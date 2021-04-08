@@ -80,21 +80,20 @@ static void	__doc_trace(const struct doc *, const struct doc_state *,
 	__attribute__((__format__(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
-	if ((st)->st_cf->cf_verbose >= 1 &&				\
+	if ((st)->st_cf->cf_verbose >= 2 &&				\
 	    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)		\
 		__doc_trace_enter((dc), (st));				\
 } while (0)
 static void	__doc_trace_enter(const struct doc *, struct doc_state *);
 
 #define doc_trace_leave(dc, st) do {					\
-	if ((st)->st_cf->cf_verbose >= 1 &&				\
+	if ((st)->st_cf->cf_verbose >= 2 &&				\
 	    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)		\
 		__doc_trace_leave((dc), (st));				\
 } while (0)
 static void	__doc_trace_leave(const struct doc *, struct doc_state *);
 
-static char		*docstr(const struct doc *, const struct doc_state *,
-    char *, size_t);
+static char		*docstr(const struct doc *, char *, size_t);
 static const char	*statestr(const struct doc_state *, unsigned int,
     char *, size_t);
 
@@ -657,7 +656,7 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "  ");
 
-	fprintf(stderr, "%s", docstr(dc, st, buf, sizeof(buf)));
+	fprintf(stderr, "%s", docstr(dc, buf, sizeof(buf)));
 	switch (dc->dc_type) {
 	case DOC_CONCAT:
 	case DOC_NOLINE:
@@ -753,8 +752,7 @@ __doc_trace_leave(const struct doc *dc, struct doc_state *st)
 }
 
 static char *
-docstr(const struct doc *dc, const struct doc_state *st, char *buf,
-    size_t bufsiz)
+docstr(const struct doc *dc, char *buf, size_t bufsiz)
 {
 	const char *str = NULL;
 	int n;
@@ -777,11 +775,7 @@ docstr(const struct doc *dc, const struct doc_state *st, char *buf,
 #undef CASE
 	}
 
-	if (st->st_cf->cf_verbose >= 3)
-		n = snprintf(buf, bufsiz, "%s<%s:%d>", str, dc->dc_fun,
-		    dc->dc_lno);
-	else
-		n = snprintf(buf, bufsiz, "%s", str);
+	n = snprintf(buf, bufsiz, "%s<%s:%d>", str, dc->dc_fun, dc->dc_lno);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 

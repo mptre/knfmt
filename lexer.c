@@ -12,8 +12,9 @@
 
 struct lexer {
 	struct lexer_state	 lx_st;
-	const char		*lx_path;
+	const struct config	*lx_cf;
 	struct buffer		*lx_bf;
+	const char		*lx_path;
 
 	int	lx_error;
 	int	lx_eof;
@@ -185,7 +186,7 @@ lexer_init(void)
 }
 
 struct lexer *
-lexer_alloc(const char *path)
+lexer_alloc(const char *path, const struct config *cf)
 {
 	struct buffer *bf;
 	struct lexer *lx;
@@ -199,9 +200,10 @@ lexer_alloc(const char *path)
 	if (lx == NULL)
 		err(1, NULL);
 	lx->lx_bf = bf;
+	lx->lx_cf = cf;
+	lx->lx_path = path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
-	lx->lx_path = path;
 	TAILQ_INIT(&lx->lx_tokens);
 
 	for (;;) {
@@ -1182,9 +1184,11 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 	if (lx->lx_error++ > 0)
 		return;
 
+	fprintf(stderr, "%s: ", lx->lx_path);
+	if (lx->lx_cf->cf_verbose > 0)
+		fprintf(stderr, "%s:%d: ", fun, lno);
 	str = token_sprintf(tk);
-	fprintf(stderr, "%s: %s:%d: expected type %s got %s\n", lx->lx_path,
-	    fun, lno, strtoken(type), str);
+	fprintf(stderr, "expected type %s got %s\n", strtoken(type), str);
 	free(str);
 }
 

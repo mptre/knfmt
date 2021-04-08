@@ -97,7 +97,7 @@ struct lexer_state {
 };
 
 void		 lexer_init(void);
-struct lexer	*lexer_alloc(const char *);
+struct lexer	*lexer_alloc(const char *, const struct config *);
 void		 lexer_free(struct lexer *);
 struct buffer	*lexer_get_buffer(struct lexer *);
 int		 lexer_get_error(const struct lexer *);

@@ -24,11 +24,11 @@ error-*)
 		_err=0
 		_tmp="$(mktemp -t knfmt.XXXXXX)"
 		commstrip "$1" >"$_tmp"
-		"${KNFMT}" "$_tmp" | diff -u -L "$1" -L "$_ok" "$_ok" - || _err="$?"
+		"${KNFMT}" -v "$_tmp" | diff -u -L "$1" -L "$_ok" "$_ok" - || _err="$?"
 		rm -f "$_tmp"
 		exit "$_err"
 	else
-		"${KNFMT}" -d "$1"
+		"${KNFMT}" -dv "$1"
 	fi
 	;;
 esac

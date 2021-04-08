@@ -84,7 +84,7 @@ parser_alloc(const char *path, const struct config *cf)
 	struct parser *pr;
 	struct lexer *lex;
 
-	lex = lexer_alloc(path);
+	lex = lexer_alloc(path, cf);
 	if (lex == NULL)
 		return NULL;
 
@@ -1462,10 +1462,14 @@ __parser_error(struct parser *pr, const char *fun, int lno)
 		return 1;
 	pr->pr_error = 1;
 
-	if (pr->pr_cf->cf_verbose > 0)
-		doc_exec(pr->pr_dc, pr->pr_bf, pr->pr_cf);
+#if 0
+	doc_exec(pr->pr_dc, pr->pr_bf, pr->pr_cf);
+#endif
 
-	fprintf(stderr, "%s: %s:%d: error at ", pr->pr_path, fun, lno);
+	fprintf(stderr, "%s: ", pr->pr_path);
+	if (pr->pr_cf->cf_verbose > 0)
+		fprintf(stderr, "%s:%d: ", fun, lno);
+	fprintf(stderr, "error at ");
 	if (lexer_back(pr->pr_lx, &tk)) {
 		char *str;
 
