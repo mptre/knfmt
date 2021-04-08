@@ -350,6 +350,10 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 				    tk_entry);
 			}
 			ex->ex_lhs = expr_exec1(es, PC0);
+			if (ex->ex_lhs == NULL) {
+				expr_free(ex);
+				return NULL;
+			}
 			return ex;
 		}
 
@@ -376,6 +380,10 @@ expr_exec_prepost(struct expr_state *es, struct expr *lhs)
 	if (lhs == NULL) {
 		ex = expr_alloc(EXPR_PREFIX, es);
 		ex->ex_lhs = expr_exec1(es, PC(es->es_er->er_pc));
+		if (ex->ex_lhs == NULL) {
+			expr_free(ex);
+			return NULL;
+		}
 	} else {
 		ex = expr_alloc(EXPR_POSTFIX, es);
 		ex->ex_lhs = lhs;
@@ -430,6 +438,10 @@ expr_exec_squares(struct expr_state *es, struct expr *lhs)
 	ex->ex_tokens[0] = es->es_tk;	/* [ */
 	ex->ex_lhs = lhs;
 	ex->ex_rhs = expr_exec1(es, PC0);
+	if (ex->ex_rhs == NULL) {
+		expr_free(ex);
+		return NULL;
+	}
 
 	if (lexer_expect(es->es_lx, TOKEN_RSQUARE, &tk))
 		ex->ex_tokens[1] = tk;	/* ] */
@@ -463,6 +475,10 @@ expr_exec_unary(struct expr_state *es, struct expr *lhs)
 
 	ex = expr_alloc(EXPR_UNARY, es);
 	ex->ex_lhs = expr_exec1(es, PC(es->es_er->er_pc));
+	if (ex->ex_lhs == NULL) {
+		expr_free(ex);
+		return NULL;
+	}
 	return ex;
 }
 
