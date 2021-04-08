@@ -122,7 +122,7 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	memset(&st, 0, sizeof(st));
 	st.st_cf = cf;
 	st.st_bf = bf;
-	st.st_mode = BREAK;
+	st.st_mode = MUNGE;
 	st.st_flags = DOC_STATE_FLAG_WIDTH;
 	doc_exec1(dc, &st);
 	return st.st_pos;
@@ -456,6 +456,13 @@ doc_fits(const struct doc *dc, const struct doc_state *st)
 static int
 doc_fits1(const struct doc *dc, struct doc_state *st)
 {
+	/*
+	 * When calculating the document width using doc_width(), everything is
+	 * expected to fit on a single line.
+	 */
+	if (st->st_flags & DOC_STATE_FLAG_WIDTH)
+		return 1;
+
 	switch (dc->dc_type) {
 	case DOC_CONCAT:
 	case DOC_NOLINE: {
