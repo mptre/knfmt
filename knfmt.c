@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include <err.h>
@@ -17,6 +18,7 @@ static __dead void	usage(void);
 static int	fileformat(const char *, const struct config *);
 static int	filediff(struct buffer *, struct buffer *, const char *);
 static int	filewrite(struct buffer *, struct buffer *, const char *);
+static int	fileattr(const char *, const char *);
 
 static int	tmpfd(const char *, char *, size_t);
 
@@ -215,8 +217,13 @@ filewrite(struct buffer *src, struct buffer *dst, const char *path)
 	close(fd);
 	fd = -1;
 
-	// XXX inherit user, group and perms
+	if (fileattr(tmppath, path))
+		goto err;
 
+	/*
+	 * Atomically replace the file using rename(2), matches what clang-tidy
+	 * does.
+	 */
 	if (rename(tmppath, path) == -1) {
 		warn("rename: %s", tmppath);
 		goto err;
@@ -229,6 +236,34 @@ err:
 		close(fd);
 	(void)unlink(tmppath);
 	return 1;
+}
+
+static int
+fileattr(const char *srcpath, const char *dstpath)
+{
+	struct stat dstst, srcst;
+
+	if (stat(srcpath, &srcst) == -1) {
+		warn("stat: %s", srcpath);
+		return 1;
+	}
+	if (stat(dstpath, &dstst) == -1) {
+		warn("stat: %s", dstpath);
+		return 1;
+	}
+
+	if (srcst.st_mode != dstst.st_mode &&
+	    chmod(srcpath, dstst.st_mode) == -1) {
+		warn("chmod: %s", srcpath);
+		return 1;
+	}
+	if ((srcst.st_uid != dstst.st_uid || srcst.st_gid != dstst.st_gid) &&
+	    chown(srcpath, dstst.st_uid, dstst.st_gid) == -1) {
+		warn("chown: %s", srcpath);
+		return 1;
+	}
+
+	return 0;
 }
 
 /*
