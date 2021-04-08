@@ -1191,7 +1191,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc, enum token_type type)
 	struct lexer *lx = pr->pr_lx;
 	struct token *end, *rparen, *tk;
 
-	if (!lexer_if(lx, type, &tk) &&
+	if (!lexer_if(lx, type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end))
 		return parser_error(pr);
 
