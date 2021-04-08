@@ -20,6 +20,12 @@ static int	__test_expr_exec(const char *, const char *, const char *, int);
 static int	__test_lexer_peek_type(const char *, const char *,
     const char *, int);
 
+#define test_lexer_read(a, b)						\
+	__test_lexer_read((a), (b), "test_lexer_read",			\
+		__LINE__);						\
+	if (xflag && error) goto out
+static int	__test_lexer_read(const char *, const char *, const char *, int);
+
 struct parser_stub {
 	char		 ps_path[PATH_MAX];
 	struct parser	*ps_pr;
@@ -161,6 +167,12 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_type("usbd_status (*v)(void)", "usbd_status");
 	error |= test_lexer_peek_type("register char", "register char");
 
+	error |= test_lexer_read("<", "LESS<1:1>(\"<\")");
+	error |= test_lexer_read("<x", "LESS<1:1>(\"<\") IDENT<1:2>(\"x\")");
+	error |= test_lexer_read("<=", "LESSEQUAL<1:1>(\"<=\")");
+	error |= test_lexer_read("<<", "LESSLESS<1:1>(\"<<\")");
+	error |= test_lexer_read("<<=", "LESSLESSEQUAL<1:1>(\"<<=\")");
+
 out:
 	return error;
 }
@@ -243,6 +255,45 @@ __test_lexer_peek_type(const char *src, const char *exp, const char *fun,
 	}
 
 out:
+	buffer_free(bf);
+	parser_stub_destroy(&ps);
+	return error;
+}
+
+static int
+__test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
+{
+	struct buffer *bf = NULL;
+	struct parser_stub ps;
+	const char *act;
+	int error = 0;
+	int ntokens = 0;
+
+	parser_stub_create(&ps, src);
+
+	bf = buffer_alloc(128);
+	for (;;) {
+		struct token *tk;
+		char *str;
+
+		if (!lexer_pop(ps.ps_lx, &tk))
+			errx(1, "%s:%d: out of tokens", fun, lno);
+		if (tk->tk_type == TOKEN_EOF)
+			break;
+
+		if (ntokens++ > 0)
+			buffer_appendc(bf, ' ');
+		str = token_sprintf(tk);
+		buffer_append(bf, str, strlen(str));
+		free(str);
+	}
+	act = buffer_ptr(bf);
+	if (strcmp(exp, act)) {
+		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
+		    act);
+		error = 1;
+	}
+
 	buffer_free(bf);
 	parser_stub_destroy(&ps);
 	return error;

@@ -32,6 +32,7 @@ static void		 lexer_ungetc(struct lexer *);
 static int		 lexer_read(struct lexer *, struct token **);
 static struct token	*lexer_eat_lines(struct lexer *, int);
 static struct token	*lexer_eat_space(struct lexer *, int, int);
+static struct token	*lexer_ambiguous(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
 static struct token	*lexer_cpp(struct lexer *);
 static void		 lexer_foreach(struct lexer *, struct token *);
@@ -747,7 +748,6 @@ lexer_read(struct lexer *lx, struct token **tk)
 	struct token_list dangling;
 	struct token *tmp;
 	struct token *t;
-	int isambiguous;
 	int error = 0;
 	unsigned char ch;
 
@@ -770,36 +770,13 @@ lexer_read(struct lexer *lx, struct token **tk)
 	}
 
 	lexer_eat_space(lx, 1, 0);
+
+	if ((*tk = lexer_ambiguous(lx)) != NULL)
+		goto out;
+
 	st = lx->lx_st;
 	if (lexer_getc(lx, &ch))
 		goto eof;
-
-	// XXX extract
-	isambiguous = 0;
-	tmp = NULL;
-ambiguous:
-	/* Recognize ambiguous tokens. */
-	if (lexer_find_token(lx, &st, &t)) {
-		if (t->tk_flags & TOKEN_FLAG_AMBIGUOUS) {
-			if (tmp != t)
-				isambiguous++;
-			tmp = t;
-		} else {
-			*tk = lexer_emit(lx, &st, t);
-			goto out;
-		}
-	}
-	if (isambiguous) {
-		if (isambiguous++ % 2 == 0) {
-			lexer_ungetc(lx);
-			*tk = lexer_emit(lx, &st, tmp);
-			goto out;
-		} else {
-			if (lexer_getc(lx, &ch))
-				goto eof;
-			goto ambiguous;
-		}
-	}
 
 	if (ch == 'L') {
 		unsigned char peek;
@@ -924,6 +901,45 @@ lexer_eat_space(struct lexer *lx, int newline, int emit)
 	if (!emit || st.st_off == lx->lx_st.st_off)
 		return NULL;
 	return lexer_emit(lx, &st, &tkspace);
+}
+
+static struct token *
+lexer_ambiguous(struct lexer *lx)
+{
+	struct lexer_state st = lx->lx_st;
+	struct token *pv = NULL;
+	struct token *tk = NULL;
+	unsigned char ch;
+
+	if (lexer_getc(lx, &ch))
+		return NULL;
+
+	for (;;) {
+		struct token *tmp;
+
+		if (!lexer_find_token(lx, &st, &tmp)) {
+			if (pv != NULL)
+				lexer_ungetc(lx);
+			tk = pv;
+			break;
+		}
+		if ((tmp->tk_flags & TOKEN_FLAG_AMBIGUOUS) == 0) {
+			tk = tmp;
+			break;
+		}
+
+		pv = tmp;
+		if (lexer_getc(lx, &ch)) {
+			tk = tmp;
+			break;
+		}
+	}
+	if (tk == NULL) {
+		lx->lx_st = st;
+		return NULL;
+	}
+
+	return lexer_emit(lx, &st, tk);
 }
 
 static struct token *
