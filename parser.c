@@ -336,6 +336,9 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 		if (parser_halted(pr))
 			return parser_error(pr);
 
+		if (lexer_peek(lx, &tk) && tk == stop)
+			break;
+
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_token(tk, dc);
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &tk)) {
@@ -351,7 +354,6 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (parser_exec_expr(pr, dc, NULL, stop))
 					return parser_error(pr);
 			}
-			break;
 		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
 			doc_token(tk, dc);
 			/* Let the remaning tokens hang of the expression. */
