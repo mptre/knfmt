@@ -538,12 +538,19 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, indent));
 
-			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
-				    &tk))
-				tk = rbrace;
+			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+				if (parser_exec_decl_braces(pr, concat))
+					return parser_error(pr);
+				expr = concat;
+			} else {
+				if (!lexer_peek_until_loose(lx, TOKEN_COMMA,
+					    rbrace, &tk))
+					tk = rbrace;
 
-			if (parser_exec_expr(pr, concat, &expr, tk))
-				return parser_error(pr);
+				if (parser_exec_expr(pr, concat, &expr, tk))
+					return parser_error(pr);
+			}
+
 			if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 				doc_token(tk, expr);
 				if (align) {
