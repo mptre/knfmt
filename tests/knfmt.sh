@@ -2,6 +2,13 @@
 
 set -e
 
+# commstrip file
+#
+# Removed the leading block comment from file.
+commstrip() {
+	awk '!p && !length($0) {p=1; next} p {print}' "$1"
+}
+
 case "$1" in
 error-*)
 	_err=0
@@ -12,6 +19,16 @@ error-*)
 	fi
 	;;
 *)
-	"${KNFMT}" -d "$1"
+	_ok="${1%.c}.ok"
+	if [ -e "$_ok" ]; then
+		_err=0
+		_tmp="$(mktemp -t knfmt.XXXXXX)"
+		commstrip "$1" >"$_tmp"
+		"${KNFMT}" "$_tmp" | diff -u -L "$1" -L "$_ok" "$_ok" - || _err="$?"
+		rm -f "$_tmp"
+		exit "$_err"
+	else
+		"${KNFMT}" -d "$1"
+	fi
 	;;
 esac

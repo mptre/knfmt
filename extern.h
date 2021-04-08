@@ -171,6 +171,7 @@ enum doc_type {
 	DOC_LINE,
 	DOC_SOFTLINE,
 	DOC_HARDLINE,
+	DOC_NOLINE,
 };
 
 void		doc_exec(const struct doc *, struct buffer *,

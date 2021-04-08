@@ -694,16 +694,18 @@ static int
 parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
     struct token *type)
 {
+	struct doc *noline;
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	if (parser_exec_type(pr, dc, type, rl) ||
-	    parser_exec_func_proto(pr, dc, DOC_SOFTLINE))
+	noline = doc_alloc(DOC_NOLINE, dc);
+	if (parser_exec_type(pr, noline, type, rl) ||
+	    parser_exec_func_proto(pr, noline, DOC_SOFTLINE))
 		return parser_error(pr);
 
 	if (!lexer_if(lx, TOKEN_SEMI, &tk))
 		return parser_error(pr);
-	doc_token(tk, dc);
+	doc_token(tk, noline);
 
 	return PARSER_OK;
 }
@@ -714,15 +716,17 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 static int
 parser_exec_func_impl(struct parser *pr, struct doc *dc)
 {
+	struct doc *noline;
 	struct lexer *lx = pr->pr_lx;
 	struct token *type;
 
 	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
 		return PARSER_NOTHING;
 
-	if (parser_exec_type(pr, dc, type, NULL))
+	noline = doc_alloc(DOC_NOLINE, dc);
+	if (parser_exec_type(pr, noline, type, NULL))
 		return parser_error(pr);
-	if (parser_exec_func_proto(pr, dc, DOC_HARDLINE))
+	if (parser_exec_func_proto(pr, noline, DOC_HARDLINE))
 		return parser_error(pr);
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL))
 		return parser_error(pr);

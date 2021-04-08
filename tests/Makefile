@@ -73,6 +73,8 @@ TESTS+=	valid-065.c
 TESTS+=	valid-066.c
 TESTS+=	valid-067.c
 TESTS+=	valid-068.c
+TESTS+=	valid-069.c
+TESTS+=	valid-070.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-errc.c
