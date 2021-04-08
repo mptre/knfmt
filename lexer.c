@@ -250,12 +250,6 @@ lexer_get_error(const struct lexer *lx)
 }
 
 int
-lexer_get_peek(const struct lexer *lx)
-{
-	return lx->lx_peek;
-}
-
-int
 lexer_pop(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state *st = &lx->lx_st;
