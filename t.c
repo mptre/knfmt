@@ -159,6 +159,7 @@ main(int argc, char *argv[])
 	    "long");
 	error |= test_lexer_peek_type("unsigned int f:1", "unsigned int");
 	error |= test_lexer_peek_type("usbd_status (*v)(void)", "usbd_status");
+	error |= test_lexer_peek_type("register char", "register char");
 
 out:
 	return error;

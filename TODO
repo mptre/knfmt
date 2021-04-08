@@ -10,7 +10,6 @@
 - force hardline after declarations of local variables
 
 - more efficient allocation of token and doc using slabs, cannot realloc
-- sync tokens, register?
 
 - group and sort includes
 - group and sort locals variables
