@@ -1,5 +1,5 @@
 /*
- * Hard lines are not honored in function declarations.
+ * Hard lines are not honored in function prototypes as part of a declaration.
  */
 
 int

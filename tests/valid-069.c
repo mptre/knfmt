@@ -1,5 +1,6 @@
 /*
- * Hard lines are not honored in function implementations.
+ * Hard lines are not honored in function prototypes as part of an
+ * implementation.
  */
 
 int

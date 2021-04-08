@@ -221,8 +221,8 @@ filewrite(struct buffer *src, struct buffer *dst, const char *path)
 		goto err;
 
 	/*
-	 * Atomically replace the file using rename(2), matches what clang-tidy
-	 * does.
+	 * Atomically replace the file using rename(2), matches what
+	 * clang-format does.
 	 */
 	if (rename(tmppath, path) == -1) {
 		warn("rename: %s", tmppath);
