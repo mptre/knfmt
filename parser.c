@@ -397,12 +397,12 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct doc *expr;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rbrace, *tk;
+	struct token *lbrace, *rbrace, *tk;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_error(pr);
-	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
-		doc_token(tk, dc);
+	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace))
+		doc_token(lbrace, dc);
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		struct doc *line = NULL;
@@ -492,7 +492,7 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		struct doc *line = NULL;
 		struct doc *concat = NULL;
 		struct doc *indent;
-		struct token *tmp = NULL;
+		struct token *tmp;
 		unsigned int col = 0;
 		int align = 1;
 
@@ -501,13 +501,14 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		 * instead respect existing hard line(s).
 		 */
 		lexer_peek_enter(lx, &s);
+		tmp = lbrace;
 		for (;;) {
 			if (!lexer_pop(lx, &tk))
 				return parser_error(pr);
 			if (tk == rbrace)
 				break;
 
-			if (tmp != NULL && token_cmp(tk, tmp) > 0) {
+			if (token_cmp(tk, tmp) > 0) {
 				align = 0;
 				break;
 			}
