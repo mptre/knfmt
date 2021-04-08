@@ -1,2 +1,23 @@
 DESIGN
 ------
+
+lexer.c
+-------
+
+parser.c
+--------
+
+parser_exec_ family of functions return 1 in case of error
+parser_peek (predicate) family of functions return 0 in case of error 1() convention recursive
+
+expr.c
+------
+
+[1] https://en.wikipedia.org/wiki/Operator-precedence_parser#Pratt_parsing
+[2] https://craftinginterpreters.com/compiling-expressions.html
+[3] https://quasilyte.dev/blog/post/pratt-parsers-go/
+
+doc.c
+-----
+
+[1] http://blog.vjeux.com/2017/javascript/anatomy-of-a-javascript-pretty-printer.html

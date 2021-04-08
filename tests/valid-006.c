@@ -1,0 +1,5 @@
+/*
+ * Forward declarations.
+ */
+
+struct s;

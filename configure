@@ -1,0 +1,229 @@
+#!/bin/sh
+
+set -e
+
+atexit() {
+	local _err="$?"
+
+	# Dump contents of generated files to config.log.
+	exec 1>>config.log 2>&1
+	set -x
+	[ -e config.h ] && cat config.h
+	[ -e config.mk ] && cat config.mk
+	rm -f "$@"
+	[ "$_err" -ne 0 ] && fatal
+	exit 0
+}
+
+compile() {
+	$CC $CPPFLAGS -Werror -o /dev/null -x c - $@
+}
+
+fatal() {
+	[ $# -gt 0 ] && echo "fatal: ${*}"
+	exec 1>&3 2>&4
+	cat config.log
+	exit 1
+}
+
+headers() {
+	cat >"$TMP1"
+	[ -s "$TMP1" ] || return 0
+
+	xargs printf '#include <%s>\n' <"$TMP1"
+}
+
+makevar() {
+	var="$(printf 'all:\n\t@echo ${%s}\n' "$1" | make -sf -)"
+	if [ -n "$var" ]; then
+		echo "$var"
+	else
+		return 1
+	fi
+}
+
+check_dead() {
+	compile <<-EOF
+	#include <stdlib.h>
+
+	__dead int dead(void);
+
+	int main(void) {
+		return 0;
+	}
+	EOF
+}
+
+check_errc() {
+	compile <<-EOF
+	#include <err.h>
+
+	int main(void) {
+		errc(1, 0, "");
+		return 0;
+	}
+	EOF
+}
+
+check_pledge() {
+	compile <<-EOF
+	#include <unistd.h>
+
+	int main(void) {
+		return !(pledge("stdio", NULL) == 0);
+	}
+	EOF
+}
+
+check_queue() {
+	compile <<-EOF
+	#include <sys/queue.h>
+
+	#if !defined(TAILQ_FOREACH_SAFE)
+	#error "TAILQ_FOREACH_SAFE not present"
+	#endif
+
+	#if !defined(TAILQ_END)
+	#error "TAILQ_END not present"
+	#endif
+
+	int main(void) {
+		return 0;
+	}
+	EOF
+}
+
+check_strtonum() {
+	compile <<-EOF
+	#include <stdlib.h>
+
+	int main(void) {
+		return !(strtonum("1", 1, 1, NULL) == 0);
+	}
+	EOF
+}
+
+check_uthash() {
+	compile <<-EOF
+	#include <uthash.h>
+
+	int main(void) {
+		return 0;
+	}
+	EOF
+}
+
+check_vis() {
+	compile <<-EOF
+	#include <stdlib.h>
+	#include <vis.h>
+
+	int main(void) {
+		return 0;
+	}
+	EOF
+}
+
+check_warnc() {
+	compile <<-EOF
+	#include <err.h>
+
+	int main(void) {
+		warnc(0, "");
+		return 0;
+	}
+	EOF
+}
+
+TMP1=$(mktemp -t configure.XXXXXX)
+TMP2=$(mktemp -t configure.XXXXXX)
+trap "atexit $TMP1 $TMP2" EXIT
+
+exec 3>&1 4>&2
+exec 1>config.log 2>&1
+
+# At this point, all variables used must be defined.
+set -u
+# Enable tracing, will end up in config.log.
+set -x
+
+HAVE_DEAD=0
+HAVE_ERRC=0
+HAVE_PLEDGE=0
+HAVE_QUEUE=0
+HAVE_STRTONUM=0
+HAVE_VIS=0
+HAVE_WARNC=0
+
+# Order is important, must come first if not defined.
+DEBUG="$(makevar DEBUG || :)"
+
+CC=$(makevar CC || fatal "CC: not defined")
+CFLAGS=$(DEBUG= makevar CFLAGS || :)
+CFLAGS="${CFLAGS} ${DEBUG} -Wall -Wextra -MD -MP"
+CPPFLAGS="$(makevar CPPFLAGS || :)"
+LDFLAGS="$(DEBUG= makevar LDFLAGS || :)"
+
+PREFIX="$(makevar PREFIX || echo /usr/local)"
+BINDIR="$(makevar BINDIR || echo "${PREFIX}/bin")"
+MANDIR="$(makevar MANDIR || echo "${PREFIX}/man")"
+INSTALL="$(makevar INSTALL || echo install)"
+INSTALL_MAN="$(makevar INSTALL_MAN || echo install)"
+
+check_uthash || fatal "uthash.h not found"
+
+check_dead && HAVE_DEAD=1
+check_errc && HAVE_ERRC=1
+check_pledge && HAVE_PLEDGE=1
+check_queue && HAVE_QUEUE=1
+check_strtonum && HAVE_STRTONUM=1
+check_vis && HAVE_VIS=1
+check_warnc && HAVE_WARNC=1
+
+# Redirect stdout to config.h.
+exec 1>config.h
+
+# Headers needed for function prototypes.
+{
+[ $HAVE_PLEDGE -eq 0 ] && echo stdlib.h
+} | sort | uniq | headers
+
+[ $HAVE_ERRC -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
+[ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
+[ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
+[ $HAVE_STRTONUM -eq 1 ] && printf '#define HAVE_STRTONUM\t1\n'
+[ $HAVE_VIS -eq 1 ] && printf '#define HAVE_VIS\t1\n'
+
+[ $HAVE_DEAD -eq 0 ] &&
+	printf '#define __dead\t__attribute__((__noreturn__))\n'
+[ $HAVE_ERRC -eq 0 ] && {
+	printf 'void errc(int, int, const char *, ...)\n';
+	printf '\t__attribute__((__noreturn__, __format__ (printf, 3, 4)));\n'; }
+[ $HAVE_PLEDGE -eq 0 ] &&
+	printf 'int pledge(const char *, const char *);\n'
+[ $HAVE_STRTONUM -eq 0 ] &&
+	printf 'long long strtonum(const char *, long long, long long, const char **);\n'
+[ $HAVE_VIS -eq 0 ] && {
+	printf '#define VIS_CSTYLE\t0x02\n';
+	printf '#define VIS_TAB\t0x08\n';
+	printf '#define VIS_NL\t0x10\n';
+	printf 'int stravis(char **, const char *, int);\n'; }
+[ $HAVE_WARNC -eq 0 ] &&
+	printf 'void warnc(int, const char *, ...);\n';
+
+# Redirect stdout to config.mk.
+exec 1>config.mk
+
+# Use echo to normalize whitespace.
+cat <<EOF
+CC=		$(echo $CC)
+CFLAGS=		$(echo $CFLAGS)
+CPPFLAGS=	$(echo $CPPFLAGS -I\${.CURDIR})
+DEBUG=		$(echo $DEBUG)
+LDFLAGS=	$(echo $LDFLAGS)
+
+BINDIR?=	$(echo $BINDIR)
+MANDIR?=	$(echo $MANDIR)
+INSTALL?=	$(echo $INSTALL)
+INSTALL_MAN?=	\${INSTALL}
+EOF

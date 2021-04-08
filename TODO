@@ -1,0 +1,21 @@
+- for (int i = 0;
+- CONFIG_FLAG_TEST hide behind DIAGNOSTIC, also doc_trace
+
+- sys/kern/tty.c label in else
+- sys/dev/acpi/acpibtn.c
+- sys/kern/subr_witness.c
+
+- align after #endif any cpp, does not see TOKEN_FLAG_LINE
+
+- force hardline after declarations of local variables
+
+- more efficient allocation of token and doc using slabs, cannot realloc
+- sync tokens, register?
+
+- group and sort includes
+- group and sort locals variables
+- align define multi line backslashes
+
+- Simplify or strict mode which mutates the code:
+  * Remove parenthesis around return expression
+  * Remove semicolon after blocks wrapped in braces
