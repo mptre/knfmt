@@ -612,7 +612,7 @@ expr_doc(const struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_lhs != NULL) {
 			es->es_parens++;
-			concat = doc_alloc_indent(PARENSINDENT, concat);
+			concat = doc_alloc_indent(DOC_INDENT_PARENS, concat);
 			concat = expr_doc_indent(es, concat, es->es_cf->cf_sw,
 			    1);
 			concat = expr_doc(ex->ex_lhs, es, concat);

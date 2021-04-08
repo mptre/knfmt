@@ -190,13 +190,13 @@ struct doc	*__doc_alloc(enum doc_type, struct doc *, const char *, int);
  * Sentinel honored by doc_alloc_dedent() which causes all indentation to be
  * removed. Mainly used by goto labels.
  */
-#define NOINDENT	0
+#define DOC_DEDENT_NONE		0x80000000u
 
 /*
  * Sentinel honored by doc_alloc_indent() which denotes entering a pair of
  * parenthesis.
  */
-#define PARENSINDENT	0
+#define DOC_INDENT_PARENS	0x80000000u
 
 #define doc_alloc_indent(a, b) \
 	__doc_alloc_indent(DOC_INDENT, (a), (b), __func__, __LINE__)

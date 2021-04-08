@@ -306,12 +306,12 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_INDENT:
-		if (dc->dc_indent == PARENSINDENT)
+		if (dc->dc_indent & DOC_INDENT_PARENS)
 			st->st_parens++;
 		else
 			st->st_indent.i_cur += dc->dc_indent;
 		doc_exec1(dc->dc_doc, st);
-		if (dc->dc_indent == PARENSINDENT)
+		if (dc->dc_indent & DOC_INDENT_PARENS)
 			st->st_parens--;
 		else
 			st->st_indent.i_cur -= dc->dc_indent;
@@ -326,7 +326,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_DEDENT: {
 		unsigned int indent;
 
-		if (dc->dc_indent == NOINDENT) {
+		if (dc->dc_indent & DOC_DEDENT_NONE) {
 			indent = st->st_indent.i_cur;
 		} else {
 			indent = dc->dc_indent;
