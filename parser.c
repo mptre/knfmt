@@ -1151,8 +1151,23 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 		return PARSER_OK;
 	}
 
-	if (!parser_exec_stmt_label(pr, dc))
+	if (parser_exec_stmt_label(pr, dc) == PARSER_OK) {
+		struct token *t1, *t2;
+
+		/*
+		 * A label is not necessarily followed by a hard line, there
+		 * could be another statement on the same line.
+		 */
+		if (lexer_back(lx, &t1) && lexer_peek(lx, &t2) && t2 != end &&
+		    token_cmp(t1, t2) == 0) {
+			struct doc *indent;
+
+			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
+			return parser_exec_stmt1(pr, indent, end);
+		}
+
 		return PARSER_OK;
+	}
 
 	if (lexer_if(lx, TOKEN_SEMI, &tk)) {
 		doc_token(tk, dc);
