@@ -1183,8 +1183,8 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 		return;
 
 	str = token_sprintf(tk);
-	fprintf(stderr, "%s:%d: expected type %s got %s\n", fun, lno,
-	    strtoken(type), str);
+	fprintf(stderr, "%s: %s:%d: expected type %s got %s\n", lx->lx_path,
+	    fun, lno, strtoken(type), str);
 	free(str);
 }
 

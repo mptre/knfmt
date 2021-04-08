@@ -1465,7 +1465,7 @@ __parser_error(struct parser *pr, const char *fun, int lno)
 	if (pr->pr_cf->cf_verbose > 0)
 		doc_exec(pr->pr_dc, pr->pr_bf, pr->pr_cf);
 
-	fprintf(stderr, "%s:%d: error at ", fun, lno);
+	fprintf(stderr, "%s: %s:%d: error at ", pr->pr_path, fun, lno);
 	if (lexer_back(pr->pr_lx, &tk)) {
 		char *str;
 
