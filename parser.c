@@ -37,6 +37,8 @@ static int	parser_exec_decl_braces1(struct parser *, struct doc *,
     struct ruler *);
 static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *);
+static int	parser_exec_decl_cppx(struct parser *, struct doc *,
+    struct ruler *);
 static int	parser_exec_expr(struct parser *, struct doc *, struct doc **,
     const struct token *);
 
@@ -613,7 +615,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	struct token *end, *tk;
 	struct doc *expr = dc;
 	int iscpp = 0;
-	int semi = 1;
+	int isxmacro = 0;
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
@@ -643,23 +645,78 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 		/* Handle X macros lacking semicolons. */
 		if (!iscpp && lexer_peek(lx, &tk) && token_cmp(tk, end) > 0) {
 			iscpp = 1;
-			semi = 0;
+			isxmacro = 1;
 		}
 	}
 	lexer_peek_leave(lx, &s);
 	if (!iscpp)
 		return PARSER_NOTHING;
+	if (isxmacro)
+		return parser_exec_decl_cppx(pr, dc, rl);
 
 	if (parser_exec_type(pr, dc, end, rl))
 		return parser_error(pr);
-
-	if (!semi)
-		return PARSER_OK;
 
 	if (parser_exec_decl_init(pr, dc, NULL, 0))
 		return parser_error(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, expr);
+
+	return PARSER_OK;
+}
+
+/*
+ * Parse a preprocessor directive known as a X macro, a construct that looks
+ * like a function call but without any trailing semicolon.
+ */
+static int
+parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
+{
+	struct doc *concat;
+	struct lexer *lx = pr->pr_lx;
+	struct token *rbrace, *tk;
+	unsigned int col = 0;
+	unsigned int w;
+
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+
+	if (lexer_expect(lx, TOKEN_IDENT, &tk))
+		doc_token(tk, concat);
+	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rbrace))
+		return parser_error(pr);
+	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
+		doc_token(tk, concat);
+
+	/*
+	 * Take note of the width of the document up to the first argument, must
+	 * be accounted for while performing alignment.
+	 */
+	w = parser_width(pr, concat);
+
+	for (;;) {
+		struct doc *arg, *expr;
+		struct token *stop;
+
+		if (lexer_peek_if(lx, TOKEN_RPAREN, NULL))
+			break;
+
+		arg = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+
+		if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop))
+			stop = rbrace;
+		if (parser_exec_expr(pr, arg, &expr, stop))
+			return parser_error(pr);
+		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
+			doc_token(tk, expr);
+			col++;
+			ruler_insert(rl, tk, expr, col,
+			    parser_width(pr, arg) + w, 0);
+			w = 0;
+		}
+	}
+
+	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+		doc_token(tk, dc);
 
 	return PARSER_OK;
 }
