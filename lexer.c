@@ -265,7 +265,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 
 	if (st->st_tok == NULL)
 		st->st_tok = TAILQ_FIRST(&lx->lx_tokens);
-	else
+	else if (st->st_tok->tk_type != TOKEN_EOF)
 		st->st_tok = TAILQ_NEXT(st->st_tok, tk_entry);
 	if (st->st_tok == NULL)
 		return 0;
