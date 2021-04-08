@@ -67,6 +67,7 @@ static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_parens(const struct doc_state *);
+static int	doc_has_list(const struct doc *);
 
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if ((st)->st_cf->cf_verbose >= 2 &&				\
@@ -164,7 +165,7 @@ doc_free(struct doc *dc)
 void
 doc_remove(struct doc *dc, struct doc *parent)
 {
-	assert(parent->dc_type == DOC_CONCAT);
+	assert(doc_has_list(parent));
 	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
 	doc_free(dc);
 }
@@ -178,7 +179,7 @@ doc_set_indent(struct doc *dc, unsigned int indent)
 void
 doc_append(struct doc *dc, struct doc *parent)
 {
-	if (parent->dc_type == DOC_CONCAT) {
+	if (doc_has_list(parent)) {
 		TAILQ_INSERT_TAIL(&parent->dc_list, dc, dc_entry);
 	} else {
 		assert(parent->dc_doc == NULL);
@@ -197,7 +198,7 @@ __doc_alloc(enum doc_type type, struct doc *parent, const char *fun, int lno)
 	dc->dc_type = type;
 	dc->dc_fun = fun;
 	dc->dc_lno = lno;
-	if (dc->dc_type == DOC_CONCAT)
+	if (doc_has_list(dc))
 		TAILQ_INIT(&dc->dc_list);
 	if (parent != NULL)
 		doc_append(dc, parent);
@@ -588,6 +589,12 @@ doc_parens(const struct doc_state *st)
 {
 	return st->st_parens > 0 && st->st_indent.i_pre > 0 &&
 	    st->st_bf->bf_ptr[st->st_indent.i_pos] == '(';
+}
+
+static int
+doc_has_list(const struct doc *dc)
+{
+	return dc->dc_type == DOC_CONCAT;
 }
 
 static void
