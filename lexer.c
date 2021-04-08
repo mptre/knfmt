@@ -388,7 +388,9 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 			 */
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 				break;
-			peek = 1;
+			/* A type cannot start with a pointer. */
+			if (ntokens > 0)
+				peek = 1;
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
 			struct lexer_state ss;
 			int ident;
