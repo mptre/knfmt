@@ -462,6 +462,10 @@ expr_exec_ternary(struct expr_state *es, struct expr *lhs)
 	if (lexer_expect(es->es_lx, TOKEN_COLON, &tk))
 		ex->ex_tokens[1] = tk;	/* : */
 	ex->ex_ternary = expr_exec1(es, PC0);
+	if (ex->ex_ternary == NULL) {
+		expr_free(ex);
+		return NULL;
+	}
 	return ex;
 }
 
