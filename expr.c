@@ -569,8 +569,7 @@ expr_doc(const struct expr *ex, struct expr_state *es, struct doc *parent)
 			doc_alloc(DOC_SOFTLINE, concat);
 			es->es_soft++;
 		}
-		if (ex->ex_rhs != NULL)
-			concat = expr_doc(ex->ex_rhs, es, concat);
+		concat = expr_doc(ex->ex_rhs, es, concat);
 		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN)
 			es->es_assign--;
 		else
@@ -664,15 +663,12 @@ expr_doc(const struct expr *ex, struct expr_state *es, struct doc *parent)
 		if (ex->ex_lhs != NULL)
 			lhs = expr_doc(ex->ex_lhs, es, concat);
 		doc_token(ex->ex_tk, lhs);
-		if (ex->ex_rhs != NULL) {
-			doc_alloc(DOC_LINE, lhs);
-			concat = doc_alloc(DOC_CONCAT,
-			    doc_alloc(DOC_GROUP, concat));
-			doc_alloc(DOC_SOFTLINE, concat);
-			es->es_soft++;
-			concat = expr_doc(ex->ex_rhs, es, concat);
-			es->es_soft--;
-		}
+		doc_alloc(DOC_LINE, lhs);
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
+		doc_alloc(DOC_SOFTLINE, concat);
+		es->es_soft++;
+		concat = expr_doc(ex->ex_rhs, es, concat);
+		es->es_soft--;
 		break;
 	}
 
