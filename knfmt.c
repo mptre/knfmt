@@ -29,7 +29,7 @@ main(int argc, char *argv[])
 	int error = 0;
 	int ch, i;
 
-	if (pledge("stdio rpath wpath cpath proc exec", NULL) == -1)
+	if (pledge("stdio rpath wpath cpath fattr chown proc exec", NULL) == -1)
 		err(1, "pledge");
 
 	config_init(&cf);
@@ -64,7 +64,8 @@ main(int argc, char *argv[])
 			err(1, "pledge");
 	} else {
 		if (cf.cf_flags & CONFIG_FLAG_INPLACE) {
-			if (pledge("stdio rpath wpath cpath", NULL) == -1)
+			if (pledge("stdio rpath wpath cpath fattr chown",
+				    NULL) == -1)
 				err(1, "pledge");
 		} else {
 			if (pledge("stdio rpath", NULL) == -1)
