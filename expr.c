@@ -225,7 +225,7 @@ static struct expr *
 expr_exec1(struct expr_state *es, enum expr_pc pc)
 {
 	const struct expr_rule *er;
-	struct expr *ex;
+	struct expr *ex = NULL;
 	struct token *tk;
 
 	if (lexer_get_error(es->es_lx) ||
@@ -235,14 +235,17 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 
 	/* Only consider unary operators. */
 	er = expr_rule_find(es->es_tk, 1);
-	if (er == NULL) {
+	if (er == NULL || er->er_type == TOKEN_LITERAL) {
 		/*
-		 * No operator found, see if the parser can recover. This can
-		 * for instance happen while encountering a type which is an
-		 * argument to a function call.
+		 * Even if a literal operator was found, let the parser recover
+		 * before continuing. Otherwise, pointer types can be
+		 * erroneously treated as a multiplication expression.
 		 */
 		ex = expr_exec_recover(es);
-	} else {
+		if (ex == NULL && er == NULL)
+			return NULL;
+	}
+	if (ex == NULL) {
 		es->es_er = er;
 		if (!lexer_pop(es->es_lx, &es->es_tk))
 			return NULL;

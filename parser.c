@@ -1472,8 +1472,8 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, unsigned int indent,
  * expression. This can happen while encountering one of the following
  * constructs:
  *
- * 	raw type, for instance a sizeof argument
- * 	binary operator used as an argument, for instance timercmp(3)
+ * 	type argument, i.e. sizeof
+ * 	binary operator used as an argument, i.e. timercmp(3)
  */
 static struct doc *
 parser_exec_expr_recover(void *arg)
@@ -1494,12 +1494,27 @@ parser_exec_expr_recover(void *arg)
 			doc_token(tk, dc);
 		}
 	} else if (lexer_peek_type(lx, &tk, 0)) {
-		dc = doc_alloc(DOC_CONCAT, NULL);
-		if (parser_exec_type(pr, dc, tk, NULL)) {
-			doc_free(dc);
+		struct token *nx, *pv;
+
+		if (!lexer_peek(lx, &pv))
 			return NULL;
+		pv = TAILQ_PREV(pv, token_list, tk_entry);
+		nx = TAILQ_NEXT(tk, tk_entry);
+		if (pv == NULL || nx == NULL)
+			return NULL;
+		if ((pv->tk_type == TOKEN_LPAREN ||
+			    pv->tk_type == TOKEN_COMMA ||
+			    pv->tk_type == TOKEN_SIZEOF) &&
+		    (nx->tk_type == TOKEN_RPAREN ||
+		     nx->tk_type == TOKEN_COMMA)) {
+			dc = doc_alloc(DOC_CONCAT, NULL);
+			if (parser_exec_type(pr, dc, tk, NULL)) {
+				doc_free(dc);
+				return NULL;
+			}
 		}
 	}
+
 	return dc;
 }
 

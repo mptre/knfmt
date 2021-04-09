@@ -84,6 +84,7 @@ TESTS+=	valid-074.c
 TESTS+=	valid-075.c
 TESTS+=	valid-076.c
 TESTS+=	valid-077.c
+TESTS+=	valid-078.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-errc.c
