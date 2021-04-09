@@ -345,8 +345,7 @@ lexer_peek_func_ptr(struct lexer *lx)
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_STAR, NULL) &&
-	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_STAR, NULL) && lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
 		peek = 1;

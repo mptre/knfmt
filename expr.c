@@ -558,15 +558,14 @@ expr_doc(const struct expr *ex, struct expr_state *es, struct doc *parent)
 		op = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, lhs));
 		doc_alloc(DOC_LINE, op);
 		doc_token(ex->ex_tk, op);
-		if (ex->ex_rhs != NULL)
-			doc_alloc(DOC_LINE, op);
 
 		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
 			es->es_assign++;
+			doc_literal(" ", op);
 		} else {
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			doc_alloc(DOC_SOFTLINE, concat);
+			doc_alloc(DOC_LINE, concat);
 			es->es_soft++;
 		}
 		concat = expr_doc(ex->ex_rhs, es, concat);
