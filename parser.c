@@ -1415,14 +1415,14 @@ parser_exec_type(struct parser *pr, struct doc *dc, struct token *end,
 			break;
 
 		if (!didalign) {
-			struct token *next;
+			struct token *nx;
 
 			if (tk->tk_type != TOKEN_STAR &&
 			    tk->tk_type != TOKEN_LPAREN &&
-			    lexer_peek(lx, &next) &&
-			    next->tk_type != TOKEN_LPAREN &&
-			    next->tk_type != TOKEN_RPAREN &&
-			    next->tk_type != TOKEN_COMMA)
+			    lexer_peek(lx, &nx) &&
+			    nx->tk_type != TOKEN_LPAREN &&
+			    nx->tk_type != TOKEN_RPAREN &&
+			    nx->tk_type != TOKEN_COMMA)
 				doc_alloc(DOC_LINE, concat);
 		}
 	}
