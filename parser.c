@@ -979,7 +979,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 		return parser_exec_stmt_expr(pr, dc, tk->tk_type);
 
 	if (lexer_if(lx, TOKEN_FOR, &tk)) {
-		struct doc *expr, *loop, *space;
+		struct doc *expr = NULL;
+		struct doc *loop, *space;
 
 		loop = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_token(tk, loop);
@@ -988,11 +989,17 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			doc_token(tk, loop);
 
-		/* Let the semicolon hang of the expression unless empty. */
-		if (parser_exec_expr(pr, loop, &expr, NULL))
+		/* Declarations are allowed in the first expression. */
+		if (parser_exec_decl(pr, loop, 0) == PARSER_NOTHING) {
+			/* Let the semicolon hang of the expression unless empty. */
+			if (parser_exec_expr(pr, loop, &expr, NULL) ==
+			    PARSER_NOTHING)
+				expr = loop;
+			if (lexer_expect(lx, TOKEN_SEMI, &tk))
+				doc_token(tk, expr);
+		} else {
 			expr = loop;
-		if (lexer_expect(lx, TOKEN_SEMI, &tk))
-			doc_token(tk, expr);
+		}
 		space = doc_literal(" ", expr);
 
 		/*
