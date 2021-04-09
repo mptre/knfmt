@@ -46,6 +46,7 @@ enum expr_type {
 	EXPR_SIZEOF,
 	EXPR_CONCAT,
 	EXPR_LITERAL,
+	EXPR_RECOVER,
 };
 
 struct expr {
@@ -59,9 +60,11 @@ struct expr {
 
 	union {
 		struct expr	*u_ternary;
+		struct doc	*u_dc;
 		int		 u_sizeof;
 	} ex_u;
 #define ex_ternary	ex_u.u_ternary
+#define ex_dc		ex_u.u_dc
 #define ex_sizeof	ex_u.u_sizeof
 };
 
@@ -88,6 +91,8 @@ struct expr_state {
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
+static struct expr	*expr_exec_recover(struct expr_state *);
+
 static struct expr	*expr_exec_binary(struct expr_state *, struct expr *);
 static struct expr	*expr_exec_concat(struct expr_state *, struct expr *);
 static struct expr	*expr_exec_field(struct expr_state *, struct expr *);
@@ -102,7 +107,7 @@ static struct expr	*expr_exec_unary(struct expr_state *, struct expr *);
 static struct expr	*expr_alloc(enum expr_type, const struct expr_state *);
 static void		 expr_free(struct expr *);
 
-static struct doc	*expr_doc(const struct expr *, struct expr_state *,
+static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_indent(const struct expr_state *,
     struct doc *, unsigned int, int);
@@ -200,8 +205,8 @@ int
 expr_peek(const struct expr_arg *ea, int ispeek)
 {
 	struct expr_state es;
-	struct expr *ex;
 	struct lexer_state s;
+	struct expr *ex;
 	int peek = 0;
 
 	expr_state_init(&es, ea);
@@ -230,13 +235,19 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 
 	/* Only consider unary operators. */
 	er = expr_rule_find(es->es_tk, 1);
-	if (er == NULL)
-		return NULL;
-	es->es_er = er;
-	if (!lexer_pop(es->es_lx, &es->es_tk))
-		return NULL;
-
-	ex = es->es_er->er_func(es, NULL);
+	if (er == NULL) {
+		/*
+		 * No operator found, see if the parser can recover. This can
+		 * for instance happen while encountering a type which is an
+		 * argument to a function call.
+		 */
+		ex = expr_exec_recover(es);
+	} else {
+		es->es_er = er;
+		if (!lexer_pop(es->es_lx, &es->es_tk))
+			return NULL;
+		ex = es->es_er->er_func(es, NULL);
+	}
 	if (ex == NULL)
 		return NULL;
 
@@ -270,6 +281,24 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 		ex = tmp;
 	}
 
+	return ex;
+}
+
+static struct expr *
+expr_exec_recover(struct expr_state *es)
+{
+	struct doc *dc;
+	struct expr *ex;
+
+	if (es->es_ea->ea_recover == NULL)
+		return NULL;
+
+	dc = es->es_ea->ea_recover(es->es_ea->ea_arg);
+	if (dc == NULL)
+		return NULL;
+
+	ex = expr_alloc(EXPR_RECOVER, es);
+	ex->ex_dc = dc;
 	return ex;
 }
 
@@ -510,11 +539,13 @@ expr_free(struct expr *ex)
 	expr_free(ex->ex_rhs);
 	if (ex->ex_type == EXPR_TERNARY)
 		expr_free(ex->ex_ternary);
+	else if (ex->ex_type == EXPR_RECOVER)
+		doc_free(ex->ex_dc);
 	free(ex);
 }
 
 static struct doc *
-expr_doc(const struct expr *ex, struct expr_state *es, struct doc *parent)
+expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 {
 	struct doc *concat, *group;
 
@@ -698,6 +729,15 @@ expr_doc(const struct expr *ex, struct expr_state *es, struct doc *parent)
 	case EXPR_LITERAL:
 		doc_token(ex->ex_tk, concat);
 		break;
+
+	case EXPR_RECOVER:
+		doc_append(ex->ex_dc, concat);
+		/*
+		 * The concat document is now responsible for freeing the
+		 * recover document.
+		 */
+		ex->ex_dc = NULL;
+		break;
 	}
 
 	/* Testing backdoor, see above. */
@@ -827,5 +867,5 @@ static int
 isliteral(const struct token *tk)
 {
 	return tk->tk_type == TOKEN_IDENT || tk->tk_type == TOKEN_LITERAL ||
-	    tk->tk_type == TOKEN_STRING || (tk->tk_flags & TOKEN_FLAG_TYPE);
+	    tk->tk_type == TOKEN_STRING;
 }

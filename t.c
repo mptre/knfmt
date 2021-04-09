@@ -117,9 +117,9 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("x * y", "((x) * (y))");
 	error |= test_expr_exec("x & y", "((x) & (y))");
 	error |= test_expr_exec("sizeof x", "(sizeof (x))");
-	error |= test_expr_exec("sizeof char", "(sizeof (char))");
+	error |= test_expr_exec("sizeof char", "(sizeof char)");
 	error |= test_expr_exec("sizeof char *", "(sizeof char *)");
-	error |= test_expr_exec("sizeof struct s", "(sizeof ((struct) (s)))");
+	error |= test_expr_exec("sizeof struct s", "(sizeof struct s)");
 	error |= test_expr_exec("sizeof(x)", "(sizeof((x)))");
 	error |= test_expr_exec("sizeof(*x)", "(sizeof((*(x))))");
 	error |= test_expr_exec("(x)", "((x))");
@@ -183,6 +183,8 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 	struct expr_arg ea = {
 		.ea_cf		= &cf,
 		.ea_stop	= NULL,
+		.ea_recover	= NULL,
+		.ea_arg		= NULL,
 	};
 	struct parser_stub ps;
 	struct buffer *bf = NULL;

@@ -65,6 +65,8 @@ static int	parser_exec_type(struct parser *, struct doc *, struct token *,
 static int	parser_exec_attributes(struct parser *, struct doc *,
     unsigned int, enum doc_type);
 
+static struct doc	*parser_exec_expr_recover(void *);
+
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 
 static unsigned int	parser_width(struct parser *, const struct doc *);
@@ -742,6 +744,8 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 		.ea_lx		= pr->pr_lx,
 		.ea_dc		= NULL,
 		.ea_stop	= stop,
+		.ea_recover	= parser_exec_expr_recover,
+		.ea_arg		= pr,
 	};
 	struct doc *ex, *group, *indent;
 
@@ -1203,6 +1207,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 			.ea_lx		= lx,
 			.ea_dc		= NULL,
 			.ea_stop	= NULL,
+			.ea_recover	= parser_exec_expr_recover,
+			.ea_arg		= pr,
 		};
 		struct lexer_state s;
 		struct doc *expr;
@@ -1459,6 +1465,33 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, unsigned int indent,
 			doc_token(tk, concat);
 	}
 	return PARSER_OK;
+}
+
+/*
+ * Callback routine invoked by expression parser while encountering an invalid
+ * expression. This can happen while encountering one of the following
+ * constructs:
+ *
+ * 	"raw" type, for instance a sizeof argument
+ */
+static struct doc *
+parser_exec_expr_recover(void *arg)
+{
+	struct doc *dc;
+	struct parser *pr = arg;
+	struct lexer *lx = pr->pr_lx;
+	struct token *end;
+
+	/* Determine if we failed on encountering a type. */
+	if (!lexer_peek_type(lx, &end, 0))
+		return NULL;
+
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	if (parser_exec_type(pr, dc, end, NULL)) {
+		doc_free(dc);
+		return NULL;
+	}
+	return dc;
 }
 
 /*

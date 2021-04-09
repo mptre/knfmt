@@ -156,6 +156,14 @@ struct expr_arg {
 	struct lexer		*ea_lx;
 	struct doc		*ea_dc;
 	const struct token	*ea_stop;
+
+	/*
+	 * Callback invoked when an invalid expression is encountered. If the
+	 * same callback returns a document implies that the expression parser
+	 * can continue.
+	 */
+	struct doc	*(*ea_recover)(void *);
+	void		*ea_arg;
 };
 
 struct doc	*expr_exec(const struct expr_arg *);
