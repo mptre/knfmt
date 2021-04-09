@@ -401,9 +401,11 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		 * the previously emitted indentation must be honored as this is
 		 * not a continuation.
 		 */
-		if (isblock)
+		if (isblock) {
+			st->st_pos = 0;
 			doc_indent(dc, st,
 			    oldpos > 0 ? st->st_indent.i_cur : st->st_indent.i_pre);
+		}
 
 		break;
 	}
@@ -521,7 +523,8 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
+doc_indent(const struct doc *UNUSED(dc), struct doc_state *st,
+    unsigned int indent)
 {
 	int parens = 0;
 
@@ -533,12 +536,6 @@ doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
 		st->st_indent.i_pre = indent;
 	}
 
-	/*
-	 * Do not reset the position while forcing indentation as there's no
-	 * guarantee to be positioned at the beginning of an empty line.
-	 */
-	if ((dc->dc_indent & DOC_INDENT_FORCE) == 0)
-		st->st_pos = 0;
 	for (; indent >= 8; indent -= 8) {
 		buffer_appendc(st->st_bf, '\t');
 		st->st_pos += 8;
@@ -580,10 +577,9 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	st->st_pos += len;
 
 	if (newline) {
+		st->st_pos = 0;
 		if (doindent)
 			doc_indent(dc, st, st->st_indent.i_cur);
-		else
-			st->st_pos = 0;
 	}
 }
 
