@@ -151,9 +151,15 @@ struct buffer	*parser_exec(struct parser *);
  * expr ------------------------------------------------------------------------
  */
 
-struct doc	*expr_exec(struct lexer *, struct doc *, const struct token *,
-    const struct config *cf);
-int		 expr_peek(struct lexer *, const struct token *, int);
+struct expr_arg {
+	const struct config	*ea_cf;
+	struct lexer		*ea_lx;
+	struct doc		*ea_dc;
+	const struct token	*ea_stop;
+};
+
+struct doc	*expr_exec(const struct expr_arg *);
+int		 expr_peek(const struct expr_arg *, int);
 
 /*
  * doc -------------------------------------------------------------------------

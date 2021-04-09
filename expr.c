@@ -76,6 +76,7 @@ struct expr_rule {
 
 struct expr_state {
 	const struct config	*es_cf;
+	const struct expr_arg	*es_ea;
 	const struct expr_rule	*es_er;
 	const struct token	*es_stop;
 	struct lexer		*es_lx;
@@ -111,6 +112,8 @@ static struct doc	*expr_doc_tokens(const struct expr *, struct doc *);
 	__expr_doc_soft((a), (b), __func__, __LINE__)
 static struct doc	*__expr_doc_soft(const struct expr_state *,
     struct doc *, const char *, int);
+
+static void	expr_state_init(struct expr_state *, const struct expr_arg *);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
@@ -172,47 +175,41 @@ static const struct expr_rule	rules[] = {
 };
 
 struct doc *
-expr_exec(struct lexer *lx, struct doc *parent, const struct token *stop,
-    const struct config *cf)
+expr_exec(const struct expr_arg *ea)
 {
 	struct expr_state es;
 	struct doc *dc;
 	struct expr *ex;
 
-	memset(&es, 0, sizeof(es));
-	es.es_cf = cf;
-	es.es_lx = lx;
-	es.es_stop = stop;
+	expr_state_init(&es, ea);
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
 		return NULL;
-	if (lexer_get_error(lx)) {
+	if (lexer_get_error(es.es_lx)) {
 		expr_free(ex);
 		return NULL;
 	}
 
-	dc = expr_doc(ex, &es, parent);
+	dc = expr_doc(ex, &es, ea->ea_dc);
 	expr_free(ex);
 	return dc;
 }
 
 int
-expr_peek(struct lexer *lx, const struct token *stop, int ispeek)
+expr_peek(const struct expr_arg *ea, int ispeek)
 {
 	struct expr_state es;
 	struct expr *ex;
 	struct lexer_state s;
 	int peek = 0;
 
-	memset(&es, 0, sizeof(es));
-	es.es_lx = lx;
-	es.es_stop = stop;
+	expr_state_init(&es, ea);
 	if (!ispeek)
-		lexer_peek_enter(lx, &s);
+		lexer_peek_enter(es.es_lx, &s);
 	ex = expr_exec1(&es, PC0);
 	if (!ispeek)
-		lexer_peek_leave(lx, &s);
+		lexer_peek_leave(es.es_lx, &s);
 	if (ex != NULL)
 		peek = 1;
 	expr_free(ex);
@@ -409,7 +406,7 @@ expr_exec_sizeof(struct expr_state *es, struct expr *lhs)
 		ex->ex_sizeof = 1;
 	}
 
-	if (expr_peek(es->es_lx, NULL, 0)) {
+	if (expr_peek(es->es_ea, 0)) {
 		ex->ex_lhs = expr_exec1(es, PC0);
 	} else {
 		if (lexer_peek(es->es_lx, &tk))
@@ -778,6 +775,16 @@ __expr_doc_soft(const struct expr_state *es, struct doc *dc, const char *fun,
 	return dc;
 }
 
+static void
+expr_state_init(struct expr_state *es, const struct expr_arg *ea)
+{
+	memset(es, 0, sizeof(*es));
+	es->es_cf = ea->ea_cf;
+	es->es_ea = ea;
+	es->es_lx = ea->ea_lx;
+	es->es_stop = ea->ea_stop;
+}
+
 static const struct expr_rule *
 expr_rule_find(const struct token *tk, int unary)
 {
@@ -809,8 +816,7 @@ iscast(struct expr_state *es)
 
 	lexer_peek_enter(es->es_lx, &s);
 	if (lexer_peek_type(es->es_lx, NULL, 1) &&
-	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
-	    expr_peek(es->es_lx, es->es_stop, 1))
+	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) && expr_peek(es->es_ea, 1))
 		cast = 1;
 	lexer_peek_leave(es->es_lx, &s);
 

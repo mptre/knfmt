@@ -180,16 +180,21 @@ out:
 static int
 __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 {
+	struct expr_arg ea = {
+		.ea_cf		= &cf,
+		.ea_stop	= NULL,
+	};
 	struct parser_stub ps;
 	struct buffer *bf = NULL;
-	struct doc *concat, *group;
+	struct doc *group;
 	const char *act;
 	int error = 0;
 
 	parser_stub_create(&ps, src);
 	group = doc_alloc(DOC_GROUP, NULL);
-	concat = doc_alloc(DOC_CONCAT, group);
-	if (expr_exec(ps.ps_lx, concat, NULL, &cf) == NULL) {
+	ea.ea_lx = ps.ps_lx;
+	ea.ea_dc = doc_alloc(DOC_CONCAT, group);
+	if (expr_exec(&ea) == NULL) {
 		warnx("%s:%d: expr_exec() failure", fun, lno);
 		error = 1;
 		goto out;

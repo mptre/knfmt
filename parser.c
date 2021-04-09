@@ -737,14 +737,20 @@ static int
 parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
     const struct token *stop)
 {
+	struct expr_arg ea = {
+		.ea_cf		= pr->pr_cf,
+		.ea_lx		= pr->pr_lx,
+		.ea_dc		= NULL,
+		.ea_stop	= stop,
+	};
 	struct doc *ex, *group, *indent;
-	struct lexer *lx = pr->pr_lx;
 
 	group = doc_alloc(DOC_GROUP, dc);
 	indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
 	if (pr->pr_expr > 0)
 		doc_alloc(DOC_SOFTLINE, indent);
-	ex = expr_exec(lx, indent, stop, pr->pr_cf);
+	ea.ea_dc = indent;
+	ex = expr_exec(&ea);
 	if (ex == NULL) {
 		doc_remove(group, dc);
 		return PARSER_NOTHING;
@@ -1192,13 +1198,18 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 	 */
 	if (!lexer_peek_type(lx, NULL, 0) &&
 	    lexer_peek_until_stop(lx, TOKEN_SEMI, end, &tk)) {
+		struct expr_arg ea = {
+			.ea_cf		= pr->pr_cf,
+			.ea_lx		= lx,
+			.ea_dc		= NULL,
+			.ea_stop	= NULL,
+		};
 		struct lexer_state s;
 		struct doc *expr;
 		int peek = 0;
 
 		lexer_peek_enter(lx, &s);
-		if (expr_peek(lx, NULL, 1) &&
-		    lexer_peek_if(lx, TOKEN_SEMI, NULL))
+		if (expr_peek(&ea, 1) && lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			peek = 1;
 		lexer_peek_leave(lx, &s);
 
