@@ -64,6 +64,8 @@ static void	doc_exec1(const struct doc *, struct doc_state *);
 static int	doc_fits(const struct doc *, const struct doc_state *);
 static int	doc_fits1(const struct doc *, struct doc_state *);
 static void	doc_indent(const struct doc *, struct doc_state *, unsigned int);
+static void	doc_indent1(const struct doc *, struct doc_state *,
+    unsigned int);
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
@@ -346,23 +348,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 	}
 
-	case DOC_ALIGN: {
-		unsigned int align;
-
-		if (st->st_flags & DOC_STATE_FLAG_WIDTH)
-			break;
-
-		align = dc->dc_indent;
-		for (; align >= 8; align -= 8) {
-			buffer_appendc(st->st_bf, '\t');
-			st->st_pos += 8 - (st->st_pos % 8);
-		}
-		for (; align > 0; align--) {
-			buffer_appendc(st->st_bf, ' ');
-			st->st_pos++;
-		}
+	case DOC_ALIGN:
+		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
+			doc_indent1(dc, st, dc->dc_indent);
 		break;
-	}
 
 	case DOC_LITERAL:
 		doc_print(dc, st, dc->dc_str, dc->dc_len, 1);
@@ -523,8 +512,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_indent(const struct doc *UNUSED(dc), struct doc_state *st,
-    unsigned int indent)
+doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
 {
 	int parens = 0;
 
@@ -536,16 +524,24 @@ doc_indent(const struct doc *UNUSED(dc), struct doc_state *st,
 		st->st_indent.i_pre = indent;
 	}
 
+	doc_indent1(dc, st, indent);
+
+	if (!parens)
+		st->st_indent.i_pos = st->st_bf->bf_len;
+}
+
+static void
+doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
+    unsigned int indent)
+{
 	for (; indent >= 8; indent -= 8) {
 		buffer_appendc(st->st_bf, '\t');
-		st->st_pos += 8;
+		st->st_pos += 8 - (st->st_pos % 8);
 	}
 	for (; indent > 0; indent--) {
 		buffer_appendc(st->st_bf, ' ');
 		st->st_pos++;
 	}
-	if (!parens)
-		st->st_indent.i_pos = st->st_bf->bf_len;
 }
 
 static void
@@ -596,7 +592,7 @@ doc_trim(const struct doc *dc, struct doc_state *st)
 		if (ch != ' ' && ch != '\t')
 			break;
 		bf->bf_len--;
-		st->st_pos -= ch == '\t' ? 8 : 1;
+		st->st_pos -= ch == '\t' ? 8 - (st->st_pos % 8) : 1;
 	}
 	if (oldpos > st->st_pos)
 		doc_trace(dc, st, "%s: trimmed %u character(s)", __func__,
