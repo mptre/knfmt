@@ -105,8 +105,12 @@ static struct doc	*expr_doc(const struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_indent(const struct expr_state *,
     struct doc *, unsigned int, int);
-static struct doc	*expr_doc_soft(const struct expr_state *, struct doc *);
 static struct doc	*expr_doc_tokens(const struct expr *, struct doc *);
+
+#define expr_doc_soft(a, b) \
+	__expr_doc_soft((a), (b), __func__, __LINE__)
+static struct doc	*__expr_doc_soft(const struct expr_state *,
+    struct doc *, const char *, int);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
@@ -730,21 +734,6 @@ expr_doc_indent(const struct expr_state *es, struct doc *dc,
 	return doc_alloc_indent(indent, dc);
 }
 
-/*
- * Emit a soft line unless an expression above us has signalled that a more
- * suitable one has already been emitted.
- */
-static struct doc *
-expr_doc_soft(const struct expr_state *es, struct doc *dc)
-{
-	if (es->es_soft > 0)
-		return dc;
-
-	dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	doc_alloc(DOC_SOFTLINE, dc);
-	return dc;
-}
-
 static struct doc *
 expr_doc_tokens(const struct expr *ex, struct doc *dc)
 {
@@ -775,6 +764,23 @@ expr_doc_tokens(const struct expr *ex, struct doc *dc)
 	 * refit.
 	 */
 	return doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
+}
+
+/*
+ * Emit a soft line unless an expression above us has signalled that a more
+ * suitable one has already been emitted.
+ */
+static struct doc *
+__expr_doc_soft(const struct expr_state *es, struct doc *dc, const char *fun,
+    int lno)
+{
+	if (es->es_soft > 0)
+		return dc;
+
+	dc = __doc_alloc(DOC_CONCAT, __doc_alloc(DOC_GROUP, dc, fun, lno), fun,
+	    lno);
+	__doc_alloc(DOC_SOFTLINE, dc, fun, lno);
+	return dc;
 }
 
 static const struct expr_rule *
