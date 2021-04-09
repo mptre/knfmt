@@ -1472,24 +1472,33 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, unsigned int indent,
  * expression. This can happen while encountering one of the following
  * constructs:
  *
- * 	"raw" type, for instance a sizeof argument
+ * 	raw type, for instance a sizeof argument
+ * 	binary operator used as an argument, for instance timercmp(3)
  */
 static struct doc *
 parser_exec_expr_recover(void *arg)
 {
-	struct doc *dc;
+	struct doc *dc = NULL;
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end;
+	struct token *tk;
 
-	/* Determine if we failed on encountering a type. */
-	if (!lexer_peek_type(lx, &end, 0))
-		return NULL;
+	if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
+		struct token *pv;
 
-	dc = doc_alloc(DOC_CONCAT, NULL);
-	if (parser_exec_type(pr, dc, end, NULL)) {
-		doc_free(dc);
-		return NULL;
+		pv = TAILQ_PREV(tk, token_list, tk_entry);
+		if (pv != NULL &&
+		    (pv->tk_type == TOKEN_LPAREN ||
+		     pv->tk_type == TOKEN_COMMA)) {
+			dc = doc_alloc(DOC_CONCAT, NULL);
+			doc_token(tk, dc);
+		}
+	} else if (lexer_peek_type(lx, &tk, 0)) {
+		dc = doc_alloc(DOC_CONCAT, NULL);
+		if (parser_exec_type(pr, dc, tk, NULL)) {
+			doc_free(dc);
+			return NULL;
+		}
 	}
 	return dc;
 }
