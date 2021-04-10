@@ -1,0 +1,37 @@
+.Dd $Mdocdate: April 10 2021 $
+.Dt KNFMT 1
+.Os
+.Sh NAME
+.Nm knfmt
+.Nd kernel normal form formatter
+.Sh SYNOPSIS
+.Nm
+.Op Fl di
+.Op Fl w Ar width
+.Op Ar
+.Sh DESCRIPTION
+The
+.Nm
+utility formats source code files to conform to Kernel Normal Form (KNF), see
+.Xr style 9 .
+.Pp
+The options are as follows:
+.Bl -tag -width "-q query"
+.It Fl d
+Produce a diff for each given
+.Ar file .
+.It Fl i
+In place edit of
+.Ar file .
+.It Fl w Ar width
+Maximum allowed column width, defaults to 80.
+.It Ar file
+One or many files to format.
+If omitted, defaults to reading from standard input.
+.El
+.Sh DIAGNOSTICS
+.Ex -std
+.Sh SEE ALSO
+.Xr style 9
+.Sh AUTHORS
+.An Anton Lindqvist Aq Mt anton@basename.se

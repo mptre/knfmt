@@ -29,14 +29,19 @@ PROG_test=	t
 
 DISTFILES+=	${SRCS_knfmt}
 DISTFILES+=	${SRCS_test}
-DISTFILES+=	compat-queue.h
-DISTFILES+=	extern.h
 DISTFILES+=	GNUmakefile
+DISTFILES+=	LICENSE
 DISTFILES+=	Makefile
-# XXX tests/valid tests/error
+DISTFILES+=	compat-queue.h
+DISTFILES+=	configure
+DISTFILES+=	extern.h
+DISTFILES+=	knfmt.1
 DISTFILES+=	tests/GNUmakefile
 DISTFILES+=	tests/Makefile
+DISTFILES+=	tests/knfmt.sh
 DISTFILES+=	token.h
+
+# XXX tests/valid* tests/error*
 
 all: ${PROG_knfmt}
 
@@ -79,7 +84,7 @@ install: all
 .PHONY: install
 
 lint:
-	# XXX mandoc -Tlint -Wstyle ${.CURDIR}/knfmt.1
+	mandoc -Tlint -Wstyle ${.CURDIR}/knfmt.1
 .PHONY: lint
 
 test: ${PROG_knfmt} test-${PROG_test}
