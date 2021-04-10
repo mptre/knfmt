@@ -401,54 +401,28 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 static int
 parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
-	struct doc *expr;
+	struct lexer_state s;
+	struct doc *concat = NULL;
+	struct doc *line = NULL;
+	struct doc *expr, *indent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *rbrace, *tk;
+	struct token *lbrace, *rbrace, *pv, *tk;
+	unsigned int col = 0;
+	int align = 1;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_error(pr);
 	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace))
 		doc_token(lbrace, dc);
 
-	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		struct doc *line = NULL;
-		struct doc *indent;
-
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
-		doc_alloc(DOC_HARDLINE, indent);
-
-		for (;;) {
-			if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
-				return parser_error(pr);
-			if (tk == rbrace) {
-				ruler_exec(rl);
-				break;
-			}
-
-			if (parser_exec_decl_braces1(pr, indent, rl))
-				return parser_error(pr);
-			if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-				doc_token(tk, indent);
-				if (token_has_line(tk))
-					ruler_exec(rl);
-			}
-			line = doc_alloc(DOC_HARDLINE, indent);
-		}
-		if (line != NULL)
-			doc_remove(line, indent);
-		doc_alloc(DOC_HARDLINE, dc);
-	} else if (lexer_peek_if(lx, TOKEN_LSQUARE, &tk) ||
+	if (lexer_peek_if(lx, TOKEN_LSQUARE, &tk) ||
 	    lexer_peek_if(lx, TOKEN_PERIOD, &tk)) {
-		struct doc *line = NULL;
-		struct doc *indent;
 		enum token_type type = tk->tk_type;
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 		doc_alloc(DOC_HARDLINE, indent);
 
 		for (;;) {
-			struct doc *concat;
-
 			if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
 				return parser_error(pr);
 			if (tk == rbrace) {
@@ -493,106 +467,103 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (line != NULL)
 			doc_remove(line, indent);
 		doc_alloc(DOC_HARDLINE, dc);
-	} else if (!lexer_peek_if(lx, TOKEN_RBRACE, NULL)) {
-		struct lexer_state s;
-		struct doc *line = NULL;
-		struct doc *concat = NULL;
-		struct doc *indent;
-		struct token *tmp;
-		unsigned int col = 0;
-		int align = 1;
-
-		/*
-		 * If any column is followed by a hard line, do not align but
-		 * instead respect existing hard line(s).
-		 */
-		lexer_peek_enter(lx, &s);
-		tmp = lbrace;
-		for (;;) {
-			if (!lexer_pop(lx, &tk))
-				return parser_error(pr);
-			if (tk == rbrace)
-				break;
-
-			if (token_cmp(tk, tmp) > 0) {
-				align = 0;
-				break;
-			}
-			tmp = tk;
-		}
-		lexer_peek_leave(lx, &s);
-
-		if (align) {
-			indent = dc;
-			doc_literal(" ", indent);
-		} else {
-			indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
-			doc_alloc(DOC_HARDLINE, indent);
-		}
-
-		for (;;) {
-			if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
-				return parser_error(pr);
-			if (tk == rbrace)
-				break;
-			col++;
-
-			concat = doc_alloc(DOC_CONCAT,
-			    doc_alloc(DOC_GROUP, indent));
-
-			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-				if (parser_exec_decl_braces(pr, concat))
-					return parser_error(pr);
-				expr = concat;
-			} else {
-				if (!lexer_peek_until_loose(lx, TOKEN_COMMA,
-					    rbrace, &tk))
-					tk = rbrace;
-
-				if (parser_exec_expr(pr, concat, &expr, tk))
-					return parser_error(pr);
-			}
-
-			if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-				doc_token(tk, expr);
-				if (align) {
-					if (lexer_peek(lx, &tk) &&
-					    tk != rbrace) {
-						unsigned int w;
-
-						/*
-						 * Let the first column account
-						 * for the already emitted the
-						 * left brace and space.
-						 */
-						w = parser_width(pr, concat);
-						if (col == 1)
-							w += 2;
-						ruler_insert(rl, tk, concat,
-						    col, w, 0);
-					}
-				} else {
-					struct token *nx;
-
-					if (lexer_peek(lx, &nx) &&
-					    token_cmp(nx, tk) > 0)
-						line = doc_alloc(DOC_HARDLINE,
-						    concat);
-					else
-						doc_literal(" ", concat);
-				}
-			} else {
-				line = doc_alloc(DOC_HARDLINE, concat);
-			}
-		}
-		if (line != NULL)
-			doc_remove(line, concat);
-		if (align)
-			doc_literal(" ", dc);
-		else
-			doc_alloc(DOC_HARDLINE, dc);
 	}
 
+	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL))
+		goto out;
+
+	/*
+	 * If any column is followed by a hard line, do not align but
+	 * instead respect existing hard line(s).
+	 */
+	lexer_peek_enter(lx, &s);
+	pv = lbrace;
+	for (;;) {
+		if (!lexer_pop(lx, &tk))
+			return parser_error(pr);
+		if (tk == rbrace)
+			break;
+
+		if (token_cmp(tk, pv) > 0) {
+			align = 0;
+			break;
+		}
+		pv = tk;
+	}
+	lexer_peek_leave(lx, &s);
+
+	if (align) {
+		indent = dc;
+		doc_literal(" ", indent);
+	} else {
+		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+		doc_alloc(DOC_HARDLINE, indent);
+	}
+
+	for (;;) {
+		struct token *comma;
+
+		if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
+			return parser_error(pr);
+		if (tk == rbrace)
+			break;
+		col++;
+
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
+
+		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+			if (parser_exec_decl_braces1(pr, concat, rl))
+				return parser_error(pr);
+			expr = concat;
+		} else {
+			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
+				    &tk))
+				tk = rbrace;
+
+			if (parser_exec_expr(pr, concat, &expr, tk))
+				return parser_error(pr);
+		}
+
+		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
+			doc_token(comma, expr);
+
+			if (align) {
+				if (lexer_peek(lx, &tk) && tk != rbrace) {
+					unsigned int w;
+
+					/*
+					 * Let the first column account for the
+					 * already emitted the left brace and
+					 * space.
+					 */
+					w = parser_width(pr, concat);
+					if (col == 1)
+						w += 2;
+					ruler_insert(rl, tk, concat, col, w, 0);
+				}
+			} else {
+				struct token *nx;
+
+				if (lexer_peek(lx, &nx) &&
+				    token_cmp(nx, tk) > 0)
+					line = doc_alloc(DOC_HARDLINE, concat);
+				else
+					doc_literal(" ", concat);
+			}
+			if (token_has_line(comma))
+				ruler_exec(rl);
+		} else {
+			line = doc_alloc(DOC_HARDLINE, concat);
+		}
+	}
+	if (line != NULL)
+		doc_remove(line, concat);
+	if (align)
+		doc_literal(" ", dc);
+	else
+		doc_alloc(DOC_HARDLINE, dc);
+
+out:
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
 
