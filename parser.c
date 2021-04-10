@@ -353,7 +353,13 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (parser_exec_decl_braces(pr, dc))
 					return parser_error(pr);
 			} else {
-				if (parser_exec_expr(pr, dc, NULL, stop))
+				struct token *estop = NULL;
+
+				if (stop == NULL)
+					(void)lexer_peek_until_loose(lx,
+					    TOKEN_COMMA, NULL, &estop);
+				if (parser_exec_expr(pr, dc, NULL,
+					    estop != NULL ? estop : stop))
 					return parser_error(pr);
 			}
 		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
