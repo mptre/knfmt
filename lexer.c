@@ -36,7 +36,6 @@ static struct token	*lexer_eat_space(struct lexer *, int, int);
 static struct token	*lexer_ambiguous(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
 static struct token	*lexer_cpp(struct lexer *);
-static void		 lexer_foreach(struct lexer *, struct token *);
 
 static int	lexer_find_token(const struct lexer *,
     const struct lexer_state *, struct token **);
@@ -52,6 +51,7 @@ static int		 isnum(unsigned char, int);
 static const char	*strnstr(const char *, size_t, const char *);
 
 static void		 token_free(struct token *);
+static int		 token_is_foreach(const struct token *);
 static const char	*strtoken(enum token_type);
 
 static struct token_hash	*tokens = NULL;
@@ -749,8 +749,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state st;
 	struct token_list dangling;
-	struct token *tmp;
-	struct token *t;
+	struct token *pv, *t, *tmp;
 	int error = 0;
 	unsigned char ch;
 
@@ -858,7 +857,14 @@ out:
 	if ((tmp = lexer_eat_lines(lx, 1)) != NULL)
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
 
-	lexer_foreach(lx, *tk);
+	/*
+	 * We cannot peek while reading tokens, therefore postpone detection of
+	 * foreach like identifiers.
+	 */
+	pv = TAILQ_PREV(*tk, token_list, tk_entry);
+	if (pv != NULL && (*tk)->tk_type == TOKEN_LPAREN &&
+	    token_is_foreach(pv))
+		pv->tk_type = TOKEN_FOREACH;
 
 	return error ? 0 : 1;
 }
@@ -1094,26 +1100,6 @@ lexer_cpp(struct lexer *lx)
 	return lexer_emit(lx, &st, &tkcpp);
 }
 
-/*
- * Detect foreach like constructs such as the ones provided by queue(3).
- */
-static void
-lexer_foreach(struct lexer *lx, struct token *tk)
-{
-	unsigned char ch;
-
-	if (strnstr(tk->tk_str, tk->tk_len, "FOREACH") == NULL &&
-	    strnstr(tk->tk_str, tk->tk_len, "_for_each") == NULL &&
-	    strnstr(tk->tk_str, tk->tk_len, "for_each_") == NULL)
-		return;
-
-	if (lexer_getc(lx, &ch))
-		return;
-	lexer_ungetc(lx);
-	if (ch == '(')
-		tk->tk_type = TOKEN_FOREACH;
-}
-
 static int
 lexer_find_token(const struct lexer *lx, const struct lexer_state *st,
     struct token **tk)
@@ -1239,6 +1225,19 @@ token_free(struct token *tk)
 		token_free(tmp);
 	}
 	free(tk);
+}
+
+/*
+ * Detect foreach like identifiers such as the ones provided by queue(3).
+ */
+static int
+token_is_foreach(const struct token *tk)
+{
+	if (strnstr(tk->tk_str, tk->tk_len, "FOREACH") == NULL &&
+	    strnstr(tk->tk_str, tk->tk_len, "_for_each") == NULL &&
+	    strnstr(tk->tk_str, tk->tk_len, "for_each_") == NULL)
+		return 0;
+	return 1;
 }
 
 static const char *
