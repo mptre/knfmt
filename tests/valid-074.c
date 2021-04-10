@@ -1,5 +1,5 @@
 /*
- * XXX
+ * Label followed by statement.
  */
 
 int
