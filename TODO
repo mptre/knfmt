@@ -1,7 +1,4 @@
-- CONFIG_FLAG_TEST hide behind DIAGNOSTIC, also doc_trace
-
 - sys/dev/acpi/acpibtn.c
-- sys/kern/subr_witness.c
 
 - align after #endif any cpp, does not see TOKEN_FLAG_LINE
 
@@ -9,10 +6,9 @@
 
 - more efficient allocation of token and doc using slabs, cannot realloc
 
-- group and sort includes
-- group and sort locals variables
-- align define multi line backslashes
-
 - Simplify or strict mode which mutates the code:
+  * Group and sort stack variables according to style(9)
+  * Group and sort includes
+  * Align backslashes in cpp define
   * Remove parenthesis around return expression
   * Remove semicolon after blocks wrapped in braces
