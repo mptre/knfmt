@@ -39,6 +39,8 @@ static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
     struct ruler *);
+static int	parser_exec_decl_func_ptr(struct parser *, struct doc *);
+
 static int	parser_exec_expr(struct parser *, struct doc *, struct doc **,
     const struct token *);
 
@@ -225,26 +227,10 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (lexer_peek_if(lx, TOKEN_SEMI, NULL))
 		goto out;
 
-	if (lexer_peek_func_ptr(lx)) {
-		struct token *rparen;
-
-		for (;;) {
-			if (lexer_peek_if(lx, TOKEN_EOF, NULL))
-				return parser_error(pr);
-
-			if (!lexer_pop(lx, &tk))
-				return parser_error(pr);
-			doc_token(tk, concat);
-
-			if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
-				    &rparen))
-				break;
-		}
-		while (parser_exec_func_arg(pr, concat, rparen) == PARSER_OK)
-			continue;
-	}
-
-	if (isdecl(beg, end, TOKEN_STRUCT) || isdecl(beg, end, TOKEN_UNION)) {
+	if (parser_exec_decl_func_ptr(pr, concat) == PARSER_OK) {
+		/* nothing */
+	} else if (isdecl(beg, end, TOKEN_STRUCT) ||
+	    isdecl(beg, end, TOKEN_UNION)) {
 		struct doc *indent;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
@@ -709,6 +695,32 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	return PARSER_OK;
 }
 
+static int
+parser_exec_decl_func_ptr(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *rparen, *tk;
+
+	if (!lexer_peek_func_ptr(lx))
+		return PARSER_NOTHING;
+
+	for (;;) {
+		if (lexer_peek_if(lx, TOKEN_EOF, NULL))
+			return parser_error(pr);
+
+		if (!lexer_pop(lx, &tk))
+			return parser_error(pr);
+		doc_token(tk, dc);
+
+		if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+			break;
+	}
+	while (parser_exec_func_arg(pr, dc, rparen) == PARSER_OK)
+		continue;
+
+	return PARSER_OK;
+}
+
 /*
  * Parse an expression. Returns zero if one was found.
  */
@@ -884,19 +896,15 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc,
 		doc_alloc(DOC_LINE, concat);
 
 	for (;;) {
-		struct token *tmp;
-
 		if (lexer_peek_if(lx, TOKEN_EOF, NULL))
 			return parser_error(pr);
 
-		if (!parser_exec_attributes(pr, concat, 0, DOC_LINE))
+		if (parser_exec_attributes(pr, concat, 0, DOC_LINE) ==
+		    PARSER_OK)
 			break;
 
-		/* Handle function pointer arguments. */
-		if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &tmp)) {
-			(void)parser_exec_func_arg(pr, concat, tmp);
+		if (parser_exec_decl_func_ptr(pr, concat) == PARSER_OK)
 			continue;
-		}
 
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, concat);
