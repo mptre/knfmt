@@ -84,10 +84,9 @@ struct expr_state {
 	const struct token	*es_stop;
 	struct lexer		*es_lx;
 	struct token		*es_tk;
-	unsigned int		 es_depth;	/* current depth of expression */
+	unsigned int		 es_nest;	/* number of nested expressions */
 	unsigned int		 es_parens;	/* number of nested parenthesis */
 	unsigned int		 es_soft;	/* number of soft lines */
-	unsigned int		 es_assign;	/* number of assignment operators */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -552,8 +551,6 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 {
 	struct doc *concat, *group;
 
-	es->es_depth++;
-
 	group = doc_alloc(DOC_GROUP, parent);
 	concat = doc_alloc(DOC_CONCAT, group);
 
@@ -567,14 +564,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 	switch (ex->ex_type) {
 	case EXPR_UNARY:
-		/*
-		 * The second conditional ensure that a soft line is never
-		 * emitted if this is the first unary expression after one or
-		 * many parenthesis expressions. Instead, lets hope any nested
-		 * expression emits a soft line at a more suitable location.
-		 */
-		if ((es->es_assign == 0 || es->es_parens > 0) &&
-		    (es->es_depth - 1 > es->es_parens))
+		if (es->es_nest > 0)
 			concat = expr_doc_soft(es, concat);
 		doc_token(ex->ex_tk, concat);
 		if (ex->ex_lhs != NULL)
@@ -582,28 +572,20 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		break;
 
 	case EXPR_BINARY: {
-		struct doc *lhs, *op;
+		struct doc *lhs;
 
 		lhs = expr_doc(ex->ex_lhs, es, concat);
-
-		op = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, lhs));
-		doc_alloc(DOC_LINE, op);
-		doc_token(ex->ex_tk, op);
+		doc_literal(" ", lhs);
+		doc_token(ex->ex_tk, lhs);
 
 		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
-			es->es_assign++;
-			doc_literal(" ", op);
+			doc_literal(" ", concat);
 		} else {
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
 			doc_alloc(DOC_LINE, concat);
-			es->es_soft++;
 		}
 		concat = expr_doc(ex->ex_rhs, es, concat);
-		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN)
-			es->es_assign--;
-		else
-			es->es_soft--;
 
 		break;
 	}
@@ -680,8 +662,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_rhs != NULL) {
 			es->es_parens++;
+			es->es_nest++;
 			concat = expr_doc(ex->ex_rhs, es,
 			    expr_doc_indent(es, concat, es->es_cf->cf_tw, 0));
+			es->es_nest--;
 			es->es_parens--;
 		}
 		doc_token(ex->ex_tokens[1], concat);	/* ) */
@@ -747,8 +731,6 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	if ((es->es_cf->cf_flags & CONFIG_FLAG_TEST) &&
 	    ex->ex_type != EXPR_PARENS)
 		doc_literal(")", concat);
-
-	es->es_depth--;
 
 	return concat;
 }

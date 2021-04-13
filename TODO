@@ -1,8 +1,6 @@
-- sys/dev/acpi/acpibtn.c
-
 - align after #endif any cpp, does not see TOKEN_FLAG_LINE
 
-- force hardline after declarations of local variables
+- struct document dc_fits cache
 
 - more efficient allocation of token and doc using slabs, cannot realloc
 
