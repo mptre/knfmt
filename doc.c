@@ -96,6 +96,7 @@ static void	__doc_trace_enter(const struct doc *, struct doc_state *);
 static void	__doc_trace_leave(const struct doc *, struct doc_state *);
 
 static char		*docstr(const struct doc *, char *, size_t);
+static const char	*indentstr(const struct doc *);
 static const char	*statestr(const struct doc_state *, unsigned int,
     char *, size_t);
 
@@ -669,9 +670,16 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_INDENT:
-	case DOC_DEDENT:
-		fprintf(stderr, "(%u", dc->dc_indent);
+	case DOC_DEDENT: {
+		const char *str;
+
+		fprintf(stderr, "(");
+		if ((str = indentstr(dc)) != NULL)
+			fprintf(stderr, "%s", str);
+		else
+			fprintf(stderr, "%u", dc->dc_indent);
 		break;
+	}
 
 	case DOC_ALIGN:
 		fprintf(stderr, "(%u)", dc->dc_indent);
@@ -781,6 +789,21 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 
 	return buf;
+}
+
+static const char *
+indentstr(const struct doc *dc)
+{
+	if (dc->dc_type == DOC_INDENT) {
+		if (dc->dc_indent == DOC_INDENT_PARENS)
+			return "PARENS";
+		else if (dc->dc_indent == DOC_INDENT_FORCE)
+			return "FORCE";
+	} else if (dc->dc_type == DOC_DEDENT) {
+		if (dc->dc_indent == DOC_DEDENT_NONE)
+			return "NONE";
+	}
+	return NULL;
 }
 
 static const char *
