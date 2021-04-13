@@ -33,7 +33,7 @@ static void		 lexer_ungetc(struct lexer *);
 static int		 lexer_read(struct lexer *, struct token **);
 static struct token	*lexer_eat_lines(struct lexer *, int);
 static struct token	*lexer_eat_space(struct lexer *, int, int);
-static struct token	*lexer_ambiguous(struct lexer *);
+static struct token	*lexer_keyword(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
 static struct token	*lexer_cpp(struct lexer *);
 
@@ -773,7 +773,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 
 	lexer_eat_space(lx, 1, 0);
 
-	if ((*tk = lexer_ambiguous(lx)) != NULL)
+	if ((*tk = lexer_keyword(lx)) != NULL)
 		goto out;
 
 	st = lx->lx_st;
@@ -913,7 +913,7 @@ lexer_eat_space(struct lexer *lx, int newline, int emit)
 }
 
 static struct token *
-lexer_ambiguous(struct lexer *lx)
+lexer_keyword(struct lexer *lx)
 {
 	struct lexer_state st = lx->lx_st;
 	struct token *pv = NULL;
