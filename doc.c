@@ -810,7 +810,7 @@ static const char *
 statestr(const struct doc_state *st, unsigned int depth, char *buf,
     size_t bufsiz)
 {
-	unsigned char mode;
+	unsigned char mode = 'U';
 	int n;
 
 	switch (st->st_mode) {

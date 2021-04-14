@@ -289,7 +289,7 @@ int
 __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
     const char *fun, int lno)
 {
-	struct token *t;
+	struct token *t = NULL;
 
 	if (!lexer_pop(lx, &t))
 		goto err;
@@ -557,7 +557,7 @@ lexer_peek_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
     struct token **tk)
 {
 	struct lexer_state s;
-	struct token *t;
+	struct token *t = NULL;
 	int pair = 0;
 
 	if (!lexer_peek_if(lx, lhs, NULL))
@@ -682,7 +682,7 @@ __lexer_until(struct lexer *lx, enum token_type type, const struct token *stop,
     struct token **tk, const char *fun, int lno)
 {
 	for (;;) {
-		struct token *t;
+		struct token *t = NULL;
 
 		if (!lexer_pop(lx, &t) || t->tk_type == TOKEN_EOF ||
 		    (stop != NULL && stop == t)) {
