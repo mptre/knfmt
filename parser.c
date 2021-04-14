@@ -437,6 +437,15 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 					doc_token(tk, concat);
 				if (lexer_expect(lx, TOKEN_IDENT, &tk))
 					doc_token(tk, concat);
+				if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
+					doc_token(tk, concat);
+					if (parser_exec_expr(pr, concat, &expr,
+						    NULL))
+						return parser_error(pr);
+					if (lexer_expect(lx, TOKEN_RSQUARE,
+						    &tk))
+						doc_token(tk, concat);
+				}
 			} else {
 				return parser_error(pr);
 			}
