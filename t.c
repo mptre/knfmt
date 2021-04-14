@@ -166,12 +166,18 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_type("unsigned int f:1", "unsigned int");
 	error |= test_lexer_peek_type("usbd_status (*v)(void)", "usbd_status");
 	error |= test_lexer_peek_type("register char", "register char");
+	error |= test_lexer_peek_type("...", "...");
 
 	error |= test_lexer_read("<", "LESS<1:1>(\"<\")");
 	error |= test_lexer_read("<x", "LESS<1:1>(\"<\") IDENT<1:2>(\"x\")");
 	error |= test_lexer_read("<=", "LESSEQUAL<1:1>(\"<=\")");
 	error |= test_lexer_read("<<", "LESSLESS<1:1>(\"<<\")");
 	error |= test_lexer_read("<<=", "LESSLESSEQUAL<1:1>(\"<<=\")");
+
+	error |= test_lexer_read(".", "PERIOD<1:1>(\".\")");
+	error |= test_lexer_read("..", "PERIOD<1:1>(\".\") PERIOD<1:2>(\".\")");
+	error |= test_lexer_read("...", "ELLIPSIS<1:1>(\"...\")");
+	error |= test_lexer_read(".x", "PERIOD<1:1>(\".\") IDENT<1:2>(\"x\")");
 
 out:
 	return error;

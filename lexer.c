@@ -36,6 +36,9 @@ static struct token	*lexer_eat_space(struct lexer *, int, int);
 static struct token	*lexer_keyword(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
 static struct token	*lexer_cpp(struct lexer *);
+static struct token	*lexer_ellipsis(struct lexer *,
+    const struct lexer_state *);
+static int		 lexer_eof(const struct lexer *);
 
 static int	lexer_find_token(const struct lexer *,
     const struct lexer_state *, struct token **);
@@ -924,16 +927,22 @@ lexer_keyword(struct lexer *lx)
 		return NULL;
 
 	for (;;) {
-		struct token *tmp;
+		struct token *ellipsis, *tmp;
 
 		if (!lexer_find_token(lx, &st, &tmp)) {
-			if (pv != NULL)
-				lexer_ungetc(lx);
+			lexer_ungetc(lx);
 			tk = pv;
 			break;
 		}
 		if ((tmp->tk_flags & TOKEN_FLAG_AMBIGUOUS) == 0) {
 			tk = tmp;
+			break;
+		}
+
+		/* Hack to detect ellipses since ".." is not a valid token. */
+		if (tmp->tk_type == TOKEN_PERIOD &&
+		    (ellipsis = lexer_ellipsis(lx, &st)) != NULL) {
+			tk = ellipsis;
 			break;
 		}
 
@@ -1098,6 +1107,33 @@ lexer_cpp(struct lexer *lx)
 	(void)lexer_eat_lines(lx, 0);
 
 	return lexer_emit(lx, &st, &tkcpp);
+}
+
+static struct token *
+lexer_ellipsis(struct lexer *lx, const struct lexer_state *st)
+{
+	struct lexer_state oldst;
+	struct token *tk;
+	unsigned char ch;
+	int i;
+
+	oldst = lx->lx_st;
+
+	for (i = 0; i < 2; i++) {
+		if (lexer_eof(lx) || lexer_getc(lx, &ch) || ch != '.') {
+			lx->lx_st = oldst;
+			return NULL;
+		}
+	}
+	if (!lexer_find_token(lx, st, &tk))
+		return NULL;
+	return tk;
+}
+
+static int
+lexer_eof(const struct lexer *lx)
+{
+	return lx->lx_st.st_off == lx->lx_bf->bf_len;
 }
 
 static int

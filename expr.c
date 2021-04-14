@@ -130,6 +130,7 @@ static const struct expr_rule	rules[] = {
 
 	{ PC1,			0,	TOKEN_COMMA,			expr_exec_binary },
 	{ PC1 | PCUNARY,	0,	TOKEN_COMMA,			expr_exec_binary },
+	{ PC1,			0,	TOKEN_ELLIPSIS,			expr_exec_binary },
 	{ PC2,			1,	TOKEN_EQUAL,			expr_exec_binary },
 	{ PC2,			1,	TOKEN_PLUSEQUAL,		expr_exec_binary },
 	{ PC2,			1,	TOKEN_MINUSEQUAL,		expr_exec_binary },

@@ -874,14 +874,10 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc,
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_alloc(DOC_SOFTLINE, concat);
 
-	/*
-	 * The argument might be missing a type which is not considered fatal,
-	 * this is the case for variadic arguments.
-	 */
-	if (lexer_peek_type(lx, &end, 0)) {
-		if (parser_exec_type(pr, concat, end, NULL))
-			return parser_error(pr);
-	}
+	/* A type will missing when emitting the final right parenthesis. */
+	if (lexer_peek_type(lx, &end, 0) &&
+	    parser_exec_type(pr, concat, end, NULL) == PARSER_NOTHING)
+		return parser_error(pr);
 
 	/* Put the argument identifier in its own group to trigger a refit. */
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
