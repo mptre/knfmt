@@ -195,24 +195,27 @@ unsigned int	doc_width(const struct doc *, struct buffer *,
 void		doc_free(struct doc *);
 void		doc_append(struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);
-void		doc_set_indent(struct doc *, unsigned int);
+void		doc_set_indent(struct doc *, int);
 
 #define doc_alloc(a, b) \
 	__doc_alloc((a), (b), __func__, __LINE__)
 struct doc	*__doc_alloc(enum doc_type, struct doc *, const char *, int);
 
-/* Sentinels honored by doc_alloc_dedent(). */
-#define DOC_DEDENT_NONE		0x80000000u	/* remove all indentation */
-
-/* Sentinels honored by doc_alloc_indent(). */
-#define DOC_INDENT_PARENS	0x80000000u	/* entering parenthesis */
-#define DOC_INDENT_FORCE	0x40000000u	/* force indentation */
+/*
+ * Sentinels honored by doc_alloc_dedent() and doc_alloc_indent(). The numbers
+ * are something arbitrary large enough to never conflict with any actual
+ * indentation. Since the numbers are compared with signed integers, favor
+ * integer literals over hexadecimal ones.
+ */
+#define DOC_DEDENT_NONE		512	/* remove all indentation */
+#define DOC_INDENT_PARENS	1024	/* entering parenthesis */
+#define DOC_INDENT_FORCE	2048	/* force indentation */
 
 #define doc_alloc_indent(a, b) \
 	__doc_alloc_indent(DOC_INDENT, (a), (b), __func__, __LINE__)
 #define doc_alloc_dedent(a, b) \
 	__doc_alloc_indent(DOC_DEDENT, (a), (b), __func__, __LINE__)
-struct doc	*__doc_alloc_indent(enum doc_type, unsigned int, struct doc *,
+struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
     const char *, int);
 
 #define doc_literal(a, b) \

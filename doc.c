@@ -29,8 +29,8 @@ struct doc {
 #define dc_doc dc_u.u_doc
 #define dc_str dc_u.u_str
 
-	unsigned int	dc_indent;
-	size_t		dc_len;
+	int	dc_indent;
+	size_t	dc_len;
 
 	TAILQ_ENTRY(doc)	dc_entry;
 };
@@ -45,9 +45,9 @@ struct doc_state {
 	} st_mode;
 
 	struct {
-		unsigned int	i_cur;
-		unsigned int	i_pre;
-		size_t		i_pos;
+		int	i_cur;
+		int	i_pre;
+		size_t	i_pos;
 	} st_indent;
 
 	unsigned int	st_pos;
@@ -63,9 +63,8 @@ struct doc_state {
 static void	doc_exec1(const struct doc *, struct doc_state *);
 static int	doc_fits(const struct doc *, const struct doc_state *);
 static int	doc_fits1(const struct doc *, struct doc_state *);
-static void	doc_indent(const struct doc *, struct doc_state *, unsigned int);
-static void	doc_indent1(const struct doc *, struct doc_state *,
-    unsigned int);
+static void	doc_indent(const struct doc *, struct doc_state *, int);
+static void	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
@@ -175,7 +174,7 @@ doc_remove(struct doc *dc, struct doc *parent)
 }
 
 void
-doc_set_indent(struct doc *dc, unsigned int indent)
+doc_set_indent(struct doc *dc, int indent)
 {
 	dc->dc_indent = indent;
 }
@@ -211,7 +210,7 @@ __doc_alloc(enum doc_type type, struct doc *parent, const char *fun, int lno)
 }
 
 struct doc *
-__doc_alloc_indent(enum doc_type type, unsigned int ind, struct doc *dc,
+__doc_alloc_indent(enum doc_type type, int ind, struct doc *dc,
     const char *fun, int lno)
 {
 	struct doc *concat, *group, *indent;
@@ -309,16 +308,16 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_INDENT:
-		if (dc->dc_indent & DOC_INDENT_PARENS)
+		if (dc->dc_indent == DOC_INDENT_PARENS)
 			st->st_parens++;
-		else if (dc->dc_indent & DOC_INDENT_FORCE)
+		else if (dc->dc_indent == DOC_INDENT_FORCE)
 			doc_indent(dc, st, st->st_indent.i_cur);
 		else
 			st->st_indent.i_cur += dc->dc_indent;
 		doc_exec1(dc->dc_doc, st);
-		if (dc->dc_indent & DOC_INDENT_PARENS) {
+		if (dc->dc_indent == DOC_INDENT_PARENS) {
 			st->st_parens--;
-		} else if (dc->dc_indent & DOC_INDENT_FORCE) {
+		} else if (dc->dc_indent == DOC_INDENT_FORCE) {
 			/* nothing */
 		} else {
 			st->st_indent.i_cur -= dc->dc_indent;
@@ -332,9 +331,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_DEDENT: {
-		unsigned int indent;
+		int indent;
 
-		if (dc->dc_indent & DOC_DEDENT_NONE) {
+		if (dc->dc_indent == DOC_DEDENT_NONE) {
 			indent = st->st_indent.i_cur;
 		} else {
 			indent = dc->dc_indent;
@@ -513,7 +512,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
+doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 {
 	int parens = 0;
 
@@ -532,8 +531,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
 }
 
 static void
-doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
-    unsigned int indent)
+doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 {
 	for (; indent >= 8; indent -= 8) {
 		buffer_appendc(st->st_bf, '\t');
@@ -677,12 +675,12 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		if ((str = indentstr(dc)) != NULL)
 			fprintf(stderr, "%s", str);
 		else
-			fprintf(stderr, "%u", dc->dc_indent);
+			fprintf(stderr, "%d", dc->dc_indent);
 		break;
 	}
 
 	case DOC_ALIGN:
-		fprintf(stderr, "(%u)", dc->dc_indent);
+		fprintf(stderr, "(%d)", dc->dc_indent);
 		break;
 
 	case DOC_LITERAL:
