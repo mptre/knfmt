@@ -1,12 +1,34 @@
-- align after #endif any cpp, does not see TOKEN_FLAG_LINE
+Bugs
+====
 
-- struct document dc_fits cache
+* Alignment spills over disjoint block if at least one block is nested inside
+  preprocessor directives. token_has_line() does not see the hard line since
+  it's part of the verbatim (cpp) token hanging of as a prefix on the following
+  token.
 
-- more efficient allocation of token and doc using slabs, cannot realloc
+	#if 1
+	struct foo *s;
+	#endif
 
-- Simplify or strict mode which mutates the code:
-  * Group and sort stack variables according to style(9)
-  * Group and sort includes
-  * Align backslashes in cpp define
-  * Remove parenthesis around return expression
-  * Remove semicolon after blocks wrapped in braces
+	int x;
+
+  It might be helpful if the trailing hard line part of the verbatim cpp token
+  was emitted as a separate verbatim token.
+
+Improvements
+============
+
+* More efficient allocation of tokens inside lexer_emit(). Use a vector of
+  tokens. However this vector can never be reallocated.
+
+* Introduce a cache in doc_fits() in order to avoid redundant calculations.
+  The last return value from doc_fits() should still be valid as long as st_pos
+  as part of the doc_state has not changed. However, entering a nested
+  group which already have been traversed must invalidate the cache.
+
+* Simplify or strict mode which mutates the code:
+  - Group and sort stack variables according to style(9)
+  - Group and sort includes
+  - Align backslashes in cpp define
+  - Remove parenthesis around return expression
+  - Remove semicolon after blocks wrapped in braces
