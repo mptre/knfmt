@@ -1464,6 +1464,7 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, unsigned int indent,
  *
  * 	type argument, i.e. sizeof
  * 	binary operator used as an argument, i.e. timercmp(3)
+ * 	cast expression followed by brace initializer
  */
 static struct doc *
 parser_exec_expr_recover(void *arg)
@@ -1502,6 +1503,20 @@ parser_exec_expr_recover(void *arg)
 				doc_free(dc);
 				return NULL;
 			}
+		}
+	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+		struct doc *indent;
+
+		/*
+		 * Since the document will be appended inside an expression
+		 * document, compensate for indentation added by
+		 * parser_exec_expr().
+		 */
+		dc = doc_alloc(DOC_GROUP, NULL);
+		indent = doc_alloc_indent(-pr->pr_cf->cf_sw, dc);
+		if (parser_exec_decl_braces(pr, indent)) {
+			doc_free(dc);
+			return NULL;
 		}
 	}
 
