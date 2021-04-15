@@ -50,8 +50,8 @@ static struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
 static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
-static int		 isnum(unsigned char, int);
-static const char	*strnstr(const char *, size_t, const char *);
+static int	isnum(unsigned char, int);
+static ssize_t	strncasestr(const char *, size_t, const char *);
 
 static void		 token_free(struct token *);
 static int		 token_is_foreach(const struct token *);
@@ -1222,26 +1222,26 @@ isnum(unsigned char ch, int prefix)
 	    ch == 'x' || ch == 'X' || ch == 'u' || ch == 'U';
 }
 
-static const char *
-strnstr(const char *big, size_t biglen, const char *little)
+static ssize_t
+strncasestr(const char *big, size_t biglen, const char *little)
 {
 	size_t i, j;
 
 	for (i = 0; i < biglen; i++) {
 		const char *s = little;
 
-		if (big[i] != s[0])
+		if (tolower(big[i]) != tolower(s[0]))
 			continue;
 
 		for (j = i; j < biglen; j++) {
-			if (big[j] != s[0])
+			if (tolower(big[j]) != tolower(s[0]))
 				break;
 			if (*++s == '\0')
-				return &big[i];
+				return i;
 		}
 	}
 
-	return NULL;
+	return -1;
 }
 
 static void
@@ -1269,11 +1269,29 @@ token_free(struct token *tk)
 static int
 token_is_foreach(const struct token *tk)
 {
-	if (strnstr(tk->tk_str, tk->tk_len, "FOREACH") == NULL &&
-	    strnstr(tk->tk_str, tk->tk_len, "_for_each") == NULL &&
-	    strnstr(tk->tk_str, tk->tk_len, "for_each_") == NULL)
-		return 0;
-	return 1;
+	static const char *patterns[] = {
+		"FOREACH",
+		"FOR_EACH",
+		NULL,
+	};
+	const char *str = tk->tk_str;
+	size_t len = tk->tk_len;
+	int i;
+
+	for (i = 0; patterns[i] != NULL; i++) {
+		ssize_t j;
+		size_t plen;
+
+		if ((j = strncasestr(str, len, patterns[i])) == -1)
+			continue;
+		if (j > 0 && str[j - 1] == '_')
+			return 1;
+		plen = strlen(patterns[i]);
+		if (j + plen < len && str[j + plen] == '_')
+			return 1;
+	}
+
+	return 0;
 }
 
 static const char *
