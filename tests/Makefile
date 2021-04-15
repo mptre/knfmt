@@ -100,7 +100,6 @@ TESTS+=	valid-089.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
-TESTS+=	../compat-queue.h
 TESTS+=	../compat-vis.c
 TESTS+=	../doc.c
 TESTS+=	../expr.c
