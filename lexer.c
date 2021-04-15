@@ -188,6 +188,12 @@ lexer_init(void)
 	}
 }
 
+void
+lexer_shutdown(void)
+{
+	HASH_CLEAR(th_hh, tokens);
+}
+
 struct lexer *
 lexer_alloc(const char *path, const struct config *cf)
 {

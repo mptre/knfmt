@@ -86,6 +86,8 @@ main(int argc, char *argv[])
 		error = fileformat("/dev/stdin", &cf);
 	}
 
+	lexer_shutdown();
+
 	return error;
 }
 
