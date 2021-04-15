@@ -6,6 +6,7 @@ TESTS+=	error-005.c
 TESTS+=	error-006.c
 TESTS+=	error-007.c
 TESTS+=	error-008.c
+TESTS+=	error-009.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c

@@ -508,7 +508,6 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 			return parser_error(pr);
 		if (tk == rbrace)
 			break;
-		col++;
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
 
@@ -538,7 +537,7 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 					 * space.
 					 */
 					w = parser_width(pr, concat);
-					if (col == 1)
+					if (++col == 1)
 						w += 2;
 					ruler_insert(rl, tk, concat, col, w, 0);
 				}
