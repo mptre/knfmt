@@ -357,7 +357,7 @@ expr_exec_field(struct expr_state *es, struct expr *lhs)
 }
 
 static struct expr *
-expr_exec_literal(struct expr_state *es, struct expr *lhs)
+expr_exec_literal(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 {
 	assert(lhs == NULL);
 
@@ -425,7 +425,7 @@ expr_exec_prepost(struct expr_state *es, struct expr *lhs)
 }
 
 static struct expr *
-expr_exec_sizeof(struct expr_state *es, struct expr *lhs)
+expr_exec_sizeof(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 {
 	struct expr *ex;
 	struct token *tk;
@@ -503,7 +503,7 @@ expr_exec_ternary(struct expr_state *es, struct expr *lhs)
 }
 
 static struct expr *
-expr_exec_unary(struct expr_state *es, struct expr *lhs)
+expr_exec_unary(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 {
 	struct expr *ex;
 
