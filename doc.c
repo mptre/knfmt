@@ -406,7 +406,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			break;
 		case MUNGE:
 			doc_print(dc, st, " ", 1, 1);
-			doc_trace(dc, st, "%s: refit %d -> %d", __func__,
+			doc_trace(dc, st, "%s: refit %u -> %d", __func__,
 			    st->st_refit, 1);
 			st->st_refit = 1;
 			break;
