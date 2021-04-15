@@ -119,7 +119,9 @@ check_vis() {
 	#include <vis.h>
 
 	int main(void) {
-		return 0;
+		char *vis, *str;
+
+		return !(stravis(&vis, str, 0) == -1);
 	}
 	EOF
 }
