@@ -1530,9 +1530,7 @@ parser_exec_expr_recover(void *arg)
 
 /*
  * Returns non-zero if the next tokens denotes a function. The type argument
- * reflects the last token of the return type. The end argument reflects the
- * token after the function prototype, i.e. semicolon for prototypes and left
- * brace for implementations.
+ * points to the last token of the return type.
  */
 static enum parser_peek
 parser_peek_func(struct parser *pr, struct token **type)
