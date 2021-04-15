@@ -93,6 +93,17 @@ check_queue() {
 	EOF
 }
 
+check_reallocarray() {
+	compile <<-EOF
+	#include <stdlib.h>
+
+	int main(void) {
+		return !(reallocarray(NULL, 1, 1) != NULL);
+	}
+	EOF
+	return 1
+}
+
 check_strtonum() {
 	compile <<-EOF
 	#include <stdlib.h>
@@ -153,6 +164,7 @@ HAVE_DEAD=0
 HAVE_ERRC=0
 HAVE_PLEDGE=0
 HAVE_QUEUE=0
+HAVE_REALLOCARRAY=0
 HAVE_STRTONUM=0
 HAVE_UTHASH=0
 HAVE_VIS=0
@@ -177,6 +189,7 @@ check_dead && HAVE_DEAD=1
 check_errc && HAVE_ERRC=1
 check_pledge && HAVE_PLEDGE=1
 check_queue && HAVE_QUEUE=1
+check_reallocarray && HAVE_REALLOCARRAY=1
 check_strtonum && HAVE_STRTONUM=1
 check_uthash && HAVE_UTHASH=1
 check_vis && HAVE_VIS=1
@@ -188,11 +201,13 @@ exec 1>config.h
 # Headers needed for function prototypes.
 {
 [ $HAVE_PLEDGE -eq 0 ] && echo stdlib.h
+[ $HAVE_REALLOCARRAY -eq 0 ] && echo stdlib.h
 } | sort | uniq | headers
 
 [ $HAVE_ERRC -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
 [ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
+[ $HAVE_REALLOCARRAY -eq 1 ] && printf '#define HAVE_REALLOCARRAY\t1\n'
 [ $HAVE_STRTONUM -eq 1 ] && printf '#define HAVE_STRTONUM\t1\n'
 [ $HAVE_UTHASH -eq 1 ] && printf '#define HAVE_UTHASH\t1\n'
 [ $HAVE_VIS -eq 1 ] && printf '#define HAVE_VIS\t1\n'
@@ -204,6 +219,8 @@ exec 1>config.h
 	printf '\t__attribute__((__noreturn__, __format__ (printf, 3, 4)));\n'; }
 [ $HAVE_PLEDGE -eq 0 ] &&
 	printf 'int pledge(const char *, const char *);\n'
+[ $HAVE_REALLOCARRAY -eq 0 ] &&
+	printf 'void *reallocarray(void *, size_t, size_t);\n'
 [ $HAVE_STRTONUM -eq 0 ] &&
 	printf 'long long strtonum(const char *, long long, long long, const char **);\n'
 [ $HAVE_VIS -eq 0 ] && {

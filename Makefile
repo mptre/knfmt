@@ -5,6 +5,7 @@ VERSION=	0.1.0
 SRCS+=	buffer.c
 SRCS+=	compat-errc.c
 SRCS+=	compat-pledge.c
+SRCS+=	compat-reallocarray.c
 SRCS+=	compat-strtonum.c
 SRCS+=	compat-vis.c
 SRCS+=	compat-warnc.c
