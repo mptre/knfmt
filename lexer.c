@@ -6,7 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_UTHASH
 #include <uthash.h>
+#else
+#include "compat-uthash.h"
+#endif
 
 #include "extern.h"
 
