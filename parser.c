@@ -58,7 +58,7 @@ static int	parser_exec_stmt1(struct parser *, struct doc *,
 static int	parser_exec_stmt_block(struct parser *, struct doc *,
     struct doc *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
-    enum token_type);
+    const struct token *);
 static int	parser_exec_stmt_label(struct parser *, struct doc *);
 
 static int	parser_exec_type(struct parser *, struct doc *, struct token *,
@@ -945,7 +945,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
 		int rbrace = 0;
 
-		if (parser_exec_stmt_expr(pr, dc, tk->tk_type))
+		if (parser_exec_stmt_expr(pr, dc, tk))
 			return parser_error(pr);
 
 		if (lexer_back(lx, &tk) && tk->tk_type == TOKEN_RBRACE)
@@ -975,8 +975,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
 	    lexer_peek_if(lx, TOKEN_SWITCH, &tk) ||
-	    lexer_peek_if(lx, TOKEN_FOREACH, &tk))
-		return parser_exec_stmt_expr(pr, dc, tk->tk_type);
+	    lexer_peek_if_flags(lx, TOKEN_FLAG_FOREACH, &tk))
+		return parser_exec_stmt_expr(pr, dc, tk);
 
 	if (lexer_if(lx, TOKEN_FOR, &tk)) {
 		struct doc *expr = NULL;
@@ -1109,7 +1109,10 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 			return parser_error(pr);
 
 		pr->pr_dowhile = 1;
-		error = parser_exec_stmt_expr(pr, dc, TOKEN_WHILE);
+		if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
+			error = parser_exec_stmt_expr(pr, dc, tk);
+		else
+			error = parser_error(pr);
 		pr->pr_dowhile = 0;
 		if (error)
 			return parser_error(pr);
@@ -1280,19 +1283,20 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
  * and following statement(s). Returns zero if such sequence was consumed.
  */
 static int
-parser_exec_stmt_expr(struct parser *pr, struct doc *dc, enum token_type type)
+parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
+    const struct token *type)
 {
 	struct doc *expr, *stmt;
 	struct lexer *lx = pr->pr_lx;
 	struct token *end, *rparen, *tk;
 
-	if (!lexer_if(lx, type, &tk) ||
+	if (!lexer_expect(lx, type->tk_type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end))
 		return parser_error(pr);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_token(tk, stmt);
-	if (type != TOKEN_FOREACH)
+	if ((type->tk_flags & TOKEN_FLAG_FOREACH) == 0)
 		doc_literal(" ", stmt);
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
@@ -1305,7 +1309,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc, enum token_type type)
 	if (parser_exec_expr(pr, stmt, &expr, rparen))
 		return parser_error(pr);
 
-	if (type == TOKEN_WHILE && pr->pr_dowhile > 0) {
+	if (type->tk_type == TOKEN_WHILE && pr->pr_dowhile > 0) {
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, expr);
 		return PARSER_OK;
@@ -1319,7 +1323,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc, enum token_type type)
 		 * Signal to parser_exec_stmt_block() that no indentation must
 		 * be added since that's desired for switch cases.
 		 */
-		if (type == TOKEN_SWITCH)
+		if (type->tk_type == TOKEN_SWITCH)
 			pr->pr_switch = 1;
 		error = parser_exec_stmt_block(pr, expr, dc);
 		return error;

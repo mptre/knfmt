@@ -867,7 +867,7 @@ out:
 	pv = TAILQ_PREV(*tk, token_list, tk_entry);
 	if (pv != NULL && (*tk)->tk_type == TOKEN_LPAREN &&
 	    token_is_foreach(pv))
-		pv->tk_type = TOKEN_FOREACH;
+		pv->tk_flags |= TOKEN_FLAG_FOREACH;
 
 	return error ? 0 : 1;
 }
