@@ -44,7 +44,6 @@ void		 buffer_free(struct buffer *);
 void		 buffer_append(struct buffer *, const char *, size_t);
 void		 buffer_appendc(struct buffer *, char);
 void		 buffer_reset(struct buffer *);
-const char	*buffer_ptr(struct buffer *);
 int		 buffer_cmp(const struct buffer *, const struct buffer *);
 
 /*

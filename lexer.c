@@ -246,6 +246,7 @@ lexer_free(struct lexer *lx)
 struct buffer *
 lexer_get_buffer(struct lexer *lx)
 {
+	buffer_appendc(lx->lx_bf, '\0');
 	return lx->lx_bf;
 }
 

@@ -16,8 +16,10 @@
 static __dead void	usage(void);
 
 static int	fileformat(const char *, const struct config *);
-static int	filediff(struct buffer *, struct buffer *, const char *);
-static int	filewrite(struct buffer *, struct buffer *, const char *);
+static int	filediff(const struct buffer *, const struct buffer *,
+    const char *);
+static int	filewrite(const struct buffer *, const struct buffer *,
+    const char *);
 static int	fileattr(const char *, const char *);
 
 static int	tmpfd(const char *, char *, size_t);
@@ -119,7 +121,7 @@ fileformat(const char *path, const struct config *cf)
 	else if (cf->cf_flags & CONFIG_FLAG_INPLACE)
 		error = filewrite(lexer_get_buffer(lx), bf, path);
 	else
-		printf("%s", buffer_ptr(bf));
+		printf("%s", bf->bf_ptr);
 
 out:
 	parser_free(pr);
@@ -127,7 +129,7 @@ out:
 }
 
 static int
-filediff(struct buffer *src, struct buffer *dst, const char *path)
+filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 {
 	char dstpath[PATH_MAX], srcpath[PATH_MAX];
 	pid_t pid;
@@ -136,10 +138,10 @@ filediff(struct buffer *src, struct buffer *dst, const char *path)
 	int error = 1;
 	int srcfd = -1;
 
-	srcfd = tmpfd(buffer_ptr(src), srcpath, sizeof(srcpath));
+	srcfd = tmpfd(src->bf_ptr, srcpath, sizeof(srcpath));
 	if (srcfd == -1)
 		goto out;
-	dstfd = tmpfd(buffer_ptr(dst), dstpath, sizeof(dstpath));
+	dstfd = tmpfd(dst->bf_ptr, dstpath, sizeof(dstpath));
 	if (dstfd == -1)
 		goto out;
 
@@ -180,7 +182,7 @@ out:
 }
 
 static int
-filewrite(struct buffer *src, struct buffer *dst, const char *path)
+filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 {
 	char tmppath[PATH_MAX];
 	const char *buf;
@@ -202,7 +204,7 @@ filewrite(struct buffer *src, struct buffer *dst, const char *path)
 		return 1;
 	}
 
-	buf = buffer_ptr(dst);
+	buf = dst->bf_ptr;
 	len = strlen(buf);
 	while (len > 0) {
 		ssize_t nw;

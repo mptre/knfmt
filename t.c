@@ -215,7 +215,7 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 		error = 1;
 		goto out;
 	}
-	act = buffer_ptr(bf);
+	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
 		    act);
@@ -260,7 +260,8 @@ __test_lexer_peek_type(const char *src, const char *exp, const char *fun,
 		if (tk == end)
 			break;
 	}
-	act = buffer_ptr(bf);
+	buffer_appendc(bf, '\0');
+	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
 		    act);
@@ -300,7 +301,8 @@ __test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
 		buffer_append(bf, str, strlen(str));
 		free(str);
 	}
-	act = buffer_ptr(bf);
+	buffer_appendc(bf, '\0');
+	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
 		    act);

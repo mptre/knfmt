@@ -105,12 +105,12 @@ doc_exec(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	struct doc_state st;
 
 	buffer_reset(bf);
-
 	memset(&st, 0, sizeof(st));
 	st.st_cf = cf;
 	st.st_bf = bf;
 	st.st_mode = BREAK;
 	doc_exec1(dc, &st);
+	buffer_appendc(bf, '\0');
 }
 
 unsigned int
@@ -119,13 +119,13 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	struct doc_state st;
 
 	buffer_reset(bf);
-
 	memset(&st, 0, sizeof(st));
 	st.st_cf = cf;
 	st.st_bf = bf;
 	st.st_mode = MUNGE;
 	st.st_flags = DOC_STATE_FLAG_WIDTH;
 	doc_exec1(dc, &st);
+
 	return st.st_pos;
 }
 

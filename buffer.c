@@ -109,14 +109,6 @@ buffer_reset(struct buffer *bf)
 	bf->bf_len = 0;
 }
 
-const char *
-buffer_ptr(struct buffer *bf)
-{
-	if (bf->bf_len == 0 || bf->bf_ptr[bf->bf_len] != '\0')
-		buffer_appendc(bf, '\0');
-	return bf->bf_ptr;
-}
-
 int
 buffer_cmp(const struct buffer *b1, const struct buffer *b2)
 {
