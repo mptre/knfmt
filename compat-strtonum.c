@@ -39,8 +39,8 @@ strtonum(const char *numstr, long long minval, long long maxval,
 	int error = 0;
 	char *ep;
 	struct errval {
-		const char	*errstr;
-		int		 err;
+		const char *errstr;
+		int err;
 	} ev[4] = {
 		{ NULL,		0 },
 		{ "invalid",	EINVAL },

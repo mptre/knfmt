@@ -99,12 +99,9 @@ TESTS+=	valid-088.c
 TESTS+=	valid-089.c
 
 TESTS+=	../buffer.c
-TESTS+=	../compat-errc.c
 TESTS+=	../compat-pledge.c
 TESTS+=	../compat-queue.h
-TESTS+=	../compat-strtonum.c
 TESTS+=	../compat-vis.c
-TESTS+=	../compat-warnc.c
 TESTS+=	../doc.c
 TESTS+=	../expr.c
 TESTS+=	../extern.h
