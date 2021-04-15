@@ -808,6 +808,8 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 	doc_alloc(DOC_HARDLINE, dc);
 	if (parser_exec_stmt_block(pr, dc, dc))
 		return parser_error(pr);
+	if (!lexer_peek_if(lx, TOKEN_EOF, NULL))
+		doc_alloc(DOC_HARDLINE, dc);
 
 	return PARSER_OK;
 }

@@ -1,0 +1,9 @@
+int
+main(void)
+{
+}
+
+static void
+usage(void)
+{
+}
