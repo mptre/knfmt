@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        compiler: [gcc, clang]
+        mode: [asan, ubsan, valgrind]
+        exclude:
+          - os: macos-latest
+            compiler: gcc
+
+          - mode: valgrind
+            os: macos-latest
+
+          - mode: valgrind
+            os: ubuntu-latest
+            compiler: clang
+
+        include:
+          - os: ubuntu-latest
+            cppflags: -D_FORTIFY_SOURCE=2
+            nproc: nproc
+
+          - os: macos-latest
+            nproc: sysctl -n hw.logicalcpu
+
+          - compiler: gcc
+            cflags: -Wformat-signedness
+
+          - mode: asan
+            debug: -fsanitize=address
+
+          - mode: ubsan
+            debug: -fsanitize=undefined -fno-sanitize-recover=all
+
+          - mode: valgrind
+            dependenices: valgrind
+            exec: valgrind
+            valgrind: --quiet --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=all --show-leak-kinds=all
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: ubuntu-dependenices
+        if: ${{matrix.os == 'ubuntu-latest'}}
+        run: sudo apt-get update && sudo apt-get install uthash-dev
+
+      - name: dependenices
+        if: ${{matrix.dependenices}}
+        run: sudo apt-get update && sudo apt-get install ${{matrix.dependenices}}
+
+      - name: test
+        env:
+          ASAN_OPTIONS: exitcode=66
+          CC: ${{matrix.compiler}}
+          CPPFLAGS: ${{matrix.cppflags}}
+          CFLAGS: -Werror -Wpedantic -Wshadow ${{matrix.cflags}}
+          DEBUG: -g -O2 ${{matrix.debug1}}
+          EXEC: ${{matrix.exec}}
+          VALGRIND_OPTS: ${{matrix.valgrind}}
+        run: |
+          set -ex
+          ${CC} -v
+          ./configure || :
+          cat config.log
+          make -j `${{matrix.nproc}}` test
+          # Ensure assertions are free from side effects.
+          env CPPFLAGS="${CPPFLAGS} -DNDEBUG" ./configure || :
+          cat config.log
+          make test "TESTFLAGS=${TESTFLAGS} -Tfault"
