@@ -20,7 +20,6 @@ struct lexer {
 	struct buffer		*lx_bf;
 	const char		*lx_path;
 
-	int	lx_error;
 	int	lx_eof;
 	int	lx_peek;
 
@@ -263,7 +262,7 @@ lexer_get_buffer(struct lexer *lx)
 int
 lexer_get_error(const struct lexer *lx)
 {
-	return lx->lx_error;
+	return lx->lx_st.st_err;
 }
 
 int
@@ -589,7 +588,7 @@ lexer_peek_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
 	}
 	lexer_peek_leave(lx, &s);
 
-	if (lx->lx_error == 0 && pair == 0) {
+	if (lx->lx_st.st_err == 0 && pair == 0) {
 		if (tk != NULL)
 			*tk = t;
 		return 1;
@@ -770,7 +769,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 	TAILQ_INIT(&dangling);
 	st = lx->lx_st;
 
-	if (lx->lx_error)
+	if (lx->lx_st.st_err)
 		goto err;
 
 	/*
@@ -1208,12 +1207,12 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 {
 	char *str;
 
-	/* Be quiet while peeking. */
-	if (lx->lx_peek > 0)
+	/* Be quiet if an error already has been emitted. */
+	if (lx->lx_st.st_err++ > 0)
 		return;
 
-	/* Be quiet if an error already has been emitted. */
-	if (lx->lx_error++ > 0)
+	/* Be quiet while peeking. */
+	if (lx->lx_peek > 0)
 		return;
 
 	fprintf(stderr, "%s: ", lx->lx_path);

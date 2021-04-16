@@ -208,14 +208,16 @@ expr_peek(const struct expr_arg *ea, int ispeek)
 	struct lexer_state s;
 	struct expr *ex;
 	int peek = 0;
+	int error;
 
 	expr_state_init(&es, ea);
 	if (!ispeek)
 		lexer_peek_enter(es.es_lx, &s);
 	ex = expr_exec1(&es, PC0);
+	error = lexer_get_error(es.es_lx);
 	if (!ispeek)
 		lexer_peek_leave(es.es_lx, &s);
-	if (ex != NULL)
+	if (ex != NULL && error == 0)
 		peek = 1;
 	expr_free(ex);
 	return peek;
