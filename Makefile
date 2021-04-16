@@ -33,6 +33,7 @@ DISTFILES+=	${SRCS_test}
 DISTFILES+=	GNUmakefile
 DISTFILES+=	LICENSE
 DISTFILES+=	Makefile
+DISTFILES+=	README.md
 DISTFILES+=	compat-queue.h
 DISTFILES+=	configure
 DISTFILES+=	extern.h
