@@ -93,6 +93,7 @@ X(TOKEN_LITERAL,	"",	0)
 X(TOKEN_PEEK,		"",	0)
 X(TOKEN_SPACE,		"",	0)
 X(TOKEN_STRING,		"",	0)
+X(TOKEN_UNKNOWN,	"",	0)
 X(TOKEN_NONE,		"",	0)
 
 #undef F

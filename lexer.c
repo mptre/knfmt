@@ -97,6 +97,9 @@ static const struct token	tkspace = {
 static const struct token	tkstr = {
 	.tk_type	= TOKEN_STRING,
 };
+static const struct token	tkunknown = {
+	.tk_type	= TOKEN_UNKNOWN,
+};
 
 int
 token_cmp(const struct token *t1, const struct token *t2)
@@ -837,12 +840,14 @@ lexer_read(struct lexer *lx, struct token **tk)
 
 		if (lexer_find_token(lx, &st, &t)) {
 			*tk = lexer_emit(lx, &st, t);
-			goto out;
+		} else {
+			/* Fallback, treat everything as an identifier. */
+			*tk = lexer_emit(lx, &st, &tkident);
 		}
+		goto out;
 	}
 
-	/* Fallback, treat everything as an identifier. */
-	*tk = lexer_emit(lx, &st, &tkident);
+	*tk = lexer_emit(lx, &st, &tkunknown);
 	goto out;
 
 err:
