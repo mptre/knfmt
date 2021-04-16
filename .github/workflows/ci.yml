@@ -62,16 +62,17 @@ jobs:
           CC: ${{matrix.compiler}}
           CPPFLAGS: ${{matrix.cppflags}}
           CFLAGS: -Werror -Wpedantic -Wshadow ${{matrix.cflags}}
-          DEBUG: -g -O2 ${{matrix.debug1}}
+          DEBUG: -g -O2 ${{matrix.debug}}
           EXEC: ${{matrix.exec}}
           VALGRIND_OPTS: ${{matrix.valgrind}}
         run: |
           set -ex
           ${CC} -v
+          MAKE="make -j `${{matrix.nproc}}`"
           ./configure || :
           cat config.log
-          make -j `${{matrix.nproc}}` test
+          ${MAKE} test
           # Ensure assertions are free from side effects.
           env CPPFLAGS="${CPPFLAGS} -DNDEBUG" ./configure || :
           cat config.log
-          make test "TESTFLAGS=${TESTFLAGS} -Tfault"
+          ${MAKE} test
