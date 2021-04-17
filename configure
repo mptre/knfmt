@@ -101,7 +101,6 @@ check_reallocarray() {
 		return !(reallocarray(NULL, 1, 1) != NULL);
 	}
 	EOF
-	return 1
 }
 
 check_strtonum() {
