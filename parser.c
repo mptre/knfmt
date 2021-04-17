@@ -35,6 +35,8 @@ static int	parser_exec_decl_init(struct parser *, struct doc *,
 static int	parser_exec_decl_braces(struct parser *, struct doc *);
 static int	parser_exec_decl_braces1(struct parser *, struct doc *,
     struct ruler *);
+static int	parser_exec_decl_braces_fields(struct parser *, struct doc *,
+    struct ruler *, const struct token *);
 static int	parser_exec_decl_braces_field(struct parser *, struct doc *,
     struct ruler *, const struct token *);
 static int	parser_exec_decl_cpp(struct parser *, struct doc *,
@@ -195,7 +197,7 @@ static int
 parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct doc *concat, *expr;
+	struct doc *concat;
 	struct token *beg, *end, *fun, *tk;
 	enum parser_peek peek;
 
@@ -251,10 +253,8 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			doc_literal(" ", concat);
 	} else if (token_is_decl(end, TOKEN_ENUM)) {
-		struct doc *line = NULL;
-		struct doc *indent;
 		struct token *rbrace;
-		int nenum = 0;
+		int isempty;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_literal(" ", concat);
@@ -264,30 +264,16 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 			return parser_error(pr);
 		if (lexer_expect(lx, TOKEN_LBRACE, &tk))
 			doc_token(tk, concat);
+		isempty = lexer_peek_if(lx, TOKEN_RBRACE, NULL);
 
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
-		doc_alloc(DOC_HARDLINE, indent);
-		for (;;) {
-			struct token *comma;
+		if (parser_exec_decl_braces_fields(pr, concat, rl, rbrace))
+			return parser_error(pr);
 
-			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
-				    &comma)) {
-				if (!lexer_peek(lx, &tk) || tk == rbrace)
-					break;
-				comma = rbrace;
-			}
-			if (parser_exec_expr(pr, indent, &expr, comma))
-				return parser_error(pr);
-			if (lexer_if(lx, TOKEN_COMMA, &tk))
-				doc_token(tk, expr);
-			line = doc_alloc(DOC_HARDLINE, indent);
-			nenum++;
-		}
-		if (line != NULL)
-			doc_remove(line, indent);
-
-		/* Do not keep the hard line if the enum is empty. */
-		if (nenum > 0)
+		/*
+		 * The enum declaration can be empty if it consists solely of
+		 * preprocessor directives.
+		 */
+		if (!isempty)
 			doc_alloc(DOC_HARDLINE, concat);
 		if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 			doc_token(tk, concat);
@@ -408,26 +394,8 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	if (lexer_peek_if(lx, TOKEN_LSQUARE, NULL) ||
 	    lexer_peek_if(lx, TOKEN_PERIOD, NULL)) {
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
-		doc_alloc(DOC_HARDLINE, indent);
-
-		for (;;) {
-			if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
-				return parser_error(pr);
-			if (tk == rbrace) {
-				ruler_exec(rl);
-				break;
-			}
-
-			concat = doc_alloc(DOC_CONCAT,
-			    doc_alloc(DOC_GROUP, indent));
-			if (parser_exec_decl_braces_field(pr, concat, rl,
-				    rbrace))
-				return parser_error(pr);
-			line = doc_alloc(DOC_HARDLINE, concat);
-		}
-		if (line != NULL)
-			doc_remove(line, indent);
+		if (parser_exec_decl_braces_fields(pr, dc, rl, rbrace))
+			return parser_error(pr);
 		doc_alloc(DOC_HARDLINE, dc);
 	}
 
@@ -533,6 +501,39 @@ out:
 }
 
 static int
+parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
+    struct ruler *rl, const struct token *rbrace)
+{
+	struct doc *line = NULL;
+	struct doc *indent;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+	doc_alloc(DOC_HARDLINE, indent);
+
+	for (;;) {
+		struct doc *concat;
+
+		if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
+			return parser_error(pr);
+		if (tk == rbrace) {
+			ruler_exec(rl);
+			break;
+		}
+
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
+		if (parser_exec_decl_braces_field(pr, concat, rl, rbrace))
+			return parser_error(pr);
+		line = doc_alloc(DOC_HARDLINE, indent);
+	}
+	if (line != NULL)
+		doc_remove(line, indent);
+
+	return PARSER_OK;
+}
+
+static int
 parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
     struct ruler *rl, const struct token *rbrace)
 {
@@ -553,6 +554,15 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			doc_token(tk, dc);
 			if (lexer_expect(lx, TOKEN_IDENT, &tk))
 				doc_token(tk, dc);
+		} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
+			/*
+			 * Only applicable to enum declarations which are
+			 * allowed to omit any initialization, alignment is not
+			 * desired in such scenario.
+			 */
+			doc_token(tk, dc);
+			if (lexer_peek_if(lx, TOKEN_COMMA, NULL))
+				goto comma;
 		} else {
 			break;
 		}
@@ -565,6 +575,8 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 		stop = tk;
 	if (parser_exec_decl_init(pr, dc, stop, 1))
 		return parser_error(pr);
+
+comma:
 	if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 		doc_token(tk, dc);
 		if (token_has_line(tk))
