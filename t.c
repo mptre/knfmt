@@ -211,11 +211,6 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 
 	bf = buffer_alloc(128);
 	doc_exec(group, bf, &cf);
-	if (bf == NULL) {
-		warnx("%s:%d: doc_exec() failure", fun, lno);
-		error = 1;
-		goto out;
-	}
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
