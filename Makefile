@@ -204,7 +204,7 @@ test: ${PROG_knfmt} test-${PROG_test}
 .PHONY: test
 
 test-${PROG_test}: ${PROG_test}
-	./${PROG_test}
+	${EXEC} ./${PROG_test}
 
 -include ${DEPS_knfmt}
 -include ${DEPS_test}
