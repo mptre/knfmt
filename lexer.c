@@ -7,9 +7,9 @@
 #include <string.h>
 
 #ifdef HAVE_UTHASH
-#include <uthash.h>
+#  include <uthash.h>
 #else
-#include "compat-uthash.h"
+#  include "compat-uthash.h"
 #endif
 
 #include "extern.h"

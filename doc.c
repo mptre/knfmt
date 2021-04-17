@@ -9,7 +9,7 @@
 #include "extern.h"
 
 #ifdef HAVE_VIS
-#include <vis.h>
+#  include <vis.h>
 #endif
 
 TAILQ_HEAD(doc_list, doc);
