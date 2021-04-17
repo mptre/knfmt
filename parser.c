@@ -951,7 +951,7 @@ parser_exec_stmt(struct parser *pr, struct doc *dc)
 }
 
 static int
-parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
+parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
@@ -984,7 +984,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 					doc_alloc(DOC_HARDLINE, dc);
 				}
 			}
-			return parser_exec_stmt1(pr, dc, end);
+			return parser_exec_stmt1(pr, dc, stop);
 		}
 
 		return PARSER_OK;
@@ -1058,7 +1058,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 			dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 			doc_alloc(DOC_HARDLINE, dc);
 		}
-		return parser_exec_stmt1(pr, dc, end);
+		return parser_exec_stmt1(pr, dc, stop);
 	}
 
 	if (lexer_if(lx, TOKEN_CASE, &tk) || lexer_if(lx, TOKEN_DEFAULT, &tk)) {
@@ -1077,7 +1077,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 
 		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 			doc_alloc(DOC_LINE, lhs);
-			parser_exec_stmt1(pr, dc, end);
+			parser_exec_stmt1(pr, dc, stop);
 		} else {
 			struct doc *indent;
 
@@ -1093,7 +1093,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 				if (lexer_peek_if(lx, TOKEN_BREAK, NULL))
 					dobreak = 1;
 				line = doc_alloc(DOC_HARDLINE, indent);
-				if (parser_exec_stmt1(pr, indent, end)) {
+				if (parser_exec_stmt1(pr, indent, stop)) {
 					/* No statement, remove the line. */
 					doc_remove(line, indent);
 					break;
@@ -1119,7 +1119,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 
 			indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 			doc_alloc(DOC_HARDLINE, indent);
-			error = parser_exec_stmt1(pr, indent, end);
+			error = parser_exec_stmt1(pr, indent, stop);
 			doc_alloc(DOC_HARDLINE, dc);
 		}
 		if (error)
@@ -1185,12 +1185,12 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 		 * A label is not necessarily followed by a hard line, there
 		 * could be another statement on the same line.
 		 */
-		if (lexer_back(lx, &t1) && lexer_peek(lx, &t2) && t2 != end &&
+		if (lexer_back(lx, &t1) && lexer_peek(lx, &t2) && t2 != stop &&
 		    token_cmp(t1, t2) == 0) {
 			struct doc *indent;
 
 			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
-			return parser_exec_stmt1(pr, indent, end);
+			return parser_exec_stmt1(pr, indent, stop);
 		}
 
 		return PARSER_OK;
@@ -1211,7 +1211,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *end)
 	 * preprocessor directives such as the ones provided by queue(3).
 	 */
 	if (!lexer_peek_type(lx, NULL, 0) &&
-	    lexer_peek_until_stop(lx, TOKEN_SEMI, end, &tk)) {
+	    lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &tk)) {
 		struct expr_arg ea = {
 			.ea_cf		= pr->pr_cf,
 			.ea_lx		= lx,
