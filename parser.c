@@ -12,8 +12,8 @@
 #define PARSER_NOTHING	1
 
 enum parser_peek {
-	PARSER_PEEK_FUNCDECL = 1,
-	PARSER_PEEK_FUNCIMPL = 2,
+	PARSER_PEEK_FUNCDECL	= 1,
+	PARSER_PEEK_FUNCIMPL	= 2,
 };
 
 struct parser {
