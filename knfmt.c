@@ -101,7 +101,7 @@ usage(void)
 static int
 fileformat(const char *path, const struct config *cf)
 {
-	struct buffer *bf;
+	const struct buffer *bf;
 	struct lexer *lx;
 	struct parser *pr;
 	int error = 0;

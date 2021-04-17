@@ -121,7 +121,7 @@ parser_get_lexer(struct parser *pr)
 	return pr->pr_lx;
 }
 
-struct buffer *
+const struct buffer *
 parser_exec(struct parser *pr)
 {
 	struct lexer *lx = pr->pr_lx;

@@ -255,7 +255,7 @@ lexer_free(struct lexer *lx)
 	free(lx);
 }
 
-struct buffer *
+const struct buffer *
 lexer_get_buffer(struct lexer *lx)
 {
 	buffer_appendc(lx->lx_bf, '\0');

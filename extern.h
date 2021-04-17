@@ -103,8 +103,9 @@ void		 lexer_init(void);
 void		 lexer_shutdown(void);
 struct lexer	*lexer_alloc(const char *, const struct config *);
 void		 lexer_free(struct lexer *);
-struct buffer	*lexer_get_buffer(struct lexer *);
-int		 lexer_get_error(const struct lexer *);
+
+const struct buffer	*lexer_get_buffer(struct lexer *);
+int			 lexer_get_error(const struct lexer *);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
@@ -146,10 +147,11 @@ int	__lexer_until(struct lexer *, enum token_type, const struct token *,
  * parser ----------------------------------------------------------------------
  */
 
-struct parser	*parser_alloc(const char *, const struct config *);
-void		 parser_free(struct parser *);
+struct parser		*parser_alloc(const char *, const struct config *);
+void			 parser_free(struct parser *);
+const struct buffer	*parser_exec(struct parser *);
+
 struct lexer	*parser_get_lexer(struct parser *);
-struct buffer	*parser_exec(struct parser *);
 
 /*
  * expr ------------------------------------------------------------------------
