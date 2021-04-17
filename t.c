@@ -180,6 +180,7 @@ main(int argc, char *argv[])
 	error |= test_lexer_read(".x", "PERIOD<1:1>(\".\") IDENT<1:2>(\"x\")");
 
 out:
+	lexer_shutdown();
 	return error;
 }
 
