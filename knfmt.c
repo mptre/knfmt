@@ -29,7 +29,7 @@ main(int argc, char *argv[])
 {
 	struct config cf;
 	int error = 0;
-	int ch, i;
+	int ch;
 
 	if (pledge("stdio rpath wpath cpath fattr chown proc exec", NULL) == -1)
 		err(1, "pledge");
@@ -78,6 +78,8 @@ main(int argc, char *argv[])
 	lexer_init();
 
 	if (argc > 0) {
+		int i;
+
 		for (i = 0; i < argc; i++) {
 			if (fileformat(argv[i], &cf))
 				error = 1;

@@ -1374,7 +1374,6 @@ static int
 parser_exec_type(struct parser *pr, struct doc *dc, struct token *end,
     struct ruler *rl)
 {
-	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
 	struct token *align = NULL;
 	struct token *beg, *tk;
@@ -1404,6 +1403,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, struct token *end,
 	}
 
 	for (;;) {
+		struct doc *concat;
 		int didalign = 0;
 
 		if (!lexer_pop(lx, &tk))
