@@ -122,6 +122,26 @@ token_is_dangling(const struct token *tk)
 }
 
 /*
+ * Returns non-zero if the given token represents a declaration of the given
+ * type.
+ */
+int
+token_is_decl(const struct token *tk, enum token_type type)
+{
+	const struct token *nx;
+
+	nx = TAILQ_NEXT(tk, tk_entry);
+	if (nx == NULL || nx->tk_type != TOKEN_LBRACE)
+		return 0;
+
+	if (tk->tk_type == TOKEN_IDENT)
+		tk = TAILQ_PREV(tk, token_list, tk_entry);
+	if (tk == NULL)
+		return 0;
+	return tk->tk_type == type;
+}
+
+/*
  * Returns non-zero if the given token has a trailing hard line.
  */
 int

@@ -81,9 +81,6 @@ static int	__parser_error(struct parser *, const char *, int);
 
 static int	parser_halted(const struct parser *);
 
-static int	isdecl(const struct token *, const struct token *,
-    enum token_type);
-
 struct parser *
 parser_alloc(const char *path, const struct config *cf)
 {
@@ -231,8 +228,8 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	if (parser_exec_decl_func_ptr(pr, concat) == PARSER_OK) {
 		/* nothing */
-	} else if (isdecl(beg, end, TOKEN_STRUCT) ||
-	    isdecl(beg, end, TOKEN_UNION)) {
+	} else if (token_is_decl(end, TOKEN_STRUCT) ||
+	    token_is_decl(end, TOKEN_UNION)) {
 		struct doc *indent;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
@@ -253,7 +250,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			doc_literal(" ", concat);
-	} else if (isdecl(beg, end, TOKEN_ENUM)) {
+	} else if (token_is_decl(end, TOKEN_ENUM)) {
 		struct doc *line = NULL;
 		struct doc *indent;
 		struct token *rbrace;
@@ -503,7 +500,8 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 					w = parser_width(pr, concat);
 					if (++col == 1)
 						w += 2;
-					ruler_insert(rl, tk, concat, col, w, 0);
+					ruler_insert(rl, comma, concat, col, w,
+					    0);
 				}
 			} else {
 				struct token *nx;
@@ -1608,34 +1606,4 @@ static int
 parser_halted(const struct parser *pr)
 {
 	return pr->pr_error || lexer_get_error(pr->pr_lx);
-}
-
-/*
- * Returns non-zero if a declaration of the given type resides within the token
- * range, inclusively.
- */
-static int
-isdecl(const struct token *beg, const struct token *end, enum token_type type)
-{
-	const struct token *tk = beg;
-
-	for (;;) {
-		if (tk->tk_type == type)
-			break;
-
-		if (tk == end)
-			return 0;
-		tk = TAILQ_NEXT(tk, tk_entry);
-		if (tk == NULL)
-			return 0;
-	}
-
-	tk = TAILQ_NEXT(tk, tk_entry);
-	if (tk == NULL)
-		return 0;
-	if (tk->tk_type == TOKEN_IDENT)
-		tk = TAILQ_NEXT(tk, tk_entry);
-	if (tk == NULL || tk->tk_type != TOKEN_LBRACE)
-		return 0;
-	return 1;
 }

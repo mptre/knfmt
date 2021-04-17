@@ -10,6 +10,7 @@ struct ruler_datum {
 	unsigned int	 rd_nspaces;
 };
 
+static int	isdecl(const struct token *);
 static int	isnexttoken(const struct token *, enum token_type);
 
 void
@@ -85,11 +86,8 @@ ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	if (isnexttoken(tk, TOKEN_SEMI))
 		return;
 
-	/*
-	 * Only a space is wanted if the following token is a left brace, i.e.
-	 * struct/enum/union declarations.
-	 */
-	if (!rl->rl_align || isnexttoken(tk, TOKEN_LBRACE))
+	/* Only a space is wanted for enum/struct/union declarations. */
+	if (!rl->rl_align || isdecl(tk))
 		goto out;
 
 	rd->rd_len = len;
@@ -138,6 +136,13 @@ ruler_exec(struct ruler *rl)
 
 	/* Reset the ruler paving the way for reuse. */
 	ruler_init(rl, rl->rl_align);
+}
+
+static int
+isdecl(const struct token *tk)
+{
+	return token_is_decl(tk, TOKEN_ENUM) ||
+	    token_is_decl(tk, TOKEN_STRUCT) || token_is_decl(tk, TOKEN_UNION);
 }
 
 static int
