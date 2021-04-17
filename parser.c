@@ -35,6 +35,8 @@ static int	parser_exec_decl_init(struct parser *, struct doc *,
 static int	parser_exec_decl_braces(struct parser *, struct doc *);
 static int	parser_exec_decl_braces1(struct parser *, struct doc *,
     struct ruler *);
+static int	parser_exec_decl_braces_field(struct parser *, struct doc *,
+    struct ruler *, const struct token *);
 static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
@@ -407,10 +409,8 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace))
 		doc_token(lbrace, dc);
 
-	if (lexer_peek_if(lx, TOKEN_LSQUARE, &tk) ||
-	    lexer_peek_if(lx, TOKEN_PERIOD, &tk)) {
-		enum token_type type = tk->tk_type;
-
+	if (lexer_peek_if(lx, TOKEN_LSQUARE, NULL) ||
+	    lexer_peek_if(lx, TOKEN_PERIOD, NULL)) {
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 		doc_alloc(DOC_HARDLINE, indent);
 
@@ -424,45 +424,9 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, indent));
-
-			if (type == TOKEN_LSQUARE) {
-				if (lexer_expect(lx, TOKEN_LSQUARE, &tk))
-					doc_token(tk, concat);
-				if (parser_exec_expr(pr, concat, &expr, NULL))
-					return parser_error(pr);
-				if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
-					doc_token(tk, expr);
-			} else if (type == TOKEN_PERIOD) {
-				if (lexer_expect(lx, TOKEN_PERIOD, &tk))
-					doc_token(tk, concat);
-				if (lexer_expect(lx, TOKEN_IDENT, &tk))
-					doc_token(tk, concat);
-				if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
-					doc_token(tk, concat);
-					if (parser_exec_expr(pr, concat, &expr,
-						    NULL))
-						return parser_error(pr);
-					if (lexer_expect(lx, TOKEN_RSQUARE,
-						    &tk))
-						doc_token(tk, concat);
-				}
-			} else {
+			if (parser_exec_decl_braces_field(pr, concat, rl,
+				    rbrace))
 				return parser_error(pr);
-			}
-
-			ruler_insert(rl, tk, concat, 1,
-			    parser_width(pr, concat), 0);
-
-			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
-				    &tk))
-				tk = rbrace;
-			if (parser_exec_decl_init(pr, concat, tk, 1))
-				return parser_error(pr);
-			if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-				doc_token(tk, concat);
-				if (token_has_line(tk))
-					ruler_exec(rl);
-			}
 			line = doc_alloc(DOC_HARDLINE, concat);
 		}
 		if (line != NULL)
@@ -566,6 +530,48 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 out:
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
+
+	return PARSER_OK;
+}
+
+static int
+parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
+    struct ruler *rl, const struct token *rbrace)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+	const struct token *stop;
+
+	for (;;) {
+		struct doc *expr;
+
+		if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
+			doc_token(tk, dc);
+			if (parser_exec_expr(pr, dc, &expr, NULL))
+				return parser_error(pr);
+			if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
+				doc_token(tk, expr);
+		} else if (lexer_if(lx, TOKEN_PERIOD, &tk)) {
+			doc_token(tk, dc);
+			if (lexer_expect(lx, TOKEN_IDENT, &tk))
+				doc_token(tk, dc);
+		} else {
+			break;
+		}
+	}
+
+	ruler_insert(rl, tk, dc, 1, parser_width(pr, dc), 0);
+
+	stop = rbrace;
+	if (lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &tk))
+		stop = tk;
+	if (parser_exec_decl_init(pr, dc, stop, 1))
+		return parser_error(pr);
+	if (lexer_if(lx, TOKEN_COMMA, &tk)) {
+		doc_token(tk, dc);
+		if (token_has_line(tk))
+			ruler_exec(rl);
+	}
 
 	return PARSER_OK;
 }
