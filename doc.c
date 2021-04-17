@@ -552,12 +552,12 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	if (newline && dc->dc_type == DOC_VERBATIM && st->st_noline > 0)
 		return;
 
-	/* Never emit more than two consecutive lines. */
 	if (newline) {
 		/* Skip new lines while testing. */
 		if (st->st_cf->cf_flags & CONFIG_FLAG_TEST)
 			return;
 
+		/* Never emit more than two consecutive lines. */
 		if (st->st_line >= 2)
 			return;
 		st->st_line++;
