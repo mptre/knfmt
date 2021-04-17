@@ -1,23 +1,135 @@
 DESIGN
-------
+======
+
+I've always wanted a tool capable of formatting source code according to
+style(9) from OpenBSD. It shouldn't require one to fiddle with a bunch of knobs
+nor supply needed include path(s) in order to do get the desired formatting.
+There are other tools out there but they didn't manage to satisfy my criterias,
+i.e. not invented here.
+
+Another motivation for knfmt was the discovery of a paper entitled "A prettier
+printer" by Philip Wadler[1]. I found his work both novel and elegant. This was
+a chance to put his ideas into use, which others already have done[2].
+
+This document is an attempt to give an introducing to the knfmt source code and
+is divided one section per file. The same files are enumerated in order of
+execution. Followed by some noteworthy topics in no particular order.
+
+[1] https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf
+[2] http://blog.vjeux.com/2017/javascript/anatomy-of-a-javascript-pretty-printer.html
 
 lexer.c
--------
+=======
+
+The lexer turns source code into a list of tokens. It does so by reading the
+source code into memory and then constructs the list of tokens. The lexer owns
+the memory associated with the list of tokens. This has several advantages as
+all tokens are therefore constant and pointers to them remains valid until
+lexer_free() is invoked.
+
+In general terms, the lexer API is divided into two categories:
+
+1. Routines that consume one or many tokens, often prefixed if lexer_if.
+   Such routines returns non-zero if it managed to consume the next token(s)
+   given a criteria, such as being of a certain type. Otherwise, zero is
+   returned.
+
+2. Routines that peek at one or many tokens, prefixed with lexer_peek. Such
+   routines returns non-zero if the peeked at token(s) satisfied the given
+   criteria, such as being of a certain type. Otherwise, zero is returned.
+
+A token can have more tokens associated with it, called dangling tokens. See cpp
+below for such a use case.
 
 parser.c
---------
+========
 
-parser_exec_ family of functions return 1 in case of error
-parser_peek (predicate) family of functions return 0 in case of error 1() convention recursive
+The parser recognizes the list of tokens emitted by the lexer according to the C
+grammar, in a recursive descent fashion. The parser is also responsible for
+constructing the document which represents the formatted source code. Parsing is
+therefore not implemented as a distinct step of the execution. It might be
+benefinal to separate the two at some point by letting the parser only be
+concerned with creation of an AST like structure.
 
 expr.c
-------
+======
+
+The expr parser is implemented using the Pratt parsing technique[1], which is a
+well common approach[2][3].
+
+Some expressions which are valid C are not recognized the parser without
+assistance from the parser. One example is sizeof() which can be given a type.
+Whenever the parser encounters something it cannot recognize it gives the parser
+a chance to recover, allowing the parser to continue; see
+parser_exec_expr_recover() and cpp below.
 
 [1] https://en.wikipedia.org/wiki/Operator-precedence_parser#Pratt_parsing
 [2] https://craftinginterpreters.com/compiling-expressions.html
 [3] https://quasilyte.dev/blog/post/pratt-parsers-go/
 
 doc.c
------
+=====
 
-[1] http://blog.vjeux.com/2017/javascript/anatomy-of-a-javascript-pretty-printer.html
+A document represents the formatted source code. In its essence, a document
+consists of different types of documents forming a tree where the most important
+document type is a group. For a description of each document type see doc_type.
+A group represents something that's intended to fit on a single line. In
+doc_exec(), the document tree is traversed causing the formatted source code to
+be emitted. Upon entering a group, it checks if all documents nested underneath
+the current document fits on the current line, see doc_fits(). If not, break
+mode is entered in which new lines are allowed to be emitted in the hopes of
+not crossing the configured max number of columns per line. If it does fit,
+munge mode is entered in which no new lines are emitted. Causing the document to
+reconsider switching between the two modes can therefore only be achieved by
+entering a group.
+
+The document representation and any decision to switch between the two modes can
+be examined by passing the `-vv' options to knfmt.
+
+ruler.c
+=======
+
+XXX
+
+cpp
+===
+
+Recall, knfmt does not run the source code through the preprocessor since it
+would require one to supply the required include path(s) which in my opinion
+makes the utility less user friendly. That has one severe downside of not being
+able to distingush preprocessor directives from other well defined language
+constructs.
+
+Usage of preprocessor directives can literally be present anywhere in the source
+code. Letting the parser cope with this fact would make the implementation
+tedious. Instead, preprocessor directives are made completely transparent to the
+parser. An emitted token by the lexer will never directly represent a
+preprocessor directive. Instead, a token always represents a well defined
+language construct and can instead have one or many dangling tokens associated
+with it, see tk_suffixes and tk_prefixes. Such dangling tokens can among other
+things represent preprocessor directives. The dangling tokens are emitted by
+doc_token().
+
+One particular type of preprocessor macros that requires special attention are
+the ones that expands to a loop construct. Such macros often include the word
+foreach in the identifier. The lexer does a best effort attempt to identify such
+macros, see lexer_foreach(). Not being aware that such macros actually expand to
+a loop construct would otherwise make the parser halt as something that looks
+like a function call followed by either a pair of braces or another statement is
+not considered valid C. An example of such macros are the ones provided by
+queue(3).
+
+Another problematic type of preprocessor macros are the ones that expands to a
+binary expression. Such macros often have a binary operator as a distinct
+argument. Macro invocations are handled by expr parser as they look like
+function calls without any further preprocessor knowledge. Encountering a binary
+operator in an unary context causes the expr parser to halt. However, in such
+scenarios it gives the parser a chance to recover from the situation; allowing
+the expr parser to continue, see parser_exec_expr_recover(). An example of such
+macros are the ones provided by timercmp(3).
+
+comments
+========
+
+Comments are never emitted directly by lexer but are instead represented as
+dangling tokens, see cpp ahove.
