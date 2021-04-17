@@ -39,7 +39,7 @@ In general terms, the lexer API is divided into two categories:
    criteria, such as being of a certain type. Otherwise, zero is returned.
 
 A token can have more tokens associated with it, called dangling tokens. See cpp
-below for such a use case.
+below for such use case.
 
 parser.c
 ========
@@ -71,25 +71,79 @@ doc.c
 =====
 
 A document represents the formatted source code. In its essence, a document
-consists of different types of documents forming a tree where the most important
-document type is a group. For a description of each document type see doc_type.
-A group represents something that's intended to fit on a single line. In
-doc_exec(), the document tree is traversed causing the formatted source code to
-be emitted. Upon entering a group, it checks if all documents nested underneath
-the current document fits on the current line, see doc_fits(). If not, break
-mode is entered in which new lines are allowed to be emitted in the hopes of
-not crossing the configured max number of columns per line. If it does fit,
-munge mode is entered in which no new lines are emitted. Causing the document to
-reconsider switching between the two modes can therefore only be achieved by
+consists of different types of documents forming a tree which roughly
+reassembles the structure of the source code. The most important type of
+document is the group which represents something that's intended to fit on a
+single line. In doc_exec(), the document tree is traversed causing the formatted
+source code to be emitted. Upon entering a group, it checks if all documents
+nested underneath it fits on the current line, see doc_fits(). If not, break
+mode is entered in which line breaks are allowed to be emitted in the hopes of
+not crossing the maximum number of columns per line. If it does fit, munge mode
+is entered in which no line breaks are emitted. Causing the document
+to reconsider switching between the two modes can therefore only be achieved by
 entering a group.
 
 The document representation and any decision to switch between the two modes can
-be examined by passing the `-vv' options to knfmt.
+be examined by invoking knfmt as follows:
+
+	$ knfmt -vv
+
+The following type of documents are available:
+
+* DOC_CONCAT
+  Concat consists of zero or more nested documents. It's often used as a child
+  of a group document.
+
+* DOC_GROUP
+  Group represents something that's intended to fit on a single line. This is
+  the only type of document that can trigger a refit.
+
+* DOC_INDENT
+  Indent increases the indentation, the same indentation is not emitted until
+  after emitting a new line.
+
+* DOC_DEDENT
+  Dedent immediately decreases the current indentation by trimming the current
+  line, assuming nothing other than indentation has been emitted on the current
+  line. One use case for this type of document is goto labels which should never
+  be indented, effectively disregarding the current indentation completely.
+
+* DOC_ALIGN
+  Align emits enough white space in order to reach the column associated with
+  the same document. Used the by the ruler.
+
+* DOC_LITERAL
+  Literal represents a string that must be emitted as is. Tokens emitted by the
+  lexer are turned into literal documents.
+
+* DOC_VERBATIM
+  Verbatim represents parts of the source code taken as is, such as comments and
+  preprocessor directives. These type of documents often carry a trailing new line
+  which requires some special care.
+
+* DOC_LINE
+  Line emits a new line while in break mode and a space in munge mode.
+
+* DOC_SOFTLINE
+  Softline emits a new line while in break mode and nothing in munge mode.
+
+* DOC_HARDLINE
+  Hardline emits a new line in both break and munge mode.
+
+* DOC_NOLINE
+  Noline prevents any type of line document nested underneath it from being
+  emitted.
 
 ruler.c
 =======
 
-XXX
+The ruler aligns certain language constructs such as function prototypes and
+variable declarations. The parser is responsible for calling ruler_insert() on
+each line it wants to align. Note it can also call ruler_insert() for many
+columns on a single line. Once all lines that must be aligned are emitted the
+parser calls ruler_exec() which calculates the needed alignment for each line
+and column. The ruler is at this point aware of all columns and can therefore
+deduce the longest one calculate the necessary alignment accordingly.
 
 cpp
 ===
@@ -121,12 +175,12 @@ queue(3).
 
 Another problematic type of preprocessor macros are the ones that expands to a
 binary expression. Such macros often have a binary operator as a distinct
-argument. Macro invocations are handled by expr parser as they look like
-function calls without any further preprocessor knowledge. Encountering a binary
-operator in an unary context causes the expr parser to halt. However, in such
-scenarios it gives the parser a chance to recover from the situation; allowing
-the expr parser to continue, see parser_exec_expr_recover(). An example of such
-macros are the ones provided by timercmp(3).
+argument. Macro invocations are handled by expr.c as they look like function
+calls without any further preprocessor knowledge. Encountering a binary operator
+in an unary context causes the expr parser to halt. However, in such scenarios
+it gives the parser a chance to recover from the situation; allowing the expr
+parser to continue, see parser_exec_expr_recover(). An example of such macros
+are the ones provided by timercmp(3).
 
 comments
 ========

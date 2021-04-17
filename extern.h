@@ -179,73 +179,18 @@ int		 expr_peek(const struct expr_arg *, int);
  * doc -------------------------------------------------------------------------
  */
 
+/* Keep in sync with DESIGN. */
 enum doc_type {
-	/*
-	 * Concat consists of zero or more nested documents. It's often used as
-	 * a child of a group document.
-	 */
 	DOC_CONCAT,
-
-	/*
-	 * Group represents something that's intended to fit on a single line.
-	 * This is the only type of document that can trigger a refit.
-	 */
 	DOC_GROUP,
-
-	/*
-	 * Indent increases the indentation, the same indentation is not emitted
-	 * until after emitting a new line.
-	 */
 	DOC_INDENT,
-
-	/*
-	 * Dedent immediately decreases the current indentation by trimming the
-	 * current line, assuming nothing other than indentation has been
-	 * emitted on the current line. One use case for this type of document
-	 * is goto labels which should never be indented, effectively
-	 * disregarding the current indentation completely.
-	 */
 	DOC_DEDENT,
-
-	/*
-	 * Align emits enough white space in order to reach the column associated
-	 * with the same document. Used the by the ruler.
-	 */
 	DOC_ALIGN,
-
-	/*
-	 * Literal represents a string that must be emitted as is. Tokens
-	 * emitted by the lexer are turned into literal documents.
-	 */
 	DOC_LITERAL,
-
-	/*
-	 * Verbatim represents parts of the source code taken as is, such as
-	 * comments and preprocessor directives. These type of documents often
-	 * carry a trailing new line which requires some special care.
-	 */
 	DOC_VERBATIM,
-
-	/*
-	 * Line emits a new line while in break mode and a space in munge mode.
-	 */
 	DOC_LINE,
-
-	/*
-	 * Softline emits a new line while in break mode and nothing in munge
-	 * mode.
-	 */
 	DOC_SOFTLINE,
-
-	/*
-	 * Hardline emits a new line in both break and munge mode.
-	 */
 	DOC_HARDLINE,
-
-	/*
-	 * Noline prevents any type of line document nested underneath it from
-	 * being emitted.
-	 */
 	DOC_NOLINE,
 };
 
