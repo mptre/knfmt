@@ -10,7 +10,7 @@ code is written to standard output:
 
 	$ knfmt <knfmt.c
 
-It can perform an in place edit by writing back to formatted source code:
+It can perform an in place edit by writing back the formatted source code:
 
 	$ knfmt -i knfmt.c
 
