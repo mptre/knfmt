@@ -77,6 +77,8 @@ struct token {
 	const char	*tk_str;
 	size_t		 tk_len;
 
+	const struct token	*tk_align;
+
 	struct token_list	tk_prefixes;
 	struct token_list	tk_suffixes;
 
@@ -111,6 +113,7 @@ int			 lexer_get_error(const struct lexer *);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
+void	lexer_seek(struct lexer *, struct token *);
 
 #define lexer_expect(a, b, c) \
 	__lexer_expect((a), (b), (c), __func__, __LINE__)
@@ -121,7 +124,6 @@ void	lexer_peek_enter(struct lexer *, struct lexer_state *);
 void	lexer_peek_leave(struct lexer *, struct lexer_state *);
 
 int	lexer_peek(struct lexer *, struct token **);
-int	lexer_peek_func_ptr(struct lexer *);
 int	lexer_peek_type(struct lexer *, struct token **, int);
 
 int	lexer_peek_if(struct lexer *, enum token_type, struct token **);

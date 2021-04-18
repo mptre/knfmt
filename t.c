@@ -106,14 +106,14 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("x--", "((x)--)");
 	error |= test_expr_exec("-x", "(-(x))");
 	error |= test_expr_exec("+x", "(+(x))");
-	error |= test_expr_exec("(int)x", "((int)(x))");
+	error |= test_expr_exec("(int)x", "(((int))(x))");
 	error |= test_expr_exec("()", "()");
-	error |= test_expr_exec("(struct s)x", "((struct s)(x))");
-	error |= test_expr_exec("(struct s*)x", "((struct s *)(x))");
+	error |= test_expr_exec("(struct s)x", "(((struct s))(x))");
+	error |= test_expr_exec("(struct s*)x", "(((struct s *))(x))");
 	error |= test_expr_exec("(char const* char*)x",
-	    "((char const *char *)(x))");
-	error |= test_expr_exec("(foo_t)x", "((foo_t)(x))");
-	error |= test_expr_exec("(foo_t *)x", "((foo_t *)(x))");
+	    "(((char const *char *))(x))");
+	error |= test_expr_exec("(foo_t)x", "(((foo_t))(x))");
+	error |= test_expr_exec("(foo_t *)x", "(((foo_t *))(x))");
 	error |= test_expr_exec("x * y", "((x) * (y))");
 	error |= test_expr_exec("x & y", "((x) & (y))");
 	error |= test_expr_exec("sizeof x", "(sizeof (x))");
@@ -164,7 +164,8 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_type("long __guard_local __attribute__",
 	    "long");
 	error |= test_lexer_peek_type("unsigned int f:1", "unsigned int");
-	error |= test_lexer_peek_type("usbd_status (*v)(void)", "usbd_status");
+	error |= test_lexer_peek_type("usbd_status (*v)(void)",
+	    "usbd_status ( * v ) ( void )");
 	error |= test_lexer_peek_type("register char", "register char");
 	error |= test_lexer_peek_type("...", "...");
 
@@ -232,8 +233,8 @@ static int
 __test_lexer_peek_type(const char *src, const char *exp, const char *fun,
     int lno)
 {
-	struct buffer *bf = NULL;
 	struct parser_stub ps;
+	struct buffer *bf = NULL;
 	struct token *end, *tk;
 	const char *act;
 	int error = 0;

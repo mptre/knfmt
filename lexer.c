@@ -53,6 +53,8 @@ static struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
 static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
+static int	lexer_peek_func_ptr(struct lexer *, struct token **);
+
 static int	isnum(unsigned char, int);
 static ssize_t	strncasestr(const char *, size_t, const char *);
 
@@ -318,6 +320,12 @@ lexer_back(const struct lexer *lx, struct token **tk)
 	return 1;
 }
 
+void
+lexer_seek(struct lexer *lx, struct token *tk)
+{
+	lx->lx_st.st_tok = tk;
+}
+
 int
 __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
     const char *fun, int lno)
@@ -371,23 +379,6 @@ lexer_peek(struct lexer *lx, struct token **tk)
 	if (tk != NULL)
 		*tk = t;
 	return 1;
-}
-
-int
-lexer_peek_func_ptr(struct lexer *lx)
-{
-	struct lexer_state s;
-	int peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_STAR, NULL) && lexer_if(lx, TOKEN_IDENT, NULL) &&
-	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
-		peek = 1;
-	lexer_peek_leave(lx, &s);
-
-	return peek;
 }
 
 /*
@@ -449,19 +440,6 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 				break;
 			}
 
-			/* Recognize function pointers. */
-			ident = 0;
-			lexer_peek_enter(lx, &ss);
-			if (lexer_if(lx, TOKEN_IDENT, NULL) &&
-			    lexer_peek_func_ptr(lx))
-				ident = 1;
-			lexer_peek_leave(lx, &ss);
-			if (ident) {
-				if (lexer_pop(lx, &t))
-					peek = 1;
-				break;
-			}
-
 			/*
 			 * Preprocessor macros can be intertwined with a type,
 			 * such macros are recognized as an identifier by the
@@ -472,7 +450,8 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 			if (lexer_if(lx, TOKEN_IDENT, NULL) &&
 			    (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, NULL) ||
 			     lexer_if(lx, TOKEN_LSQUARE, NULL) ||
-			     lexer_if(lx, TOKEN_LPAREN, NULL) ||
+			     (lexer_if(lx, TOKEN_LPAREN, NULL) &&
+			      !lexer_peek_if(lx, TOKEN_STAR, NULL)) ||
 			     lexer_if(lx, TOKEN_RPAREN, NULL) ||
 			     lexer_if(lx, TOKEN_SEMI, NULL) ||
 			     lexer_if(lx, TOKEN_COMMA, NULL) ||
@@ -485,6 +464,17 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 
 			/* Consume the identifier, i.e. preprocessor macro. */
 			lexer_if(lx, TOKEN_IDENT, &t);
+		} else if (lexer_peek_func_ptr(lx, &t)) {
+			struct token *align;
+
+			/*
+			 * Instruct parser_exec_type() where to perform ruler
+			 * alignment.
+			 */
+			if (lexer_back(lx, &align))
+				t->tk_align = align;
+			peek = 1;
+			break;
 		} else {
 			unknown = 1;
 			break;
@@ -1253,6 +1243,25 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 	str = token_sprintf(tk);
 	fprintf(stderr, "expected type %s got %s\n", strtoken(type), str);
 	free(str);
+}
+
+static int
+lexer_peek_func_ptr(struct lexer *lx, struct token **tk)
+{
+	struct lexer_state s;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
+	    lexer_if(lx, TOKEN_STAR, NULL)) {
+		lexer_if(lx, TOKEN_IDENT, NULL);
+		if (lexer_if(lx, TOKEN_RPAREN, NULL) &&
+		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, tk))
+			peek = 1;
+	}
+	lexer_peek_leave(lx, &s);
+
+	return peek;
 }
 
 static int

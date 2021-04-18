@@ -376,16 +376,17 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 		if (iscast(es)) {
 			ex = expr_alloc(EXPR_CAST, es);
 			if (lexer_back(es->es_lx, &tk))
-				ex->ex_tokens[0] = tk;
-			if (lexer_peek(es->es_lx, &tk))
-				ex->ex_beg = tk;
-			if (lexer_until(es->es_lx, TOKEN_RPAREN, &tk)) {
-				ex->ex_tokens[1] = tk;
-				ex->ex_end = TAILQ_PREV(tk, token_list,
-				    tk_entry);
-			}
-			ex->ex_lhs = expr_exec1(es, PC0);
+				ex->ex_tokens[0] = tk;	/* ( */
+			/* Let the parser emit the type. */
+			ex->ex_lhs = expr_exec_recover(es);
 			if (ex->ex_lhs == NULL) {
+				expr_free(ex);
+				return NULL;
+			}
+			if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
+				ex->ex_tokens[1] = tk;	/* ) */
+			ex->ex_rhs = expr_exec1(es, PC0);
+			if (ex->ex_rhs == NULL) {
 				expr_free(ex);
 				return NULL;
 			}
@@ -682,9 +683,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 	case EXPR_CAST:
 		doc_token(ex->ex_tokens[0], concat);	/* ( */
-		expr_doc_tokens(ex, concat);
-		doc_token(ex->ex_tokens[1], concat);	/* ) */
 		expr_doc(ex->ex_lhs, es, concat);
+		doc_token(ex->ex_tokens[1], concat);	/* ) */
+		expr_doc(ex->ex_rhs, es, concat);
 		break;
 
 	case EXPR_SIZEOF:
@@ -831,12 +832,16 @@ static int
 iscast(struct expr_state *es)
 {
 	struct lexer_state s;
+	struct token *end;
 	int cast = 0;
 
 	lexer_peek_enter(es->es_lx, &s);
-	if (lexer_peek_type(es->es_lx, NULL, 1) &&
-	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) && expr_peek(es->es_ea, 1))
-		cast = 1;
+	if (lexer_peek_type(es->es_lx, &end, 1)) {
+		lexer_seek(es->es_lx, end);
+		if (lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
+		    expr_peek(es->es_ea, 1))
+			cast = 1;
+	}
 	lexer_peek_leave(es->es_lx, &s);
 
 	return cast;
