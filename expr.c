@@ -440,19 +440,10 @@ expr_exec_sizeof(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 		ex->ex_sizeof = 1;
 	}
 
-	if (expr_peek(es->es_ea, 0)) {
-		ex->ex_lhs = expr_exec1(es, PC0);
-	} else {
-		if (lexer_peek(es->es_lx, &tk))
-			ex->ex_beg = tk;
-		if (lexer_peek_type(es->es_lx, &ex->ex_end, 0)) {
-			for (;;) {
-				if (!lexer_pop(es->es_lx, &tk))
-					break;
-				if (tk == ex->ex_end)
-					break;
-			}
-		}
+	ex->ex_lhs = expr_exec1(es, PC0);
+	if (ex->ex_lhs == NULL) {
+		expr_free(ex);
+		return NULL;
 	}
 
 	if (ex->ex_sizeof && lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))

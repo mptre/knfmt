@@ -117,9 +117,9 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("x * y", "((x) * (y))");
 	error |= test_expr_exec("x & y", "((x) & (y))");
 	error |= test_expr_exec("sizeof x", "(sizeof (x))");
-	error |= test_expr_exec("sizeof char", "(sizeof char)");
-	error |= test_expr_exec("sizeof char *", "(sizeof char *)");
-	error |= test_expr_exec("sizeof struct s", "(sizeof struct s)");
+	error |= test_expr_exec("sizeof char", "(sizeof (char))");
+	error |= test_expr_exec("sizeof char *", "(sizeof (char *))");
+	error |= test_expr_exec("sizeof struct s", "(sizeof (struct s))");
 	error |= test_expr_exec("sizeof(x)", "(sizeof((x)))");
 	error |= test_expr_exec("sizeof(*x)", "(sizeof((*(x))))");
 	error |= test_expr_exec("(x)", "((x))");
@@ -189,8 +189,10 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 {
 	struct expr_arg ea = {
 		.ea_cf		= &cf,
+		.ea_lx		= NULL,
+		.ea_dc		= NULL,
 		.ea_stop	= NULL,
-		.ea_recover	= NULL,
+		.ea_recover	= parser_exec_expr_recover,
 		.ea_arg		= NULL,
 	};
 	struct parser_stub ps;
@@ -203,6 +205,7 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 	group = doc_alloc(DOC_GROUP, NULL);
 	ea.ea_lx = ps.ps_lx;
 	ea.ea_dc = doc_alloc(DOC_CONCAT, group);
+	ea.ea_arg = ps.ps_pr;
 	if (expr_exec(&ea) == NULL) {
 		warnx("%s:%d: expr_exec() failure", fun, lno);
 		error = 1;

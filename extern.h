@@ -151,6 +151,7 @@ int	__lexer_until(struct lexer *, enum token_type, const struct token *,
 struct parser		*parser_alloc(const char *, const struct config *);
 void			 parser_free(struct parser *);
 const struct buffer	*parser_exec(struct parser *);
+struct doc		*parser_exec_expr_recover(void *);
 
 struct lexer	*parser_get_lexer(struct parser *);
 

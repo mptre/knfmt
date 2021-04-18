@@ -71,8 +71,6 @@ static int	parser_exec_type(struct parser *, struct doc *, struct token *,
 static int	parser_exec_attributes(struct parser *, struct doc *,
     unsigned int, enum doc_type);
 
-static struct doc	*parser_exec_expr_recover(void *);
-
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 
 static unsigned int	parser_width(struct parser *, const struct doc *);
@@ -156,6 +154,72 @@ parser_exec(struct parser *pr)
 
 	doc_exec(pr->pr_dc, pr->pr_bf, pr->pr_cf);
 	return pr->pr_bf;
+}
+
+/*
+ * Callback routine invoked by expression parser while encountering an invalid
+ * expression. This can happen while encountering one of the following
+ * constructs:
+ *
+ * 	type argument, i.e. sizeof
+ * 	binary operator used as an argument, i.e. timercmp(3)
+ * 	cast expression followed by brace initializer
+ */
+struct doc *
+parser_exec_expr_recover(void *arg)
+{
+	struct doc *dc = NULL;
+	struct parser *pr = arg;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
+		struct token *pv;
+
+		pv = TAILQ_PREV(tk, token_list, tk_entry);
+		if (pv != NULL &&
+		    (pv->tk_type == TOKEN_LPAREN ||
+		     pv->tk_type == TOKEN_COMMA)) {
+			dc = doc_alloc(DOC_CONCAT, NULL);
+			doc_token(tk, dc);
+		}
+	} else if (lexer_peek_type(lx, &tk, 0)) {
+		struct token *nx, *pv;
+
+		if (!lexer_peek(lx, &pv))
+			return NULL;
+		pv = TAILQ_PREV(pv, token_list, tk_entry);
+		nx = TAILQ_NEXT(tk, tk_entry);
+		if (pv == NULL || nx == NULL)
+			return NULL;
+		if ((pv->tk_type == TOKEN_LPAREN ||
+			    pv->tk_type == TOKEN_COMMA ||
+			    pv->tk_type == TOKEN_SIZEOF) &&
+		    (nx->tk_type == TOKEN_RPAREN ||
+		     nx->tk_type == TOKEN_COMMA || nx->tk_type == TOKEN_EOF)) {
+			dc = doc_alloc(DOC_CONCAT, NULL);
+			if (parser_exec_type(pr, dc, tk, NULL)) {
+				doc_free(dc);
+				return NULL;
+			}
+		}
+	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+		struct doc *indent;
+
+		/*
+		 * Since the document will be appended inside an expression
+		 * document, compensate for indentation added by
+		 * parser_exec_expr().
+		 */
+		dc = doc_alloc(DOC_GROUP, NULL);
+		indent = doc_alloc_indent(-pr->pr_cf->cf_sw, dc);
+		if (parser_exec_decl_braces(pr, indent)) {
+			doc_free(dc);
+			return NULL;
+		}
+	}
+
+	return dc;
 }
 
 static int
@@ -1476,72 +1540,6 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, unsigned int indent,
 			doc_token(tk, concat);
 	}
 	return PARSER_OK;
-}
-
-/*
- * Callback routine invoked by expression parser while encountering an invalid
- * expression. This can happen while encountering one of the following
- * constructs:
- *
- * 	type argument, i.e. sizeof
- * 	binary operator used as an argument, i.e. timercmp(3)
- * 	cast expression followed by brace initializer
- */
-static struct doc *
-parser_exec_expr_recover(void *arg)
-{
-	struct doc *dc = NULL;
-	struct parser *pr = arg;
-	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
-
-	if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
-		struct token *pv;
-
-		pv = TAILQ_PREV(tk, token_list, tk_entry);
-		if (pv != NULL &&
-		    (pv->tk_type == TOKEN_LPAREN ||
-		     pv->tk_type == TOKEN_COMMA)) {
-			dc = doc_alloc(DOC_CONCAT, NULL);
-			doc_token(tk, dc);
-		}
-	} else if (lexer_peek_type(lx, &tk, 0)) {
-		struct token *nx, *pv;
-
-		if (!lexer_peek(lx, &pv))
-			return NULL;
-		pv = TAILQ_PREV(pv, token_list, tk_entry);
-		nx = TAILQ_NEXT(tk, tk_entry);
-		if (pv == NULL || nx == NULL)
-			return NULL;
-		if ((pv->tk_type == TOKEN_LPAREN ||
-			    pv->tk_type == TOKEN_COMMA ||
-			    pv->tk_type == TOKEN_SIZEOF) &&
-		    (nx->tk_type == TOKEN_RPAREN ||
-		     nx->tk_type == TOKEN_COMMA)) {
-			dc = doc_alloc(DOC_CONCAT, NULL);
-			if (parser_exec_type(pr, dc, tk, NULL)) {
-				doc_free(dc);
-				return NULL;
-			}
-		}
-	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		struct doc *indent;
-
-		/*
-		 * Since the document will be appended inside an expression
-		 * document, compensate for indentation added by
-		 * parser_exec_expr().
-		 */
-		dc = doc_alloc(DOC_GROUP, NULL);
-		indent = doc_alloc_indent(-pr->pr_cf->cf_sw, dc);
-		if (parser_exec_decl_braces(pr, indent)) {
-			doc_free(dc);
-			return NULL;
-		}
-	}
-
-	return dc;
 }
 
 /*
