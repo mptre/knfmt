@@ -82,6 +82,7 @@ X(TOKEN_SEMI,			";",	0)
 X(TOKEN_EQUAL,			"=",	F(AMBIGUOUS) | F(ASSIGN))
 X(TOKEN_EQUALEQUAL,		"==",	F(BINARY))
 X(TOKEN_COMMA,			",",	0)
+X(TOKEN_BACKSLASH,		"\\",	F(DISCARD))
 
 /* sentinels */
 X(TOKEN_COMMENT,	"",	0)

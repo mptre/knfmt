@@ -807,10 +807,15 @@ lexer_read(struct lexer *lx, struct token **tk)
 			break;
 	}
 
-	lexer_eat_space(lx, 1, 0);
-
-	if ((*tk = lexer_keyword(lx)) != NULL)
+	/* Look for keywords but ignore discarded ones. */
+	for (;;) {
+		lexer_eat_space(lx, 1, 0);
+		if ((*tk = lexer_keyword(lx)) == NULL)
+			break;
+		if ((*tk)->tk_flags & TOKEN_FLAG_DISCARD)
+			continue;
 		goto out;
+	}
 
 	st = lx->lx_st;
 	if (lexer_getc(lx, &ch))
@@ -991,6 +996,8 @@ lexer_keyword(struct lexer *lx)
 		lx->lx_st = st;
 		return NULL;
 	}
+	if (tk->tk_flags & TOKEN_FLAG_DISCARD)
+		return tk;
 
 	return lexer_emit(lx, &st, tk);
 }
