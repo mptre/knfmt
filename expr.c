@@ -232,7 +232,7 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 
 	if (lexer_get_error(es->es_lx) ||
 	    (lexer_back(es->es_lx, &tk) && tk == es->es_stop) ||
-	     (!lexer_peek(es->es_lx, &es->es_tk) || es->es_tk == es->es_stop))
+	    (!lexer_peek(es->es_lx, &es->es_tk) || es->es_tk == es->es_stop))
 		return NULL;
 
 	/* Only consider unary operators. */

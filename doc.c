@@ -518,7 +518,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 
 	if (doc_parens(st)) {
 		/* Align with the left parenthesis on the previous line. */
-		indent = st->st_indent.i_pre + 1;
+		indent = st->st_indent.i_pre + (st->st_parens - 1);
 		parens = 1;
 	} else {
 		st->st_indent.i_pre = indent;
