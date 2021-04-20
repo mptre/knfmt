@@ -242,7 +242,7 @@ __test_lexer_peek_type(const char *src, const char *exp, const char *fun,
 
 	parser_stub_create(&ps, src);
 
-	if (!lexer_peek_type(ps.ps_lx, &end, 0)) {
+	if (!lexer_peek_type(ps.ps_lx, &end)) {
 		warnx("%s:%d: lexer_peek_type() failure", fun, lno);
 		error = 1;
 		goto out;

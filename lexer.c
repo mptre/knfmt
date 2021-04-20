@@ -320,12 +320,6 @@ lexer_back(const struct lexer *lx, struct token **tk)
 	return 1;
 }
 
-void
-lexer_seek(struct lexer *lx, struct token *tk)
-{
-	lx->lx_st.st_tok = tk;
-}
-
 int
 __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
     const char *fun, int lno)
@@ -385,7 +379,7 @@ lexer_peek(struct lexer *lx, struct token **tk)
  * Returns non-zero if the next token(s) denotes a type.
  */
 int
-lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
+lexer_peek_type(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state s;
 	struct token *beg, *t;
@@ -395,8 +389,8 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 
 	if (!lexer_peek(lx, &beg))
 		return 0;
-	if (!ispeek)
-		lexer_peek_enter(lx, &s);
+
+	lexer_peek_enter(lx, &s);
 	for (;;) {
 		unsigned int flags = TOKEN_FLAG_TYPE | TOKEN_FLAG_QUALIFIER |
 		    TOKEN_FLAG_STORAGE;
@@ -481,8 +475,7 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 
 		ntokens++;
 	}
-	if (!ispeek)
-		lexer_peek_leave(lx, &s);
+	lexer_peek_leave(lx, &s);
 
 	if (ntokens == 1 &&
 	    (beg->tk_flags & (TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE))) {
@@ -499,6 +492,19 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 	if (peek && tk != NULL)
 		*tk = t;
 	return peek;
+}
+
+int
+lexer_if_type(struct lexer *lx, struct token **tk)
+{
+	struct token *t;
+
+	if (!lexer_peek_type(lx, &t))
+		return 0;
+	lx->lx_st.st_tok = t;
+	if (tk != NULL)
+		*tk = t;
+	return 1;
 }
 
 /*
