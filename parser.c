@@ -1257,7 +1257,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		int peek = 0;
 
 		lexer_peek_enter(lx, &s);
-		if (expr_peek(&ea, 1) && lexer_peek_if(lx, TOKEN_SEMI, NULL))
+		if (expr_peek(&ea) && lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			peek = 1;
 		lexer_peek_leave(lx, &s);
 

@@ -178,7 +178,7 @@ struct expr_arg {
 };
 
 struct doc	*expr_exec(const struct expr_arg *);
-int		 expr_peek(const struct expr_arg *, int);
+int		 expr_peek(const struct expr_arg *);
 
 /*
  * doc -------------------------------------------------------------------------

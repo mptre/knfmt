@@ -202,21 +202,16 @@ expr_exec(const struct expr_arg *ea)
 }
 
 int
-expr_peek(const struct expr_arg *ea, int ispeek)
+expr_peek(const struct expr_arg *ea)
 {
 	struct expr_state es;
-	struct lexer_state s;
 	struct expr *ex;
 	int peek = 0;
 	int error;
 
 	expr_state_init(&es, ea);
-	if (!ispeek)
-		lexer_peek_enter(es.es_lx, &s);
 	ex = expr_exec1(&es, PC0);
 	error = lexer_get_error(es.es_lx);
-	if (!ispeek)
-		lexer_peek_leave(es.es_lx, &s);
 	if (ex != NULL && error == 0)
 		peek = 1;
 	expr_free(ex);
@@ -839,7 +834,7 @@ iscast(struct expr_state *es)
 	if (lexer_peek_type(es->es_lx, &end, 1)) {
 		lexer_seek(es->es_lx, end);
 		if (lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
-		    expr_peek(es->es_ea, 1))
+		    expr_peek(es->es_ea))
 			cast = 1;
 	}
 	lexer_peek_leave(es->es_lx, &s);
