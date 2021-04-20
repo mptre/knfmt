@@ -942,10 +942,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc,
 	/* Put the argument identifier in its own group to trigger a refit. */
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
 
-	/*
-	 * Put a line between the type and argument identifier unless it's a
-	 * pointer or an unnamed argument.
-	 */
+	/* Put a line between the type and identifier when wanted. */
 	if (end != NULL && end->tk_type != TOKEN_STAR &&
 	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL) &&

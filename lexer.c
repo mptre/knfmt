@@ -441,9 +441,8 @@ lexer_peek_type(struct lexer *lx, struct token **tk, int ispeek)
 			}
 
 			/*
-			 * Preprocessor macros can be intertwined with a type,
-			 * such macros are recognized as an identifier by the
-			 * lexer.
+			 * Ensure this is not an identifier which is not part of
+			 * the type.
 			 */
 			ident = 1;
 			lexer_peek_enter(lx, &ss);
