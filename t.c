@@ -24,7 +24,8 @@ static int	__test_lexer_peek_if_type(const char *, const char *,
 	__test_lexer_read((a), (b), "test_lexer_read",			\
 		__LINE__);						\
 	if (xflag && error) goto out
-static int	__test_lexer_read(const char *, const char *, const char *, int);
+static int	__test_lexer_read(const char *, const char *, const char *,
+    int);
 
 struct parser_stub {
 	char		 ps_path[PATH_MAX];
