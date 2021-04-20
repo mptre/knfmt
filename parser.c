@@ -182,7 +182,7 @@ parser_exec_expr_recover(void *arg)
 			dc = doc_alloc(DOC_CONCAT, NULL);
 			doc_token(tk, dc);
 		}
-	} else if (lexer_peek_type(lx, &tk)) {
+	} else if (lexer_peek_if_type(lx, &tk)) {
 		struct token *nx, *pv;
 
 		if (!lexer_peek(lx, &pv))
@@ -267,7 +267,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (!lexer_peek(lx, &beg))
 		return PARSER_NOTHING;
 
-	if (!lexer_peek_type(lx, &end)) {
+	if (!lexer_peek_if_type(lx, &end)) {
 		/* No type found, this declaration could make use of cpp. */
 		return parser_exec_decl_cpp(pr, dc, rl);
 	}
@@ -935,7 +935,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc,
 	doc_alloc(DOC_SOFTLINE, concat);
 
 	/* A type will missing when emitting the final right parenthesis. */
-	if (lexer_peek_type(lx, &end) &&
+	if (lexer_peek_if_type(lx, &end) &&
 	    parser_exec_type(pr, concat, end, NULL) == PARSER_NOTHING)
 		return parser_error(pr);
 
@@ -1239,7 +1239,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	 * parser_exec_decl() being able to detect declarations making use of
 	 * preprocessor directives such as the ones provided by queue(3).
 	 */
-	if (!lexer_peek_type(lx, NULL) &&
+	if (!lexer_peek_if_type(lx, NULL) &&
 	    lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &tk)) {
 		struct expr_arg ea = {
 			.ea_cf		= pr->pr_cf,

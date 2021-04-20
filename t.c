@@ -13,11 +13,11 @@
 	if (xflag && error) goto out
 static int	__test_expr_exec(const char *, const char *, const char *, int);
 
-#define test_lexer_peek_type(a, b)					\
-	__test_lexer_peek_type((a), (b), "test_lexer_peek_type",	\
+#define test_lexer_peek_if_type(a, b)					\
+	__test_lexer_peek_if_type((a), (b), "test_lexer_peek_if_type",	\
 		__LINE__);						\
 	if (xflag && error) goto out
-static int	__test_lexer_peek_type(const char *, const char *,
+static int	__test_lexer_peek_if_type(const char *, const char *,
     const char *, int);
 
 #define test_lexer_read(a, b)						\
@@ -129,45 +129,45 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("x->y", "((x)->(y))");
 	error |= test_expr_exec("x.y", "((x).(y))");
 
-	error |= test_lexer_peek_type("void", "void");
-	error |= test_lexer_peek_type("void *", "void *");
-	error |= test_lexer_peek_type("void *p", "void *");
-	error |= test_lexer_peek_type("size_t", "size_t");
-	error |= test_lexer_peek_type("size_t)", "size_t");
-	error |= test_lexer_peek_type("size_t s)", "size_t");
-	error |= test_lexer_peek_type("size_t *", "size_t *");
-	error |= test_lexer_peek_type("size_t *p", "size_t *");
-	error |= test_lexer_peek_type("void main(int)", "void");
-	error |= test_lexer_peek_type("void main(int);", "void");
-	error |= test_lexer_peek_type("static foo void", "static foo void");
-	error |= test_lexer_peek_type("static void foo", "static void foo");
-	error |= test_lexer_peek_type("static inline foo(", "static inline");
-	error |= test_lexer_peek_type("void foo f(void)", "void foo");
-	error |= test_lexer_peek_type("char[]", "char");
-	error |= test_lexer_peek_type("void)", "void");
-	error |= test_lexer_peek_type("void,", "void");
-	error |= test_lexer_peek_type("struct {,", "struct");
-	error |= test_lexer_peek_type("struct s,", "struct s");
-	error |= test_lexer_peek_type("struct s {,", "struct s");
-	error |= test_lexer_peek_type("struct s *,", "struct s *");
-	error |= test_lexer_peek_type("struct s **,", "struct s * *");
-	error |= test_lexer_peek_type("struct s ***,", "struct s * * *");
-	error |= test_lexer_peek_type("union {,", "union");
-	error |= test_lexer_peek_type("union u,", "union u");
-	error |= test_lexer_peek_type("union u {,", "union u");
-	error |= test_lexer_peek_type("const* char*", "const * char *");
-	error |= test_lexer_peek_type("char x[]", "char");
-	error |= test_lexer_peek_type("va_list ap;", "va_list");
-	error |= test_lexer_peek_type("struct s *M(v)", "struct s *");
-	error |= test_lexer_peek_type("const struct filterops *const sysfilt_ops[]",
+	error |= test_lexer_peek_if_type("void", "void");
+	error |= test_lexer_peek_if_type("void *", "void *");
+	error |= test_lexer_peek_if_type("void *p", "void *");
+	error |= test_lexer_peek_if_type("size_t", "size_t");
+	error |= test_lexer_peek_if_type("size_t)", "size_t");
+	error |= test_lexer_peek_if_type("size_t s)", "size_t");
+	error |= test_lexer_peek_if_type("size_t *", "size_t *");
+	error |= test_lexer_peek_if_type("size_t *p", "size_t *");
+	error |= test_lexer_peek_if_type("void main(int)", "void");
+	error |= test_lexer_peek_if_type("void main(int);", "void");
+	error |= test_lexer_peek_if_type("static foo void", "static foo void");
+	error |= test_lexer_peek_if_type("static void foo", "static void foo");
+	error |= test_lexer_peek_if_type("static inline foo(", "static inline");
+	error |= test_lexer_peek_if_type("void foo f(void)", "void foo");
+	error |= test_lexer_peek_if_type("char[]", "char");
+	error |= test_lexer_peek_if_type("void)", "void");
+	error |= test_lexer_peek_if_type("void,", "void");
+	error |= test_lexer_peek_if_type("struct {,", "struct");
+	error |= test_lexer_peek_if_type("struct s,", "struct s");
+	error |= test_lexer_peek_if_type("struct s {,", "struct s");
+	error |= test_lexer_peek_if_type("struct s *,", "struct s *");
+	error |= test_lexer_peek_if_type("struct s **,", "struct s * *");
+	error |= test_lexer_peek_if_type("struct s ***,", "struct s * * *");
+	error |= test_lexer_peek_if_type("union {,", "union");
+	error |= test_lexer_peek_if_type("union u,", "union u");
+	error |= test_lexer_peek_if_type("union u {,", "union u");
+	error |= test_lexer_peek_if_type("const* char*", "const * char *");
+	error |= test_lexer_peek_if_type("char x[]", "char");
+	error |= test_lexer_peek_if_type("va_list ap;", "va_list");
+	error |= test_lexer_peek_if_type("struct s *M(v)", "struct s *");
+	error |= test_lexer_peek_if_type("const struct filterops *const sysfilt_ops[]",
 	    "const struct filterops * const");
-	error |= test_lexer_peek_type("long __guard_local __attribute__",
+	error |= test_lexer_peek_if_type("long __guard_local __attribute__",
 	    "long");
-	error |= test_lexer_peek_type("unsigned int f:1", "unsigned int");
-	error |= test_lexer_peek_type("usbd_status (*v)(void)",
+	error |= test_lexer_peek_if_type("unsigned int f:1", "unsigned int");
+	error |= test_lexer_peek_if_type("usbd_status (*v)(void)",
 	    "usbd_status ( * v ) ( void )");
-	error |= test_lexer_peek_type("register char", "register char");
-	error |= test_lexer_peek_type("...", "...");
+	error |= test_lexer_peek_if_type("register char", "register char");
+	error |= test_lexer_peek_if_type("...", "...");
 
 	error |= test_lexer_read("<", "LESS<1:1>(\"<\")");
 	error |= test_lexer_read("<x", "LESS<1:1>(\"<\") IDENT<1:2>(\"x\")");
@@ -230,7 +230,7 @@ out:
 }
 
 static int
-__test_lexer_peek_type(const char *src, const char *exp, const char *fun,
+__test_lexer_peek_if_type(const char *src, const char *exp, const char *fun,
     int lno)
 {
 	struct parser_stub ps;
@@ -242,8 +242,8 @@ __test_lexer_peek_type(const char *src, const char *exp, const char *fun,
 
 	parser_stub_create(&ps, src);
 
-	if (!lexer_peek_type(ps.ps_lx, &end)) {
-		warnx("%s:%d: lexer_peek_type() failure", fun, lno);
+	if (!lexer_peek_if_type(ps.ps_lx, &end)) {
+		warnx("%s:%d: lexer_peek_if_type() failure", fun, lno);
 		error = 1;
 		goto out;
 	}
