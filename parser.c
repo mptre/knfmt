@@ -1538,7 +1538,7 @@ parser_peek_func(struct parser *pr, struct token **type)
 		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;
 		else if (lexer_peek_type(lx, NULL, 1))
-			peek = PARSER_PEEK_FUNCIMPL;
+			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 	lexer_peek_leave(lx, &s);
 
