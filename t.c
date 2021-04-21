@@ -144,7 +144,9 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("static void foo", "static void foo");
 	error |= test_lexer_peek_if_type("static inline foo(", "static inline");
 	error |= test_lexer_peek_if_type("void foo f(void)", "void foo");
-	error |= test_lexer_peek_if_type("char[]", "char");
+	error |= test_lexer_peek_if_type("char[]", "char [ ]");
+	error |= test_lexer_peek_if_type("struct wsmouse_param[]",
+	    "struct wsmouse_param [ ]");
 	error |= test_lexer_peek_if_type("void)", "void");
 	error |= test_lexer_peek_if_type("void,", "void");
 	error |= test_lexer_peek_if_type("struct {,", "struct");
