@@ -45,6 +45,12 @@ struct doc_state {
 	} st_mode;
 
 	struct {
+		int		f_fits;
+		unsigned int	f_pos;
+		unsigned int	f_ppos;
+	} st_fits;
+
+	struct {
 		int	i_cur;
 		int	i_pre;
 		size_t	i_pos;
@@ -52,6 +58,7 @@ struct doc_state {
 
 	struct {
 		unsigned int	s_nfits;
+		unsigned int	s_nfits_cache;
 	} st_stats;
 
 	unsigned int	st_pos;
@@ -113,10 +120,12 @@ doc_exec(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_cf = cf;
 	st.st_bf = bf;
 	st.st_mode = BREAK;
+	st.st_fits.f_fits = -1;
 	doc_exec1(dc, &st);
 	buffer_appendc(bf, '\0');
 
-	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
+	doc_trace(dc, &st, "%s: nfits %u/%u", __func__,
+	    st.st_stats.s_nfits_cache, st.st_stats.s_nfits);
 }
 
 unsigned int
@@ -129,6 +138,7 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_cf = cf;
 	st.st_bf = bf;
 	st.st_mode = MUNGE;
+	st.st_fits.f_fits = -1;
 	st.st_flags = DOC_STATE_FLAG_WIDTH;
 	doc_exec1(dc, &st);
 
@@ -280,7 +290,19 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_CONCAT:
 	case DOC_NOLINE: {
 		struct doc *concat;
+		int ndocs = 0;
 		int noline = dc->dc_type == DOC_NOLINE;
+
+		/*
+		 * If the document has more than one child the cache must be
+		 * invalidated since it spans over all children.
+		 */
+		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
+			if (++ndocs > 1)
+				break;
+		}
+		if (ndocs > 1)
+			st->st_fits.f_fits = -1;
 
 		if (noline)
 			st->st_noline++;
@@ -441,20 +463,30 @@ static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
 	struct doc_state sst;
-	int fits;
+	int cached = 0;
 
 	if (DOC_TRACE(st))
 		st->st_stats.s_nfits++;
 
-	memcpy(&sst, st, sizeof(sst));
-	/* Should not perform any printing. */
-	sst.st_bf = NULL;
-	// XXX we always want to fit in MUNGE mode? If so, remove conditionals in doc_fits1()
-	sst.st_mode = MUNGE;
-	fits = doc_fits1(dc, &sst);
-	doc_trace(dc, st, "%s: %u %s %u", __func__, sst.st_pos,
-	    fits ? "<=" : ">", st->st_cf->cf_mw);
-	return fits;
+	if (st->st_fits.f_fits == -1 || st->st_fits.f_pos != st->st_pos) {
+		memcpy(&sst, st, sizeof(sst));
+		/* Should not perform any printing. */
+		sst.st_bf = NULL;
+		// XXX we always want to fit in MUNGE mode? If so, remove conditionals in doc_fits1()
+		sst.st_mode = MUNGE;
+		st->st_fits.f_fits = doc_fits1(dc, &sst);
+		st->st_fits.f_pos = st->st_pos;
+		st->st_fits.f_ppos = sst.st_pos;
+	} else {
+		if (DOC_TRACE(st))
+			st->st_stats.s_nfits_cache++;
+		cached = 1;
+	}
+	doc_trace(dc, st, "%s: %u %s %u%s", __func__, st->st_fits.f_ppos,
+	    st->st_fits.f_fits ? "<=" : ">", st->st_cf->cf_mw,
+	    cached ? " (cached)" : "");
+
+	return st->st_fits.f_fits;
 }
 
 static int
