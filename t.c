@@ -171,6 +171,8 @@ main(int argc, char *argv[])
 	    "usbd_status ( * v ) ( void )");
 	error |= test_lexer_peek_if_type("register char", "register char");
 	error |= test_lexer_peek_if_type("...", "...");
+	error |= test_lexer_peek_if_type("int (*f[])(void)",
+	    "int ( * f [ ] ) ( void )");
 
 	error |= test_lexer_read("<", "LESS<1:1>(\"<\")");
 	error |= test_lexer_read("<x", "LESS<1:1>(\"<\") IDENT<1:2>(\"x\")");
