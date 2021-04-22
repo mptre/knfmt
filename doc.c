@@ -259,9 +259,9 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 
 	/*
 	 * If the token has dangling tokens, a parent is mandatory as we're
-	 * about to append more than token.
+	 * about to append more than one token.
 	 */
-	if (dc == NULL && token_is_dangling(tk)) {
+	if (dc == NULL && token_has_dangling(tk)) {
 		dangling = 1;
 		dc = doc_alloc(DOC_CONCAT, NULL);
 	}

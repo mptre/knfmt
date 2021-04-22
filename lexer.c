@@ -118,9 +118,24 @@ token_cmp(const struct token *t1, const struct token *t2)
  * Returns non-zero if the given token has dangling tokens.
  */
 int
-token_is_dangling(const struct token *tk)
+token_has_dangling(const struct token *tk)
 {
 	return !TAILQ_EMPTY(&tk->tk_prefixes) || !TAILQ_EMPTY(&tk->tk_suffixes);
+}
+
+/*
+ * Returns non-zero if the given token has a trailing hard line.
+ */
+int
+token_has_line(const struct token *tk)
+{
+	const struct token *tmp;
+
+	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
+		if (tmp->tk_type == TOKEN_SPACE)
+			return 1;
+	}
+	return 0;
 }
 
 /*
@@ -141,21 +156,6 @@ token_is_decl(const struct token *tk, enum token_type type)
 	if (tk == NULL)
 		return 0;
 	return tk->tk_type == type;
-}
-
-/*
- * Returns non-zero if the given token has a trailing hard line.
- */
-int
-token_has_line(const struct token *tk)
-{
-	const struct token *tmp;
-
-	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
-		if (tmp->tk_type == TOKEN_SPACE)
-			return 1;
-	}
-	return 0;
 }
 
 char *
