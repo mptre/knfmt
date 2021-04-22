@@ -4,7 +4,7 @@ DESIGN
 I've always wanted a tool capable of formatting source code according to
 style(9) from OpenBSD. It shouldn't require one to fiddle with a bunch of knobs
 nor supply needed include path(s) in order to do get the desired formatting.
-There are other tools out there but they didn't manage to satisfy my criterias,
+There are other tools out there but they didn't manage to satisfy my criteria,
 i.e. not invented here.
 
 Another motivation for knfmt was the discovery of a paper entitled "A prettier
@@ -48,14 +48,14 @@ The parser recognizes the list of tokens emitted by the lexer according to the C
 grammar, in a recursive descent fashion. The parser is also responsible for
 constructing the document which represents the formatted source code. Parsing is
 therefore not implemented as a distinct step of the execution. It might be
-benefinal to separate the two at some point by letting the parser only be
+beneficial to separate the two at some point by letting the parser only be
 concerned with creation of an AST like structure.
 
 expr.c
 ======
 
-The expr parser is implemented using the Pratt parsing technique[1], which is a
-well common approach[2][3].
+The expr parser is implemented using the Pratt parsing technique[1], a common
+approach[2][3].
 
 Some expressions which are valid C are not recognized the parser without
 assistance from the parser. One example is sizeof() which can be given a type.
@@ -151,7 +151,7 @@ cpp
 Recall, knfmt does not run the source code through the preprocessor since it
 would require one to supply the required include path(s) which in my opinion
 makes the utility less user friendly. That has one severe downside of not being
-able to distingush preprocessor directives from other well defined language
+able to distinguish preprocessor directives from other well defined language
 constructs.
 
 Usage of preprocessor directives can literally be present anywhere in the source
@@ -160,7 +160,7 @@ tedious. Instead, preprocessor directives are made completely transparent to the
 parser. An emitted token by the lexer will never directly represent a
 preprocessor directive. Instead, a token always represents a well defined
 language construct and can instead have one or many dangling tokens associated
-with it, see tk_suffixes and tk_prefixes. Such dangling tokens can among other
+with it, see tk_prefixes and tk_suffixes. Such dangling tokens can among other
 things represent preprocessor directives. The dangling tokens are emitted by
 doc_token().
 
@@ -186,4 +186,4 @@ comments
 ========
 
 Comments are never emitted directly by lexer but are instead represented as
-dangling tokens, see cpp ahove.
+dangling tokens, see cpp above.
