@@ -72,8 +72,8 @@ static int	doc_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 
 #define doc_trace(dc, st, fmt, ...) do {				\
-	if ((st)->st_cf->cf_verbose >= 2 &&				\
-	    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)		\
+	if (UNLIKELY((st)->st_cf->cf_verbose >= 2 &&			\
+		    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))	\
 		__doc_trace((dc), (st), (fmt), __VA_ARGS__);		\
 } while (0)
 static void	__doc_trace(const struct doc *, const struct doc_state *,
@@ -81,15 +81,15 @@ static void	__doc_trace(const struct doc *, const struct doc_state *,
 	__attribute__((__format__(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
-	if ((st)->st_cf->cf_verbose >= 2 &&				\
-	    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)		\
+	if (UNLIKELY((st)->st_cf->cf_verbose >= 2 &&			\
+		    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))	\
 		__doc_trace_enter((dc), (st));				\
 } while (0)
 static void	__doc_trace_enter(const struct doc *, struct doc_state *);
 
 #define doc_trace_leave(dc, st) do {					\
-	if ((st)->st_cf->cf_verbose >= 2 &&				\
-	    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)		\
+	if (UNLIKELY((st)->st_cf->cf_verbose >= 2 &&			\
+		    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))	\
 		__doc_trace_leave((dc), (st));				\
 } while (0)
 static void	__doc_trace_leave(const struct doc *, struct doc_state *);
