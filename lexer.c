@@ -1278,7 +1278,7 @@ isnum(unsigned char ch, int prefix)
 	if (prefix)
 		return isdigit(ch);
 	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'L' ||
-	    ch == 'x' || ch == 'X' || ch == 'u' || ch == 'U';
+	    ch == 'x' || ch == 'X' || ch == 'u' || ch == 'U' || ch == '.';
 }
 
 static ssize_t
