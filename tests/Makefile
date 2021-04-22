@@ -103,6 +103,7 @@ TESTS+=	valid-092.c
 TESTS+=	valid-093.c
 TESTS+=	valid-094.c
 TESTS+=	valid-095.c
+TESTS+=	valid-096.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c

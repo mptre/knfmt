@@ -617,12 +617,26 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			if (lexer_expect(lx, TOKEN_IDENT, &tk))
 				doc_token(tk, dc);
 		} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
+			doc_token(tk, dc);
+
+			/*
+			 * Only applicable to enum declarations making use of
+			 * preprocessor directives.
+			 */
+			if (lexer_if(lx, TOKEN_LPAREN, &tk)) {
+				doc_token(tk, dc);
+				if (parser_exec_expr(pr, dc, &expr, NULL) ==
+				    PARSER_NOTHING)
+					expr = dc;
+				if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+					doc_token(tk, expr);
+			}
+
 			/*
 			 * Only applicable to enum declarations which are
 			 * allowed to omit any initialization, alignment is not
 			 * desired in such scenario.
 			 */
-			doc_token(tk, dc);
 			if (lexer_peek_if(lx, TOKEN_COMMA, NULL))
 				goto comma;
 		} else {
