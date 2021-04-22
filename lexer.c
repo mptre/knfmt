@@ -53,7 +53,7 @@ static struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
 static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
-static int	lexer_peek_func_ptr(struct lexer *, struct token **);
+static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 
 static int	isnum(unsigned char, int);
 static ssize_t	strncasestr(const char *, size_t, const char *);
@@ -460,7 +460,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk)
 
 			/* Consume the identifier, i.e. preprocessor macro. */
 			lexer_if(lx, TOKEN_IDENT, &t);
-		} else if (lexer_peek_func_ptr(lx, &t)) {
+		} else if (lexer_peek_if_func_ptr(lx, &t)) {
 			struct token *align;
 
 			/*
@@ -1254,7 +1254,7 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 }
 
 static int
-lexer_peek_func_ptr(struct lexer *lx, struct token **tk)
+lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state s;
 	int peek = 0;
@@ -1262,6 +1262,7 @@ lexer_peek_func_ptr(struct lexer *lx, struct token **tk)
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_STAR, NULL)) {
+		lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER, NULL);
 		lexer_if(lx, TOKEN_IDENT, NULL);
 		lexer_if(lx, TOKEN_LSQUARE, NULL);
 		lexer_if(lx, TOKEN_RSQUARE, NULL);
