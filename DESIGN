@@ -118,8 +118,8 @@ The following type of documents are available:
 
 * DOC_VERBATIM
   Verbatim represents parts of the source code taken as is, such as comments and
-  preprocessor directives. These type of documents often carry a trailing new line
-  which requires some special care.
+  preprocessor directives. These type of documents often carry a trailing new
+  line which requires some special care.
 
 * DOC_LINE
   Line emits a new line while in break mode and a space in munge mode.
