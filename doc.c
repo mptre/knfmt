@@ -50,6 +50,10 @@ struct doc_state {
 		size_t	i_pos;
 	} st_indent;
 
+	struct {
+		unsigned int	s_nfits;
+	} st_stats;
+
 	unsigned int	st_pos;
 	unsigned int	st_depth;
 	unsigned int	st_refit;
@@ -61,7 +65,7 @@ struct doc_state {
 };
 
 static void	doc_exec1(const struct doc *, struct doc_state *);
-static int	doc_fits(const struct doc *, const struct doc_state *);
+static int	doc_fits(const struct doc *, struct doc_state *);
 static int	doc_fits1(const struct doc *, struct doc_state *);
 static void	doc_indent(const struct doc *, struct doc_state *, int);
 static void	doc_indent1(const struct doc *, struct doc_state *, int);
@@ -71,9 +75,11 @@ static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 
+#define DOC_TRACE(st)	(UNLIKELY((st)->st_cf->cf_verbose >= 2 &&	\
+	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))
+
 #define doc_trace(dc, st, fmt, ...) do {				\
-	if (UNLIKELY((st)->st_cf->cf_verbose >= 2 &&			\
-		    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))	\
+	if (DOC_TRACE(st))						\
 		__doc_trace((dc), (st), (fmt), __VA_ARGS__);		\
 } while (0)
 static void	__doc_trace(const struct doc *, const struct doc_state *,
@@ -81,15 +87,13 @@ static void	__doc_trace(const struct doc *, const struct doc_state *,
 	__attribute__((__format__(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
-	if (UNLIKELY((st)->st_cf->cf_verbose >= 2 &&			\
-		    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))	\
+	if (DOC_TRACE(st))						\
 		__doc_trace_enter((dc), (st));				\
 } while (0)
 static void	__doc_trace_enter(const struct doc *, struct doc_state *);
 
 #define doc_trace_leave(dc, st) do {					\
-	if (UNLIKELY((st)->st_cf->cf_verbose >= 2 &&			\
-		    ((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))	\
+	if (DOC_TRACE(st))						\
 		__doc_trace_leave((dc), (st));				\
 } while (0)
 static void	__doc_trace_leave(const struct doc *, struct doc_state *);
@@ -111,6 +115,8 @@ doc_exec(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_mode = BREAK;
 	doc_exec1(dc, &st);
 	buffer_appendc(bf, '\0');
+
+	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
 }
 
 unsigned int
@@ -432,10 +438,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 }
 
 static int
-doc_fits(const struct doc *dc, const struct doc_state *st)
+doc_fits(const struct doc *dc, struct doc_state *st)
 {
 	struct doc_state sst;
 	int fits;
+
+	if (DOC_TRACE(st))
+		st->st_stats.s_nfits++;
 
 	memcpy(&sst, st, sizeof(sst));
 	/* Should not perform any printing. */
