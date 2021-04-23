@@ -1465,6 +1465,17 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		if (!lexer_pop(lx, &tk))
 			return parser_error(pr);
 
+		if (tk->tk_flags & TOKEN_FLAG_TYPE_ARGS) {
+			struct doc *indent;
+
+			doc_token(tk, dc);
+			indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
+			while (parser_exec_func_arg(pr, indent, NULL, end) ==
+			    PARSER_OK)
+				continue;
+			break;
+		}
+
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_token(tk, concat);
 
