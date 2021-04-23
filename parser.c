@@ -935,7 +935,8 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 {
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *tk;
+	struct token *end = NULL;
+	struct token *tk;
 
 	/* Consume any left parenthesis before emitting a soft line. */
 	if (lexer_if(lx, TOKEN_LPAREN, &tk))
