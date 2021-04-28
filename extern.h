@@ -76,6 +76,7 @@ struct token {
 #define TOKEN_FLAG_FOREACH	0x00000100u
 #define TOKEN_FLAG_DISCARD	0x00000200u
 #define TOKEN_FLAG_TYPE_ARGS	0x00000400u
+#define TOKEN_FLAG_TYPE_FUNC	0x00000800u
 
 	const char	*tk_str;
 	size_t		 tk_len;

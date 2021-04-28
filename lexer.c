@@ -1264,6 +1264,9 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_STAR, NULL)) {
+		while (lexer_if(lx, TOKEN_STAR, NULL))
+			continue;
+
 		lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER, NULL);
 		lexer_if(lx, TOKEN_IDENT, NULL);
 		lexer_if(lx, TOKEN_LSQUARE, NULL);

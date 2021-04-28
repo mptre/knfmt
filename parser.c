@@ -28,6 +28,14 @@ struct parser {
 	unsigned int		 pr_dowhile;
 };
 
+struct parser_exec_func_proto_arg {
+	struct doc		*pa_dc;
+	struct ruler		*pa_rl;
+	const struct token	*pa_type;
+	enum doc_type		 pa_line;
+	struct doc		*pa_out;
+};
+
 static int	parser_exec_decl(struct parser *, struct doc *, int);
 static int	parser_exec_decl1(struct parser *, struct doc *,
     struct ruler *);
@@ -51,8 +59,8 @@ static int	parser_exec_expr(struct parser *, struct doc *, struct doc **,
 static int	parser_exec_func_decl(struct parser *, struct doc *,
     struct ruler *, const struct token *);
 static int	parser_exec_func_impl(struct parser *, struct doc *);
-static int	parser_exec_func_proto(struct parser *, struct doc *,
-    struct doc **, enum doc_type);
+static int	parser_exec_func_proto(struct parser *,
+    struct parser_exec_func_proto_arg *);
 static int	parser_exec_func_arg(struct parser *, struct doc *,
     struct doc **, const struct token *);
 
@@ -834,18 +842,21 @@ static int
 parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *type)
 {
-	struct doc *noline, *proto;
+	struct parser_exec_func_proto_arg pa = {
+		.pa_dc		= dc,
+		.pa_rl		= rl,
+		.pa_type	= type,
+		.pa_line	= DOC_SOFTLINE,
+	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	noline = doc_alloc(DOC_NOLINE, dc);
-	if (parser_exec_type(pr, noline, type, rl) ||
-	    parser_exec_func_proto(pr, noline, &proto, DOC_SOFTLINE))
+	if (parser_exec_func_proto(pr, &pa))
 		return parser_error(pr);
 
 	if (!lexer_if(lx, TOKEN_SEMI, &tk))
 		return parser_error(pr);
-	doc_token(tk, proto);
+	doc_token(tk, pa.pa_out);
 
 	return PARSER_OK;
 }
@@ -856,17 +867,20 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 static int
 parser_exec_func_impl(struct parser *pr, struct doc *dc)
 {
-	struct doc *noline;
+	struct parser_exec_func_proto_arg pa = {
+		.pa_dc		= dc,
+		.pa_rl		= NULL,
+		.pa_type	= NULL,
+		.pa_line	= DOC_HARDLINE,
+	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *type;
 
 	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
 		return PARSER_NOTHING;
+	pa.pa_type = type;
 
-	noline = doc_alloc(DOC_NOLINE, dc);
-	if (parser_exec_type(pr, noline, type, NULL))
-		return parser_error(pr);
-	if (parser_exec_func_proto(pr, noline, NULL, DOC_HARDLINE))
+	if (parser_exec_func_proto(pr, &pa))
 		return parser_error(pr);
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL))
 		return parser_error(pr);
@@ -881,46 +895,69 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 }
 
 /*
- * Parse a function prototype, i.e. identifier, arguments and optional attributes.
- * The caller is expected to already have parsed the return type. Returns zero
- * if one was found.
+ * Parse a function prototype, i.e. return type, identifier, arguments and
+ * optional attributes. The caller is expected to already have parsed the
+ * return type. Returns zero if one was found.
  */
 static int
-parser_exec_func_proto(struct parser *pr, struct doc *dc, struct doc **out,
-    enum doc_type linetype)
+parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pa)
 {
-	struct doc *indent, *kr;
+	struct doc *indent, *noline, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *tk;
 	int error = 1;
+
+	noline = doc_alloc(DOC_NOLINE, pa->pa_dc);
+
+	if (parser_exec_type(pr, noline, pa->pa_type, pa->pa_rl))
+		return parser_error(pr);
 
 	/*
 	 * Hard line implies function implementation in which the identifier
 	 * must never be indented.
 	 */
-	indent = linetype == DOC_HARDLINE ? dc :
-	    doc_alloc_indent(pr->pr_cf->cf_sw, dc);
-	doc_alloc(linetype, indent);
-	if (lexer_expect(lx, TOKEN_IDENT, &tk))
+	indent = pa->pa_line == DOC_HARDLINE ? noline :
+	    doc_alloc_indent(pr->pr_cf->cf_sw, noline);
+	doc_alloc(pa->pa_line, indent);
+
+	if (pa->pa_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
+		/* Function returning a function pointer. */
+		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
+			doc_token(tk, indent);
+		if (lexer_expect(lx, TOKEN_STAR, &tk))
+			doc_token(tk, indent);
+		if (lexer_expect(lx, TOKEN_IDENT, &tk))
+			doc_token(tk, indent);
+		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+			return parser_error(pr);
+		while (parser_exec_func_arg(pr, indent, NULL, rparen) ==
+		    PARSER_OK)
+			continue;
+		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+			doc_token(tk, indent);
+	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
 		doc_token(tk, indent);
+	}
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_error(pr);
 
-	indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
-	while (parser_exec_func_arg(pr, indent, out, rparen) == PARSER_OK)
+	indent = doc_alloc_indent(pr->pr_cf->cf_sw, noline);
+	while (parser_exec_func_arg(pr, indent, &pa->pa_out, rparen) ==
+	    PARSER_OK)
 		continue;
 
 	/* Recognize K&R argument declarations. */
-	kr = doc_alloc(DOC_GROUP, dc);
+	kr = doc_alloc(DOC_GROUP, noline);
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, kr);
 	doc_alloc(DOC_HARDLINE, indent);
 	while (parser_exec_decl(pr, indent, 0) == PARSER_OK)
 		error = 0;
 	if (error)
-		doc_remove(kr, dc);
+		doc_remove(kr, noline);
 
-	parser_exec_attributes(pr, dc, out, pr->pr_cf->cf_tw, DOC_HARDLINE);
+	parser_exec_attributes(pr, noline, &pa->pa_out, pr->pr_cf->cf_tw,
+	    DOC_HARDLINE);
 
 	return PARSER_OK;
 }
@@ -1557,8 +1594,26 @@ parser_peek_func(struct parser *pr, struct token **type)
 	enum parser_peek peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if_type(lx, type) && lexer_if(lx, TOKEN_IDENT, NULL) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL)) {
+	if (lexer_if_type(lx, type)) {
+		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
+			/* nothing */
+		} else if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
+		    lexer_if(lx, TOKEN_STAR, NULL) &&
+		    lexer_if(lx, TOKEN_IDENT, NULL) &&
+		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+		    lexer_if(lx, TOKEN_RPAREN, NULL)) {
+			/*
+			 * Function returning a function pointer, used by
+			 * parser_exec_func_proto().
+			 */
+			(*type)->tk_flags |= TOKEN_FLAG_TYPE_FUNC;
+		} else {
+			goto out;
+		}
+
+		if (!lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
+			goto out;
+
 		for (;;) {
 			if (!lexer_if(lx, TOKEN_ATTRIBUTE, NULL) ||
 			    !lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
@@ -1572,8 +1627,8 @@ parser_peek_func(struct parser *pr, struct token **type)
 		else if (lexer_if_type(lx, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
+out:
 	lexer_peek_leave(lx, &s);
-
 	return peek;
 }
 
