@@ -78,15 +78,15 @@ struct expr_rule {
 };
 
 struct expr_state {
-	const struct config	*es_cf;
-	const struct expr_arg	*es_ea;
-	const struct expr_rule	*es_er;
-	const struct token	*es_stop;
-	struct lexer		*es_lx;
-	struct token		*es_tk;
-	unsigned int		 es_nest;	/* number of nested expressions */
-	unsigned int		 es_parens;	/* number of nested parenthesis */
-	unsigned int		 es_soft;	/* number of soft lines */
+	const struct config		*es_cf;
+	const struct expr_exec_arg	*es_ea;
+	const struct expr_rule		*es_er;
+	const struct token		*es_stop;
+	struct lexer			*es_lx;
+	struct token			*es_tk;
+	unsigned int			 es_nest;	/* number of nested expressions */
+	unsigned int			 es_parens;	/* number of nested parenthesis */
+	unsigned int			 es_soft;	/* number of soft lines */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -117,7 +117,8 @@ static struct doc	*expr_doc_tokens(const struct expr *, struct doc *);
 static struct doc	*__expr_doc_soft(const struct expr_state *,
     struct doc *, const char *, int);
 
-static void	expr_state_init(struct expr_state *, const struct expr_arg *);
+static void	expr_state_init(struct expr_state *,
+    const struct expr_exec_arg *);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
@@ -180,7 +181,7 @@ static const struct expr_rule	rules[] = {
 };
 
 struct doc *
-expr_exec(const struct expr_arg *ea)
+expr_exec(const struct expr_exec_arg *ea)
 {
 	struct expr_state es;
 	struct doc *dc;
@@ -202,7 +203,7 @@ expr_exec(const struct expr_arg *ea)
 }
 
 int
-expr_peek(const struct expr_arg *ea)
+expr_peek(const struct expr_exec_arg *ea)
 {
 	struct expr_state es;
 	struct expr *ex;
@@ -791,7 +792,7 @@ __expr_doc_soft(const struct expr_state *es, struct doc *dc, const char *fun,
 }
 
 static void
-expr_state_init(struct expr_state *es, const struct expr_arg *ea)
+expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea)
 {
 	memset(es, 0, sizeof(*es));
 	es->es_cf = ea->ea_cf;

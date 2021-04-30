@@ -167,7 +167,7 @@ struct lexer	*parser_get_lexer(struct parser *);
  * expr ------------------------------------------------------------------------
  */
 
-struct expr_arg {
+struct expr_exec_arg {
 	const struct config	*ea_cf;
 	struct lexer		*ea_lx;
 	struct doc		*ea_dc;
@@ -182,8 +182,8 @@ struct expr_arg {
 	void		*ea_arg;
 };
 
-struct doc	*expr_exec(const struct expr_arg *);
-int		 expr_peek(const struct expr_arg *);
+struct doc	*expr_exec(const struct expr_exec_arg *);
+int		 expr_peek(const struct expr_exec_arg *);
 
 /*
  * doc -------------------------------------------------------------------------

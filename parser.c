@@ -810,7 +810,7 @@ static int
 parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
     const struct token *stop)
 {
-	struct expr_arg ea = {
+	struct expr_exec_arg ea = {
 		.ea_cf		= pr->pr_cf,
 		.ea_lx		= pr->pr_lx,
 		.ea_dc		= NULL,
@@ -1296,7 +1296,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	 */
 	if (!lexer_peek_if_type(lx, NULL) &&
 	    lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &tk)) {
-		struct expr_arg ea = {
+		struct expr_exec_arg ea = {
 			.ea_cf		= pr->pr_cf,
 			.ea_lx		= lx,
 			.ea_dc		= NULL,
