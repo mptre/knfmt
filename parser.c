@@ -88,6 +88,7 @@ static unsigned int	parser_width(struct parser *, const struct doc *);
 static int	__parser_error(struct parser *, const char *, int);
 
 static int	parser_halted(const struct parser *);
+static int	parser_ok(const struct parser *);
 
 struct parser *
 parser_alloc(const char *path, const struct config *cf)
@@ -360,7 +361,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 out:
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, concat);
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -427,7 +428,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 		}
 	}
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 static int
@@ -567,7 +568,7 @@ out:
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 static int
@@ -600,7 +601,7 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 	if (line != NULL)
 		doc_remove(line, indent);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 static int
@@ -667,7 +668,7 @@ comma:
 			ruler_exec(rl);
 	}
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -744,7 +745,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, expr);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -800,7 +801,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 		doc_token(tk, dc);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -832,7 +833,7 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 	}
 	if (expr != NULL)
 		*expr = ex;
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -854,11 +855,10 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (parser_exec_func_proto(pr, &pa))
 		return parser_error(pr);
 
-	if (!lexer_if(lx, TOKEN_SEMI, &tk))
-		return parser_error(pr);
-	doc_token(tk, pa.pa_out);
+	if (lexer_expect(lx, TOKEN_SEMI, &tk))
+		doc_token(tk, pa.pa_out);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -891,7 +891,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 	if (!lexer_peek_if(lx, TOKEN_EOF, NULL))
 		doc_alloc(DOC_HARDLINE, dc);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -959,7 +959,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pa)
 	parser_exec_attributes(pr, noline, &pa->pa_out, pr->pr_cf->cf_tw,
 	    DOC_HARDLINE);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -1015,7 +1015,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, concat);
 			doc_alloc(DOC_LINE, concat);
-			return PARSER_OK;
+			return parser_ok(pr);
 		}
 
 		if (!lexer_pop(lx, &tk))
@@ -1025,7 +1025,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 			return PARSER_NOTHING;
 	}
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 static int
@@ -1041,7 +1041,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	struct token *tk, *tmp;
 
 	if (!parser_exec_stmt_block(pr, dc, dc))
-		return PARSER_OK;
+		return parser_ok(pr);
 
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
 		int rbrace = 0;
@@ -1071,7 +1071,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			return parser_exec_stmt1(pr, dc, stop);
 		}
 
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
@@ -1187,7 +1187,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			}
 		}
 
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (lexer_if(lx, TOKEN_DO, &tk)) {
@@ -1217,7 +1217,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		pr->pr_dowhile = 0;
 		if (error)
 			return parser_error(pr);
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (lexer_if(lx, TOKEN_BREAK, &tk) ||
@@ -1225,7 +1225,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		doc_token(tk, dc);
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, dc);
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (lexer_if(lx, TOKEN_RETURN, &tk)) {
@@ -1246,7 +1246,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		}
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, concat);
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (lexer_if(lx, TOKEN_GOTO, &tk)) {
@@ -1259,7 +1259,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, concat);
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (parser_exec_stmt_label(pr, dc) == PARSER_OK) {
@@ -1277,12 +1277,12 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			return parser_exec_stmt1(pr, indent, stop);
 		}
 
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (lexer_if(lx, TOKEN_SEMI, &tk)) {
 		doc_token(tk, dc);
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	/*
@@ -1316,12 +1316,12 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		if (peek && !parser_exec_expr(pr, dc, &expr, NULL)) {
 			if (lexer_expect(lx, TOKEN_SEMI, &tk))
 				doc_token(tk, expr);
-			return PARSER_OK;
+			return parser_ok(pr);
 		}
 	}
 
 	if (!parser_exec_decl(pr, dc, 0))
-		return PARSER_OK;
+		return parser_ok(pr);
 
 	return PARSER_NOTHING;
 }
@@ -1376,7 +1376,7 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, tail);
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -1413,7 +1413,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	if (type->tk_type == TOKEN_WHILE && pr->pr_dowhile > 0) {
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, expr);
-		return PARSER_OK;
+		return parser_ok(pr);
 	}
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
@@ -1458,7 +1458,7 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 		doc_token(tk, dedent);
 	if (lexer_expect(lx, TOKEN_COLON, &tk))
 		doc_token(tk, dedent);
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -1545,7 +1545,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 static int
@@ -1579,7 +1579,7 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 	if (out != NULL)
 		*out = concat;
 
-	return PARSER_OK;
+	return parser_ok(pr);
 }
 
 /*
@@ -1674,4 +1674,12 @@ static int
 parser_halted(const struct parser *pr)
 {
 	return pr->pr_error || lexer_get_error(pr->pr_lx);
+}
+
+static int
+parser_ok(const struct parser *pr)
+{
+	if (lexer_get_error(pr->pr_lx))
+		return PARSER_NOTHING;
+	return PARSER_OK;
 }
