@@ -1048,7 +1048,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
 
-	if (!parser_exec_stmt_block(pr, dc, dc))
+	if (parser_exec_stmt_block(pr, dc, dc) == PARSER_OK)
 		return parser_ok(pr);
 
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
@@ -1327,7 +1327,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		}
 	}
 
-	if (!parser_exec_decl(pr, dc, 0))
+	if (parser_exec_decl(pr, dc, 0) == PARSER_OK)
 		return parser_ok(pr);
 
 	/*
