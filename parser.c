@@ -1651,7 +1651,7 @@ __parser_error(struct parser *pr, const char *fun, int lno)
 {
 	struct token *tk;
 
-	if (pr->pr_error)
+	if (parser_halted(pr))
 		return 1;
 	pr->pr_error = 1;
 
