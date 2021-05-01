@@ -103,5 +103,6 @@ T(TOKEN_STRING,		"",	0)
 T(TOKEN_UNKNOWN,	"",	0)
 T(TOKEN_NONE,		"",	0)
 
+#undef T
 #undef A
 #undef F
