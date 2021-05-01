@@ -56,10 +56,8 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 
 static int	isnum(unsigned char, int);
-static ssize_t	strncasestr(const char *, size_t, const char *);
 
 static void		 token_free(struct token *);
-static int		 token_is_foreach(const struct token *);
 static const char	*strtoken(enum token_type);
 
 static struct token_hash	*tokens = NULL;
@@ -784,7 +782,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state st;
 	struct token_list dangling;
-	struct token *pv, *t, *tmp;
+	struct token *t, *tmp;
 	int error = 0;
 	unsigned char ch;
 
@@ -898,15 +896,6 @@ out:
 	/* Consume hard lines, will be hanging of the emitted token. */
 	if ((tmp = lexer_eat_lines(lx, 1)) != NULL)
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
-
-	/*
-	 * We cannot peek while reading tokens, therefore postpone detection of
-	 * foreach like identifiers.
-	 */
-	pv = TAILQ_PREV(*tk, token_list, tk_entry);
-	if (pv != NULL && (*tk)->tk_type == TOKEN_LPAREN &&
-	    token_is_foreach(pv))
-		pv->tk_flags |= TOKEN_FLAG_FOREACH;
 
 	return error ? 0 : 1;
 }
@@ -1298,28 +1287,6 @@ isnum(unsigned char ch, int prefix)
 	    ch == 'u' || ch == '.';
 }
 
-static ssize_t
-strncasestr(const char *big, size_t biglen, const char *little)
-{
-	size_t i, j;
-
-	for (i = 0; i < biglen; i++) {
-		const char *s = little;
-
-		if (tolower(big[i]) != tolower(s[0]))
-			continue;
-
-		for (j = i; j < biglen; j++) {
-			if (tolower(big[j]) != tolower(s[0]))
-				break;
-			if (*++s == '\0')
-				return i;
-		}
-	}
-
-	return -1;
-}
-
 static void
 token_free(struct token *tk)
 {
@@ -1337,37 +1304,6 @@ token_free(struct token *tk)
 		token_free(tmp);
 	}
 	free(tk);
-}
-
-/*
- * Detect foreach like identifiers such as the ones provided by queue(3).
- */
-static int
-token_is_foreach(const struct token *tk)
-{
-	static const char *patterns[] = {
-		"FOREACH",
-		"FOR_EACH",
-		NULL,
-	};
-	const char *str = tk->tk_str;
-	size_t len = tk->tk_len;
-	int i;
-
-	for (i = 0; patterns[i] != NULL; i++) {
-		ssize_t j;
-		size_t plen;
-
-		if ((j = strncasestr(str, len, patterns[i])) == -1)
-			continue;
-		if (j > 0 && str[j - 1] == '_')
-			return 1;
-		plen = strlen(patterns[i]);
-		if (j + plen < len && str[j + plen] == '_')
-			return 1;
-	}
-
-	return 0;
 }
 
 static const char *

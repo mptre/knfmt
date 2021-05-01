@@ -709,12 +709,15 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (lexer_if(lx, TOKEN_SEMI, NULL)) {
 			iscpp = 1;
 		} else {
+			struct lexer_state ss;
+
 			for (;;) {
 				if (!lexer_if(lx, TOKEN_STAR, &tk))
 					break;
 				end = tk;
 			}
 
+			lexer_peek_enter(lx, &ss);
 			if (lexer_if(lx, TOKEN_IDENT, NULL) &&
 			    (lexer_if(lx, TOKEN_LSQUARE, NULL) ||
 			     lexer_if(lx, TOKEN_SEMI, NULL) ||
@@ -723,10 +726,15 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 			else if (lexer_if(lx, TOKEN_EQUAL, NULL) &&
 			    lexer_if(lx, TOKEN_LBRACE, NULL))
 				iscpp = 1;
+			lexer_peek_leave(lx, &ss);
 		}
 
-		/* Handle X macros lacking semicolons. */
-		if (!iscpp && lexer_peek(lx, &tk) && token_cmp(tk, end) > 0) {
+		/*
+		 * Detect X macro, must be followed by another macro or nothing
+		 * at all.
+		 */
+		if (!iscpp && lexer_peek(lx, &tk) &&
+		    (tk->tk_type == TOKEN_IDENT || tk->tk_type == TOKEN_EOF)) {
 			iscpp = 1;
 			isxmacro = 1;
 		}
@@ -1075,8 +1083,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	}
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
-	    lexer_peek_if(lx, TOKEN_SWITCH, &tk) ||
-	    lexer_peek_if_flags(lx, TOKEN_FLAG_FOREACH, &tk))
+	    lexer_peek_if(lx, TOKEN_SWITCH, &tk))
 		return parser_exec_stmt_expr(pr, dc, tk);
 
 	if (lexer_if(lx, TOKEN_FOR, &tk)) {
@@ -1323,6 +1330,13 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	if (!parser_exec_decl(pr, dc, 0))
 		return parser_ok(pr);
 
+	/*
+	 * Last resort, see if this is a loop construct hidden behind cpp such
+	 * as queue(3).
+	 */
+	if (lexer_peek_if(lx, TOKEN_IDENT, &tk))
+		return parser_exec_stmt_expr(pr, dc, tk);
+
 	return PARSER_NOTHING;
 }
 
@@ -1397,7 +1411,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_token(tk, stmt);
-	if ((type->tk_flags & TOKEN_FLAG_FOREACH) == 0)
+	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))

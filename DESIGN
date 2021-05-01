@@ -166,12 +166,11 @@ doc_token().
 
 One particular type of preprocessor macros that requires special attention are
 the ones that expands to a loop construct. Such macros often include the word
-foreach in the identifier. The lexer does a best effort attempt to identify such
-macros, see lexer_foreach(). Not being aware that such macros actually expand to
+foreach in the identifier. Not being aware that such macros actually expand to
 a loop construct would otherwise make the parser halt as something that looks
 like a function call followed by either a pair of braces or another statement is
-not considered valid C. An example of such macros are the ones provided by
-queue(3).
+not considered valid C, see parser_exec_stmt(). An example of such macros are
+the ones provided by queue(3).
 
 Another problematic type of preprocessor macros are the ones that expands to a
 binary expression. Such macros often have a binary operator as a distinct

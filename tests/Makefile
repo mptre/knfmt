@@ -107,6 +107,7 @@ TESTS+=	valid-096.c
 TESTS+=	valid-097.c
 TESTS+=	valid-098.c
 TESTS+=	valid-099.c
+TESTS+=	valid-100.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
