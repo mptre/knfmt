@@ -53,9 +53,9 @@ int		 buffer_cmp(const struct buffer *, const struct buffer *);
  */
 
 enum token_type {
-#define X(t, s, f) t,
+#define T(t, s, f) t,
 #include "token.h"
-#undef X
+#undef T
 };
 
 TAILQ_HEAD(token_list, token);

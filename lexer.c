@@ -189,7 +189,7 @@ void
 lexer_init(void)
 {
 	static struct token_hash keywords[] = {
-#define X(t, s, f) { .th_tk = {						\
+#define T(t, s, f) { .th_tk = {						\
 	.tk_type	= (t),						\
 	.tk_lno		= 0,						\
 	.tk_cno		= 0,						\
@@ -200,8 +200,10 @@ lexer_init(void)
 	.tk_suffixes	= { NULL, NULL },				\
 	.tk_entry	= { NULL, NULL }				\
 }},
+#define A(t, s, f)	T(t, s, f)
 #include "token.h"
-#undef X
+#undef A
+#undef T
 	};
 	unsigned int i;
 
@@ -1310,9 +1312,9 @@ static const char *
 strtoken(enum token_type type)
 {
 	switch (type) {
-#define X(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
+#define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
 #include "token.h"
-#undef X
+#undef T
 	}
 	return NULL;
 }
