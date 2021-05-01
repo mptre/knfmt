@@ -27,3 +27,6 @@ Improvements
   - Align backslashes in cpp define
   - Remove parenthesis around return expression
   - Remove semicolon after blocks wrapped in braces
+
+* Handle assembler:
+  - https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html
