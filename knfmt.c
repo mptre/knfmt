@@ -103,8 +103,7 @@ usage(void)
 static int
 fileformat(const char *path, const struct config *cf)
 {
-	const struct buffer *bf;
-	struct lexer *lx;
+	const struct buffer *dst, *src;
 	struct parser *pr;
 	int error = 0;
 
@@ -113,19 +112,19 @@ fileformat(const char *path, const struct config *cf)
 		error = 1;
 		goto out;
 	}
-	bf = parser_exec(pr);
-	if (bf == NULL) {
+	dst = parser_exec(pr);
+	if (dst == NULL) {
 		error = 1;
 		goto out;
 	}
 
-	lx = parser_get_lexer(pr);
+	src = lexer_get_buffer(parser_get_lexer(pr));
 	if (cf->cf_flags & CONFIG_FLAG_DIFF)
-		error = filediff(lexer_get_buffer(lx), bf, path);
+		error = filediff(src, dst, path);
 	else if (cf->cf_flags & CONFIG_FLAG_INPLACE)
-		error = filewrite(lexer_get_buffer(lx), bf, path);
+		error = filewrite(src, dst, path);
 	else
-		printf("%s", bf->bf_ptr);
+		printf("%s", dst->bf_ptr);
 
 out:
 	parser_free(pr);
