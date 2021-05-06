@@ -807,7 +807,6 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 
 	switch (dc->dc_type) {
 #define CASE(t) case t: str = &#t[sizeof("DOC_") - 1]; break
-
 	CASE(DOC_CONCAT);
 	CASE(DOC_GROUP);
 	CASE(DOC_INDENT);
@@ -819,7 +818,6 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_SOFTLINE);
 	CASE(DOC_HARDLINE);
 	CASE(DOC_NOLINE);
-
 #undef CASE
 	}
 

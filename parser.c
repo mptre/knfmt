@@ -443,7 +443,6 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
-
 }
 
 static int
@@ -1348,11 +1347,16 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 {
 	struct doc *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *tk;
+	struct token *end, *pv, *tk;
 	int nstmt = 0;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &end))
 		return PARSER_NOTHING;
+
+	/* Do not honor empty lines before the closing right brace. */
+	pv = TAILQ_PREV(end, token_list, tk_entry);
+	if (pv != NULL)
+		token_trim(pv);
 
 	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
 		doc_token(tk, head);

@@ -156,6 +156,22 @@ token_is_decl(const struct token *tk, enum token_type type)
 	return tk->tk_type == type;
 }
 
+/*
+ * Remove any space suffixes from the given token.
+ */
+void
+token_trim(struct token *tk)
+{
+	struct token *suffix, *tmp;
+
+	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
+		if (suffix->tk_type == TOKEN_SPACE) {
+			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
+			token_free(suffix);
+		}
+	}
+}
+
 char *
 token_sprintf(const struct token *tk)
 {
