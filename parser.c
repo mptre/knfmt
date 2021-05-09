@@ -1407,10 +1407,10 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 {
 	struct doc *expr, *stmt;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *rparen, *tk;
+	struct token *rparen, *tk;
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
-	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end))
+	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_error(pr);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
@@ -1418,8 +1418,6 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
 
-	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
-		return parser_error(pr);
 	/*
 	 * The tokens after the expression must be nested underneath the same
 	 * expression since we want to fit everything until the following
