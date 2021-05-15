@@ -1,20 +1,6 @@
 Bugs
 ====
 
-* Alignment spills over disjoint block if at least one block is nested inside
-  preprocessor directives. token_has_line() does not see the hard line since
-  it's part of the verbatim (cpp) token hanging of as a prefix on the following
-  token.
-
-	#if 1
-	struct foo *s;
-	#endif
-
-	int x;
-
-  It might be helpful if the trailing hard line part of the verbatim cpp token
-  was emitted as a separate verbatim token.
-
 Improvements
 ============
 

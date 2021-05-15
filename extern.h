@@ -96,7 +96,7 @@ struct token {
 int	 token_cmp(const struct token *, const struct token *);
 int	 token_has_dangling(const struct token *);
 int	 token_has_line(const struct token *);
-int	 token_is_branch(const struct token *);
+int	 token_is_branch(const struct token *, int);
 int	 token_is_decl(const struct token *, enum token_type);
 void	 token_trim(struct token *);
 char	*token_sprintf(const struct token *);
@@ -122,7 +122,7 @@ const struct buffer	*lexer_get_buffer(struct lexer *);
 int			 lexer_get_error(const struct lexer *);
 
 int	lexer_branch(struct lexer *, struct token *);
-int	lexer_is_branch(const struct lexer *, int);
+int	lexer_is_branch(const struct lexer *);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
