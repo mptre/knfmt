@@ -1,6 +1,10 @@
 Bugs
 ====
 
+* Indentation after cpp branch is incorrect for expressions, see
+  tests/valid-106.c. Could be solved by taking note of the current indentation
+  before going mute.
+
 Improvements
 ============
 

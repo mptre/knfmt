@@ -7,6 +7,7 @@ TESTS+=	error-006.c
 TESTS+=	error-007.c
 TESTS+=	error-008.c
 TESTS+=	error-009.c
+TESTS+=	error-010.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c
@@ -113,6 +114,7 @@ TESTS+=	valid-102.c
 TESTS+=	valid-103.c
 TESTS+=	valid-104.c
 TESTS+=	valid-105.c
+TESTS+=	valid-106.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c

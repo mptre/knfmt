@@ -311,7 +311,6 @@ lexer_alloc(const char *path, const struct config *cf)
 		lexer_free(lx);
 		return NULL;
 	}
-	lx->lx_branch = NULL;
 
 	return lx;
 }
@@ -1497,6 +1496,10 @@ lexer_branch_leave(struct lexer *lx, struct token *tk)
 	lexer_trace(lx, "%s", token_sprintf(tk));
 
 	br = TAILQ_LAST(&lx->lx_branches, branch_list);
+	/* Silently ignore broken branch. */
+	if (br == NULL)
+		return;
+
 	TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
 	free(br);
 }
@@ -1507,6 +1510,10 @@ lexer_branch_link(struct lexer *lx, struct token *tk)
 	struct branch *br;
 
 	br = TAILQ_LAST(&lx->lx_branches, branch_list);
+	/* Silently ignore broken branch. */
+	if (br == NULL)
+		return;
+
 	/* Discard branches attached to EOF. */
 	if (br->br_tk == tk)
 		return;
