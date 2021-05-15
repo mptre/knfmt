@@ -39,7 +39,7 @@ In general terms, the lexer API is divided into two categories:
    criteria, such as being of a certain type. Otherwise, zero is returned.
 
 A token can have more tokens associated with it, called dangling tokens. See cpp
-below for such use case.
+section below for such use case.
 
 parser.c
 ========
@@ -61,7 +61,7 @@ Some expressions which are valid C are not recognized the parser without
 assistance from the parser. One example is sizeof() which can be given a type.
 Whenever the parser encounters something it cannot recognize it gives the parser
 a chance to recover, allowing the parser to continue; see
-parser_exec_expr_recover() and cpp below.
+parser_exec_expr_recover() and cpp section below.
 
 [1] https://en.wikipedia.org/wiki/Operator-precedence_parser#Pratt_parsing
 [2] https://craftinginterpreters.com/compiling-expressions.html
@@ -136,7 +136,7 @@ The following type of documents are available:
 
 * DOC_MUTE
   Mute informs doc_print() to not emit anything. Used while traversing cpp
-  conditionals.
+  branches.
 
 ruler.c
 =======
@@ -185,8 +185,56 @@ it gives the parser a chance to recover from the situation; allowing the expr
 parser to continue, see parser_exec_expr_recover(). An example of such macros
 are the ones provided by timercmp(3).
 
+cpp conditionals
+================
+
+Conditional preprocessor constructs, internally referred to as branches, can
+confuse the parser unless considering each branch in isolation. Some code is
+therefore not valid while disregarding the branches:
+
+	int				[1]
+	main(void)
+	{
+		while
+	#if 0
+			(0)		[2]
+	#else
+			(1)		[3]
+	#endif
+			continue;	[4]
+	}
+
+Recall, preprocessor directives are made completely transparent to the parser as
+described in the cpp section above. Preprocessor branches can literally be
+present anywhere in the source code. Letting the parser cope with this fact
+would make the implementation tedious.
+
+Instead the lexer keeps track of all branches, see lexer_cpp() and lexer_read().
+Upon entering a branch continuation denoted by #else or #elif, lexer_pop() will
+halt while consuming tokens but move passed the branch continuation while
+peeking. This gives the parser the impression of traversing valid grammar and
+language constructs can still be detected. At some point, the parser must call
+lexer_branch() in order to take the next available branch continuation. The
+aforementioned routine will remove any tokens associated with the branch just
+taken[2] and then seek backwards to the token given by parser[1]. This seek
+token must be positioned at the beginning of some language construct that the
+parser can recognize[1]; effectively making the parser traverse the same tokens
+again but this time with the previous branch removed. This has the advantage of
+not requiring any explicit handling of branches inside the parser implementation
+as it reuses existing logic. However, calls to lexer_is_branch() are carefully
+sprinkled inside the parser as some parsing must be avoided while branching.
+
+One caveat with approach is caused by the parser potentially traversing the same
+code more than once as it seeks backwards[1]. While traversing a branch
+continuation, nothing should be emitted until unexamined tokens[3] has been
+reached. While emitting the last token before a branch continuation[2],
+doc_token() will cause any subsequent document to be muted, i.e. do not output
+anything. Once the branch continuation has been crossed, the aforementioned
+routine unmutes. The mute decision is therefore tied to tokens and the
+corresponding logic resides in lexer_branch().
+
 comments
 ========
 
 Comments are never emitted directly by lexer but are instead represented as
-dangling tokens, see cpp above.
+dangling tokens, see cpp section above.
