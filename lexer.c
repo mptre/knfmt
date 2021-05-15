@@ -360,16 +360,17 @@ lexer_branch(struct lexer *lx, struct token *seek)
 	    token_sprintf(branch->tk_branch.br_pv), token_sprintf(branch));
 
 	rm = branch->tk_branch.br_pv;
-	/*
-	 * Move the seek token forward if we stamped the token about to be
-	 * removed.
-	 */
-	if (seek == rm)
-		seek = branch;
 	for (;;) {
 		struct token *nx;
 
 		lexer_trace(lx, "removing %s", token_sprintf(rm));
+
+		/*
+		 * Move the seek token forward if we stamped a token about to be
+		 * removed.
+		 */
+		if (rm == seek)
+			seek = branch;
 
 		nx = TAILQ_NEXT(rm, tk_entry);
 		TAILQ_REMOVE(&lx->lx_tokens, rm, tk_entry);
@@ -1526,8 +1527,10 @@ lexer_branch_link(struct lexer *lx, struct token *tk)
 
 	br->br_tk->tk_branch.br_nx = tk;
 	tk->tk_branch.br_pv = br->br_tk;
-	lexer_trace(lx, "%s %s %s", token_sprintf(br->br_tk),
-	    token_is_branch(br->br_tk, 1) ? "<->" : "->", token_sprintf(tk));
+	if (token_is_branch(br->br_tk, 1))
+		lexer_trace(lx, "%s <-> %s",
+		    token_sprintf(br->br_tk->tk_branch.br_pv),
+		    token_sprintf(br->br_tk));
 	br->br_tk = tk;
 }
 
