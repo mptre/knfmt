@@ -523,6 +523,9 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	for (;;) {
 		struct token *comma;
 
+		if (lexer_is_branch(lx, 1))
+			break;
+
 		if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
 			return parser_error(pr);
 		if (tk == rbrace)
@@ -1067,7 +1070,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
 
-	if (lexer_is_branch(lx))
+	if (lexer_is_branch(lx, 0))
 		return parser_ok(pr);
 
 	if (parser_exec_stmt_block(pr, dc, dc) == PARSER_OK)
@@ -1398,7 +1401,7 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 	while (parser_exec_stmt1(pr, indent, end) == PARSER_OK) {
 		nstmt++;
 
-		if (lexer_is_branch(lx))
+		if (lexer_is_branch(lx, 0))
 			break;
 
 		if (lexer_peek_if(lx, TOKEN_RBRACE, &tk) && tk == end)

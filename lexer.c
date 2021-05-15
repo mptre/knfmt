@@ -160,15 +160,15 @@ token_has_line(const struct token *tk)
 }
 
 /*
- * Returns non-zero if the given token is a fully linked branch or optionally
+ * Returns non-zero if the given token is a branch continuation or optionally
  * the end of a branch.
  */
 int
-token_is_branch(const struct token *tk, int bidirectional)
+token_is_branch(const struct token *tk, int cont)
 {
 	if (tk->tk_branch.br_pv != NULL && tk->tk_branch.br_nx != NULL)
 		return 1;
-	if (bidirectional)
+	if (cont)
 		return 0;
 	return tk->tk_branch.br_pv != NULL && tk->tk_branch.br_nx == NULL;
 }
@@ -379,7 +379,7 @@ lexer_branch(struct lexer *lx, struct token *seek)
 		rm = nx;
 	}
 
-	/* No longer a fully linked branch. */
+	/* No longer a branch continuation. */
 	branch->tk_branch.br_pv = NULL;
 
 	/*
@@ -400,11 +400,17 @@ lexer_branch(struct lexer *lx, struct token *seek)
  * Returns non-zero if the lexer is about to branch.
  */
 int
-lexer_is_branch(const struct lexer *lx)
+lexer_is_branch(const struct lexer *lx, int peek)
 {
 	struct token *tk;
 
-	return lexer_back(lx, &tk) && token_is_branch(tk, 1);
+	if (!lexer_back(lx, &tk))
+		return 0;
+	if (!peek)
+		return token_is_branch(tk, 1);
+	/* Cannot use lexer_peek() as it would move past the branch. */
+	tk = TAILQ_NEXT(tk, tk_entry);
+	return tk != NULL && token_is_branch(tk, 1);
 }
 
 int

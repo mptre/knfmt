@@ -122,7 +122,7 @@ const struct buffer	*lexer_get_buffer(struct lexer *);
 int			 lexer_get_error(const struct lexer *);
 
 int	lexer_branch(struct lexer *, struct token *);
-int	lexer_is_branch(const struct lexer *);
+int	lexer_is_branch(const struct lexer *, int);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
