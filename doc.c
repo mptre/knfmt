@@ -21,13 +21,10 @@ struct doc {
 	const char	*dc_fun;
 
 	union {
-		struct doc_list	 u_list;
-		struct doc	*u_doc;
-		const char	*u_str;
-	} dc_u;
-#define dc_list	dc_u.u_list
-#define dc_doc dc_u.u_doc
-#define dc_str dc_u.u_str
+		struct doc_list	 dc_list;
+		struct doc	*dc_doc;
+		const char	*dc_str;
+	};
 
 	int	dc_indent;
 	size_t	dc_len;

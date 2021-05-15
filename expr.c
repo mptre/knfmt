@@ -59,13 +59,10 @@ struct expr {
 	struct token		*ex_tokens[2];
 
 	union {
-		struct expr	*u_ternary;
-		struct doc	*u_dc;
-		int		 u_sizeof;
-	} ex_u;
-#define ex_ternary	ex_u.u_ternary
-#define ex_dc		ex_u.u_dc
-#define ex_sizeof	ex_u.u_sizeof
+		struct expr	*ex_ternary;
+		struct doc	*ex_dc;
+		int		 ex_sizeof;
+	};
 };
 
 struct expr_state;
