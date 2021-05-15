@@ -73,13 +73,19 @@ struct token {
 #define TOKEN_FLAG_AMBIGUOUS	0x00000040u
 #define TOKEN_FLAG_BINARY	0x00000080u
 #define TOKEN_FLAG_DISCARD	0x00000100u
-#define TOKEN_FLAG_TYPE_ARGS	0x00000200u
-#define TOKEN_FLAG_TYPE_FUNC	0x00000400u
+#define TOKEN_FLAG_UNMUTE	0x00000200u
+#define TOKEN_FLAG_TYPE_ARGS	0x00000400u
+#define TOKEN_FLAG_TYPE_FUNC	0x00000800u
 
 	const char	*tk_str;
 	size_t		 tk_len;
 
 	const struct token	*tk_align;
+
+	struct {
+		struct token	*br_pv;
+		struct token	*br_nx;
+	} tk_branch;
 
 	struct token_list	tk_prefixes;
 	struct token_list	tk_suffixes;
@@ -90,6 +96,7 @@ struct token {
 int	 token_cmp(const struct token *, const struct token *);
 int	 token_has_dangling(const struct token *);
 int	 token_has_line(const struct token *);
+int	 token_is_branch(const struct token *);
 int	 token_is_decl(const struct token *, enum token_type);
 void	 token_trim(struct token *);
 char	*token_sprintf(const struct token *);
@@ -113,6 +120,9 @@ void		 lexer_free(struct lexer *);
 
 const struct buffer	*lexer_get_buffer(struct lexer *);
 int			 lexer_get_error(const struct lexer *);
+
+int	lexer_branch(struct lexer *, struct token *);
+int	lexer_is_branch(const struct lexer *, int);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
@@ -201,6 +211,7 @@ enum doc_type {
 	DOC_SOFTLINE,
 	DOC_HARDLINE,
 	DOC_NOLINE,
+	DOC_MUTE,
 };
 
 void		doc_exec(const struct doc *, struct buffer *,

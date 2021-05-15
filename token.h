@@ -94,6 +94,9 @@ T(TOKEN_BACKSLASH,		"\\",	F(DISCARD))
 /* sentinels */
 T(TOKEN_COMMENT,	"",	0)
 T(TOKEN_CPP,		"",	0)
+T(TOKEN_CPP_ELSE,	"",	0)
+T(TOKEN_CPP_ENDIF,	"",	0)
+T(TOKEN_CPP_IF,		"",	0)
 T(TOKEN_EOF,		"",	0)
 T(TOKEN_ERROR,		"",	0)
 T(TOKEN_IDENT,		"",	0)
@@ -101,7 +104,9 @@ T(TOKEN_LITERAL,	"",	0)
 T(TOKEN_SPACE,		"",	0)
 T(TOKEN_STRING,		"",	0)
 T(TOKEN_UNKNOWN,	"",	0)
-T(TOKEN_NONE,		"",	0)
+
+/* last */
+T(TOKEN_NONE,	"",	0)
 
 #undef T
 #undef A

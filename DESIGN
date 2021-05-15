@@ -134,6 +134,10 @@ The following type of documents are available:
   Noline prevents any type of line document nested underneath it from being
   emitted.
 
+* DOC_MUTE
+  Mute informs doc_print() to not emit anything. Used while traversing cpp
+  conditionals.
+
 ruler.c
 =======
 

@@ -612,7 +612,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		break;
 
 	case EXPR_PARENS:
-		doc_token(ex->ex_tokens[0], concat);	/* ( */
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_lhs != NULL) {
 			es->es_parens++;
 			concat = doc_alloc_indent(DOC_INDENT_PARENS, concat);
@@ -621,7 +622,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 			es->es_parens--;
 		}
-		doc_token(ex->ex_tokens[1], concat);	/* ) */
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], concat);	/* ) */
 		break;
 
 	case EXPR_SQUARES:

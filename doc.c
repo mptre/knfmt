@@ -24,6 +24,7 @@ struct doc {
 		struct doc_list	 dc_list;
 		struct doc	*dc_doc;
 		const char	*dc_str;
+		int		 dc_int;
 	};
 
 	int	dc_indent;
@@ -64,6 +65,7 @@ struct doc_state {
 	unsigned int	st_line;
 	unsigned int	st_noline;
 	unsigned int	st_parens;
+	int		st_mute;
 	unsigned int	st_flags;
 #define DOC_STATE_FLAG_WIDTH	0x00000001u
 };
@@ -78,6 +80,8 @@ static void	doc_print(const struct doc *, struct doc_state *, const char *,
 static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
+
+static struct doc	*__doc_alloc_mute(int, struct doc *, const char *, int);
 
 #define DOC_TRACE(st)	(UNLIKELY((st)->st_cf->cf_verbose >= 2 &&	\
 	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))
@@ -172,6 +176,7 @@ doc_free(struct doc *dc)
 	case DOC_LINE:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
+	case DOC_MUTE:
 		break;
 	}
 
@@ -263,6 +268,9 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 		dc = doc_alloc(DOC_CONCAT, NULL);
 	}
 
+	if (tk->tk_flags & TOKEN_FLAG_UNMUTE)
+		__doc_alloc_mute(-1, dc, fun, lno);
+
 	TAILQ_FOREACH(tmp, &tk->tk_prefixes, tk_entry) {
 		__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
@@ -274,6 +282,11 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
 		__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
+
+	/* Mute if we're about to branch. */
+	tmp = TAILQ_NEXT(tk, tk_entry);
+	if (tmp != NULL && token_is_branch(tmp))
+		__doc_alloc_mute(1, dc, fun, lno);
 
 	return dangling ? dc : token;
 }
@@ -385,6 +398,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_VERBATIM: {
 		unsigned int oldpos;
 
+		if (st->st_mute)
+			break;
+
 		/*
 		 * A verbatim block is either a comment or preprocessor
 		 * directive.
@@ -450,6 +466,11 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_HARDLINE:
 		doc_print(dc, st, "\n", 1, 1);
+		break;
+
+	case DOC_MUTE:
+		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
+			st->st_mute += dc->dc_int;
 		break;
 	}
 
@@ -544,6 +565,9 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_HARDLINE:
 		return 1;
+
+	case DOC_MUTE:
+		break;
 	}
 
 	return st->st_pos <= st->st_cf->cf_mw;
@@ -586,6 +610,9 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
     size_t len, int doindent)
 {
 	int newline = len == 1 && str[0] == '\n';
+
+	if (st->st_mute)
+		return;
 
 	if (newline && dc->dc_type == DOC_VERBATIM && st->st_noline > 0)
 		return;
@@ -660,11 +687,21 @@ doc_has_list(const struct doc *dc)
 	return 0;
 }
 
+static struct doc *
+__doc_alloc_mute(int mute, struct doc *parent, const char *fun, int lno)
+{
+	struct doc *dc;
+
+	dc = __doc_alloc(DOC_MUTE, parent, fun, lno);
+	dc->dc_int = mute;
+	return dc;
+}
+
 static void
 __doc_trace(const struct doc *UNUSED(dc), const struct doc_state *st,
     const char *fmt, ...)
 {
-	char buf[16];
+	char buf[32];
 	va_list ap;
 	unsigned int depth, i;
 
@@ -749,6 +786,10 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 
 	case DOC_HARDLINE:
 		break;
+
+	case DOC_MUTE:
+		fprintf(stderr, "(%d)", dc->dc_int);
+		break;
 	}
 	fprintf(stderr, "\n");
 }
@@ -780,6 +821,7 @@ __doc_trace_leave(const struct doc *dc, struct doc_state *st)
 	case DOC_LINE:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
+	case DOC_MUTE:
 		break;
 	}
 
@@ -815,6 +857,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_SOFTLINE);
 	CASE(DOC_HARDLINE);
 	CASE(DOC_NOLINE);
+	CASE(DOC_MUTE);
 #undef CASE
 	}
 
@@ -855,7 +898,8 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		mode = 'M';
 		break;
 	}
-	n = snprintf(buf, bufsiz, "[%c,%3u,%3u]", mode, st->st_pos, depth);
+	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d]", mode, st->st_pos,
+	    depth, st->st_mute);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 	return buf;

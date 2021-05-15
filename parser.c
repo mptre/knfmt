@@ -137,6 +137,7 @@ parser_exec(struct parser *pr)
 	pr->pr_dc = doc_alloc(DOC_CONCAT, NULL);
 
 	for (;;) {
+		struct token *seek = NULL;
 		struct token *tk;
 
 		/* Always emit EOF token as it could have dangling tokens. */
@@ -145,15 +146,25 @@ parser_exec(struct parser *pr)
 			break;
 		}
 
+		/*
+		 * Take note of the first token of this round of parsing, later
+		 * passed to lexer_branch().
+		 */
+		(void)lexer_peek(lx, &seek);
+
 		if (parser_exec_decl(pr, pr->pr_dc, 1) &&
-		    parser_exec_func_impl(pr, pr->pr_dc)) {
+		    parser_exec_func_impl(pr, pr->pr_dc))
 			error = 1;
-			break;
-		} else if (parser_halted(pr)) {
+		else if (parser_halted(pr))
 			error = 1;
-			break;
-		} else {
+		else
 			doc_alloc(DOC_HARDLINE, pr->pr_dc);
+
+		if (error)
+			break;
+		if (lexer_branch(lx, seek)) {
+			pr->pr_error = 0;
+			error = 0;
 		}
 	}
 	if (error) {
@@ -259,11 +270,18 @@ parser_exec_decl(struct parser *pr, struct doc *dc, int align)
 		 */
 		if (lexer_back(lx, &tk) && token_has_line(tk))
 			break;
+
+		/*
+		 * Crossing a branch also denotes the end of this block of
+		 * declarations.
+		 */
+		if (lexer_is_branch(lx, 1))
+			break;
 	}
 	ruler_exec(&rl);
 	ruler_free(&rl);
 
-	return ndecl > 0 ? PARSER_OK : PARSER_NOTHING;
+	return ndecl > 0 ? parser_ok(pr) : PARSER_NOTHING;
 }
 
 static int
@@ -1047,6 +1065,9 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
 
+	if (lexer_is_branch(lx, 0))
+		return parser_ok(pr);
+
 	if (parser_exec_stmt_block(pr, dc, dc) == PARSER_OK)
 		return parser_ok(pr);
 
@@ -1374,6 +1395,9 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 	line = doc_alloc(DOC_HARDLINE, indent);
 	while (parser_exec_stmt1(pr, indent, end) == PARSER_OK) {
 		nstmt++;
+
+		if (lexer_is_branch(lx, 0))
+			break;
 
 		if (lexer_peek_if(lx, TOKEN_RBRACE, &tk) && tk == end)
 			break;

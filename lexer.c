@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,16 +15,25 @@
 
 #include "extern.h"
 
+struct branch {
+	struct token		*br_tk;
+	TAILQ_ENTRY(branch)	 br_entry;
+};
+
+TAILQ_HEAD(branch_list, branch);
+
 struct lexer {
 	struct lexer_state	 lx_st;
 	const struct config	*lx_cf;
 	struct buffer		*lx_bf;
 	const char		*lx_path;
+	struct token		*lx_branch;
 
 	int	lx_eof;
 	int	lx_peek;
 
 	struct token_list	lx_tokens;
+	struct branch_list	lx_branches;
 };
 
 struct token_hash {
@@ -54,6 +64,19 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
+
+static void	lexer_branch_enter(struct lexer *, struct token *);
+static void	lexer_branch_leave(struct lexer *, struct token *);
+static void	lexer_branch_link(struct lexer *, struct token *);
+
+#define lexer_trace(lx, fmt, ...) do {					\
+	if (UNLIKELY((lx)->lx_cf->cf_verbose >= 2))			\
+		__lexer_trace((lx), __func__, (fmt),			\
+		    __VA_ARGS__);					\
+} while (0)
+static void	__lexer_trace(const struct lexer *, const char *, const char *,
+    ...)
+	__attribute__((__format__(printf, 3, 4)));
 
 static int	isnum(unsigned char, int);
 
@@ -134,6 +157,15 @@ token_has_line(const struct token *tk)
 			return 1;
 	}
 	return 0;
+}
+
+/*
+ * Returns non-zero if the given token is a branch continuation.
+ */
+int
+token_is_branch(const struct token *tk)
+{
+	return tk->tk_branch.br_pv != NULL && tk->tk_branch.br_nx != NULL;
 }
 
 /*
@@ -256,6 +288,7 @@ lexer_alloc(const char *path, const struct config *cf)
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	TAILQ_INIT(&lx->lx_tokens);
+	TAILQ_INIT(&lx->lx_branches);
 
 	for (;;) {
 		struct token *tk;
@@ -267,10 +300,13 @@ lexer_alloc(const char *path, const struct config *cf)
 		if (tk->tk_type == TOKEN_EOF)
 			break;
 	}
+	assert(TAILQ_EMPTY(&lx->lx_branches));
+
 	if (error) {
 		lexer_free(lx);
 		return NULL;
 	}
+	lx->lx_branch = NULL;
 
 	return lx;
 }
@@ -304,6 +340,75 @@ lexer_get_error(const struct lexer *lx)
 	return lx->lx_st.st_err;
 }
 
+/*
+ * Returns non-zero if the lexer took the next branch.
+ */
+int
+lexer_branch(struct lexer *lx, struct token *seek)
+{
+	struct token *branch = lx->lx_branch;
+	struct token *rm;
+
+	if (branch == NULL)
+		return 0;
+
+	lexer_trace(lx, "branch from %s to %s",
+	    token_sprintf(branch->tk_branch.br_pv), token_sprintf(branch));
+
+	rm = branch->tk_branch.br_pv;
+	/*
+	 * Move the seek token forward if we stamped the token about to be
+	 * removed.
+	 */
+	if (seek == rm)
+		seek = branch;
+	for (;;) {
+		struct token *nx;
+
+		lexer_trace(lx, "removing %s", token_sprintf(rm));
+
+		nx = TAILQ_NEXT(rm, tk_entry);
+		TAILQ_REMOVE(&lx->lx_tokens, rm, tk_entry);
+		token_free(rm);
+		if (nx == branch)
+			break;
+		rm = nx;
+	}
+
+	/* No longer a fully linked branch. */
+	branch->tk_branch.br_pv = NULL;
+
+	/*
+	 * Tell doc_token() that crossing this token must cause tokens to be
+	 * emitted again.
+	 */
+	branch->tk_flags |= TOKEN_FLAG_UNMUTE;
+
+	/* Rewind causing the seek token to be next one to emit. */
+	lexer_trace(lx, "seek to %s", token_sprintf(seek));
+	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
+	lx->lx_branch = NULL;
+
+	return 1;
+}
+
+/*
+ * Returns non-zero if the lexer is about to branch.
+ */
+int
+lexer_is_branch(const struct lexer *lx, int peek)
+{
+	struct token *tk;
+
+	if (!lexer_back(lx, &tk))
+		return 0;
+	if (!peek)
+		return token_is_branch(tk);
+
+	tk = TAILQ_NEXT(tk, tk_entry);
+	return tk != NULL && token_is_branch(tk);
+}
+
 int
 lexer_pop(struct lexer *lx, struct token **tk)
 {
@@ -312,10 +417,42 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	if (TAILQ_EMPTY(&lx->lx_tokens))
 		return 0;
 
-	if (st->st_tok == NULL)
+	if (st->st_tok == NULL) {
 		st->st_tok = TAILQ_FIRST(&lx->lx_tokens);
-	else if (st->st_tok->tk_type != TOKEN_EOF)
+	} else if (st->st_tok->tk_type != TOKEN_EOF) {
+		struct token *branch = NULL;
+
+		/* Do not move passed the branch token. */
+		if (lx->lx_peek == 0 && token_is_branch(st->st_tok, 1))
+			return 0;
+
 		st->st_tok = TAILQ_NEXT(st->st_tok, tk_entry);
+		if (!token_is_branch(st->st_tok))
+			goto out;
+
+		branch = st->st_tok;
+		/* Take note of the start of the branch. */
+		if (lx->lx_branch == NULL)
+			lx->lx_branch = branch;
+
+		if (lx->lx_peek == 0) {
+			/*
+			 * While not peeking, instruct the parser to halt.
+			 * Calling lexer_branch() allows the parser to continue
+			 * execution by taking the next branch.
+			 */
+			lexer_trace(lx, "halt at %s",
+			    token_sprintf(st->st_tok));
+			return 0;
+		} else {
+			/* While peeking, act as taking the current branch. */
+			while (branch->tk_branch.br_nx != NULL)
+				branch = branch->tk_branch.br_nx;
+			st->st_tok = branch;
+		}
+	}
+
+out:
 	if (st->st_tok == NULL)
 		return 0;
 	*tk = st->st_tok;
@@ -913,6 +1050,26 @@ out:
 	if ((tmp = lexer_eat_lines(lx, 1)) != NULL)
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
 
+	/*
+	 * Establish links between cpp branches.
+	 */
+	TAILQ_FOREACH(tmp, &(*tk)->tk_prefixes, tk_entry) {
+		switch (tmp->tk_type) {
+		case TOKEN_CPP_IF:
+			lexer_branch_enter(lx, *tk);
+			break;
+		case TOKEN_CPP_ELSE:
+			lexer_branch_link(lx, *tk);
+			break;
+		case TOKEN_CPP_ENDIF:
+			lexer_branch_link(lx, *tk);
+			lexer_branch_leave(lx, *tk);
+			break;
+		default:
+			break;
+		}
+	}
+
 	return error ? 0 : 1;
 }
 
@@ -1079,6 +1236,8 @@ static struct token *
 lexer_cpp(struct lexer *lx)
 {
 	struct lexer_state st;
+	struct token cpp;
+	enum token_type type = TOKEN_CPP;
 	int ncpp = 0;
 	int off = 0;
 
@@ -1132,6 +1291,8 @@ lexer_cpp(struct lexer *lx)
 			ch = peek;
 		}
 
+		ncpp++;
+
 		/* Treat disabled blocks as verbatim. */
 		if (off) {
 			if (lexer_buffer_strcmp(lx, &cppst, "#if"))
@@ -1140,11 +1301,20 @@ lexer_cpp(struct lexer *lx)
 				off--;
 		} else {
 			if (lexer_buffer_strcmp(lx, &cppst, "#if 0") ||
-			    lexer_buffer_strcmp(lx, &cppst, "#ifdef notyet"))
+			    lexer_buffer_strcmp(lx, &cppst, "#ifdef notyet")) {
 				off++;
+			} else if (lexer_buffer_strcmp(lx, &cppst, "#if")) {
+				type = TOKEN_CPP_IF;
+				break;
+			} else if (lexer_buffer_strcmp(lx, &cppst, "#else") ||
+			    lexer_buffer_strcmp(lx, &cppst, "#elif")) {
+				type = TOKEN_CPP_ELSE;
+				break;
+			} else if (lexer_buffer_strcmp(lx, &cppst, "#endif")) {
+				type = TOKEN_CPP_ENDIF;
+				break;
+			}
 		}
-
-		ncpp++;
 	}
 	if (ncpp == 0)
 		return NULL;
@@ -1152,7 +1322,9 @@ lexer_cpp(struct lexer *lx)
 	/* Consume hard line(s), will be hanging of the cpp token. */
 	(void)lexer_eat_lines(lx, 0);
 
-	return lexer_emit(lx, &st, &tkcpp);
+	cpp = tkcpp;
+	cpp.tk_type = type;
+	return lexer_emit(lx, &st, &cpp);
 }
 
 static struct token *
@@ -1243,6 +1415,10 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 {
 	char *str;
 
+	/* Be quiet while about to branch. */
+	if (lx->lx_branch != NULL)
+		return;
+
 	/* Be quiet if an error already has been emitted. */
 	if (lx->lx_st.st_err++ > 0)
 		return;
@@ -1290,6 +1466,70 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 	lexer_peek_leave(lx, &s);
 
 	return peek;
+}
+
+static void
+lexer_branch_enter(struct lexer *lx, struct token *tk)
+{
+	struct branch *br;
+
+	lexer_trace(lx, "%s", token_sprintf(tk));
+
+	/* Remove previous branch while entering again. */
+	if (tk->tk_branch.br_pv != NULL) {
+		struct token *pv = tk->tk_branch.br_pv;
+
+		pv->tk_branch.br_nx = NULL;
+		tk->tk_branch.br_pv = NULL;
+	}
+
+	br = calloc(1, sizeof(*br));
+	if (br == NULL)
+		err(1, NULL);
+	br->br_tk = tk;
+	TAILQ_INSERT_TAIL(&lx->lx_branches, br, br_entry);
+}
+
+static void
+lexer_branch_leave(struct lexer *lx, struct token *tk)
+{
+	struct branch *br;
+
+	lexer_trace(lx, "%s", token_sprintf(tk));
+
+	br = TAILQ_LAST(&lx->lx_branches, branch_list);
+	TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
+	free(br);
+}
+
+static void
+lexer_branch_link(struct lexer *lx, struct token *tk)
+{
+	struct branch *br;
+
+	br = TAILQ_LAST(&lx->lx_branches, branch_list);
+	/* Discard branches attached to EOF. */
+	if (br->br_tk == tk)
+		return;
+
+	br->br_tk->tk_branch.br_nx = tk;
+	tk->tk_branch.br_pv = br->br_tk;
+	lexer_trace(lx, "%s %s %s", token_sprintf(br->br_tk),
+	    token_is_branch(br->br_tk) ? "<->" : "->", token_sprintf(tk));
+	br->br_tk = tk;
+}
+
+static void
+__lexer_trace(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
+    ...)
+{
+	va_list ap;
+
+	fprintf(stderr, "[L] %s: ", fun);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
 }
 
 static int
