@@ -160,17 +160,12 @@ token_has_line(const struct token *tk)
 }
 
 /*
- * Returns non-zero if the given token is a branch continuation or optionally
- * the end of a branch.
+ * Returns non-zero if the given token denotes a branch continuation.
  */
 int
-token_is_branch(const struct token *tk, int cont)
+token_is_branch(const struct token *tk)
 {
-	if (tk->tk_branch.br_pv != NULL && tk->tk_branch.br_nx != NULL)
-		return 1;
-	if (cont)
-		return 0;
-	return tk->tk_branch.br_pv != NULL && tk->tk_branch.br_nx == NULL;
+	return tk->tk_branch.br_pv != NULL && tk->tk_branch.br_nx != NULL;
 }
 
 /*
@@ -353,6 +348,17 @@ lexer_branch(struct lexer *lx, struct token *seek)
 	struct token *branch = lx->lx_branch;
 	struct token *rm;
 
+	if (seek == NULL) {
+		assert(branch == NULL);
+		if (!lexer_back(lx, &branch))
+			return 0;
+
+		branch = TAILQ_NEXT(branch, tk_entry);
+		if (branch == NULL || !token_is_branch(branch))
+			return 0;
+		seek = branch;
+	}
+
 	if (branch == NULL)
 		return 0;
 
@@ -398,20 +404,34 @@ lexer_branch(struct lexer *lx, struct token *seek)
 }
 
 /*
- * Returns non-zero if the lexer is about to branch.
+ * Returns non-zero if the next token denotes a branch continuation.
  */
 int
-lexer_is_branch(const struct lexer *lx, int peek)
+lexer_is_branch(const struct lexer *lx)
 {
 	struct token *tk;
 
+	/* Cannot use lexer_peek() as it would move past the branch. */
 	if (!lexer_back(lx, &tk))
 		return 0;
-	if (!peek)
-		return token_is_branch(tk, 1);
-	/* Cannot use lexer_peek() as it would move past the branch. */
 	tk = TAILQ_NEXT(tk, tk_entry);
-	return tk != NULL && token_is_branch(tk, 1);
+	return tk != NULL && token_is_branch(tk);
+}
+
+/*
+ * Returns non-zero if the next token denotes the end of a branch.
+ */
+int
+lexer_is_branch_end(const struct lexer *lx)
+{
+	struct token *tk;
+
+	/* Cannot use lexer_peek() as it would move past the branch. */
+	if (!lexer_back(lx, &tk))
+		return 0;
+	tk = TAILQ_NEXT(tk, tk_entry);
+	return tk != NULL && tk->tk_branch.br_pv != NULL &&
+	    tk->tk_branch.br_nx == NULL;
 }
 
 int
@@ -425,20 +445,16 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	if (st->st_tok == NULL) {
 		st->st_tok = TAILQ_FIRST(&lx->lx_tokens);
 	} else if (st->st_tok->tk_type != TOKEN_EOF) {
-		struct token *branch = NULL;
+		struct token *pv;
 
 		/* Do not move passed the branch token. */
-		if (lx->lx_peek == 0 && token_is_branch(st->st_tok, 1))
+		if (lx->lx_peek == 0 && lx->lx_branch != NULL)
 			return 0;
 
+		pv = st->st_tok;
 		st->st_tok = TAILQ_NEXT(st->st_tok, tk_entry);
-		if (!token_is_branch(st->st_tok, 1))
+		if (!token_is_branch(st->st_tok))
 			goto out;
-
-		branch = st->st_tok;
-		/* Take note of the start of the branch. */
-		if (lx->lx_branch == NULL)
-			lx->lx_branch = branch;
 
 		if (lx->lx_peek == 0) {
 			/*
@@ -446,14 +462,18 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			 * Calling lexer_branch() allows the parser to continue
 			 * execution by taking the next branch.
 			 */
+			lx->lx_branch = st->st_tok;
+			st->st_tok = pv;
 			lexer_trace(lx, "halt at %s",
-			    token_sprintf(st->st_tok));
+			    token_sprintf(lx->lx_branch));
 			return 0;
 		} else {
+			struct token *br = st->st_tok;
+
 			/* While peeking, act as taking the current branch. */
-			while (branch->tk_branch.br_nx != NULL)
-				branch = branch->tk_branch.br_nx;
-			st->st_tok = branch;
+			while (br->tk_branch.br_nx != NULL)
+				br = br->tk_branch.br_nx;
+			st->st_tok = br;
 		}
 	}
 
@@ -1421,8 +1441,11 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 	char *str;
 
 	/* Be quiet while about to branch. */
-	if (lx->lx_branch != NULL)
+	if (lx->lx_branch != NULL) {
+		lexer_trace(lx, "%s:%d: suppressed, expected %s", fun, lno,
+		    strtoken(type));
 		return;
+	}
 
 	/* Be quiet if an error already has been emitted. */
 	if (lx->lx_st.st_err++ > 0)
@@ -1500,9 +1523,12 @@ lexer_branch_leave(struct lexer *lx, struct token *tk)
 {
 	struct branch *br;
 
-	lexer_trace(lx, "%s", token_sprintf(tk));
-
 	br = TAILQ_LAST(&lx->lx_branches, branch_list);
+
+	lexer_trace(lx, "%s -> %s",
+	    br ? token_sprintf(br->br_tk->tk_branch.br_pv) : "(null)",
+	    token_sprintf(tk));
+
 	/* Silently ignore broken branch. */
 	if (br == NULL)
 		return;
@@ -1527,7 +1553,7 @@ lexer_branch_link(struct lexer *lx, struct token *tk)
 
 	br->br_tk->tk_branch.br_nx = tk;
 	tk->tk_branch.br_pv = br->br_tk;
-	if (token_is_branch(br->br_tk, 1))
+	if (token_is_branch(br->br_tk))
 		lexer_trace(lx, "%s <-> %s",
 		    token_sprintf(br->br_tk->tk_branch.br_pv),
 		    token_sprintf(br->br_tk));
