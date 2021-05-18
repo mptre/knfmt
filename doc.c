@@ -68,6 +68,7 @@ struct doc_state {
 	int		st_mute;
 	unsigned int	st_flags;
 #define DOC_STATE_FLAG_WIDTH	0x00000001u
+#define DOC_STATE_FLAG_BLOCK	0x00000002u
 };
 
 static void	doc_exec1(const struct doc *, struct doc_state *);
@@ -416,8 +417,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		oldpos = st->st_pos;
 
 		/* Verbatim blocks must always start on a new line. */
-		if (isblock && st->st_pos > 0)
+		if (isblock &&
+		    (st->st_pos > 0 || st->st_flags & DOC_STATE_FLAG_BLOCK))
 			doc_print(dc, st, "\n", 1, 0);
+		st->st_flags &= ~DOC_STATE_FLAG_BLOCK;
 
 		doc_print(dc, st, dc->dc_str, dc->dc_len, 1);
 
@@ -469,8 +472,15 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
-		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
+		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0) {
 			st->st_mute += dc->dc_int;
+			/*
+			 * Instruct any subsequent DOC_VERBATIM document to
+			 * always emit a new line.
+			 */
+			if (st->st_mute == 0)
+				st->st_flags |= DOC_STATE_FLAG_BLOCK;
+		}
 		break;
 	}
 
@@ -611,9 +621,6 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 {
 	int newline = len == 1 && str[0] == '\n';
 
-	if (st->st_mute)
-		return;
-
 	if (newline && dc->dc_type == DOC_VERBATIM && st->st_noline > 0)
 		return;
 
@@ -633,7 +640,8 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	if (newline)
 		doc_trim(dc, st);
 
-	buffer_append(st->st_bf, str, len);
+	if (st->st_mute == 0)
+		buffer_append(st->st_bf, str, len);
 	st->st_pos += len;
 
 	if (newline) {

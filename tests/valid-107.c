@@ -7,7 +7,7 @@ struct emul	emul_elf = {
 #ifdef SYSCALL_DEBUG
 	syscallnames,
 #else
-	    NULL,
+	NULL,
 #endif
 	sigcoderet
 };
