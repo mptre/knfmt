@@ -1376,14 +1376,14 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 {
 	struct doc *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *pv, *tk;
+	struct token *pv, *rbrace, *tk;
 	int nstmt = 0;
 
-	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &end))
+	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return PARSER_NOTHING;
 
 	/* Do not honor empty lines before the closing right brace. */
-	pv = TAILQ_PREV(end, token_list, tk_entry);
+	pv = TAILQ_PREV(rbrace, token_list, tk_entry);
 	if (pv != NULL)
 		token_trim(pv);
 
@@ -1401,13 +1401,13 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, tail);
 	}
 	line = doc_alloc(DOC_HARDLINE, indent);
-	while (parser_exec_stmt1(pr, indent, end) == PARSER_OK) {
+	while (parser_exec_stmt1(pr, indent, rbrace) == PARSER_OK) {
 		nstmt++;
 
 		if (lexer_is_branch(lx))
 			break;
 
-		if (lexer_peek_if(lx, TOKEN_RBRACE, &tk) && tk == end)
+		if (lexer_peek_if(lx, TOKEN_RBRACE, &tk) && tk == rbrace)
 			break;
 
 		if (lexer_back(lx, &tk) && tk->tk_type == TOKEN_RBRACE &&
