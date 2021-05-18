@@ -583,7 +583,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 		ternary = expr_doc(ex->ex_lhs, es, concat);
 		doc_alloc(DOC_LINE, ternary);
-		doc_token(ex->ex_tokens[0], ternary);	/* ? */
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], ternary);	/* ? */
 		if (ex->ex_rhs != NULL)
 			doc_alloc(DOC_LINE, ternary);
 
@@ -593,7 +594,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			ternary = expr_doc(ex->ex_rhs, es, ternary);
 			doc_alloc(DOC_LINE, ternary);
 		}
-		doc_token(ex->ex_tokens[1], ternary);	/* : */
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], ternary);	/* : */
 		doc_alloc(DOC_LINE, ternary);
 
 		ternary = expr_doc_soft(es, concat);
@@ -631,10 +633,12 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		es->es_soft++;
 		concat = expr_doc(ex->ex_lhs, es, concat);
 		es->es_soft--;
-		doc_token(ex->ex_tokens[0], concat);	/* [ */
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], concat);	/* [ */
 		concat = expr_doc_soft(es, concat);
 		concat = expr_doc(ex->ex_rhs, es, concat);
-		doc_token(ex->ex_tokens[1], concat);	/* ] */
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], concat);	/* ] */
 		break;
 
 	case EXPR_FIELD:
@@ -649,7 +653,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		es->es_soft++;
 		concat = expr_doc(ex->ex_lhs, es, concat);
 		es->es_soft--;
-		doc_token(ex->ex_tokens[0], concat);	/* ( */
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_rhs != NULL) {
 			es->es_parens++;
 			es->es_nest++;
@@ -658,7 +663,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			es->es_nest--;
 			es->es_parens--;
 		}
-		doc_token(ex->ex_tokens[1], concat);	/* ) */
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], concat);	/* ) */
 		break;
 
 	case EXPR_ARG: {
@@ -677,24 +683,30 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	}
 
 	case EXPR_CAST:
-		doc_token(ex->ex_tokens[0], concat);	/* ( */
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], concat);	/* ( */
 		expr_doc(ex->ex_lhs, es, concat);
-		doc_token(ex->ex_tokens[1], concat);	/* ) */
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], concat);	/* ) */
 		expr_doc(ex->ex_rhs, es, concat);
 		break;
 
 	case EXPR_SIZEOF:
 		doc_token(ex->ex_tk, concat);
-		if (ex->ex_sizeof)
-			doc_token(ex->ex_tokens[0], concat);	/* ( */
-		else
+		if (ex->ex_sizeof) {
+			if (ex->ex_tokens[0] != NULL)
+				doc_token(ex->ex_tokens[0], concat);	/* ( */
+		} else {
 			doc_literal(" ", concat);
+		}
 		if (ex->ex_lhs != NULL)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		else
 			expr_doc_tokens(ex, concat);
-		if (ex->ex_sizeof)
-			doc_token(ex->ex_tokens[1], concat);	/* ) */
+		if (ex->ex_sizeof) {
+			if (ex->ex_tokens[1] != NULL)
+				doc_token(ex->ex_tokens[1], concat);	/* ) */
+		}
 		break;
 
 	case EXPR_CONCAT:
