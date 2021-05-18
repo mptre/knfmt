@@ -137,8 +137,7 @@ parser_exec(struct parser *pr)
 	pr->pr_dc = doc_alloc(DOC_CONCAT, NULL);
 
 	for (;;) {
-		struct token *seek = NULL;
-		struct token *tk;
+		struct token *seek, *tk;
 
 		/* Always emit EOF token as it could have dangling tokens. */
 		if (lexer_if(lx, TOKEN_EOF, &tk)) {
@@ -150,7 +149,8 @@ parser_exec(struct parser *pr)
 		 * Take note of the first token of this round of parsing, later
 		 * passed to lexer_branch().
 		 */
-		(void)lexer_peek(lx, &seek);
+		if (!lexer_peek(lx, &seek))
+			seek = NULL;
 
 		if (parser_exec_decl(pr, pr->pr_dc, 1) &&
 		    parser_exec_func_impl(pr, pr->pr_dc))
@@ -1219,6 +1219,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 				}
 				if (dobreak)
 					break;
+
+				(void)lexer_branch(lx, NULL);
 			}
 		}
 
