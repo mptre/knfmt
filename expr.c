@@ -47,6 +47,7 @@ enum expr_type {
 	EXPR_CONCAT,
 	EXPR_LITERAL,
 	EXPR_RECOVER,
+	EXPR_BRANCH,
 };
 
 struct expr {
@@ -222,6 +223,9 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 	const struct expr_rule *er;
 	struct expr *ex = NULL;
 	struct token *tk;
+
+	if (lexer_is_branch(es->es_lx))
+		return expr_alloc(EXPR_BRANCH, es);
 
 	if (lexer_get_error(es->es_lx) ||
 	    (lexer_back(es->es_lx, &tk) && tk == es->es_stop) ||
@@ -726,6 +730,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		 * recover document.
 		 */
 		ex->ex_dc = NULL;
+		break;
+
+	case EXPR_BRANCH:
 		break;
 	}
 
