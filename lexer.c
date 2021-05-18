@@ -27,7 +27,6 @@ struct lexer {
 	const struct config	*lx_cf;
 	struct buffer		*lx_bf;
 	const char		*lx_path;
-	struct token		*lx_branch;
 
 	int	lx_eof;
 	int	lx_peek;
@@ -65,9 +64,10 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 
-static void	lexer_branch_enter(struct lexer *, struct token *);
-static void	lexer_branch_leave(struct lexer *, struct token *);
-static void	lexer_branch_link(struct lexer *, struct token *);
+static struct token	*lexer_branch_next(const struct lexer *);
+static void		 lexer_branch_enter(struct lexer *, struct token *);
+static void		 lexer_branch_leave(struct lexer *, struct token *);
+static void		 lexer_branch_link(struct lexer *, struct token *);
 
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (UNLIKELY((lx)->lx_cf->cf_verbose >= 2))			\
@@ -345,22 +345,15 @@ lexer_get_error(const struct lexer *lx)
 int
 lexer_branch(struct lexer *lx, struct token *seek)
 {
-	struct token *branch = lx->lx_branch;
+	struct token *branch;
 	struct token *rm;
 
-	if (seek == NULL) {
-		assert(branch == NULL);
-		if (!lexer_back(lx, &branch))
-			return 0;
-
-		branch = TAILQ_NEXT(branch, tk_entry);
-		if (branch == NULL || !token_is_branch(branch))
-			return 0;
-		seek = branch;
-	}
-
+	branch = lexer_branch_next(lx);
 	if (branch == NULL)
 		return 0;
+
+	if (seek == NULL)
+		seek = branch;
 
 	lexer_trace(lx, "branch from %s to %s",
 	    token_sprintf(branch->tk_branch.br_pv), token_sprintf(branch));
@@ -398,24 +391,17 @@ lexer_branch(struct lexer *lx, struct token *seek)
 	/* Rewind causing the seek token to be next one to emit. */
 	lexer_trace(lx, "seek to %s", token_sprintf(seek));
 	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
-	lx->lx_branch = NULL;
 
 	return 1;
 }
 
 /*
- * Returns non-zero if the next token denotes a branch continuation.
+ * Returns the next branch continuation token if present.
  */
 int
 lexer_is_branch(const struct lexer *lx)
 {
-	struct token *tk;
-
-	/* Cannot use lexer_peek() as it would move past the branch. */
-	if (!lexer_back(lx, &tk))
-		return 0;
-	tk = TAILQ_NEXT(tk, tk_entry);
-	return tk != NULL && token_is_branch(tk);
+	return lexer_branch_next(lx) != NULL;
 }
 
 /*
@@ -445,13 +431,10 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	if (st->st_tok == NULL) {
 		st->st_tok = TAILQ_FIRST(&lx->lx_tokens);
 	} else if (st->st_tok->tk_type != TOKEN_EOF) {
-		struct token *pv;
-
-		/* Do not move passed the branch token. */
-		if (lx->lx_peek == 0 && lx->lx_branch != NULL)
+		/* Do not move passed a branch. */
+		if (lx->lx_peek == 0 && token_is_branch(st->st_tok))
 			return 0;
 
-		pv = st->st_tok;
 		st->st_tok = TAILQ_NEXT(st->st_tok, tk_entry);
 		if (!token_is_branch(st->st_tok))
 			goto out;
@@ -462,10 +445,8 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			 * Calling lexer_branch() allows the parser to continue
 			 * execution by taking the next branch.
 			 */
-			lx->lx_branch = st->st_tok;
-			st->st_tok = pv;
 			lexer_trace(lx, "halt at %s",
-			    token_sprintf(lx->lx_branch));
+			    token_sprintf(st->st_tok));
 			return 0;
 		} else {
 			struct token *br = st->st_tok;
@@ -1438,10 +1419,11 @@ static void
 lexer_emit_error(struct lexer *lx, enum token_type type,
     const struct token *tk, const char *fun, int lno)
 {
+	struct token *t;
 	char *str;
 
 	/* Be quiet while about to branch. */
-	if (lx->lx_branch != NULL) {
+	if (lexer_back(lx, &t) && token_is_branch(t)) {
 		lexer_trace(lx, "%s:%d: suppressed, expected %s", fun, lno,
 		    strtoken(type));
 		return;
@@ -1494,6 +1476,23 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 	lexer_peek_leave(lx, &s);
 
 	return peek;
+}
+
+static struct token *
+lexer_branch_next(const struct lexer *lx)
+{
+	struct token *tk;
+
+	if (!lexer_back(lx, &tk))
+		return NULL;
+	if (token_is_branch(tk))
+		return tk;
+
+	tk = TAILQ_NEXT(tk, tk_entry);
+	if (tk != NULL && token_is_branch(tk))
+		return tk;
+
+	return NULL;
 }
 
 static void
