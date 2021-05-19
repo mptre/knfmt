@@ -1461,8 +1461,10 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 
 		lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER, NULL);
 		lexer_if(lx, TOKEN_IDENT, NULL);
-		lexer_if(lx, TOKEN_LSQUARE, NULL);
-		lexer_if(lx, TOKEN_RSQUARE, NULL);
+		if (lexer_if(lx, TOKEN_LSQUARE, NULL)) {
+			lexer_if(lx, TOKEN_LITERAL, NULL);
+			lexer_if(lx, TOKEN_RSQUARE, NULL);
+		}
 		if (lexer_if(lx, TOKEN_RPAREN, NULL) &&
 		    lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
 		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, tk)) {

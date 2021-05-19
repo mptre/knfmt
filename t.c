@@ -178,6 +178,8 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("int (**f)(void);",
 	    "int ( * * f ) ( void )");
 	error |= test_lexer_peek_if_type("int (*f(void))(void)", "int");
+	error |= test_lexer_peek_if_type("void (*f[1])(void)",
+	    "void ( * f [ 1 ] ) ( void )");
 
 	error |= test_lexer_read("<", "LESS<1:1>(\"<\")");
 	error |= test_lexer_read("<x", "LESS<1:1>(\"<\") IDENT<1:2>(\"x\")");
