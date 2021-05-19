@@ -131,26 +131,23 @@ const struct buffer *
 parser_exec(struct parser *pr)
 {
 	struct lexer *lx = pr->pr_lx;
+	struct token *seek;
 	int error = 0;
 
 	pr->pr_bf = buffer_alloc(lexer_get_buffer(lx)->bf_siz);
 	pr->pr_dc = doc_alloc(DOC_CONCAT, NULL);
 
+	if (!lexer_peek(lx, &seek))
+		seek = NULL;
+
 	for (;;) {
-		struct token *seek, *tk;
+		struct token *tk;
 
 		/* Always emit EOF token as it could have dangling tokens. */
 		if (lexer_if(lx, TOKEN_EOF, &tk)) {
 			doc_token(tk, pr->pr_dc);
 			break;
 		}
-
-		/*
-		 * Take note of the first token of this round of parsing, later
-		 * passed to lexer_branch().
-		 */
-		if (!lexer_peek(lx, &seek))
-			seek = NULL;
 
 		if (parser_exec_decl(pr, pr->pr_dc, 1) &&
 		    parser_exec_func_impl(pr, pr->pr_dc))
@@ -162,7 +159,7 @@ parser_exec(struct parser *pr)
 
 		if (error)
 			break;
-		if (lexer_branch(lx, seek)) {
+		if (lexer_branch(lx, &seek)) {
 			pr->pr_error = 0;
 			error = 0;
 		}
@@ -852,17 +849,29 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 		.ea_recover	= parser_exec_expr_recover,
 		.ea_arg		= pr,
 	};
-	struct doc *ex, *group, *indent;
+	struct doc *ex;
+	struct lexer *lx = pr->pr_lx;
+	struct token *seek;
 
-	group = doc_alloc(DOC_GROUP, dc);
-	indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
-	if (pr->pr_expr > 0)
-		doc_alloc(DOC_SOFTLINE, indent);
-	ea.ea_dc = indent;
-	ex = expr_exec(&ea);
-	if (ex == NULL) {
-		doc_remove(group, dc);
-		return PARSER_NOTHING;
+	if (!lexer_peek(lx, &seek))
+		seek = NULL;
+
+	for (;;) {
+		struct doc *group, *indent;
+
+		group = doc_alloc(DOC_GROUP, dc);
+		indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
+		if (pr->pr_expr > 0)
+			doc_alloc(DOC_SOFTLINE, indent);
+		ea.ea_dc = indent;
+		ex = expr_exec(&ea);
+		if (ex == NULL) {
+			doc_remove(group, dc);
+			return PARSER_NOTHING;
+		}
+
+		if (!lexer_branch(lx, &seek))
+			break;
 	}
 	if (expr != NULL)
 		*expr = ex;
@@ -1073,9 +1082,6 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
 
-	if (lexer_is_branch(lx))
-		return parser_ok(pr);
-
 	if (parser_exec_stmt_block(pr, dc, dc) == PARSER_OK)
 		return parser_ok(pr);
 
@@ -1154,6 +1160,11 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, expr);
 		space = doc_literal(" ", expr);
+
+		if (lexer_is_branch(lx)) {
+			doc_alloc(DOC_HARDLINE, loop);
+			return parser_ok(pr);
+		}
 
 		/*
 		 * If the expression does not fit, break after the semicolon if
@@ -1350,9 +1361,13 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			peek = 1;
 		lexer_peek_leave(lx, &s);
 
-		if (peek && !parser_exec_expr(pr, dc, &expr, NULL)) {
+		if (peek) {
+			if (parser_exec_expr(pr, dc, &expr, NULL))
+				return parser_error(pr);
 			if (lexer_expect(lx, TOKEN_SEMI, &tk))
 				doc_token(tk, expr);
+			if (lexer_is_branch(lx))
+				doc_alloc(DOC_HARDLINE, dc);
 			return parser_ok(pr);
 		}
 	}
@@ -1378,7 +1393,7 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 {
 	struct doc *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *pv, *rbrace, *tk;
+	struct token *pv, *rbrace, *seek, *tk;
 	int nstmt = 0;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
@@ -1391,6 +1406,9 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 
 	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
 		doc_token(tk, head);
+
+	if (!lexer_peek(lx, &seek))
+		seek = NULL;
 
 	if (pr->pr_switch > 0) {
 		/*
@@ -1406,8 +1424,10 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 	while (parser_exec_stmt1(pr, indent, rbrace) == PARSER_OK) {
 		nstmt++;
 
-		if (lexer_is_branch(lx))
-			break;
+		if (lexer_branch(lx, &seek))
+			continue;
+		if (!lexer_peek(lx, &seek))
+			seek = NULL;
 
 		if (lexer_peek_if(lx, TOKEN_RBRACE, &tk) && tk == rbrace)
 			break;
@@ -1459,6 +1479,9 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	 */
 	if (parser_exec_expr(pr, stmt, &expr, rparen))
 		return parser_error(pr);
+
+	if (lexer_is_branch(lx))
+		return parser_ok(pr);
 
 	if (type->tk_type == TOKEN_WHILE && pr->pr_dowhile > 0) {
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))

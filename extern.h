@@ -121,7 +121,7 @@ void		 lexer_free(struct lexer *);
 const struct buffer	*lexer_get_buffer(struct lexer *);
 int			 lexer_get_error(const struct lexer *);
 
-int	lexer_branch(struct lexer *, struct token *);
+int	lexer_branch(struct lexer *, struct token **);
 int	lexer_is_branch(const struct lexer *);
 int	lexer_is_branch_end(const struct lexer *);
 

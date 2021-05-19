@@ -135,8 +135,8 @@ The following type of documents are available:
   emitted.
 
 * DOC_MUTE
-  Mute informs doc_print() to not emit anything. Used while traversing cpp
-  branches.
+  Mute informs doc_print() to not emit anything expect DOC_HARDLINE. Used while
+  traversing cpp branches.
 
 ruler.c
 =======

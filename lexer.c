@@ -343,17 +343,16 @@ lexer_get_error(const struct lexer *lx)
  * Returns non-zero if the lexer took the next branch.
  */
 int
-lexer_branch(struct lexer *lx, struct token *seek)
+lexer_branch(struct lexer *lx, struct token **tk)
 {
 	struct token *branch;
-	struct token *rm;
+	struct token *rm, *seek;
 
 	branch = lexer_branch_next(lx);
 	if (branch == NULL)
 		return 0;
 
-	if (seek == NULL)
-		seek = branch;
+	seek = tk != NULL ? *tk : branch;
 
 	lexer_trace(lx, "branch from %s to %s",
 	    token_sprintf(branch->tk_branch.br_pv), token_sprintf(branch));
@@ -391,6 +390,8 @@ lexer_branch(struct lexer *lx, struct token *seek)
 	/* Rewind causing the seek token to be next one to emit. */
 	lexer_trace(lx, "seek to %s", token_sprintf(seek));
 	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
+	if (tk != NULL)
+		*tk = seek;
 
 	return 1;
 }
