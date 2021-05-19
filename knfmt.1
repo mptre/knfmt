@@ -7,7 +7,6 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl di
-.Op Fl w Ar width
 .Op Ar
 .Sh DESCRIPTION
 The
@@ -16,15 +15,13 @@ utility formats source code files to conform to Kernel Normal Form (KNF), see
 .Xr style 9 .
 .Pp
 The options are as follows:
-.Bl -tag -width "-q query"
+.Bl -tag -width "file"
 .It Fl d
 Produce a diff for each given
 .Ar file .
 .It Fl i
 In place edit of
 .Ar file .
-.It Fl w Ar width
-Maximum allowed column width, defaults to 80.
 .It Ar file
 One or many files to format.
 If omitted, defaults to reading from standard input.

@@ -36,9 +36,7 @@ main(int argc, char *argv[])
 
 	config_init(&cf);
 
-	while ((ch = getopt(argc, argv, "divw:")) != -1) {
-		const char *errstr;
-
+	while ((ch = getopt(argc, argv, "div")) != -1) {
 		switch (ch) {
 		case 'd':
 			cf.cf_flags |= CONFIG_FLAG_DIFF;
@@ -48,11 +46,6 @@ main(int argc, char *argv[])
 			break;
 		case 'v':
 			cf.cf_verbose++;
-			break;
-		case 'w':
-			cf.cf_mw = strtonum(optarg, 1, 1000, &errstr);
-			if (cf.cf_mw == 0)
-				errx(1, "width %s", errstr);
 			break;
 		default:
 			usage();
@@ -96,7 +89,7 @@ main(int argc, char *argv[])
 static __dead void
 usage(void)
 {
-	fprintf(stderr, "usage: knfmt [-di] [-w width]\n");
+	fprintf(stderr, "usage: knfmt [-di] [file ...]\n");
 	exit(1);
 }
 
