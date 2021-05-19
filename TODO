@@ -7,12 +7,14 @@ Improvements
 * More efficient allocation of tokens inside lexer_emit(). Use a vector of
   tokens. However this vector can never be reallocated.
 
+* Format C code in yacc grammar specifications.
+
+* Handle assembler:
+  - https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html
+
 * Simplify or strict mode which mutates the code:
   - Group and sort stack variables according to style(9)
   - Group and sort includes
   - Align backslashes in cpp define
   - Remove parenthesis around return expression
   - Remove semicolon after blocks wrapped in braces
-
-* Handle assembler:
-  - https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html
