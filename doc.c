@@ -8,10 +8,6 @@
 
 #include "extern.h"
 
-#ifdef HAVE_VIS
-#  include <vis.h>
-#endif
-
 TAILQ_HEAD(doc_list, doc);
 
 struct doc {
@@ -758,15 +754,10 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 
 	case DOC_LITERAL:
 	case DOC_VERBATIM: {
-		char *str, *vis;
+		char *str;
 
-		str = strndup(dc->dc_str, dc->dc_len);
-		if (str == NULL)
-			err(1, NULL);
-		if (stravis(&vis, str, VIS_CSTYLE | VIS_TAB | VIS_NL) == -1)
-			err(1, NULL);
-		fprintf(stderr, "(\"%s\", %zu)", vis, dc->dc_len);
-		free(vis);
+		str = strnice(dc->dc_str, dc->dc_len);
+		fprintf(stderr, "(\"%s\", %zu)", str, dc->dc_len);
 		free(str);
 		break;
 	}

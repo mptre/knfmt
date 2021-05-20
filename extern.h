@@ -284,3 +284,9 @@ void	ruler_free(struct ruler *);
 void	ruler_insert(struct ruler *, const struct token *, struct doc *,
     unsigned int, unsigned int, unsigned int);
 void	ruler_exec(struct ruler *);
+
+/*
+ * util ------------------------------------------------------------------------
+ */
+
+char	*strnice(const char *, size_t);

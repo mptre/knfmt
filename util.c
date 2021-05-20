@@ -1,3 +1,5 @@
+#include <err.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "extern.h"
@@ -9,4 +11,28 @@ config_init(struct config *cf)
 	cf->cf_mw = 80;
 	cf->cf_tw = 8;
 	cf->cf_sw = 4;
+}
+
+char *
+strnice(const char *str, size_t len)
+{
+	char *buf, *p;
+	size_t i;
+
+	buf = p = malloc(2 * len + 1);
+	if (buf == NULL)
+		err(1, NULL);
+	for (i = 0; i < len; i++) {
+		if (str[i] == '\n') {
+			*buf++ = '\\';
+			*buf++ = 'n';
+		} else if (str[i] == '\t') {
+			*buf++ = '\\';
+			*buf++ = 't';
+		} else {
+			*buf++ = str[i];
+		}
+	}
+	*buf = '\0';
+	return p;
 }

@@ -125,7 +125,6 @@ TESTS+=	valid-113.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
-TESTS+=	../compat-vis.c
 TESTS+=	../doc.c
 TESTS+=	../expr.c
 TESTS+=	../extern.h
