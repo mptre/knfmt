@@ -1,6 +1,7 @@
-#include <ctype.h>
 #include <err.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -101,6 +102,34 @@ void
 buffer_appendc(struct buffer *bf, char ch)
 {
 	buffer_append(bf, &ch, 1);
+}
+
+void
+buffer_appendv(struct buffer *bf, const char *fmt, ...)
+{
+	va_list ap, cp;
+	unsigned int shift = 0;
+	int n;
+
+	va_start(ap, fmt);
+	va_copy(cp, ap);
+	n = vsnprintf(NULL, 0, fmt, ap);
+	if (n < 0)
+		err(1, "vsnprintf");
+	va_end(ap);
+
+	while ((bf->bf_siz << shift) - bf->bf_len < (size_t)n)
+		shift++;
+	if (shift > 0)
+		buffer_grow(bf, shift);
+
+	n = vsnprintf(&bf->bf_ptr[bf->bf_len], bf->bf_siz - bf->bf_len, fmt,
+	    cp);
+	if (n < 0)
+		err(1, "vsnprintf");
+	bf->bf_len += n;
+
+	va_end(cp);
 }
 
 void

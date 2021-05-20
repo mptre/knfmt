@@ -188,6 +188,17 @@ doc_remove(struct doc *dc, struct doc *parent)
 }
 
 void
+doc_remove_tail(struct doc *parent)
+{
+	struct doc *dc;
+
+	assert(doc_has_list(parent));
+	dc = TAILQ_LAST(&parent->dc_list, doc_list);
+	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
+	doc_free(dc);
+}
+
+void
 doc_set_indent(struct doc *dc, int indent)
 {
 	dc->dc_indent = indent;

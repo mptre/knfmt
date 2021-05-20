@@ -18,6 +18,7 @@ enum parser_peek {
 
 struct parser {
 	const char		*pr_path;
+	struct error		*pr_er;
 	const struct config	*pr_cf;
 	struct lexer		*pr_lx;
 	struct buffer		*pr_bf;
@@ -91,12 +92,12 @@ static int	parser_halted(const struct parser *);
 static int	parser_ok(const struct parser *);
 
 struct parser *
-parser_alloc(const char *path, const struct config *cf)
+parser_alloc(const char *path, struct error *er, const struct config *cf)
 {
 	struct parser *pr;
 	struct lexer *lex;
 
-	lex = lexer_alloc(path, cf);
+	lex = lexer_alloc(path, er, cf);
 	if (lex == NULL)
 		return NULL;
 
@@ -104,6 +105,7 @@ parser_alloc(const char *path, const struct config *cf)
 	if (pr == NULL)
 		err(1, NULL);
 	pr->pr_path = path;
+	pr->pr_er = er;
 	pr->pr_cf = cf;
 	pr->pr_lx = lex;
 	return pr;
@@ -141,27 +143,41 @@ parser_exec(struct parser *pr)
 		seek = NULL;
 
 	for (;;) {
+		struct doc *dc;
 		struct token *tk;
+		int r;
+
+		dc = doc_alloc(DOC_CONCAT, pr->pr_dc);
 
 		/* Always emit EOF token as it could have dangling tokens. */
 		if (lexer_if(lx, TOKEN_EOF, &tk)) {
-			doc_token(tk, pr->pr_dc);
+			doc_token(tk, dc);
 			break;
 		}
 
-		if (parser_exec_decl(pr, pr->pr_dc, 1) &&
-		    parser_exec_func_impl(pr, pr->pr_dc))
+		lexer_recover_mark(lx);
+
+		if (parser_exec_decl(pr, dc, 1) &&
+		    parser_exec_func_impl(pr, dc))
 			error = 1;
 		else if (parser_halted(pr))
 			error = 1;
 		else
-			doc_alloc(DOC_HARDLINE, pr->pr_dc);
+			doc_alloc(DOC_HARDLINE, dc);
 
-		if (error)
-			break;
-		if (lexer_branch(lx, &seek)) {
+		if (error && (r = lexer_recover(lx))) {
+			while (r-- > 0)
+				doc_remove_tail(pr->pr_dc);
 			pr->pr_error = 0;
 			error = 0;
+		} else if (lexer_branch(lx, &seek)) {
+			pr->pr_error = 0;
+			error = 0;
+		} else if (error) {
+			break;
+		} else {
+			if (!lexer_peek(lx, &seek))
+				seek = NULL;
 		}
 	}
 	if (error) {
@@ -1554,7 +1570,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		 * Find the first non pointer token starting from the end, this
 		 * is where the ruler alignment must be performed.
 		 */
-		align = end->tk_align != NULL ? end->tk_align : end;
+		align = end->tk_data != NULL ? end->tk_data : end;
 		for (;;) {
 			if (align->tk_type != TOKEN_STAR)
 				break;
@@ -1718,18 +1734,18 @@ __parser_error(struct parser *pr, const char *fun, int lno)
 	doc_exec(pr->pr_dc, pr->pr_bf, pr->pr_cf);
 #endif
 
-	fprintf(stderr, "%s: ", pr->pr_path);
+	error_write(pr->pr_er, "%s: ", pr->pr_path);
 	if (pr->pr_cf->cf_verbose > 0)
-		fprintf(stderr, "%s:%d: ", fun, lno);
-	fprintf(stderr, "error at ");
+		error_write(pr->pr_er, "%s:%d: ", fun, lno);
+	error_write(pr->pr_er, "%s", "error at ");
 	if (lexer_back(pr->pr_lx, &tk)) {
 		char *str;
 
 		str = token_sprintf(tk);
-		fprintf(stderr, "%s\n", str);
+		error_write(pr->pr_er, "%s\n", str);
 		free(str);
 	} else {
-		fprintf(stderr, "(null)\n");
+		error_write(pr->pr_er, "%s", "(null)\n");
 	}
 	return 1;
 }

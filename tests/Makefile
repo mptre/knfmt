@@ -122,10 +122,13 @@ TESTS+=	valid-110.c
 TESTS+=	valid-111.c
 TESTS+=	valid-112.c
 TESTS+=	valid-113.c
+TESTS+=	valid-114.c
+TESTS+=	valid-115.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
 TESTS+=	../doc.c
+TESTS+=	../error.c
 TESTS+=	../expr.c
 TESTS+=	../extern.h
 TESTS+=	../knfmt.c

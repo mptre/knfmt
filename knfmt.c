@@ -15,7 +15,7 @@
 
 static __dead void	usage(void);
 
-static int	fileformat(const char *, const struct config *);
+static int	fileformat(const char *, struct error *, const struct config *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const char *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -28,6 +28,7 @@ int
 main(int argc, char *argv[])
 {
 	struct config cf;
+	struct error er;
 	int error = 0;
 	int ch;
 
@@ -35,6 +36,7 @@ main(int argc, char *argv[])
 		err(1, "pledge");
 
 	config_init(&cf);
+	error_init(&er, &cf);
 
 	while ((ch = getopt(argc, argv, "div")) != -1) {
 		switch (ch) {
@@ -74,13 +76,19 @@ main(int argc, char *argv[])
 		int i;
 
 		for (i = 0; i < argc; i++) {
-			if (fileformat(argv[i], &cf))
+			if (fileformat(argv[i], &er, &cf)) {
 				error = 1;
+				error_flush(&er);
+			}
+			error_reset(&er);
 		}
 	} else {
-		error = fileformat("/dev/stdin", &cf);
+		error = fileformat("/dev/stdin", &er, &cf);
+		if (error)
+			error_flush(&er);
 	}
 
+	error_close(&er);
 	lexer_shutdown();
 
 	return error;
@@ -94,13 +102,13 @@ usage(void)
 }
 
 static int
-fileformat(const char *path, const struct config *cf)
+fileformat(const char *path, struct error *er, const struct config *cf)
 {
 	const struct buffer *dst, *src;
 	struct parser *pr;
 	int error = 0;
 
-	pr = parser_alloc(path, cf);
+	pr = parser_alloc(path, er, cf);
 	if (pr == NULL) {
 		error = 1;
 		goto out;

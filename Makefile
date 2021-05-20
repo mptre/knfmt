@@ -8,6 +8,7 @@ SRCS+=	compat-pledge.c
 SRCS+=	compat-reallocarray.c
 SRCS+=	compat-warnc.c
 SRCS+=	doc.c
+SRCS+=	error.c
 SRCS+=	expr.c
 SRCS+=	lexer.c
 SRCS+=	parser.c
@@ -174,6 +175,8 @@ DISTFILES+=	tests/valid-110.c
 DISTFILES+=	tests/valid-111.c
 DISTFILES+=	tests/valid-112.c
 DISTFILES+=	tests/valid-113.c
+DISTFILES+=	tests/valid-114.c
+DISTFILES+=	tests/valid-115.c
 DISTFILES+=	token.h
 
 all: ${PROG_knfmt}

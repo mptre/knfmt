@@ -19,16 +19,29 @@ error-*)
 	fi
 	;;
 *)
+	_wrkdir="$(mktemp -dt knfmt.XXXXXX)"
+	trap "rm -rf ${_wrkdir}" 0
+
+	_out="${_wrkdir}/out"
 	_ok="${1%.c}.ok"
 	if [ -e "$_ok" ]; then
-		_err=0
-		_tmp="$(mktemp -t knfmt.XXXXXX)"
+		_tmp="${_wrkdir}/tmp"
 		commstrip "$1" >"$_tmp"
-		${EXEC:-} "${KNFMT}" -v "$_tmp" | diff -u -L "$1" -L "$_ok" "$_ok" - || _err="$?"
-		rm -f "$_tmp"
-		exit "$_err"
+		if ! ${EXEC:-} "${KNFMT}" -v "$_tmp" 2>&1 |
+			diff -u -L "$1" -L "$_ok" "$_ok" - >"$_out" 2>&1
+		then
+			cat "$_out" 1>&2
+			exit 1
+		fi
 	else
-		${EXEC:-} "${KNFMT}" -dv "$1"
+		if ! ${EXEC:-} "${KNFMT}" -dv "$1" >"$_out" 2>&1; then
+			cat "$_out" 1>&2
+			exit 1
+		fi
+	fi
+	if ! cmp -s /dev/null "$_out"; then
+		cat "$_out" 1>&2
+		exit 1
 	fi
 	;;
 esac

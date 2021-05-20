@@ -45,8 +45,31 @@ struct buffer	*buffer_read(const char *);
 void		 buffer_free(struct buffer *);
 void		 buffer_append(struct buffer *, const char *, size_t);
 void		 buffer_appendc(struct buffer *, char);
+void		 buffer_appendv(struct buffer *, const char *, ...)
+	__attribute__((__format__(printf, 2, 3)));
 void		 buffer_reset(struct buffer *);
 int		 buffer_cmp(const struct buffer *, const struct buffer *);
+
+/*
+ * error -----------------------------------------------------------------------
+ */
+
+struct error {
+	const struct config	*er_cf;
+	struct buffer		*er_bf;
+};
+
+void		 error_init(struct error *, const struct config *);
+void		 error_close(struct error *);
+void		 error_reset(struct error *);
+void		 error_flush(struct error *);
+struct buffer	*error_get_buffer(struct error *);
+
+#define error_write(er, fmt, ...) do {					\
+	buffer_appendv(error_get_buffer((er)), (fmt), __VA_ARGS__);	\
+	if (UNLIKELY((er)->er_cf->cf_verbose) >= 2)			\
+		error_flush((er));					\
+} while (0)
 
 /*
  * token -----------------------------------------------------------------------
@@ -61,6 +84,7 @@ TAILQ_HEAD(token_list, token);
 
 struct token {
 	enum token_type	 tk_type;
+	size_t		 tk_off;
 	unsigned int	 tk_lno;
 	unsigned int	 tk_cno;
 	unsigned int	 tk_flags;
@@ -80,7 +104,7 @@ struct token {
 	const char	*tk_str;
 	size_t		 tk_len;
 
-	const struct token	*tk_align;
+	struct token	*tk_data;
 
 	struct {
 		struct token	*br_pv;
@@ -115,13 +139,20 @@ struct lexer_state {
 
 void		 lexer_init(void);
 void		 lexer_shutdown(void);
-struct lexer	*lexer_alloc(const char *, const struct config *);
+struct lexer	*lexer_alloc(const char *, struct error *,
+    const struct config *);
 void		 lexer_free(struct lexer *);
 
 const struct buffer	*lexer_get_buffer(struct lexer *);
 int			 lexer_get_error(const struct lexer *);
 
-int	lexer_branch(struct lexer *, struct token **);
+void	lexer_recover_mark(struct lexer *);
+int	lexer_recover(struct lexer *);
+
+#define lexer_branch(a, b)						\
+	__lexer_branch((a), (b), __func__, __LINE__)
+int	__lexer_branch(struct lexer *, struct token **, const char *, int);
+
 int	lexer_is_branch(const struct lexer *);
 int	lexer_is_branch_end(const struct lexer *);
 
@@ -166,7 +197,8 @@ int	__lexer_until(struct lexer *, enum token_type, const struct token *,
  * parser ----------------------------------------------------------------------
  */
 
-struct parser		*parser_alloc(const char *, const struct config *);
+struct parser		*parser_alloc(const char *, struct error *,
+    const struct config *);
 void			 parser_free(struct parser *);
 const struct buffer	*parser_exec(struct parser *);
 struct doc		*parser_exec_expr_recover(void *);
@@ -222,6 +254,7 @@ unsigned int	doc_width(const struct doc *, struct buffer *,
 void		doc_free(struct doc *);
 void		doc_append(struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);
+void		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, int);
 
 #define doc_alloc(a, b) \

@@ -29,6 +29,7 @@ static int	__test_lexer_read(const char *, const char *, const char *,
 
 struct parser_stub {
 	char		 ps_path[PATH_MAX];
+	struct error	 ps_er;
 	struct parser	*ps_pr;
 	struct lexer	*ps_lx;
 	int		 ps_fd[2];
@@ -347,13 +348,17 @@ parser_stub_create(struct parser_stub *ps, const char *src)
 	if (n < 0 || n > len)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 
-	ps->ps_pr = parser_alloc(ps->ps_path, &cf);
+	error_init(&ps->ps_er, &cf);
+	ps->ps_pr = parser_alloc(ps->ps_path, &ps->ps_er, &cf);
 	ps->ps_lx = parser_get_lexer(ps->ps_pr);
 }
 
 static void
 parser_stub_destroy(struct parser_stub *ps)
 {
+	error_flush(&ps->ps_er);
+	error_close(&ps->ps_er);
+
 	parser_free(ps->ps_pr);
 	ps->ps_pr = NULL;
 

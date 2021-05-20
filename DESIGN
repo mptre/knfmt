@@ -226,12 +226,12 @@ sprinkled inside the parser as some parsing must be avoided while branching.
 
 One caveat with approach is caused by the parser potentially traversing the same
 code more than once as it seeks backwards[1]. While traversing a branch
-continuation, nothing should be emitted until unexamined tokens[3] has been
+continuation, nothing should be emitted until unexamined tokens[3] have been
 reached. While emitting the last token before a branch continuation[2],
-doc_token() will cause any subsequent document to be muted, i.e. do not output
-anything. Once the branch continuation has been crossed, the aforementioned
-routine unmutes. The mute decision is therefore tied to tokens and the
-corresponding logic resides in lexer_branch().
+doc_token() will cause any subsequent document to be muted, see DOC_MUTE above.
+Once the branch continuation has been crossed, the aforementioned routine
+unmutes. The mute decision is therefore tied to tokens and the corresponding
+logic resides in lexer_branch().
 
 comments
 ========
