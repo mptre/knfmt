@@ -113,10 +113,11 @@ buffer_appendv(struct buffer *bf, const char *fmt, ...)
 
 	va_start(ap, fmt);
 	va_copy(cp, ap);
+
 	n = vsnprintf(NULL, 0, fmt, ap);
+	va_end(ap);
 	if (n < 0)
 		err(1, "vsnprintf");
-	va_end(ap);
 
 	while ((bf->bf_siz << shift) - bf->bf_len < (size_t)n)
 		shift++;
@@ -125,11 +126,10 @@ buffer_appendv(struct buffer *bf, const char *fmt, ...)
 
 	n = vsnprintf(&bf->bf_ptr[bf->bf_len], bf->bf_siz - bf->bf_len, fmt,
 	    cp);
+	va_end(cp);
 	if (n < 0)
 		err(1, "vsnprintf");
 	bf->bf_len += n;
-
-	va_end(cp);
 }
 
 void

@@ -370,7 +370,7 @@ lexer_recover_mark(struct lexer *lx)
 {
 	int i = 0;
 
-	/* Remove by the first entry by shifting everything to the left. */
+	/* Remove the first entry by shifting everything to the left. */
 	for (i = 0; i < NMARKERS - 1; i++) {
 		if (lx->lx_markers[i + 1] == NULL)
 			break;
@@ -1386,27 +1386,23 @@ lexer_comment(struct lexer *lx, int block)
 static struct token *
 lexer_cpp(struct lexer *lx)
 {
-	struct lexer_state cppst, st;
+	struct lexer_state cmpst, st;
 	struct token cpp;
 	enum token_type type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
 
-	/* Stamp the state used to restore. */
 	st = lx->lx_st;
-
 	lexer_eat_space(lx, 1, 0);
-
-	/*
-	 * Stamp the state after consuming whitespace in order to capture the
-	 * complete line representing a preprocessor directive.
-	 */
-	cppst = lx->lx_st;
 
 	if (lexer_getc(lx, &ch) || ch != '#') {
 		lx->lx_st = st;
 		return NULL;
 	}
+
+	/* Space before keyword is allowed. */
+	lexer_eat_space(lx, 0, 0);
+	cmpst = lx->lx_st;
 
 	ch = '\0';
 	comment = 0;
@@ -1429,12 +1425,12 @@ lexer_cpp(struct lexer *lx)
 		ch = peek;
 	}
 
-	if (lexer_buffer_strcmp(lx, &cppst, "#if"))
+	if (lexer_buffer_strcmp(lx, &cmpst, "if") == 0)
 		type = TOKEN_CPP_IF;
-	else if (lexer_buffer_strcmp(lx, &cppst, "#else") ||
-	    lexer_buffer_strcmp(lx, &cppst, "#elif"))
+	else if (lexer_buffer_strcmp(lx, &cmpst, "else") == 0 ||
+	    lexer_buffer_strcmp(lx, &cmpst, "elif") == 0)
 		type = TOKEN_CPP_ELSE;
-	else if (lexer_buffer_strcmp(lx, &cppst, "#endif"))
+	else if (lexer_buffer_strcmp(lx, &cmpst, "endif") == 0)
 		type = TOKEN_CPP_ENDIF;
 
 	/* Consume hard line(s), will be hanging of the cpp token. */
@@ -1501,7 +1497,7 @@ lexer_buffer_strcmp(const struct lexer *lx, const struct lexer_state *st,
 	len = strlen(str);
 	if (len > buflen)
 		return 0;
-	return strncmp(buf, str, len) == 0 ? 1 : 0;
+	return strncmp(buf, str, len);
 }
 
 static struct token *
