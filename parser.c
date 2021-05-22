@@ -1031,6 +1031,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
 	struct token *end = NULL;
+	struct token *pv = NULL;
 	struct token *tk;
 
 	/* Consume any left parenthesis before emitting a soft line. */
@@ -1078,9 +1079,14 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 
 		if (!lexer_pop(lx, &tk))
 			return parser_error(pr);
+		/* Identifiers must be separated. */
+		if (pv != NULL && pv->tk_type == TOKEN_IDENT &&
+		    tk->tk_type == TOKEN_IDENT)
+			doc_alloc(DOC_LINE, concat);
 		doc_token(tk, concat);
 		if (tk == rparen)
 			return PARSER_NOTHING;
+		pv = tk;
 	}
 
 	return parser_ok(pr);
