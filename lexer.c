@@ -295,6 +295,7 @@ lexer_shutdown(void)
 struct lexer *
 lexer_alloc(const char *path, struct error *er, const struct config *cf)
 {
+	struct branch *br;
 	struct buffer *bf;
 	struct lexer *lx;
 	int error = 0;
@@ -326,7 +327,12 @@ lexer_alloc(const char *path, struct error *er, const struct config *cf)
 		if (tk->tk_type == TOKEN_EOF)
 			break;
 	}
-	assert(TAILQ_EMPTY(&lx->lx_branches));
+
+	/* Remove any pending broken branches. */
+	while ((br = TAILQ_FIRST(&lx->lx_branches)) != NULL) {
+		TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
+		free(br);
+	}
 
 	if (error) {
 		lexer_free(lx);
