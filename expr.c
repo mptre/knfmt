@@ -392,6 +392,10 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 
 		ex = expr_alloc(EXPR_PARENS, es);
 		ex->ex_lhs = expr_exec1(es, PC0);
+		if (ex->ex_lhs == NULL) {
+			expr_free(ex);
+			return NULL;
+		}
 	} else {
 		ex = expr_alloc(EXPR_CALL, es);
 		ex->ex_lhs = lhs;

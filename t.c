@@ -109,7 +109,6 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("-x", "(-(x))");
 	error |= test_expr_exec("+x", "(+(x))");
 	error |= test_expr_exec("(int)x", "(((int))(x))");
-	error |= test_expr_exec("()", "()");
 	error |= test_expr_exec("(struct s)x", "(((struct s))(x))");
 	error |= test_expr_exec("(struct s*)x", "(((struct s *))(x))");
 	error |= test_expr_exec("(char const* char*)x",

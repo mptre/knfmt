@@ -29,8 +29,9 @@ struct lexer {
 	struct buffer		*lx_bf;
 	const char		*lx_path;
 
-	int	lx_eof;
-	int	lx_peek;
+	int		lx_eof;
+	int		lx_peek;
+	enum token_type	lx_expect;
 
 #define NMARKERS	2
 	struct token	*lx_markers[NMARKERS];
@@ -68,8 +69,10 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 
-static void	lexer_recover_fold(struct lexer *, struct token *,
-    struct token **);
+static struct token	*lexer_recover_fold(struct lexer *, struct token *,
+    struct token *, const struct token *);
+static int		 lexer_recover_hard(struct lexer *, struct token *);
+static void		 lexer_recover_reset(struct lexer *, struct token *);
 
 static struct token	*lexer_branch_find(struct token *, int);
 static struct token	*lexer_branch_next(const struct lexer *);
@@ -307,6 +310,7 @@ lexer_alloc(const char *path, struct error *er, const struct config *cf)
 	lx->lx_cf = cf;
 	lx->lx_bf = bf;
 	lx->lx_path = path;
+	lx->lx_expect = TOKEN_NONE;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	TAILQ_INIT(&lx->lx_tokens);
@@ -390,9 +394,12 @@ lexer_recover_mark(struct lexer *lx)
 int
 lexer_recover(struct lexer *lx)
 {
-	struct token *br, *dst, *src, *start, *tk;
+	struct token *back, *br, *dst, *src, *start, *tk;
 	int nmarkers = 0;
-	int i, m;
+	int m;
+
+	if (!lexer_back(lx, &back))
+		return 0;
 
 	for (m = 0; m < NMARKERS; m++) {
 		if (lx->lx_markers[m] == NULL)
@@ -416,12 +423,13 @@ lexer_recover(struct lexer *lx)
 	 * Find the first branch by looking backwards and forwards from the
 	 * start token. Note, we could be inside a branch.
 	 */
-	lexer_trace(lx, "start from %s", token_sprintf(tk));
+	lexer_trace(lx, "start %s, back %s", token_sprintf(tk),
+	    token_sprintf(back));
 	br = lexer_branch_find(tk, 0);
 	if (br == NULL)
 		br = lexer_branch_find(tk, 1);
 	if (br == NULL)
-		return 0;
+		return lexer_recover_hard(lx, start);
 
 	src = br->tk_data;
 	dst = br->tk_branch.br_nx->tk_data;
@@ -429,32 +437,43 @@ lexer_recover(struct lexer *lx)
 	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
 	    token_sprintf(src), token_sprintf(dst));
 
-	if (!token_branch_cover(br, start)) {
+	if (token_branch_cover(br, start)) {
+		lexer_trace(lx, "start %s covered by branch [%s, %s]",
+		    token_sprintf(start), token_sprintf(br),
+		    token_sprintf(br->tk_branch.br_nx));
+
+		/*
+		 * Move forward the start as the same token is about to be
+		 * removed.
+		 */
+		start = dst;
+	} else if (lexer_recover_hard(lx, start)) {
+		/*
+		 * Since the branch does not cover the start token, we might be
+		 * better of doing a hard recover.
+		 */
+		return 1;
+	} else {
 		/* Find the first marked token positioned before the branch. */
 		for (;;) {
 			start = lx->lx_markers[m];
 			if (token_cmp(start, br) < 0)
 				break;
 
-			lexer_trace(lx, "start moving backwards %s",
-			    token_sprintf(start));
 			if (m == 0)
 				break;
 			m--;
+			lexer_trace(lx,
+			    "start %s before branch, moving backwards...",
+			    token_sprintf(start));
 		}
 	}
 
-	for (i = 0; i < NMARKERS; i++)
-		lx->lx_markers[i] = NULL;
-
 	/* Turn the whole branch into a prefix hanging of the destination. */
-	lexer_recover_fold(lx, br, &start);
+	lexer_recover_fold(lx, src, dst, br->tk_branch.br_nx);
 
-	lexer_trace(lx, "seek to %s, removing %d documents",
-	    token_sprintf(start), nmarkers - m);
-	lx->lx_st.st_tok = TAILQ_PREV(start, token_list, tk_entry);
-	lx->lx_st.st_err = 0;
-
+	lexer_recover_reset(lx, start);
+	lexer_trace(lx, "removing %d document(s)", nmarkers - m);
 	return nmarkers - m;
 }
 
@@ -616,6 +635,8 @@ __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
 	}
 
 err:
+	if (lx->lx_expect == TOKEN_NONE)
+		lx->lx_expect = type;
 	lx->lx_st.st_tok = pv;
 	lexer_emit_error(lx, type, t, fun, lno);
 	return 0;
@@ -1574,22 +1595,23 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 }
 
 /*
- * Fold the branch into a prefix hanging of the branch destination.
+ * Fold tokens covered by [src, dst) into a prefix hanging of dst. Any existing
+ * prefix hanging of dst after stop (inclusively) will be preserved.
  */
-static void
-lexer_recover_fold(struct lexer *lx, struct token *br, struct token **seek)
+static struct token *
+lexer_recover_fold(struct lexer *lx, struct token *src, struct token *dst,
+    const struct token *stop)
 {
 	struct lexer_state st;
-	struct token *dst, *prefix, *pv, *src, *stop;
+	struct token *prefix, *pv;
 	size_t beg, end, oldoff;
 
-	src = br->tk_data;
-	dst = br->tk_branch.br_nx->tk_data;
-	stop = br->tk_branch.br_nx;
+	pv = src;
+	if (!TAILQ_EMPTY(&src->tk_prefixes))
+		pv = TAILQ_FIRST(&src->tk_prefixes);
 
-	pv = TAILQ_FIRST(&src->tk_prefixes);
 	beg = pv->tk_off;
-	end = br->tk_branch.br_nx->tk_off;
+	end = stop->tk_off;
 	memset(&st, 0, sizeof(st));
 	st.st_off = beg;
 	st.st_lno = pv->tk_lno;
@@ -1605,13 +1627,6 @@ lexer_recover_fold(struct lexer *lx, struct token *br, struct token **seek)
 	 */
 	for (;;) {
 		struct token *nx;
-
-		/*
-		 * Move the seek token forward if we stamped a token about to be
-		 * removed.
-		 */
-		if (src == *seek)
-			*seek = dst;
 
 		nx = TAILQ_NEXT(src, tk_entry);
 		lexer_trace(lx, "removing %s", token_sprintf(src));
@@ -1641,6 +1656,53 @@ lexer_recover_fold(struct lexer *lx, struct token *br, struct token **seek)
 	lexer_trace(lx, "add prefix %s to %s", token_sprintf(prefix),
 	    token_sprintf(dst));
 	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+
+	return prefix;
+}
+
+static int
+lexer_recover_hard(struct lexer *lx, struct token *seek)
+{
+	struct token *back, *expect, *prefix;
+	size_t off;
+
+	if (lx->lx_expect == TOKEN_NONE || !lexer_back(lx, &back) ||
+	    !lexer_peek_until(lx, lx->lx_expect, &expect))
+		return 0;
+
+	lexer_trace(lx, "back %s, expect %s", token_sprintf(back),
+	    token_sprintf(expect));
+
+	/* Play it safe, do nothing while crossing a line. */
+	if (token_cmp(back, expect))
+		return 0;
+
+	prefix = lexer_recover_fold(lx, back, expect, expect);
+	/* Ugliness ahead, preserve any white space preceding the prefix. */
+	for (off = prefix->tk_off; off > 0; off--) {
+		if (!isspace((unsigned char)prefix->tk_str[-1]))
+			break;
+
+		prefix->tk_str--;
+		prefix->tk_len++;
+	}
+
+	lexer_recover_reset(lx, seek);
+	lx->lx_expect = TOKEN_NONE;
+	return 1;
+}
+
+static void
+lexer_recover_reset(struct lexer *lx, struct token *seek)
+{
+	int i;
+
+	for (i = 0; i < NMARKERS; i++)
+		lx->lx_markers[i] = NULL;
+
+	lexer_trace(lx, "seek to %s", token_sprintf(seek));
+	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
+	lx->lx_st.st_err = 0;
 }
 
 static struct token *
