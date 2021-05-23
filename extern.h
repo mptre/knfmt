@@ -106,7 +106,7 @@ struct token {
 	size_t		 tk_len;
 
 	union {
-		struct token	*tk_data;
+		struct token	*tk_token;
 		int		 tk_int;
 	};
 

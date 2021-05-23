@@ -437,8 +437,8 @@ lexer_recover(struct lexer *lx)
 	if (br == NULL)
 		return lexer_recover_hard(lx, start);
 
-	src = br->tk_data;
-	dst = br->tk_branch.br_nx->tk_data;
+	src = br->tk_token;
+	dst = br->tk_branch.br_nx->tk_token;
 	lexer_trace(lx, "branch from %s to %s covering [%s, %s)",
 	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
 	    token_sprintf(src), token_sprintf(dst));
@@ -495,16 +495,16 @@ __lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 	if (br == NULL)
 		return 0;
 
-	dst = br->tk_data;
+	dst = br->tk_token;
 	seek = tk != NULL ? *tk : dst;
 
 	lexer_trace(lx, "from %s:%d", fun, lno);
 	lexer_trace(lx, "branch from %s to %s, covering [%s, %s)",
 	    token_sprintf(br->tk_branch.br_pv), token_sprintf(br),
-	    token_sprintf(br->tk_branch.br_pv->tk_data),
-	    token_sprintf(br->tk_data));
+	    token_sprintf(br->tk_branch.br_pv->tk_token),
+	    token_sprintf(br->tk_token));
 
-	rm = br->tk_branch.br_pv->tk_data;
+	rm = br->tk_branch.br_pv->tk_token;
 
 	for (;;) {
 		struct token *nx;
@@ -778,7 +778,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk)
 			 * alignment.
 			 */
 			if (lexer_back(lx, &align))
-				t->tk_data = align;
+				t->tk_token = align;
 			peek = 1;
 			break;
 		} else {
@@ -1776,7 +1776,7 @@ lexer_branch_enter(struct lexer *lx, struct token *cpp, struct token *tk)
 
 	lexer_trace(lx, "%s", token_sprintf(cpp));
 
-	cpp->tk_data = tk;
+	cpp->tk_token = tk;
 
 	br = calloc(1, sizeof(*br));
 	if (br == NULL)
@@ -1799,12 +1799,12 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 	 * Discard branches hanging of the same token, such branch cannot cause
 	 * removal of any tokens.
 	 */
-	if (br->br_cpp->tk_data == tk) {
+	if (br->br_cpp->tk_token == tk) {
 		lexer_trace(lx, "%s. discard empty branch", token_sprintf(cpp));
 		token_branch_unlink(br->br_cpp);
 		token_branch_unlink(cpp);
 	} else {
-		cpp->tk_data = tk;
+		cpp->tk_token = tk;
 		token_branch_link(br->br_cpp, cpp);
 		lexer_trace(lx, "%s -> %s", token_sprintf(br->br_cpp),
 		    token_sprintf(cpp));
@@ -1828,7 +1828,7 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 	 * Discard branches hanging of the same token, such branch cannot cause
 	 * removal of any tokens.
 	 */
-	if (br->br_cpp->tk_data == tk) {
+	if (br->br_cpp->tk_token == tk) {
 		token_branch_unlink(cpp);
 		return;
 	}
@@ -1836,7 +1836,7 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 	lexer_trace(lx, "%s -> %s", token_sprintf(br->br_cpp),
 	    token_sprintf(cpp));
 
-	cpp->tk_data = tk;
+	cpp->tk_token = tk;
 	token_branch_link(br->br_cpp, cpp);
 	br->br_cpp = cpp;
 }

@@ -1576,7 +1576,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		 * Find the first non pointer token starting from the end, this
 		 * is where the ruler alignment must be performed.
 		 */
-		align = end->tk_data != NULL ? end->tk_data : end;
+		align = end->tk_token != NULL ? end->tk_token : end;
 		for (;;) {
 			if (align->tk_type != TOKEN_STAR)
 				break;
