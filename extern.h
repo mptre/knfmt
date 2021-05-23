@@ -83,11 +83,10 @@ enum token_type {
 TAILQ_HEAD(token_list, token);
 
 struct token {
-	enum token_type	 tk_type;
-	size_t		 tk_off;
-	unsigned int	 tk_lno;
-	unsigned int	 tk_cno;
-	unsigned int	 tk_flags;
+	enum token_type	tk_type;
+	unsigned int	tk_lno;
+	unsigned int	tk_cno;
+	unsigned int	tk_flags;
 #define TOKEN_FLAG_TYPE		0x00000001u
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
 #define TOKEN_FLAG_STORAGE	0x00000004u
@@ -101,6 +100,8 @@ struct token {
 #define TOKEN_FLAG_NEWLINE	0x00000400u
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
+
+	size_t		tk_off;
 
 	const char	*tk_str;
 	size_t		 tk_len;

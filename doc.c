@@ -23,7 +23,7 @@ struct doc {
 		int		 dc_int;
 	};
 
-	int	dc_indent;
+	ssize_t	dc_indent;
 	size_t	dc_len;
 
 	TAILQ_ENTRY(doc)	dc_entry;
@@ -787,12 +787,12 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		if ((str = indentstr(dc)) != NULL)
 			fprintf(stderr, "%s", str);
 		else
-			fprintf(stderr, "%d", dc->dc_indent);
+			fprintf(stderr, "%zd", dc->dc_indent);
 		break;
 	}
 
 	case DOC_ALIGN:
-		fprintf(stderr, "(%d)", dc->dc_indent);
+		fprintf(stderr, "(%zd)", dc->dc_indent);
 		break;
 
 	case DOC_LITERAL:
