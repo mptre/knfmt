@@ -130,6 +130,9 @@ The following type of documents are available:
 * DOC_HARDLINE
   Hardline emits a new line in both break and munge mode.
 
+* DOC_NEWLINE
+  Newline emits one or many new lines. Used by trailing comments.
+
 * DOC_NOLINE
   Noline prevents any type of line document nested underneath it from being
   emitted.

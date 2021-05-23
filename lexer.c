@@ -48,7 +48,7 @@ struct token_hash {
 static int		 lexer_getc(struct lexer *, unsigned char *);
 static void		 lexer_ungetc(struct lexer *);
 static int		 lexer_read(struct lexer *, struct token **);
-static struct token	*lexer_eat_lines(struct lexer *, int);
+static int		 lexer_eat_lines(struct lexer *, struct token **, int);
 static struct token	*lexer_eat_space(struct lexer *, int, int);
 static struct token	*lexer_keyword(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
@@ -1202,10 +1202,17 @@ out:
 		if ((tmp = lexer_comment(lx, 0)) == NULL)
 			break;
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
+		/*
+		 * Halt on hard line(s) since this must be a trailing comment
+		 * meaning no further comment(s) can be associated with this
+		 * token.
+		 */
+		if (tmp->tk_flags & TOKEN_FLAG_NEWLINE)
+			break;
 	}
 
 	/* Consume hard lines, will be hanging of the emitted token. */
-	if ((tmp = lexer_eat_lines(lx, 1)) != NULL)
+	if (lexer_eat_lines(lx, &tmp, 2))
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
 
 	/*
@@ -1230,8 +1237,8 @@ out:
 	return error ? 0 : 1;
 }
 
-static struct token *
-lexer_eat_lines(struct lexer *lx, int emit)
+static int
+lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 {
 	struct lexer_state st;
 	int nlines = 0;
@@ -1249,9 +1256,11 @@ lexer_eat_lines(struct lexer *lx, int emit)
 			break;
 		}
 	}
-	if (nlines <= 1)
-		return NULL;
-	return emit ? lexer_emit(lx, &st, &tkline) : NULL;
+	if (nlines < threshold)
+		return 0;
+	if (tk != NULL)
+		*tk = lexer_emit(lx, &st, &tkline);
+	return nlines;
 }
 
 static struct token *
@@ -1324,7 +1333,9 @@ static struct token *
 lexer_comment(struct lexer *lx, int block)
 {
 	struct lexer_state oldst, st;
+	struct token *tk;
 	int ncomments = 0;
+	int nlines;
 
 	/* Stamp the state which marks the start of comments. */
 	st = lx->lx_st;
@@ -1376,17 +1387,26 @@ lexer_comment(struct lexer *lx, int block)
 	if (ncomments == 0)
 		return NULL;
 
-	/*
-	 * Optionally consume trailing whitespace and hard lines(s), will be
-	 * hanging of the comment token. This is only relevant for block
-	 * comments.
-	 */
 	if (block) {
+		/*
+		 * For block comments, consume trailing whitespace and hard lines(s),
+		 * will be hanging of the comment token.
+		 */
 		(void)lexer_eat_space(lx, 0, 0);
-		(void)lexer_eat_lines(lx, 0);
+		lexer_eat_lines(lx, NULL, 2);
+		return lexer_emit(lx, &st, &tkcomment);
 	}
 
-	return lexer_emit(lx, &st, &tkcomment);
+	/*
+	 * For trailing comments, take note trailing hard line which will be emitted
+	 * by doc_token().
+	 */
+	tk = lexer_emit(lx, &st, &tkcomment);
+	if ((nlines = lexer_eat_lines(lx, NULL, 1)) > 0) {
+		tk->tk_flags |= TOKEN_FLAG_NEWLINE;
+		tk->tk_int = nlines;
+	}
+	return tk;
 }
 
 static struct token *
@@ -1440,7 +1460,7 @@ lexer_cpp(struct lexer *lx)
 		type = TOKEN_CPP_ENDIF;
 
 	/* Consume hard line(s), will be hanging of the cpp token. */
-	(void)lexer_eat_lines(lx, 0);
+	lexer_eat_lines(lx, NULL, 2);
 
 	cpp = tkcpp;
 	cpp.tk_type = type;

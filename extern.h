@@ -98,13 +98,17 @@ struct token {
 #define TOKEN_FLAG_BINARY	0x00000080u
 #define TOKEN_FLAG_DISCARD	0x00000100u
 #define TOKEN_FLAG_UNMUTE	0x00000200u
+#define TOKEN_FLAG_NEWLINE	0x00000400u
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
 	const char	*tk_str;
 	size_t		 tk_len;
 
-	struct token	*tk_data;
+	union {
+		struct token	*tk_data;
+		int		 tk_int;
+	};
 
 	struct {
 		struct token	*br_pv;
@@ -243,6 +247,7 @@ enum doc_type {
 	DOC_LINE,
 	DOC_SOFTLINE,
 	DOC_HARDLINE,
+	DOC_NEWLINE,
 	DOC_NOLINE,
 	DOC_MUTE,
 };

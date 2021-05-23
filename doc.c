@@ -59,6 +59,7 @@ struct doc_state {
 	unsigned int	st_depth;
 	unsigned int	st_refit;
 	unsigned int	st_line;
+	unsigned int	st_newline;
 	unsigned int	st_noline;
 	unsigned int	st_parens;
 	int		st_mute;
@@ -172,6 +173,7 @@ doc_free(struct doc *dc)
 	case DOC_LINE:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
+	case DOC_NEWLINE:
 	case DOC_MUTE:
 		break;
 	}
@@ -288,6 +290,14 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 
 	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
 		__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
+	}
+
+	/* lexer_comment() signalled that hard line(s) must be emitted. */
+	if (tk->tk_flags & TOKEN_FLAG_NEWLINE) {
+		struct doc *newline;
+
+		newline = __doc_alloc(DOC_NEWLINE, dc, fun, lno);
+		newline->dc_int = tk->tk_int;
 	}
 
 	/* Mute if we're about to branch. */
@@ -475,6 +485,14 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		doc_print(dc, st, "\n", 1, 1);
 		break;
 
+	case DOC_NEWLINE:
+		/*
+		 * Signal to doc_print() that we've got pending hard line(s) to
+		 * emit.
+		 */
+		st->st_newline = dc->dc_int;
+		break;
+
 	case DOC_MUTE:
 		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
 			st->st_mute += dc->dc_int;
@@ -571,6 +589,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_HARDLINE:
+	case DOC_NEWLINE:
 		return 1;
 
 	case DOC_MUTE:
@@ -617,6 +636,19 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
     size_t len, int doindent)
 {
 	int newline = len == 1 && str[0] == '\n';
+
+	/* Emit any pending hard line(s). */
+	if (st->st_newline > 0) {
+		int space = len == 1 && str[0] == ' ';
+		int n;
+
+		n = st->st_newline;
+		st->st_newline = 0;
+		for (; n > 0; n--)
+			doc_print(dc, st, "\n", 1, doindent && n - 1 == 0);
+		if (newline || space)
+			return;
+	}
 
 	if (newline && dc->dc_type == DOC_VERBATIM && st->st_noline > 0)
 		return;
@@ -788,6 +820,7 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
+	case DOC_NEWLINE:
 		fprintf(stderr, "(%d)", dc->dc_int);
 		break;
 	}
@@ -821,6 +854,7 @@ __doc_trace_leave(const struct doc *dc, struct doc_state *st)
 	case DOC_LINE:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
+	case DOC_NEWLINE:
 	case DOC_MUTE:
 		break;
 	}
@@ -856,6 +890,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_LINE);
 	CASE(DOC_SOFTLINE);
 	CASE(DOC_HARDLINE);
+	CASE(DOC_NEWLINE);
 	CASE(DOC_NOLINE);
 	CASE(DOC_MUTE);
 #undef CASE
