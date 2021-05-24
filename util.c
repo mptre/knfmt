@@ -29,6 +29,9 @@ strnice(const char *str, size_t len)
 		} else if (str[i] == '\t') {
 			*buf++ = '\\';
 			*buf++ = 't';
+		} else if (str[i] == '"') {
+			*buf++ = '\\';
+			*buf++ = '"';
 		} else {
 			*buf++ = str[i];
 		}
