@@ -1799,7 +1799,7 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 	 * Discard branches hanging of the same token, such branch cannot cause
 	 * removal of any tokens.
 	 */
-	if (br->br_cpp->tk_token == tk) {
+	if (br->br_cpp->tk_token == tk && br->br_cpp->tk_type == TOKEN_CPP_IF) {
 		lexer_trace(lx, "%s. discard empty branch", token_sprintf(cpp));
 		token_branch_unlink(br->br_cpp);
 		token_branch_unlink(cpp);
