@@ -1256,7 +1256,7 @@ lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 			break;
 		}
 	}
-	if (nlines < threshold)
+	if (nlines < threshold || lexer_eof(lx))
 		return 0;
 	if (tk != NULL)
 		*tk = lexer_emit(lx, &st, &tkline);
