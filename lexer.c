@@ -1602,9 +1602,9 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 	error_write(lx->lx_er, "%s: ", lx->lx_path);
 	if (lx->lx_cf->cf_verbose > 0)
 		error_write(lx->lx_er, "%s:%d: ", fun, lno);
-	str = token_sprintf(tk);
+	str = tk ? token_sprintf(tk) : NULL;
 	error_write(lx->lx_er, "expected type %s got %s\n", strtoken(type),
-	    str);
+	    str ? str : "(null)");
 	free(str);
 }
 
@@ -1724,12 +1724,12 @@ lexer_recover_hard(struct lexer *lx, struct token *seek)
 		    !lexer_peek_until(lx, lx->lx_expect, &expect))
 			return 0;
 
-		lexer_trace(lx, "back %s, expect %s", token_sprintf(back),
-		    token_sprintf(expect));
-
 		/* Play it safe, do nothing while crossing a line. */
 		if (token_cmp(back, expect))
 			return 0;
+
+		lexer_trace(lx, "back %s, expect %s", token_sprintf(back),
+		    token_sprintf(expect));
 
 		prefix = lexer_recover_fold(lx, back, expect, expect);
 		/*
