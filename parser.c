@@ -132,6 +132,7 @@ parser_get_lexer(struct parser *pr)
 const struct buffer *
 parser_exec(struct parser *pr)
 {
+	struct lexer_recover_markers lm;
 	struct lexer *lx = pr->pr_lx;
 	struct token *seek;
 	int error = 0;
@@ -141,6 +142,8 @@ parser_exec(struct parser *pr)
 
 	if (!lexer_peek(lx, &seek))
 		seek = NULL;
+
+	lexer_recover_init(&lm);
 
 	for (;;) {
 		struct doc *dc;
@@ -155,7 +158,7 @@ parser_exec(struct parser *pr)
 			break;
 		}
 
-		lexer_recover_mark(lx);
+		lexer_recover_mark(lx, &lm);
 
 		if (parser_exec_decl(pr, dc, 1) &&
 		    parser_exec_func_impl(pr, dc))
@@ -165,7 +168,7 @@ parser_exec(struct parser *pr)
 		else
 			doc_alloc(DOC_HARDLINE, dc);
 
-		if (error && (r = lexer_recover(lx))) {
+		if (error && (r = lexer_recover(lx, &lm))) {
 			while (r-- > 0)
 				doc_remove_tail(pr->pr_dc);
 			pr->pr_error = 0;
