@@ -199,6 +199,8 @@ int	lexer_peek_until_stop(struct lexer *, enum token_type,
 int	__lexer_until(struct lexer *, enum token_type, const struct token *,
     struct token **, const char *, int);
 
+void	lexer_dump(const struct lexer *);
+
 /*
  * parser ----------------------------------------------------------------------
  */
