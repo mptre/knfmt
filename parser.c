@@ -874,6 +874,7 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 
 	for (;;) {
 		struct doc *group, *indent;
+		int error = 0;
 
 		group = doc_alloc(DOC_GROUP, dc);
 		indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
@@ -881,13 +882,16 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 			doc_alloc(DOC_SOFTLINE, indent);
 		ea.ea_dc = indent;
 		ex = expr_exec(&ea);
-		if (ex == NULL) {
-			doc_remove(group, dc);
-			return PARSER_NOTHING;
-		}
+		if (ex == NULL)
+			error = 1;
 
-		if (!lexer_branch(lx, &seek))
+		/* Suppress error if we managed to branch. */
+		if (lexer_branch(lx, &seek))
+			continue;
+		if (!error)
 			break;
+		doc_remove(group, dc);
+		return PARSER_NOTHING;
 	}
 	if (expr != NULL)
 		*expr = ex;

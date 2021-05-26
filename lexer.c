@@ -76,7 +76,7 @@ static struct token	*lexer_recover_fold(struct lexer *, struct token *,
 static int		 lexer_recover_hard(struct lexer *, struct token *);
 static void		 lexer_recover_reset(struct lexer *, struct token *);
 
-static struct token	*lexer_branch_find(struct token *, int);
+static struct token	*lexer_branch_find(struct token *);
 static struct token	*lexer_branch_next(const struct lexer *);
 static void		 lexer_branch_enter(struct lexer *, struct token *,
     struct token *);
@@ -100,6 +100,7 @@ static int		 token_branch_cover(const struct token *,
     const struct token *);
 static void		 token_branch_link(struct token *, struct token *);
 static void		 token_branch_unlink(struct token *);
+static struct token	*token_get_branch(struct token *);
 static struct token	*token_find_prefix(const struct token *,
     enum token_type);
 static void		 token_free(struct token *);
@@ -183,12 +184,12 @@ token_has_line(const struct token *tk)
 }
 
 /*
- * Returns non-zero if the given token denotes a branch continuation.
+ * Returns non-zero if given token has a branch continuation associated with it.
  */
 int
 token_is_branch(const struct token *tk)
 {
-	return token_find_prefix(tk, TOKEN_CPP_ELSE) != NULL;
+	return token_get_branch((struct token *)tk) != NULL;
 }
 
 /*
@@ -428,14 +429,12 @@ lexer_recover(struct lexer *lx)
 	tk = start;
 
 	/*
-	 * Find the first branch by looking backwards and forwards from the
-	 * start token. Note, we could be inside a branch.
+	 * Find the first branch by looking forward from the start token. Note,
+	 * we could be inside a branch.
 	 */
 	lexer_trace(lx, "start %s, back %s", token_sprintf(tk),
 	    token_sprintf(back));
-	br = lexer_branch_find(tk, 0);
-	if (br == NULL)
-		br = lexer_branch_find(tk, 1);
+	br = lexer_branch_find(tk);
 	if (br == NULL)
 		return lexer_recover_hard(lx, start);
 
@@ -497,16 +496,16 @@ __lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 	if (br == NULL)
 		return 0;
 
-	dst = br->tk_token;
+	dst = br->tk_branch.br_nx->tk_token;
 	seek = tk != NULL ? *tk : dst;
 
 	lexer_trace(lx, "from %s:%d", fun, lno);
 	lexer_trace(lx, "branch from %s to %s, covering [%s, %s)",
-	    token_sprintf(br->tk_branch.br_pv), token_sprintf(br),
-	    token_sprintf(br->tk_branch.br_pv->tk_token),
-	    token_sprintf(br->tk_token));
+	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
+	    token_sprintf(br->tk_token),
+	    token_sprintf(br->tk_branch.br_nx->tk_token));
 
-	rm = br->tk_branch.br_pv->tk_token;
+	rm = br->tk_token;
 
 	for (;;) {
 		struct token *nx;
@@ -537,9 +536,9 @@ __lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 	/* Rewind causing the seek token to be next one to emit. */
 	lexer_trace(lx, "seek to %s", token_sprintf(seek));
 	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
+	lx->lx_st.st_err = 0;
 	if (tk != NULL)
 		*tk = seek;
-
 	return 1;
 }
 
@@ -1786,7 +1785,7 @@ lexer_recover_reset(struct lexer *lx, struct token *seek)
 }
 
 static struct token *
-lexer_branch_find(struct token *tk, int next)
+lexer_branch_find(struct token *tk)
 {
 	for (;;) {
 		struct token *br;
@@ -1799,10 +1798,7 @@ lexer_branch_find(struct token *tk, int next)
 		if (br != NULL)
 			return br->tk_branch.br_pv;
 
-		if (next)
-			tk = TAILQ_NEXT(tk, tk_entry);
-		else
-			tk = TAILQ_PREV(tk, token_list, tk_entry);
+		tk = TAILQ_NEXT(tk, tk_entry);
 		if (tk == NULL)
 			break;
 	}
@@ -1813,18 +1809,24 @@ lexer_branch_find(struct token *tk, int next)
 static struct token *
 lexer_branch_next(const struct lexer *lx)
 {
-	struct token *br, *tk;
+	struct token *tk;
+	int i;
 
 	if (!lexer_back(lx, &tk))
 		return NULL;
-	br = token_find_prefix(tk, TOKEN_CPP_ELSE);
-	if (br != NULL)
-		return br;
 
-	tk = TAILQ_NEXT(tk, tk_entry);
-	if (tk == NULL)
-		return NULL;
-	return token_find_prefix(tk, TOKEN_CPP_ELSE);
+	for (i = 0; i < 2; i++) {
+		struct token *br;
+
+		br = token_get_branch(tk);
+		if (br != NULL)
+			return br;
+
+		tk = TAILQ_NEXT(tk, tk_entry);
+		if (tk == NULL)
+			break;
+	}
+	return NULL;
 }
 
 static void
@@ -1942,15 +1944,43 @@ token_branch_unlink(struct token *tk)
 	struct token *nx, *pv;
 
 	pv = tk->tk_branch.br_pv;
-	tk->tk_branch.br_pv = NULL;
 	nx = tk->tk_branch.br_nx;
-	tk->tk_branch.br_nx = NULL;
-	if (pv != NULL)
-		token_branch_unlink(pv);
-	if (nx != NULL)
-		token_branch_unlink(nx);
 
-	tk->tk_type = TOKEN_CPP;
+	if (tk->tk_type == TOKEN_CPP_IF) {
+		if (nx != NULL) {
+			nx->tk_branch.br_pv = NULL;
+			tk->tk_branch.br_nx = NULL;
+		} else {
+			/* Branch exhausted. */
+			tk->tk_type = TOKEN_CPP;
+		}
+	} else if (tk->tk_type == TOKEN_CPP_ELSE ||
+	    tk->tk_type == TOKEN_CPP_ENDIF) {
+		if (pv != NULL) {
+			pv->tk_branch.br_nx = NULL;
+			tk->tk_branch.br_pv = NULL;
+		} else if (nx != NULL) {
+			nx->tk_branch.br_pv = NULL;
+			tk->tk_branch.br_nx = NULL;
+		} else {
+			/* Branch exhausted. */
+			tk->tk_type = TOKEN_CPP;
+		}
+	}
+}
+
+/*
+ * Returns the branch continuation associated with the given token if present.
+ */
+static struct token *
+token_get_branch(struct token *tk)
+{
+	struct token *br;
+
+	br = token_find_prefix(tk, TOKEN_CPP_ELSE);
+	if (br == NULL)
+		return NULL;
+	return br->tk_branch.br_pv;
 }
 
 static struct token *
