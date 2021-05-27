@@ -74,7 +74,7 @@ static struct token	*lexer_recover_fold(struct lexer *, struct token *,
 static int		 lexer_recover_hard(struct lexer *, struct token *);
 static void		 lexer_recover_reset(struct lexer *, struct token *);
 
-static struct token	*lexer_branch_find(struct token *);
+static struct token	*lexer_branch_find(struct token *, int);
 static struct token	*lexer_branch_next(const struct lexer *);
 static void		 lexer_branch_enter(struct lexer *, struct token *,
     struct token *);
@@ -402,9 +402,7 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
 		lm->lm_recover = lx->lx_recover;
 	}
 
-	if (lexer_peek(lx, &lm->lm_markers[i]))
-		lexer_trace(lx, "marker %s", token_sprintf(lm->lm_markers[i]));
-	else
+	if (!lexer_peek(lx, &lm->lm_markers[i]))
 		lm->lm_markers[i] = NULL;
 }
 
@@ -412,11 +410,14 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
  * Try to recover after encountering invalid code.
  */
 int
-lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm)
+__lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
+    const char *fun, int lno)
 {
 	struct token *back, *br, *dst, *src, *start, *tk;
 	int nmarkers = 0;
 	int m;
+
+	lexer_trace(lx, "from %s:%d", fun, lno);
 
 	if (lx->lx_recover != lm->lm_recover) {
 		lexer_trace(lx, "invalid markers, want %d got %d",
@@ -432,6 +433,8 @@ lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm)
 	for (m = 0; m < NMARKERS; m++) {
 		if (lm->lm_markers[m] == NULL)
 			break;
+
+		lexer_trace(lx, "marker %s", token_sprintf(lm->lm_markers[m]));
 		nmarkers++;
 	}
 
@@ -446,12 +449,14 @@ lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm)
 	tk = start;
 
 	/*
-	 * Find the first branch by looking forward from the start token. Note,
-	 * we could be inside a branch.
+	 * Find the first branch by looking forward and backward from the start
+	 * token. Note, we could be inside a branch.
 	 */
 	lexer_trace(lx, "start %s, back %s", token_sprintf(start),
 	    token_sprintf(back));
-	br = lexer_branch_find(tk);
+	br = lexer_branch_find(tk, 1);
+	if (br == NULL)
+		br = lexer_branch_find(tk, 0);
 	if (br == NULL)
 		return lexer_recover_hard(lx, start);
 
@@ -1832,7 +1837,7 @@ lexer_recover_reset(struct lexer *lx, struct token *seek)
 }
 
 static struct token *
-lexer_branch_find(struct token *tk)
+lexer_branch_find(struct token *tk, int next)
 {
 	for (;;) {
 		struct token *br;
@@ -1845,7 +1850,10 @@ lexer_branch_find(struct token *tk)
 		if (br != NULL)
 			return br->tk_branch.br_pv;
 
-		tk = TAILQ_NEXT(tk, tk_entry);
+		if (next)
+			tk = TAILQ_NEXT(tk, tk_entry);
+		else
+			tk = TAILQ_PREV(tk, token_list, tk_entry);
 		if (tk == NULL)
 			break;
 	}

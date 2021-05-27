@@ -161,7 +161,11 @@ int			 lexer_get_error(const struct lexer *);
 
 void	lexer_recover_init(struct lexer_recover_markers *);
 void	lexer_recover_mark(struct lexer *, struct lexer_recover_markers *);
-int	lexer_recover(struct lexer *, struct lexer_recover_markers *);
+
+#define lexer_recover(a, b)						\
+	__lexer_recover((a), (b), __func__, __LINE__)
+int	__lexer_recover(struct lexer *, struct lexer_recover_markers *,
+    const char *, int);
 
 #define lexer_branch(a, b)						\
 	__lexer_branch((a), (b), __func__, __LINE__)
