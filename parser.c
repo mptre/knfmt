@@ -90,6 +90,7 @@ static int	__parser_error(struct parser *, const char *, int);
 
 static int	parser_halted(const struct parser *);
 static int	parser_ok(const struct parser *);
+static void	parser_reset(struct parser *);
 
 struct parser *
 parser_alloc(const char *path, struct error *er, const struct config *cf)
@@ -171,10 +172,10 @@ parser_exec(struct parser *pr)
 		if (error && (r = lexer_recover(lx, &lm))) {
 			while (r-- > 0)
 				doc_remove_tail(pr->pr_dc);
-			pr->pr_error = 0;
+			parser_reset(pr);
 			error = 0;
 		} else if (lexer_branch(lx, &seek)) {
-			pr->pr_error = 0;
+			parser_reset(pr);
 			error = 0;
 		} else if (error) {
 			break;
@@ -261,17 +262,31 @@ parser_exec_expr_recover(void *arg)
 static int
 parser_exec_decl(struct parser *pr, struct doc *dc, int align)
 {
+	struct lexer_recover_markers lm;
 	struct ruler rl;
 	struct doc *line = NULL;
 	struct lexer *lx = pr->pr_lx;
 	int ndecl = 0;
 
+	lexer_recover_init(&lm);
 	memset(&rl, 0, sizeof(rl));
 	ruler_init(&rl, align);
+
 	for (;;) {
 		struct token *tk;
 
+		lexer_recover_mark(lx, &lm);
+
 		if (parser_exec_decl1(pr, dc, &rl)) {
+			int r;
+
+			if (parser_halted(pr) && (r = lexer_recover(lx, &lm))) {
+				while (r-- > 0)
+					doc_remove_tail(dc);
+				parser_reset(pr);
+				continue;
+			}
+
 			if (line != NULL)
 				doc_remove(line, dc);
 			break;
@@ -299,7 +314,8 @@ parser_exec_decl(struct parser *pr, struct doc *dc, int align)
 		/* Take the next branch if available. */
 		(void)lexer_branch(lx, NULL);
 	}
-	ruler_exec(&rl);
+	if (ndecl > 0)
+		ruler_exec(&rl);
 	ruler_free(&rl);
 
 	return ndecl > 0 ? parser_ok(pr) : PARSER_NOTHING;
@@ -1784,4 +1800,10 @@ parser_ok(const struct parser *pr)
 	if (lexer_get_error(pr->pr_lx))
 		return PARSER_NOTHING;
 	return PARSER_OK;
+}
+
+static void
+parser_reset(struct parser *pr)
+{
+	pr->pr_error = 0;
 }

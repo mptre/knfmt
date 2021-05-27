@@ -146,6 +146,8 @@ struct lexer_state {
 struct lexer_recover_markers {
 #define NMARKERS	2
 	struct token	*lm_markers[NMARKERS];
+
+	int	lm_recover;
 };
 
 void		 lexer_init(void);
