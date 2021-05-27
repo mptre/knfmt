@@ -2002,22 +2002,22 @@ token_branch_unlink(struct token *tk)
 	nx = tk->tk_branch.br_nx;
 
 	if (tk->tk_type == TOKEN_CPP_IF) {
-		if (nx != NULL) {
-			nx->tk_branch.br_pv = NULL;
-			tk->tk_branch.br_nx = NULL;
-		} else {
-			/* Branch exhausted. */
-			tk->tk_type = TOKEN_CPP;
-		}
+		if (nx != NULL)
+			token_branch_unlink(nx);
+		/* Branch exhausted. */
+		tk->tk_type = TOKEN_CPP;
 	} else if (tk->tk_type == TOKEN_CPP_ELSE ||
 	    tk->tk_type == TOKEN_CPP_ENDIF) {
 		if (pv != NULL) {
 			pv->tk_branch.br_nx = NULL;
 			tk->tk_branch.br_pv = NULL;
+			pv = NULL;
 		} else if (nx != NULL) {
 			nx->tk_branch.br_pv = NULL;
 			tk->tk_branch.br_nx = NULL;
-		} else {
+			nx = NULL;
+		}
+		if (pv == NULL && nx == NULL) {
 			/* Branch exhausted. */
 			tk->tk_type = TOKEN_CPP;
 		}
