@@ -9,20 +9,21 @@ commstrip() {
 	awk '!p && !length($0) {p=1; next} p {print}' "$1"
 }
 
+_wrkdir="$(mktemp -dt knfmt.XXXXXX)"
+trap "rm -rf ${_wrkdir}" 0
+_out="${_wrkdir}/out"
+
 case "$1" in
 error-*)
 	_err=0
-	${EXEC:-} ${KNFMT} "$1" >/dev/null 2>&1 || _err="$?"
+	${EXEC:-} ${KNFMT} "$1" >"$_out" 2>&1 || _err="$?"
 	if [ "$_err" -ne 1 ]; then
+		cat "$_out" 1>&2
 		echo "${1}; expected exit 1, got ${_err}" 1>&2
 		exit 1
 	fi
 	;;
 *)
-	_wrkdir="$(mktemp -dt knfmt.XXXXXX)"
-	trap "rm -rf ${_wrkdir}" 0
-
-	_out="${_wrkdir}/out"
 	_ok="${1%.c}.ok"
 	if [ -e "$_ok" ]; then
 		_tmp="${_wrkdir}/tmp"
