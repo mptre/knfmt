@@ -1,6 +1,10 @@
 Bugs
 ====
 
+* The ruler spills over nested braces causing incorrect alignment.
+
+  struct itimerval tv = { {1, 0}, {1, 0} };
+
 Improvements
 ============
 
