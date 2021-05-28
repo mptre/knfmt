@@ -1805,5 +1805,6 @@ parser_ok(const struct parser *pr)
 static void
 parser_reset(struct parser *pr)
 {
+	error_reset(pr->pr_er);
 	pr->pr_error = 0;
 }
