@@ -31,7 +31,6 @@ struct lexer {
 
 	int		lx_eof;
 	int		lx_peek;
-	int		lx_recover;
 	enum token_type	lx_expect;
 
 	struct token_list	lx_tokens;
@@ -373,9 +372,24 @@ lexer_get_error(const struct lexer *lx)
 }
 
 void
-lexer_recover_init(struct lexer_recover_markers *lm)
+lexer_recover_enter(struct lexer_recover_markers *lm)
 {
 	memset(lm, 0, sizeof(*lm));
+}
+
+void
+lexer_recover_leave(struct lexer_recover_markers *lm)
+{
+	int i;
+
+	for (i = 0; i < NMARKERS; i++) {
+		struct token *tk = lm->lm_markers[i];
+
+		if (tk == NULL)
+			break;
+		if (--tk->tk_markers == 0 && (tk->tk_flags & TOKEN_FLAG_FREE))
+			token_free(tk);
+	}
 }
 
 void
@@ -383,27 +397,40 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
 {
 	int i = 0;
 
-	if (lx->lx_recover == lm->lm_recover) {
-		/* Remove the first entry by shifting everything to the left. */
-		for (i = 0; i < NMARKERS - 1; i++) {
-			if (lm->lm_markers[i + 1] == NULL)
-				break;
-			lm->lm_markers[i] = lm->lm_markers[i + 1];
-			lm->lm_markers[i + 1] = NULL;
-		}
+	lexer_recover_purge(lm);
 
-		/* Find the first empty slot. */
-		for (i = 0; i < NMARKERS - 1; i++) {
-			if (lm->lm_markers[i] == NULL)
-				break;
-		}
-	} else {
-		lexer_recover_init(lm);
-		lm->lm_recover = lx->lx_recover;
+	/* Remove the first entry by shifting everything to the left. */
+	for (i = 0; i < NMARKERS - 1; i++) {
+		if (lm->lm_markers[i + 1] == NULL)
+			break;
+		lm->lm_markers[i]->tk_markers--;
+		lm->lm_markers[i] = lm->lm_markers[i + 1];
+		lm->lm_markers[i + 1] = NULL;
 	}
 
-	if (!lexer_peek(lx, &lm->lm_markers[i]))
-		lm->lm_markers[i] = NULL;
+	/* Find the first empty slot. */
+	for (i = 0; i < NMARKERS - 1; i++) {
+		if (lm->lm_markers[i] == NULL)
+			break;
+	}
+
+	if (lexer_peek(lx, &lm->lm_markers[i]))
+		lm->lm_markers[i]->tk_markers++;
+}
+
+void
+lexer_recover_purge(struct lexer_recover_markers *lm)
+{
+	for (;;) {
+		struct token *tk = lm->lm_markers[0];
+
+		if (tk == NULL || (tk->tk_flags & TOKEN_FLAG_FREE) == 0)
+			break;
+
+		if (--tk->tk_markers == 0)
+			token_free(tk);
+		lm->lm_markers[0] = lm->lm_markers[1];
+	}
 }
 
 /*
@@ -413,22 +440,13 @@ int
 __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
     const char *fun, int lno)
 {
-	struct token *back, *br, *dst, *src, *start, *tk;
+	struct token *back, *br, *dst, *src, *start;
 	int nmarkers = 0;
 	int m;
 
 	lexer_trace(lx, "from %s:%d", fun, lno);
 
-	if (lx->lx_recover != lm->lm_recover) {
-		lexer_trace(lx, "invalid markers, want %d got %d",
-		    lx->lx_recover, lm->lm_recover);
-
-		/* If EOF is reached, fake a successful recovery. */
-		return lexer_peek_if(lx, TOKEN_EOF, NULL) ? 1 : 0;
-	}
-
-	if (!lexer_back(lx, &back) && !lexer_peek(lx, &back))
-		return 0;
+	lexer_recover_purge(lm);
 
 	for (m = 0; m < NMARKERS; m++) {
 		if (lm->lm_markers[m] == NULL)
@@ -444,9 +462,16 @@ __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
 		if (start != NULL)
 			break;
 	}
-	if (start == NULL)
+	if (start == NULL) {
+		/*
+		 * If EOF is reached, fake a successful recovery in order to
+		 * emit the EOF token.
+		 */
+		return lexer_peek_if(lx, TOKEN_EOF, NULL) ? 1 : 0;
+	}
+
+	if (!lexer_back(lx, &back) && !lexer_peek(lx, &back))
 		return 0;
-	tk = start;
 
 	/*
 	 * Find the first branch by looking forward and backward from the start
@@ -454,9 +479,9 @@ __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
 	 */
 	lexer_trace(lx, "start %s, back %s", token_sprintf(start),
 	    token_sprintf(back));
-	br = lexer_branch_find(tk, 1);
+	br = lexer_branch_find(start, 1);
 	if (br == NULL)
-		br = lexer_branch_find(tk, 0);
+		br = lexer_branch_find(start, 0);
 	if (br == NULL)
 		return lexer_recover_hard(lx, start);
 
@@ -1832,8 +1857,6 @@ lexer_recover_reset(struct lexer *lx, struct token *seek)
 	lexer_trace(lx, "seek to %s", token_sprintf(seek));
 	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
 	lx->lx_st.st_err = 0;
-	/* Invalidate markers. */
-	lx->lx_recover++;
 }
 
 static struct token *
@@ -2068,6 +2091,17 @@ token_free(struct token *tk)
 
 	token_list_free(&tk->tk_prefixes);
 	token_list_free(&tk->tk_suffixes);
+
+	if (tk->tk_markers > 0) {
+		/*
+		 * Token is still being used as a recover marker, postpone
+		 * freeing to lexer_recover_purge() once the last reference is
+		 * released.
+		 */
+		tk->tk_flags |= TOKEN_FLAG_FREE;
+		return;
+	}
+
 	free(tk);
 }
 

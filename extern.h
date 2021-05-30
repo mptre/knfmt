@@ -86,6 +86,7 @@ struct token {
 	enum token_type	tk_type;
 	unsigned int	tk_lno;
 	unsigned int	tk_cno;
+	unsigned int	tk_markers;
 	unsigned int	tk_flags;
 #define TOKEN_FLAG_TYPE		0x00000001u
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
@@ -99,6 +100,7 @@ struct token {
 #define TOKEN_FLAG_UNMUTE	0x00000200u
 #define TOKEN_FLAG_NEWLINE	0x00000400u
 #define TOKEN_FLAG_FAKE		0x00000800u
+#define TOKEN_FLAG_FREE		0x00001000u
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
@@ -146,8 +148,6 @@ struct lexer_state {
 struct lexer_recover_markers {
 #define NMARKERS	2
 	struct token	*lm_markers[NMARKERS];
-
-	int	lm_recover;
 };
 
 void		 lexer_init(void);
@@ -159,8 +159,10 @@ void		 lexer_free(struct lexer *);
 const struct buffer	*lexer_get_buffer(struct lexer *);
 int			 lexer_get_error(const struct lexer *);
 
-void	lexer_recover_init(struct lexer_recover_markers *);
+void	lexer_recover_enter(struct lexer_recover_markers *);
+void	lexer_recover_leave(struct lexer_recover_markers *);
 void	lexer_recover_mark(struct lexer *, struct lexer_recover_markers *);
+void	lexer_recover_purge(struct lexer_recover_markers *);
 
 #define lexer_recover(a, b)						\
 	__lexer_recover((a), (b), __func__, __LINE__)
