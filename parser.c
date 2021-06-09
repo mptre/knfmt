@@ -781,7 +781,8 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 			if (lexer_if(lx, TOKEN_IDENT, NULL) &&
 			    (lexer_if(lx, TOKEN_LSQUARE, NULL) ||
 			     lexer_if(lx, TOKEN_SEMI, NULL) ||
-			     lexer_if(lx, TOKEN_EQUAL, NULL)))
+			     lexer_if(lx, TOKEN_EQUAL, NULL) ||
+			     lexer_if(lx, TOKEN_COMMA, NULL)))
 				iscpp = 1;
 			else if (lexer_if(lx, TOKEN_EQUAL, NULL) &&
 			    lexer_if(lx, TOKEN_LBRACE, NULL))
@@ -790,11 +791,13 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 		}
 
 		/*
-		 * Detect X macro, must be followed by another macro or nothing
-		 * at all.
+		 * Detect X macro, must be followed by nothing at all or by
+		 * another macro.
 		 */
-		if (!iscpp && lexer_peek(lx, &tk) &&
-		    (tk->tk_type == TOKEN_IDENT || tk->tk_type == TOKEN_EOF)) {
+		if (!iscpp &&
+		    (lexer_if(lx, TOKEN_EOF, NULL) ||
+		     (lexer_if(lx, TOKEN_IDENT, NULL) &&
+		      lexer_if(lx, TOKEN_LPAREN, NULL)))) {
 			iscpp = 1;
 			isxmacro = 1;
 		}
