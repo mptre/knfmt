@@ -423,13 +423,18 @@ lexer_recover_purge(struct lexer_recover_markers *lm)
 {
 	for (;;) {
 		struct token *tk = lm->lm_markers[0];
+		int i;
 
 		if (tk == NULL || (tk->tk_flags & TOKEN_FLAG_FREE) == 0)
 			break;
 
 		if (--tk->tk_markers == 0)
 			token_free(tk);
-		lm->lm_markers[0] = lm->lm_markers[1];
+
+		for (i = 0; i < NMARKERS - 1; i++) {
+			lm->lm_markers[i] = lm->lm_markers[i + 1];
+			lm->lm_markers[i + 1] = NULL;
+		}
 	}
 }
 
