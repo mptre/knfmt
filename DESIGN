@@ -243,6 +243,41 @@ Once the branch continuation has been crossed, the aforementioned routine
 unmutes. The mute decision is therefore tied to tokens and the corresponding
 logic resides in lexer_branch().
 
+cpp recover
+===========
+
+Some conditional preprocessor constructs, see the cpp conditionals section
+above, are never evaluated to true during compilation causing the wrapped code
+to be discarded. Such code is therefore not strictly needed to be syntactically
+correct as its discarded:
+
+	#if 0				[1]
+	main(void) {}
+	#endif
+
+	int				[2]
+	main(void)
+	{
+	#ifdef notyet
+	}				[3]
+	#endif
+	}				[4]
+
+The two examples above shows two common idioms for disabled chunks of code.
+However, such idioms comes in many forms and maintaining an exhaustive listing
+of all variations is unmanageable.
+
+As knfmt by defaults assumes all branches are syntactically correct, it could
+enter a disabled branch only to encountered something invalid. Instead of
+immediately halting, it gives the lexer a chance to recover by removing the
+closest branch given the position of parser, see lexer_recover().
+
+Some scenarios[2] are more tedious than others, while taking the branch[3] the
+function implementation is correctly terminated. However, the following token[4]
+is not expected at this point. Calling lexer_recover() as this point would cause
+the branch[3] to be removed effecitvely making the unexpected token[4] be the
+terminating right brace for the function implementation.
+
 comments
 ========
 
