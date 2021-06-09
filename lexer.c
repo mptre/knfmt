@@ -31,6 +31,7 @@ struct lexer {
 
 	int		lx_eof;
 	int		lx_peek;
+	int		lx_trim;
 	enum token_type	lx_expect;
 
 	struct token_list	lx_tokens;
@@ -102,6 +103,7 @@ static struct token	*token_find_prefix(const struct token *,
     enum token_type);
 static void		 token_free(struct token *);
 static void		 token_list_free(struct token_list *);
+static void		 token_trim(struct token *);
 static const char	*strtoken(enum token_type);
 
 static struct token_hash	*tokens = NULL;
@@ -207,22 +209,6 @@ token_is_decl(const struct token *tk, enum token_type type)
 	if (tk == NULL)
 		return 0;
 	return tk->tk_type == type;
-}
-
-/*
- * Remove any space suffixes from the given token.
- */
-void
-token_trim(struct token *tk)
-{
-	struct token *suffix, *tmp;
-
-	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
-		if (suffix->tk_type == TOKEN_SPACE) {
-			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
-			token_free(suffix);
-		}
-	}
 }
 
 char *
@@ -660,6 +646,8 @@ lexer_pop(struct lexer *lx, struct token **tk)
 out:
 	if (st->st_tok == NULL)
 		return 0;
+	if (lx->lx_peek == 0 && lx->lx_trim)
+		token_trim(st->st_tok);
 	*tk = st->st_tok;
 	return 1;
 }
@@ -1091,6 +1079,18 @@ __lexer_until(struct lexer *lx, enum token_type type, const struct token *stop,
 		}
 	}
 	return 0;
+}
+
+void
+lexer_trim_enter(struct lexer *lx)
+{
+	lx->lx_trim++;
+}
+
+void
+lexer_trim_leave(struct lexer *lx)
+{
+	lx->lx_trim--;
 }
 
 /*
@@ -2120,6 +2120,22 @@ token_list_free(struct token_list *tl)
 		TAILQ_REMOVE(tl, tmp, tk_entry);
 		token_branch_unlink(tmp);
 		token_free(tmp);
+	}
+}
+
+/*
+ * Remove any space suffixes from the given token.
+ */
+static void
+token_trim(struct token *tk)
+{
+	struct token *suffix, *tmp;
+
+	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
+		if (suffix->tk_type == TOKEN_SPACE) {
+			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
+			token_free(suffix);
+		}
 	}
 }
 

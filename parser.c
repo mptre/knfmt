@@ -62,6 +62,8 @@ static int	parser_exec_func_decl(struct parser *, struct doc *,
 static int	parser_exec_func_impl(struct parser *, struct doc *);
 static int	parser_exec_func_proto(struct parser *,
     struct parser_exec_func_proto_arg *);
+static int	parser_exec_func_proto1(struct parser *,
+    struct parser_exec_func_proto_arg *);
 static int	parser_exec_func_arg(struct parser *, struct doc *,
     struct doc **, const struct token *);
 
@@ -995,22 +997,33 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 static int
 parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pa)
 {
-	struct doc *indent, *noline, *kr;
+	int error;
+
+	lexer_trim_enter(pr->pr_lx);
+	error = parser_exec_func_proto1(pr, pa);
+	lexer_trim_leave(pr->pr_lx);
+	return error;
+}
+
+static int
+parser_exec_func_proto1(struct parser *pr,
+    struct parser_exec_func_proto_arg *pa)
+{
+	struct doc *dc = pa->pa_dc;
+	struct doc *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *tk;
 	int error = 1;
 
-	noline = doc_alloc(DOC_NOLINE, pa->pa_dc);
-
-	if (parser_exec_type(pr, noline, pa->pa_type, pa->pa_rl))
+	if (parser_exec_type(pr, dc, pa->pa_type, pa->pa_rl))
 		return parser_error(pr);
 
 	/*
 	 * Hard line implies function implementation in which the identifier
 	 * must never be indented.
 	 */
-	indent = pa->pa_line == DOC_HARDLINE ? noline :
-	    doc_alloc_indent(pr->pr_cf->cf_sw, noline);
+	indent = pa->pa_line == DOC_HARDLINE ? dc :
+	    doc_alloc_indent(pr->pr_cf->cf_sw, dc);
 	doc_alloc(pa->pa_line, indent);
 
 	if (pa->pa_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
@@ -1035,21 +1048,21 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pa)
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_error(pr);
 
-	indent = doc_alloc_indent(pr->pr_cf->cf_sw, noline);
+	indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
 	while (parser_exec_func_arg(pr, indent, &pa->pa_out, rparen) ==
 	    PARSER_OK)
 		continue;
 
 	/* Recognize K&R argument declarations. */
-	kr = doc_alloc(DOC_GROUP, noline);
+	kr = doc_alloc(DOC_GROUP, dc);
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, kr);
 	doc_alloc(DOC_HARDLINE, indent);
 	while (parser_exec_decl(pr, indent, 0) == PARSER_OK)
 		error = 0;
 	if (error)
-		doc_remove(kr, noline);
+		doc_remove(kr, dc);
 
-	parser_exec_attributes(pr, noline, &pa->pa_out, pr->pr_cf->cf_tw,
+	parser_exec_attributes(pr, dc, &pa->pa_out, pr->pr_cf->cf_tw,
 	    DOC_HARDLINE);
 
 	return parser_ok(pr);
@@ -1068,6 +1081,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	struct token *end = NULL;
 	struct token *pv = NULL;
 	struct token *tk;
+	int error = 0;
 
 	/* Consume any left parenthesis before emitting a soft line. */
 	if (lexer_if(lx, TOKEN_LPAREN, &tk))
@@ -1109,11 +1123,13 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, concat);
 			doc_alloc(DOC_LINE, concat);
-			return parser_ok(pr);
+			break;
 		}
 
-		if (!lexer_pop(lx, &tk))
-			return parser_error(pr);
+		if (!lexer_pop(lx, &tk)) {
+			error = parser_error(pr);
+			break;
+		}
 		/* Identifiers must be separated. */
 		if (pv != NULL && pv->tk_type == TOKEN_IDENT &&
 		    tk->tk_type == TOKEN_IDENT)
@@ -1124,7 +1140,10 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		pv = tk;
 	}
 
-	return parser_ok(pr);
+	/* Take the next branch if available. */
+	if (lexer_branch(lx, NULL, NULL))
+		error = 0;
+	return error ? error : parser_ok(pr);
 }
 
 static int
@@ -1288,7 +1307,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 				if (dobreak)
 					break;
 
-				(void)lexer_branch(lx, NULL, NULL);
+				/* Take the next branch if available. */
+				lexer_branch(lx, NULL, NULL);
 			}
 		}
 
@@ -1450,16 +1470,11 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 {
 	struct doc *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *pv, *rbrace, *seek, *tk;
+	struct token *rbrace, *seek, *tk;
 	int nstmt = 0;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return PARSER_NOTHING;
-
-	/* Do not honor empty lines before the closing right brace. */
-	pv = TAILQ_PREV(rbrace, token_list, tk_entry);
-	if (pv != NULL)
-		token_trim(pv);
 
 	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
 		doc_token(tk, head);

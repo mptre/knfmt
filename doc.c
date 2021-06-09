@@ -60,7 +60,6 @@ struct doc_state {
 	unsigned int	st_refit;
 	unsigned int	st_line;
 	unsigned int	st_newline;
-	unsigned int	st_noline;
 	unsigned int	st_parens;
 	int		st_mute;
 	unsigned int	st_flags;
@@ -150,8 +149,7 @@ doc_free(struct doc *dc)
 		return;
 
 	switch (dc->dc_type) {
-	case DOC_CONCAT:
-	case DOC_NOLINE: {
+	case DOC_CONCAT: {
 		struct doc *concat;
 
 		while ((concat = TAILQ_FIRST(&dc->dc_list)) != NULL) {
@@ -320,11 +318,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	doc_trace_enter(dc, st);
 
 	switch (dc->dc_type) {
-	case DOC_CONCAT:
-	case DOC_NOLINE: {
+	case DOC_CONCAT: {
 		struct doc *concat;
 		int ndocs = 0;
-		int noline = dc->dc_type == DOC_NOLINE;
 
 		/*
 		 * If the document has more than one child the cache must be
@@ -337,13 +333,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (ndocs > 1)
 			st->st_fits.f_fits = -1;
 
-		if (noline)
-			st->st_noline++;
 		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
 			doc_exec1(concat, st);
 		}
-		if (noline)
-			st->st_noline--;
 		break;
 	}
 
@@ -549,8 +541,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 		return 1;
 
 	switch (dc->dc_type) {
-	case DOC_CONCAT:
-	case DOC_NOLINE: {
+	case DOC_CONCAT: {
 		struct doc *concat;
 
 		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
@@ -656,9 +647,6 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 			return;
 	}
 
-	if (newline && dc->dc_type == DOC_VERBATIM && st->st_noline > 0)
-		return;
-
 	if (newline) {
 		/* Skip new lines while testing. */
 		if (st->st_cf->cf_flags & CONFIG_FLAG_TEST)
@@ -722,7 +710,6 @@ doc_has_list(const struct doc *dc)
 {
 	switch (dc->dc_type) {
 	case DOC_CONCAT:
-	case DOC_NOLINE:
 		return 1;
 	default:
 		break;
@@ -777,7 +764,6 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 	fprintf(stderr, "%s", docstr(dc, buf, sizeof(buf)));
 	switch (dc->dc_type) {
 	case DOC_CONCAT:
-	case DOC_NOLINE:
 		fprintf(stderr, "([");
 		break;
 
@@ -846,7 +832,6 @@ __doc_trace_leave(const struct doc *dc, struct doc_state *st)
 
 	switch (dc->dc_type) {
 	case DOC_CONCAT:
-	case DOC_NOLINE:
 		brackets = 1;
 		/* FALLTHROUGH */
 	case DOC_GROUP:
@@ -897,7 +882,6 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_SOFTLINE);
 	CASE(DOC_HARDLINE);
 	CASE(DOC_NEWLINE);
-	CASE(DOC_NOLINE);
 	CASE(DOC_MUTE);
 #undef CASE
 	}

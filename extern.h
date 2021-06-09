@@ -130,7 +130,6 @@ int	 token_has_dangling(const struct token *);
 int	 token_has_line(const struct token *);
 int	 token_is_branch(const struct token *);
 int	 token_is_decl(const struct token *, enum token_type);
-void	 token_trim(struct token *);
 char	*token_sprintf(const struct token *);
 
 /*
@@ -214,6 +213,9 @@ int	lexer_peek_until_stop(struct lexer *, enum token_type,
 int	__lexer_until(struct lexer *, enum token_type, const struct token *,
     struct token **, const char *, int);
 
+void	lexer_trim_enter(struct lexer *);
+void	lexer_trim_leave(struct lexer *);
+
 void	lexer_dump(const struct lexer *);
 
 /*
@@ -267,7 +269,6 @@ enum doc_type {
 	DOC_SOFTLINE,
 	DOC_HARDLINE,
 	DOC_NEWLINE,
-	DOC_NOLINE,
 	DOC_MUTE,
 };
 
