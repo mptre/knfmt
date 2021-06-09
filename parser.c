@@ -282,6 +282,12 @@ parser_exec_decl(struct parser *pr, struct doc *dc, int align)
 			int r;
 
 			if (parser_halted(pr) && (r = lexer_recover(lx, &lm))) {
+				/*
+				 * Let the ruler align what we got so far as
+				 * some documents it might refer to are about
+				 * the be removed.
+				 */
+				ruler_exec(&rl);
 				while (r-- > 0)
 					doc_remove_tail(dc);
 				parser_reset(pr);
