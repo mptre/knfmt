@@ -56,6 +56,7 @@ DISTFILES+=	tests/error-007.c
 DISTFILES+=	tests/error-008.c
 DISTFILES+=	tests/error-009.c
 DISTFILES+=	tests/error-010.c
+DISTFILES+=	tests/error-011.c
 DISTFILES+=	tests/knfmt.sh
 DISTFILES+=	tests/valid-001.c
 DISTFILES+=	tests/valid-002.c

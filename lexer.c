@@ -70,7 +70,7 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 
 static struct token	*lexer_recover_fold(struct lexer *, struct token *,
-    struct token *, const struct token *);
+    struct token *, struct token *, struct token *);
 static int		 lexer_recover_hard(struct lexer *, struct token *);
 static void		 lexer_recover_reset(struct lexer *, struct token *);
 
@@ -97,7 +97,7 @@ static int	isnum(unsigned char, int);
 static int		 token_branch_cover(const struct token *,
     const struct token *);
 static void		 token_branch_link(struct token *, struct token *);
-static void		 token_branch_unlink(struct token *);
+static int		 token_branch_unlink(struct token *);
 static struct token	*token_get_branch(struct token *);
 static struct token	*token_find_prefix(const struct token *,
     enum token_type);
@@ -515,7 +515,7 @@ __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
 	}
 
 	/* Turn the whole branch into a prefix hanging of the destination. */
-	lexer_recover_fold(lx, src, dst, br->tk_branch.br_nx);
+	lexer_recover_fold(lx, src, br, dst, br->tk_branch.br_nx);
 
 	lexer_recover_reset(lx, start);
 	lexer_trace(lx, "removing %d document(s)", nmarkers - m);
@@ -1724,32 +1724,90 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 }
 
 /*
- * Fold tokens covered by [src, dst) into a prefix hanging of dst. Any existing
- * prefix hanging of dst after stop (inclusively) will be preserved.
+ * Fold tokens covered by [src, dst) into a prefix hanging of dst. The prefix
+ * will span [srcpre, dstpre) where srcpre must be a prefix of src and dstpre a
+ * prefix of dst.
  */
 static struct token *
-lexer_recover_fold(struct lexer *lx, struct token *src, struct token *dst,
-    const struct token *stop)
+lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
+    struct token *dst, struct token *dstpre)
 {
 	struct lexer_state st;
-	struct token *prefix, *pv;
-	size_t beg, end, oldoff;
+	struct token *prefix;
+	size_t off, oldoff;
 	unsigned int flags = 0;
+	int dosrc = 0;
 
-	pv = src;
-	if (!TAILQ_EMPTY(&src->tk_prefixes))
-		pv = TAILQ_FIRST(&src->tk_prefixes);
+	if (srcpre != NULL) {
+		dosrc = 1;
+	} else {
+		srcpre = TAILQ_FIRST(&src->tk_prefixes);
+		if (srcpre == NULL)
+			srcpre = src;
+	}
 
-	beg = pv->tk_off;
-	end = stop->tk_off;
+	if (dstpre != NULL)
+		off = dstpre->tk_off + dstpre->tk_len;
+	else
+		off = dst->tk_off;
+
 	memset(&st, 0, sizeof(st));
-	st.st_off = beg;
-	st.st_lno = pv->tk_lno;
-	st.st_cno = pv->tk_cno;
+	st.st_off = srcpre->tk_off;
+	st.st_lno = srcpre->tk_lno;
+	st.st_cno = srcpre->tk_cno;
 	oldoff = lx->lx_st.st_off;
-	lx->lx_st.st_off = end;
+	lx->lx_st.st_off = off;
 	prefix = lexer_emit(lx, &st, &tkcpp);
 	lx->lx_st.st_off = oldoff;
+
+	if (dstpre != NULL) {
+		/*
+		 * Remove all prefixes hanging of the destination covered by the new
+		 * prefix token.
+		 */
+		while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
+			struct token *pr;
+
+			pr = TAILQ_FIRST(&dst->tk_prefixes);
+			lexer_trace(lx, "removing prefix %s",
+			    token_sprintf(pr));
+			TAILQ_REMOVE(&dst->tk_prefixes, pr, tk_entry);
+			/* Completely unlink any branch. */
+			while (token_branch_unlink(pr) == 0)
+				continue;
+			token_free(pr);
+			if (pr == dstpre)
+				break;
+		}
+	}
+
+	lexer_trace(lx, "add prefix %s to %s", token_sprintf(prefix),
+	    token_sprintf(dst));
+	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+
+	if (dosrc) {
+		struct token *pv;
+
+		/*
+		 * Keep any existing prefix not covered by the new prefix token by
+		 * moving them to the destination.
+		 */
+		pv = TAILQ_PREV(srcpre, token_list, tk_entry);
+		for (;;) {
+			struct token *tmp;
+
+			if (pv == NULL)
+				break;
+
+			lexer_trace(lx, "keeping prefix %s", token_sprintf(pv));
+			tmp = TAILQ_PREV(pv, token_list, tk_entry);
+			TAILQ_REMOVE(&src->tk_prefixes, pv, tk_entry);
+			TAILQ_INSERT_HEAD(&dst->tk_prefixes, pv, tk_entry);
+			if (pv->tk_token != NULL)
+				pv->tk_token = dst;
+			pv = tmp;
+		}
+	}
 
 	/*
 	 * Remove all tokens up to the destination covered by the new prefix
@@ -1768,28 +1826,8 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *dst,
 		src = nx;
 	}
 
-	/*
-	 * Remove all prefixes hanging of the destination covered by the new
-	 * prefix token.
-	 */
-	while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
-		struct token *pr;
-
-		pr = TAILQ_FIRST(&dst->tk_prefixes);
-		if (pr == stop)
-			break;
-
-		lexer_trace(lx, "removing prefix %s", token_sprintf(pr));
-		TAILQ_REMOVE(&dst->tk_prefixes, pr, tk_entry);
-		token_free(pr);
-	}
-
 	/* Propagate preserved flags. */
 	dst->tk_flags |= flags;
-
-	lexer_trace(lx, "add prefix %s to %s", token_sprintf(prefix),
-	    token_sprintf(dst));
-	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
 
 	return prefix;
 }
@@ -1816,7 +1854,7 @@ lexer_recover_hard(struct lexer *lx, struct token *seek)
 		lexer_trace(lx, "back %s, expect %s", token_sprintf(back),
 		    token_sprintf(expect));
 
-		prefix = lexer_recover_fold(lx, back, expect, expect);
+		prefix = lexer_recover_fold(lx, back, NULL, expect, NULL);
 		/*
 		 * Ugliness ahead, preserve any white space preceding the
 		 * prefix.
@@ -2032,7 +2070,12 @@ token_branch_link(struct token *src, struct token *dst)
 	dst->tk_branch.br_pv = src;
 }
 
-static void
+/*
+ * Unlink any branch associated with the given token. Returns 1 if the branch is
+ * completely unlinked, 0 if the branch is not completely unlinked and -1 if
+ * it's not a branch token.
+ */
+static int
 token_branch_unlink(struct token *tk)
 {
 	struct token *nx, *pv;
@@ -2045,6 +2088,7 @@ token_branch_unlink(struct token *tk)
 			token_branch_unlink(nx);
 		/* Branch exhausted. */
 		tk->tk_type = TOKEN_CPP;
+		return 1;
 	} else if (tk->tk_type == TOKEN_CPP_ELSE ||
 	    tk->tk_type == TOKEN_CPP_ENDIF) {
 		if (pv != NULL) {
@@ -2059,8 +2103,11 @@ token_branch_unlink(struct token *tk)
 		if (pv == NULL && nx == NULL) {
 			/* Branch exhausted. */
 			tk->tk_type = TOKEN_CPP;
+			return 1;
 		}
+		return 0;
 	}
+	return -1;
 }
 
 /*
