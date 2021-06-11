@@ -1470,11 +1470,16 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail)
 {
 	struct doc *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rbrace, *seek, *tk;
+	struct token *rbrace, *seek, *pv, *tk;
 	int nstmt = 0;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return PARSER_NOTHING;
+
+	/* Do not honor empty lines before the closing right brace. */
+	pv = TAILQ_PREV(rbrace, token_list, tk_entry);
+	if (pv != NULL)
+		token_trim(pv);
 
 	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
 		doc_token(tk, head);

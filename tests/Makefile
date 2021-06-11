@@ -145,6 +145,7 @@ TESTS+=	valid-132.c
 TESTS+=	valid-133.c
 TESTS+=	valid-134.c
 TESTS+=	valid-135.c
+TESTS+=	valid-136.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c

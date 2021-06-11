@@ -103,7 +103,6 @@ static struct token	*token_find_prefix(const struct token *,
     enum token_type);
 static void		 token_free(struct token *);
 static void		 token_list_free(struct token_list *);
-static void		 token_trim(struct token *);
 static const char	*strtoken(enum token_type);
 
 static struct token_hash	*tokens = NULL;
@@ -209,6 +208,22 @@ token_is_decl(const struct token *tk, enum token_type type)
 	if (tk == NULL)
 		return 0;
 	return tk->tk_type == type;
+}
+
+/*
+ * Remove any space suffixes from the given token.
+ */
+void
+token_trim(struct token *tk)
+{
+	struct token *suffix, *tmp;
+
+	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
+		if (suffix->tk_type == TOKEN_SPACE) {
+			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
+			token_free(suffix);
+		}
+	}
 }
 
 char *
@@ -2167,22 +2182,6 @@ token_list_free(struct token_list *tl)
 		TAILQ_REMOVE(tl, tmp, tk_entry);
 		token_branch_unlink(tmp);
 		token_free(tmp);
-	}
-}
-
-/*
- * Remove any space suffixes from the given token.
- */
-static void
-token_trim(struct token *tk)
-{
-	struct token *suffix, *tmp;
-
-	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
-		if (suffix->tk_type == TOKEN_SPACE) {
-			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
-			token_free(suffix);
-		}
 	}
 }
 

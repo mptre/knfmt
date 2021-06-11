@@ -199,6 +199,8 @@ DISTFILES+=	tests/valid-132.c
 DISTFILES+=	tests/valid-133.c
 DISTFILES+=	tests/valid-134.c
 DISTFILES+=	tests/valid-135.c
+DISTFILES+=	tests/valid-136.c
+DISTFILES+=	tests/valid-136.ok
 DISTFILES+=	token.h
 
 all: ${PROG_knfmt}
