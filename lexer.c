@@ -1348,11 +1348,13 @@ lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 			break;
 		if (ch == '\n') {
 			nlines++;
-		} else {
+			st = lx->lx_st;
+		} else if (ch != ' ' && ch != '\t') {
 			lexer_ungetc(lx);
 			break;
 		}
 	}
+	lx->lx_st = st;
 	if (nlines < threshold || lexer_eof(lx))
 		return 0;
 	if (tk != NULL)
