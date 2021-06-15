@@ -47,8 +47,9 @@ static int		 lexer_getc(struct lexer *, unsigned char *);
 static void		 lexer_ungetc(struct lexer *);
 static int		 lexer_read(struct lexer *, struct token **);
 static int		 lexer_eat_lines(struct lexer *, struct token **, int);
-static int		 lexer_eat_space(struct lexer *, int);
+static int		 lexer_eat_spaces(struct lexer *, int);
 static struct token	*lexer_keyword(struct lexer *);
+static struct token	*lexer_keyword1(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
 static struct token	*lexer_cpp(struct lexer *);
 static struct token	*lexer_ellipsis(struct lexer *,
@@ -1208,15 +1209,8 @@ lexer_read(struct lexer *lx, struct token **tk)
 			break;
 	}
 
-	/* Look for keywords but ignore discarded ones. */
-	for (;;) {
-		lexer_eat_space(lx, 1);
-		if ((*tk = lexer_keyword(lx)) == NULL)
-			break;
-		if ((*tk)->tk_flags & TOKEN_FLAG_DISCARD)
-			continue;
+	if ((*tk = lexer_keyword(lx)) != NULL)
 		goto out;
-	}
 
 	st = lx->lx_st;
 	if (lexer_getc(lx, &ch))
@@ -1359,7 +1353,7 @@ lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 }
 
 static int
-lexer_eat_space(struct lexer *lx, int newline)
+lexer_eat_spaces(struct lexer *lx, int newline)
 {
 	struct lexer_state st;
 	unsigned char ch;
@@ -1379,6 +1373,22 @@ lexer_eat_space(struct lexer *lx, int newline)
 
 static struct token *
 lexer_keyword(struct lexer *lx)
+{
+	for (;;) {
+		struct token *tk;
+
+		lexer_eat_spaces(lx, 1);
+		tk = lexer_keyword1(lx);
+		if (tk == NULL)
+			break;
+		if ((tk->tk_flags & TOKEN_FLAG_DISCARD) == 0)
+			return tk;
+	}
+	return NULL;
+}
+
+static struct token *
+lexer_keyword1(struct lexer *lx)
 {
 	struct lexer_state st = lx->lx_st;
 	struct token *pv = NULL;
@@ -1420,7 +1430,6 @@ lexer_keyword(struct lexer *lx)
 	}
 	if (tk->tk_flags & TOKEN_FLAG_DISCARD)
 		return tk;
-
 	return lexer_emit(lx, &st, tk);
 }
 
@@ -1445,7 +1454,7 @@ lexer_comment(struct lexer *lx, int block)
 		 */
 		oldst = lx->lx_st;
 
-		lexer_eat_space(lx, block);
+		lexer_eat_spaces(lx, block);
 
 		if (lexer_getc(lx, &ch) || ch != '/') {
 			lx->lx_st = oldst;
@@ -1487,7 +1496,7 @@ lexer_comment(struct lexer *lx, int block)
 		 * For block comments, consume trailing whitespace and hard lines(s),
 		 * will be hanging of the comment token.
 		 */
-		lexer_eat_space(lx, 0);
+		lexer_eat_spaces(lx, 0);
 		lexer_eat_lines(lx, NULL, 2);
 		return lexer_emit(lx, &st, &tkcomment);
 	}
@@ -1514,7 +1523,7 @@ lexer_cpp(struct lexer *lx)
 	unsigned char ch;
 
 	st = lx->lx_st;
-	lexer_eat_space(lx, 1);
+	lexer_eat_spaces(lx, 1);
 
 	if (lexer_getc(lx, &ch) || ch != '#') {
 		lx->lx_st = st;
@@ -1522,7 +1531,7 @@ lexer_cpp(struct lexer *lx)
 	}
 
 	/* Space before keyword is allowed. */
-	lexer_eat_space(lx, 0);
+	lexer_eat_spaces(lx, 0);
 	cmpst = lx->lx_st;
 
 	ch = '\0';
