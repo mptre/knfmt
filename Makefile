@@ -27,6 +27,20 @@ OBJS_test=	${SRCS_test:.c=.o}
 DEPS_test=	${SRCS_test:.c=.d}
 PROG_test=	t
 
+KNFMT+=	buffer.c
+KNFMT+=	compat-pledge.c
+KNFMT+=	doc.c
+KNFMT+=	error.c
+KNFMT+=	expr.c
+KNFMT+=	extern.h
+KNFMT+=	knfmt.c
+KNFMT+=	lexer.c
+KNFMT+=	parser.c
+KNFMT+=	ruler.c
+KNFMT+=	t.c
+KNFMT+=	token.h
+KNFMT+=	util.c
+
 DISTFILES+=	${SRCS_knfmt}
 DISTFILES+=	${SRCS_test}
 DISTFILES+=	CHANGELOG.md
@@ -238,6 +252,10 @@ distclean: clean
 		${.CURDIR}/knfmt-${VERSION}.sha256
 .PHONY: distclean
 
+format: ${PROG_knfmt}
+	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -i ${KNFMT}
+.PHONY: format
+
 install: all
 	@mkdir -p ${DESTDIR}${BINDIR}
 	${INSTALL} ${PROG_knfmt} ${DESTDIR}${BINDIR}
@@ -245,8 +263,9 @@ install: all
 	${INSTALL_MAN} ${.CURDIR}/knfmt.1 ${DESTDIR}${MANDIR}/man1
 .PHONY: install
 
-lint:
+lint: ${PROG_knfmt}
 	mandoc -Tlint -Wstyle ${.CURDIR}/knfmt.1
+	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -d ${KNFMT}
 .PHONY: lint
 
 test: ${PROG_knfmt} test-${PROG_test}
