@@ -337,6 +337,8 @@ lexer_alloc(const char *path, struct error *er, const struct config *cf)
 		return NULL;
 	}
 
+	buffer_appendc(lx->lx_bf, '\0');
+
 	return lx;
 }
 
@@ -357,9 +359,8 @@ lexer_free(struct lexer *lx)
 }
 
 const struct buffer *
-lexer_get_buffer(struct lexer *lx)
+lexer_get_buffer(const struct lexer *lx)
 {
-	buffer_appendc(lx->lx_bf, '\0');
 	return lx->lx_bf;
 }
 

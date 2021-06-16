@@ -156,7 +156,7 @@ struct lexer	*lexer_alloc(const char *, struct error *,
     const struct config *);
 void		 lexer_free(struct lexer *);
 
-const struct buffer	*lexer_get_buffer(struct lexer *);
+const struct buffer	*lexer_get_buffer(const struct lexer *);
 int			 lexer_get_error(const struct lexer *);
 
 void	lexer_recover_enter(struct lexer_recover_markers *);
