@@ -181,16 +181,16 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("void (*f[1])(void)",
 	    "void ( * f [ 1 ] ) ( void )");
 
-	error |= test_lexer_read("<", "LESS<1:1>(\"<\")");
-	error |= test_lexer_read("<x", "LESS<1:1>(\"<\") IDENT<1:2>(\"x\")");
-	error |= test_lexer_read("<=", "LESSEQUAL<1:1>(\"<=\")");
-	error |= test_lexer_read("<<", "LESSLESS<1:1>(\"<<\")");
-	error |= test_lexer_read("<<=", "LESSLESSEQUAL<1:1>(\"<<=\")");
+	error |= test_lexer_read("<", "LESS");
+	error |= test_lexer_read("<x", "LESS IDENT");
+	error |= test_lexer_read("<=", "LESSEQUAL");
+	error |= test_lexer_read("<<", "LESSLESS");
+	error |= test_lexer_read("<<=", "LESSLESSEQUAL");
 
-	error |= test_lexer_read(".", "PERIOD<1:1>(\".\")");
-	error |= test_lexer_read("..", "PERIOD<1:1>(\".\") PERIOD<1:2>(\".\")");
-	error |= test_lexer_read("...", "ELLIPSIS<1:1>(\"...\")");
-	error |= test_lexer_read(".x", "PERIOD<1:1>(\".\") IDENT<1:2>(\"x\")");
+	error |= test_lexer_read(".", "PERIOD");
+	error |= test_lexer_read("..", "PERIOD PERIOD");
+	error |= test_lexer_read("...", "ELLIPSIS");
+	error |= test_lexer_read(".x", "PERIOD IDENT");
 
 out:
 	lexer_shutdown();
@@ -300,6 +300,7 @@ __test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
 	bf = buffer_alloc(128);
 	for (;;) {
 		struct token *tk;
+		const char *end;
 		char *str;
 
 		if (!lexer_pop(ps.ps_lx, &tk))
@@ -310,7 +311,9 @@ __test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
 		if (ntokens++ > 0)
 			buffer_appendc(bf, ' ');
 		str = token_sprintf(tk);
-		buffer_append(bf, str, strlen(str));
+		/* Strip of the token position and verbatim representation. */
+		end = strchr(str, '<');
+		buffer_append(bf, str, end - str);
 		free(str);
 	}
 	buffer_appendc(bf, '\0');
