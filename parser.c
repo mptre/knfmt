@@ -453,6 +453,8 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_token(tk, dc);
+			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
+				doc_literal(" ", dc);
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &tk)) {
 			if (!didalign)
 				doc_literal(" ", dc);
@@ -472,14 +474,20 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 					    estop != NULL ? estop : stop))
 					return parser_error(pr);
 			}
-		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
+		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
+		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
+			enum token_type rhs = tk->tk_type == TOKEN_LSQUARE ?
+			    TOKEN_RSQUARE : TOKEN_RPAREN;
+
 			doc_token(tk, dc);
 			/* Let the remaning tokens hang of the expression. */
 			if (parser_exec_expr(pr, dc, &expr, NULL) ==
 			    PARSER_NOTHING)
 				expr = dc;
-			if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
+			if (lexer_expect(lx, rhs, &tk))
 				doc_token(tk, expr);
+			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
+				doc_literal(" ", dc);
 		} else if (lexer_if(lx, TOKEN_COLON, &tk)) {
 			/* Handle bitfields. */
 			doc_token(tk, dc);
