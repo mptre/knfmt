@@ -519,22 +519,26 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	struct lexer_state s;
 	struct doc *concat = NULL;
 	struct doc *line = NULL;
-	struct doc *expr, *indent;
+	struct doc *braces, *expr, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *pv, *tk;
 	unsigned int col = 0;
+	unsigned int w = 0;
 	int align = 1;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_error(pr);
+
+	braces = doc_alloc(DOC_CONCAT, dc);
+
 	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace))
-		doc_token(lbrace, dc);
+		doc_token(lbrace, braces);
 
 	if (lexer_peek_if(lx, TOKEN_LSQUARE, NULL) ||
 	    lexer_peek_if(lx, TOKEN_PERIOD, NULL)) {
-		if (parser_exec_decl_braces_fields(pr, dc, rl, rbrace))
+		if (parser_exec_decl_braces_fields(pr, braces, rl, rbrace))
 			return parser_error(pr);
-		doc_alloc(DOC_HARDLINE, dc);
+		doc_alloc(DOC_HARDLINE, braces);
 	}
 
 	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL))
@@ -561,10 +565,16 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	lexer_peek_leave(lx, &s);
 
 	if (align) {
-		indent = dc;
+		indent = braces;
 		doc_literal(" ", indent);
+
+		/*
+		 * Take note of the width of the document, must be accounted for
+		 * while performing alignment.
+		 */
+		w = parser_width(pr, braces);
 	} else {
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+		indent = doc_alloc_indent(pr->pr_cf->cf_tw, braces);
 		doc_alloc(DOC_HARDLINE, indent);
 	}
 
@@ -596,18 +606,10 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 			if (align) {
 				if (lexer_peek(lx, &tk) && tk != rbrace) {
-					unsigned int w;
-
-					/*
-					 * Let the first column account for the
-					 * already emitted the left brace and
-					 * space.
-					 */
-					w = parser_width(pr, concat);
-					if (++col == 1)
-						w += 2;
-					ruler_insert(rl, comma, concat, col, w,
-					    0);
+					col++;
+					ruler_insert(rl, comma, concat, col,
+					    parser_width(pr, concat) + w, 0);
+					w = 0;
 				}
 			} else {
 				struct token *nx;
@@ -630,13 +632,13 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (line != NULL)
 		doc_remove(line, concat);
 	if (align)
-		doc_literal(" ", dc);
+		doc_literal(" ", braces);
 	else
-		doc_alloc(DOC_HARDLINE, dc);
+		doc_alloc(DOC_HARDLINE, braces);
 
 out:
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
-		doc_token(tk, dc);
+		doc_token(tk, braces);
 
 	return parser_ok(pr);
 }
