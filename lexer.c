@@ -1825,6 +1825,9 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 	for (;;) {
 		struct token *nx;
 
+		if (src == dst)
+			break;
+
 		nx = TAILQ_NEXT(src, tk_entry);
 		lexer_trace(lx, "removing %s", token_sprintf(src));
 		flags |= src->tk_flags & TOKEN_FLAG_UNMUTE;
