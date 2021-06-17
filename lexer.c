@@ -2011,10 +2011,16 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 		lexer_trace(lx, "%s -> %s. discard empty branch",
 		    token_sprintf(br->br_cpp), token_sprintf(cpp));
 		pv = br->br_cpp->tk_branch.br_pv;
+		/*
+		 * Prevent the previous branch from being exhausted if we're
+		 * about to link it again below.
+		 */
+		if (pv != NULL)
+			br->br_cpp->tk_branch.br_pv = NULL;
 		token_branch_unlink(br->br_cpp);
 		/*
-		 * If this is an empty else branch, try to link the previous
-		 * one instead.
+		 * If this is an empty else branch, try to link with the
+		 * previous one instead.
 		 */
 		br->br_cpp = pv;
 	}
@@ -2118,10 +2124,14 @@ token_branch_unlink(struct token *tk)
 		if (pv != NULL) {
 			pv->tk_branch.br_nx = NULL;
 			tk->tk_branch.br_pv = NULL;
+			if (pv->tk_type == TOKEN_CPP_IF)
+				token_branch_unlink(pv);
 			pv = NULL;
 		} else if (nx != NULL) {
 			nx->tk_branch.br_pv = NULL;
 			tk->tk_branch.br_nx = NULL;
+			if (nx->tk_type == TOKEN_CPP_ENDIF)
+				token_branch_unlink(nx);
 			nx = NULL;
 		}
 		if (pv == NULL && nx == NULL) {
@@ -2190,7 +2200,7 @@ token_list_free(struct token_list *tl)
 	while ((tmp = TAILQ_FIRST(tl)) != NULL) {
 		TAILQ_REMOVE(tl, tmp, tk_entry);
 		token_branch_unlink(tmp);
-		token_free(tmp);
+		free(tmp);
 	}
 }
 
