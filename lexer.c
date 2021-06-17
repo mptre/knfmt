@@ -7,13 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "extern.h"
+
 #ifdef HAVE_UTHASH
 #  include <uthash.h>
 #else
 #  include "compat-uthash.h"
 #endif
-
-#include "extern.h"
 
 struct branch {
 	struct token		*br_cpp;
