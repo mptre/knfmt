@@ -13,18 +13,24 @@ TAILQ_HEAD(doc_list, doc);
 struct doc {
 	enum doc_type	dc_type;
 
+	/* allocation trace */
 	int		 dc_lno;
 	const char	*dc_fun;
 
+	/* children */
 	union {
 		struct doc_list	 dc_list;
 		struct doc	*dc_doc;
-		const char	*dc_str;
-		int		 dc_int;
 	};
 
-	ssize_t	dc_indent;
-	size_t	dc_len;
+	/* value */
+	union {
+		struct {
+			const char	*dc_str;
+			size_t		 dc_len;
+		};
+		int	dc_int;
+	};
 
 	TAILQ_ENTRY(doc)	dc_entry;
 };
@@ -203,7 +209,7 @@ doc_remove_tail(struct doc *parent)
 void
 doc_set_indent(struct doc *dc, int indent)
 {
-	dc->dc_indent = indent;
+	dc->dc_int = indent;
 }
 
 void
@@ -244,7 +250,7 @@ __doc_alloc_indent(enum doc_type type, int ind, struct doc *dc,
 
 	group = __doc_alloc(DOC_GROUP, dc, fun, lno);
 	indent = __doc_alloc(type, group, fun, lno);
-	indent->dc_indent = ind;
+	indent->dc_int = ind;
 	concat = __doc_alloc(DOC_CONCAT, indent, fun, lno);
 	return concat;
 }
@@ -361,19 +367,19 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_INDENT:
-		if (dc->dc_indent == DOC_INDENT_PARENS)
+		if (dc->dc_int == DOC_INDENT_PARENS)
 			st->st_parens++;
-		else if (dc->dc_indent == DOC_INDENT_FORCE)
+		else if (dc->dc_int == DOC_INDENT_FORCE)
 			doc_indent(dc, st, st->st_indent.i_cur);
 		else
-			st->st_indent.i_cur += dc->dc_indent;
+			st->st_indent.i_cur += dc->dc_int;
 		doc_exec1(dc->dc_doc, st);
-		if (dc->dc_indent == DOC_INDENT_PARENS) {
+		if (dc->dc_int == DOC_INDENT_PARENS) {
 			st->st_parens--;
-		} else if (dc->dc_indent == DOC_INDENT_FORCE) {
+		} else if (dc->dc_int == DOC_INDENT_FORCE) {
 			/* nothing */
 		} else {
-			st->st_indent.i_cur -= dc->dc_indent;
+			st->st_indent.i_cur -= dc->dc_int;
 		}
 		/*
 		 * While reaching the first column, there's no longer any
@@ -386,10 +392,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_DEDENT: {
 		int indent;
 
-		if (dc->dc_indent == DOC_DEDENT_NONE) {
+		if (dc->dc_int == DOC_DEDENT_NONE) {
 			indent = st->st_indent.i_cur;
 		} else {
-			indent = dc->dc_indent;
+			indent = dc->dc_int;
 			if (indent > st->st_indent.i_cur)
 				indent = st->st_indent.i_cur;
 		}
@@ -403,7 +409,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_ALIGN:
 		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
-			doc_indent1(dc, st, dc->dc_indent);
+			doc_indent1(dc, st, dc->dc_int);
 		break;
 
 	case DOC_LITERAL:
@@ -766,12 +772,12 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		if ((str = indentstr(dc)) != NULL)
 			fprintf(stderr, "%s", str);
 		else
-			fprintf(stderr, "%zd", dc->dc_indent);
+			fprintf(stderr, "%d", dc->dc_int);
 		break;
 	}
 
 	case DOC_ALIGN:
-		fprintf(stderr, "(%zd)", dc->dc_indent);
+		fprintf(stderr, "(%d)", dc->dc_int);
 		break;
 
 	case DOC_LITERAL:
@@ -884,12 +890,12 @@ static const char *
 indentstr(const struct doc *dc)
 {
 	if (dc->dc_type == DOC_INDENT) {
-		if (dc->dc_indent == DOC_INDENT_PARENS)
+		if (dc->dc_int == DOC_INDENT_PARENS)
 			return "PARENS";
-		else if (dc->dc_indent == DOC_INDENT_FORCE)
+		else if (dc->dc_int == DOC_INDENT_FORCE)
 			return "FORCE";
 	} else if (dc->dc_type == DOC_DEDENT) {
-		if (dc->dc_indent == DOC_DEDENT_NONE)
+		if (dc->dc_int == DOC_DEDENT_NONE)
 			return "NONE";
 	}
 	return NULL;
