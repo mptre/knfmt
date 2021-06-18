@@ -520,7 +520,6 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		memcpy(&sst, st, sizeof(sst));
 		/* Should not perform any printing. */
 		sst.st_bf = NULL;
-		// XXX we always want to fit in MUNGE mode? If so, remove conditionals in doc_fits1()
 		sst.st_mode = MUNGE;
 		st->st_fits.f_fits = doc_fits1(dc, &sst);
 		st->st_fits.f_pos = st->st_pos;
@@ -567,22 +566,10 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 		return 1;
 
 	case DOC_LINE:
-		switch (st->st_mode) {
-		case BREAK:
-			return 1;
-		case MUNGE:
-			st->st_pos++;
-			break;
-		}
+		st->st_pos++;
 		break;
 
 	case DOC_SOFTLINE:
-		switch (st->st_mode) {
-		case BREAK:
-			return 1;
-		case MUNGE:
-			break;
-		}
 		break;
 
 	case DOC_HARDLINE:
