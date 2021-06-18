@@ -506,6 +506,13 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	struct doc_state sst;
 	int cached = 0;
 
+	/*
+	 * When calculating the document width using doc_width(), everything is
+	 * expected to fit on a single line.
+	 */
+	if (st->st_flags & DOC_STATE_FLAG_WIDTH)
+		return 1;
+
 	if (DOC_TRACE(st))
 		st->st_stats.s_nfits++;
 
@@ -533,13 +540,6 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 static int
 doc_fits1(const struct doc *dc, struct doc_state *st)
 {
-	/*
-	 * When calculating the document width using doc_width(), everything is
-	 * expected to fit on a single line.
-	 */
-	if (st->st_flags & DOC_STATE_FLAG_WIDTH)
-		return 1;
-
 	switch (dc->dc_type) {
 	case DOC_CONCAT: {
 		struct doc *concat;
