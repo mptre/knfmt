@@ -36,7 +36,10 @@ struct parser_exec_func_proto_arg {
 	struct doc		*pa_out;
 };
 
-static int	parser_exec_decl(struct parser *, struct doc *, int);
+#define PARSER_EXEC_DECL_FLAG_ALIGN	0x00000001u
+#define PARSER_EXEC_DECL_FLAG_BREAK	0x00000002u
+
+static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl1(struct parser *, struct doc *,
     struct ruler *);
 static int	parser_exec_decl_init(struct parser *, struct doc *,
@@ -161,7 +164,9 @@ parser_exec(struct parser *pr)
 
 		lexer_recover_mark(lx, &lm);
 
-		if (parser_exec_decl(pr, dc, 1) &&
+		if (parser_exec_decl(pr, dc,
+			    PARSER_EXEC_DECL_FLAG_ALIGN |
+			    PARSER_EXEC_DECL_FLAG_BREAK) &&
 		    parser_exec_func_impl(pr, dc))
 			error = 1;
 		else if (parser_halted(pr))
@@ -262,7 +267,7 @@ parser_exec_expr_recover(void *arg)
 }
 
 static int
-parser_exec_decl(struct parser *pr, struct doc *dc, int align)
+parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	struct lexer_recover_markers lm;
 	struct doc *concat;
@@ -273,7 +278,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, int align)
 
 	concat = doc_alloc(DOC_CONCAT, dc);
 	memset(&rl, 0, sizeof(rl));
-	ruler_init(&rl, align);
+	ruler_init(&rl, flags & PARSER_EXEC_DECL_FLAG_ALIGN);
 
 	lexer_recover_enter(&lm);
 	for (;;) {
@@ -309,7 +314,8 @@ parser_exec_decl(struct parser *pr, struct doc *dc, int align)
 		 * Honor an empty line which denotes the end of this block of
 		 * declarations.
 		 */
-		if (lexer_back(lx, &tk) & token_has_line(tk))
+		if ((flags & PARSER_EXEC_DECL_FLAG_BREAK) &&
+		    lexer_back(lx, &tk) & token_has_line(tk))
 			break;
 
 		/*
@@ -381,7 +387,8 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
 		doc_alloc(DOC_HARDLINE, indent);
-		while (parser_exec_decl(pr, indent, 1) == PARSER_OK)
+		while (parser_exec_decl(pr, indent,
+			    PARSER_EXEC_DECL_FLAG_ALIGN) == PARSER_OK)
 			continue;
 
 		doc_alloc(DOC_HARDLINE, concat);
@@ -1437,7 +1444,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		}
 	}
 
-	if (parser_exec_decl(pr, dc, 0) == PARSER_OK)
+	if (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_FLAG_BREAK) == PARSER_OK)
 		return parser_ok(pr);
 
 	/*
