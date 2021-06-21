@@ -107,7 +107,7 @@ static void		 expr_free(struct expr *);
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_indent(const struct expr_state *,
-    struct doc *, unsigned int, int);
+    struct doc *, unsigned int);
 static struct doc	*expr_doc_tokens(const struct expr *, struct doc *);
 
 #define expr_doc_soft(a, b) \
@@ -627,8 +627,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		if (ex->ex_lhs != NULL) {
 			es->es_parens++;
 			concat = doc_alloc_indent(DOC_INDENT_PARENS, concat);
-			concat = expr_doc_indent(es, concat, es->es_cf->cf_sw,
-			    1);
+			concat = expr_doc_indent(es, concat, es->es_cf->cf_sw);
 			concat = expr_doc(ex->ex_lhs, es, concat);
 			es->es_parens--;
 		}
@@ -667,7 +666,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			es->es_parens++;
 			es->es_nest++;
 			concat = expr_doc(ex->ex_rhs, es,
-			    expr_doc_indent(es, concat, es->es_cf->cf_tw, 0));
+			    expr_doc_indent(es, concat, es->es_cf->cf_tw));
 			es->es_nest--;
 			es->es_parens--;
 		}
@@ -750,17 +749,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 static struct doc *
 expr_doc_indent(const struct expr_state *es, struct doc *dc,
-    unsigned int indent, int parens)
+    unsigned int indent)
 {
 	if (es->es_parens < 2)
 		return dc;
-
-	/*
-	 * When applying the first level indentation for nested parenthesis,
-	 * account for the compensation performed by expr_exec().
-	 */
-	if (parens && es->es_parens == 2)
-		indent *= 2;
 	return doc_alloc_indent(indent, dc);
 }
 
