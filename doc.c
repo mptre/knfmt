@@ -481,8 +481,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 				 * indentation is smaller since it implies that
 				 * we're in a different scope by now.
 				 */
-				indent = it->i_cur < it->i_mute ? it->i_cur :
-				    it->i_mute;
+				indent = it->i_cur < it->i_mute ?
+				    it->i_cur : it->i_mute;
 				it->i_mute = 0;
 			} else if (oldpos > 0) {
 				/*
@@ -607,9 +607,11 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 			st->st_stats.s_nfits_cache++;
 		cached = 1;
 	}
-	doc_trace(dc, st, "%s: %u %s %u%s", __func__, st->st_fits.f_ppos,
-	    st->st_fits.f_fits ? "<=" : ">", st->st_cf->cf_mw,
-	    cached ? " (cached)" : "");
+	doc_trace(dc, st, "%s: %u %s %u%s",
+	    __func__,
+	    st->st_fits.f_ppos,
+	    st->st_fits.f_fits ? "<=" : ">",
+	    st->st_cf->cf_mw, cached ? " (cached)" : "");
 
 	return st->st_fits.f_fits;
 }
