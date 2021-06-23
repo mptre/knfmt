@@ -248,6 +248,9 @@ struct expr_exec_arg {
 	 */
 	struct doc	*(*ea_recover)(void *);
 	void		*ea_arg;
+
+	unsigned int	ea_flags;
+#define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);

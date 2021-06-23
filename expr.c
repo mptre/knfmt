@@ -182,7 +182,7 @@ struct doc *
 expr_exec(const struct expr_exec_arg *ea)
 {
 	struct expr_state es;
-	struct doc *dc;
+	struct doc *dc, *expr, *indent;
 	struct expr *ex;
 
 	expr_state_init(&es, ea);
@@ -195,9 +195,13 @@ expr_exec(const struct expr_exec_arg *ea)
 		return NULL;
 	}
 
-	dc = expr_doc(ex, &es, ea->ea_dc);
+	dc = doc_alloc(DOC_GROUP, ea->ea_dc);
+	indent = doc_alloc_indent(ea->ea_cf->cf_sw, dc);
+	if (ea->ea_flags & EXPR_EXEC_FLAG_SOFTLINE)
+		doc_alloc(DOC_SOFTLINE, indent);
+	expr = expr_doc(ex, &es, indent);
 	expr_free(ex);
-	return dc;
+	return expr;
 }
 
 int

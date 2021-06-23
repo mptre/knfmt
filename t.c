@@ -207,6 +207,7 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 		.ea_stop	= NULL,
 		.ea_recover	= parser_exec_expr_recover,
 		.ea_arg		= NULL,
+		.ea_flags	= 0,
 	};
 	struct parser_stub ps;
 	struct buffer *bf = NULL;
