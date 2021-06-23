@@ -83,11 +83,11 @@ enum token_type {
 TAILQ_HEAD(token_list, token);
 
 struct token {
-	enum token_type	tk_type;
-	unsigned int	tk_lno;
-	unsigned int	tk_cno;
-	unsigned int	tk_markers;
-	unsigned int	tk_flags;
+	enum token_type		 tk_type;
+	unsigned int		 tk_lno;
+	unsigned int		 tk_cno;
+	unsigned int		 tk_markers;
+	unsigned int		 tk_flags;
 #define TOKEN_FLAG_TYPE		0x00000001u
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
 #define TOKEN_FLAG_STORAGE	0x00000004u
@@ -104,10 +104,10 @@ struct token {
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
-	size_t		tk_off;
+	size_t			 tk_off;
 
-	const char	*tk_str;
-	size_t		 tk_len;
+	const char		*tk_str;
+	size_t			 tk_len;
 
 	union {
 		struct token	*tk_token;
@@ -119,10 +119,10 @@ struct token {
 		struct token	*br_nx;
 	} tk_branch;
 
-	struct token_list	tk_prefixes;
-	struct token_list	tk_suffixes;
+	struct token_list	 tk_prefixes;
+	struct token_list	 tk_suffixes;
 
-	TAILQ_ENTRY(token)	tk_entry;
+	TAILQ_ENTRY(token)	 tk_entry;
 };
 
 int	 token_cmp(const struct token *, const struct token *);
@@ -246,10 +246,10 @@ struct expr_exec_arg {
 	 * same callback returns a document implies that the expression parser
 	 * can continue.
 	 */
-	struct doc	*(*ea_recover)(void *);
-	void		*ea_arg;
+	struct doc		*(*ea_recover)(void *);
+	void			*ea_arg;
 
-	unsigned int	ea_flags;
+	unsigned int		 ea_flags;
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
 };
 

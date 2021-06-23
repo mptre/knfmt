@@ -29,13 +29,13 @@ struct lexer {
 	struct buffer		*lx_bf;
 	const char		*lx_path;
 
-	int		lx_eof;
-	int		lx_peek;
-	int		lx_trim;
-	enum token_type	lx_expect;
+	int			 lx_eof;
+	int			 lx_peek;
+	int			 lx_trim;
+	enum token_type		 lx_expect;
 
-	struct token_list	lx_tokens;
-	struct branch_list	lx_branches;
+	struct token_list	 lx_tokens;
+	struct branch_list	 lx_branches;
 };
 
 struct token_hash {
