@@ -133,9 +133,16 @@ The following type of documents are available:
 * DOC_NEWLINE
   Newline emits one or many new lines. Used by trailing comments.
 
+* DOC_OPTLINE
+  Optional line only honored while inside DOC_OPTIONAL. Used to honor new
+  line(s) from the original source code in certain constructs.
+
 * DOC_MUTE
   Mute informs doc_print() to not emit anything expect DOC_HARDLINE. Used while
   traversing cpp branches.
+
+* DOC_OPTIONAL
+  Allow DOC_OPTLINE to be emitted.
 
 ruler.c
 =======

@@ -173,7 +173,8 @@ token_has_line(const struct token *tk)
 	const struct token *tmp;
 
 	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
-		if (tmp->tk_type == TOKEN_SPACE)
+		if (tmp->tk_type == TOKEN_SPACE &&
+		    (tmp->tk_flags & TOKEN_FLAG_OPTLINE) == 0)
 			return 1;
 	}
 	return 0;
@@ -1176,6 +1177,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 	struct token_list dangling;
 	struct token *t, *tmp;
 	int error = 0;
+	int nlines;
 	unsigned char ch;
 
 	TAILQ_INIT(&dangling);
@@ -1286,8 +1288,11 @@ out:
 	}
 
 	/* Consume hard lines, will be hanging of the emitted token. */
-	if (lexer_eat_lines(lx, &tmp, 2))
+	if ((nlines = lexer_eat_lines(lx, &tmp, 1)) > 0) {
+		if (nlines == 1)
+			tmp->tk_flags |= TOKEN_FLAG_OPTLINE;
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
+	}
 
 	/*
 	 * Establish links between cpp branches.

@@ -1550,7 +1550,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	 * statement on a single line.
 	 */
 	stop = TAILQ_NEXT(rparen, tk_entry);
-	if (parser_exec_expr(pr, stmt, &expr, stop, 0))
+	if (parser_exec_expr(pr, stmt, &expr, stop, EXPR_EXEC_FLAG_PARENS))
 		return parser_error(pr);
 
 	if (lexer_is_branch(lx))

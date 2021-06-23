@@ -20,6 +20,6 @@ addr2str(
 	}
 #endif
 	if (!inet_ntop(AF_INET, &((struct sockaddr_in *)addr)->sin_addr, str,
-		    len))
+		len))
 		strlcpy(str, "[unknown ip4, inet_ntop failed]", len);
 }

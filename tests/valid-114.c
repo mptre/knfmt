@@ -130,7 +130,7 @@ otus_attachhook(struct device *self)
 	printf("%s: MAC/BBP AR9170, RF AR%X, MIMO %dT%dR, address %s\n",
 	    sc->sc_dev.dv_xname,
 	    (sc->capflags & AR5416_OPFLAGS_11A) ? 0x9104 : ((sc->txmask ==
-	     0x5) ? 0x9102 : 0x9101),
+	      0x5) ? 0x9102 : 0x9101),
 	    (sc->txmask == 0x5) ? 2 : 1,
 	    (sc->rxmask == 0x5) ? 2 : 1, ether_sprintf(ic->ic_myaddr));
 
@@ -226,7 +226,7 @@ otus_cmd_rxeof(struct otus_softc *sc, uint8_t *buf, int len)
 	}
 	hdr = (struct ar_cmd_hdr *)buf;
 	if (__predict_false(sizeof(*hdr) + hdr->len > len ||
-		    sizeof(*hdr) + hdr->len > 64)) {
+		sizeof(*hdr) + hdr->len > 64)) {
 		DPRINTF(("cmd too large %d\n", hdr->len));
 		return;
 	}
@@ -234,7 +234,7 @@ otus_cmd_rxeof(struct otus_softc *sc, uint8_t *buf, int len)
 	if ((hdr->code & 0xc0) != 0xc0) {
 		DPRINTFN(2,
 		    ("received reply code=0x%02x len=%d token=%d\n", hdr->code,
-		    hdr->len, hdr->token));
+		     hdr->len, hdr->token));
 		cmd = &sc->tx_cmd;
 		if (__predict_false(hdr->token != cmd->token))
 			return;

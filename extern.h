@@ -101,6 +101,7 @@ struct token {
 #define TOKEN_FLAG_NEWLINE	0x00000400u
 #define TOKEN_FLAG_FAKE		0x00000800u
 #define TOKEN_FLAG_FREE		0x00001000u
+#define TOKEN_FLAG_OPTLINE	0x00002000u
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
@@ -251,6 +252,7 @@ struct expr_exec_arg {
 
 	unsigned int		 ea_flags;
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
+#define EXPR_EXEC_FLAG_PARENS		0x00000002u
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);
@@ -273,7 +275,9 @@ enum doc_type {
 	DOC_SOFTLINE,
 	DOC_HARDLINE,
 	DOC_NEWLINE,
+	DOC_OPTLINE,
 	DOC_MUTE,
+	DOC_OPTIONAL,
 };
 
 void		doc_exec(const struct doc *, struct buffer *,
@@ -306,6 +310,10 @@ struct doc	*__doc_alloc(enum doc_type, struct doc *, const char *, int);
 	__doc_alloc_indent(DOC_DEDENT, (a), (b), __func__, __LINE__)
 struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
     const char *, int);
+
+#define doc_alloc_optional(a, b) \
+	__doc_alloc_optional((a), (b), __func__, __LINE__)
+struct doc	*__doc_alloc_optional(int, struct doc *, const char *, int);
 
 #define doc_literal(a, b) \
 	__doc_literal((a), (b), __func__, __LINE__)

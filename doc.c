@@ -69,6 +69,7 @@ struct doc_state {
 	unsigned int		st_refit;
 	unsigned int		st_line;
 	unsigned int		st_newline;
+	unsigned int		st_optline;
 	unsigned int		st_parens;
 	int			st_mute;
 	unsigned int		st_flags;
@@ -90,6 +91,11 @@ static struct doc	*__doc_alloc_mute(int, struct doc *, const char *, int);
 
 #define DOC_TRACE(st)	(UNLIKELY((st)->st_cf->cf_verbose >= 2 &&	\
 	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))
+
+#define doc_trace_header(st) do {					\
+	if (DOC_TRACE(st))						\
+		fprintf(stderr, "[D] [M,  C,  D,  M,  O]\n");		\
+} while (0)
 
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if (DOC_TRACE(st))						\
@@ -127,6 +133,9 @@ doc_exec(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_bf = bf;
 	st.st_mode = BREAK;
 	st.st_fits.f_fits = -1;
+
+	doc_trace_header(&st);
+
 	doc_exec1(dc, &st);
 	buffer_appendc(bf, '\0');
 
@@ -181,7 +190,9 @@ doc_free(struct doc *dc)
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
 	case DOC_NEWLINE:
+	case DOC_OPTLINE:
 	case DOC_MUTE:
+	case DOC_OPTIONAL:
 		break;
 	}
 
@@ -259,6 +270,16 @@ __doc_alloc_indent(enum doc_type type, int ind, struct doc *dc,
 }
 
 struct doc *
+__doc_alloc_optional(int opt, struct doc *dc, const char *fun, int lno)
+{
+	struct doc *optional;
+
+	optional = __doc_alloc(DOC_OPTIONAL, dc, fun, lno);
+	optional->dc_int = opt;
+	return optional;
+}
+
+struct doc *
 __doc_literal(const char *str, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *literal;
@@ -302,7 +323,10 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	token->dc_len = tk->tk_len;
 
 	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
-		__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
+		if (tmp->tk_flags & TOKEN_FLAG_OPTLINE)
+			doc_alloc(DOC_OPTLINE, dc);
+		else
+			__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
 
 	/* lexer_comment() signalled that hard line(s) must be emitted. */
@@ -488,6 +512,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			doc_print(dc, st, "\n", 1, 1);
 			break;
 		case MUNGE:
+			/* Redundant if we're about to emit a hard line. */
+			if (st->st_newline)
+				break;
 			doc_print(dc, st, " ", 1, 1);
 			doc_trace(dc, st, "%s: refit %u -> %d", __func__,
 			    st->st_refit, 1);
@@ -521,6 +548,15 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		st->st_newline = dc->dc_int;
 		break;
 
+	case DOC_OPTLINE:
+		/*
+		 * Signal to doc_print() to emit a hard line on the next
+		 * invocation. Necessary in order to get indentation right.
+		 */
+		if (st->st_optline)
+			st->st_newline = 1;
+		break;
+
 	case DOC_MUTE:
 		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0) {
 			/*
@@ -532,6 +568,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 			st->st_mute += dc->dc_int;
 		}
+		break;
+
+	case DOC_OPTIONAL:
+		st->st_optline += dc->dc_int;
 		break;
 	}
 
@@ -614,7 +654,15 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 	case DOC_NEWLINE:
 		return 1;
 
+	case DOC_OPTLINE:
+		if (st->st_optline)
+			return 1;
+		break;
+
 	case DOC_MUTE:
+		break;
+
+	case DOC_OPTIONAL:
 		break;
 	}
 
@@ -628,7 +676,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 
 	if (doc_parens(st)) {
 		/* Align with the left parenthesis on the previous line. */
-		indent = st->st_indent.i_pre + (st->st_parens - 1);
+		indent = st->st_indent.i_pre + st->st_parens;
 		parens = 1;
 	} else {
 		st->st_indent.i_pre = indent;
@@ -839,8 +887,14 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		fprintf(stderr, "(\"\\n\", 1)");
 		break;
 
+	case DOC_OPTLINE:
+		fprintf(stderr, "(\"%s\", %d)",
+		    st->st_optline ? "\\n" : "", st->st_optline ? 1 : 0);
+		break;
+
 	case DOC_MUTE:
 	case DOC_NEWLINE:
+	case DOC_OPTIONAL:
 		fprintf(stderr, "(%d)", dc->dc_int);
 		break;
 	}
@@ -874,7 +928,9 @@ __doc_trace_leave(const struct doc *dc, struct doc_state *st)
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
 	case DOC_NEWLINE:
+	case DOC_OPTLINE:
 	case DOC_MUTE:
+	case DOC_OPTIONAL:
 		break;
 	}
 
@@ -910,7 +966,9 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_SOFTLINE);
 	CASE(DOC_HARDLINE);
 	CASE(DOC_NEWLINE);
+	CASE(DOC_OPTLINE);
 	CASE(DOC_MUTE);
+	CASE(DOC_OPTIONAL);
 #undef CASE
 	}
 
@@ -951,8 +1009,9 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		mode = 'M';
 		break;
 	}
-	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d]", mode, st->st_pos,
-	    depth, st->st_mute);
+	/* Keep in sync with doc_state_header(). */
+	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d,%3u]",
+	    mode, st->st_pos, depth, st->st_mute, st->st_optline);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 	return buf;
