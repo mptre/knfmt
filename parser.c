@@ -911,34 +911,19 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 		.ea_recover	= parser_exec_expr_recover,
 		.ea_arg		= pr,
 	};
-	struct doc *ex;
-	struct lexer *lx = pr->pr_lx;
-	struct token *seek;
+	struct doc *ex, *group, *indent;
 
-	if (!lexer_peek(lx, &seek))
-		seek = NULL;
-
-	for (;;) {
-		struct doc *group, *indent;
-		int error = 0;
-
-		group = doc_alloc(DOC_GROUP, dc);
-		indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
-		if (pr->pr_expr > 0)
-			doc_alloc(DOC_SOFTLINE, indent);
-		ea.ea_dc = indent;
-		ex = expr_exec(&ea);
-		if (ex == NULL)
-			error = 1;
-
-		/* Suppress error if we managed to branch. */
-		if (lexer_branch(lx, &seek, stop))
-			continue;
-		if (!error)
-			break;
+	group = doc_alloc(DOC_GROUP, dc);
+	indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
+	if (pr->pr_expr > 0)
+		doc_alloc(DOC_SOFTLINE, indent);
+	ea.ea_dc = indent;
+	ex = expr_exec(&ea);
+	if (ex == NULL) {
 		doc_remove(group, dc);
 		return PARSER_NOTHING;
 	}
+
 	if (expr != NULL)
 		*expr = ex;
 	return parser_ok(pr);
@@ -1551,7 +1536,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 {
 	struct doc *expr, *stmt;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rparen, *tk;
+	struct token *rparen, *stop, *tk;
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
@@ -1567,7 +1552,8 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	 * expression since we want to fit everything until the following
 	 * statement on a single line.
 	 */
-	if (parser_exec_expr(pr, stmt, &expr, rparen))
+	stop = TAILQ_NEXT(rparen, tk_entry);
+	if (parser_exec_expr(pr, stmt, &expr, stop))
 		return parser_error(pr);
 
 	if (lexer_is_branch(lx))

@@ -35,6 +35,13 @@ struct doc {
 	TAILQ_ENTRY(doc)	dc_entry;
 };
 
+struct doc_state_indent {
+	int	i_cur;
+	int	i_pre;
+	int	i_mute;
+	size_t	i_pos;
+};
+
 struct doc_state {
 	const struct config	*st_cf;
 	struct buffer		*st_bf;
@@ -50,11 +57,7 @@ struct doc_state {
 		unsigned int	f_ppos;
 	} st_fits;
 
-	struct {
-		int	i_cur;
-		int	i_pre;
-		size_t	i_pos;
-	} st_indent;
+	struct doc_state_indent	st_indent;
 
 	struct {
 		unsigned int	s_nfits;
@@ -442,20 +445,38 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 		doc_print(dc, st, dc->dc_str, dc->dc_len, 1);
 
-		/*
-		 * Restore the indentation after emitting a verbatim block.
-		 * If the position after trimming is greater than zero must
-		 * imply that we're in the middle of some construct and the
-		 * current indentation must be honored as what follows is a
-		 * continuation of the same construct. Otherwise, the verbatim
-		 * block was emitted starting with an already blank line. Then
-		 * the previously emitted indentation must be honored as this is
-		 * not a continuation.
-		 */
+		/* Restore the indentation after emitting a verbatim block. */
 		if (isblock) {
+			struct doc_state_indent *it = &st->st_indent;
+			unsigned int indent;
+
+			if (it->i_mute > 0) {
+				/*
+				 * Honor last emitted indentation before going
+				 * mute. However, discard it if the current
+				 * indentation is smaller since it implies that
+				 * we're in a different scope by now.
+				 */
+				indent = it->i_cur < it->i_mute ? it->i_cur :
+				    it->i_mute;
+				it->i_mute = 0;
+			} else if (oldpos > 0) {
+				/*
+				 * The line is not empty after trimming. Assume
+				 * this a continuation in which the current
+				 * indentation level must be used.
+				 */
+				indent = it->i_cur;
+			} else {
+				/*
+				 * The line is empty after trimming. Assume this
+				 * is not a continuation in which the previously
+				 * emitted indentation must be used.
+				 */
+				indent = it->i_pre;
+			}
 			st->st_pos = 0;
-			doc_indent(dc, st,
-			    oldpos > 0 ? st->st_indent.i_cur : st->st_indent.i_pre);
+			doc_indent(dc, st, indent);
 		}
 
 		break;
@@ -486,6 +507,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_HARDLINE:
+		/* Take note of new line(s), later emitted by doc_print(). */
+		if (st->st_mute)
+			st->st_newline = 1;
 		doc_print(dc, st, "\n", 1, 1);
 		break;
 
@@ -498,8 +522,16 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
-		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
+		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0) {
+			/*
+			 * Take note of the previously emitted indentation
+			 * before going mute.
+			 */
+			if (st->st_mute == 0 && dc->dc_int > 0)
+				st->st_indent.i_mute = st->st_indent.i_pre;
+
 			st->st_mute += dc->dc_int;
+		}
 		break;
 	}
 
@@ -627,6 +659,9 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 {
 	int newline = len == 1 && str[0] == '\n';
 
+	if (st->st_mute)
+		return;
+
 	/* Emit any pending hard line(s). */
 	if (st->st_newline > 0) {
 		int space = len == 1 && str[0] == ' ';
@@ -656,8 +691,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	if (newline)
 		doc_trim(dc, st);
 
-	if (st->st_mute == 0 || dc->dc_type == DOC_HARDLINE)
-		buffer_append(st->st_bf, str, len);
+	buffer_append(st->st_bf, str, len);
 	st->st_pos += len;
 
 	if (newline) {

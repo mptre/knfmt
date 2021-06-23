@@ -222,13 +222,11 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 {
 	const struct expr_rule *er;
 	struct expr *ex = NULL;
-	struct token *tk;
 
 	if (lexer_is_branch(es->es_lx))
 		return expr_alloc(EXPR_BRANCH, es);
 
 	if (lexer_get_error(es->es_lx) ||
-	    (lexer_back(es->es_lx, &tk) && tk == es->es_stop) ||
 	    (!lexer_peek(es->es_lx, &es->es_tk) || es->es_tk == es->es_stop))
 		return NULL;
 
@@ -256,8 +254,6 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 	for (;;) {
 		struct expr *tmp;
 
-		if (lexer_back(es->es_lx, &tk) && tk == es->es_stop)
-			break;
 		if (!lexer_peek(es->es_lx, &es->es_tk) ||
 		    es->es_tk == es->es_stop)
 			break;
