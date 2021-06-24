@@ -757,13 +757,11 @@ expr_doc_indent_parens(const struct expr_state *es, struct doc *dc)
 	if (es->es_ea->ea_flags & EXPR_EXEC_FLAG_PARENS) {
 		if (es->es_parens > 1)
 			dc = doc_alloc_indent(DOC_INDENT_PARENS, dc);
-		if (es->es_parens > 2)
-			dc = doc_alloc_indent(es->es_cf->cf_sw, dc);
 	} else {
 		dc = doc_alloc_indent(DOC_INDENT_PARENS, dc);
-		if (es->es_parens > 1)
-			dc = doc_alloc_indent(es->es_cf->cf_sw, dc);
 	}
+	if (es->es_parens > 1)
+		dc = doc_alloc_indent(es->es_cf->cf_sw, dc);
 	return dc;
 }
 
