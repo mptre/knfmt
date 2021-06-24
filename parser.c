@@ -1570,16 +1570,16 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 {
 	struct doc *indent, *lhs;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *kw, *tk;
 
-	if (!lexer_if(lx, TOKEN_CASE, &tk) && !lexer_if(lx, TOKEN_DEFAULT, &tk))
+	if (!lexer_if(lx, TOKEN_CASE, &kw) && !lexer_if(lx, TOKEN_DEFAULT, &kw))
 		return PARSER_NOTHING;
 
 	lhs = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	doc_token(tk, lhs);
+	doc_token(kw, lhs);
 	if (!lexer_peek_until(lx, TOKEN_COLON, NULL))
 		return parser_error(pr);
-	if (tk->tk_type == TOKEN_CASE) {
+	if (kw->tk_type == TOKEN_CASE) {
 		doc_alloc(DOC_LINE, lhs);
 		parser_exec_expr(pr, lhs, NULL, NULL, 0);
 	}
@@ -1594,21 +1594,30 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 	for (;;) {
 		struct doc *line;
-		int dobreak = 0;
+		struct token *nx;
 
 		if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
 		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
 			break;
 
-		if (lexer_peek_if(lx, TOKEN_BREAK, NULL))
-			dobreak = 1;
-		line = doc_alloc(DOC_HARDLINE, indent);
+		if (!lexer_peek(lx, &nx))
+			return parser_error(pr);
+
+		/*
+		 * Allowing following statement(s) to be placed on the same line
+		 * as the case/default keyword.
+		 */
+		if (token_cmp(kw, nx) == 0)
+			line = doc_literal(" ", indent);
+		else
+			line = doc_alloc(DOC_HARDLINE, indent);
+
 		if (parser_exec_stmt1(pr, indent, stop)) {
 			/* No statement, remove the line. */
 			doc_remove(line, indent);
 			break;
 		}
-		if (dobreak)
+		if (nx->tk_type == TOKEN_BREAK)
 			break;
 
 		/* Take the next branch if available. */
