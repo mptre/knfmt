@@ -237,8 +237,8 @@ parser_exec_expr_recover(void *arg)
 		if (pv == NULL || nx == NULL)
 			return NULL;
 		if ((pv->tk_type == TOKEN_LPAREN ||
-		    pv->tk_type == TOKEN_COMMA ||
-		    pv->tk_type == TOKEN_SIZEOF) &&
+			pv->tk_type == TOKEN_COMMA ||
+			pv->tk_type == TOKEN_SIZEOF) &&
 		    (nx->tk_type == TOKEN_RPAREN ||
 		     nx->tk_type == TOKEN_COMMA || nx->tk_type == TOKEN_EOF)) {
 			dc = doc_alloc(DOC_CONCAT, NULL);
