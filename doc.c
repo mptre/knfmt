@@ -81,11 +81,14 @@ static int	doc_fits(const struct doc *, struct doc_state *);
 static int	doc_fits1(const struct doc *, struct doc_state *);
 static void	doc_indent(const struct doc *, struct doc_state *, int);
 static void	doc_indent1(const struct doc *, struct doc_state *, int);
-static void	doc_print(const struct doc *, struct doc_state *, const char *,
-    size_t, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_is_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
+
+#define DOC_PRINT_FLAG_INDENT	0x00000001u
+
+static void	doc_print(const struct doc *, struct doc_state *, const char *,
+    size_t, unsigned int);
 
 static struct doc	*__doc_alloc_mute(int, struct doc *, const char *, int);
 
@@ -440,7 +443,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_LITERAL:
-		doc_print(dc, st, dc->dc_str, dc->dc_len, 1);
+		doc_print(dc, st, dc->dc_str, dc->dc_len,
+		    DOC_PRINT_FLAG_INDENT);
 		break;
 
 	case DOC_VERBATIM: {
@@ -467,7 +471,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (isblock && st->st_pos > 0)
 			doc_print(dc, st, "\n", 1, 0);
 
-		doc_print(dc, st, dc->dc_str, dc->dc_len, 1);
+		doc_print(dc, st, dc->dc_str, dc->dc_len,
+		    DOC_PRINT_FLAG_INDENT);
 
 		/* Restore the indentation after emitting a verbatim block. */
 		if (isblock) {
@@ -509,13 +514,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_LINE:
 		switch (st->st_mode) {
 		case BREAK:
-			doc_print(dc, st, "\n", 1, 1);
+			doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
 			break;
 		case MUNGE:
 			/* Redundant if we're about to emit a hard line. */
 			if (st->st_newline)
 				break;
-			doc_print(dc, st, " ", 1, 1);
+			doc_print(dc, st, " ", 1, DOC_PRINT_FLAG_INDENT);
 			doc_trace(dc, st, "%s: refit %u -> %d", __func__,
 			    st->st_refit, 1);
 			st->st_refit = 1;
@@ -526,7 +531,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_SOFTLINE:
 		switch (st->st_mode) {
 		case BREAK:
-			doc_print(dc, st, "\n", 1, 1);
+			doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
 			break;
 		case MUNGE:
 			break;
@@ -537,7 +542,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		/* Take note of new line(s), later emitted by doc_print(). */
 		if (st->st_mute)
 			st->st_newline = 1;
-		doc_print(dc, st, "\n", 1, 1);
+		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
 		break;
 
 	case DOC_NEWLINE:
@@ -705,7 +710,7 @@ doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 
 static void
 doc_print(const struct doc *dc, struct doc_state *st, const char *str,
-    size_t len, int doindent)
+    size_t len, unsigned int flags)
 {
 	int newline = len == 1 && str[0] == '\n';
 
@@ -720,7 +725,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		n = st->st_newline;
 		st->st_newline = 0;
 		for (; n > 0; n--)
-			doc_print(dc, st, "\n", 1, doindent && n - 1 == 0);
+			doc_print(dc, st, "\n", 1, n - 1 == 0 ? flags : 0);
 		if (newline || space)
 			return;
 	}
@@ -746,7 +751,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 
 	if (newline) {
 		st->st_pos = 0;
-		if (doindent)
+		if (flags & DOC_PRINT_FLAG_INDENT)
 			doc_indent(dc, st, st->st_indent.i_cur);
 	}
 }
