@@ -100,10 +100,10 @@ struct parser *
 parser_alloc(const char *path, struct error *er, const struct config *cf)
 {
 	struct parser *pr;
-	struct lexer *lex;
+	struct lexer *lx;
 
-	lex = lexer_alloc(path, er, cf);
-	if (lex == NULL)
+	lx = lexer_alloc(path, er, cf);
+	if (lx == NULL)
 		return NULL;
 
 	pr = calloc(1, sizeof(*pr));
@@ -112,7 +112,7 @@ parser_alloc(const char *path, struct error *er, const struct config *cf)
 	pr->pr_path = path;
 	pr->pr_er = er;
 	pr->pr_cf = cf;
-	pr->pr_lx = lex;
+	pr->pr_lx = lx;
 	return pr;
 }
 
