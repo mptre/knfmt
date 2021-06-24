@@ -67,7 +67,7 @@ struct doc_state {
 	unsigned int		st_pos;
 	unsigned int		st_depth;
 	unsigned int		st_refit;
-	unsigned int		st_line;
+	unsigned int		st_nlines;
 	unsigned int		st_newline;
 	unsigned int		st_optline;
 	unsigned int		st_parens;
@@ -731,11 +731,11 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 			return;
 
 		/* Never emit more than two consecutive lines. */
-		if (st->st_line >= 2)
+		if (st->st_nlines >= 2)
 			return;
-		st->st_line++;
+		st->st_nlines++;
 	} else {
-		st->st_line = 0;
+		st->st_nlines = 0;
 	}
 
 	if (newline)
