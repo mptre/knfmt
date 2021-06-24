@@ -77,6 +77,8 @@ static int	parser_exec_stmt_block(struct parser *, struct doc *,
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_label(struct parser *, struct doc *);
+static int	parser_exec_stmt_case(struct parser *, struct doc *,
+    const struct token *);
 
 static int	parser_exec_type(struct parser *, struct doc *,
     const struct token *, struct ruler *);
@@ -1261,53 +1263,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_exec_stmt1(pr, dc, stop);
 	}
 
-	if (lexer_if(lx, TOKEN_CASE, &tk) || lexer_if(lx, TOKEN_DEFAULT, &tk)) {
-		struct doc *lhs;
-
-		lhs = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		doc_token(tk, lhs);
-		if (!lexer_peek_until(lx, TOKEN_COLON, &tmp))
-			return parser_error(pr);
-		if (tk->tk_type == TOKEN_CASE) {
-			doc_alloc(DOC_LINE, lhs);
-			parser_exec_expr(pr, lhs, NULL, NULL, 0);
-		}
-		if (lexer_expect(lx, TOKEN_COLON, &tk))
-			doc_token(tk, lhs);
-
-		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-			doc_alloc(DOC_LINE, lhs);
-			parser_exec_stmt1(pr, dc, stop);
-		} else {
-			struct doc *indent;
-
-			indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
-			for (;;) {
-				struct doc *line;
-				int dobreak = 0;
-
-				if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
-				    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
-					break;
-
-				if (lexer_peek_if(lx, TOKEN_BREAK, NULL))
-					dobreak = 1;
-				line = doc_alloc(DOC_HARDLINE, indent);
-				if (parser_exec_stmt1(pr, indent, stop)) {
-					/* No statement, remove the line. */
-					doc_remove(line, indent);
-					break;
-				}
-				if (dobreak)
-					break;
-
-				/* Take the next branch if available. */
-				lexer_branch(lx, NULL, NULL);
-			}
-		}
-
+	if (parser_exec_stmt_case(pr, dc, stop) == PARSER_OK)
 		return parser_ok(pr);
-	}
 
 	if (lexer_if(lx, TOKEN_DO, &tk)) {
 		int error;
@@ -1604,6 +1561,60 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 		doc_token(tk, dedent);
 	if (lexer_expect(lx, TOKEN_COLON, &tk))
 		doc_token(tk, dedent);
+	return parser_ok(pr);
+}
+
+static int
+parser_exec_stmt_case(struct parser *pr, struct doc *dc,
+    const struct token *stop)
+{
+	struct doc *indent, *lhs;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	if (!lexer_if(lx, TOKEN_CASE, &tk) && !lexer_if(lx, TOKEN_DEFAULT, &tk))
+		return PARSER_NOTHING;
+
+	lhs = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	doc_token(tk, lhs);
+	if (!lexer_peek_until(lx, TOKEN_COLON, NULL))
+		return parser_error(pr);
+	if (tk->tk_type == TOKEN_CASE) {
+		doc_alloc(DOC_LINE, lhs);
+		parser_exec_expr(pr, lhs, NULL, NULL, 0);
+	}
+	if (lexer_expect(lx, TOKEN_COLON, &tk))
+		doc_token(tk, lhs);
+
+	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+		doc_alloc(DOC_LINE, lhs);
+		return parser_exec_stmt1(pr, dc, stop);
+	}
+
+	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+	for (;;) {
+		struct doc *line;
+		int dobreak = 0;
+
+		if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
+		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
+			break;
+
+		if (lexer_peek_if(lx, TOKEN_BREAK, NULL))
+			dobreak = 1;
+		line = doc_alloc(DOC_HARDLINE, indent);
+		if (parser_exec_stmt1(pr, indent, stop)) {
+			/* No statement, remove the line. */
+			doc_remove(line, indent);
+			break;
+		}
+		if (dobreak)
+			break;
+
+		/* Take the next branch if available. */
+		lexer_branch(lx, NULL, NULL);
+	}
+
 	return parser_ok(pr);
 }
 
