@@ -310,8 +310,13 @@ static struct expr *
 expr_exec_binary(struct expr_state *es, struct expr *lhs)
 {
 	struct expr *ex;
+	struct token *pv;
 	enum expr_pc pc;
 	int iscomma = es->es_tk->tk_type == TOKEN_COMMA;
+
+	/* Never break before the binary operator. */
+	pv = TAILQ_PREV(es->es_tk, token_list, tk_entry);
+	token_trim(pv, TOKEN_SPACE, TOKEN_FLAG_OPTLINE);
 
 	pc = PC(es->es_er->er_pc);
 	if (es->es_er->er_rassoc)

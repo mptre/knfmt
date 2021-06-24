@@ -131,7 +131,7 @@ int	 token_has_dangling(const struct token *);
 int	 token_has_line(const struct token *);
 int	 token_is_branch(const struct token *);
 int	 token_is_decl(const struct token *, enum token_type);
-void	 token_trim(struct token *);
+void	 token_trim(struct token *, enum token_type, unsigned int);
 char	*token_sprintf(const struct token *);
 
 /*

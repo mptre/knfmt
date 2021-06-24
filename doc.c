@@ -67,10 +67,10 @@ struct doc_state {
 	unsigned int		st_pos;
 	unsigned int		st_depth;
 	unsigned int		st_refit;
+	unsigned int		st_parens;
 	unsigned int		st_nlines;
 	unsigned int		st_newline;
-	unsigned int		st_optline;
-	unsigned int		st_parens;
+	int			st_optline;
 	int			st_mute;
 	unsigned int		st_flags;
 #define DOC_STATE_FLAG_WIDTH	0x00000001u
@@ -86,6 +86,7 @@ static int	doc_is_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 
 #define DOC_PRINT_FLAG_INDENT	0x00000001u
+#define DOC_PRINT_FLAG_NEWLINE	0x00000002u
 
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
@@ -576,7 +577,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_OPTIONAL:
-		st->st_optline += dc->dc_int;
+		/* Note, could already be cleared by doc_print(). */
+		if (dc->dc_int > 0 || -dc->dc_int <= st->st_optline)
+			st->st_optline += dc->dc_int;
 		break;
 	}
 
@@ -725,7 +728,8 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		n = st->st_newline;
 		st->st_newline = 0;
 		for (; n > 0; n--)
-			doc_print(dc, st, "\n", 1, n - 1 == 0 ? flags : 0);
+			doc_print(dc, st, "\n", 1,
+			    (n - 1 == 0 ? flags : 0) | DOC_PRINT_FLAG_NEWLINE);
 		if (newline || space)
 			return;
 	}
@@ -739,6 +743,16 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		if (st->st_nlines >= 2)
 			return;
 		st->st_nlines++;
+
+		/*
+		 * Suppress optional line(s) while emitting a line. Mixing the
+		 * two results in odd formatting.
+		 */
+		if ((flags & DOC_PRINT_FLAG_NEWLINE) == 0 && st->st_optline) {
+			doc_trace(dc, st, "%s: optline %d -> 0",
+			    __func__, st->st_optline);
+			st->st_optline = 0;
+		}
 	} else {
 		st->st_nlines = 0;
 	}

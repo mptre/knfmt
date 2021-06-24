@@ -210,15 +210,17 @@ token_is_decl(const struct token *tk, enum token_type type)
 }
 
 /*
- * Remove any space suffixes from the given token.
+ * Remove all suffixes from the given token matching the given type and optional
+ * flags.
  */
 void
-token_trim(struct token *tk)
+token_trim(struct token *tk, enum token_type type, unsigned int flags)
 {
 	struct token *suffix, *tmp;
 
 	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
-		if (suffix->tk_type == TOKEN_SPACE) {
+		if (suffix->tk_type == type &&
+		    (flags == 0 || (suffix->tk_flags & flags))) {
 			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
 			token_free(suffix);
 		}
@@ -647,7 +649,7 @@ out:
 	if (st->st_tok == NULL)
 		return 0;
 	if (lx->lx_peek == 0 && lx->lx_trim)
-		token_trim(st->st_tok);
+		token_trim(st->st_tok, TOKEN_SPACE, 0);
 	*tk = st->st_tok;
 	return 1;
 }
