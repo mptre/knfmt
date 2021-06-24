@@ -84,7 +84,7 @@ static void	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
-static int	doc_parens(const struct doc_state *);
+static int	doc_is_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 
 static struct doc	*__doc_alloc_mute(int, struct doc *, const char *, int);
@@ -676,7 +676,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 {
 	int parens = 0;
 
-	if (doc_parens(st)) {
+	if (doc_is_parens(st)) {
 		/* Align with the left parenthesis on the previous line. */
 		indent = st->st_indent.i_pre + st->st_parens;
 		parens = 1;
@@ -776,7 +776,7 @@ doc_trim(const struct doc *dc, struct doc_state *st)
  * aligned indentation.
  */
 static int
-doc_parens(const struct doc_state *st)
+doc_is_parens(const struct doc_state *st)
 {
 	return st->st_parens > 0 && st->st_indent.i_pre > 0 &&
 	    st->st_bf->bf_ptr[st->st_indent.i_pos] == '(';
