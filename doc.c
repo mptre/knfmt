@@ -1008,7 +1008,7 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		break;
 	}
 	/* Keep in sync with doc_state_header(). */
-	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d,%3u]",
+	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d,%3d]",
 	    mode, st->st_pos, depth, st->st_mute, st->st_optline);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
