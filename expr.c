@@ -813,9 +813,9 @@ __expr_doc_soft(const struct expr_state *es, struct doc *dc, const char *fun,
 	if (es->es_soft > 0)
 		return dc;
 
-	dc = __doc_alloc(DOC_CONCAT, __doc_alloc(DOC_GROUP, dc, fun, lno), fun,
-	    lno);
-	__doc_alloc(DOC_SOFTLINE, dc, fun, lno);
+	dc = __doc_alloc(DOC_CONCAT, __doc_alloc(DOC_GROUP, dc, 0, fun, lno),
+	    0, fun, lno);
+	__doc_alloc(DOC_SOFTLINE, dc, 0, fun, lno);
 	return dc;
 }
 

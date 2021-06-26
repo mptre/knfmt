@@ -291,8 +291,12 @@ void		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, int);
 
 #define doc_alloc(a, b) \
-	__doc_alloc((a), (b), __func__, __LINE__)
-struct doc	*__doc_alloc(enum doc_type, struct doc *, const char *, int);
+	__doc_alloc((a), (b), 0, __func__, __LINE__)
+struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
+    int);
+
+#define doc_alloc_optional(a, b) \
+	__doc_alloc(DOC_OPTIONAL, (b), (a), __func__, __LINE__)
 
 /*
  * Sentinels honored by doc_alloc_dedent() and doc_alloc_indent(). The numbers
@@ -310,10 +314,6 @@ struct doc	*__doc_alloc(enum doc_type, struct doc *, const char *, int);
 	__doc_alloc_indent(DOC_DEDENT, (a), (b), __func__, __LINE__)
 struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
     const char *, int);
-
-#define doc_alloc_optional(a, b) \
-	__doc_alloc_optional((a), (b), __func__, __LINE__)
-struct doc	*__doc_alloc_optional(int, struct doc *, const char *, int);
 
 #define doc_literal(a, b) \
 	__doc_literal((a), (b), __func__, __LINE__)

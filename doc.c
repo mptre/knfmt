@@ -91,8 +91,6 @@ static int	doc_has_list(const struct doc *);
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
 
-static struct doc	*__doc_alloc_mute(int, struct doc *, const char *, int);
-
 #define DOC_TRACE(st)	(UNLIKELY((st)->st_cf->cf_verbose >= 2 &&	\
 	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))
 
@@ -242,7 +240,8 @@ doc_append(struct doc *dc, struct doc *parent)
 }
 
 struct doc *
-__doc_alloc(enum doc_type type, struct doc *parent, const char *fun, int lno)
+__doc_alloc(enum doc_type type, struct doc *parent, int val, const char *fun,
+    int lno)
 {
 	struct doc *dc;
 
@@ -252,6 +251,7 @@ __doc_alloc(enum doc_type type, struct doc *parent, const char *fun, int lno)
 	dc->dc_type = type;
 	dc->dc_fun = fun;
 	dc->dc_lno = lno;
+	dc->dc_int = val;
 	if (doc_has_list(dc))
 		TAILQ_INIT(&dc->dc_list);
 	if (parent != NULL)
@@ -266,21 +266,11 @@ __doc_alloc_indent(enum doc_type type, int ind, struct doc *dc,
 {
 	struct doc *concat, *group, *indent;
 
-	group = __doc_alloc(DOC_GROUP, dc, fun, lno);
-	indent = __doc_alloc(type, group, fun, lno);
+	group = __doc_alloc(DOC_GROUP, dc, 0, fun, lno);
+	indent = __doc_alloc(type, group, 0, fun, lno);
 	indent->dc_int = ind;
-	concat = __doc_alloc(DOC_CONCAT, indent, fun, lno);
+	concat = __doc_alloc(DOC_CONCAT, indent, 0, fun, lno);
 	return concat;
-}
-
-struct doc *
-__doc_alloc_optional(int opt, struct doc *dc, const char *fun, int lno)
-{
-	struct doc *optional;
-
-	optional = __doc_alloc(DOC_OPTIONAL, dc, fun, lno);
-	optional->dc_int = opt;
-	return optional;
 }
 
 struct doc *
@@ -288,7 +278,7 @@ __doc_literal(const char *str, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *literal;
 
-	literal = __doc_alloc(DOC_LITERAL, dc, fun, lno);
+	literal = __doc_alloc(DOC_LITERAL, dc, 0, fun, lno);
 	literal->dc_str = str;
 	literal->dc_len = strlen(str);
 	return literal;
@@ -316,13 +306,13 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	}
 
 	if (tk->tk_flags & TOKEN_FLAG_UNMUTE)
-		__doc_alloc_mute(-1, dc, fun, lno);
+		__doc_alloc(DOC_MUTE, dc, -1, fun, lno);
 
 	TAILQ_FOREACH(tmp, &tk->tk_prefixes, tk_entry) {
 		__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
 
-	token = __doc_alloc(type, dc, fun, lno);
+	token = __doc_alloc(type, dc, 0, fun, lno);
 	token->dc_str = tk->tk_str;
 	token->dc_len = tk->tk_len;
 
@@ -335,16 +325,13 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 
 	/* lexer_comment() signalled that hard line(s) must be emitted. */
 	if (tk->tk_flags & TOKEN_FLAG_NEWLINE) {
-		struct doc *newline;
-
-		newline = __doc_alloc(DOC_NEWLINE, dc, fun, lno);
-		newline->dc_int = tk->tk_int;
+		__doc_alloc(DOC_NEWLINE, dc, tk->tk_int, fun, lno);
 	}
 
 	/* Mute if we're about to branch. */
 	tmp = TAILQ_NEXT(tk, tk_entry);
 	if (tmp != NULL && token_is_branch(tmp))
-		__doc_alloc_mute(1, dc, fun, lno);
+		__doc_alloc(DOC_MUTE, dc, 1, fun, lno);
 
 	return dangling ? dc : token;
 }
@@ -811,16 +798,6 @@ doc_has_list(const struct doc *dc)
 		break;
 	}
 	return 0;
-}
-
-static struct doc *
-__doc_alloc_mute(int mute, struct doc *parent, const char *fun, int lno)
-{
-	struct doc *dc;
-
-	dc = __doc_alloc(DOC_MUTE, parent, fun, lno);
-	dc->dc_int = mute;
-	return dc;
 }
 
 static void
