@@ -1619,9 +1619,6 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		}
 		if (nx->tk_type == TOKEN_BREAK)
 			break;
-
-		/* Take the next branch if available. */
-		lexer_branch(lx, NULL, NULL);
 	}
 
 	return parser_ok(pr);
