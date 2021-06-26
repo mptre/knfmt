@@ -142,7 +142,8 @@ static int
 isdecl(const struct token *tk)
 {
 	return token_is_decl(tk, TOKEN_ENUM) ||
-	    token_is_decl(tk, TOKEN_STRUCT) || token_is_decl(tk, TOKEN_UNION);
+	    token_is_decl(tk, TOKEN_STRUCT) ||
+	    token_is_decl(tk, TOKEN_UNION);
 }
 
 static int
