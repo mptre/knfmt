@@ -236,13 +236,13 @@ parser_exec_expr_recover(void *arg)
 			return NULL;
 		pv = TAILQ_PREV(pv, token_list, tk_entry);
 		nx = TAILQ_NEXT(tk, tk_entry);
-		if (pv == NULL || nx == NULL)
-			return NULL;
-		if ((pv->tk_type == TOKEN_LPAREN ||
-			pv->tk_type == TOKEN_COMMA ||
-			pv->tk_type == TOKEN_SIZEOF) &&
+		if (pv != NULL && nx != NULL &&
+		    (pv->tk_type == TOKEN_LPAREN ||
+		     pv->tk_type == TOKEN_COMMA ||
+		     pv->tk_type == TOKEN_SIZEOF) &&
 		    (nx->tk_type == TOKEN_RPAREN ||
-		     nx->tk_type == TOKEN_COMMA || nx->tk_type == TOKEN_EOF)) {
+		     nx->tk_type == TOKEN_COMMA ||
+		     nx->tk_type == TOKEN_EOF)) {
 			dc = doc_alloc(DOC_CONCAT, NULL);
 			if (parser_exec_type(pr, dc, tk, NULL)) {
 				doc_free(dc);
