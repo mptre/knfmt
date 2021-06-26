@@ -53,6 +53,7 @@ struct doc_state {
 
 	struct {
 		int		f_fits;
+		unsigned int	f_optline;
 		unsigned int	f_pos;
 		unsigned int	f_ppos;
 	} st_fits;
@@ -576,8 +577,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
-	struct doc_state sst;
+	struct doc_state fst;
 	int cached = 0;
+	int optline = 0;
 
 	/*
 	 * When calculating the document width using doc_width(), everything is
@@ -590,23 +592,33 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		st->st_stats.s_nfits++;
 
 	if (st->st_fits.f_fits == -1 || st->st_fits.f_pos != st->st_pos) {
-		memcpy(&sst, st, sizeof(sst));
+		memcpy(&fst, st, sizeof(fst));
 		/* Should not perform any printing. */
-		sst.st_bf = NULL;
-		sst.st_mode = MUNGE;
-		st->st_fits.f_fits = doc_fits1(dc, &sst);
+		fst.st_bf = NULL;
+		fst.st_mode = MUNGE;
+		fst.st_fits.f_optline = 0;
+		st->st_fits.f_fits = doc_fits1(dc, &fst);
 		st->st_fits.f_pos = st->st_pos;
-		st->st_fits.f_ppos = sst.st_pos;
+		if (st->st_fits.f_fits) {
+			st->st_fits.f_ppos = fst.st_pos;
+		} else if (fst.st_fits.f_optline > 0 &&
+		    fst.st_fits.f_optline <= st->st_cf->cf_mw) {
+			/* Honoring an optional line makes everything fit. */
+			st->st_fits.f_fits = 1;
+			st->st_fits.f_ppos = fst.st_fits.f_optline;
+			optline = 1;
+		}
 	} else {
 		if (DOC_TRACE(st))
 			st->st_stats.s_nfits_cache++;
 		cached = 1;
 	}
-	doc_trace(dc, st, "%s: %u %s %u%s",
+	doc_trace(dc, st, "%s: %u %s %u, cached %d, optline %d",
 	    __func__,
 	    st->st_fits.f_ppos,
 	    st->st_fits.f_fits ? "<=" : ">",
-	    st->st_cf->cf_mw, cached ? " (cached)" : "");
+	    st->st_cf->cf_mw,
+	    cached, optline);
 
 	return st->st_fits.f_fits;
 }
@@ -652,8 +664,11 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 		return 1;
 
 	case DOC_OPTLINE:
-		if (st->st_optline)
+		if (st->st_optline) {
+			if (st->st_fits.f_optline == 0)
+				st->st_fits.f_optline = st->st_pos;
 			return 1;
+		}
 		break;
 
 	case DOC_MUTE:

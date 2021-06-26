@@ -1,5 +1,5 @@
 /*
- * Long expression, do not honor optional line(s) after emitting a hard line.
+ * Long expression, honor optional line.
  */
 
 int
