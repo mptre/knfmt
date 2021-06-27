@@ -856,15 +856,13 @@ static int
 iscast(struct expr_state *es)
 {
 	struct lexer_state s;
-	struct token *end;
 	int cast = 0;
 
 	lexer_peek_enter(es->es_lx, &s);
-	if (lexer_if_type(es->es_lx, &end)) {
-		if (lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
-		    expr_peek(es->es_ea))
-			cast = 1;
-	}
+	if (lexer_if_type(es->es_lx, NULL) &&
+	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
+	    expr_peek(es->es_ea))
+		cast = 1;
 	lexer_peek_leave(es->es_lx, &s);
 
 	return cast;
@@ -873,6 +871,7 @@ iscast(struct expr_state *es)
 static int
 isliteral(const struct token *tk)
 {
-	return tk->tk_type == TOKEN_IDENT || tk->tk_type == TOKEN_LITERAL ||
+	return tk->tk_type == TOKEN_IDENT ||
+	    tk->tk_type == TOKEN_LITERAL ||
 	    tk->tk_type == TOKEN_STRING;
 }
