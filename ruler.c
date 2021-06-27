@@ -99,10 +99,7 @@ ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 		rc->rc_nspaces = rd->rd_nspaces;
 
 out:
-	if (rd->rd_len > 0)
-		rd->rd_dc = doc_alloc(DOC_ALIGN, dc);
-	else
-		rd->rd_dc = doc_literal(" ", dc);
+	rd->rd_dc = doc_alloc_align(1, dc);
 }
 
 void

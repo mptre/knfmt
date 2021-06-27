@@ -295,6 +295,9 @@ void		doc_set_indent(struct doc *, int);
 struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
     int);
 
+#define doc_alloc_align(a, b) \
+	__doc_alloc(DOC_ALIGN, (b), (a), __func__, __LINE__)
+
 #define doc_alloc_optional(a, b) \
 	__doc_alloc(DOC_OPTIONAL, (b), (a), __func__, __LINE__)
 
