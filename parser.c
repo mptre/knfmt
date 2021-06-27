@@ -22,7 +22,6 @@ struct parser {
 	const struct config	*pr_cf;
 	struct lexer		*pr_lx;
 	struct buffer		*pr_bf;
-	struct doc		*pr_dc;
 	unsigned int		 pr_error;
 };
 
@@ -126,7 +125,6 @@ parser_free(struct parser *pr)
 	if (pr == NULL)
 		return;
 
-	doc_free(pr->pr_dc);
 	lexer_free(pr->pr_lx);
 	buffer_free(pr->pr_bf);
 	free(pr);
@@ -142,45 +140,46 @@ const struct buffer *
 parser_exec(struct parser *pr)
 {
 	struct lexer_recover_markers lm;
+	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
 	struct token *seek;
 	int error = 0;
 
 	pr->pr_bf = buffer_alloc(lexer_get_buffer(lx)->bf_siz);
-	pr->pr_dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_alloc(DOC_CONCAT, NULL);
 
 	if (!lexer_peek(lx, &seek))
 		seek = NULL;
 
 	lexer_recover_enter(&lm);
 	for (;;) {
-		struct doc *dc;
+		struct doc *concat;
 		struct token *tk;
 		int r;
 
-		dc = doc_alloc(DOC_CONCAT, pr->pr_dc);
+		concat = doc_alloc(DOC_CONCAT, dc);
 
 		/* Always emit EOF token as it could have dangling tokens. */
 		if (lexer_if(lx, TOKEN_EOF, &tk)) {
-			doc_token(tk, dc);
+			doc_token(tk, concat);
 			break;
 		}
 
 		lexer_recover_mark(lx, &lm);
 
-		if (parser_exec_decl(pr, dc,
+		if (parser_exec_decl(pr, concat,
 			PARSER_EXEC_DECL_FLAG_ALIGN |
 			PARSER_EXEC_DECL_FLAG_BREAK) &&
-		    parser_exec_func_impl(pr, dc))
+		    parser_exec_func_impl(pr, concat))
 			error = 1;
 		else if (parser_halted(pr))
 			error = 1;
 		else
-			doc_alloc(DOC_HARDLINE, dc);
+			doc_alloc(DOC_HARDLINE, concat);
 
 		if (error && (r = lexer_recover(lx, &lm))) {
 			while (r-- > 0)
-				doc_remove_tail(pr->pr_dc);
+				doc_remove_tail(dc);
 			parser_reset(pr);
 			error = 0;
 		} else if (lexer_branch(lx, &seek, NULL)) {
@@ -196,11 +195,13 @@ parser_exec(struct parser *pr)
 	}
 	lexer_recover_leave(&lm);
 	if (error) {
+		doc_free(dc);
 		parser_error(pr);
 		return NULL;
 	}
 
-	doc_exec(pr->pr_dc, pr->pr_bf, pr->pr_cf);
+	doc_exec(dc, pr->pr_bf, pr->pr_cf);
+	doc_free(dc);
 	return pr->pr_bf;
 }
 
@@ -1787,10 +1788,6 @@ __parser_error(struct parser *pr, const char *fun, int lno)
 	if (parser_halted(pr))
 		return 1;
 	pr->pr_error = 1;
-
-#if 0
-	doc_exec(pr->pr_dc, pr->pr_bf, pr->pr_cf);
-#endif
 
 	error_write(pr->pr_er, "%s: ", pr->pr_path);
 	if (pr->pr_cf->cf_verbose > 0)
