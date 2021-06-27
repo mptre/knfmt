@@ -337,7 +337,9 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 			lexer_recover_purge(&lm);
 	}
 	lexer_recover_leave(&lm);
-	if (ndecl > 0)
+	if (ndecl == 0)
+		doc_remove(concat, dc);
+	else
 		ruler_exec(&rl);
 	ruler_free(&rl);
 
