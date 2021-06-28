@@ -599,9 +599,9 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		fst.st_fits.f_optline = 0;
 		st->st_fits.f_fits = doc_fits1(dc, &fst);
 		st->st_fits.f_pos = st->st_pos;
-		if (st->st_fits.f_fits) {
-			st->st_fits.f_ppos = fst.st_pos;
-		} else if (fst.st_fits.f_optline > 0 &&
+		st->st_fits.f_ppos = fst.st_pos;
+		if (!st->st_fits.f_fits &&
+		    fst.st_fits.f_optline > 0 &&
 		    fst.st_fits.f_optline <= st->st_cf->cf_mw) {
 			/* Honoring an optional line makes everything fit. */
 			st->st_fits.f_fits = 1;
