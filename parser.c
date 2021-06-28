@@ -1568,7 +1568,8 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		return parser_error(pr);
 	if (kw->tk_type == TOKEN_CASE) {
 		doc_alloc(DOC_LINE, lhs);
-		parser_exec_expr(pr, lhs, NULL, NULL, 0);
+		if (parser_exec_expr(pr, lhs, NULL, NULL, 0) == PARSER_NOTHING)
+			return parser_error(pr);
 	}
 	if (lexer_expect(lx, TOKEN_COLON, &tk))
 		doc_token(tk, lhs);
