@@ -995,14 +995,13 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 static const char *
 indentstr(const struct doc *dc)
 {
-	if (dc->dc_type == DOC_INDENT) {
-		if (dc->dc_int == DOC_INDENT_PARENS)
-			return "PARENS";
-		else if (dc->dc_int == DOC_INDENT_FORCE)
-			return "FORCE";
-	} else if (dc->dc_type == DOC_DEDENT) {
-		if (dc->dc_int == DOC_DEDENT_NONE)
-			return "NONE";
+	switch (dc->dc_int) {
+	case DOC_INDENT_PARENS:
+		return "PARENS";
+	case DOC_INDENT_FORCE:
+		return "FORCE";
+	case DOC_DEDENT_NONE:
+		return "NONE";
 	}
 	return NULL;
 }
