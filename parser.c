@@ -603,6 +603,9 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	for (;;) {
 		struct token *comma;
 
+		if (lexer_is_branch(lx))
+			break;
+
 		if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
 			return parser_error(pr);
 		if (tk == rbrace)
@@ -647,9 +650,6 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		} else {
 			line = doc_alloc(DOC_HARDLINE, concat);
 		}
-
-		/* Take the next branch if available. */
-		lexer_branch(lx, NULL, NULL);
 	}
 	if (line != NULL)
 		doc_remove(line, concat);
