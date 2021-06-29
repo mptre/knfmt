@@ -170,11 +170,11 @@ token_has_dangling(const struct token *tk)
 int
 token_has_line(const struct token *tk)
 {
-	const struct token *tmp;
+	const struct token *suffix;
 
-	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
-		if (tmp->tk_type == TOKEN_SPACE &&
-		    (tmp->tk_flags & TOKEN_FLAG_OPTLINE) == 0)
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		if (suffix->tk_type == TOKEN_SPACE &&
+		    (suffix->tk_flags & TOKEN_FLAG_OPTLINE) == 0)
 			return 1;
 	}
 	return 0;
