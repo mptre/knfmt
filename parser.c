@@ -1689,6 +1689,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			    (nx->tk_type != TOKEN_LPAREN ||
 			     lexer_if(lx, TOKEN_STAR, NULL)) &&
 			    nx->tk_type != TOKEN_LSQUARE &&
+			    nx->tk_type != TOKEN_RSQUARE &&
 			    nx->tk_type != TOKEN_RPAREN &&
 			    nx->tk_type != TOKEN_COMMA)
 				doc_alloc(DOC_LINE, concat);
