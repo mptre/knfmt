@@ -320,7 +320,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		 * declarations.
 		 */
 		if ((flags & PARSER_EXEC_DECL_FLAG_BREAK) &&
-		    lexer_back(lx, &tk) & token_has_line(tk))
+		    lexer_back(lx, &tk) && token_has_line(tk))
 			break;
 
 		/*
