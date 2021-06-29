@@ -1166,6 +1166,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_ok(pr);
 
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
+		struct token *kw;
 		int rbrace = 0;
 
 		if (parser_exec_stmt_expr(pr, dc, tk, 0))
@@ -1173,13 +1174,16 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 
 		if (lexer_back(lx, &tk) && tk->tk_type == TOKEN_RBRACE)
 			rbrace = 1;
-		if (lexer_if(lx, TOKEN_ELSE, &tk)) {
+		if (lexer_if(lx, TOKEN_ELSE, &kw)) {
+			struct token *nx;
+
 			if (rbrace)
 				doc_literal(" ", dc);
 			else
 				doc_alloc(DOC_HARDLINE, dc);
-			doc_token(tk, dc);
-			if (lexer_peek_if(lx, TOKEN_IF, NULL)) {
+			doc_token(kw, dc);
+			if (lexer_peek_if(lx, TOKEN_IF, &nx) &&
+			    token_cmp(kw, nx) == 0) {
 				doc_literal(" ", dc);
 			} else {
 				if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
