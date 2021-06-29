@@ -1596,8 +1596,8 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 			return parser_error(pr);
 
 		/*
-		 * Allowing following statement(s) to be placed on the same line
-		 * as the case/default keyword.
+		 * Allow following statement(s) to be placed on the same line as
+		 * the case/default keyword.
 		 */
 		if (token_cmp(kw, nx) == 0)
 			line = doc_literal(" ", indent);
