@@ -670,13 +670,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_rhs != NULL) {
 			es->es_nest++;
-			es->es_parens++;
-			/* Compensate for indentation added by expr_exec(). */
-			if (es->es_parens > 1)
-				concat = doc_alloc_indent(es->es_cf->cf_sw,
-				    concat);
 			concat = expr_doc(ex->ex_rhs, es, concat);
-			es->es_parens--;
 			es->es_nest--;
 		}
 		if (ex->ex_tokens[1] != NULL)
@@ -759,14 +753,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 static struct doc *
 expr_doc_indent_parens(const struct expr_state *es, struct doc *dc)
 {
-	if (es->es_ea->ea_flags & EXPR_EXEC_FLAG_PARENS) {
-		if (es->es_parens > 1)
-			dc = doc_alloc_indent(DOC_INDENT_PARENS, dc);
-	} else {
-		dc = doc_alloc_indent(DOC_INDENT_PARENS, dc);
-	}
-	if (es->es_parens > 1)
-		dc = doc_alloc_indent(es->es_cf->cf_sw, dc);
+	if ((es->es_ea->ea_flags & EXPR_EXEC_FLAG_PARENS) == 0 ||
+	    es->es_parens > 1)
+		return doc_alloc_indent(DOC_INDENT_PARENS, dc);
 	return dc;
 }
 

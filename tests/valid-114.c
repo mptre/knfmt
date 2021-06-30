@@ -226,7 +226,7 @@ otus_cmd_rxeof(struct otus_softc *sc, uint8_t *buf, int len)
 	}
 	hdr = (struct ar_cmd_hdr *)buf;
 	if (__predict_false(sizeof(*hdr) + hdr->len > len ||
-		sizeof(*hdr) + hdr->len > 64)) {
+	    sizeof(*hdr) + hdr->len > 64)) {
 		DPRINTF(("cmd too large %d\n", hdr->len));
 		return;
 	}
@@ -248,7 +248,7 @@ otus_cmd_rxeof(struct otus_softc *sc, uint8_t *buf, int len)
 
 	/* Received unsolicited notification. */
 	DPRINTF(("received notification code=0x%02x len=%d\n", hdr->code,
-		hdr->len));
+	    hdr->len));
 	switch (hdr->code & 0x3f) {
 	case AR_EVT_BEACON:
 		break;
@@ -258,8 +258,8 @@ otus_cmd_rxeof(struct otus_softc *sc, uint8_t *buf, int len)
 		struct otus_node *on;
 
 		DPRINTF(("tx completed %s status=%d phy=0x%x\n",
-			ether_sprintf(tx->macaddr), letoh16(tx->status),
-			letoh32(tx->phy)));
+		    ether_sprintf(tx->macaddr), letoh16(tx->status),
+		    letoh32(tx->phy)));
 		s = splnet();
 #ifdef notyet
 #ifndef IEEE80211_STA_ONLY
