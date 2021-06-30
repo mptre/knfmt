@@ -62,7 +62,7 @@ main(int argc, char *argv[])
 	} else {
 		if (cf.cf_flags & CONFIG_FLAG_INPLACE) {
 			if (pledge("stdio rpath wpath cpath fattr chown",
-				NULL) == -1)
+			    NULL) == -1)
 				err(1, "pledge");
 		} else {
 			if (pledge("stdio rpath", NULL) == -1)

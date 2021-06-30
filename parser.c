@@ -168,8 +168,8 @@ parser_exec(struct parser *pr)
 		lexer_recover_mark(lx, &lm);
 
 		if (parser_exec_decl(pr, concat,
-			PARSER_EXEC_DECL_FLAG_ALIGN |
-			PARSER_EXEC_DECL_FLAG_BREAK) &&
+		    PARSER_EXEC_DECL_FLAG_ALIGN |
+		    PARSER_EXEC_DECL_FLAG_BREAK) &&
 		    parser_exec_func_impl(pr, concat))
 			error = 1;
 		else if (parser_halted(pr))
@@ -395,7 +395,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
 		doc_alloc(DOC_HARDLINE, indent);
 		while (parser_exec_decl(pr, indent,
-			PARSER_EXEC_DECL_FLAG_ALIGN) == PARSER_OK)
+		    PARSER_EXEC_DECL_FLAG_ALIGN) == PARSER_OK)
 			continue;
 
 		doc_alloc(DOC_HARDLINE, concat);
@@ -484,7 +484,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 					(void)lexer_peek_until_loose(lx,
 					    TOKEN_COMMA, NULL, &estop);
 				if (parser_exec_expr(pr, dc, NULL,
-					estop != NULL ? estop : stop, 0))
+				    estop != NULL ? estop : stop, 0))
 					return parser_error(pr);
 			}
 		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
@@ -508,7 +508,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				doc_token(tk, dc);
 		} else if (lexer_if(lx, TOKEN_COMMA, &tk) ||
 		    lexer_if_flags(lx,
-			TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
+		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
 			doc_token(tk, dc);
 			doc_literal(" ", dc);
 		} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
@@ -619,7 +619,7 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 			expr = concat;
 		} else {
 			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
-				&tk))
+			    &tk))
 				tk = rbrace;
 
 			if (parser_exec_expr(pr, concat, &expr, tk, 0))
@@ -796,7 +796,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
-		NULL))
+	    NULL))
 		continue;
 	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end)) {
