@@ -90,6 +90,7 @@ static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, unsigned int, enum doc_type);
 
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
+static int		parser_peek_line(struct parser *, const struct token *);
 
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
@@ -528,12 +529,11 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 static int
 parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
-	struct lexer_state s;
 	struct doc *concat = NULL;
 	struct doc *line = NULL;
 	struct doc *braces, *expr, *indent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *rbrace, *pv, *tk;
+	struct token *rbrace, *tk;
 	unsigned int col = 0;
 	unsigned int w = 0;
 	int align = 1;
@@ -544,33 +544,20 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (parser_exec_decl_braces_fields(pr, dc, rl, rbrace, 0) == PARSER_OK)
 		return parser_ok(pr);
 
-	braces = doc_alloc(DOC_CONCAT, dc);
-
-	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace))
-		doc_token(lbrace, braces);
-
-	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL))
-		goto out;
-
 	/*
 	 * If any column is followed by a hard line, do not align but
 	 * instead respect existing hard line(s).
 	 */
-	lexer_peek_enter(lx, &s);
-	pv = lbrace;
-	for (;;) {
-		if (!lexer_pop(lx, &tk))
-			return parser_error(pr);
-		if (tk == rbrace)
-			break;
+	if (parser_peek_line(pr, rbrace))
+		align = 0;
 
-		if (token_cmp(tk, pv) > 0) {
-			align = 0;
-			break;
-		}
-		pv = tk;
-	}
-	lexer_peek_leave(lx, &s);
+	braces = doc_alloc(DOC_CONCAT, dc);
+
+	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
+		doc_token(tk, braces);
+
+	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL))
+		goto out;
 
 	if (align) {
 		indent = braces;
@@ -1792,6 +1779,34 @@ parser_peek_func(struct parser *pr, struct token **type)
 	}
 out:
 	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+static int
+parser_peek_line(struct parser *pr, const struct token *stop)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *pv = NULL;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	for (;;) {
+		struct token *tk;
+
+		if (!lexer_pop(lx, &tk))
+			return parser_error(pr);
+		if (tk == stop)
+			break;
+
+		if (pv != NULL && token_cmp(tk, pv) > 0) {
+			peek = 1;
+			break;
+		}
+		pv = tk;
+	}
+	lexer_peek_leave(lx, &s);
+
 	return peek;
 }
 
