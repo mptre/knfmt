@@ -1,3 +1,24 @@
+# v0.3.0 - 2021-07-01
+
+## News
+
+- Reduce expression indentation even further, use 4 spaces disregarding
+  parenthesis depth.
+  (cb90511)
+  (Anton Lindqvist)
+
+  ```
+  # before
+  if (!(vmm_softc->mode == VMM_MODE_EPT ||
+  	vmm_softc->mode == VMM_MODE_RVI))
+  	return 0;
+
+  #after
+  if (!(vmm_softc->mode == VMM_MODE_EPT ||
+      vmm_softc->mode == VMM_MODE_RVI))
+  	return 0;
+  ```
+
 # v0.2.0 - 2021-07-29
 
 ## Bug fixes
