@@ -85,6 +85,7 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("x || y", "((x) || (y))");
 	error |= test_expr_exec("x && y", "((x) && (y))");
 	error |= test_expr_exec("x | y", "((x) | (y))");
+	error |= test_expr_exec("x|y", "((x)|(y))");
 	error |= test_expr_exec("x ^ y", "((x) ^ (y))");
 	error |= test_expr_exec("x & y", "((x) & (y))");
 	error |= test_expr_exec("x == y", "((x) == (y))");
@@ -98,7 +99,9 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("x + y", "((x) + (y))");
 	error |= test_expr_exec("x - y", "((x) - (y))");
 	error |= test_expr_exec("x * y", "((x) * (y))");
+	error |= test_expr_exec("x*y", "((x)*(y))");
 	error |= test_expr_exec("x / y", "((x) / (y))");
+	error |= test_expr_exec("x/y", "((x)/(y))");
 	error |= test_expr_exec("x % y", "((x) % (y))");
 	error |= test_expr_exec("!x", "(!(x))");
 	error |= test_expr_exec("~x", "(~(x))");

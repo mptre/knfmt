@@ -103,6 +103,7 @@ struct token {
 #define TOKEN_FLAG_FREE		0x00001000u
 #define TOKEN_FLAG_OPTLINE	0x00002000u
 #define TOKEN_FLAG_OPTSPACE	0x00004000u
+#define TOKEN_FLAG_SPACE	0x00008000u
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
@@ -131,6 +132,7 @@ int	 token_cmp(const struct token *, const struct token *);
 int	 token_has_dangling(const struct token *);
 int	 token_has_line(const struct token *, int);
 int	 token_has_tabs(const struct token *);
+int	 token_has_spaces(const struct token *);
 int	 token_is_branch(const struct token *);
 int	 token_is_decl(const struct token *, enum token_type);
 void	 token_trim(struct token *, enum token_type, unsigned int);

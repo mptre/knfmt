@@ -108,6 +108,7 @@ static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
+static int		 expr_doc_has_spaces(const struct expr *);
 static struct doc	*expr_doc_tokens(const struct expr *, struct doc *);
 
 #define expr_doc_soft(a, b) \
@@ -577,9 +578,12 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 	case EXPR_BINARY: {
 		struct doc *lhs;
+		int dospace;
 
 		lhs = expr_doc(ex->ex_lhs, es, concat);
-		doc_literal(" ", lhs);
+		dospace = expr_doc_has_spaces(ex);
+		if (dospace)
+			doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
 
 		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
@@ -587,7 +591,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		} else {
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			doc_alloc(DOC_LINE, concat);
+			if (dospace)
+				doc_alloc(DOC_LINE, concat);
 		}
 		concat = expr_doc(ex->ex_rhs, es, concat);
 
@@ -758,6 +763,18 @@ expr_doc_indent_parens(const struct expr_state *es, struct doc *dc)
 	    es->es_parens > 1)
 		return doc_alloc_indent(DOC_INDENT_PARENS, dc);
 	return dc;
+}
+
+static int
+expr_doc_has_spaces(const struct expr *ex)
+{
+	struct token *pv;
+
+	if ((ex->ex_tk->tk_flags & TOKEN_FLAG_SPACE) == 0)
+		return 1;
+
+	pv = TAILQ_PREV(ex->ex_tk, token_list, tk_entry);
+	return token_has_spaces(pv);
 }
 
 static struct doc *

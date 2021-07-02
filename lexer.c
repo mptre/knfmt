@@ -189,7 +189,7 @@ token_has_line(const struct token *tk, int optional)
 }
 
 /*
- * Returns non-zero if the given token has a trailing tab.
+ * Returns non-zero if the given token has trailing tabs.
  */
 int
 token_has_tabs(const struct token *tk)
@@ -200,6 +200,22 @@ token_has_tabs(const struct token *tk)
 		if (suffix->tk_type == TOKEN_SPACE &&
 		    (suffix->tk_flags & TOKEN_FLAG_OPTSPACE) &&
 		    suffix->tk_str[0] == '\t')
+			return 1;
+	}
+	return 0;
+}
+
+/*
+ * Returns non-zero if the given token has trailing spaces.
+ */
+int
+token_has_spaces(const struct token *tk)
+{
+	const struct token *suffix;
+
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		if (suffix->tk_type == TOKEN_SPACE &&
+		    (suffix->tk_flags & TOKEN_FLAG_OPTSPACE))
 			return 1;
 	}
 	return 0;
