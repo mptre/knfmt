@@ -320,7 +320,7 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
 		if (tmp->tk_flags & TOKEN_FLAG_OPTLINE)
 			doc_alloc(DOC_OPTLINE, dc);
-		else
+		else if ((tmp->tk_flags & TOKEN_FLAG_OPTSPACE) == 0)
 			__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
 

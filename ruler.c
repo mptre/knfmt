@@ -97,6 +97,8 @@ ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 		rc->rc_len = rd->rd_len;
 	if (rd->rd_nspaces > rc->rc_nspaces)
 		rc->rc_nspaces = rd->rd_nspaces;
+	if (token_has_tabs(tk))
+		rc->rc_ntabs++;
 
 out:
 	rd->rd_dc = doc_alloc_align(1, dc);
@@ -111,6 +113,9 @@ ruler_exec(struct ruler *rl)
 		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
 		size_t j;
 		unsigned int maxlen;
+
+		if (rc->rc_ntabs == 0)
+			continue;
 
 		/* Round up the longest column to a multiple of 8. */
 		maxlen = rc->rc_len;

@@ -137,6 +137,10 @@ static const struct token	tkline = {
 static const struct token	tklit = {
 	.tk_type	= TOKEN_LITERAL,
 };
+static const struct token	tkspace = {
+	.tk_type	= TOKEN_SPACE,
+	.tk_flags	= TOKEN_FLAG_DANGLING,
+};
 static const struct token	tkstr = {
 	.tk_type	= TOKEN_STRING,
 };
@@ -171,10 +175,28 @@ int
 token_has_line(const struct token *tk)
 {
 	const struct token *suffix;
+	unsigned int flags = TOKEN_FLAG_OPTLINE | TOKEN_FLAG_OPTSPACE;
 
 	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
 		if (suffix->tk_type == TOKEN_SPACE &&
-		    (suffix->tk_flags & TOKEN_FLAG_OPTLINE) == 0)
+		    (suffix->tk_flags & flags) == 0)
+			return 1;
+	}
+	return 0;
+}
+
+/*
+ * Returns non-zero if the given token has a trailing tab.
+ */
+int
+token_has_tabs(const struct token *tk)
+{
+	const struct token *suffix;
+
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		if (suffix->tk_type == TOKEN_SPACE &&
+		    (suffix->tk_flags & TOKEN_FLAG_OPTSPACE) &&
+		    suffix->tk_str[0] == '\t')
 			return 1;
 	}
 	return 0;
@@ -219,6 +241,13 @@ token_trim(struct token *tk, enum token_type type, unsigned int flags)
 	struct token *suffix, *tmp;
 
 	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
+		/*
+		 * Optional spaces are never emitted and must there be
+		 * preserved.
+		 */
+		if (suffix->tk_flags & TOKEN_FLAG_OPTSPACE)
+			continue;
+
 		if (suffix->tk_type == type &&
 		    (flags == 0 || (suffix->tk_flags & flags))) {
 			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
@@ -1179,6 +1208,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 	struct token_list dangling;
 	struct token *t, *tmp;
 	int error = 0;
+	int ncomments = 0;
 	int nlines;
 	unsigned char ch;
 
@@ -1280,6 +1310,8 @@ out:
 		if ((tmp = lexer_comment(lx, 0)) == NULL)
 			break;
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
+		ncomments++;
+
 		/*
 		 * Halt on hard line(s) since this must be a trailing comment
 		 * meaning no further comment(s) can be associated with this
@@ -1287,6 +1319,15 @@ out:
 		 */
 		if (tmp->tk_flags & TOKEN_FLAG_NEWLINE)
 			break;
+	}
+
+	/*
+	 * Trailing whitespace is only honored if it's present immediately after
+	 * the token.
+	 */
+	if (ncomments == 0 && lexer_eat_spaces(lx, &tmp, 0)) {
+		tmp->tk_flags |= TOKEN_FLAG_OPTSPACE;
+		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
 	}
 
 	/* Consume hard lines, will be hanging of the emitted token. */
