@@ -121,7 +121,7 @@ static void	__doc_trace_enter(const struct doc *, struct doc_state *);
 static void	__doc_trace_leave(const struct doc *, struct doc_state *);
 
 static char		*docstr(const struct doc *, char *, size_t);
-static const char	*indentstr(const struct doc *);
+static const char	*intstr(const struct doc *);
 static const char	*statestr(const struct doc_state *, unsigned int,
     char *, size_t);
 
@@ -565,9 +565,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_OPTIONAL:
-		/* Note, could already be cleared by doc_print(). */
-		if (dc->dc_int > 0 || -dc->dc_int <= st->st_optline)
+		if (st->st_optline == DOC_OPTIONAL_STICKY) {
+			if (-dc->dc_int == DOC_OPTIONAL_STICKY)
+				st->st_optline = 0;
+		} else if (dc->dc_int > 0 || -dc->dc_int <= st->st_optline) {
+			/* Note, could already be cleared by doc_print(). */
 			st->st_optline += dc->dc_int;
+		}
 		break;
 	}
 
@@ -745,6 +749,18 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		if (st->st_nlines >= 2)
 			return;
 		st->st_nlines++;
+
+		/*
+		 * Suppress optional line(s) while emitting a line. Mixing the
+		 * two results in odd formatting.
+		 */
+		if ((flags & DOC_PRINT_FLAG_NEWLINE) == 0 &&
+		    st->st_optline > 0 &&
+		    st->st_optline != DOC_OPTIONAL_STICKY) {
+			doc_trace(dc, st, "%s: optline %d -> 0",
+			    __func__, st->st_optline);
+			st->st_optline = 0;
+		}
 	} else {
 		st->st_nlines = 0;
 	}
@@ -850,14 +866,17 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_INDENT:
-	case DOC_DEDENT: {
+	case DOC_DEDENT:
+	case DOC_OPTIONAL: {
 		const char *str;
 
 		fprintf(stderr, "(");
-		if ((str = indentstr(dc)) != NULL)
+		if ((str = intstr(dc)) != NULL)
 			fprintf(stderr, "%s", str);
 		else
 			fprintf(stderr, "%d", dc->dc_int);
+		if (dc->dc_type == DOC_OPTIONAL)
+			fprintf(stderr, ")");
 		break;
 	}
 
@@ -897,7 +916,6 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 
 	case DOC_MUTE:
 	case DOC_NEWLINE:
-	case DOC_OPTIONAL:
 		fprintf(stderr, "(%d)", dc->dc_int);
 		break;
 	}
@@ -983,15 +1001,19 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 }
 
 static const char *
-indentstr(const struct doc *dc)
+intstr(const struct doc *dc)
 {
 	switch (dc->dc_int) {
+	case DOC_DEDENT_NONE:
+		return "NONE";
 	case DOC_INDENT_PARENS:
 		return "PARENS";
 	case DOC_INDENT_FORCE:
 		return "FORCE";
-	case DOC_DEDENT_NONE:
-		return "NONE";
+	case DOC_OPTIONAL_STICKY:
+		return "STICKY";
+	case -DOC_OPTIONAL_STICKY:
+		return "-STICKY";
 	}
 	return NULL;
 }
@@ -1000,6 +1022,7 @@ static const char *
 statestr(const struct doc_state *st, unsigned int depth, char *buf,
     size_t bufsiz)
 {
+	char optline[4];
 	unsigned char mode = 'U';
 	int n;
 
@@ -1011,9 +1034,13 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		mode = 'M';
 		break;
 	}
+	if (st->st_optline == DOC_OPTIONAL_STICKY)
+		(void)snprintf(optline, sizeof(optline), "  S");
+	else
+		(void)snprintf(optline, sizeof(optline), "%3d", st->st_optline);
 	/* Keep in sync with doc_state_header(). */
-	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d,%3d]",
-	    mode, st->st_pos, depth, st->st_mute, st->st_optline);
+	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d,%s]",
+	    mode, st->st_pos, depth, st->st_mute, optline);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 	return buf;

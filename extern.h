@@ -305,14 +305,15 @@ struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
 	__doc_alloc(DOC_OPTIONAL, (b), (a), __func__, __LINE__)
 
 /*
- * Sentinels honored by doc_alloc_dedent() and doc_alloc_indent(). The numbers
- * are something arbitrary large enough to never conflict with any actual
- * indentation. Since the numbers are compared with signed integers, favor
- * integer literals over hexadecimal ones.
+ * Sentinels honored by document allocation routines. The numbers are something
+ * arbitrary large enough to never conflict with any actual value. Since the
+ * numbers are compared with signed integers, favor integer literals over
+ * hexadecimal ones.
  */
-#define DOC_DEDENT_NONE		512	/* remove all indentation */
-#define DOC_INDENT_PARENS	1024	/* entering parenthesis */
-#define DOC_INDENT_FORCE	2048	/* force indentation */
+#define DOC_DEDENT_NONE		111	/* remove all indentation */
+#define DOC_INDENT_PARENS	222	/* entering parenthesis */
+#define DOC_INDENT_FORCE	333	/* force indentation */
+#define DOC_OPTIONAL_STICKY	444	/* always allow optional line(s) */
 
 #define doc_alloc_indent(a, b) \
 	__doc_alloc_indent(DOC_INDENT, (a), (b), __func__, __LINE__)

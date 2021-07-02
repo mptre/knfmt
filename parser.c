@@ -518,9 +518,9 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 	memset(&rl, 0, sizeof(rl));
 	ruler_init(&rl);
 	concat = doc_alloc(DOC_CONCAT, dc);
-	doc_alloc_optional(1, concat);
+	doc_alloc_optional(DOC_OPTIONAL_STICKY, concat);
 	error = parser_exec_decl_braces1(pr, concat, &rl);
-	doc_alloc_optional(-1, concat);
+	doc_alloc_optional(-DOC_OPTIONAL_STICKY, concat);
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
