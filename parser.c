@@ -320,7 +320,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		 * declarations.
 		 */
 		if ((flags & PARSER_EXEC_DECL_FLAG_BREAK) &&
-		    lexer_back(lx, &tk) && token_has_line(tk))
+		    lexer_back(lx, &tk) && token_has_line(tk, 0))
 			break;
 
 		/*
@@ -614,7 +614,7 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 				else
 					doc_literal(" ", concat);
 			}
-			if (token_has_line(comma))
+			if (token_has_line(comma, 0))
 				ruler_exec(rl);
 		} else {
 			line = doc_alloc(DOC_HARDLINE, concat);
@@ -748,7 +748,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 comma:
 	if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 		doc_token(tk, dc);
-		if (token_has_line(tk))
+		if (token_has_line(tk, 0))
 			ruler_exec(rl);
 	}
 
