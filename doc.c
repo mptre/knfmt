@@ -745,16 +745,6 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		if (st->st_nlines >= 2)
 			return;
 		st->st_nlines++;
-
-		/*
-		 * Suppress optional line(s) while emitting a line. Mixing the
-		 * two results in odd formatting.
-		 */
-		if ((flags & DOC_PRINT_FLAG_NEWLINE) == 0 && st->st_optline) {
-			doc_trace(dc, st, "%s: optline %d -> 0",
-			    __func__, st->st_optline);
-			st->st_optline = 0;
-		}
 	} else {
 		st->st_nlines = 0;
 	}
