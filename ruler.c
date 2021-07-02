@@ -14,7 +14,7 @@ static int	isdecl(const struct token *);
 static int	isnexttoken(const struct token *, enum token_type);
 
 void
-ruler_init(struct ruler *rl, unsigned int align)
+ruler_init(struct ruler *rl)
 {
 	size_t i;
 
@@ -26,7 +26,6 @@ ruler_init(struct ruler *rl, unsigned int align)
 	}
 
 	rl->rl_columns.b_len = 0;
-	rl->rl_align = align;
 }
 
 void
@@ -87,7 +86,7 @@ ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 		return;
 
 	/* Only a space is wanted for enum/struct/union declarations. */
-	if (!rl->rl_align || isdecl(tk))
+	if (isdecl(tk))
 		goto out;
 
 	rd->rd_len = len;
@@ -137,7 +136,7 @@ ruler_exec(struct ruler *rl)
 	}
 
 	/* Reset the ruler paving the way for reuse. */
-	ruler_init(rl, rl->rl_align);
+	ruler_init(rl);
 }
 
 static int

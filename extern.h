@@ -339,8 +339,6 @@ struct ruler {
 		size_t			 b_len;
 		size_t			 b_siz;
 	} rl_columns;
-
-	unsigned int	rl_align;
 };
 
 struct ruler_column {
@@ -355,7 +353,7 @@ struct ruler_column {
 	size_t	rc_ntabs;
 };
 
-void	ruler_init(struct ruler *, unsigned int);
+void	ruler_init(struct ruler *);
 void	ruler_free(struct ruler *);
 void	ruler_insert(struct ruler *, const struct token *, struct doc *,
     unsigned int, unsigned int, unsigned int);
