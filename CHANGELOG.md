@@ -1,3 +1,25 @@
+# v0.4.0 - 2021-07-06
+
+## News
+
+- Honor no existing alignment among variable definitions and function
+  prototypes.
+  (1e5488c)
+  (Anton Lindqvist)
+
+- Honor alignment of stack local variables.
+  (d9498ff)
+  (Anton Lindqvist)
+
+- Be more conservative while formatting brace initializers without
+  alignment.
+  (ec8666f)
+  (Anton Lindqvist)
+
+- Do not require spaces around certain binary operators.
+  (6690597)
+  (Anton Lindqvist)
+
 # v0.3.0 - 2021-07-01
 
 ## News
