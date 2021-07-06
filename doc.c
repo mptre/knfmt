@@ -595,7 +595,11 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	if (DOC_TRACE(st))
 		st->st_stats.s_nfits++;
 
-	if (st->st_fits.f_fits == -1 || st->st_fits.f_pos != st->st_pos) {
+	if (st->st_newline > 0) {
+		/* Pending hard line(s), assume that everything fits. */
+		optline = 1;
+	} else if (st->st_fits.f_fits == -1 ||
+	    st->st_fits.f_pos != st->st_pos) {
 		memcpy(&fst, st, sizeof(fst));
 		/* Should not perform any printing. */
 		fst.st_bf = NULL;
