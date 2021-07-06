@@ -76,11 +76,12 @@ struct expr_rule {
 };
 
 struct expr_state {
-	const struct config		*es_cf;
 	const struct expr_exec_arg	*es_ea;
+#define es_cf	es_ea->ea_cf
+#define es_lx	es_ea->ea_lx
+#define es_stop	es_ea->ea_stop
+
 	const struct expr_rule		*es_er;
-	const struct token		*es_stop;
-	struct lexer			*es_lx;
 	struct token			*es_tk;
 	unsigned int			 es_nest;	/* number of nested expressions */
 	unsigned int			 es_parens;	/* number of nested parenthesis */
@@ -115,9 +116,6 @@ static struct doc	*expr_doc_tokens(const struct expr *, struct doc *);
 	__expr_doc_soft((a), (b), __func__, __LINE__)
 static struct doc	*__expr_doc_soft(const struct expr_state *,
     struct doc *, const char *, int);
-
-static void	expr_state_init(struct expr_state *,
-    const struct expr_exec_arg *);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
@@ -186,7 +184,8 @@ expr_exec(const struct expr_exec_arg *ea)
 	struct doc *dc, *expr, *indent;
 	struct expr *ex;
 
-	expr_state_init(&es, ea);
+	memset(&es, 0, sizeof(es));
+	es.es_ea = ea;
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
@@ -216,7 +215,9 @@ expr_peek(const struct expr_exec_arg *ea)
 	int peek = 0;
 	int error;
 
-	expr_state_init(&es, ea);
+	memset(&es, 0, sizeof(es));
+	es.es_ea = ea;
+
 	ex = expr_exec1(&es, PC0);
 	error = lexer_get_error(es.es_lx);
 	if (ex != NULL && error == 0)
@@ -824,16 +825,6 @@ __expr_doc_soft(const struct expr_state *es, struct doc *dc, const char *fun,
 	    0, fun, lno);
 	__doc_alloc(DOC_SOFTLINE, dc, 0, fun, lno);
 	return dc;
-}
-
-static void
-expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea)
-{
-	memset(es, 0, sizeof(*es));
-	es->es_cf = ea->ea_cf;
-	es->es_ea = ea;
-	es->es_lx = ea->ea_lx;
-	es->es_stop = ea->ea_stop;
 }
 
 static const struct expr_rule *
