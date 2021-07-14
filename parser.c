@@ -34,6 +34,7 @@ struct parser_exec_func_proto_arg {
 };
 
 #define PARSER_EXEC_DECL_FLAG_BREAK	0x00000001u
+#define PARSER_EXEC_DECL_FLAG_LINE	0x00000002u
 
 #define PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM	0x00000001u
 
@@ -169,13 +170,12 @@ parser_exec(struct parser *pr)
 
 		lexer_recover_mark(lx, &lm);
 
-		if (parser_exec_decl(pr, concat, PARSER_EXEC_DECL_FLAG_BREAK) &&
+		if (parser_exec_decl(pr, concat,
+		    PARSER_EXEC_DECL_FLAG_BREAK | PARSER_EXEC_DECL_FLAG_LINE) &&
 		    parser_exec_func_impl(pr, concat))
 			error = 1;
 		else if (parser_halted(pr))
 			error = 1;
-		else
-			doc_alloc(DOC_HARDLINE, concat);
 
 		if (error && (r = lexer_recover(lx, &lm))) {
 			while (r-- > 0)
@@ -343,7 +343,12 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		ruler_exec(&rl);
 	ruler_free(&rl);
 
-	return ndecl > 0 ? parser_ok(pr) : PARSER_NOTHING;
+	if (ndecl == 0)
+		return PARSER_NOTHING;
+
+	if (flags & PARSER_EXEC_DECL_FLAG_LINE)
+		doc_alloc(DOC_HARDLINE, concat);
+	return parser_ok(pr);
 }
 
 static int
@@ -978,6 +983,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 		return parser_error(pr);
 	if (!lexer_peek_if(lx, TOKEN_EOF, NULL))
 		doc_alloc(DOC_HARDLINE, dc);
+	doc_alloc(DOC_HARDLINE, dc);
 
 	return parser_ok(pr);
 }
