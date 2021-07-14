@@ -1429,7 +1429,7 @@ static int
 parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
     unsigned int flags)
 {
-	struct doc *indent, *line;
+	struct doc *concat, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rbrace, *seek, *pv, *tk;
 	int nstmt = 0;
@@ -1473,10 +1473,16 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 		doc_remove(line, indent);
 
 	doc_alloc(DOC_HARDLINE, tail);
+
+	/*
+	 * The right brace and any following statement is expected to fit on a
+	 * single line.
+	 */
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, tail));
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
-		doc_token(tk, tail);
+		doc_token(tk, concat);
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, tail);
+		doc_token(tk, concat);
 
 	return parser_ok(pr);
 }
