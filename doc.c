@@ -95,11 +95,6 @@ static void	doc_print(const struct doc *, struct doc_state *, const char *,
 #define DOC_TRACE(st)	(TRACE((st)->st_cf) &&	\
 	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
 
-#define doc_trace_header(st) do {					\
-	if (DOC_TRACE(st))						\
-		fprintf(stderr, "[D] [M,  C,  D,  M,  O]\n");		\
-} while (0)
-
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if (DOC_TRACE(st))						\
 		__doc_trace((dc), (st), (fmt), __VA_ARGS__);		\
@@ -136,8 +131,6 @@ doc_exec(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_bf = bf;
 	st.st_mode = BREAK;
 	st.st_fits.f_fits = -1;
-
-	doc_trace_header(&st);
 
 	doc_exec1(dc, &st);
 	buffer_appendc(bf, '\0');
@@ -829,7 +822,7 @@ static void
 __doc_trace(const struct doc *UNUSED(dc), const struct doc_state *st,
     const char *fmt, ...)
 {
-	char buf[32];
+	char buf[128];
 	va_list ap;
 	unsigned int depth, i;
 
@@ -1039,11 +1032,10 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		break;
 	}
 	if (st->st_optline == DOC_OPTIONAL_STICKY)
-		(void)snprintf(optline, sizeof(optline), "  S");
+		(void)snprintf(optline, sizeof(optline), "S");
 	else
-		(void)snprintf(optline, sizeof(optline), "%3d", st->st_optline);
-	/* Keep in sync with doc_state_header(). */
-	n = snprintf(buf, bufsiz, "[D] [%c,%3u,%3u,%3d,%s]",
+		(void)snprintf(optline, sizeof(optline), "%d", st->st_optline);
+	n = snprintf(buf, bufsiz, "[D] [%c C=%-3u D=%-3u U=%d O=%s]",
 	    mode, st->st_pos, depth, st->st_mute, optline);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
