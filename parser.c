@@ -1777,6 +1777,10 @@ out:
 	return peek;
 }
 
+/*
+ * Returns non-zero if any token up to the given stop token exclusively is
+ * followed by a hard line.
+ */
 static int
 parser_peek_line(struct parser *pr, const struct token *stop)
 {
