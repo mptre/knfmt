@@ -279,13 +279,13 @@ static int
 parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	struct lexer_recover_markers lm;
-	struct doc *concat;
+	struct doc *concat, *root;
 	struct ruler rl;
 	struct doc *line = NULL;
 	struct lexer *lx = pr->pr_lx;
 	int ndecl = 0;
 
-	concat = doc_alloc(DOC_CONCAT, dc);
+	root = doc_alloc(DOC_CONCAT, dc);
 	memset(&rl, 0, sizeof(rl));
 	ruler_init(&rl);
 
@@ -295,6 +295,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 		lexer_recover_mark(lx, &lm);
 
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, root));
 		if (parser_exec_decl1(pr, concat, &rl)) {
 			int r;
 
@@ -342,7 +343,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	}
 	lexer_recover_leave(&lm);
 	if (ndecl == 0)
-		doc_remove(concat, dc);
+		doc_remove(root, dc);
 	else
 		ruler_exec(&rl);
 	ruler_free(&rl);
