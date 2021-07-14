@@ -4,7 +4,7 @@ The
 [knfmt(1)][knfmt]
 utility formats source code files according to 
 [style(9)][style]
-from OpenBSD.
+from OpenBSD in a best effort fashion.
 By default, source code is read from standard input and the formatted source
 code is written to standard output:
 
