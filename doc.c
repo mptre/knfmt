@@ -92,8 +92,8 @@ static int	doc_has_list(const struct doc *);
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
 
-#define DOC_TRACE(st)	(UNLIKELY((st)->st_cf->cf_verbose >= 2 &&	\
-	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0))
+#define DOC_TRACE(st)	(TRACE((st)->st_cf) &&	\
+	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
 
 #define doc_trace_header(st) do {					\
 	if (DOC_TRACE(st))						\

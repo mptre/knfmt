@@ -86,7 +86,7 @@ static void		 lexer_branch_link(struct lexer *, struct token *,
     struct token *);
 
 #define lexer_trace(lx, fmt, ...) do {					\
-	if (UNLIKELY((lx)->lx_cf->cf_verbose >= 2))			\
+	if (TRACE((lx)->lx_cf))						\
 		__lexer_trace((lx), __func__, (fmt),			\
 		    __VA_ARGS__);					\
 } while (0)

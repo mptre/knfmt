@@ -12,6 +12,8 @@
 
 #define UNLIKELY(x)	__builtin_expect((x), 0)
 
+#define TRACE(cf)	(UNLIKELY((cf)->cf_verbose >= 2))
+
 /*
  * config ----------------------------------------------------------------------
  */
