@@ -1490,6 +1490,8 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_error(pr);
+	/* Never break after the right parenthesis. */
+	token_trim(rparen, TOKEN_SPACE, TOKEN_FLAG_OPTLINE);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_token(tk, stmt);

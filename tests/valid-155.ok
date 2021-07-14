@@ -1,0 +1,8 @@
+int
+main(void)
+{
+	if (nest) {
+		return nest;
+	}
+	return 0;
+}
