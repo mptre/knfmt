@@ -937,7 +937,6 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *type)
 {
 	struct parser_exec_func_proto_arg pa = {
-		.pa_dc		= dc,
 		.pa_rl		= rl,
 		.pa_type	= type,
 		.pa_line	= DOC_SOFTLINE,
@@ -945,6 +944,7 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
+	pa.pa_dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	if (parser_exec_func_proto(pr, &pa))
 		return parser_error(pr);
 
@@ -1021,8 +1021,11 @@ parser_exec_func_proto1(struct parser *pr,
 	 * Hard line implies function implementation in which the identifier
 	 * must never be indented.
 	 */
-	indent = pa->pa_line == DOC_HARDLINE ?
-	    dc : doc_alloc_indent(pr->pr_cf->cf_sw, dc);
+	if (pa->pa_line == DOC_HARDLINE)
+		indent = dc;
+	else
+		indent = doc_alloc_indent(pr->pr_cf->cf_sw,
+		    doc_alloc(DOC_GROUP, dc));
 	doc_alloc(pa->pa_line, indent);
 
 	if (pa->pa_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {

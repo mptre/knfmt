@@ -255,16 +255,13 @@ __doc_alloc(enum doc_type type, struct doc *parent, int val, const char *fun,
 }
 
 struct doc *
-__doc_alloc_indent(enum doc_type type, int ind, struct doc *dc,
+__doc_alloc_indent(enum doc_type type, int val, struct doc *dc,
     const char *fun, int lno)
 {
-	struct doc *concat, *group, *indent;
+	struct doc *indent;
 
-	group = __doc_alloc(DOC_GROUP, dc, 0, fun, lno);
-	indent = __doc_alloc(type, group, 0, fun, lno);
-	indent->dc_int = ind;
-	concat = __doc_alloc(DOC_CONCAT, indent, 0, fun, lno);
-	return concat;
+	indent = __doc_alloc(type, dc, val, fun, lno);
+	return __doc_alloc(DOC_CONCAT, indent, 0, fun, lno);
 }
 
 struct doc *
