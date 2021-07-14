@@ -1013,24 +1013,32 @@ parser_exec_func_proto1(struct parser *pr,
     struct parser_exec_func_proto_arg *pa)
 {
 	struct doc *dc = pa->pa_dc;
-	struct doc *indent, *kr;
+	struct doc *group, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *tk;
 	int error = 1;
+	int isimpl = pa->pa_line == DOC_HARDLINE;
 
 	if (parser_exec_type(pr, dc, pa->pa_type, pa->pa_rl))
 		return parser_error(pr);
+	/*
+	 * Hard line after the return type is only wanted for function
+	 * implementations.
+	 */
+	if (isimpl)
+		doc_alloc(DOC_HARDLINE, dc);
 
 	/*
-	 * Hard line implies function implementation in which the identifier
-	 * must never be indented.
+	 * The function identifier and arguments are intended to fit on a single
+	 * line.
 	 */
-	if (pa->pa_line == DOC_HARDLINE)
-		indent = dc;
-	else
-		indent = doc_alloc_indent(pr->pr_cf->cf_sw,
-		    doc_alloc(DOC_GROUP, dc));
-	doc_alloc(pa->pa_line, indent);
+	group = doc_alloc(DOC_GROUP, dc);
+	if (isimpl) {
+		indent = doc_alloc(DOC_CONCAT, group);
+	} else {
+		indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
+		doc_alloc(pa->pa_line, indent);
+	}
 
 	if (pa->pa_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning a function pointer. */
