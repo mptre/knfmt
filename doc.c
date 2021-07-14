@@ -558,9 +558,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_OPTIONAL:
-		if (st->st_optline == DOC_OPTIONAL_STICKY) {
+		if (st->st_optline >= DOC_OPTIONAL_STICKY) {
 			if (-dc->dc_int == DOC_OPTIONAL_STICKY)
-				st->st_optline = 0;
+				st->st_optline -= DOC_OPTIONAL_STICKY;
 		} else if (dc->dc_int > 0 || -dc->dc_int <= st->st_optline) {
 			/* Note, could already be cleared by doc_print(). */
 			st->st_optline += dc->dc_int;
@@ -753,7 +753,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		 */
 		if ((flags & DOC_PRINT_FLAG_NEWLINE) == 0 &&
 		    st->st_optline > 0 &&
-		    st->st_optline != DOC_OPTIONAL_STICKY) {
+		    st->st_optline < DOC_OPTIONAL_STICKY) {
 			doc_trace(dc, st, "%s: optline %d -> 0",
 			    __func__, st->st_optline);
 			st->st_optline = 0;
@@ -1031,7 +1031,7 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		mode = 'M';
 		break;
 	}
-	if (st->st_optline == DOC_OPTIONAL_STICKY)
+	if (st->st_optline >= DOC_OPTIONAL_STICKY)
 		(void)snprintf(optline, sizeof(optline), "S");
 	else
 		(void)snprintf(optline, sizeof(optline), "%d", st->st_optline);
