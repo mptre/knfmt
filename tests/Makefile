@@ -1,3 +1,20 @@
+TESTS+=	diff-001.c
+TESTS+=	diff-002.c
+TESTS+=	diff-003.c
+TESTS+=	diff-004.c
+TESTS+=	diff-005.c
+TESTS+=	diff-006.c
+TESTS+=	diff-007.c
+TESTS+=	diff-008.c
+TESTS+=	diff-009.c
+TESTS+=	diff-010.c
+TESTS+=	diff-011.c
+TESTS+=	diff-012.c
+TESTS+=	diff-013.c
+TESTS+=	diff-014.c
+TESTS+=	diff-015.c
+TESTS+=	diff-016.c
+
 TESTS+=	error-001.c
 TESTS+=	error-002.c
 TESTS+=	error-003.c
@@ -170,6 +187,7 @@ TESTS+=	valid-156.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
+TESTS+=	../diff.c
 TESTS+=	../doc.c
 TESTS+=	../error.c
 TESTS+=	../expr.c

@@ -30,6 +30,7 @@ static int	__test_lexer_read(const char *, const char *, const char *,
 struct parser_stub {
 	char		 ps_path[PATH_MAX];
 	struct error	 ps_er;
+	struct file	*ps_fe;
 	struct parser	*ps_pr;
 	struct lexer	*ps_lx;
 	int		 ps_fd[2];
@@ -63,6 +64,7 @@ main(int argc, char *argv[])
 	cf.cf_flags |= CONFIG_FLAG_TEST;
 
 	lexer_init();
+	diff_init();
 
 	error |= test_expr_exec("1", "(1)");
 	error |= test_expr_exec("x", "(x)");
@@ -196,6 +198,7 @@ main(int argc, char *argv[])
 	error |= test_lexer_read(".x", "PERIOD IDENT");
 
 out:
+	diff_shutdown();
 	lexer_shutdown();
 	return error;
 }
@@ -230,7 +233,7 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 	}
 
 	bf = buffer_alloc(128);
-	doc_exec(group, bf, &cf);
+	doc_exec(group, ps.ps_lx, bf, &cf);
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
@@ -355,7 +358,8 @@ parser_stub_create(struct parser_stub *ps, const char *src)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 
 	error_init(&ps->ps_er, &cf);
-	ps->ps_pr = parser_alloc(ps->ps_path, &ps->ps_er, &cf);
+	ps->ps_fe = file_alloc(ps->ps_path, 0);
+	ps->ps_pr = parser_alloc(ps->ps_fe, &ps->ps_er, &cf);
 	ps->ps_lx = parser_get_lexer(ps->ps_pr);
 }
 
@@ -367,6 +371,8 @@ parser_stub_destroy(struct parser_stub *ps)
 
 	parser_free(ps->ps_pr);
 	ps->ps_pr = NULL;
+
+	file_free(ps->ps_fe);
 
 	if (ps->ps_fd[0] != -1)
 		close(ps->ps_fd[0]);

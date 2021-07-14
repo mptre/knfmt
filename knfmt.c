@@ -15,7 +15,10 @@
 
 static __dead void	usage(void);
 
-static int	fileformat(const char *, struct error *, const struct config *);
+static int	filelist(int, char **, struct file_list *,
+    const struct config *);
+static int	fileformat(const struct file *, struct error *,
+    const struct config *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const char *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -27,19 +30,25 @@ static int	tmpfd(const char *, char *, size_t);
 int
 main(int argc, char *argv[])
 {
+	struct file_list files;
 	struct config cf;
 	struct error er;
+	const struct file *fe;
 	int error = 0;
 	int ch;
 
 	if (pledge("stdio rpath wpath cpath fattr chown proc exec", NULL) == -1)
 		err(1, "pledge");
 
+	TAILQ_INIT(&files);
 	config_init(&cf);
 	error_init(&er, &cf);
 
-	while ((ch = getopt(argc, argv, "div")) != -1) {
+	while ((ch = getopt(argc, argv, "Ddiv")) != -1) {
 		switch (ch) {
+		case 'D':
+			cf.cf_flags |= CONFIG_FLAG_DIFFPARSE;
+			break;
 		case 'd':
 			cf.cf_flags |= CONFIG_FLAG_DIFF;
 			break;
@@ -55,6 +64,8 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
+	if ((cf.cf_flags & CONFIG_FLAG_DIFFPARSE) && argc > 0)
+		usage();
 
 	if (cf.cf_flags & CONFIG_FLAG_DIFF) {
 		if (pledge("stdio rpath wpath cpath proc exec", NULL) == -1)
@@ -71,24 +82,24 @@ main(int argc, char *argv[])
 	}
 
 	lexer_init();
+	diff_init();
 
-	if (argc > 0) {
-		int i;
-
-		for (i = 0; i < argc; i++) {
-			if (fileformat(argv[i], &er, &cf)) {
-				error = 1;
-				error_flush(&er);
-			}
-			error_reset(&er);
-		}
-	} else {
-		error = fileformat("/dev/stdin", &er, &cf);
-		if (error)
-			error_flush(&er);
+	if (filelist(argc, argv, &files, &cf)) {
+		error = 1;
+		goto out;
 	}
+	TAILQ_FOREACH(fe, &files, fe_entry) {
+		if (fileformat(fe, &er, &cf)) {
+			error = 1;
+			error_flush(&er);
+		}
+		error_reset(&er);
+	}
+	files_free(&files);
 
+out:
 	error_close(&er);
+	diff_shutdown();
 	lexer_shutdown();
 
 	return error;
@@ -98,17 +109,40 @@ static __dead void
 usage(void)
 {
 	fprintf(stderr, "usage: knfmt [-di] [file ...]\n");
+	fprintf(stderr, "       knfmt [-Ddi]\n");
 	exit(1);
 }
 
 static int
-fileformat(const char *path, struct error *er, const struct config *cf)
+filelist(int argc, char **argv, struct file_list *files,
+    const struct config *cf)
+{
+	struct file *fe;
+	int i;
+
+	if (cf->cf_flags & CONFIG_FLAG_DIFFPARSE)
+		return diff_parse(files, cf);
+
+	if (argc == 0) {
+		fe = file_alloc("/dev/stdin", 0);
+		TAILQ_INSERT_TAIL(files, fe, fe_entry);
+	} else {
+		for (i = 0; i < argc; i++) {
+			fe = file_alloc(argv[i], 0);
+			TAILQ_INSERT_TAIL(files, fe, fe_entry);
+		}
+	}
+	return 0;
+}
+
+static int
+fileformat(const struct file *fe, struct error *er, const struct config *cf)
 {
 	const struct buffer *dst, *src;
 	struct parser *pr;
 	int error = 0;
 
-	pr = parser_alloc(path, er, cf);
+	pr = parser_alloc(fe, er, cf);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
@@ -121,9 +155,9 @@ fileformat(const char *path, struct error *er, const struct config *cf)
 
 	src = lexer_get_buffer(parser_get_lexer(pr));
 	if (cf->cf_flags & CONFIG_FLAG_DIFF)
-		error = filediff(src, dst, path);
+		error = filediff(src, dst, fe->fe_path);
 	else if (cf->cf_flags & CONFIG_FLAG_INPLACE)
-		error = filewrite(src, dst, path);
+		error = filewrite(src, dst, fe->fe_path);
 	else
 		printf("%s", dst->bf_ptr);
 

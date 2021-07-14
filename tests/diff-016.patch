@@ -1,0 +1,7 @@
+diff --git a/diff.c b/diff.c
+index fff0847..c418c26 100644
+--- a/diff-016.c
++++ b/diff-016.c
+@@ -1 +1,2 @@
+ int	x;
++int y;

@@ -1,0 +1,8 @@
+--- diff-008.c
++++ diff-008.c
+@@ -1,3 +1,5 @@
++/* comment */
++
+ int
+ main(void)
+ {

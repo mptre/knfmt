@@ -21,7 +21,8 @@
 struct config {
 	unsigned int	cf_flags;
 #define CONFIG_FLAG_DIFF		0x00000001u
-#define CONFIG_FLAG_INPLACE		0x00000002u
+#define CONFIG_FLAG_DIFFPARSE		0x00000002u
+#define CONFIG_FLAG_INPLACE		0x00000004u
 #define CONFIG_FLAG_TEST		0x80000000u
 
 	unsigned int	cf_verbose;
@@ -74,6 +75,50 @@ struct buffer	*error_get_buffer(struct error *);
 } while (0)
 
 /*
+ * diff ------------------------------------------------------------------------
+ */
+
+struct file_list;
+
+struct diffchunk {
+	unsigned int		du_beg;
+	unsigned int		du_end;
+
+	TAILQ_ENTRY(diffchunk)	du_entry;
+};
+
+TAILQ_HEAD(diffchunk_list, diffchunk);
+
+struct diff {
+	struct diffchunk_list	di_chunks;
+};
+
+void	diff_init(void);
+void	diff_shutdown(void);
+int	diff_parse(struct file_list *, const struct config *);
+int	diff_covers(const struct diff *, unsigned int);
+
+/*
+ * file ------------------------------------------------------------------------
+ */
+
+struct file {
+	struct diff		 fe_diff;
+	char			*fe_path;
+	unsigned int		 fe_flags;
+#define FILE_FLAG_FREE		0x00000001u	/* fe_path must be freed */
+
+	TAILQ_ENTRY(file)	 fe_entry;
+};
+
+TAILQ_HEAD(file_list, file);
+
+void	files_free(struct file_list *);
+
+struct file	*file_alloc(char *, unsigned int);
+void		 file_free(struct file *);
+
+/*
  * token -----------------------------------------------------------------------
  */
 
@@ -106,6 +151,7 @@ struct token {
 #define TOKEN_FLAG_OPTLINE	0x00002000u
 #define TOKEN_FLAG_OPTSPACE	0x00004000u
 #define TOKEN_FLAG_SPACE	0x00008000u
+#define TOKEN_FLAG_DIFF		0x00010000u
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
@@ -159,12 +205,14 @@ struct lexer_recover_markers {
 
 void		 lexer_init(void);
 void		 lexer_shutdown(void);
-struct lexer	*lexer_alloc(const char *, struct error *,
+struct lexer	*lexer_alloc(const struct file *, struct error *,
     const struct config *);
 void		 lexer_free(struct lexer *);
 
 const struct buffer	*lexer_get_buffer(const struct lexer *);
 int			 lexer_get_error(const struct lexer *);
+int			 lexer_get_lines(const struct lexer *, unsigned int,
+    unsigned int, const char **, size_t *);
 
 void	lexer_recover_enter(struct lexer_recover_markers *);
 void	lexer_recover_leave(struct lexer_recover_markers *);
@@ -224,13 +272,16 @@ int	__lexer_until(struct lexer *, enum token_type, const struct token *,
 void	lexer_trim_enter(struct lexer *);
 void	lexer_trim_leave(struct lexer *);
 
+const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
+    unsigned int);
+
 void	lexer_dump(const struct lexer *);
 
 /*
  * parser ----------------------------------------------------------------------
  */
 
-struct parser		*parser_alloc(const char *, struct error *,
+struct parser		*parser_alloc(const struct file *, struct error *,
     const struct config *);
 void			 parser_free(struct parser *);
 const struct buffer	*parser_exec(struct parser *);
@@ -287,7 +338,7 @@ enum doc_type {
 	DOC_OPTIONAL,
 };
 
-void		doc_exec(const struct doc *, struct buffer *,
+void		doc_exec(const struct doc *, struct lexer *, struct buffer *,
     const struct config *);
 unsigned int	doc_width(const struct doc *, struct buffer *,
     const struct config *);

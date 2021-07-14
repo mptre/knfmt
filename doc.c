@@ -19,8 +19,9 @@ struct doc {
 
 	/* children */
 	union {
-		struct doc_list	 dc_list;
-		struct doc	*dc_doc;
+		struct doc_list		 dc_list;
+		struct doc		*dc_doc;
+		const struct token	*dc_tk;
 	};
 
 	/* value */
@@ -45,11 +46,19 @@ struct doc_state_indent {
 struct doc_state {
 	const struct config	*st_cf;
 	struct buffer		*st_bf;
+	struct lexer		*st_lx;
 
 	enum {
 		BREAK,
 		MUNGE,
 	} st_mode;
+
+	struct {
+		int		d_group;
+		int		d_ignore;
+		unsigned int	d_beg;
+		unsigned int	d_end;
+	} st_diff;
 
 	struct {
 		int		f_fits;
@@ -77,6 +86,14 @@ struct doc_state {
 #define DOC_STATE_FLAG_WIDTH	0x00000001u
 };
 
+/*
+ * Line numbers extracted from a document group that covers a diff chunk.
+ */
+struct doc_diff {
+	unsigned int	dd_first;	/* first token in group */
+	unsigned int	dd_chunk;	/* first token covered by the chunk */
+};
+
 static void	doc_exec1(const struct doc *, struct doc_state *);
 static int	doc_fits(const struct doc *, struct doc_state *);
 static int	doc_fits1(const struct doc *, struct doc_state *);
@@ -85,6 +102,24 @@ static void	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_is_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
+
+#define DOC_DIFF(st) 							\
+	(((st)->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&		\
+	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
+
+static void	doc_diff_group_enter(const struct doc *, struct doc_state *);
+static void	doc_diff_group_leave(const struct doc *, struct doc_state *);
+static void	doc_diff_literal(const struct doc *, struct doc_state *);
+static void	doc_diff_exit(const struct doc *, struct doc_state *);
+static void	doc_diff_verbatim(const struct doc *, struct doc_state *,
+    unsigned int, unsigned int);
+static int	doc_diff_covers(const struct doc *, struct doc_diff *);
+static int	doc_diff_is_mute(const struct doc_state *);
+
+#define doc_diff_leave(a, b) \
+	__doc_diff_leave((a), (b), __func__)
+static void	__doc_diff_leave(const struct doc *, struct doc_state *,
+    const char *);
 
 #define DOC_PRINT_FLAG_INDENT	0x00000001u
 #define DOC_PRINT_FLAG_NEWLINE	0x00000002u
@@ -121,7 +156,8 @@ static const char	*statestr(const struct doc_state *, unsigned int,
     char *, size_t);
 
 void
-doc_exec(const struct doc *dc, struct buffer *bf, const struct config *cf)
+doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
+    const struct config *cf)
 {
 	struct doc_state st;
 
@@ -129,10 +165,12 @@ doc_exec(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	memset(&st, 0, sizeof(st));
 	st.st_cf = cf;
 	st.st_bf = bf;
+	st.st_lx = lx;
 	st.st_mode = BREAK;
 	st.st_fits.f_fits = -1;
 
 	doc_exec1(dc, &st);
+	doc_diff_exit(dc, &st);
 	buffer_appendc(bf, '\0');
 
 	doc_trace(dc, &st, "%s: nfits %u/%u", __func__,
@@ -304,6 +342,7 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	}
 
 	token = __doc_alloc(type, dc, 0, fun, lno);
+	token->dc_tk = tk;
 	token->dc_str = tk->tk_str;
 	token->dc_len = tk->tk_len;
 
@@ -356,6 +395,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_GROUP: {
 		unsigned int oldmode;
 
+		doc_diff_group_enter(dc, st);
 		switch (st->st_mode) {
 		case MUNGE:
 			if (st->st_refit == 0) {
@@ -371,6 +411,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			st->st_mode = oldmode;
 			break;
 		}
+		doc_diff_group_leave(dc, st);
+
 		break;
 	}
 
@@ -421,6 +463,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_LITERAL:
+		doc_diff_literal(dc, st);
 		doc_print(dc, st, dc->dc_str, dc->dc_len,
 		    DOC_PRINT_FLAG_INDENT);
 		break;
@@ -700,6 +743,9 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 static void
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 {
+	if (st->st_mute || doc_diff_is_mute(st))
+		return;
+
 	for (; indent >= 8; indent -= 8) {
 		buffer_appendc(st->st_bf, '\t');
 		st->st_pos += 8 - (st->st_pos % 8);
@@ -716,7 +762,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 {
 	int newline = len == 1 && str[0] == '\n';
 
-	if (st->st_mute)
+	if (st->st_mute || doc_diff_is_mute(st))
 		return;
 
 	/* Emit any pending hard line(s). */
@@ -789,6 +835,248 @@ doc_trim(const struct doc *dc, struct doc_state *st)
 	if (oldpos > st->st_pos)
 		doc_trace(dc, st, "%s: trimmed %u character(s)", __func__,
 		    oldpos - st->st_pos);
+}
+
+static void
+doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
+{
+	struct doc_diff dd;
+	const struct diffchunk *du;
+
+	if (!DOC_DIFF(st))
+		return;
+
+	/*
+	 * Only applicable while entering the first group. Unless the group
+	 * above us was ignored, see below.
+	 */
+	if (st->st_diff.d_group++ > 0 && !st->st_diff.d_ignore)
+		return;
+
+	/*
+	 * Check if the current group is covered by a diff chunk. If so, we must
+	 * start emitting documents nested under the same group.
+	 *
+	 * A group is something intended to fit on a single line. However,
+	 * there are expections in the sense of groups spanning multiple lines;
+	 * one example is brace initializers. Such groups are ignored allowing
+	 * the first group covering a single line to be found.
+	 */
+	memset(&dd, 0, sizeof(dd));
+	switch (doc_diff_covers(dc, &dd)) {
+	case 0:
+		/*
+		 * The group is not covered by any diff chunk. However, if the
+		 * previous group above us touched lines after the diff chunk
+		 * due to reformatting make sure to reset the state.
+		 */
+		if (st->st_diff.d_end > 0)
+			doc_diff_leave(dc, st);
+		return;
+	case -1:
+		/*
+		 * The group spans multiple lines. Ignore it and keep evaluating
+		 * nested groups on subsequent invocations of this routine.
+		 */
+		doc_trace(dc, st, "%s: ignore", __func__);
+		st->st_diff.d_ignore = 1;
+		return;
+	}
+	st->st_diff.d_ignore = 0;
+
+	doc_trace(dc, st, "%s: enter chunk: beg %u, end %u, first %u, "
+	    "chunk %u, seen %d", __func__,
+	    st->st_diff.d_beg, st->st_diff.d_end,
+	    dd.dd_first, dd.dd_chunk,
+	    st->st_diff.d_end > 0);
+
+	if (st->st_diff.d_end > 0) {
+		/*
+		 * The diff chunk is spanning more than one group. Any preceding
+		 * verbatim lines are already emitted at this point.
+		 */
+		return;
+	}
+
+	du = lexer_get_diffchunk(st->st_lx, dd.dd_chunk);
+	if (du == NULL)
+		return;
+	doc_trace(dc, st, "%s: chunk range %u-%u", __func__,
+	    du->du_beg, du->du_end);
+
+	/*
+	 * Take a tentative note on which line the diff chunk ends. Note that if
+	 * the current group spans beyond the diff chunk, the end line will be
+	 * adjusted by doc_diff_literal(). This can happen when reformatting
+	 * causes lines to be merged.
+	 */
+	st->st_diff.d_end = du->du_end;
+
+	/*
+	 * Emit any preceding line(s) not covered by the diff chunk. It is of
+	 * importance to end at the line from the first token covered by this
+	 * group and not the first line covered by the diff chunk; as a group
+	 * represents something intended to fit on a single line but the diff
+	 * chunk might only touch a subset of the group.
+	 */
+	doc_diff_verbatim(dc, st, st->st_diff.d_beg, dd.dd_first);
+	st->st_pos = 0;
+	doc_indent(dc, st, st->st_indent.i_cur);
+}
+
+static void
+doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st)
+{
+	if (!DOC_DIFF(st))
+		return;
+	st->st_diff.d_group--;
+}
+
+static void
+doc_diff_literal(const struct doc *dc, struct doc_state *st)
+{
+	const struct token *tk = dc->dc_tk;
+
+	if (!DOC_DIFF(st))
+		return;
+
+	if (tk == NULL || st->st_diff.d_end == 0)
+		return;
+
+	if (st->st_diff.d_group > 0) {
+		if (tk->tk_lno > st->st_diff.d_end) {
+			/*
+			 * The current group spans beyond the diff chunk, adjust
+			 * the end line. This can happen when reformatting
+			 * causes lines to be merged.
+			 */
+			doc_trace(dc, st, "%s: end %u", __func__, tk->tk_lno);
+			st->st_diff.d_end = tk->tk_lno;
+		}
+	} else if (tk->tk_lno > st->st_diff.d_end) {
+		doc_diff_leave(dc, st);
+	}
+}
+
+static void
+doc_diff_exit(const struct doc *dc, struct doc_state *st)
+{
+	if (!DOC_DIFF(st))
+		return;
+
+	/* Bypass doc_diff_is_mute(). */
+	st->st_diff.d_end = 1;
+	doc_diff_verbatim(dc, st, st->st_diff.d_beg, 0);
+	st->st_diff.d_end = 0;
+}
+
+/*
+ * Emit everything between the given lines as is.
+ */
+static void
+doc_diff_verbatim(const struct doc *dc, struct doc_state *st, unsigned int beg,
+    unsigned int end)
+{
+	const char *str;
+	size_t len;
+
+	doc_trace(dc, st, "%s: beg %u, end %u", __func__, beg, end);
+	if (!lexer_get_lines(st->st_lx, beg, end, &str, &len))
+		return;
+
+	if (DOC_TRACE(st)) {
+		char *s;
+
+		s = strnice(str, len);
+		doc_trace(dc, st, "%s: verbatim \"%s\"", __func__, s);
+		free(s);
+	}
+
+	st->st_newline = 0;
+	doc_trim(dc, st);
+	doc_print(dc, st, str, len, 0);
+}
+
+/*
+ * Returns non-zero if any document covers a token which is part of a diff
+ * chunk.
+ */
+static int
+doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
+{
+	switch (dc->dc_type) {
+	case DOC_CONCAT: {
+		const struct doc *concat;
+
+		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
+			int c;
+
+			if ((c = doc_diff_covers(concat, dd)) != 0)
+				return c;
+		}
+		break;
+	}
+	case DOC_GROUP:
+	case DOC_INDENT:
+	case DOC_DEDENT:
+		return doc_diff_covers(dc->dc_doc, dd);
+
+	case DOC_LITERAL: {
+		const struct token *tk = dc->dc_tk;
+
+		if (tk != NULL) {
+			if (dd->dd_first == 0)
+				dd->dd_first = tk->tk_lno;
+			if (tk->tk_flags & TOKEN_FLAG_DIFF) {
+				dd->dd_chunk = tk->tk_lno;
+				return 1;
+			}
+		}
+		break;
+	}
+
+	case DOC_VERBATIM: {
+		const struct token *tk = dc->dc_tk;
+
+		if (tk != NULL && dd->dd_first == 0)
+			dd->dd_first = tk->tk_lno;
+		break;
+	}
+
+	case DOC_HARDLINE:
+		return -1;
+
+	case DOC_ALIGN:
+	case DOC_LINE:
+	case DOC_SOFTLINE:
+	case DOC_NEWLINE:
+	case DOC_OPTLINE:
+	case DOC_MUTE:
+	case DOC_OPTIONAL:
+		break;
+	}
+
+	return 0;
+}
+
+/*
+ * Returns non-zero if nothing should be emitted while being positioned on a
+ * line not touched by the diff.
+ */
+static int
+doc_diff_is_mute(const struct doc_state *st)
+{
+	return (st->st_flags & DOC_STATE_FLAG_WIDTH) == 0 &&
+	    (st->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&
+	    st->st_diff.d_end == 0;
+}
+
+static void
+__doc_diff_leave(const struct doc *dc, struct doc_state *st, const char *fun)
+{
+	st->st_diff.d_beg = st->st_diff.d_end + 1;
+	st->st_diff.d_end = 0;
+	doc_trace(dc, st, "%s: leave chunk: beg %u", fun, st->st_diff.d_beg);
 }
 
 /*
@@ -1015,7 +1303,7 @@ static const char *
 statestr(const struct doc_state *st, unsigned int depth, char *buf,
     size_t bufsiz)
 {
-	char optline[4];
+	char mute[16], optline[16];
 	unsigned char mode = 'U';
 	int n;
 
@@ -1027,12 +1315,19 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		mode = 'M';
 		break;
 	}
+
+	if (doc_diff_is_mute(st))
+		(void)snprintf(mute, sizeof(mute), "D");
+	else
+		(void)snprintf(mute, sizeof(mute), "%d", st->st_mute);
+
 	if (st->st_optline >= DOC_OPTIONAL_STICKY)
 		(void)snprintf(optline, sizeof(optline), "S");
 	else
 		(void)snprintf(optline, sizeof(optline), "%d", st->st_optline);
-	n = snprintf(buf, bufsiz, "[D] [%c C=%-3u D=%-3u U=%d O=%s]",
-	    mode, st->st_pos, depth, st->st_mute, optline);
+
+	n = snprintf(buf, bufsiz, "[D] [%c C=%-3u D=%-3u U=%s O=%s]",
+	    mode, st->st_pos, depth, mute, optline);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 	return buf;

@@ -1,0 +1,9 @@
+--- diff-001.c	Fri Jul  9 19:55:50 2021
++++ diff-001.c	Fri Jul  9 19:55:58 2021
+@@ -1,5 +1,5 @@
+ int
+ x;
+ 
+-int
++static int
+ y;

@@ -8,6 +8,8 @@
 .Nm
 .Op Fl di
 .Op Ar
+.Nm
+.Op Fl Ddi
 .Sh DESCRIPTION
 The
 .Nm
@@ -17,6 +19,8 @@ a best effort fashion, see
 .Pp
 The options are as follows:
 .Bl -tag -width "file"
+.It Fl D
+Only format changed lines extracted from a diff read from standard input.
 .It Fl d
 Produce a diff for each given
 .Ar file .

@@ -18,6 +18,11 @@ It can produce a diff between the original and formatted source code:
 
 	$ knfmt -d knfmt.c
 
+In addition, it can given a diff only format the changed lines.
+This option is compatible with the options mentioned above:
+
+	$ git diff | knfmt -Dd
+
 The implementation is further described in [DESIGN][design].
 
 [design]: DESIGN

@@ -1,0 +1,10 @@
+--- diff-002.c
++++ diff-002.c
+@@ -2,4 +2,7 @@
+ f1(void);
+ 
+ int
++f2(void);
++
++int
+ f3(void);

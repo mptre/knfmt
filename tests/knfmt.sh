@@ -19,6 +19,16 @@ trap "rm -rf ${_wrkdir}" 0
 _out="${_wrkdir}/out"
 
 case "$1" in
+diff-*)
+	_base="${1%.c}"
+	_ok="${_base}.ok"
+	if ! ${EXEC:-} ${KNFMT} -D <"${_base}.patch" 2>&1 | \
+		diff -u -L "$1" -L "$_ok" "$_ok" - >"$_out" 2>&1
+	then
+		cat "$_out" 1>&2
+		exit 1
+	fi
+	;;
 error-*)
 	_err=0
 	${EXEC:-} ${KNFMT} "$1" >"$_out" 2>&1 || _err="$?"

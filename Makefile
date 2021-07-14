@@ -7,6 +7,7 @@ SRCS+=	compat-errc.c
 SRCS+=	compat-pledge.c
 SRCS+=	compat-reallocarray.c
 SRCS+=	compat-warnc.c
+SRCS+=	diff.c
 SRCS+=	doc.c
 SRCS+=	error.c
 SRCS+=	expr.c
@@ -29,6 +30,7 @@ PROG_test=	t
 
 KNFMT+=	buffer.c
 KNFMT+=	compat-pledge.c
+KNFMT+=	diff.c
 KNFMT+=	doc.c
 KNFMT+=	error.c
 KNFMT+=	expr.c

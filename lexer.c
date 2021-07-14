@@ -26,6 +26,7 @@ struct lexer {
 	struct lexer_state	 lx_st;
 	struct error		*lx_er;
 	const struct config	*lx_cf;
+	const struct diff	*lx_diff;
 	struct buffer		*lx_bf;
 	const char		*lx_path;
 
@@ -69,6 +70,9 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
+
+static const struct token	*lexer_get_line(const struct lexer *,
+    unsigned int);
 
 static struct token	*lexer_recover_fold(struct lexer *, struct token *,
     struct token *, struct token *, struct token *);
@@ -343,14 +347,14 @@ lexer_shutdown(void)
 }
 
 struct lexer *
-lexer_alloc(const char *path, struct error *er, const struct config *cf)
+lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
 {
 	struct branch *br;
 	struct buffer *bf;
 	struct lexer *lx;
 	int error = 0;
 
-	bf = buffer_read(path);
+	bf = buffer_read(fe->fe_path);
 	if (bf == NULL)
 		return NULL;
 
@@ -360,7 +364,8 @@ lexer_alloc(const char *path, struct error *er, const struct config *cf)
 	lx->lx_er = er;
 	lx->lx_cf = cf;
 	lx->lx_bf = bf;
-	lx->lx_path = path;
+	lx->lx_diff = &fe->fe_diff;
+	lx->lx_path = fe->fe_path;
 	lx->lx_expect = TOKEN_NONE;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
@@ -420,6 +425,54 @@ int
 lexer_get_error(const struct lexer *lx)
 {
 	return lx->lx_st.st_err;
+}
+
+/*
+ * Get the buffer contents for the lines [beg, end). If end is equal to 0, the
+ * line number of the last token is used.
+ */
+int
+lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
+    const char **str, size_t *len)
+{
+	const struct buffer *bf = lx->lx_bf;
+	const struct token *tkbeg, *tkend;
+	size_t offbeg, offend;
+
+	if (end == 0)
+		end = lx->lx_st.st_lno;
+
+	tkbeg = lexer_get_line(lx, beg);
+	if (tkbeg == NULL)
+		return 0;
+	tkend = lexer_get_line(lx, end);
+	if (tkend == NULL)
+		return 0;
+
+	/*
+	 * Include all whitespace preceding the first token, such tokens could
+	 * already have been removed by token_trim().
+	 */
+	offbeg = tkbeg->tk_off;
+	for (; offbeg > 0; offbeg--) {
+		unsigned char ch = bf->bf_ptr[offbeg - 1];
+
+		if (ch != ' ' && ch != '\t')
+			break;
+	}
+
+	/* Remove all whitespace after the last token. */
+	offend = tkend->tk_off;
+	for (; offend > 0; offend--) {
+		unsigned char ch = bf->bf_ptr[offend - 1];
+
+		if (ch != ' ' && ch != '\t')
+			break;
+	}
+
+	*str = &bf->bf_ptr[offbeg];
+	*len = offend - offbeg;
+	return 1;
 }
 
 void
@@ -1143,6 +1196,18 @@ lexer_trim_leave(struct lexer *lx)
 	lx->lx_trim--;
 }
 
+const struct diffchunk *
+lexer_get_diffchunk(const struct lexer *lx, unsigned int beg)
+{
+	const struct diffchunk *du;
+
+	TAILQ_FOREACH(du, &lx->lx_diff->di_chunks, du_entry) {
+		if (beg >= du->du_beg && beg <= du->du_end)
+			return du;
+	}
+	return NULL;
+}
+
 /*
  * Looks unused but only used while debugging and therefore not declared static.
  */
@@ -1699,6 +1764,8 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
+	if (diff_covers(lx->lx_diff, t->tk_lno))
+		t->tk_flags |= TOKEN_FLAG_DIFF;
 	if (t->tk_str == NULL) {
 		t->tk_str = &lx->lx_bf->bf_ptr[st->st_off];
 		t->tk_len = lx->lx_st.st_off - st->st_off;
@@ -1799,6 +1866,34 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 	lexer_peek_leave(lx, &s);
 
 	return peek;
+}
+
+/*
+ * Returns the first token on the given line number.
+ */
+static const struct token *
+lexer_get_line(const struct lexer *lx, unsigned int lno)
+{
+	const struct token *tk;
+
+	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
+		const struct token *prefix, *suffix;
+
+		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+			if (prefix->tk_lno >= lno)
+				return prefix;
+		}
+
+		if (tk->tk_lno >= lno)
+			return tk;
+
+		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+			if (suffix->tk_lno >= lno)
+				return suffix;
+		}
+	}
+
+	return NULL;
 }
 
 /*
