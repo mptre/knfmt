@@ -9,6 +9,11 @@ commstrip() {
 	awk '!p && !length($0) {p=1; next} p {print}' "$1"
 }
 
+# Enable hardening malloc(3) options on OpenBSD.
+case "$(uname -s)" in
+OpenBSD)	export MALLOC_OPTIONS="RS";;
+esac
+
 _wrkdir="$(mktemp -dt knfmt.XXXXXX)"
 trap "rm -rf ${_wrkdir}" 0
 _out="${_wrkdir}/out"
