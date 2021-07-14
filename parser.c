@@ -28,11 +28,11 @@ struct parser {
 };
 
 struct parser_exec_func_proto_arg {
-	struct doc		*pa_dc;
-	struct ruler		*pa_rl;
-	const struct token	*pa_type;
-	enum doc_type		 pa_line;
-	struct doc		*pa_out;
+	struct doc		*pf_dc;
+	struct ruler		*pf_rl;
+	const struct token	*pf_type;
+	enum doc_type		 pf_line;
+	struct doc		*pf_out;
 };
 
 #define PARSER_EXEC_DECL_FLAG_BREAK	0x00000001u
@@ -941,20 +941,20 @@ static int
 parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *type)
 {
-	struct parser_exec_func_proto_arg pa = {
-		.pa_rl		= rl,
-		.pa_type	= type,
-		.pa_line	= DOC_SOFTLINE,
+	struct parser_exec_func_proto_arg pf = {
+		.pf_rl		= rl,
+		.pf_type	= type,
+		.pf_line	= DOC_SOFTLINE,
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	pa.pa_dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	if (parser_exec_func_proto(pr, &pa))
+	pf.pf_dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	if (parser_exec_func_proto(pr, &pf))
 		return parser_error(pr);
 
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, pa.pa_out);
+		doc_token(tk, pf.pf_out);
 
 	return parser_ok(pr);
 }
@@ -965,20 +965,20 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 static int
 parser_exec_func_impl(struct parser *pr, struct doc *dc)
 {
-	struct parser_exec_func_proto_arg pa = {
-		.pa_dc		= dc,
-		.pa_rl		= NULL,
-		.pa_type	= NULL,
-		.pa_line	= DOC_HARDLINE,
+	struct parser_exec_func_proto_arg pf = {
+		.pf_dc		= dc,
+		.pf_rl		= NULL,
+		.pf_type	= NULL,
+		.pf_line	= DOC_HARDLINE,
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *type;
 
 	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
 		return PARSER_NOTHING;
-	pa.pa_type = type;
+	pf.pf_type = type;
 
-	if (parser_exec_func_proto(pr, &pa))
+	if (parser_exec_func_proto(pr, &pf))
 		return parser_error(pr);
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL))
 		return parser_error(pr);
@@ -999,28 +999,28 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
  * return type. Returns zero if one was found.
  */
 static int
-parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pa)
+parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 {
 	int error;
 
 	lexer_trim_enter(pr->pr_lx);
-	error = parser_exec_func_proto1(pr, pa);
+	error = parser_exec_func_proto1(pr, pf);
 	lexer_trim_leave(pr->pr_lx);
 	return error;
 }
 
 static int
 parser_exec_func_proto1(struct parser *pr,
-    struct parser_exec_func_proto_arg *pa)
+    struct parser_exec_func_proto_arg *pf)
 {
-	struct doc *dc = pa->pa_dc;
+	struct doc *dc = pf->pf_dc;
 	struct doc *group, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *tk;
 	int error = 1;
-	int isimpl = pa->pa_line == DOC_HARDLINE;
+	int isimpl = pf->pf_line == DOC_HARDLINE;
 
-	if (parser_exec_type(pr, dc, pa->pa_type, pa->pa_rl))
+	if (parser_exec_type(pr, dc, pf->pf_type, pf->pf_rl))
 		return parser_error(pr);
 	/*
 	 * Hard line after the return type is only wanted for function
@@ -1038,10 +1038,10 @@ parser_exec_func_proto1(struct parser *pr,
 		indent = doc_alloc(DOC_CONCAT, group);
 	} else {
 		indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
-		doc_alloc(pa->pa_line, indent);
+		doc_alloc(pf->pf_line, indent);
 	}
 
-	if (pa->pa_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
+	if (pf->pf_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning a function pointer. */
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			doc_token(tk, indent);
@@ -1064,7 +1064,7 @@ parser_exec_func_proto1(struct parser *pr,
 		return parser_error(pr);
 
 	indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
-	while (parser_exec_func_arg(pr, indent, &pa->pa_out, rparen) ==
+	while (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen) ==
 	    PARSER_OK)
 		continue;
 
@@ -1077,7 +1077,7 @@ parser_exec_func_proto1(struct parser *pr,
 	if (error)
 		doc_remove(kr, dc);
 
-	parser_exec_attributes(pr, dc, &pa->pa_out, pr->pr_cf->cf_tw,
+	parser_exec_attributes(pr, dc, &pf->pf_out, pr->pr_cf->cf_tw,
 	    DOC_HARDLINE);
 
 	return parser_ok(pr);
