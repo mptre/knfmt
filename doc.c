@@ -318,9 +318,8 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	}
 
 	/* lexer_comment() signalled that hard line(s) must be emitted. */
-	if (tk->tk_flags & TOKEN_FLAG_NEWLINE) {
+	if (tk->tk_flags & TOKEN_FLAG_NEWLINE)
 		__doc_alloc(DOC_NEWLINE, dc, tk->tk_int, fun, lno);
-	}
 
 	/* Mute if we're about to branch. */
 	tmp = TAILQ_NEXT(tk, tk_entry);
