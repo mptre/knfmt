@@ -54,7 +54,7 @@ struct doc_state {
 	} st_mode;
 
 	struct {
-		int		d_group;
+		int		d_groups;
 		int		d_ignore;
 		unsigned int	d_beg;
 		unsigned int	d_end;
@@ -859,7 +859,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * Only applicable while entering the first group. Unless the group
 	 * above us was ignored, see below.
 	 */
-	if (st->st_diff.d_group++ > 0 && !st->st_diff.d_ignore)
+	if (st->st_diff.d_groups++ > 0 && !st->st_diff.d_ignore)
 		return 0;
 
 	/*
@@ -942,7 +942,7 @@ doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st,
 
 	if (ignore)
 		st->st_diff.d_ignore--;
-	st->st_diff.d_group--;
+	st->st_diff.d_groups--;
 }
 
 static void
@@ -956,7 +956,7 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 	if (tk == NULL || st->st_diff.d_end == 0)
 		return;
 
-	if (st->st_diff.d_group > 0) {
+	if (st->st_diff.d_groups > 0) {
 		if (tk->tk_lno > st->st_diff.d_end) {
 			/*
 			 * The current group spans beyond the diff chunk, adjust
