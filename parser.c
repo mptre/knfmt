@@ -519,8 +519,10 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			doc_token(tk, dc);
 			if (lexer_expect(lx, TOKEN_LITERAL, &tk))
 				doc_token(tk, dc);
-		} else if (lexer_if(lx, TOKEN_COMMA, &tk) ||
-		    lexer_if_flags(lx,
+		} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
+			doc_token(tk, dc);
+			doc_alloc(DOC_LINE, dc);
+		} else if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
 			doc_token(tk, dc);
 			doc_literal(" ", dc);
