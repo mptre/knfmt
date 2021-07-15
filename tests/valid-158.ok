@@ -1,0 +1,11 @@
+struct s {
+	int x;
+};
+
+enum {
+	x,
+};
+
+union {
+	int x;
+};

@@ -395,34 +395,49 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (token_is_decl(end, TOKEN_STRUCT) ||
 	    token_is_decl(end, TOKEN_UNION)) {
 		struct doc *indent;
+		struct token *lbrace, *pv, *rbrace;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_literal(" ", concat);
 			doc_token(tk, concat);
 		}
-		if (lexer_expect(lx, TOKEN_LBRACE, &tk))
-			doc_token(tk, concat);
+
+		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+			return parser_error(pr);
+		pv = TAILQ_PREV(rbrace, token_list, tk_entry);
+		if (pv != NULL)
+			token_trim(pv, TOKEN_SPACE, 0);
+		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
+			token_trim(lbrace, TOKEN_SPACE, 0);
+			doc_token(lbrace, concat);
+		}
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
 		doc_alloc(DOC_HARDLINE, indent);
 		while (parser_exec_decl(pr, indent, 0) == PARSER_OK)
 			continue;
-
 		doc_alloc(DOC_HARDLINE, concat);
+
 		if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 			doc_token(tk, concat);
 
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			doc_literal(" ", concat);
 	} else if (token_is_decl(end, TOKEN_ENUM)) {
-		struct token *rbrace;
+		struct token *lbrace, *pv, *rbrace;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_literal(" ", concat);
 			doc_token(tk, concat);
 		}
+
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 			return parser_error(pr);
+		pv = TAILQ_PREV(rbrace, token_list, tk_entry);
+		if (pv != NULL)
+			token_trim(pv, TOKEN_SPACE, 0);
+		if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace))
+			token_trim(lbrace, TOKEN_SPACE, 0);
 
 		if (parser_exec_decl_braces_fields(pr, concat, rl, rbrace,
 		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM))
