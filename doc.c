@@ -624,6 +624,13 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	if (st->st_flags & DOC_STATE_FLAG_WIDTH)
 		return 1;
 
+	/*
+	 * Nothing fits while being outside of a diff chunk. Needed in order to
+	 * stay in break mode until entering a diff chunk.
+	 */
+	if (doc_diff_is_mute(st))
+		return 0;
+
 	if (DOC_TRACE(st))
 		st->st_stats.s_nfits++;
 
