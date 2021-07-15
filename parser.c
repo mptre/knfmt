@@ -71,6 +71,7 @@ static int	parser_exec_func_arg(struct parser *, struct doc *,
     struct doc **, const struct token *);
 
 #define PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH	0x00000001u
+#define PARSER_EXEC_STMT_BLOCK_FLAG_TRIM	0x00000002u
 
 #define PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE	0x00000001u
 #define PARSER_EXEC_STMT_EXPR_FLAG_ELSE		0x00000002u
@@ -1173,7 +1174,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
 
-	if (parser_exec_stmt_block(pr, dc, dc, 0) == PARSER_OK)
+	if (parser_exec_stmt_block(pr, dc, dc,
+	    PARSER_EXEC_STMT_BLOCK_FLAG_TRIM) == PARSER_OK)
 		return parser_ok(pr);
 
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
@@ -1294,7 +1296,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		doc_token(tk, dc);
 		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 			doc_literal(" ", dc);
-			error = parser_exec_stmt_block(pr, dc, dc, 0);
+			error = parser_exec_stmt_block(pr, dc, dc,
+			    PARSER_EXEC_STMT_BLOCK_FLAG_TRIM);
 			doc_literal(" ", dc);
 		} else {
 			struct doc *indent;
@@ -1440,7 +1443,7 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 {
 	struct doc *concat, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rbrace, *seek, *pv, *tk;
+	struct token *lbrace, *rbrace, *seek, *pv, *tk;
 	int nstmt = 0;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
@@ -1451,8 +1454,17 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 	if (pv != NULL)
 		token_trim(pv, TOKEN_SPACE, 0);
 
-	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
-		doc_token(tk, head);
+	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
+		/*
+		 * Optionally remove empty lines after the opening left brace.
+		 * An empty line is however allowed in the beginning of a
+		 * function implementation, a convention used by some when the
+		 * function lacks local variables.
+		 */
+		if (flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM)
+			token_trim(lbrace, TOKEN_SPACE, 0);
+		doc_token(lbrace, head);
+	}
 
 	if (!lexer_peek(lx, &seek))
 		seek = NULL;
@@ -1548,11 +1560,12 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	}
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		int isswitch = type->tk_type == TOKEN_SWITCH;
+		unsigned int fflags = PARSER_EXEC_STMT_BLOCK_FLAG_TRIM;
 
+		if (type->tk_type == TOKEN_SWITCH)
+			fflags |= PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
 		doc_literal(" ", expr);
-		return parser_exec_stmt_block(pr, expr, dc,
-		    isswitch ? PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH : 0);
+		return parser_exec_stmt_block(pr, expr, dc, fflags);
 	} else {
 		struct doc *indent;
 
