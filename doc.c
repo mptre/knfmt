@@ -104,6 +104,7 @@ static int	doc_fits1(const struct doc *, struct doc_state *);
 static void	doc_indent(const struct doc *, struct doc_state *, int);
 static void	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
+static int	doc_is_mute(const struct doc_state *);
 static int	doc_is_parens(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 
@@ -480,7 +481,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_VERBATIM: {
 		unsigned int oldpos;
 
-		if (st->st_mute)
+		if (doc_is_mute(st))
 			break;
 
 		/*
@@ -760,7 +761,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 static void
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 {
-	if (st->st_mute || doc_diff_is_mute(st))
+	if (doc_is_mute(st))
 		return;
 
 	for (; indent >= 8; indent -= 8) {
@@ -779,8 +780,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 {
 	int newline = len == 1 && str[0] == '\n';
 
-	if ((st->st_mute || doc_diff_is_mute(st)) &&
-	    (flags & DOC_PRINT_FLAG_FORCE) == 0)
+	if (doc_is_mute(st) && (flags & DOC_PRINT_FLAG_FORCE) == 0)
 		return;
 
 	/* Emit any pending hard line(s). */
@@ -1105,6 +1105,12 @@ __doc_diff_leave(const struct doc *dc, struct doc_state *st, const char *fun)
 	st->st_mute = st->st_diff.d_mute;
 	st->st_diff.d_mute = 0;
 	doc_trace(dc, st, "%s: leave chunk: beg %u", fun, st->st_diff.d_beg);
+}
+
+static int
+doc_is_mute(const struct doc_state *st)
+{
+	return st->st_mute || doc_diff_is_mute(st);
 }
 
 /*
