@@ -599,7 +599,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			if (st->st_mute == 0 && dc->dc_int > 0)
 				st->st_indent.i_mute = st->st_indent.i_pre;
 
-			st->st_mute += dc->dc_int;
+			if (dc->dc_int > 0 || st->st_mute >= -dc->dc_int)
+				st->st_mute += dc->dc_int;
 		}
 		break;
 
