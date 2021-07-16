@@ -1091,9 +1091,7 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 static int
 doc_diff_is_mute(const struct doc_state *st)
 {
-	return (st->st_flags & DOC_STATE_FLAG_WIDTH) == 0 &&
-	    (st->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&
-	    st->st_diff.d_end == 0;
+	return DOC_DIFF(st) && st->st_diff.d_end == 0;
 }
 
 static void
