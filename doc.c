@@ -929,7 +929,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	st->st_diff.d_end = du->du_end;
 
 	/*
-	 * We could still be in a muted section of the document, ignore and
+	 * We could still be in a muted section of the document, ignore and then
 	 * restore in doc_diff_leave();
 	 */
 	st->st_diff.d_mute = st->st_mute;
