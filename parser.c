@@ -560,7 +560,6 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 static int
 parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
-	struct doc *concat = NULL;
 	struct doc *line = NULL;
 	struct doc *braces, *expr, *indent;
 	struct lexer *lx = pr->pr_lx;
@@ -605,6 +604,7 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	}
 
 	for (;;) {
+		struct doc *concat;
 		struct token *comma;
 
 		if (lexer_is_branch(lx))
@@ -645,16 +645,16 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 			} else if (!token_has_line(comma, 1)) {
 				doc_literal(" ", concat);
 			} else {
-				doc_alloc(DOC_HARDLINE, concat);
+				doc_alloc(DOC_HARDLINE, indent);
 			}
 			if (token_has_line(comma, 0))
 				ruler_exec(rl);
 		} else {
-			line = doc_alloc(DOC_HARDLINE, concat);
+			line = doc_alloc(DOC_HARDLINE, indent);
 		}
 	}
 	if (line != NULL)
-		doc_remove(line, concat);
+		doc_remove(line, indent);
 
 	doc_literal(" ", braces);
 out:
