@@ -1,0 +1,46 @@
+commit 061e6e0abdeb6a01a01836c8fd11c3899af20c1f
+Author: krw <krw@openbsd.org>
+Date:   Sun Jul 11 19:43:19 2021 +0000
+
+    Add 'mbr_' prefix to struct mbr field names.
+    
+    Change 'offset' to mbr_lba_self and 'reloffset'
+    to mbr_lba_firstembr to make their use more evident.
+    Adjust a few parameter names to match.
+    
+    Change 'part[]' to mbr_prt[] to reflect that it is an
+    array of struct prt.
+    
+    No functional change.
+
+diff --git sbin/fdisk/part.c sbin/fdisk/part.c
+index 1d21ee09730..929b5f14033 100644
+--- diff-022.c
++++ diff-022.c
+@@ -1,4 +1,4 @@
+-/*	$OpenBSD: part.c,v 1.89 2021/07/11 13:38:27 krw Exp $	*/
++/*	$OpenBSD: part.c,v 1.90 2021/07/11 19:43:19 krw Exp $	*/
+ 
+ /*
+  * Copyright (c) 1997 Tobias Weingartner
+@@ -222,7 +222,7 @@ ascii_id(int id)
+ }
+ 
+ void
+-PRT_parse(struct dos_partition *prt, off_t offset, off_t reloff,
++PRT_parse(struct dos_partition *prt, off_t lba_self, off_t lba_firstembr,
+     struct prt *partn)
+ {
+ 	off_t			off;
+@@ -240,9 +240,9 @@ PRT_parse(struct dos_partition *prt, off_t offset, off_t reloff,
+ 	partn->ecyl = ((prt->dp_esect << 2) & 0xFF00) | prt->dp_ecyl;
+ 
+ 	if ((partn->id == DOSPTYP_EXTEND) || (partn->id == DOSPTYP_EXTENDL))
+-		off = reloff;
++		off = lba_firstembr;
+ 	else
+-		off = offset;
++		off = lba_self;
+ 
+ #if 0 /* XXX */
+ 	partn->bs = letoh32(prt->dp_start) + off;

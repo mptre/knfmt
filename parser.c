@@ -1035,7 +1035,7 @@ parser_exec_func_proto1(struct parser *pr,
     struct parser_exec_func_proto_arg *pf)
 {
 	struct doc *dc = pf->pf_dc;
-	struct doc *group, *indent, *kr;
+	struct doc *concat, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *tk;
 	int error = 1;
@@ -1054,16 +1054,13 @@ parser_exec_func_proto1(struct parser *pr,
 	 * The function identifier and arguments are intended to fit on a single
 	 * line.
 	 */
-	group = doc_alloc(DOC_GROUP, dc);
-	if (isimpl) {
-		indent = doc_alloc(DOC_CONCAT, group);
-	} else {
-		indent = doc_alloc_indent(pr->pr_cf->cf_sw, group);
-		doc_alloc(pf->pf_line, indent);
-	}
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	indent = isimpl ? concat : doc_alloc_indent(pr->pr_cf->cf_sw, concat);
 
 	if (pf->pf_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning a function pointer. */
+		if (!isimpl)
+			doc_alloc(pf->pf_line, indent);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			doc_token(tk, indent);
 		if (lexer_expect(lx, TOKEN_STAR, &tk))
@@ -1078,13 +1075,22 @@ parser_exec_func_proto1(struct parser *pr,
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 			doc_token(tk, indent);
 	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
-		doc_token(tk, indent);
+		if (isimpl) {
+			doc_token(tk, indent);
+		} else {
+			struct doc *ident;
+
+			ident = doc_alloc(DOC_CONCAT,
+			    doc_alloc(DOC_GROUP, indent));
+			doc_alloc(pf->pf_line, ident);
+			doc_token(tk, ident);
+		}
 	}
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_error(pr);
 
-	indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
+	indent = doc_alloc_indent(pr->pr_cf->cf_sw, concat);
 	while (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen) ==
 	    PARSER_OK)
 		continue;

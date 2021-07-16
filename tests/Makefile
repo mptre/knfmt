@@ -19,6 +19,7 @@ TESTS+=	diff-018.c
 TESTS+=	diff-019.c
 TESTS+=	diff-020.c
 TESTS+=	diff-021.c
+TESTS+=	diff-022.c
 
 TESTS+=	error-001.c
 TESTS+=	error-002.c
