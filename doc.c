@@ -910,7 +910,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	du = lexer_get_diffchunk(st->st_lx, dd.dd_chunk);
 	if (du == NULL)
 		return 0;
-	doc_trace(dc, st, "%s: chunk range %u-%u", __func__,
+	doc_trace(dc, st, "%s: chunk range [%u-%u]", __func__,
 	    du->du_beg, du->du_end);
 
 	/*
@@ -994,7 +994,7 @@ doc_diff_verbatim(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	const char *str;
 	size_t len;
 
-	doc_trace(dc, st, "%s: beg %u, end %u", __func__, beg, end);
+	doc_trace(dc, st, "%s: range [%u, %u)", __func__, beg, end);
 	if (!lexer_get_lines(st->st_lx, beg, end, &str, &len))
 		return;
 
