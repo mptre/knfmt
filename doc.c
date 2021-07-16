@@ -902,10 +902,10 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	}
 
 	doc_trace(dc, st, "%s: enter chunk: beg %u, end %u, first %u, "
-	    "chunk %u, ignore %d, seen %d", __func__,
+	    "chunk %u, groups %d, ignore %d, seen %d", __func__,
 	    st->st_diff.d_beg, st->st_diff.d_end,
 	    dd.dd_first, dd.dd_chunk,
-	    st->st_diff.d_ignore, st->st_diff.d_end > 0);
+	    st->st_diff.d_groups, st->st_diff.d_ignore, st->st_diff.d_end > 0);
 
 	if (st->st_diff.d_end > 0) {
 		/*
