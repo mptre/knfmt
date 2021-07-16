@@ -168,6 +168,7 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_bf = bf;
 	st.st_lx = lx;
 	st.st_mode = BREAK;
+	st.st_diff.d_beg = 1;
 	st.st_fits.f_fits = -1;
 
 	doc_exec1(dc, &st);

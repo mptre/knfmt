@@ -1,0 +1,35 @@
+commit fa56b7e6af638e1836a608d1e023437f08bf1f4f
+Author: kn <kn@openbsd.org>
+Date:   Wed Jul 14 13:33:57 2021 +0000
+
+    Remove unneeded calls to tls_init(3)
+    
+    As per the manual and lib/libtls/tls.c revision 1.79 from 2018
+    "Automatically handle library initialisation for libtls." initialisation
+    is handled automatically by other tls_*(3) functions.
+    
+    Remove explicit tls_init() calls from base to not give the impression of
+    it being needed.
+    
+    Feedback tb
+    OK Tests mestre
+
+diff --git usr.bin/ftp/main.c usr.bin/ftp/main.c
+index 6af1f318854..decebcb995c 100644
+--- diff-017.c
++++ diff-017.c
+@@ -1,4 +1,4 @@
+-/*	$OpenBSD: main.c,v 1.137 2021/02/02 21:41:12 jmc Exp $	*/
++/*	$OpenBSD: main.c,v 1.138 2021/07/14 13:33:57 kn Exp $	*/
+ /*	$NetBSD: main.c,v 1.24 1997/08/18 10:20:26 lukem Exp $	*/
+ 
+ /*
+@@ -403,8 +403,6 @@ main(volatile int argc, char *argv[])
+ 
+ #ifndef NOSSL
+ 	cookiefile = getenv("http_cookies");
+-	if (tls_init() != 0)
+-		errx(1, "tls init failed");
+ 	if (tls_config == NULL) {
+ 		tls_config = tls_config_new();
+ 		if (tls_config == NULL)
