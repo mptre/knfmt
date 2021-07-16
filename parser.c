@@ -1379,14 +1379,14 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	}
 
 	if (parser_exec_stmt_label(pr, dc) == PARSER_OK) {
-		struct token *t1, *t2;
+		struct token *nx;
 
 		/*
 		 * A label is not necessarily followed by a hard line, there
 		 * could be another statement on the same line.
 		 */
-		if (lexer_back(lx, &t1) && lexer_peek(lx, &t2) && t2 != stop &&
-		    token_cmp(t1, t2) == 0) {
+		if (lexer_back(lx, &tk) && lexer_peek(lx, &nx) && nx != stop &&
+		    token_cmp(tk, nx) == 0) {
 			struct doc *indent;
 
 			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
