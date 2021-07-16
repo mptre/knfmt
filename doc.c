@@ -868,7 +868,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * Only applicable while entering the first group. Unless the group
 	 * above us was ignored, see below.
 	 */
-	if (st->st_diff.d_groups++ > 0 && !st->st_diff.d_ignore)
+	if (st->st_diff.d_groups++ > 0 && st->st_diff.d_ignore == 0)
 		return 0;
 
 	/*
