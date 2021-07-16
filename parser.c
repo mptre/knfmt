@@ -292,11 +292,13 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 	lexer_recover_enter(&lm);
 	for (;;) {
+		struct doc *group;
 		struct token *tk;
 
 		lexer_recover_mark(lx, &lm);
 
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, root));
+		group = doc_alloc(DOC_GROUP, root);
+		concat = doc_alloc(DOC_CONCAT, group);
 		if (parser_exec_decl1(pr, concat, &rl)) {
 			int r;
 
@@ -315,6 +317,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 			if (line != NULL)
 				doc_remove(line, concat);
+			doc_remove(group, root);
 			break;
 		}
 		ndecl++;
@@ -353,7 +356,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		return PARSER_NOTHING;
 
 	if (flags & PARSER_EXEC_DECL_FLAG_LINE)
-		doc_alloc(DOC_HARDLINE, concat);
+		doc_alloc(DOC_HARDLINE, root);
 	return parser_ok(pr);
 }
 
