@@ -130,7 +130,7 @@ otus_attachhook(struct device *self)
 	printf("%s: MAC/BBP AR9170, RF AR%X, MIMO %dT%dR, address %s\n",
 	    sc->sc_dev.dv_xname,
 	    (sc->capflags & AR5416_OPFLAGS_11A) ? 0x9104 : ((sc->txmask ==
-	      0x5) ? 0x9102 : 0x9101),
+	    0x5) ? 0x9102 : 0x9101),
 	    (sc->txmask == 0x5) ? 2 : 1,
 	    (sc->rxmask == 0x5) ? 2 : 1, ether_sprintf(ic->ic_myaddr));
 

@@ -43,7 +43,6 @@ struct doc_state_indent {
 	int	i_cur;
 	int	i_pre;
 	int	i_mute;
-	size_t	i_pos;
 };
 
 struct doc_state {
@@ -105,7 +104,7 @@ static void	doc_indent(const struct doc *, struct doc_state *, int);
 static void	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_is_mute(const struct doc_state *);
-static int	doc_is_parens(const struct doc_state *);
+static int	doc_parens_align(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 
 #define DOC_DIFF(st) 							\
@@ -426,16 +425,21 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 	}
 
-	case DOC_INDENT:
-		if (dc->dc_int == DOC_INDENT_PARENS)
-			st->st_parens++;
-		else if (dc->dc_int == DOC_INDENT_FORCE)
+	case DOC_INDENT: {
+		int oldparens = 0;
+
+		if (dc->dc_int == DOC_INDENT_PARENS) {
+			oldparens = st->st_parens;
+			if (doc_parens_align(st))
+				st->st_parens++;
+		} else if (dc->dc_int == DOC_INDENT_FORCE) {
 			doc_indent(dc, st, st->st_indent.i_cur);
-		else
+		} else {
 			st->st_indent.i_cur += dc->dc_int;
+		}
 		doc_exec1(dc->dc_doc, st);
 		if (dc->dc_int == DOC_INDENT_PARENS) {
-			st->st_parens--;
+			st->st_parens = oldparens;
 		} else if (dc->dc_int == DOC_INDENT_FORCE) {
 			/* nothing */
 		} else {
@@ -448,6 +452,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (st->st_indent.i_cur == 0)
 			st->st_indent.i_pre = 0;
 		break;
+	}
 
 	case DOC_DEDENT: {
 		int indent;
@@ -742,20 +747,14 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 static void
 doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 {
-	int parens = 0;
-
-	if (doc_is_parens(st)) {
+	if (st->st_parens > 0) {
 		/* Align with the left parenthesis on the previous line. */
 		indent = st->st_indent.i_pre + st->st_parens;
-		parens = 1;
 	} else {
 		st->st_indent.i_pre = indent;
 	}
 
 	doc_indent1(dc, st, indent);
-
-	if (!parens)
-		st->st_indent.i_pos = st->st_bf->bf_len;
 }
 
 static void
@@ -1112,14 +1111,28 @@ doc_is_mute(const struct doc_state *st)
 }
 
 /*
- * Returns non-zero if we're in a pair of parenthesis that's applicable to
- * aligned indentation.
+ * Returns non-zero if the current line is suitable for parenthesis alignment.
+ * That is a line beginning with whitespace followed by a left parenthesis.
  */
 static int
-doc_is_parens(const struct doc_state *st)
+doc_parens_align(const struct doc_state *st)
 {
-	return st->st_parens > 0 && st->st_indent.i_pre > 0 &&
-	    st->st_bf->bf_ptr[st->st_indent.i_pos] == '(';
+	const char *buf;
+	size_t i;
+
+	buf = st->st_bf->bf_ptr;
+	i = st->st_bf->bf_len;
+	if (i == 0)
+		return 0;
+	if (buf[i - 1] != '(')
+		return 0;
+	while (--i > 0) {
+		if (buf[i - 1] == '\n')
+			break;
+		if (buf[i - 1] != ' ' && buf[i - 1] != '\t')
+			return 0;
+	}
+	return 1;
 }
 
 static int
