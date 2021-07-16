@@ -19,9 +19,12 @@ struct doc {
 
 	/* children */
 	union {
-		struct doc_list		 dc_list;
-		struct doc		*dc_doc;
-		const struct token	*dc_tk;
+		struct doc_list	 dc_list;
+		struct doc	*dc_doc;
+		struct {
+			unsigned int	tk_lno;
+			unsigned int	tk_flags;
+		} dc_tk;
 	};
 
 	/* value */
@@ -344,7 +347,8 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	}
 
 	token = __doc_alloc(type, dc, 0, fun, lno);
-	token->dc_tk = tk;
+	token->dc_tk.tk_lno = tk->tk_lno;
+	token->dc_tk.tk_flags = tk->tk_flags;
 	token->dc_str = tk->tk_str;
 	token->dc_len = tk->tk_len;
 
@@ -949,25 +953,25 @@ doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st,
 static void
 doc_diff_literal(const struct doc *dc, struct doc_state *st)
 {
-	const struct token *tk = dc->dc_tk;
+	unsigned int lno = dc->dc_tk.tk_lno;
 
 	if (!DOC_DIFF(st))
 		return;
 
-	if (tk == NULL || st->st_diff.d_end == 0)
+	if (lno == 0 || st->st_diff.d_end == 0)
 		return;
 
 	if (st->st_diff.d_groups > 0) {
-		if (tk->tk_lno > st->st_diff.d_end) {
+		if (lno > st->st_diff.d_end) {
 			/*
 			 * The current group spans beyond the diff chunk, adjust
 			 * the end line. This can happen when reformatting
 			 * causes lines to be merged.
 			 */
-			doc_trace(dc, st, "%s: end %u", __func__, tk->tk_lno);
-			st->st_diff.d_end = tk->tk_lno;
+			doc_trace(dc, st, "%s: end %u", __func__, lno);
+			st->st_diff.d_end = lno;
 		}
-	} else if (tk->tk_lno > st->st_diff.d_end) {
+	} else if (lno > st->st_diff.d_end) {
 		doc_diff_leave(dc, st);
 	}
 }
@@ -1036,13 +1040,13 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 		return doc_diff_covers(dc->dc_doc, dd);
 
 	case DOC_LITERAL: {
-		const struct token *tk = dc->dc_tk;
+		unsigned int lno = dc->dc_tk.tk_lno;
 
-		if (tk != NULL) {
+		if (lno > 0) {
 			if (dd->dd_first == 0)
-				dd->dd_first = tk->tk_lno;
-			if (tk->tk_flags & TOKEN_FLAG_DIFF) {
-				dd->dd_chunk = tk->tk_lno;
+				dd->dd_first = lno;
+			if (dc->dc_tk.tk_flags & TOKEN_FLAG_DIFF) {
+				dd->dd_chunk = lno;
 				return 1;
 			}
 		}
@@ -1050,10 +1054,10 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 	}
 
 	case DOC_VERBATIM: {
-		const struct token *tk = dc->dc_tk;
+		unsigned int lno = dc->dc_tk.tk_lno;
 
-		if (tk != NULL && dd->dd_first == 0)
-			dd->dd_first = tk->tk_lno;
+		if (lno > 0 && dd->dd_first == 0)
+			dd->dd_first = lno;
 		break;
 	}
 
