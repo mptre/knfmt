@@ -1111,20 +1111,26 @@ doc_is_mute(const struct doc_state *st)
 }
 
 /*
- * Returns non-zero if the current line is suitable for parenthesis alignment.
- * That is a line beginning with whitespace followed by a left parenthesis.
+ * Returns non-zero if the current line is suitable for parenthesis alignment,
+ * i.e. a line consisting of whitespace followed by one or many left
+ * parenthesisa. This is the desired outcome:
+ *
+ * 	if (a &&
+ * 	    ((b &&
+ * 	      c)))
  */
 static int
 doc_parens_align(const struct doc_state *st)
 {
 	const char *buf;
 	size_t i;
+	int nparens = 0;
 
 	buf = st->st_bf->bf_ptr;
 	i = st->st_bf->bf_len;
-	if (i == 0)
-		return 0;
-	if (buf[i - 1] != '(')
+	for (; i > 0 && buf[i - 1] == '('; i--)
+		nparens++;
+	if (nparens == 0 || i == 0)
 		return 0;
 	while (--i > 0) {
 		if (buf[i - 1] == '\n')
