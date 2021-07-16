@@ -59,6 +59,7 @@ struct doc_state {
 	struct {
 		int		d_groups;
 		int		d_ignore;
+		int		d_mute;
 		unsigned int	d_beg;
 		unsigned int	d_end;
 	} st_diff;
@@ -127,6 +128,7 @@ static void	__doc_diff_leave(const struct doc *, struct doc_state *,
 
 #define DOC_PRINT_FLAG_INDENT	0x00000001u
 #define DOC_PRINT_FLAG_NEWLINE	0x00000002u
+#define DOC_PRINT_FLAG_FORCE	0x00000004u
 
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
@@ -777,7 +779,8 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 {
 	int newline = len == 1 && str[0] == '\n';
 
-	if (st->st_mute || doc_diff_is_mute(st))
+	if ((st->st_mute || doc_diff_is_mute(st)) &&
+	    (flags & DOC_PRINT_FLAG_FORCE) == 0)
 		return;
 
 	/* Emit any pending hard line(s). */
@@ -927,6 +930,13 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	st->st_diff.d_end = du->du_end;
 
 	/*
+	 * We could still be in a muted section of the document, ignore and
+	 * restore in doc_diff_leave();
+	 */
+	st->st_diff.d_mute = st->st_mute;
+	st->st_mute = 0;
+
+	/*
 	 * Emit any preceding line(s) not covered by the diff chunk. It is of
 	 * importance to end at the line from the first token covered by this
 	 * group and not the first line covered by the diff chunk; as a group
@@ -982,11 +992,7 @@ doc_diff_exit(const struct doc *dc, struct doc_state *st)
 {
 	if (!DOC_DIFF(st))
 		return;
-
-	/* Bypass doc_diff_is_mute(). */
-	st->st_diff.d_end = 1;
 	doc_diff_verbatim(dc, st, st->st_diff.d_beg, 0);
-	st->st_diff.d_end = 0;
 }
 
 /*
@@ -1013,7 +1019,7 @@ doc_diff_verbatim(const struct doc *dc, struct doc_state *st, unsigned int beg,
 
 	st->st_newline = 0;
 	doc_trim(dc, st);
-	doc_print(dc, st, str, len, 0);
+	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
 }
 
 /*
@@ -1096,6 +1102,8 @@ __doc_diff_leave(const struct doc *dc, struct doc_state *st, const char *fun)
 	assert(st->st_diff.d_end > 0);
 	st->st_diff.d_beg = st->st_diff.d_end + 1;
 	st->st_diff.d_end = 0;
+	st->st_mute = st->st_diff.d_mute;
+	st->st_diff.d_mute = 0;
 	doc_trace(dc, st, "%s: leave chunk: beg %u", fun, st->st_diff.d_beg);
 }
 
