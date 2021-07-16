@@ -42,6 +42,8 @@ struct lexer {
 	int			 lx_trim;
 	enum token_type		 lx_expect;
 
+	struct token		*lx_unmute;
+
 	struct token_list	 lx_tokens;
 	struct branch_list	 lx_branches;
 };
@@ -654,6 +656,9 @@ __lexer_branch(struct lexer *lx, struct token **tk, const struct token *stop,
 		if (rm == seek)
 			seek = dst;
 
+		if (rm == lx->lx_unmute)
+			lx->lx_unmute = NULL;
+
 		nx = TAILQ_NEXT(rm, tk_entry);
 		TAILQ_REMOVE(&lx->lx_tokens, rm, tk_entry);
 		token_free(rm);
@@ -664,9 +669,13 @@ __lexer_branch(struct lexer *lx, struct token **tk, const struct token *stop,
 
 	/*
 	 * Tell doc_token() that crossing this token must cause tokens to be
-	 * emitted again.
+	 * emitted again. While here, disarm any previous unmute token as it
+	 * might be crossed again.
 	 */
+	if (lx->lx_unmute != NULL)
+		lx->lx_unmute->tk_flags &= ~TOKEN_FLAG_UNMUTE;
 	dst->tk_flags |= TOKEN_FLAG_UNMUTE;
+	lx->lx_unmute = dst;
 
 	/* Rewind causing the seek token to be next one to emit. */
 	lexer_trace(lx, "seek to %s", token_sprintf(seek));
