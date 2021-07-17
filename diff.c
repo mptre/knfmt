@@ -270,10 +270,11 @@ skipline(char *str)
 static void
 xregcomp(regex_t *re, const char *pattern)
 {
-	char errbuf[128];
 	int error;
 
 	if ((error = regcomp(re, pattern, REG_EXTENDED | REG_NEWLINE))) {
+		char errbuf[128];
+
 		if (regerror(error, re, errbuf, sizeof(errbuf)) > 0)
 			errx(1, "regcomp: %s", errbuf);
 	}

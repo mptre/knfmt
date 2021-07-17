@@ -118,7 +118,6 @@ filelist(int argc, char **argv, struct file_list *files,
     const struct config *cf)
 {
 	struct file *fe;
-	int i;
 
 	if (cf->cf_flags & CONFIG_FLAG_DIFFPARSE)
 		return diff_parse(files, cf);
@@ -127,6 +126,8 @@ filelist(int argc, char **argv, struct file_list *files,
 		fe = file_alloc("/dev/stdin", 0);
 		TAILQ_INSERT_TAIL(files, fe, fe_entry);
 	} else {
+		int i;
+
 		for (i = 0; i < argc; i++) {
 			fe = file_alloc(argv[i], 0);
 			TAILQ_INSERT_TAIL(files, fe, fe_entry);
