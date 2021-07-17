@@ -88,7 +88,6 @@ diff_parse(struct file_list *files, const struct config *cf)
 	struct file *fe = NULL;
 	char *buf;
 	struct buffer *bf;
-	int error;
 
 	bf = buffer_read("/dev/stdin");
 	if (bf == NULL)
@@ -100,20 +99,14 @@ diff_parse(struct file_list *files, const struct config *cf)
 		char *path;
 		int el, sl;
 
-		if ((error = matchpath(buf, &path))) {
-			if (error == -1)
-				goto err;
-
+		if (matchpath(buf, &path)) {
 			fe = file_alloc(path, FILE_FLAG_FREE);
 			TAILQ_INSERT_TAIL(files, fe, fe_entry);
 
 			buf = skipline(buf);
 			if (buf == NULL)
 				goto err;
-		} else if ((error = matchchunk(buf, &sl, &el))) {
-			if (error == -1)
-				goto err;
-
+		} else if (matchchunk(buf, &sl, &el)) {
 			/* Chunks cannot be present before the path. */
 			if (fe == NULL)
 				goto err;
