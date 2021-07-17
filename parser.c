@@ -280,24 +280,24 @@ static int
 parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	struct lexer_recover_markers lm;
-	struct doc *concat, *root;
+	struct doc *decl;
 	struct ruler rl;
 	struct doc *line = NULL;
 	struct lexer *lx = pr->pr_lx;
 	int ndecl = 0;
 
-	root = doc_alloc(DOC_CONCAT, dc);
+	decl = doc_alloc(DOC_CONCAT, dc);
 	memset(&rl, 0, sizeof(rl));
 	ruler_init(&rl);
 
 	lexer_recover_enter(&lm);
 	for (;;) {
-		struct doc *group;
+		struct doc *concat, *group;
 		struct token *tk;
 
 		lexer_recover_mark(lx, &lm);
 
-		group = doc_alloc(DOC_GROUP, root);
+		group = doc_alloc(DOC_GROUP, decl);
 		concat = doc_alloc(DOC_CONCAT, group);
 		if (parser_exec_decl1(pr, concat, &rl)) {
 			int r;
@@ -316,13 +316,13 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 			}
 
 			if (line != NULL)
-				doc_remove(line, concat);
-			doc_remove(group, root);
+				doc_remove(line, decl);
+			doc_remove(group, decl);
 			break;
 		}
 		ndecl++;
 
-		line = doc_alloc(DOC_HARDLINE, concat);
+		line = doc_alloc(DOC_HARDLINE, decl);
 
 		/*
 		 * Honor an empty line which denotes the end of this block of
@@ -337,7 +337,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		 * declarations.
 		 */
 		if (lexer_is_branch_end(lx)) {
-			doc_remove(line, concat);
+			doc_remove(line, decl);
 			break;
 		}
 
@@ -347,7 +347,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	}
 	lexer_recover_leave(&lm);
 	if (ndecl == 0)
-		doc_remove(root, dc);
+		doc_remove(decl, dc);
 	else
 		ruler_exec(&rl);
 	ruler_free(&rl);
@@ -356,7 +356,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		return PARSER_NOTHING;
 
 	if (flags & PARSER_EXEC_DECL_FLAG_LINE)
-		doc_alloc(DOC_HARDLINE, root);
+		doc_alloc(DOC_HARDLINE, decl);
 	return parser_ok(pr);
 }
 
