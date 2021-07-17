@@ -42,7 +42,6 @@ main(int argc, char *argv[])
 
 	TAILQ_INIT(&files);
 	config_init(&cf);
-	error_init(&er, &cf);
 
 	while ((ch = getopt(argc, argv, "Ddiv")) != -1) {
 		switch (ch) {
@@ -81,8 +80,9 @@ main(int argc, char *argv[])
 		}
 	}
 
-	lexer_init();
+	error_init(&er, &cf);
 	diff_init();
+	lexer_init();
 
 	if (filelist(argc, argv, &files, &cf)) {
 		error = 1;
@@ -95,12 +95,12 @@ main(int argc, char *argv[])
 		}
 		error_reset(&er);
 	}
-	files_free(&files);
 
 out:
-	error_close(&er);
-	diff_shutdown();
 	lexer_shutdown();
+	diff_shutdown();
+	error_close(&er);
+	files_free(&files);
 
 	return error;
 }
