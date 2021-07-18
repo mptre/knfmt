@@ -70,7 +70,7 @@ struct buffer	*error_get_buffer(struct error *);
 
 #define error_write(er, fmt, ...) do {					\
 	buffer_appendv(error_get_buffer((er)), (fmt), __VA_ARGS__);	\
-	if (UNLIKELY((er)->er_cf->cf_verbose) >= 2)			\
+	if (TRACE((er)->er_cf))						\
 		error_flush((er));					\
 } while (0)
 
