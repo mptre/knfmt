@@ -17,7 +17,6 @@ static int	matchline(char *, int, struct file *);
 
 static char	*skipline(char *);
 
-static void	xregcomp(regex_t *, const char *);
 static int	xregexec(const regex_t *, char *, regmatch_t *, size_t);
 
 static void	diff_trace(const char *, ...)
@@ -71,8 +70,28 @@ file_free(struct file *fe)
 void
 diff_init(void)
 {
-	xregcomp(&rechunk, "^@@.+\\+([[:digit:]]+)(,([[:digit:]]+))?.+@@");
-	xregcomp(&repath, "^\\+\\+\\+[[:space:]]+([^[:space:]]+)");
+	struct {
+		regex_t		*r;
+		const char	*p;
+	} patterns[] = {
+		{ &rechunk,	"^@@.+\\+([[:digit:]]+)(,([[:digit:]]+))?.+@@" },
+		{ &repath,	"^\\+\\+\\+[[:space:]]+([^[:space:]]+)" },
+	};
+	size_t n = sizeof(patterns) / sizeof(patterns[0]);
+	size_t i;
+
+	for (i = 0; i < n; i++) {
+		char errbuf[128];
+		int error;
+
+		error = regcomp(patterns[i].r, patterns[i].p,
+		    REG_EXTENDED | REG_NEWLINE);
+		if (error == 0)
+			continue;
+
+		if (regerror(error, patterns[i].r, errbuf, sizeof(errbuf)) > 0)
+			errx(1, "regcomp: %s", errbuf);
+	}
 }
 
 void
@@ -258,19 +277,6 @@ skipline(char *str)
 	if (p == NULL)
 		return NULL;
 	return p + 1;
-}
-
-static void
-xregcomp(regex_t *re, const char *pattern)
-{
-	int error;
-
-	if ((error = regcomp(re, pattern, REG_EXTENDED | REG_NEWLINE))) {
-		char errbuf[128];
-
-		if (regerror(error, re, errbuf, sizeof(errbuf)) > 0)
-			errx(1, "regcomp: %s", errbuf);
-	}
 }
 
 static int
