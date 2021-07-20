@@ -791,10 +791,6 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	}
 
 	if (newline) {
-		/* Skip new lines while testing. */
-		if (st->st_cf->cf_flags & CONFIG_FLAG_TEST)
-			return;
-
 		/* Never emit more than two consecutive lines. */
 		if (st->st_nlines >= 2)
 			return;
