@@ -187,7 +187,7 @@ parser_exec(struct parser *pr)
 				doc_remove_tail(dc);
 			parser_reset(pr);
 			error = 0;
-		} else if (lexer_branch(lx, &seek, NULL)) {
+		} else if (lexer_branch(lx, &seek)) {
 			lexer_recover_purge(&lm);
 			parser_reset(pr);
 			error = 0;
@@ -342,7 +342,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		}
 
 		/* Take the next branch if available. */
-		if (lexer_branch(lx, NULL, NULL))
+		if (lexer_branch(lx, NULL))
 			lexer_recover_purge(&lm);
 	}
 	lexer_recover_leave(&lm);
@@ -1183,7 +1183,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	}
 
 	/* Take the next branch if available. */
-	if (lexer_branch(lx, NULL, NULL))
+	if (lexer_branch(lx, NULL))
 		error = 0;
 	return error ? error : parser_ok(pr);
 }
@@ -1501,7 +1501,7 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 	while (parser_exec_stmt1(pr, indent, rbrace) == PARSER_OK) {
 		nstmt++;
 
-		if (lexer_branch(lx, &seek, NULL))
+		if (lexer_branch(lx, &seek))
 			continue;
 		if (!lexer_peek(lx, &seek))
 			seek = NULL;

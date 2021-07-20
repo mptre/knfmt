@@ -108,8 +108,6 @@ static void	__lexer_trace(const struct lexer *, const char *, const char *,
 
 static int	isnum(unsigned char, int);
 
-static int		 token_branch_cover(const struct token *,
-    const struct token *);
 static void		 token_branch_link(struct token *, struct token *);
 static int		 token_branch_unlink(struct token *);
 static struct token	*token_get_branch(struct token *);
@@ -624,13 +622,12 @@ __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
  * Returns non-zero if the lexer took the next branch.
  */
 int
-__lexer_branch(struct lexer *lx, struct token **tk, const struct token *stop,
-    const char *fun, int lno)
+__lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 {
 	struct token *br, *dst, *rm, *seek;
 
 	br = lexer_branch_next(lx);
-	if (br == NULL || (stop != NULL && token_branch_cover(br, stop)))
+	if (br == NULL)
 		return 0;
 
 	dst = br->tk_branch.br_nx->tk_token;
@@ -2250,12 +2247,6 @@ isnum(unsigned char ch, int prefix)
 	ch = tolower(ch);
 	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
 	    ch == 'u' || ch == '.';
-}
-
-static int
-token_branch_cover(const struct token *br, const struct token *tk)
-{
-	return token_cmp(br, tk) < 0 && token_cmp(br->tk_branch.br_nx, tk) > 0;
 }
 
 static void

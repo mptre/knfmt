@@ -224,10 +224,9 @@ void	lexer_recover_purge(struct lexer_recover_markers *);
 int	__lexer_recover(struct lexer *, struct lexer_recover_markers *,
     const char *, int);
 
-#define lexer_branch(a, b, c)						\
-	__lexer_branch((a), (b), (c), __func__, __LINE__)
-int	__lexer_branch(struct lexer *, struct token **, const struct token *,
-    const char *, int);
+#define lexer_branch(a, b)						\
+	__lexer_branch((a), (b), __func__, __LINE__)
+int	__lexer_branch(struct lexer *, struct token **, const char *, int);
 
 int	lexer_is_branch(const struct lexer *);
 int	lexer_is_branch_end(const struct lexer *);
