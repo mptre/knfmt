@@ -110,7 +110,6 @@ static struct doc	*expr_doc(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
-static struct doc	*expr_doc_tokens(const struct expr *, struct doc *);
 
 #define expr_doc_soft(a, b) \
 	__expr_doc_soft((a), (b), __func__, __LINE__)
@@ -718,10 +717,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		} else {
 			doc_literal(" ", concat);
 		}
-		if (ex->ex_lhs != NULL)
-			concat = expr_doc(ex->ex_lhs, es, concat);
-		else
-			expr_doc_tokens(ex, concat);
+		concat = expr_doc(ex->ex_lhs, es, concat);
 		if (ex->ex_sizeof) {
 			if (ex->ex_tokens[1] != NULL)
 				doc_token(ex->ex_tokens[1], concat);	/* ) */
@@ -778,38 +774,6 @@ expr_doc_has_spaces(const struct expr *ex)
 
 	pv = TAILQ_PREV(ex->ex_tk, token_list, tk_entry);
 	return token_has_spaces(pv);
-}
-
-static struct doc *
-expr_doc_tokens(const struct expr *ex, struct doc *dc)
-{
-	struct doc *concat;
-	const struct token *tk = ex->ex_beg;
-	int i = 0;
-	int line = 1;
-
-	for (;;) {
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		if (i++ > 0) {
-			if (line)
-				doc_alloc(DOC_LINE, concat);
-			line = tk->tk_type != TOKEN_STAR;
-		}
-
-		doc_token(tk, concat);
-		if (tk == ex->ex_end)
-			break;
-
-		tk = TAILQ_NEXT(tk, tk_entry);
-		if (tk == NULL)
-			break;
-	}
-
-	/*
-	 * Nest any following tokens under the last group in order cause a
-	 * refit.
-	 */
-	return doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
 }
 
 /*
