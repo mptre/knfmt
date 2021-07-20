@@ -455,20 +455,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_DEDENT: {
-		int indent;
+		int oldindent;
 
-		if (dc->dc_int == DOC_DEDENT_NONE) {
-			indent = st->st_indent.i_cur;
-		} else {
-			indent = dc->dc_int;
-			if (indent > st->st_indent.i_cur)
-				indent = st->st_indent.i_cur;
-		}
 		doc_trim(dc, st);
-		st->st_indent.i_cur -= indent;
-		doc_indent(dc, st, st->st_indent.i_cur);
+		oldindent = st->st_indent.i_cur;
+		st->st_indent.i_cur = 0;
 		doc_exec1(dc->dc_doc, st);
-		st->st_indent.i_cur += indent;
+		st->st_indent.i_cur = oldindent;
 		break;
 	}
 
@@ -1337,8 +1330,6 @@ static const char *
 intstr(const struct doc *dc)
 {
 	switch (dc->dc_int) {
-	case DOC_DEDENT_NONE:
-		return "NONE";
 	case DOC_INDENT_PARENS:
 		return "PARENS";
 	case DOC_INDENT_FORCE:

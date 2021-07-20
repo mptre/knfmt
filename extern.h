@@ -365,15 +365,14 @@ struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
  * numbers are compared with signed integers, favor integer literals over
  * hexadecimal ones.
  */
-#define DOC_DEDENT_NONE		111	/* remove all indentation */
-#define DOC_INDENT_PARENS	222	/* entering parenthesis */
-#define DOC_INDENT_FORCE	333	/* force indentation */
-#define DOC_OPTIONAL_STICKY	444	/* always allow optional line(s) */
+#define DOC_INDENT_PARENS	111	/* entering parenthesis */
+#define DOC_INDENT_FORCE	222	/* force indentation */
+#define DOC_OPTIONAL_STICKY	333	/* always allow optional line(s) */
 
 #define doc_alloc_indent(a, b) \
 	__doc_alloc_indent(DOC_INDENT, (a), (b), __func__, __LINE__)
-#define doc_alloc_dedent(a, b) \
-	__doc_alloc_indent(DOC_DEDENT, (a), (b), __func__, __LINE__)
+#define doc_alloc_dedent(a) \
+	__doc_alloc_indent(DOC_DEDENT, 0, (a), __func__, __LINE__)
 struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
     const char *, int);
 

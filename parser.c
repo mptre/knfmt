@@ -1617,7 +1617,7 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return PARSER_NOTHING;
 
-	dedent = doc_alloc_dedent(DOC_DEDENT_NONE, dc);
+	dedent = doc_alloc_dedent(dc);
 	if (lexer_expect(lx, TOKEN_IDENT, &tk))
 		doc_token(tk, dedent);
 	if (lexer_expect(lx, TOKEN_COLON, &tk))
