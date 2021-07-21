@@ -472,7 +472,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 
 	for (;;) {
 		struct doc *expr;
-		struct token *tk;
+		struct token *assign, *tk;
 
 		if (parser_halted(pr))
 			return parser_error(pr);
@@ -484,10 +484,10 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			doc_token(tk, dc);
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 				doc_literal(" ", dc);
-		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &tk)) {
+		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &assign)) {
 			if (!didalign)
 				doc_literal(" ", dc);
-			doc_token(tk, dc);
+			doc_token(assign, dc);
 			doc_literal(" ", dc);
 
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
@@ -495,12 +495,22 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 					return parser_error(pr);
 			} else {
 				struct token *estop = NULL;
+				unsigned int flags = 0;
 
 				if (stop == NULL)
 					(void)lexer_peek_until_loose(lx,
 					    TOKEN_COMMA, NULL, &estop);
+
+				/*
+				 * Honor hard line after assignment which must
+				 * be emitted inside the expression document to
+				 * get indentation right.
+				 */
+				if (token_has_line(assign, 1))
+					flags |= EXPR_EXEC_FLAG_HARDLINE;
+
 				if (parser_exec_expr(pr, dc, NULL,
-				    estop != NULL ? estop : stop, 0))
+				    estop != NULL ? estop : stop, flags))
 					return parser_error(pr);
 			}
 		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||

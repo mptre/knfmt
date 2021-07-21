@@ -200,6 +200,8 @@ expr_exec(const struct expr_exec_arg *ea)
 	doc_alloc_optional(1, indent);
 	if (ea->ea_flags & EXPR_EXEC_FLAG_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
+	if (ea->ea_flags & EXPR_EXEC_FLAG_HARDLINE)
+		doc_alloc(DOC_HARDLINE, indent);
 	expr = expr_doc(ex, &es, indent);
 	doc_alloc_optional(-1, expr);
 	expr_free(ex);
