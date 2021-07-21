@@ -108,8 +108,7 @@ out:
 static __dead void
 usage(void)
 {
-	fprintf(stderr, "usage: knfmt [-di] [file ...]\n");
-	fprintf(stderr, "       knfmt [-Ddi]\n");
+	fprintf(stderr, "usage: knfmt [-Ddi] [file ...]\n");
 	exit(1);
 }
 
