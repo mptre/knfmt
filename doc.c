@@ -11,11 +11,11 @@
 TAILQ_HEAD(doc_list, doc);
 
 struct doc {
-	enum doc_type		 dc_type;
+	enum doc_type	 dc_type;
 
 	/* allocation trace */
-	int			 dc_lno;
-	const char		*dc_fun;
+	int		 dc_lno;
+	const char	*dc_fun;
 
 	/* children */
 	union {
@@ -36,7 +36,7 @@ struct doc {
 		int	dc_int;
 	};
 
-	TAILQ_ENTRY(doc)	 dc_entry;
+	TAILQ_ENTRY(doc) dc_entry;
 };
 
 struct doc_state_indent {
