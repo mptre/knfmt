@@ -1557,60 +1557,43 @@ lexer_keyword1(struct lexer *lx)
 static struct token *
 lexer_comment(struct lexer *lx, int block)
 {
-	struct lexer_state oldst, st;
+	struct lexer_state st;
 	struct token *tk;
-	int ncomments = 0;
-	int nlines;
+	int cstyle, nlines;
+	unsigned char ch;
 
 	/* Stamp the state which marks the start of comments. */
 	st = lx->lx_st;
 
+	lexer_eat_spaces(lx, NULL, block);
+
+	if (lexer_getc(lx, &ch) || ch != '/') {
+		lx->lx_st = st;
+		return 0;
+	}
+	if (lexer_getc(lx, &ch) || (ch != '/' && ch != '*')) {
+		lx->lx_st = st;
+		return 0;
+	}
+	cstyle = ch == '*';
+
+	ch = '\0';
 	for (;;) {
-		int cstyle;
-		unsigned char ch;
+		unsigned char peek;
 
-		/*
-		 * Stamp the state before consuming whitespace as peeking must
-		 * not cause any side effects.
-		 */
-		oldst = lx->lx_st;
-
-		lexer_eat_spaces(lx, NULL, block);
-
-		if (lexer_getc(lx, &ch) || ch != '/') {
-			lx->lx_st = oldst;
+		if (lexer_getc(lx, &peek))
 			break;
-		}
-		if (lexer_getc(lx, &ch) || (ch != '/' && ch != '*')) {
-			lx->lx_st = oldst;
-			break;
-		}
-		cstyle = ch == '*';
-
-		ch = '\0';
-		for (;;) {
-			unsigned char peek;
-
-			if (lexer_getc(lx, &peek))
+		if (cstyle) {
+			if (ch == '*' && peek == '/')
 				break;
-			if (cstyle) {
-				if (ch == '*' && peek == '/')
-					break;
-				ch = peek;
-			} else {
-				if (peek == '\n') {
-					lexer_ungetc(lx);
-					break;
-				}
+			ch = peek;
+		} else {
+			if (peek == '\n') {
+				lexer_ungetc(lx);
+				break;
 			}
 		}
-
-		ncomments++;
-		if (!block)
-			break;
 	}
-	if (ncomments == 0)
-		return NULL;
 
 	if (block) {
 		/*
