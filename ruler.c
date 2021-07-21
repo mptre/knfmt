@@ -12,6 +12,7 @@ struct ruler_datum {
 
 static int	isdecl(const struct token *);
 static int	isnexttoken(const struct token *, enum token_type);
+static int	minimize(const struct ruler_column *);
 
 void
 ruler_init(struct ruler *rl)
@@ -116,9 +117,11 @@ ruler_exec(struct ruler *rl)
 		if (rc->rc_ntabs == 0)
 			continue;
 
-		/* Round up the longest column to a multiple of 8. */
 		maxlen = rc->rc_len;
-		maxlen += 8 - (maxlen % 8);
+		if (!minimize(rc)) {
+			/* Round up the longest datum to a multiple of 8. */
+			maxlen += 8 - (maxlen % 8);
+		}
 
 		for (j = 0; j < rc->rc_datums.b_len; j++) {
 			struct ruler_datum *rd = &rc->rc_datums.b_ptr[j];
@@ -137,6 +140,37 @@ ruler_exec(struct ruler *rl)
 
 	/* Reset the ruler paving the way for reuse. */
 	ruler_init(rl);
+}
+
+static int
+minimize(const struct ruler_column *rc)
+{
+	size_t i;
+	unsigned int minspaces = 0;
+
+	if (rc->rc_datums.b_len < 2 ||
+	    rc->rc_nspaces == 0 ||
+	    rc->rc_len % 8 > 0)
+		return 0;
+
+	/* Find the longest datum with the smallest amount of spaces. */
+	for (i = 0; i < rc->rc_datums.b_len; i++) {
+		const struct ruler_datum *rd = &rc->rc_datums.b_ptr[i];
+
+		if (rc->rc_len == rd->rd_len &&
+		    (minspaces == 0 || rd->rd_nspaces < minspaces))
+			minspaces = rd->rd_nspaces;
+	}
+
+	/*
+	 * If the number of spaces required for the longest datum with smallest
+	 * amount of spaces is less than the maximum amount of spaces, other
+	 * datums will overlap.
+	 */
+	if (rc->rc_nspaces - minspaces < rc->rc_nspaces)
+		return 0;
+
+	return 1;
 }
 
 static int
