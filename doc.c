@@ -115,8 +115,9 @@ static int	doc_diff_group_enter(const struct doc *, struct doc_state *);
 static void	doc_diff_group_leave(const struct doc *, struct doc_state *,
     int);
 static void	doc_diff_literal(const struct doc *, struct doc_state *);
+static void	doc_diff_verbatim(const struct doc *, struct doc_state *);
 static void	doc_diff_exit(const struct doc *, struct doc_state *);
-static void	doc_diff_verbatim(const struct doc *, struct doc_state *,
+static void	doc_diff_emit(const struct doc *, struct doc_state *,
     unsigned int, unsigned int);
 static int	doc_diff_covers(const struct doc *, struct doc_diff *);
 static int	doc_diff_is_mute(const struct doc_state *);
@@ -478,6 +479,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_VERBATIM: {
 		unsigned int oldpos;
+
+		doc_diff_verbatim(dc, st);
 
 		if (doc_is_mute(st))
 			break;
@@ -932,7 +935,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * represents something intended to fit on a single line but the diff
 	 * chunk might only touch a subset of the group.
 	 */
-	doc_diff_verbatim(dc, st, st->st_diff.d_beg, dd.dd_first);
+	doc_diff_emit(dc, st, st->st_diff.d_beg, dd.dd_first);
 	st->st_pos = 0;
 	doc_indent(dc, st, st->st_indent.i_cur);
 	return 0;
@@ -957,7 +960,6 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 
 	if (!DOC_DIFF(st))
 		return;
-
 	if (lno == 0 || st->st_diff.d_end == 0)
 		return;
 
@@ -977,18 +979,32 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 }
 
 static void
+doc_diff_verbatim(const struct doc *dc, struct doc_state *st)
+{
+	unsigned int lno = dc->dc_tk.tk_lno;
+
+	if (!DOC_DIFF(st))
+		return;
+	if (lno == 0 || st->st_diff.d_end == 0)
+		return;
+
+	if (lno > st->st_diff.d_end)
+		doc_diff_leave(dc, st);
+}
+
+static void
 doc_diff_exit(const struct doc *dc, struct doc_state *st)
 {
 	if (!DOC_DIFF(st))
 		return;
-	doc_diff_verbatim(dc, st, st->st_diff.d_beg, 0);
+	doc_diff_emit(dc, st, st->st_diff.d_beg, 0);
 }
 
 /*
  * Emit everything between the given lines as is.
  */
 static void
-doc_diff_verbatim(const struct doc *dc, struct doc_state *st, unsigned int beg,
+doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
     unsigned int end)
 {
 	const char *str;
@@ -1035,7 +1051,8 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 	case DOC_DEDENT:
 		return doc_diff_covers(dc->dc_doc, dd);
 
-	case DOC_LITERAL: {
+	case DOC_LITERAL:
+	case DOC_VERBATIM: {
 		unsigned int lno = dc->dc_tk.tk_lno;
 
 		if (lno > 0) {
@@ -1046,14 +1063,6 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 				return 1;
 			}
 		}
-		break;
-	}
-
-	case DOC_VERBATIM: {
-		unsigned int lno = dc->dc_tk.tk_lno;
-
-		if (lno > 0 && dd->dd_first == 0)
-			dd->dd_first = lno;
 		break;
 	}
 
