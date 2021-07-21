@@ -1446,24 +1446,24 @@ out:
 static int
 lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 {
-	struct lexer_state st;
+	struct lexer_state oldst, st;
 	int nlines = 0;
 	unsigned char ch;
 
-	st = lx->lx_st;
+	oldst = st = lx->lx_st;
 
 	for (;;) {
 		if (lexer_getc(lx, &ch))
 			break;
 		if (ch == '\n') {
 			nlines++;
-			st = lx->lx_st;
+			oldst = lx->lx_st;
 		} else if (ch != ' ' && ch != '\t') {
 			lexer_ungetc(lx);
 			break;
 		}
 	}
-	lx->lx_st = st;
+	lx->lx_st = oldst;
 	if (nlines < threshold || lexer_eof(lx))
 		return 0;
 	if (tk != NULL)
