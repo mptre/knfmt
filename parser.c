@@ -733,7 +733,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
     struct ruler *rl, const struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *comma, *tk;
 	const struct token *stop;
 
 	for (;;) {
@@ -779,9 +779,8 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 
 	ruler_insert(rl, tk, dc, 1, parser_width(pr, dc), 0);
 
-	stop = rbrace;
-	if (lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &tk))
-		stop = tk;
+	stop = lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &comma) ?
+	    comma : rbrace;
 	if (parser_exec_decl_init(pr, dc, stop, 1))
 		return parser_error(pr);
 
