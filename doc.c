@@ -111,21 +111,24 @@ static int	doc_has_list(const struct doc *);
 	(((st)->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&		\
 	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
 
-static int	doc_diff_group_enter(const struct doc *, struct doc_state *);
-static void	doc_diff_group_leave(const struct doc *, struct doc_state *,
-    int);
-static void	doc_diff_literal(const struct doc *, struct doc_state *);
-static void	doc_diff_verbatim(const struct doc *, struct doc_state *);
-static void	doc_diff_exit(const struct doc *, struct doc_state *);
-static void	doc_diff_emit(const struct doc *, struct doc_state *,
+static int		doc_diff_group_enter(const struct doc *,
+    struct doc_state *);
+static void		doc_diff_group_leave(const struct doc *,
+    struct doc_state *, int);
+static void		doc_diff_literal(const struct doc *,
+    struct doc_state *);
+static unsigned int	doc_diff_verbatim(const struct doc *,
+    struct doc_state *);
+static void		doc_diff_exit(const struct doc *, struct doc_state *);
+static void		doc_diff_emit(const struct doc *, struct doc_state *,
     unsigned int, unsigned int);
-static int	doc_diff_covers(const struct doc *, struct doc_diff *);
-static int	doc_diff_is_mute(const struct doc_state *);
+static int		doc_diff_covers(const struct doc *, struct doc_diff *);
+static int		doc_diff_is_mute(const struct doc_state *);
 
-#define doc_diff_leave(a, b) \
-	__doc_diff_leave((a), (b), __func__)
+#define doc_diff_leave(a, b, c) \
+	__doc_diff_leave((a), (b), (c), __func__)
 static void	__doc_diff_leave(const struct doc *, struct doc_state *,
-    const char *);
+    unsigned int, const char *);
 
 #define DOC_PRINT_FLAG_INDENT	0x00000001u
 #define DOC_PRINT_FLAG_NEWLINE	0x00000002u
@@ -161,6 +164,8 @@ static char		*docstr(const struct doc *, char *, size_t);
 static const char	*intstr(const struct doc *);
 static const char	*statestr(const struct doc_state *, unsigned int,
     char *, size_t);
+
+static unsigned int	countlines(const char *, size_t);
 
 void
 doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
@@ -478,9 +483,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_VERBATIM: {
-		unsigned int oldpos;
+		unsigned int end, oldpos;
 
-		doc_diff_verbatim(dc, st);
+		end = doc_diff_verbatim(dc, st);
 
 		if (doc_is_mute(st))
 			break;
@@ -539,6 +544,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			st->st_pos = 0;
 			doc_indent(dc, st, indent);
 		}
+
+		if (end > 0)
+			doc_diff_leave(dc, st, end);
 
 		break;
 	}
@@ -881,7 +889,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		 * due to reformatting make sure to reset the state.
 		 */
 		if (st->st_diff.d_end > 0)
-			doc_diff_leave(dc, st);
+			doc_diff_leave(dc, st, 1);
 		return 0;
 	case -1:
 		/*
@@ -974,22 +982,41 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 			st->st_diff.d_end = lno;
 		}
 	} else if (lno > st->st_diff.d_end) {
-		doc_diff_leave(dc, st);
+		doc_diff_leave(dc, st, 1);
 	}
 }
 
-static void
+static unsigned int
 doc_diff_verbatim(const struct doc *dc, struct doc_state *st)
 {
 	unsigned int lno = dc->dc_tk.tk_lno;
+	unsigned int n;
 
 	if (!DOC_DIFF(st))
-		return;
+		return 0;
 	if (lno == 0 || st->st_diff.d_end == 0)
-		return;
+		return 0;
 
-	if (lno > st->st_diff.d_end)
-		doc_diff_leave(dc, st);
+	if (lno > st->st_diff.d_end) {
+		doc_diff_leave(dc, st, 1);
+		return 0;
+	}
+
+	/*
+	 * A verbatim document could contain one or many hard line(s) which can
+	 * takes us beyond the diff chunk. Signal that after emitting this
+	 * document the diff chunk must be left.
+	 */
+	n = countlines(dc->dc_str, dc->dc_len);
+	if (n > 0 && lno + n > st->st_diff.d_end) {
+		unsigned int end;
+
+		end = (lno + n) - st->st_diff.d_end;
+		doc_trace(dc, st, "%s: postpone leave: end %u", __func__, end);
+		return end;
+	}
+
+	return 0;
 }
 
 static void
@@ -1093,14 +1120,16 @@ doc_diff_is_mute(const struct doc_state *st)
 }
 
 static void
-__doc_diff_leave(const struct doc *dc, struct doc_state *st, const char *fun)
+__doc_diff_leave(const struct doc *dc, struct doc_state *st, unsigned int end,
+    const char *fun)
 {
 	assert(st->st_diff.d_end > 0);
-	st->st_diff.d_beg = st->st_diff.d_end + 1;
+	st->st_diff.d_beg = st->st_diff.d_end + end;
 	st->st_diff.d_end = 0;
 	st->st_mute = st->st_diff.d_mute;
 	st->st_diff.d_mute = 0;
-	doc_trace(dc, st, "%s: leave chunk: beg %u", fun, st->st_diff.d_beg);
+	doc_trace(dc, st, "doc_diff_leave: %s: leave chunk: beg %u",
+	    fun, st->st_diff.d_beg);
 }
 
 static int
@@ -1379,4 +1408,22 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 	return buf;
+}
+
+static unsigned int
+countlines(const char *str, size_t len)
+{
+	unsigned int nlines = 0;
+
+	while (len > 0) {
+		const char *p;
+
+		p = memchr(str, '\n', len);
+		if (p == NULL)
+			break;
+		nlines++;
+		len -= (p - str) + 1;
+		str = p + 1;
+	}
+	return nlines;
 }

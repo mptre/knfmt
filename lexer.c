@@ -445,7 +445,6 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 {
 	const struct buffer *bf = lx->lx_bf;
 	size_t bo, eo;
-	const char *p;
 
 	if ((lx->lx_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) == 0)
 		return 0;
@@ -455,15 +454,7 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 		eo = bf->bf_len;
 	else
 		eo = lx->lx_lines.l_off[end - 1];
-	p = &bf->bf_ptr[bo];
-	/*
-	 * Skip empty lines, mimicking lexer_eat_lines() in which a sequence of
-	 * one or many empty lines are represented by a single token.
-	 */
-	for (; p[0] == '\n'; p++, bo++)
-		continue;
-
-	*str = p;
+	*str = &bf->bf_ptr[bo];
 	*len = eo - bo;
 	return 1;
 }

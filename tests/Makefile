@@ -21,6 +21,7 @@ TESTS+=	diff-020.c
 TESTS+=	diff-021.c
 TESTS+=	diff-022.c
 TESTS+=	diff-023.c
+TESTS+=	diff-024.c
 
 TESTS+=	error-001.c
 TESTS+=	error-002.c
