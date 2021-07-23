@@ -1,3 +1,42 @@
+# v0.5.0 - 2021-07-23
+
+## Bug fixes
+
+- Assume that everything fits while having pending new line(s).
+  (0172dd5)
+  (Alexandre Ratchov, Anton Lindqvist)
+
+- Do not allow new lines before the opening brace as part of an if statement.
+  (8b7824b)
+  (Anton Lindqvist)
+
+- Break long binary expressions even if spaces around the operator are absent.
+  (db0787a)
+  (Anton Lindqvist)
+
+- Fix nested parenthesis alignment.
+  (741c751, 6912015)
+  (Anton Lindqvist)
+
+## News
+
+- Add support for reformatting only changed lines given a diff.
+  Inspired by clang-format-diff and others alike.
+  (7dc490f)
+  (Anton Lindqvist)
+
+- Remove empty lines in the beginning and end of blocks.
+  (440b5ab, 6d61b6f)
+  (Anton Lindqvist)
+
+- Minimize alignment for declarations.
+  (d981eec)
+  (Anton Lindqvist)
+
+- Honor new lines after assignment operators.
+  (8ced949)
+  (Anton Lindqvist)
+
 # v0.4.0 - 2021-07-06
 
 ## News
