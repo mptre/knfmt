@@ -31,6 +31,12 @@ The implementation is further described in [DESIGN][design].
 
 ## Installation
 
+### OpenBSD
+
+```
+# pkg_add knfmt
+```
+
 ### From source
 
 The installation prefix defaults to `/usr/local` and can be altered using the
