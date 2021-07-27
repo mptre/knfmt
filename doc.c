@@ -466,6 +466,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		doc_trim(dc, st);
 		oldindent = st->st_indent.i_cur;
 		st->st_indent.i_cur = 0;
+		st->st_indent.i_pre = 0;
 		doc_exec1(dc->dc_doc, st);
 		st->st_indent.i_cur = oldindent;
 		break;
