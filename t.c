@@ -185,6 +185,8 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("int (*f(void))(void)", "int");
 	error |= test_lexer_peek_if_type("void (*f[1])(void)",
 	    "void ( * f [ 1 ] ) ( void )");
+	error |= test_lexer_peek_if_type("void (*)",
+	    "void ( * )");
 
 	error |= test_lexer_read("<", "LESS");
 	error |= test_lexer_read("<x", "LESS IDENT");

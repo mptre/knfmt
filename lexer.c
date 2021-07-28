@@ -905,7 +905,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk)
 
 			/* Consume the identifier, i.e. preprocessor macro. */
 			lexer_if(lx, TOKEN_IDENT, &t);
-		} else if (lexer_peek_if_func_ptr(lx, &t)) {
+		} else if (ntokens > 0 && lexer_peek_if_func_ptr(lx, &t)) {
 			struct token *align;
 
 			/*
@@ -1852,14 +1852,15 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 			lexer_if(lx, TOKEN_LITERAL, NULL);
 			lexer_if(lx, TOKEN_RSQUARE, NULL);
 		}
-		if (lexer_if(lx, TOKEN_RPAREN, NULL) &&
-		    lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
-		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, tk)) {
-			/*
-			 * Annotate the left parenthesis, used by
-			 * parser_exec_type().
-			 */
-			lparen->tk_flags |= TOKEN_FLAG_TYPE_ARGS;
+		if (lexer_if(lx, TOKEN_RPAREN, tk)) {
+			if (lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
+			    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, tk)) {
+				/*
+				 * Annotate the left parenthesis, used by
+				 * parser_exec_type().
+				 */
+				lparen->tk_flags |= TOKEN_FLAG_TYPE_ARGS;
+			}
 			peek = 1;
 		}
 	}
