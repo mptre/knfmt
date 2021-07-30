@@ -818,8 +818,9 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *tk;
+	struct token *end, *ident, *tk;
 	struct doc *expr = dc;
+	int semi = 1;
 	int iscpp = 0;
 	int isxmacro = 0;
 
@@ -827,9 +828,20 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
 	    NULL))
 		continue;
-	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end)) {
 		if (lexer_if(lx, TOKEN_SEMI, NULL)) {
+			iscpp = 1;
+		} else if (lexer_peek(lx, &tk) &&
+		    token_cmp(end, tk) < 0 && tk->tk_cno <= ident->tk_cno) {
+			/*
+			 * Lacking semicolon, assume it's a cpp declaration
+			 * since the next token resides on a new line and has
+			 * the same or less indentation. This is of importance
+			 * in order to not confuse loop constructs hidden behind
+			 * cpp as a declaration.
+			 */
+			semi = 0;
 			iscpp = 1;
 		} else {
 			struct lexer_state ss;
@@ -857,10 +869,9 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 		 * Detect X macro, must be followed by nothing at all or by
 		 * another macro.
 		 */
-		if (!iscpp &&
-		    (lexer_if(lx, TOKEN_EOF, NULL) ||
-		     (lexer_if(lx, TOKEN_IDENT, NULL) &&
-		      lexer_if(lx, TOKEN_LPAREN, NULL)))) {
+		if (lexer_if(lx, TOKEN_EOF, NULL) ||
+		    (lexer_if(lx, TOKEN_IDENT, NULL) &&
+		     lexer_if(lx, TOKEN_LPAREN, NULL))) {
 			iscpp = 1;
 			isxmacro = 1;
 		}
@@ -876,7 +887,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	if (parser_exec_decl_init(pr, dc, NULL, 0))
 		return parser_error(pr);
-	if (lexer_expect(lx, TOKEN_SEMI, &tk))
+	if (semi && lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, expr);
 
 	return parser_ok(pr);

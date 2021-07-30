@@ -75,8 +75,6 @@ static int	lexer_buffer_strcmp(const struct lexer *,
 
 static struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
     const struct token *);
-static struct token	*lexer_emit_fake(struct lexer *, enum token_type,
-    struct token *);
 static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
@@ -84,8 +82,6 @@ static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 
 static struct token	*lexer_recover_fold(struct lexer *, struct token *,
     struct token *, struct token *, struct token *);
-static int		 lexer_recover_hard(struct lexer *,
-    struct lexer_recover_markers *);
 static void		 lexer_recover_reset(struct lexer *, struct token *);
 
 static struct token	*lexer_branch_find(struct token *, int);
@@ -569,7 +565,7 @@ __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
 	if (br == NULL)
 		br = lexer_branch_find(back, 0);
 	if (br == NULL)
-		return lexer_recover_hard(lx, lm);
+		return 0;
 
 	src = br->tk_token;
 	dst = br->tk_branch.br_nx->tk_token;
@@ -1777,31 +1773,6 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	return t;
 }
 
-static struct token *
-lexer_emit_fake(struct lexer *lx, enum token_type type, struct token *after)
-{
-	struct token *t;
-	struct token_hash *th, *tmp;
-
-	HASH_ITER(th_hh, tokens, th, tmp) {
-		if (th->th_tk.tk_type == type)
-			break;
-	}
-	assert(th != NULL);
-
-	t = calloc(1, sizeof(*t));
-	if (t == NULL)
-		err(1, NULL);
-	t->tk_type = type;
-	t->tk_flags = TOKEN_FLAG_FAKE;
-	t->tk_str = th->th_tk.tk_str;
-	t->tk_len = th->th_tk.tk_len;
-	TAILQ_INIT(&t->tk_prefixes);
-	TAILQ_INIT(&t->tk_suffixes);
-	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, t, tk_entry);
-	return t;
-}
-
 static void
 lexer_emit_error(struct lexer *lx, enum token_type type,
     const struct token *tk, const char *fun, int lno)
@@ -1979,81 +1950,6 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 	dst->tk_flags |= flags;
 
 	return prefix;
-}
-
-static int
-lexer_recover_hard(struct lexer *lx, struct lexer_recover_markers *lm)
-{
-	struct token *seek = NULL;
-	int m;
-
-	/* Use the last marker. */
-	for (m = NMARKERS - 1; m >= 0; m--) {
-		seek = lm->lm_markers[m];
-		if (seek != NULL)
-			break;
-	}
-	if (seek == NULL)
-		return 0;
-
-	if (lx->lx_expect != TOKEN_NONE) {
-		struct token *back, *expect, *prefix;
-		size_t off;
-
-		/*
-		 * Recover by turning everything from the unconsumed token to
-		 * the expected token into a prefix.
-		 */
-		if (!lexer_back(lx, &back) ||
-		    !lexer_peek_until(lx, lx->lx_expect, &expect))
-			return 0;
-
-		/* Play it safe, do nothing while crossing a line. */
-		if (token_cmp(back, expect))
-			return 0;
-
-		lexer_trace(lx, "back %s, expect %s", token_sprintf(back),
-		    token_sprintf(expect));
-
-		prefix = lexer_recover_fold(lx, back, NULL, expect, NULL);
-		/*
-		 * Ugliness ahead, preserve any white space preceding the
-		 * prefix.
-		 */
-		for (off = prefix->tk_off; off > 0; off--) {
-			if (!isspace((unsigned char)prefix->tk_str[-1]))
-				break;
-
-			prefix->tk_str--;
-			prefix->tk_len++;
-		}
-
-		lx->lx_expect = TOKEN_NONE;
-	} else {
-		struct lexer_state s;
-		struct token *rparen, *semi;
-		int peek = 0;
-
-		/*
-		 * Recover from preprocessor declaration lacking a trailing
-		 * semicolon by injecting a fake semicolon.
-		 */
-		lexer_peek_enter(lx, &s);
-		if (lexer_if(lx, TOKEN_IDENT, NULL) &&
-		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
-		    !lexer_if(lx, TOKEN_SEMI, NULL))
-			peek = 1;
-		lexer_peek_leave(lx, &s);
-		if (!peek)
-			return 0;
-
-		semi = lexer_emit_fake(lx, TOKEN_SEMI, rparen);
-		lexer_trace(lx, "added %s after %s", token_sprintf(semi),
-		    token_sprintf(rparen));
-	}
-
-	lexer_recover_reset(lx, seek);
-	return 1;
 }
 
 static void
