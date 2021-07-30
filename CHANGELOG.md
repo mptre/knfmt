@@ -1,3 +1,19 @@
+# v0.5.1 - 2021-07-30
+
+## Bug fixes
+
+- Fix diff mode bug caused by a diff chunk only adding cpp directives.
+  (b3d23d9)
+  (Anton Lindqvist)
+
+- Fix incorrect indentation for block comments followed by goto labels.
+  (4de9d61)
+  (Anton Lindqvist)
+
+- Recognize function pointer types without arguments.
+  (adaa6ee)
+  (Anton Lindqvist)
+
 # v0.5.0 - 2021-07-23
 
 ## Bug fixes
