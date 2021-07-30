@@ -899,7 +899,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk)
 			if (!ident)
 				break;
 
-			/* Consume the identifier, i.e. preprocessor macro. */
+			/* Identifier is part of the type, consume it. */
 			lexer_if(lx, TOKEN_IDENT, &t);
 		} else if (ntokens > 0 && lexer_peek_if_func_ptr(lx, &t)) {
 			struct token *align;
@@ -927,8 +927,8 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk)
 		peek = 0;
 	} else if (!peek && !unknown && ntokens > 0) {
 		/*
-		 * Nothing was found. However this is a sequence of identifiers (i.e.
-		 * unknown types) therefore treat it as a type.
+		 * Nothing was found. However this is a sequence of identifiers
+		 * (i.e. unknown types) therefore treat it as a type.
 		 */
 		peek = 1;
 	}
