@@ -1815,8 +1815,16 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 				 * parser_exec_type().
 				 */
 				lparen->tk_flags |= TOKEN_FLAG_TYPE_ARGS;
+
+				peek = 1;
+			} else if (!lexer_if(lx, TOKEN_SEMI, NULL)) {
+				/*
+				 * Function pointer lacking arguments wrapped in
+				 * parenthesis. Be careful here in order to not
+				 * confuse a function call statement.
+				 */
+				peek = 1;
 			}
-			peek = 1;
 		}
 	}
 	lexer_peek_leave(lx, &s);
