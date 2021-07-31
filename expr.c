@@ -825,7 +825,7 @@ iscast(struct expr_state *es)
 	int cast = 0;
 
 	lexer_peek_enter(es->es_lx, &s);
-	if (lexer_if_type(es->es_lx, NULL) &&
+	if (lexer_if_type(es->es_lx, NULL, 0) &&
 	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
 	    expr_peek(es->es_ea))
 		cast = 1;

@@ -819,7 +819,8 @@ lexer_peek(struct lexer *lx, struct token **tk)
  * Returns non-zero if the next token(s) denotes a type.
  */
 int
-lexer_peek_if_type(struct lexer *lx, struct token **tk)
+lexer_peek_if_type(struct lexer *lx, struct token **tk,
+    unsigned int UNUSED(flags))
 {
 	struct lexer_state s;
 	struct token *beg, *t;
@@ -939,11 +940,11 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk)
 }
 
 int
-lexer_if_type(struct lexer *lx, struct token **tk)
+lexer_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 {
 	struct token *t;
 
-	if (!lexer_peek_if_type(lx, &t))
+	if (!lexer_peek_if_type(lx, &t, flags))
 		return 0;
 	lx->lx_st.st_tok = t;
 	if (tk != NULL)

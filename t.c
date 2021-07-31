@@ -14,11 +14,11 @@
 static int	__test_expr_exec(const char *, const char *, const char *, int);
 
 #define test_lexer_peek_if_type(a, b)					\
-	__test_lexer_peek_if_type((a), (b), "test_lexer_peek_if_type",	\
-		__LINE__);						\
+	__test_lexer_peek_if_type((a), (b), 0,				\
+		"test_lexer_peek_if_type", __LINE__);			\
 	if (xflag && error) goto out
 static int	__test_lexer_peek_if_type(const char *, const char *,
-    const char *, int);
+    unsigned int, const char *, int);
 
 #define test_lexer_read(a, b)						\
 	__test_lexer_read((a), (b), "test_lexer_read",			\
@@ -251,8 +251,8 @@ out:
 }
 
 static int
-__test_lexer_peek_if_type(const char *src, const char *exp, const char *fun,
-    int lno)
+__test_lexer_peek_if_type(const char *src, const char *exp, unsigned int flags,
+    const char *fun, int lno)
 {
 	struct parser_stub ps;
 	struct buffer *bf = NULL;
@@ -263,7 +263,7 @@ __test_lexer_peek_if_type(const char *src, const char *exp, const char *fun,
 
 	parser_stub_create(&ps, src);
 
-	if (!lexer_peek_if_type(ps.ps_lx, &end)) {
+	if (!lexer_peek_if_type(ps.ps_lx, &end, flags)) {
 		warnx("%s:%d: lexer_peek_if_type() failure", fun, lno);
 		error = 1;
 		goto out;

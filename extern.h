@@ -244,8 +244,8 @@ void	lexer_peek_leave(struct lexer *, struct lexer_state *);
 
 int	lexer_peek(struct lexer *, struct token **);
 
-int	lexer_peek_if_type(struct lexer *, struct token **);
-int	lexer_if_type(struct lexer *, struct token **);
+int	lexer_peek_if_type(struct lexer *, struct token **, unsigned int);
+int	lexer_if_type(struct lexer *, struct token **, unsigned int);
 
 int	lexer_peek_if(struct lexer *, enum token_type, struct token **);
 int	lexer_if(struct lexer *, enum token_type, struct token **);
