@@ -1442,7 +1442,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			.ea_cf		= pr->pr_cf,
 			.ea_lx		= lx,
 			.ea_dc		= NULL,
-			.ea_stop	= NULL,
+			.ea_stop	= tk,
 			.ea_recover	= parser_exec_expr_recover,
 			.ea_arg		= pr,
 			.ea_flags	= 0,
