@@ -17,6 +17,10 @@ static int	__test_expr_exec(const char *, const char *, const char *, int);
 	__test_lexer_peek_if_type((a), (b), 0,				\
 		"test_lexer_peek_if_type", __LINE__);			\
 	if (xflag && error) goto out
+#define test_lexer_peek_if_type_flags(a, b, c)				\
+	__test_lexer_peek_if_type((b), (c), (a),			\
+		"test_lexer_peek_if_type", __LINE__);			\
+	if (xflag && error) goto out
 static int	__test_lexer_peek_if_type(const char *, const char *,
     unsigned int, const char *, int);
 
@@ -187,6 +191,9 @@ main(int argc, char *argv[])
 	    "void ( * f [ 1 ] ) ( void )");
 	error |= test_lexer_peek_if_type("void (*)",
 	    "void ( * )");
+
+	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_CAST,
+	    "const foo_t)", "const foo_t");
 
 	error |= test_lexer_read("<", "LESS");
 	error |= test_lexer_read("<x", "LESS IDENT");

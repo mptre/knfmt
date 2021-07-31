@@ -220,7 +220,7 @@ parser_exec(struct parser *pr)
  * 	cast expression followed by brace initializer
  */
 struct doc *
-parser_exec_expr_recover(void *arg)
+parser_exec_expr_recover(unsigned int flags, void *arg)
 {
 	struct doc *dc = NULL;
 	struct parser *pr = arg;
@@ -237,7 +237,8 @@ parser_exec_expr_recover(void *arg)
 			dc = doc_alloc(DOC_CONCAT, NULL);
 			doc_token(tk, dc);
 		}
-	} else if (lexer_peek_if_type(lx, &tk, 0)) {
+	} else if (lexer_peek_if_type(lx, &tk,
+	    (flags & EXPR_RECOVER_FLAG_CAST) ? LEXER_TYPE_FLAG_CAST : 0)) {
 		struct token *nx, *pv;
 
 		if (!lexer_peek(lx, &pv))

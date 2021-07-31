@@ -79,6 +79,7 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
+static int	lexer_peek_if_type_ident(struct lexer *lx);
 
 static struct token	*lexer_recover_fold(struct lexer *, struct token *,
     struct token *, struct token *, struct token *);
@@ -819,8 +820,7 @@ lexer_peek(struct lexer *lx, struct token **tk)
  * Returns non-zero if the next token(s) denotes a type.
  */
 int
-lexer_peek_if_type(struct lexer *lx, struct token **tk,
-    unsigned int UNUSED(flags))
+lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 {
 	struct lexer_state s;
 	struct token *beg, *t;
@@ -833,13 +833,12 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk,
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
-		unsigned int flags = TOKEN_FLAG_TYPE | TOKEN_FLAG_QUALIFIER |
-		    TOKEN_FLAG_STORAGE;
-
 		if (lexer_peek_if(lx, TOKEN_EOF, NULL))
 			break;
 
-		if (lexer_if_flags(lx, flags, &t)) {
+		if (lexer_if_flags(lx,
+		    TOKEN_FLAG_TYPE | TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
+		    &t)) {
 			if (t->tk_flags & TOKEN_FLAG_IDENT)
 				lexer_if(lx, TOKEN_IDENT, &t);
 			/* Recognize constructs like `struct s[]' for instance. */
@@ -879,25 +878,9 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk,
 				break;
 			}
 
-			/*
-			 * Ensure this is not an identifier which is not part of
-			 * the type.
-			 */
-			ident = 1;
-			lexer_peek_enter(lx, &ss);
-			if (lexer_if(lx, TOKEN_IDENT, NULL) &&
-			    (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, NULL) ||
-			     lexer_if(lx, TOKEN_LSQUARE, NULL) ||
-			     (lexer_if(lx, TOKEN_LPAREN, NULL) &&
-			      !lexer_peek_if(lx, TOKEN_STAR, NULL)) ||
-			     lexer_if(lx, TOKEN_RPAREN, NULL) ||
-			     lexer_if(lx, TOKEN_SEMI, NULL) ||
-			     lexer_if(lx, TOKEN_COMMA, NULL) ||
-			     lexer_if(lx, TOKEN_COLON, NULL) ||
-			     lexer_if(lx, TOKEN_ATTRIBUTE, NULL)))
-				ident = 0;
-			lexer_peek_leave(lx, &ss);
-			if (!ident)
+			/* Ensure this is not the identifier after the type. */
+			if ((flags & LEXER_TYPE_FLAG_CAST) == 0 &&
+			    lexer_peek_if_type_ident(lx))
 				break;
 
 			/* Identifier is part of the type, consume it. */
@@ -1836,6 +1819,29 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 			peek = 1;
 		}
 	}
+	lexer_peek_leave(lx, &s);
+
+	return peek;
+}
+
+static int
+lexer_peek_if_type_ident(struct lexer *lx)
+{
+	struct lexer_state s;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, NULL) ||
+	     lexer_if(lx, TOKEN_LSQUARE, NULL) ||
+	     (lexer_if(lx, TOKEN_LPAREN, NULL) &&
+	      !lexer_peek_if(lx, TOKEN_STAR, NULL)) ||
+	     lexer_if(lx, TOKEN_RPAREN, NULL) ||
+	     lexer_if(lx, TOKEN_SEMI, NULL) ||
+	     lexer_if(lx, TOKEN_COMMA, NULL) ||
+	     lexer_if(lx, TOKEN_COLON, NULL) ||
+	     lexer_if(lx, TOKEN_ATTRIBUTE, NULL)))
+		peek = 1;
 	lexer_peek_leave(lx, &s);
 
 	return peek;

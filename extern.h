@@ -244,6 +244,8 @@ void	lexer_peek_leave(struct lexer *, struct lexer_state *);
 
 int	lexer_peek(struct lexer *, struct token **);
 
+#define LEXER_TYPE_FLAG_CAST	0x00000001u
+
 int	lexer_peek_if_type(struct lexer *, struct token **, unsigned int);
 int	lexer_if_type(struct lexer *, struct token **, unsigned int);
 
@@ -284,7 +286,7 @@ struct parser		*parser_alloc(const struct file *, struct error *,
     const struct config *);
 void			 parser_free(struct parser *);
 const struct buffer	*parser_exec(struct parser *);
-struct doc		*parser_exec_expr_recover(void *);
+struct doc		*parser_exec_expr_recover(unsigned int, void *);
 
 struct lexer	*parser_get_lexer(struct parser *);
 
@@ -303,8 +305,9 @@ struct expr_exec_arg {
 	 * same callback returns a document implies that the expression parser
 	 * can continue.
 	 */
-	struct doc		*(*ea_recover)(void *);
+	struct doc		*(*ea_recover)(unsigned int, void *);
 	void			*ea_arg;
+#define EXPR_RECOVER_FLAG_CAST	0x00000001u
 
 	unsigned int		 ea_flags;
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
