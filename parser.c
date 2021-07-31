@@ -869,9 +869,10 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 		 * Detect X macro, must be followed by nothing at all or by
 		 * another macro.
 		 */
-		if (lexer_if(lx, TOKEN_EOF, NULL) ||
-		    (lexer_if(lx, TOKEN_IDENT, NULL) &&
-		     lexer_if(lx, TOKEN_LPAREN, NULL))) {
+		if (!semi &&
+		    (lexer_if(lx, TOKEN_EOF, NULL) ||
+		     (lexer_if(lx, TOKEN_IDENT, NULL) &&
+		      lexer_if(lx, TOKEN_LPAREN, NULL)))) {
 			iscpp = 1;
 			isxmacro = 1;
 		}
