@@ -76,8 +76,7 @@ static int	parser_exec_func_arg(struct parser *, struct doc *,
 #define PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE	0x00000001u
 #define PARSER_EXEC_STMT_EXPR_FLAG_ELSE		0x00000002u
 
-static int	parser_exec_stmt(struct parser *, struct doc *);
-static int	parser_exec_stmt1(struct parser *, struct doc *,
+static int	parser_exec_stmt(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_block(struct parser *, struct doc *,
     struct doc *, unsigned int);
@@ -1210,13 +1209,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 }
 
 static int
-parser_exec_stmt(struct parser *pr, struct doc *dc)
-{
-	return parser_exec_stmt1(pr, dc, NULL);
-}
-
-static int
-parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
+parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
@@ -1254,7 +1247,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 					    dc);
 					doc_alloc(DOC_HARDLINE, dc);
 				}
-				if (parser_exec_stmt1(pr, dc, stop))
+				if (parser_exec_stmt(pr, dc, stop))
 					return parser_error(pr);
 			}
 		}
@@ -1331,7 +1324,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 			doc_alloc(DOC_HARDLINE, dc);
 		}
-		return parser_exec_stmt1(pr, dc, stop);
+		return parser_exec_stmt(pr, dc, stop);
 	}
 
 	if (parser_exec_stmt_case(pr, dc, stop) == PARSER_OK)
@@ -1351,7 +1344,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 
 			indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 			doc_alloc(DOC_HARDLINE, indent);
-			error = parser_exec_stmt1(pr, indent, stop);
+			error = parser_exec_stmt(pr, indent, stop);
 			doc_alloc(DOC_HARDLINE, dc);
 		}
 		if (error)
@@ -1417,7 +1410,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			struct doc *indent;
 
 			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
-			return parser_exec_stmt1(pr, indent, stop);
+			return parser_exec_stmt(pr, indent, stop);
 		}
 
 		return parser_ok(pr);
@@ -1519,7 +1512,7 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 	indent = flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH ? tail :
 	    doc_alloc_indent(pr->pr_cf->cf_tw, tail);
 	line = doc_alloc(DOC_HARDLINE, indent);
-	while (parser_exec_stmt1(pr, indent, rbrace) == PARSER_OK) {
+	while (parser_exec_stmt(pr, indent, rbrace) == PARSER_OK) {
 		nstmt++;
 
 		if (lexer_branch(lx, &seek))
@@ -1618,7 +1611,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 		doc_alloc(DOC_HARDLINE, indent);
-		return parser_exec_stmt(pr, indent);
+		return parser_exec_stmt(pr, indent, NULL);
 	}
 }
 
@@ -1671,7 +1664,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_alloc(DOC_LINE, lhs);
-		return parser_exec_stmt1(pr, dc, stop);
+		return parser_exec_stmt(pr, dc, stop);
 	}
 
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
@@ -1695,7 +1688,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		else
 			line = doc_alloc(DOC_HARDLINE, indent);
 
-		if (parser_exec_stmt1(pr, indent, stop)) {
+		if (parser_exec_stmt(pr, indent, stop)) {
 			/* No statement, remove the line. */
 			doc_remove(line, indent);
 			break;
