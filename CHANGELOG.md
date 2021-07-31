@@ -1,3 +1,15 @@
+# v0.5.2 - 2021-07-31
+
+## Bug fixes
+
+- Recognize unknown types as part of a cast expression.
+  (63fec6e)
+  (Anton Lindqvist)
+
+- Do not confuse certain function calls and function pointers.
+  (86fead2)
+  (Anton Lindqvist)
+
 # v0.5.1 - 2021-07-30
 
 ## Bug fixes
