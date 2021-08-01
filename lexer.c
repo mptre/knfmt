@@ -505,7 +505,7 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
 	}
 
 	/* Find the first empty slot. */
-	for (i = 0; i < NMARKERS - 1; i++) {
+	for (i = 0; i < NMARKERS; i++) {
 		if (lm->lm_markers[i] == NULL)
 			break;
 	}
