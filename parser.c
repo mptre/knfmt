@@ -593,8 +593,9 @@ parser_exec_decl_braces1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	braces = doc_alloc(DOC_CONCAT, dc);
 
-	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace))
-		doc_token(lbrace, braces);
+	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
+		return parser_error(pr);
+	doc_token(lbrace, braces);
 
 	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL))
 		goto out;
