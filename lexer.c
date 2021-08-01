@@ -390,6 +390,8 @@ lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
 	/* Remove any pending broken branches. */
 	while ((br = TAILQ_FIRST(&lx->lx_branches)) != NULL) {
 		TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
+		while (token_branch_unlink(br->br_cpp) == 0)
+			continue;
 		free(br);
 	}
 
