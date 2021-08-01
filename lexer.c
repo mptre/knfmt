@@ -713,7 +713,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			return 0;
 
 		st->st_tok = TAILQ_NEXT(st->st_tok, tk_entry);
-		if (!token_is_branch(st->st_tok))
+		if (st->st_tok == NULL || !token_is_branch(st->st_tok))
 			goto out;
 
 		if (lx->lx_peek == 0) {
