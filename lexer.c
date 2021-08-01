@@ -516,21 +516,24 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
 void
 lexer_recover_purge(struct lexer_recover_markers *lm)
 {
-	for (;;) {
-		struct token *tk = lm->lm_markers[0];
-		int i;
+	struct lexer_recover_markers markers;
+	int i, j;
 
-		if (tk == NULL || (tk->tk_flags & TOKEN_FLAG_FREE) == 0)
+	memset(&markers, 0, sizeof(markers));
+
+	for (i = 0, j = 0; i < NMARKERS; i++) {
+		struct token *tk = lm->lm_markers[i];
+
+		if (tk == NULL)
 			break;
-
-		if (--tk->tk_markers == 0)
+		if ((tk->tk_flags & TOKEN_FLAG_FREE) == 0)
+			markers.lm_markers[j++] = tk;
+		else if (--tk->tk_markers == 0)
 			token_free(tk);
-
-		for (i = 0; i < NMARKERS - 1; i++) {
-			lm->lm_markers[i] = lm->lm_markers[i + 1];
-			lm->lm_markers[i + 1] = NULL;
-		}
 	}
+
+	for (i = 0; i < NMARKERS; i++)
+		lm->lm_markers[i] = markers.lm_markers[i];
 }
 
 /*
