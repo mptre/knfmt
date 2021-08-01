@@ -14,6 +14,9 @@ case "$(uname -s)" in
 OpenBSD)	export MALLOC_OPTIONS="RS";;
 esac
 
+# Use a distinct ASan exit code.
+export ASAN_OPTIONS="exitcode=66"
+
 _wrkdir="$(mktemp -dt knfmt.XXXXXX)"
 trap "rm -rf ${_wrkdir}" 0
 _out="${_wrkdir}/out"

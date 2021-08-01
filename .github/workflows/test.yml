@@ -68,7 +68,6 @@ jobs:
 
       - name: test
         env:
-          ASAN_OPTIONS: exitcode=66
           CC: ${{matrix.cc || matrix.compiler}}
           CFLAGS: -Werror -Wpedantic -Wshadow ${{matrix.cflags}}
           CPPFLAGS: ${{matrix.cppflags}}
