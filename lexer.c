@@ -1548,7 +1548,7 @@ lexer_comment(struct lexer *lx, int block)
 	int cstyle, nlines;
 	unsigned char ch;
 
-	/* Stamp the state which marks the start of comments. */
+	/* Stamp the state which marks the start of the comment. */
 	st = lx->lx_st;
 
 	lexer_eat_spaces(lx, NULL, block);
