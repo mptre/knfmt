@@ -259,12 +259,13 @@ token_is_decl(const struct token *tk, enum token_type type)
 
 /*
  * Remove all suffixes from the given token matching the given type and optional
- * flags.
+ * flags. Returns the number of removed suffixes.
  */
-void
+int
 token_trim(struct token *tk, enum token_type type, unsigned int flags)
 {
 	struct token *suffix, *tmp;
+	int ntrim = 0;
 
 	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
 		/*
@@ -278,8 +279,11 @@ token_trim(struct token *tk, enum token_type type, unsigned int flags)
 		    (flags == 0 || (suffix->tk_flags & flags))) {
 			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
 			token_free(suffix);
+			ntrim++;
 		}
 	}
+
+	return ntrim;
 }
 
 char *

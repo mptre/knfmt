@@ -183,7 +183,7 @@ int	 token_has_tabs(const struct token *);
 int	 token_has_spaces(const struct token *);
 int	 token_is_branch(const struct token *);
 int	 token_is_decl(const struct token *, enum token_type);
-void	 token_trim(struct token *, enum token_type, unsigned int);
+int	 token_trim(struct token *, enum token_type, unsigned int);
 char	*token_sprintf(const struct token *);
 
 /*

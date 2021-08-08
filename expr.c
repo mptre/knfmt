@@ -62,6 +62,10 @@ struct expr {
 	union {
 		struct expr	*ex_ternary;
 		struct doc	*ex_dc;
+		struct {
+			int	b_hardline;
+			int	b_space;
+		} ex_binary;
 		int		 ex_sizeof;
 	};
 };
@@ -86,6 +90,8 @@ struct expr_state {
 	unsigned int			 es_nest;	/* number of nested expressions */
 	unsigned int			 es_parens;	/* number of nested parenthesis */
 	unsigned int			 es_soft;	/* number of soft lines */
+	unsigned int			 es_flags;
+#define EXPR_STATE_FLAG_PEEK		0x00000001u
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -218,6 +224,7 @@ expr_peek(const struct expr_exec_arg *ea)
 
 	memset(&es, 0, sizeof(es));
 	es.es_ea = ea;
+	es.es_flags = EXPR_STATE_FLAG_PEEK;
 
 	ex = expr_exec1(&es, PC0);
 	error = lexer_get_error(es.es_lx);
@@ -317,16 +324,35 @@ expr_exec_binary(struct expr_state *es, struct expr *lhs)
 	struct token *pv;
 	enum expr_pc pc;
 	int iscomma = es->es_tk->tk_type == TOKEN_COMMA;
+	int hardline = 0;
+	int space = 0;
 
 	/* Never break before the binary operator. */
-	pv = TAILQ_PREV(es->es_tk, token_list, tk_entry);
-	token_trim(pv, TOKEN_SPACE, TOKEN_FLAG_OPTLINE);
+	if ((es->es_flags & EXPR_STATE_FLAG_PEEK) == 0) {
+		unsigned int lno;
+
+		pv = TAILQ_PREV(es->es_tk, token_list, tk_entry);
+		lno = es->es_tk->tk_lno - pv->tk_lno;
+		if (token_trim(pv, TOKEN_SPACE, TOKEN_FLAG_OPTLINE) > 0 &&
+		    lno == 1) {
+			/*
+			 * The operator is not positioned at the end of the
+			 * line. Push it to the previous line and preserve
+			 * spaces before it.
+			 */
+			hardline = 1;
+			if (token_has_spaces(es->es_tk))
+				space = 1;
+		}
+	}
 
 	pc = PC(es->es_er->er_pc);
 	if (es->es_er->er_rassoc)
 		pc--;
 
 	ex = expr_alloc(iscomma ? EXPR_ARG : EXPR_BINARY, es);
+	ex->ex_binary.b_hardline = hardline;
+	ex->ex_binary.b_space = space;
 	ex->ex_lhs = lhs;
 	ex->ex_rhs = expr_exec1(es, pc);
 	if (ex->ex_rhs == NULL) {
@@ -594,7 +620,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		} else {
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			if (dospace)
+			if (ex->ex_binary.b_hardline)
+				doc_alloc(DOC_HARDLINE, concat);
+			else if (dospace)
 				doc_alloc(DOC_LINE, concat);
 			else
 				doc_alloc(DOC_SOFTLINE, concat);
@@ -772,11 +800,21 @@ expr_doc_has_spaces(const struct expr *ex)
 {
 	struct token *pv;
 
+	/*
+	 * Only applicable to binary operators where spaces around it are
+	 * permitted.
+	 */
 	if ((ex->ex_tk->tk_flags & TOKEN_FLAG_SPACE) == 0)
 		return 1;
 
 	pv = TAILQ_PREV(ex->ex_tk, token_list, tk_entry);
-	return token_has_spaces(pv);
+	if (token_has_spaces(pv))
+		return 1;
+
+	if (ex->ex_type == EXPR_BINARY && ex->ex_binary.b_space)
+		return 1;
+
+	return 0;
 }
 
 /*
