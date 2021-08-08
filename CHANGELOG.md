@@ -1,3 +1,28 @@
+# v0.5.3 - 2021-08-08
+
+## Bug fixes
+
+- Fix function pointer type detection regression.
+  (5fe68c7)
+  (Anton Lindqvist)
+
+- Improve detection of unknown types.
+  (af73977)
+  (Anton Lindqvist)
+
+- Preserve spaces around misplaced binary operators.
+  (926a879)
+  (Anton Lindqvist)
+
+- Preserve new lines before comments placed at the end of a statement
+  block.
+  (8787cec)
+  (Anton Lindqvist)
+
+- Do not emit a new line before a field expression.
+  (d622edf)
+  (Anton Lindqvist)
+
 # v0.5.2 - 2021-07-31
 
 ## Bug fixes
