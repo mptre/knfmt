@@ -127,6 +127,8 @@ static const struct expr_rule	*expr_rule_find(const struct token *, int);
 static int	iscast(struct expr_state *);
 static int	isliteral(const struct token *);
 
+static const char	*strexpr(enum expr_type);
+
 static const struct expr_rule	rules[] = {
 	{ PC0 | PCUNARY,	0,	TOKEN_LITERAL,	expr_exec_literal },
 	{ PC1,			0,	TOKEN_LITERAL,	expr_exec_concat },
@@ -586,6 +588,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	struct doc *concat, *group;
 
 	group = doc_alloc(DOC_GROUP, parent);
+	doc_annotate(group, strexpr(ex->ex_type));
 	concat = doc_alloc(DOC_CONCAT, group);
 
 	/*
@@ -879,4 +882,29 @@ isliteral(const struct token *tk)
 	return tk->tk_type == TOKEN_IDENT ||
 	    tk->tk_type == TOKEN_LITERAL ||
 	    tk->tk_type == TOKEN_STRING;
+}
+
+static const char *
+strexpr(enum expr_type type)
+{
+	switch (type) {
+#define CASE(t) case t: return #t
+	CASE(EXPR_UNARY);
+	CASE(EXPR_BINARY);
+	CASE(EXPR_TERNARY);
+	CASE(EXPR_PREFIX);
+	CASE(EXPR_POSTFIX);
+	CASE(EXPR_PARENS);
+	CASE(EXPR_SQUARES);
+	CASE(EXPR_FIELD);
+	CASE(EXPR_CALL);
+	CASE(EXPR_ARG);
+	CASE(EXPR_CAST);
+	CASE(EXPR_SIZEOF);
+	CASE(EXPR_CONCAT);
+	CASE(EXPR_LITERAL);
+	CASE(EXPR_RECOVER);
+	CASE(EXPR_BRANCH);
+	}
+	return NULL;
 }

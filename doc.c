@@ -16,6 +16,7 @@ struct doc {
 	/* allocation trace */
 	int		 dc_lno;
 	const char	*dc_fun;
+	const char	*dc_suffix;
 
 	/* children */
 	union {
@@ -377,6 +378,12 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 		__doc_alloc(DOC_MUTE, dc, 1, fun, lno);
 
 	return dangling ? dc : token;
+}
+
+void
+doc_annotate(struct doc *dc, const char *suffix)
+{
+	dc->dc_suffix = suffix;
 }
 
 static void
@@ -1338,6 +1345,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 {
 	const char *str = NULL;
 	int n;
+	int suffix = dc->dc_suffix != NULL;
 
 	switch (dc->dc_type) {
 #define CASE(t) case t: str = &#t[sizeof("DOC_") - 1]; break
@@ -1358,7 +1366,9 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 #undef CASE
 	}
 
-	n = snprintf(buf, bufsiz, "%s<%s:%d>", str, dc->dc_fun, dc->dc_lno);
+	n = snprintf(buf, bufsiz, "%s<%s:%d%s%s>",
+	    str, dc->dc_fun, dc->dc_lno,
+	    suffix ? ", " : "", suffix ? dc->dc_suffix : "");
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 

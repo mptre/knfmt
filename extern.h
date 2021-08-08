@@ -389,6 +389,8 @@ struct doc	*__doc_literal(const char *, struct doc *, const char *, int);
 struct doc	*__doc_token(const struct token *, struct doc *, enum doc_type,
     const char *, int);
 
+void	doc_annotate(struct doc *, const char *);
+
 /*
  * ruler -----------------------------------------------------------------------
  */
