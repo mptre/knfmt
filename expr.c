@@ -697,7 +697,6 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		break;
 
 	case EXPR_FIELD:
-		concat = expr_doc_soft(es, concat);
 		concat = expr_doc(ex->ex_lhs, es, concat);
 		doc_token(ex->ex_tk, concat);
 		concat = expr_doc(ex->ex_rhs, es, concat);
