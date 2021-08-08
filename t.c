@@ -191,6 +191,7 @@ main(int argc, char *argv[])
 	    "void ( * f [ 1 ] ) ( void )");
 	error |= test_lexer_peek_if_type("void (*)",
 	    "void ( * )");
+	error |= test_lexer_peek_if_type("char (*v)[1]", "char");
 
 	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_CAST,
 	    "const foo_t)", "const foo_t");

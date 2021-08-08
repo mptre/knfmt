@@ -1797,7 +1797,7 @@ static int
 lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state s;
-	struct token *lparen;
+	struct token *lparen, *rparen;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -1812,7 +1812,7 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 			lexer_if(lx, TOKEN_LITERAL, NULL);
 			lexer_if(lx, TOKEN_RSQUARE, NULL);
 		}
-		if (lexer_if(lx, TOKEN_RPAREN, tk)) {
+		if (lexer_if(lx, TOKEN_RPAREN, &rparen)) {
 			if (lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
 			    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, tk)) {
 				/*
@@ -1822,13 +1822,15 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 				lparen->tk_flags |= TOKEN_FLAG_TYPE_ARGS;
 
 				peek = 1;
-			} else if (!lexer_if(lx, TOKEN_SEMI, NULL)) {
+			} else if (lexer_if(lx, TOKEN_RPAREN, NULL) ||
+			    lexer_if(lx, TOKEN_EOF, NULL)) {
 				/*
 				 * Function pointer lacking arguments wrapped in
 				 * parenthesis. Be careful here in order to not
-				 * confuse a function call statement.
+				 * confuse a function call.
 				 */
 				peek = 1;
+				*tk = rparen;
 			}
 		}
 	}
