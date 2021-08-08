@@ -227,6 +227,7 @@ doc_free(struct doc *dc)
 	case DOC_GROUP:
 	case DOC_INDENT:
 	case DOC_DEDENT:
+	case DOC_OPTIONAL:
 		doc_free(dc->dc_doc);
 		break;
 
@@ -239,7 +240,6 @@ doc_free(struct doc *dc)
 	case DOC_NEWLINE:
 	case DOC_OPTLINE:
 	case DOC_MUTE:
-	case DOC_OPTIONAL:
 		break;
 	}
 
@@ -618,15 +618,23 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		}
 		break;
 
-	case DOC_OPTIONAL:
-		if (st->st_optline >= DOC_OPTIONAL_STICKY) {
-			if (-dc->dc_int == DOC_OPTIONAL_STICKY)
-				st->st_optline -= DOC_OPTIONAL_STICKY;
-		} else if (dc->dc_int > 0 || -dc->dc_int <= st->st_optline) {
+	case DOC_OPTIONAL: {
+		if (st->st_optline != DOC_OPTIONAL_STICKY) {
+			int oldoptline = st->st_optline;
+
+			if (dc->dc_int == DOC_OPTIONAL_STICKY)
+				st->st_optline = DOC_OPTIONAL_STICKY;
+			else
+				st->st_optline++;
+			doc_exec1(dc->dc_doc, st);
 			/* Note, could already be cleared by doc_print(). */
-			st->st_optline += dc->dc_int;
+			if (oldoptline <= st->st_optline)
+				st->st_optline = oldoptline;
+		} else {
+			doc_exec1(dc->dc_doc, st);
 		}
 		break;
+	}
 	}
 
 	doc_trace_leave(dc, st);
@@ -709,6 +717,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 	case DOC_GROUP:
 	case DOC_INDENT:
 	case DOC_DEDENT:
+	case DOC_OPTIONAL:
 		return doc_fits1(dc->dc_doc, st);
 
 	case DOC_ALIGN:
@@ -741,9 +750,6 @@ doc_fits1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
-		break;
-
-	case DOC_OPTIONAL:
 		break;
 	}
 
@@ -1077,6 +1083,7 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 	case DOC_GROUP:
 	case DOC_INDENT:
 	case DOC_DEDENT:
+	case DOC_OPTIONAL:
 		return doc_diff_covers(dc->dc_doc, dd);
 
 	case DOC_LITERAL:
@@ -1103,7 +1110,6 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 	case DOC_NEWLINE:
 	case DOC_OPTLINE:
 	case DOC_MUTE:
-	case DOC_OPTIONAL:
 		break;
 	}
 
@@ -1236,8 +1242,6 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 			fprintf(stderr, "%s", str);
 		else
 			fprintf(stderr, "%d", dc->dc_int);
-		if (dc->dc_type == DOC_OPTIONAL)
-			fprintf(stderr, ")");
 		break;
 	}
 
@@ -1371,8 +1375,6 @@ intstr(const struct doc *dc)
 		return "FORCE";
 	case DOC_OPTIONAL_STICKY:
 		return "STICKY";
-	case -DOC_OPTIONAL_STICKY:
-		return "-STICKY";
 	}
 	return NULL;
 }

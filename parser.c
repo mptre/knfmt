@@ -553,15 +553,14 @@ static int
 parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 {
 	struct ruler rl;
-	struct doc *concat;
+	struct doc *concat, *optional;
 	int error;
 
 	memset(&rl, 0, sizeof(rl));
 	ruler_init(&rl);
-	concat = doc_alloc(DOC_CONCAT, dc);
-	doc_alloc_optional(DOC_OPTIONAL_STICKY, concat);
+	optional = doc_alloc_optional(DOC_OPTIONAL_STICKY, dc);
+	concat = doc_alloc(DOC_CONCAT, optional);
 	error = parser_exec_decl_braces1(pr, concat, &rl);
-	doc_alloc_optional(-DOC_OPTIONAL_STICKY, concat);
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
