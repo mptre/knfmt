@@ -1195,12 +1195,16 @@ void
 lexer_dump(const struct lexer *lx)
 {
 	struct token *tk;
+	unsigned int i = 0;
 
 	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
 		struct token *prefix, *suffix;
 
+		i++;
+
 		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			fprintf(stderr, "  prefix %s", token_sprintf(prefix));
+			fprintf(stderr, "%6u   prefix %s",
+			    i, token_sprintf(prefix));
 			if (prefix->tk_branch.br_pv != NULL)
 				fprintf(stderr, ", pv %s",
 				    token_sprintf(prefix->tk_branch.br_pv));
@@ -1209,9 +1213,10 @@ lexer_dump(const struct lexer *lx)
 				    token_sprintf(prefix->tk_branch.br_nx));
 			fprintf(stderr, "\n");
 		}
-		fprintf(stderr, "%s\n", token_sprintf(tk));
+		fprintf(stderr, "%6u %s\n", i, token_sprintf(tk));
 		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-			fprintf(stderr, "  suffix %s\n", token_sprintf(suffix));
+			fprintf(stderr, "%6u   suffix %s\n",
+			    i, token_sprintf(suffix));
 		}
 	}
 }
