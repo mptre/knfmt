@@ -179,6 +179,7 @@ struct token {
 int	 token_cmp(const struct token *, const struct token *);
 int	 token_has_dangling(const struct token *);
 int	 token_has_line(const struct token *, int);
+int	 token_has_prefix(const struct token *, enum token_type);
 int	 token_has_tabs(const struct token *);
 int	 token_has_spaces(const struct token *);
 int	 token_is_branch(const struct token *);

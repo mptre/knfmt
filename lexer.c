@@ -195,6 +195,12 @@ token_has_line(const struct token *tk, int optional)
 	return 0;
 }
 
+int
+token_has_prefix(const struct token *tk, enum token_type type)
+{
+	return token_find_prefix(tk, type) != NULL;
+}
+
 /*
  * Returns non-zero if the given token has trailing tabs.
  */

@@ -1492,7 +1492,7 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 
 	/* Do not honor empty lines before the closing right brace. */
 	pv = TAILQ_PREV(rbrace, token_list, tk_entry);
-	if (pv != NULL)
+	if (pv != NULL && !token_has_prefix(rbrace, TOKEN_COMMENT))
 		token_trim(pv, TOKEN_SPACE, 0);
 
 	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
