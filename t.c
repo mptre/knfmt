@@ -195,6 +195,8 @@ main(int argc, char *argv[])
 
 	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_CAST,
 	    "const foo_t)", "const foo_t");
+	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_ARG,
+	    "const foo_t)", "const");
 
 	error |= test_lexer_read("<", "LESS");
 	error |= test_lexer_read("<x", "LESS IDENT");

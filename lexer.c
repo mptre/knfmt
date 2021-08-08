@@ -911,6 +911,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 	lexer_peek_leave(lx, &s);
 
 	if (ntokens == 1 &&
+	    (flags & LEXER_TYPE_FLAG_ARG) == 0 &&
 	    (beg->tk_flags & (TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE))) {
 		/* A single qualifier or storage token cannot denote a type. */
 		peek = 0;

@@ -1159,7 +1159,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	doc_alloc(DOC_SOFTLINE, concat);
 
 	/* A type will missing when emitting the final right parenthesis. */
-	if (lexer_peek_if_type(lx, &end, 0) &&
+	if (lexer_peek_if_type(lx, &end, LEXER_TYPE_FLAG_ARG) &&
 	    parser_exec_type(pr, concat, end, NULL) == PARSER_NOTHING)
 		return parser_error(pr);
 
