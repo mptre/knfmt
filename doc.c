@@ -938,8 +938,8 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	/*
 	 * Take a tentative note on which line the diff chunk ends. Note that if
 	 * the current group spans beyond the diff chunk, the end line will be
-	 * adjusted by doc_diff_literal(). This can happen when reformatting
-	 * causes lines to be merged.
+	 * adjusted. This can happen when reformatting causes lines to be
+	 * merged.
 	 */
 	st->st_diff.d_end = du->du_end;
 
@@ -952,7 +952,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 
 	/*
 	 * Emit any preceding line(s) not covered by the diff chunk. It is of
-	 * importance to end at the line from the first token covered by this
+	 * importance to begin at the line from the first token covered by this
 	 * group and not the first line covered by the diff chunk; as a group
 	 * represents something intended to fit on a single line but the diff
 	 * chunk might only touch a subset of the group.
