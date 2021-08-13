@@ -1,0 +1,23 @@
+commit 65646dec5cf9c538df287a2db75fc37f9d68afb7
+Author: jsg <jsg@openbsd.org>
+Date:   Wed Aug 11 03:12:47 2021 +0000
+
+    drm/amd/display: Fix comparison error in dcn21 DML
+    
+    From Victor Lu
+    f9d875c8c92f1bdaeeb3eeccbf8402974f20cd31 in linux 5.10.y/5.10.57
+    ec3102dc6b36c692104c4a0546d4119de59a3bc1 in mainline linux
+
+diff --git sys/dev/pci/drm/amd/display/dc/dml/dcn21/display_mode_vba_21.c sys/dev/pci/drm/amd/display/dc/dml/dcn21/display_mode_vba_21.c
+index 367c82b5ab4..c09bca33506 100644
+--- diff-026.c
++++ diff-026.c
+@@ -4888,7 +4888,7 @@ void dml21_ModeSupportAndSystemConfigurationFull(struct display_mode_lib *mode_l
+ 				}
+ 			} while ((locals->PrefetchSupported[i][j] != true || locals->VRatioInPrefetchSupported[i][j] != true)
+ 					&& (mode_lib->vba.NextMaxVStartup != mode_lib->vba.MaxMaxVStartup[0][0]
+-						|| mode_lib->vba.NextPrefetchMode < mode_lib->vba.MaxPrefetchMode));
++						|| mode_lib->vba.NextPrefetchMode <= mode_lib->vba.MaxPrefetchMode));
+ 
+ 			if (locals->PrefetchSupported[i][j] == true && locals->VRatioInPrefetchSupported[i][j] == true) {
+ 				mode_lib->vba.BandwidthAvailableForImmediateFlip = locals->ReturnBWPerState[i][0];

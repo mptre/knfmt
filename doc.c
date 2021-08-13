@@ -58,7 +58,6 @@ struct doc_state {
 
 	struct {
 		int		d_groups;
-		int		d_ignore;
 		int		d_mute;
 		unsigned int	d_beg;
 		unsigned int	d_end;
@@ -115,7 +114,7 @@ static int	doc_has_list(const struct doc *);
 static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);
 static void		doc_diff_group_leave(const struct doc *,
-    struct doc_state *, int);
+    struct doc_state *);
 static void		doc_diff_literal(const struct doc *,
     struct doc_state *);
 static unsigned int	doc_diff_verbatim(const struct doc *,
@@ -415,9 +414,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_GROUP: {
 		unsigned int oldmode;
-		int ignore;
+		int leave;
 
-		ignore = doc_diff_group_enter(dc, st);
+		leave = doc_diff_group_enter(dc, st);
 		switch (st->st_mode) {
 		case MUNGE:
 			if (st->st_refit == 0) {
@@ -433,7 +432,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			st->st_mode = oldmode;
 			break;
 		}
-		doc_diff_group_leave(dc, st, ignore);
+		if (leave)
+			doc_diff_group_leave(dc, st);
 
 		break;
 	}
@@ -882,7 +882,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * Only applicable while entering the first group. Unless the group
 	 * above us was ignored, see below.
 	 */
-	if (st->st_diff.d_groups++ > 0 && st->st_diff.d_ignore == 0)
+	if (st->st_diff.d_groups > 0)
 		return 0;
 
 	/*
@@ -898,40 +898,42 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	switch (doc_diff_covers(dc, &dd)) {
 	case 0:
 		/*
-		 * The group is not covered by any diff chunk. However, if the
-		 * previous group above us touched lines after the diff chunk
-		 * due to reformatting make sure to reset the state.
+		 * The group is not covered by any diff chunk and all nested
+		 * groups can therefore be ignored. However, if the previous
+		 * group above us touched lines after the diff chunk due to
+		 * reformatting make sure to reset the state.
 		 */
 		if (st->st_diff.d_end > 0)
 			doc_diff_leave(dc, st, 1);
-		return 0;
+		st->st_diff.d_groups++;
+		return 1;
 	case -1:
 		/*
 		 * The group spans multiple lines. Ignore it and keep evaluating
 		 * nested groups on subsequent invocations of this routine.
 		 */
-		doc_trace(dc, st, "%s: ignore", __func__);
-		st->st_diff.d_ignore++;
-		return 1;
+		return 0;
 	}
 
+	st->st_diff.d_groups++;
+
 	doc_trace(dc, st, "%s: enter chunk: beg %u, end %u, first %u, "
-	    "chunk %u, groups %d, ignore %d, seen %d", __func__,
+	    "chunk %u, groups %d, seen %d", __func__,
 	    st->st_diff.d_beg, st->st_diff.d_end,
 	    dd.dd_first, dd.dd_chunk,
-	    st->st_diff.d_groups, st->st_diff.d_ignore, st->st_diff.d_end > 0);
+	    st->st_diff.d_groups, st->st_diff.d_end > 0);
 
 	if (st->st_diff.d_end > 0) {
 		/*
 		 * The diff chunk is spanning more than one group. Any preceding
 		 * verbatim lines are already emitted at this point.
 		 */
-		return 0;
+		return 1;
 	}
 
 	du = lexer_get_diffchunk(st->st_lx, dd.dd_chunk);
 	if (du == NULL)
-		return 0;
+		return 1;
 	doc_trace(dc, st, "%s: chunk range [%u-%u]", __func__,
 	    du->du_beg, du->du_end);
 
@@ -960,18 +962,15 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	doc_diff_emit(dc, st, st->st_diff.d_beg, dd.dd_first);
 	st->st_pos = 0;
 	doc_indent(dc, st, st->st_indent.i_cur);
-	return 0;
+	return 1;
 }
 
 static void
-doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st,
-    int ignore)
+doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st)
 {
 	if (!DOC_DIFF(st))
 		return;
-
-	if (ignore)
-		st->st_diff.d_ignore--;
+	assert(st->st_diff.d_groups == 1);
 	st->st_diff.d_groups--;
 }
 
