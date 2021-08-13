@@ -733,8 +733,12 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
     struct ruler *rl, const struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *comma, *tk;
+	struct token *tk = NULL;
+	struct token *comma;
 	const struct token *stop;
+
+	stop = lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &comma) ?
+	    comma : rbrace;
 
 	for (;;) {
 		struct doc *expr;
@@ -773,14 +777,20 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			if (lexer_peek_if(lx, TOKEN_COMMA, NULL))
 				goto comma;
 		} else {
+			if (tk == NULL) {
+				/*
+				 * Nothing found so far, the field name could be
+				 * omitted.
+				 */
+				(void)parser_exec_expr(pr, dc, NULL, stop, 0);
+				goto comma;
+			}
 			break;
 		}
 	}
 
 	ruler_insert(rl, tk, dc, 1, parser_width(pr, dc), 0);
 
-	stop = lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &comma) ?
-	    comma : rbrace;
 	if (parser_exec_decl_init(pr, dc, stop, 1))
 		return parser_error(pr);
 
