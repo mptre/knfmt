@@ -1,0 +1,13 @@
+--- diff-027.c
++++ diff-027.c
+@@ -1,8 +1,8 @@
+ int
+ main(void)
+ {
+-	if (caps->ext_caps->bits.oled == 1 ||
++	if (caps->ext_caps->bits.oled == 1 /*||
+ 	    caps->ext_caps->bits.sdr_aux_backlight_control == 1 ||
+-	    caps->ext_caps->bits.hdr_aux_backlight_control == 1)
++	    caps->ext_caps->bits.hdr_aux_backlight_control == 1*/)
+ 		caps->aux_support = true;
+ }

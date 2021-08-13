@@ -1427,6 +1427,10 @@ countlines(const char *str, size_t len)
 {
 	unsigned int nlines = 0;
 
+	/* Only applicable to tokens ending with a hard line. */
+	if (len > 0 && str[len - 1] != '\n')
+		return 0;
+
 	while (len > 0) {
 		const char *p;
 
