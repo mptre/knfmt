@@ -1819,11 +1819,13 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_STAR, NULL)) {
+		struct token *ident = NULL;
+
 		while (lexer_if(lx, TOKEN_STAR, NULL))
 			continue;
 
 		lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER, NULL);
-		lexer_if(lx, TOKEN_IDENT, NULL);
+		lexer_if(lx, TOKEN_IDENT, &ident);
 		if (lexer_if(lx, TOKEN_LSQUARE, NULL)) {
 			lexer_if(lx, TOKEN_LITERAL, NULL);
 			lexer_if(lx, TOKEN_RSQUARE, NULL);
@@ -1838,8 +1840,9 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 				lparen->tk_flags |= TOKEN_FLAG_TYPE_ARGS;
 
 				peek = 1;
-			} else if (lexer_if(lx, TOKEN_RPAREN, NULL) ||
-			    lexer_if(lx, TOKEN_EOF, NULL)) {
+			} else if (ident == NULL &&
+			    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
+			     lexer_if(lx, TOKEN_EOF, NULL))) {
 				/*
 				 * Function pointer lacking arguments wrapped in
 				 * parenthesis. Be careful here in order to not
