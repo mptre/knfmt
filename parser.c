@@ -102,6 +102,7 @@ static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static enum parser_peek	parser_peek_else(struct parser *, struct token **);
 static int		parser_peek_line(struct parser *, const struct token *);
 
+static void		parser_trim_brace(struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
 #define parser_error(a) \
@@ -404,7 +405,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (token_is_decl(end, TOKEN_STRUCT) ||
 	    token_is_decl(end, TOKEN_UNION)) {
 		struct doc *indent;
-		struct token *lbrace, *pv, *rbrace;
+		struct token *lbrace, *rbrace;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_literal(" ", concat);
@@ -413,9 +414,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 			return parser_error(pr);
-		pv = TAILQ_PREV(rbrace, token_list, tk_entry);
-		if (pv != NULL)
-			token_trim(pv, TOKEN_SPACE, 0);
+		parser_trim_brace(rbrace);
 		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
 			token_trim(lbrace, TOKEN_SPACE, 0);
 			doc_token(lbrace, concat);
@@ -433,7 +432,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			doc_literal(" ", concat);
 	} else if (token_is_decl(end, TOKEN_ENUM)) {
-		struct token *lbrace, *pv, *rbrace;
+		struct token *lbrace, *rbrace;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_literal(" ", concat);
@@ -442,9 +441,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 			return parser_error(pr);
-		pv = TAILQ_PREV(rbrace, token_list, tk_entry);
-		if (pv != NULL)
-			token_trim(pv, TOKEN_SPACE, 0);
+		parser_trim_brace(rbrace);
 		if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace))
 			token_trim(lbrace, TOKEN_SPACE, 0);
 
@@ -1520,16 +1517,12 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 {
 	struct doc *concat, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *rbrace, *seek, *pv, *tk;
+	struct token *lbrace, *rbrace, *seek, *tk;
 	int nstmt = 0;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return PARSER_NOTHING;
-
-	/* Do not honor empty lines before the closing right brace. */
-	pv = TAILQ_PREV(rbrace, token_list, tk_entry);
-	if (pv != NULL && !token_has_prefix(rbrace, TOKEN_COMMENT))
-		token_trim(pv, TOKEN_SPACE, 0);
+	parser_trim_brace(rbrace);
 
 	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
 		/*
@@ -1987,6 +1980,22 @@ __parser_error(struct parser *pr, const char *fun, int lno)
 		error_write(pr->pr_er, "%s", "(null)\n");
 	}
 	return 1;
+}
+
+/*
+ * Trim hard line(s) from the given right brace as part of block, unless the
+ * right brace is preceeded with prefixes intended to be emitted.
+ */
+static void
+parser_trim_brace(struct token *rbrace)
+{
+	struct token *pv;
+
+	pv = TAILQ_PREV(rbrace, token_list, tk_entry);
+	if (pv != NULL &&
+	    !token_has_prefix(rbrace, TOKEN_COMMENT) &&
+	    !token_has_prefix(rbrace, TOKEN_CPP))
+		token_trim(pv, TOKEN_SPACE, 0);
 }
 
 /*
