@@ -1,3 +1,23 @@
+# v0.5.4 - 2021-08-18
+
+## Bug fixes
+
+- Fix several diff mode crashes.
+  (1f086d1, 1f04936)
+  (Anton Lindqvist)
+
+- Handle mixed designated and positional initializers.
+  (c882f03)
+  (Anton Lindqvist)
+
+- Fix function pointer type detection regression.
+  (72edf7e)
+  (Anton Lindqvist)
+
+- Fix alignment of nested brace initializers on the same line.
+  (b1744b0)
+  (Anton Lindqvist)
+
 # v0.5.3 - 2021-08-08
 
 ## Bug fixes
