@@ -38,6 +38,7 @@ struct parser_exec_func_proto_arg {
 struct parser_exec_decl_braces_arg {
 	struct doc	*pb_dc;
 	struct ruler	*pb_rl;
+	unsigned int	 pb_col;
 };
 
 #define PARSER_EXEC_DECL_FLAG_BREAK	0x00000001u
@@ -568,6 +569,7 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 	concat = doc_alloc(DOC_CONCAT, optional);
 	pb.pb_dc = concat;
 	pb.pb_rl = &rl;
+	pb.pb_col = 0;
 	error = parser_exec_decl_braces1(pr, &pb);
 	ruler_exec(&rl);
 	ruler_free(&rl);
@@ -582,7 +584,6 @@ parser_exec_decl_braces1(struct parser *pr,
 	struct doc *braces, *expr, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *tk;
-	unsigned int col = 0;
 	unsigned int w = 0;
 	int align = 1;
 
@@ -625,7 +626,7 @@ parser_exec_decl_braces1(struct parser *pr,
 
 	for (;;) {
 		struct doc *concat;
-		struct token *comma;
+		struct token *comma, *nx;
 
 		if (lexer_is_branch(lx))
 			break;
@@ -637,13 +638,23 @@ parser_exec_decl_braces1(struct parser *pr,
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
 
-		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+		if (lexer_peek_if(lx, TOKEN_LBRACE, &nx)) {
 			struct doc *dc = pb->pb_dc;
+			unsigned int col = pb->pb_col;
 
 			pb->pb_dc = concat;
 			if (parser_exec_decl_braces1(pr, pb))
 				return parser_error(pr);
 			pb->pb_dc = dc;
+			/*
+			 * If the nested braces are positioned on the same line
+			 * as the braces currently being parsed, do not restore
+			 * the column as we're still on the same row in terms of
+			 * alignment.
+			 */
+			if (token_cmp(lbrace, nx) < 0)
+				pb->pb_col = col;
+
 			expr = concat;
 		} else {
 			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
@@ -662,9 +673,10 @@ parser_exec_decl_braces1(struct parser *pr,
 				break;
 
 			if (align) {
-				col++;
-				ruler_insert(pb->pb_rl, comma, concat, col,
-				    parser_width(pr, concat) + w, 0);
+				pb->pb_col++;
+				w += parser_width(pr, concat);
+				ruler_insert(pb->pb_rl, comma, concat,
+				    pb->pb_col, w, 0);
 				w = 0;
 			} else if (!token_has_line(comma, 1)) {
 				doc_literal(" ", concat);
