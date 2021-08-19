@@ -151,6 +151,9 @@ buffer_grow(struct buffer *bf, unsigned int shift)
 {
 	size_t newsiz;
 
+	if (bf->bf_len < bf->bf_siz / 2)
+		return;
+
 	newsiz = bf->bf_siz << shift;
 	bf->bf_ptr = realloc(bf->bf_ptr, newsiz);
 	if (bf->bf_ptr == NULL)
