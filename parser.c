@@ -331,21 +331,22 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 		line = doc_alloc(DOC_HARDLINE, decl);
 
-		/*
-		 * Honor an empty line which denotes the end of this block of
-		 * declarations.
-		 */
-		if ((flags & PARSER_EXEC_DECL_FLAG_BREAK) &&
-		    lexer_back(lx, &tk) && token_has_line(tk, 0))
-			break;
+		if (flags & PARSER_EXEC_DECL_FLAG_BREAK) {
+			/*
+			 * Honor empty line(s) which denotes the end of this
+			 * block of declarations.
+			 */
+			if (lexer_back(lx, &tk) && token_has_line(tk, 0))
+				break;
 
-		/*
-		 * Ending a branch also denotes the end of this block of
-		 * declarations.
-		 */
-		if (lexer_is_branch_end(lx)) {
-			doc_remove(line, decl);
-			break;
+			/*
+			 * Ending a branch also denotes the end of this block of
+			 * declarations.
+			 */
+			if (lexer_is_branch_end(lx)) {
+				doc_remove(line, decl);
+				break;
+			}
 		}
 
 		/* Take the next branch if available. */
