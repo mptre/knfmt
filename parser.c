@@ -17,6 +17,7 @@ enum parser_peek {
 	PARSER_PEEK_ELSE	= 3,
 	PARSER_PEEK_ELSEIF	= 4,
 	PARSER_PEEK_CPPX	= 5,
+	PARSER_PEEK_CPPINIT	= 6,
 };
 
 struct parser {
@@ -100,6 +101,7 @@ static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, unsigned int, enum doc_type);
 
 static enum parser_peek	parser_peek_cppx(struct parser *);
+static enum parser_peek	parser_peek_cpp_init(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static enum parser_peek	parser_peek_else(struct parser *, struct token **);
 static int		parser_peek_line(struct parser *, const struct token *);
@@ -581,7 +583,7 @@ parser_exec_decl_braces1(struct parser *pr,
     struct parser_exec_decl_braces_arg *pb)
 {
 	struct doc *line = NULL;
-	struct doc *braces, *expr, *indent;
+	struct doc *braces, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *tk;
 	unsigned int w = 0;
@@ -625,6 +627,7 @@ parser_exec_decl_braces1(struct parser *pr,
 	}
 
 	for (;;) {
+		struct doc *expr = NULL;
 		struct doc *concat;
 		struct token *comma, *nx;
 
@@ -659,6 +662,10 @@ parser_exec_decl_braces1(struct parser *pr,
 		} else if (parser_peek_cppx(pr)) {
 			if (parser_exec_decl_cppx(pr, concat, pb->pb_rl))
 				return parser_error(pr);
+		} else if (parser_peek_cpp_init(pr)) {
+			if (parser_exec_decl_cppx(pr, concat, pb->pb_rl))
+				return parser_error(pr);
+			expr = concat;
 		} else {
 			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
 			    &tk))
@@ -940,9 +947,8 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 			return parser_error(pr);
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, expr);
-			col++;
-			ruler_insert(rl, tk, expr, col,
-			    parser_width(pr, arg) + w, 0);
+			w += parser_width(pr, arg);
+			ruler_insert(rl, tk, expr, ++col, w, 0);
 			w = 0;
 		}
 	}
@@ -1853,6 +1859,33 @@ parser_peek_cppx(struct parser *pr)
 		    (nx == NULL || (token_cmp(nx, rparen) > 0 &&
 		     nx->tk_cno <= ident->tk_cno)))
 			peek = PARSER_PEEK_CPPX;
+	}
+	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+/*
+ * Returns non-zero if the next tokens denotes an initializer making use of cpp.
+ */
+static enum parser_peek
+parser_peek_cpp_init(struct parser *pr)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *comma, *ident, *rparen;
+	enum parser_peek peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
+	    lexer_if(lx, TOKEN_COMMA, &comma)) {
+		const struct token *nx, *pv;
+
+		pv = TAILQ_PREV(ident, token_list, tk_entry);
+		nx = TAILQ_NEXT(comma, tk_entry);
+		if (pv != NULL && token_cmp(pv, ident) < 0 &&
+		    nx != NULL && token_cmp(nx, comma) > 0)
+			peek = PARSER_PEEK_CPPINIT;
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
