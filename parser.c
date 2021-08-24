@@ -16,6 +16,7 @@ enum parser_peek {
 	PARSER_PEEK_FUNCIMPL	= 2,
 	PARSER_PEEK_ELSE	= 3,
 	PARSER_PEEK_ELSEIF	= 4,
+	PARSER_PEEK_CPPX	= 5,
 };
 
 struct parser {
@@ -98,6 +99,7 @@ static int	parser_exec_type(struct parser *, struct doc *,
 static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, unsigned int, enum doc_type);
 
+static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static enum parser_peek	parser_peek_else(struct parser *, struct token **);
 static int		parser_peek_line(struct parser *, const struct token *);
@@ -654,6 +656,9 @@ parser_exec_decl_braces1(struct parser *pr,
 				pb->pb_col = col;
 
 			expr = concat;
+		} else if (parser_peek_cppx(pr)) {
+			if (parser_exec_decl_cppx(pr, concat, pb->pb_rl))
+				return parser_error(pr);
 		} else {
 			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
 			    &tk))
@@ -838,11 +843,6 @@ comma:
  * 	TAILQ_HEAD(x, y) *z;
  * 	TAILQ_HEAD(x, y) z = TAILQ_HEAD_INITIALIZER(z);
  *
- * In addition, detect X macros such as the ones provided by RBT_PROTOTYPE(9),
- * note the absence of a trailing semicolon:
- *
- * 	RBT_PROTOTYPE(x, y)
- *
  * In addition, detect various macros:
  *
  * 	UMQ_FIXED_EP_DEF() = {
@@ -856,7 +856,6 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	struct doc *expr = dc;
 	int semi = 1;
 	int iscpp = 0;
-	int isxmacro = 0;
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
@@ -866,27 +865,13 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end)) {
 		if (lexer_if(lx, TOKEN_SEMI, NULL)) {
 			iscpp = 1;
-		} else if (lexer_peek(lx, &tk) &&
-		    token_cmp(end, tk) < 0 && tk->tk_cno <= ident->tk_cno) {
-			/*
-			 * Lacking semicolon, assume it's a cpp declaration
-			 * since the next token resides on a new line and has
-			 * the same or less indentation. This is of importance
-			 * in order to not confuse loop constructs hidden behind
-			 * cpp as a declaration.
-			 */
-			semi = 0;
-			iscpp = 1;
 		} else {
-			struct lexer_state ss;
-
 			for (;;) {
 				if (!lexer_if(lx, TOKEN_STAR, &tk))
 					break;
 				end = tk;
 			}
 
-			lexer_peek_enter(lx, &ss);
 			if (lexer_if(lx, TOKEN_IDENT, NULL) &&
 			    (lexer_if(lx, TOKEN_LSQUARE, NULL) ||
 			     lexer_if(lx, TOKEN_SEMI, NULL) ||
@@ -896,26 +881,14 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 			else if (lexer_if(lx, TOKEN_EQUAL, NULL) &&
 			    lexer_if(lx, TOKEN_LBRACE, NULL))
 				iscpp = 1;
-			lexer_peek_leave(lx, &ss);
-		}
-
-		/*
-		 * Detect X macro, must be followed by nothing at all or by
-		 * another macro.
-		 */
-		if (!semi &&
-		    (lexer_if(lx, TOKEN_EOF, NULL) ||
-		     (lexer_if(lx, TOKEN_IDENT, NULL) &&
-		      lexer_if(lx, TOKEN_LPAREN, NULL)))) {
-			iscpp = 1;
-			isxmacro = 1;
 		}
 	}
 	lexer_peek_leave(lx, &s);
-	if (!iscpp)
+	if (!iscpp) {
+		if (parser_peek_cppx(pr))
+			return parser_exec_decl_cppx(pr, dc, rl);
 		return PARSER_NOTHING;
-	if (isxmacro)
-		return parser_exec_decl_cppx(pr, dc, rl);
+	}
 
 	if (parser_exec_type(pr, dc, end, rl))
 		return parser_error(pr);
@@ -928,10 +901,6 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	return parser_ok(pr);
 }
 
-/*
- * Parse a preprocessor directive known as a X macro, a construct that looks
- * like a function call but without any trailing semicolon.
- */
 static int
 parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
@@ -1851,6 +1820,42 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		*out = concat;
 
 	return parser_ok(pr);
+}
+
+/*
+ * Returns non-zero if the next tokens denotes a X macro. That is, something
+ * that looks like a function call but is not followed by a semicolon nor comma
+ * if being part of an initializer. One example are the macros provided by
+ * RBT_PROTOTYPE(9).
+ */
+static enum parser_peek
+parser_peek_cppx(struct parser *pr)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *ident, *rparen;
+	enum parser_peek peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen)) {
+		const struct token *nx, *pv;
+
+		/*
+		 * The previous token must not reside on the same line as the
+		 * identifier. The next token must reside on the next line and
+		 * have the same or less indentation. This is of importance in
+		 * order to not confuse loop constructs hidden behind cpp.
+		 */
+		pv = TAILQ_PREV(ident, token_list, tk_entry);
+		nx = TAILQ_NEXT(rparen, tk_entry);
+		if ((pv == NULL || token_cmp(pv, ident) < 0) &&
+		    (nx == NULL || (token_cmp(nx, rparen) > 0 &&
+		     nx->tk_cno <= ident->tk_cno)))
+			peek = PARSER_PEEK_CPPX;
+	}
+	lexer_peek_leave(lx, &s);
+	return peek;
 }
 
 /*
