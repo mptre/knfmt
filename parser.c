@@ -47,6 +47,7 @@ struct parser_exec_decl_braces_arg {
 #define PARSER_EXEC_DECL_FLAG_LINE	0x00000002u
 
 #define PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM	0x00000001u
+#define PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM	0x00000002u
 
 static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl1(struct parser *, struct doc *,
@@ -437,7 +438,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			doc_literal(" ", concat);
 	} else if (token_is_decl(end, TOKEN_ENUM)) {
-		struct token *lbrace, *rbrace;
+		struct token *rbrace;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_literal(" ", concat);
@@ -447,11 +448,10 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 			return parser_error(pr);
 		parser_trim_brace(rbrace);
-		if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace))
-			token_trim(lbrace, TOKEN_SPACE, 0);
 
 		if (parser_exec_decl_braces_fields(pr, concat, rl, rbrace,
-		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM))
+		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM |
+		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM))
 			return parser_error(pr);
 
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
@@ -711,10 +711,11 @@ static int
 parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
     struct ruler *rl, const struct token *rbrace, unsigned int flags)
 {
-	struct doc *line;
+	struct doc *line = NULL;
 	struct doc *indent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *lbrace, *tk;
+	int doline;
 
 	if ((flags & PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM) == 0) {
 		struct lexer_state s;
@@ -730,11 +731,18 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 			return PARSER_NOTHING;
 	}
 
-	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
-		doc_token(tk, dc);
+	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
+		return parser_error(pr);
+	doline = token_has_line(lbrace, 1);
+	if (flags & PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM)
+		token_trim(lbrace, TOKEN_SPACE, 0);
+	doc_token(lbrace, dc);
 
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
-	line = doc_alloc(DOC_HARDLINE, indent);
+	if (doline)
+		line = doc_alloc(DOC_HARDLINE, indent);
+	else
+		doc_literal(" ", indent);
 
 	for (;;) {
 		struct doc *concat;
@@ -749,12 +757,16 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
 		if (parser_exec_decl_braces_field(pr, concat, rl, rbrace))
 			return parser_error(pr);
-		line = doc_alloc(DOC_HARDLINE, indent);
+		if (doline)
+			line = doc_alloc(DOC_HARDLINE, indent);
+		else
+			line = doc_literal(" ", indent);
 	}
 	if (line != NULL)
 		doc_remove(line, indent);
 
-	doc_alloc(DOC_HARDLINE, dc);
+	if (doline)
+		doc_alloc(DOC_HARDLINE, dc);
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
 
