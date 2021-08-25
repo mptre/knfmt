@@ -659,10 +659,7 @@ parser_exec_decl_braces1(struct parser *pr,
 				pb->pb_col = col;
 
 			expr = concat;
-		} else if (parser_peek_cppx(pr)) {
-			if (parser_exec_decl_cppx(pr, concat, pb->pb_rl))
-				return parser_error(pr);
-		} else if (parser_peek_cpp_init(pr)) {
+		} else if (parser_peek_cppx(pr) || parser_peek_cpp_init(pr)) {
 			if (parser_exec_decl_cppx(pr, concat, pb->pb_rl))
 				return parser_error(pr);
 			expr = concat;
