@@ -806,6 +806,9 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		int space = len == 1 && str[0] == ' ';
 		int n;
 
+		/* DOC_OPTLINE has the same semantics as DOC_LINE. */
+		st->st_refit = 1;
+
 		n = st->st_newline;
 		st->st_newline = 0;
 		for (; n > 0; n--)
