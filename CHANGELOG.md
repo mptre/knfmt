@@ -1,3 +1,42 @@
+# v1.0.0 - 2021-08-28
+
+## News
+
+- Handle and align x macros in brace initializers.
+  (61f851e)
+  (Anton Lindqvist)
+
+- Handle and align cpp macros in brace initializers.
+  (9086e2e)
+  (Anton Lindqvist)
+
+- Allow enum declarations on a single line.
+  (02f2f34)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Preserve new lines before comments and cpp declarations at end of a statement
+  block.
+  (3f25572)
+  (Anton Lindqvist)
+
+- Only grow the buffer if more than half of the space is utilized.
+  Prevents from running out of memory due to aggressive and redundant
+  allocations while reading large files/diffs.
+  (018d346)
+  (Anton Lindqvist)
+
+- Do not let a cpp branch inside a struct declaration end the current scope of
+  alignment.
+  (4a05336)
+  (Anton Lindqvist)
+
+- Long expressions in combination with optional new lines would not break under
+  certain circumstances.
+  (530d436)
+  (Anton Lindqvist)
+
 # v0.5.4 - 2021-08-18
 
 ## Bug fixes
