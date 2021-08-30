@@ -395,12 +395,6 @@ dist:
 	rm -r $$d
 .PHONY: dist
 
-distclean: clean
-	rm -f ${.CURDIR}/config.h ${.CURDIR}/config.log ${.CURDIR}/config.mk \
-		${.CURDIR}/knfmt-${VERSION}.tar.gz \
-		${.CURDIR}/knfmt-${VERSION}.sha256
-.PHONY: distclean
-
 format: ${PROG_knfmt}
 	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -i ${KNFMT}
 .PHONY: format
