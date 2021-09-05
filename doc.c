@@ -334,10 +334,6 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	struct token *tmp;
 	int dangling = 0;
 
-	/* Fake token created by lexer_recover_hard(), emit nothing. */
-	if (tk->tk_flags & TOKEN_FLAG_FAKE)
-		return NULL;
-
 	/*
 	 * If the token has dangling tokens, a parent is mandatory as we're
 	 * about to append more than one token.
