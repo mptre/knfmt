@@ -103,8 +103,6 @@ static void	__lexer_trace(const struct lexer *, const char *, const char *,
     ...)
 	__attribute__((__format__(printf, 3, 4)));
 
-static int	isnum(unsigned char, int);
-
 static void		 token_branch_link(struct token *, struct token *);
 static int		 token_branch_unlink(struct token *);
 static struct token	*token_get_branch(struct token *);
@@ -113,6 +111,8 @@ static struct token	*token_find_prefix(const struct token *,
 static void		 token_free(struct token *);
 static void		 token_list_free(struct token_list *);
 static const char	*strtoken(enum token_type);
+
+static int	isnum(unsigned char, int);
 
 static struct token_hash	*tokens = NULL;
 
@@ -2150,17 +2150,6 @@ __lexer_trace(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
 	fprintf(stderr, "\n");
 }
 
-static int
-isnum(unsigned char ch, int prefix)
-{
-	if (prefix)
-		return isdigit(ch);
-
-	ch = tolower(ch);
-	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
-	    ch == 'u' || ch == '.';
-}
-
 static void
 token_branch_link(struct token *src, struct token *dst)
 {
@@ -2280,4 +2269,15 @@ strtoken(enum token_type type)
 #include "token.h"
 	}
 	return NULL;
+}
+
+static int
+isnum(unsigned char ch, int prefix)
+{
+	if (prefix)
+		return isdigit(ch);
+
+	ch = tolower(ch);
+	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
+	    ch == 'u' || ch == '.';
 }
