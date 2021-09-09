@@ -146,7 +146,7 @@ struct token {
 #define TOKEN_FLAG_DISCARD	0x00000100u
 #define TOKEN_FLAG_UNMUTE	0x00000200u
 #define TOKEN_FLAG_NEWLINE	0x00000400u
-/* #define TOKEN_FLAG_XXX	0x00000800u */
+#define TOKEN_FLAG_CPP		0x00000800u
 #define TOKEN_FLAG_FREE		0x00001000u
 #define TOKEN_FLAG_OPTLINE	0x00002000u
 #define TOKEN_FLAG_OPTSPACE	0x00004000u
@@ -230,7 +230,6 @@ int	__lexer_recover(struct lexer *, struct lexer_recover_markers *,
 int	__lexer_branch(struct lexer *, struct token **, const char *, int);
 
 int	lexer_is_branch(const struct lexer *);
-int	lexer_is_branch_end(const struct lexer *);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
@@ -260,6 +259,9 @@ int	lexer_if_flags(struct lexer *, unsigned int, struct token **);
 int	lexer_peek_if_pair(struct lexer *, enum token_type, enum token_type,
     struct token **);
 int	lexer_if_pair(struct lexer *, enum token_type, enum token_type,
+    struct token **);
+
+int	lexer_peek_if_prefix_flags(struct lexer *, unsigned int,
     struct token **);
 
 int	lexer_peek_until(struct lexer *, enum token_type, struct token **);

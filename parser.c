@@ -345,10 +345,11 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 				break;
 
 			/*
-			 * Ending a branch also denotes the end of this block of
-			 * declarations.
+			 * Any cpp directive also denotes the end of this block
+			 * of declarations.
 			 */
-			if (lexer_is_branch_end(lx)) {
+			if (lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP,
+			    NULL)) {
 				doc_remove(line, decl);
 				break;
 			}
@@ -1046,9 +1047,16 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 	doc_alloc(DOC_HARDLINE, dc);
 	if (parser_exec_stmt_block(pr, dc, dc, 0))
 		return parser_error(pr);
-	if (!lexer_peek_if(lx, TOKEN_EOF, NULL))
-		doc_alloc(DOC_HARDLINE, dc);
+
 	doc_alloc(DOC_HARDLINE, dc);
+	if (!lexer_peek_if(lx, TOKEN_EOF, NULL)) {
+		struct token *tk, *px;
+
+		if (!lexer_back(lx, &tk) ||
+		    !lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP, &px) ||
+		    px->tk_lno - tk->tk_lno > 1)
+			doc_alloc(DOC_HARDLINE, dc);
+	}
 
 	return parser_ok(pr);
 }

@@ -122,7 +122,7 @@ static const struct token	tkcomment = {
 };
 static const struct token	tkcpp = {
 	.tk_type	= TOKEN_CPP,
-	.tk_flags	= TOKEN_FLAG_DANGLING,
+	.tk_flags	= TOKEN_FLAG_DANGLING | TOKEN_FLAG_CPP,
 };
 static struct token		tkeof = {
 	.tk_type	= TOKEN_EOF,
@@ -695,21 +695,6 @@ lexer_is_branch(const struct lexer *lx)
 	return lexer_branch_next(lx) != NULL;
 }
 
-/*
- * Returns non-zero if the next token denotes the end of a branch.
- */
-int
-lexer_is_branch_end(const struct lexer *lx)
-{
-	struct token *tk;
-
-	/* Cannot use lexer_peek() as it would move past the branch. */
-	if (!lexer_back(lx, &tk))
-		return 0;
-	tk = TAILQ_NEXT(tk, tk_entry);
-	return tk != NULL && token_find_prefix(tk, TOKEN_CPP_ENDIF);
-}
-
 int
 lexer_pop(struct lexer *lx, struct token **tk)
 {
@@ -1075,6 +1060,32 @@ lexer_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
 	if (tk != NULL)
 		*tk = end;
 	return 1;
+}
+
+/*
+ * Peek at the prefixes of the next token without consuming it. Returns non-zero
+ * if any prefix has the given flags.
+ */
+int
+lexer_peek_if_prefix_flags(struct lexer *lx, unsigned int flags,
+    struct token **tk)
+{
+	struct token *px, *t;
+
+	/* Cannot use lexer_peek() as it would move past cpp branches. */
+	if (!lexer_back(lx, &t))
+		return 0;
+	t = TAILQ_NEXT(t, tk_entry);
+	if (t == NULL)
+		return 0;
+	TAILQ_FOREACH(px, &t->tk_prefixes, tk_entry) {
+		if (px->tk_flags & flags) {
+			if (tk != NULL)
+				*tk = px;
+			return 1;
+		}
+	}
+	return 0;
 }
 
 /*
