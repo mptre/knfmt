@@ -1458,7 +1458,9 @@ lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 	for (;;) {
 		if (lexer_getc(lx, &ch))
 			break;
-		if (ch == '\n') {
+		if (ch == '\r') {
+			continue;
+		} else if (ch == '\n') {
 			nlines++;
 			oldst = lx->lx_st;
 		} else if (ch != ' ' && ch != '\t') {
@@ -1485,7 +1487,8 @@ lexer_eat_spaces(struct lexer *lx, struct token **tk, int newline)
 	do {
 		if (lexer_getc(lx, &ch))
 			return 0;
-	} while (ch == ' ' || ch == '\t' || (ch == '\n' && newline));
+	} while (ch == ' ' || ch == '\t' ||
+	    ((ch == '\r' || ch == '\n') && newline));
 	lexer_ungetc(lx);
 
 	if (st.st_off == lx->lx_st.st_off)
