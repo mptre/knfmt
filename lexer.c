@@ -1600,8 +1600,8 @@ lexer_comment(struct lexer *lx, int block)
 
 	if (block) {
 		/*
-		 * For block comments, consume trailing whitespace and hard lines(s),
-		 * will be hanging of the comment token.
+		 * For block comments, consume trailing whitespace and hard
+		 * lines(s), will be hanging of the comment token.
 		 */
 		lexer_eat_spaces(lx, NULL, 0);
 		lexer_eat_lines(lx, NULL, 2);
@@ -1609,8 +1609,8 @@ lexer_comment(struct lexer *lx, int block)
 	}
 
 	/*
-	 * For trailing comments, take note trailing hard line which will be emitted
-	 * by doc_token().
+	 * For trailing comments, take note trailing hard line which will be
+	 * emitted by doc_token().
 	 */
 	tk = lexer_emit(lx, &st, &tkcomment);
 	if ((nlines = lexer_eat_lines(lx, NULL, 1)) > 0) {
