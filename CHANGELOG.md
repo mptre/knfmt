@@ -112,24 +112,6 @@
 
 # v0.5.0 - 2021-07-23
 
-## Bug fixes
-
-- Assume that everything fits while having pending new line(s).
-  (0172dd5)
-  (Alexandre Ratchov, Anton Lindqvist)
-
-- Do not allow new lines before the opening brace as part of an if statement.
-  (8b7824b)
-  (Anton Lindqvist)
-
-- Break long binary expressions even if spaces around the operator are absent.
-  (db0787a)
-  (Anton Lindqvist)
-
-- Fix nested parenthesis alignment.
-  (741c751, 6912015)
-  (Anton Lindqvist)
-
 ## News
 
 - Add support for reformatting only changed lines given a diff.
@@ -147,6 +129,24 @@
 
 - Honor new lines after assignment operators.
   (8ced949)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Assume that everything fits while having pending new line(s).
+  (0172dd5)
+  (Alexandre Ratchov, Anton Lindqvist)
+
+- Do not allow new lines before the opening brace as part of an if statement.
+  (8b7824b)
+  (Anton Lindqvist)
+
+- Break long binary expressions even if spaces around the operator are absent.
+  (db0787a)
+  (Anton Lindqvist)
+
+- Fix nested parenthesis alignment.
+  (741c751, 6912015)
   (Anton Lindqvist)
 
 # v0.4.0 - 2021-07-06
@@ -193,16 +193,6 @@
   ```
 
 # v0.2.0 - 2021-07-29
-
-## Bug fixes
-
-- Do not emit a space before the right brace as part of an array declaration.
-  (0dae997)
-  (Anton Lindqvist)
-
-- Do not confuse else if and nested if statements.
-  (4058af1)
-  (Anton Lindqvist)
 
 ## News
 
@@ -255,7 +245,19 @@
   (d7be26f)
   (Anton Lindqvist)
 
+## Bug fixes
+
+- Do not emit a space before the right brace as part of an array declaration.
+  (0dae997)
+  (Anton Lindqvist)
+
+- Do not confuse else if and nested if statements.
+  (4058af1)
+  (Anton Lindqvist)
+
 # v0.1.0 - 2021-06-17
+
+## News
 
 - First release.
   (Anton Lindqvist)
