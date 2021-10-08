@@ -748,6 +748,9 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 	for (;;) {
 		struct doc *concat;
 
+		if (lexer_is_branch(lx))
+			break;
+
 		if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
 			return parser_error(pr);
 		if (tk == rbrace) {
