@@ -1698,6 +1698,9 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		struct doc *line;
 		struct token *nx;
 
+		if (lexer_is_branch(lx))
+			break;
+
 		if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
 		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
 			break;
