@@ -1690,7 +1690,8 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_alloc(DOC_LINE, lhs);
-		return parser_exec_stmt(pr, dc, stop);
+		if (parser_exec_stmt(pr, dc, stop))
+			return parser_error(pr);
 	}
 
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
