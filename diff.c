@@ -13,7 +13,7 @@ static void	diff_end(struct diff *, unsigned int);
 
 static int	matchpath(char *, char **);
 static int	matchchunk(char *, int *, int *);
-static int	matchline(char *, int, struct file *);
+static int	matchline(const char *, int, struct file *);
 
 static char	*skipline(char *);
 
@@ -246,7 +246,7 @@ matchchunk(char *str, int *sl, int *el)
 }
 
 static int
-matchline(char *str, int lno, struct file *fe)
+matchline(const char *str, int lno, struct file *fe)
 {
 	struct diffchunk *du;
 
