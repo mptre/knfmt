@@ -519,6 +519,7 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
 		if (lm->lm_markers[i] == NULL)
 			break;
 	}
+	assert(i < NMARKERS);
 	tk->tk_markers++;
 	lm->lm_markers[i] = tk;
 }
