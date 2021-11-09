@@ -83,7 +83,6 @@ struct expr_state {
 
 	const struct expr_rule		*es_er;
 	struct token			*es_tk;
-	unsigned int			 es_nest;	/* number of nested expressions */
 	unsigned int			 es_parens;	/* number of nested parenthesis */
 	unsigned int			 es_soft;	/* number of soft lines */
 };
@@ -570,8 +569,6 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 	switch (ex->ex_type) {
 	case EXPR_UNARY:
-		if (es->es_nest > 0)
-			concat = expr_doc_soft(es, concat);
 		doc_token(ex->ex_tk, concat);
 		if (ex->ex_lhs != NULL)
 			expr_doc(ex->ex_lhs, es, concat);
@@ -708,9 +705,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 					    TOKEN_SPACE, TOKEN_FLAG_OPTLINE);
 			}
 
-			es->es_nest++;
 			concat = expr_doc(ex->ex_rhs, es, concat);
-			es->es_nest--;
 		}
 		if (rparen)
 			doc_token(rparen, concat);
