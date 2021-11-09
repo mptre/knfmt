@@ -687,21 +687,35 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		concat = expr_doc(ex->ex_rhs, es, concat);
 		break;
 
-	case EXPR_CALL:
+	case EXPR_CALL: {
+		struct token *lparen = ex->ex_tokens[0];
+		struct token *rparen = ex->ex_tokens[1];
+
 		/* Do not break the left expression. */
 		es->es_soft++;
 		concat = expr_doc(ex->ex_lhs, es, concat);
 		es->es_soft--;
-		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], concat);	/* ( */
+		if (lparen != NULL)
+			doc_token(lparen, concat);
 		if (ex->ex_rhs != NULL) {
+			if (rparen != NULL) {
+				struct token *pv;
+
+				/* Never break before the closing parens. */
+				pv = TAILQ_PREV(rparen, token_list, tk_entry);
+				if (pv != NULL)
+					token_trim(pv,
+					    TOKEN_SPACE, TOKEN_FLAG_OPTLINE);
+			}
+
 			es->es_nest++;
 			concat = expr_doc(ex->ex_rhs, es, concat);
 			es->es_nest--;
 		}
-		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], concat);	/* ) */
+		if (rparen)
+			doc_token(rparen, concat);
 		break;
+	}
 
 	case EXPR_ARG: {
 		struct doc *lhs = concat;
