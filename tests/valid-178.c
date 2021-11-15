@@ -4,14 +4,19 @@
 
 static const struct ucc_keysym ucc_keysyms[] = {
 	/* 0x0000 Unassigned */
-	N(0x0001,	"Consumer Control",	0,	0)
-	N(0x0002,	"Numeric Key Pad",	0,	0)
-	N(0x0003,	"Programmable Button",	0,	0)
-	N(0x0004,	"Microphone",		0,	0)
-	N(0x0005,	"Headphone",		0,	0)
-	N(0x0006,	"Graphic Equalizer",	0,	0)
+
+	/* 0x016B-0x016F Reserved */
+	N(0x0170,	"Sub-channel",			0,	0)
+	N(0x0171,	"Sub-channel Increment",	0,	0)
+	N(0x0172,	"Sub-channel Decrement",	0,	0)
+	N(0x0173,	"Alternate Audio Increment",	0,	0)
+	N(0x0174,	"Alternate Audio Decrement",	0,	0)
+
+	/* 0x0175-0x017F Reserved */
+	N(0x0180,	"Application Launch Buttons",		0,	0)
+	N(0x0181,	"AL Launch Button Configuration Tool",	0,	0)
+	N(0x0182,	"AL Programmable Button Configuration",	0,	0)
+	N(0x0183,	"AL Consumer Control Configuration",	0,	0)
+
 	/* 0x0007-0x001f Reserved */
-	N(0x0020,	"+10",			0,	0)
-	N(0x0021,	"+100",			0,	0)
-	N(0x0022,	"AM/PM",		0,	0)
 };

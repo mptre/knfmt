@@ -583,7 +583,6 @@ static int
 parser_exec_decl_braces1(struct parser *pr,
     struct parser_exec_decl_braces_arg *pb)
 {
-	struct doc *line = NULL;
 	struct doc *braces, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *tk;
@@ -677,30 +676,35 @@ parser_exec_decl_braces1(struct parser *pr,
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
 			doc_token(comma, expr);
 
-			if (lexer_peek(lx, &tk) && tk == rbrace)
-				break;
-
 			if (align) {
 				pb->pb_col++;
 				w += parser_width(pr, concat);
 				ruler_insert(pb->pb_rl, comma, concat,
 				    pb->pb_col, w, 0);
 				w = 0;
-			} else if (!token_has_line(comma, 1)) {
-				doc_literal(" ", concat);
-			} else {
-				doc_alloc(DOC_HARDLINE, indent);
+				goto next;
 			}
-			if (token_has_line(comma, 0))
-				ruler_exec(pb->pb_rl);
-		} else {
-			line = doc_alloc(DOC_HARDLINE, indent);
 		}
-	}
-	if (line != NULL)
-		doc_remove(line, indent);
 
-	doc_literal(" ", braces);
+		if (!lexer_back(lx, &tk)) {
+			return parser_error(pr);
+		} else if (token_has_spaces(tk)) {
+			doc_literal(" ", concat);
+		} else if (!lexer_peek(lx, &tk)) {
+			return parser_error(pr);
+		} else {
+			/*
+			 * Put the last hard line outside to get indentation
+			 * right.
+			 */
+			doc_alloc(DOC_HARDLINE, tk == rbrace ? braces : indent);
+		}
+
+next:
+		if (lexer_back(lx, &tk) && token_has_line(tk, 0))
+			ruler_exec(pb->pb_rl);
+	}
+
 out:
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, braces);
