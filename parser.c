@@ -341,7 +341,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 			 * Honor empty line(s) which denotes the end of this
 			 * block of declarations.
 			 */
-			if (lexer_back(lx, &tk) && token_has_line(tk, 0))
+			if (lexer_back(lx, &tk) && token_has_line(tk, 2))
 				break;
 
 			/*
@@ -701,7 +701,7 @@ parser_exec_decl_braces1(struct parser *pr,
 		}
 
 next:
-		if (lexer_back(lx, &tk) && token_has_line(tk, 0))
+		if (lexer_back(lx, &tk) && token_has_line(tk, 2))
 			ruler_exec(pb->pb_rl);
 	}
 
@@ -850,7 +850,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 comma:
 	if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 		doc_token(tk, dc);
-		if (token_has_line(tk, 0))
+		if (token_has_line(tk, 2))
 			ruler_exec(rl);
 	}
 

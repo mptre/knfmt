@@ -176,15 +176,18 @@ token_has_dangling(const struct token *tk)
 }
 
 /*
- * Returns non-zero if the given token has a trailing hard line.
+ * Returns non-zero if the given token has at least nlines number of trailing
+ * hard line(s).
  */
 int
-token_has_line(const struct token *tk, int optional)
+token_has_line(const struct token *tk, int nlines)
 {
 	const struct token *suffix;
 	unsigned int flags = TOKEN_FLAG_OPTSPACE;
 
-	if (!optional)
+	assert(nlines > 0 && nlines <= 2);
+
+	if (nlines > 1)
 		flags |= TOKEN_FLAG_OPTLINE;
 
 	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
