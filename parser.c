@@ -1719,8 +1719,10 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		if (parser_exec_expr(pr, lhs, NULL, NULL, 0) == PARSER_NOTHING)
 			return parser_error(pr);
 	}
-	if (lexer_expect(lx, TOKEN_COLON, &tk))
-		doc_token(tk, lhs);
+	if (!lexer_expect(lx, TOKEN_COLON, &tk))
+		return parser_error(pr);
+	token_trim(tk, TOKEN_SPACE, 0);
+	doc_token(tk, lhs);
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_alloc(DOC_LINE, lhs);
