@@ -43,6 +43,14 @@ struct parser_exec_decl_braces_arg {
 	unsigned int	 pb_col;
 };
 
+struct parser_exec_stmt_block_arg {
+	struct doc	*ps_head;
+	struct doc	*ps_tail;
+	unsigned int	 ps_flags;
+#define PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH	0x00000001u
+#define PARSER_EXEC_STMT_BLOCK_FLAG_TRIM	0x00000002u
+};
+
 #define PARSER_EXEC_DECL_FLAG_BREAK	0x00000001u
 #define PARSER_EXEC_DECL_FLAG_LINE	0x00000002u
 
@@ -79,16 +87,13 @@ static int	parser_exec_func_proto1(struct parser *,
 static int	parser_exec_func_arg(struct parser *, struct doc *,
     struct doc **, const struct token *);
 
-#define PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH	0x00000001u
-#define PARSER_EXEC_STMT_BLOCK_FLAG_TRIM	0x00000002u
-
 #define PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE	0x00000001u
 #define PARSER_EXEC_STMT_EXPR_FLAG_ELSE		0x00000002u
 
 static int	parser_exec_stmt(struct parser *, struct doc *,
     const struct token *);
-static int	parser_exec_stmt_block(struct parser *, struct doc *,
-    struct doc *, unsigned int);
+static int	parser_exec_stmt_block(struct parser *,
+    struct parser_exec_stmt_block_arg *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
 static int	parser_exec_stmt_label(struct parser *, struct doc *);
@@ -1042,6 +1047,11 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 		.pf_type	= NULL,
 		.pf_line	= DOC_HARDLINE,
 	};
+	struct parser_exec_stmt_block_arg ps = {
+		.ps_head	= dc,
+		.ps_tail	= dc,
+		.ps_flags	= 0,
+	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *type;
 
@@ -1055,7 +1065,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 		return parser_error(pr);
 
 	doc_alloc(DOC_HARDLINE, dc);
-	if (parser_exec_stmt_block(pr, dc, dc, 0))
+	if (parser_exec_stmt_block(pr, &ps))
 		return parser_error(pr);
 
 	doc_alloc(DOC_HARDLINE, dc);
@@ -1248,11 +1258,15 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 static int
 parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 {
+	struct parser_exec_stmt_block_arg ps = {
+		.ps_head	= dc,
+		.ps_tail	= dc,
+		.ps_flags	= PARSER_EXEC_STMT_BLOCK_FLAG_TRIM,
+	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
 
-	if (parser_exec_stmt_block(pr, dc, dc,
-	    PARSER_EXEC_STMT_BLOCK_FLAG_TRIM) == PARSER_OK)
+	if (parser_exec_stmt_block(pr, &ps) == PARSER_OK)
 		return parser_ok(pr);
 
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
@@ -1373,8 +1387,7 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 		doc_token(tk, dc);
 		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 			doc_literal(" ", dc);
-			error = parser_exec_stmt_block(pr, dc, dc,
-			    PARSER_EXEC_STMT_BLOCK_FLAG_TRIM);
+			error = parser_exec_stmt_block(pr, &ps);
 			doc_literal(" ", dc);
 		} else {
 			struct doc *indent;
@@ -1515,8 +1528,7 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
  * Parse a block statement wrapped in braces.
  */
 static int
-parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
-    unsigned int flags)
+parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 {
 	struct doc *concat, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
@@ -1534,16 +1546,16 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 		 * function implementation, a convention used by some when the
 		 * function lacks local variables.
 		 */
-		if (flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM)
+		if (ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM)
 			token_trim(lbrace, TOKEN_SPACE, 0);
-		doc_token(lbrace, head);
+		doc_token(lbrace, ps->ps_head);
 	}
 
 	if (!lexer_peek(lx, &seek))
 		seek = NULL;
 
-	indent = flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH ? tail :
-	    doc_alloc_indent(pr->pr_cf->cf_tw, tail);
+	indent = ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH ?
+	    ps->ps_tail : doc_alloc_indent(pr->pr_cf->cf_tw, ps->ps_tail);
 	line = doc_alloc(DOC_HARDLINE, indent);
 	while (parser_exec_stmt(pr, indent, rbrace) == PARSER_OK) {
 		nstmt++;
@@ -1566,13 +1578,13 @@ parser_exec_stmt_block(struct parser *pr, struct doc *head, struct doc *tail,
 	if (nstmt == 0)
 		doc_remove(line, indent);
 
-	doc_alloc(DOC_HARDLINE, tail);
+	doc_alloc(DOC_HARDLINE, ps->ps_tail);
 
 	/*
 	 * The right brace and any following statement is expected to fit on a
 	 * single line.
 	 */
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, tail));
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, ps->ps_tail));
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, concat);
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
@@ -1633,12 +1645,16 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	}
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		unsigned int fflags = PARSER_EXEC_STMT_BLOCK_FLAG_TRIM;
+		struct parser_exec_stmt_block_arg ps = {
+			.ps_head	= expr,
+			.ps_tail	= dc,
+			.ps_flags	= PARSER_EXEC_STMT_BLOCK_FLAG_TRIM,
+		};
 
 		if (type->tk_type == TOKEN_SWITCH)
-			fflags |= PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
+			ps.ps_flags |= PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
 		doc_literal(" ", expr);
-		return parser_exec_stmt_block(pr, expr, dc, fflags);
+		return parser_exec_stmt_block(pr, &ps);
 	} else {
 		struct doc *indent;
 
