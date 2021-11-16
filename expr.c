@@ -578,7 +578,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		struct doc *lhs;
 		struct token *pv;
 		unsigned int lno;
-		int dohardline = 0;
+		int doreorder = 0;
 		int dospace;
 
 		/* Never break before the binary operator. */
@@ -591,7 +591,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			 * line. Push it to the previous line and preserve
 			 * spaces before it.
 			 */
-			dohardline = 1;
+			doreorder = 1;
 		}
 
 		lhs = expr_doc(ex->ex_lhs, es, concat);
@@ -599,15 +599,15 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		if (dospace)
 			doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
+		if (doreorder)
+			doc_alloc(DOC_OPTLINE, lhs);
 
 		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
 			doc_literal(" ", concat);
 		} else {
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			if (dohardline)
-				doc_alloc(DOC_HARDLINE, concat);
-			else if (dospace)
+			if (doreorder || dospace)
 				doc_alloc(DOC_LINE, concat);
 			else
 				doc_alloc(DOC_SOFTLINE, concat);

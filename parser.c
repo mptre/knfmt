@@ -46,6 +46,7 @@ struct parser_exec_decl_braces_arg {
 struct parser_exec_stmt_block_arg {
 	struct doc	*ps_head;
 	struct doc	*ps_tail;
+	struct doc	*ps_rbrace;
 	unsigned int	 ps_flags;
 #define PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH	0x00000001u
 #define PARSER_EXEC_STMT_BLOCK_FLAG_TRIM	0x00000002u
@@ -1051,6 +1052,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 		.ps_head	= dc,
 		.ps_tail	= dc,
 		.ps_flags	= 0,
+		.ps_rbrace	= NULL,
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *type;
@@ -1262,6 +1264,7 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 		.ps_head	= dc,
 		.ps_tail	= dc,
 		.ps_flags	= PARSER_EXEC_STMT_BLOCK_FLAG_TRIM,
+		.ps_rbrace	= NULL,
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
@@ -1382,26 +1385,32 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_ok(pr);
 
 	if (lexer_if(lx, TOKEN_DO, &tk)) {
+		struct doc *concat = dc;
 		int error;
 
-		doc_token(tk, dc);
+		doc_token(tk, concat);
 		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-			doc_literal(" ", dc);
+			doc_literal(" ", concat);
 			error = parser_exec_stmt_block(pr, &ps);
-			doc_literal(" ", dc);
+			/*
+			 * The following while statement is intended to fit on
+			 * the same line as the right brace.
+			 */
+			concat = ps.ps_rbrace;
+			doc_literal(" ", concat);
 		} else {
 			struct doc *indent;
 
-			indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+			indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
 			doc_alloc(DOC_HARDLINE, indent);
 			error = parser_exec_stmt(pr, indent, stop);
-			doc_alloc(DOC_HARDLINE, dc);
+			doc_alloc(DOC_HARDLINE, concat);
 		}
 		if (error)
 			return parser_error(pr);
 
 		if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
-			return parser_exec_stmt_expr(pr, dc, tk,
+			return parser_exec_stmt_expr(pr, concat, tk,
 			    PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE);
 		return parser_error(pr);
 	}
@@ -1589,6 +1598,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		doc_token(tk, concat);
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, concat);
+	ps->ps_rbrace = concat;
 
 	return parser_ok(pr);
 }
@@ -1649,6 +1659,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 			.ps_head	= expr,
 			.ps_tail	= dc,
 			.ps_flags	= PARSER_EXEC_STMT_BLOCK_FLAG_TRIM,
+			.ps_rbrace	= NULL,
 		};
 
 		if (type->tk_type == TOKEN_SWITCH)

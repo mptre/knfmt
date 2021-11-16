@@ -4886,7 +4886,8 @@ void dml21_ModeSupportAndSystemConfigurationFull(struct display_mode_lib *mode_l
 				} else {
 					mode_lib->vba.NextMaxVStartup = mode_lib->vba.NextMaxVStartup - 1;
 				}
-			} while ((locals->PrefetchSupported[i][j] != true || locals->VRatioInPrefetchSupported[i][j] != true)
+			} while ((locals->PrefetchSupported[i][j] != true ||
+			    locals->VRatioInPrefetchSupported[i][j] != true) &&
 			    (mode_lib->vba.NextMaxVStartup !=
 			     mode_lib->vba.MaxMaxVStartup[0][0] ||
 			     mode_lib->vba.NextPrefetchMode <=
