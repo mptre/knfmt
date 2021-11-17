@@ -1,4 +1,5 @@
 #include <err.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -146,7 +147,7 @@ static int
 minimize(const struct ruler_column *rc)
 {
 	size_t i;
-	unsigned int minspaces = 0;
+	unsigned int minspaces = UINT_MAX;
 
 	if (rc->rc_datums.b_len < 2 ||
 	    rc->rc_nspaces == 0 ||
@@ -156,10 +157,14 @@ minimize(const struct ruler_column *rc)
 	/* Find the longest datum with the smallest amount of spaces. */
 	for (i = 0; i < rc->rc_datums.b_len; i++) {
 		const struct ruler_datum *rd = &rc->rc_datums.b_ptr[i];
+		unsigned int nspaces;
 
-		if (rc->rc_len == rd->rd_len &&
-		    (minspaces == 0 || rd->rd_nspaces < minspaces))
-			minspaces = rd->rd_nspaces;
+		if (rd->rd_len < rc->rc_len)
+			continue;
+
+		nspaces = rc->rc_nspaces - rd->rd_nspaces;
+		if (minspaces == UINT_MAX || nspaces < minspaces)
+			minspaces = nspaces;
 	}
 
 	/*
@@ -167,10 +172,7 @@ minimize(const struct ruler_column *rc)
 	 * amount of spaces is less than the maximum amount of spaces, other
 	 * datums will overlap.
 	 */
-	if (rc->rc_nspaces - minspaces < rc->rc_nspaces)
-		return 0;
-
-	return 1;
+	return minspaces >= rc->rc_nspaces;
 }
 
 static int
