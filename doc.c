@@ -57,7 +57,7 @@ struct doc_state {
 	} st_mode;
 
 	struct {
-		int		d_groups;
+		int		d_group;
 		int		d_mute;
 		unsigned int	d_beg;
 		unsigned int	d_end;
@@ -881,7 +881,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * Only applicable while entering the first group. Unless the group
 	 * above us was ignored, see below.
 	 */
-	if (st->st_diff.d_groups > 0)
+	if (st->st_diff.d_group)
 		return 0;
 
 	/*
@@ -895,6 +895,12 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 */
 	memset(&dd, 0, sizeof(dd));
 	switch (doc_diff_covers(dc, &dd)) {
+	case -1:
+		/*
+		 * The group spans multiple lines. Ignore it and keep evaluating
+		 * nested groups on subsequent invocations of this routine.
+		 */
+		return 0;
 	case 0:
 		/*
 		 * The group is not covered by any diff chunk and all nested
@@ -904,23 +910,17 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		 */
 		if (st->st_diff.d_end > 0)
 			doc_diff_leave(dc, st, 1);
-		st->st_diff.d_groups++;
+		st->st_diff.d_group = 1;
 		return 1;
-	case -1:
-		/*
-		 * The group spans multiple lines. Ignore it and keep evaluating
-		 * nested groups on subsequent invocations of this routine.
-		 */
-		return 0;
 	}
 
-	st->st_diff.d_groups++;
+	st->st_diff.d_group = 1;
 
 	doc_trace(dc, st, "%s: enter chunk: beg %u, end %u, first %u, "
-	    "chunk %u, groups %d, seen %d", __func__,
+	    "chunk %u, seen %d", __func__,
 	    st->st_diff.d_beg, st->st_diff.d_end,
 	    dd.dd_first, dd.dd_chunk,
-	    st->st_diff.d_groups, st->st_diff.d_end > 0);
+	    st->st_diff.d_end > 0);
 
 	if (st->st_diff.d_end > 0) {
 		/*
@@ -969,8 +969,8 @@ doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st)
 {
 	if (!DOC_DIFF(st))
 		return;
-	assert(st->st_diff.d_groups == 1);
-	st->st_diff.d_groups--;
+	assert(st->st_diff.d_group == 1);
+	st->st_diff.d_group = 0;
 }
 
 static void
@@ -983,7 +983,7 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 	if (lno == 0 || st->st_diff.d_end == 0)
 		return;
 
-	if (st->st_diff.d_groups > 0) {
+	if (st->st_diff.d_group) {
 		if (lno > st->st_diff.d_end) {
 			/*
 			 * The current group spans beyond the diff chunk, adjust
