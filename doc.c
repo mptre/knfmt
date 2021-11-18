@@ -9,6 +9,7 @@
 #include "extern.h"
 
 TAILQ_HEAD(doc_list, doc);
+TAILQ_HEAD(doc_stack, doc);
 
 struct doc {
 	enum doc_type	 dc_type;
@@ -38,6 +39,7 @@ struct doc {
 	};
 
 	TAILQ_ENTRY(doc) dc_entry;
+	TAILQ_ENTRY(doc) dc_stack;
 };
 
 struct doc_state_indent {
@@ -704,59 +706,76 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 }
 
 static int
-doc_fits1(const struct doc *dc, struct doc_state *st)
+doc_fits1(const struct doc *parent, struct doc_state *st)
 {
-	switch (dc->dc_type) {
-	case DOC_CONCAT: {
-		struct doc *concat;
+	struct doc_stack ds;
+	/* Only the dc_stack field is mutated, therefore cheat a bit. */
+	struct doc *dc = (struct doc *)parent;
+	int fits = 1;
 
-		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
-			if (!doc_fits1(concat, st))
-				return 0;
+	/* Recursion flatten into a loop for increased performance. */
+	TAILQ_INIT(&ds);
+	TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
+	while (!TAILQ_EMPTY(&ds)) {
+		dc = TAILQ_LAST(&ds, doc_stack);
+		TAILQ_REMOVE(&ds, dc, dc_stack);
+
+		switch (dc->dc_type) {
+		case DOC_CONCAT: {
+			const struct doc_list *dl = &dc->dc_list;
+
+			TAILQ_FOREACH_REVERSE(dc, dl, doc_stack, dc_entry) {
+				TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
+			}
+			continue;
 		}
-		break;
-	}
 
-	case DOC_GROUP:
-	case DOC_INDENT:
-	case DOC_DEDENT:
-	case DOC_OPTIONAL:
-		return doc_fits1(dc->dc_doc, st);
+		case DOC_GROUP:
+		case DOC_INDENT:
+		case DOC_DEDENT:
+		case DOC_OPTIONAL:
+			TAILQ_INSERT_TAIL(&ds, dc->dc_doc, dc_stack);
+			continue;
 
-	case DOC_ALIGN:
-		break;
+		case DOC_ALIGN:
+			continue;
 
-	case DOC_LITERAL:
-		st->st_pos += dc->dc_len;
-		break;
+		case DOC_LITERAL:
+			st->st_pos += dc->dc_len;
+			break;
 
-	case DOC_VERBATIM:
-		return 1;
+		case DOC_VERBATIM:
+			continue;
 
-	case DOC_LINE:
-		st->st_pos++;
-		break;
+		case DOC_LINE:
+			st->st_pos++;
+			break;
 
-	case DOC_SOFTLINE:
-		break;
+		case DOC_SOFTLINE:
+			continue;
 
-	case DOC_HARDLINE:
-	case DOC_NEWLINE:
-		return 1;
+		case DOC_HARDLINE:
+		case DOC_NEWLINE:
+			continue;
 
-	case DOC_OPTLINE:
-		if (st->st_optline) {
-			if (st->st_fits.f_optline == 0)
+		case DOC_OPTLINE:
+			if (st->st_optline && st->st_fits.f_optline == 0)
 				st->st_fits.f_optline = st->st_pos;
-			return 1;
-		}
-		break;
+			continue;
 
-	case DOC_MUTE:
-		break;
+		case DOC_MUTE:
+			continue;
+		}
+
+		if (st->st_pos > st->st_cf->cf_mw) {
+			fits = 0;
+			break;
+		}
 	}
 
-	return st->st_pos <= st->st_cf->cf_mw;
+	while ((dc = TAILQ_FIRST(&ds)) != NULL)
+		TAILQ_REMOVE(&ds, dc, dc_stack);
+	return fits;
 }
 
 static void
