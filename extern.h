@@ -145,7 +145,7 @@ struct token {
 #define TOKEN_FLAG_BINARY	0x00000080u
 #define TOKEN_FLAG_DISCARD	0x00000100u
 #define TOKEN_FLAG_UNMUTE	0x00000200u
-#define TOKEN_FLAG_NEWLINE	0x00000400u
+/* was TOKEN_FLAG_NEWLINE	0x00000400u */
 #define TOKEN_FLAG_CPP		0x00000800u
 #define TOKEN_FLAG_FREE		0x00001000u
 #define TOKEN_FLAG_OPTLINE	0x00002000u
@@ -162,7 +162,6 @@ struct token {
 
 	union {
 		struct token	*tk_token;
-		int		 tk_int;
 	};
 
 	struct {

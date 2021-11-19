@@ -365,10 +365,6 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 			__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
 
-	/* lexer_comment() signalled that hard line(s) must be emitted. */
-	if (tk->tk_flags & TOKEN_FLAG_NEWLINE)
-		__doc_alloc(DOC_NEWLINE, dc, tk->tk_int, fun, lno);
-
 	/* Mute if we're about to branch. */
 	tmp = TAILQ_NEXT(tk, tk_entry);
 	if (tmp != NULL && token_is_branch(tmp))

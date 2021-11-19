@@ -1402,14 +1402,6 @@ out:
 			break;
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
 		ncomments++;
-
-		/*
-		 * Halt on hard line(s) since this must be a trailing comment
-		 * meaning no further comment(s) can be associated with this
-		 * token.
-		 */
-		if (tmp->tk_flags & TOKEN_FLAG_NEWLINE)
-			break;
 	}
 
 	/*
@@ -1568,8 +1560,7 @@ static struct token *
 lexer_comment(struct lexer *lx, int block)
 {
 	struct lexer_state st;
-	struct token *tk;
-	int cstyle, nlines;
+	int cstyle;
 	unsigned char ch;
 
 	/* Stamp the state which marks the start of the comment. */
@@ -1615,16 +1606,7 @@ lexer_comment(struct lexer *lx, int block)
 		return lexer_emit(lx, &st, &tkcomment);
 	}
 
-	/*
-	 * For trailing comments, take note trailing hard line which will be
-	 * emitted by doc_token().
-	 */
-	tk = lexer_emit(lx, &st, &tkcomment);
-	if ((nlines = lexer_eat_lines(lx, NULL, 1)) > 0) {
-		tk->tk_flags |= TOKEN_FLAG_NEWLINE;
-		tk->tk_int = nlines;
-	}
-	return tk;
+	return lexer_emit(lx, &st, &tkcomment);
 }
 
 static struct token *
