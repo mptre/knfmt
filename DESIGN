@@ -5,7 +5,7 @@ I've always wanted a tool capable of formatting source code according to
 style(9) from OpenBSD. It shouldn't require one to fiddle with a bunch of knobs
 nor supply needed include path(s) in order to do get the desired formatting
 right. There are other tools out there but they didn't manage to satisfy my
-criteria, i.e. not invented here.
+requirements.
 
 Another motivation for knfmt was the discovery of a paper entitled "A prettier
 printer" by Philip Wadler[1]. I found his work both novel and elegant. This was
@@ -22,10 +22,10 @@ lexer.c
 =======
 
 The lexer turns source code into a list of tokens. It does so by reading the
-source code into memory and then constructs the list of tokens. The lexer owns
-the memory associated with the tokens. This has several advantages as all tokens
-are therefore constant and pointers to them can be compared for equality and
-remains valid until lexer_free() is invoked.
+source code into memory and then constructs a list of tokens. The lexer owns the
+memory associated with the tokens. This has several advantages as all tokens are
+therefore constant and pointers to them can be compared for equality and remains
+valid until lexer_free() is invoked.
 
 In general terms, the lexer API is divided into two categories:
 
