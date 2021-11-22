@@ -1,3 +1,45 @@
+# v1.1.0 - 2021-11-22
+
+## News
+
+- Handle windows line endings.
+  (492f346)
+  (Anton Lindqvist)
+
+- Never break before the closing parens in a call expression.
+  (12c89ba)
+  (Anton Lindqvist)
+
+- Trim empty lines after switch case statements.
+  (8007b49)
+  (Anton Lindqvist)
+
+- Trim trailing whitespace from comments.
+  (8f9a933)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Optionally skip new line after function implementation.
+  (19357a0)
+  (Anton Lindqvist)
+
+- Multiple fixes related to handling of cpp branches.
+  (2bdc511, efb1941)
+  (Anton Lindqvist)
+
+- Fix indent of statements after switch case statement.
+  (95f2656)
+  (Anton Lindqvist)
+
+- Multiple fixes related to brace initializers.
+  (2b2a8a0, f0e722f)
+  (Anton Lindqvist)
+
+- correct handling of do/while statements in diff mode.
+  (5032313)
+  (Anton Lindqvist)
+
 # v1.0.0 - 2021-08-28
 
 ## News
