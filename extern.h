@@ -50,6 +50,7 @@ void		 buffer_append(struct buffer *, const char *, size_t);
 void		 buffer_appendc(struct buffer *, char);
 void		 buffer_appendv(struct buffer *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
+char		*buffer_release(struct buffer *);
 void		 buffer_reset(struct buffer *);
 int		 buffer_cmp(const struct buffer *, const struct buffer *);
 
@@ -145,7 +146,7 @@ struct token {
 #define TOKEN_FLAG_BINARY	0x00000080u
 #define TOKEN_FLAG_DISCARD	0x00000100u
 #define TOKEN_FLAG_UNMUTE	0x00000200u
-/* was TOKEN_FLAG_NEWLINE	0x00000400u */
+#define TOKEN_FLAG_DIRTY	0x00000400u
 #define TOKEN_FLAG_CPP		0x00000800u
 #define TOKEN_FLAG_FREE		0x00001000u
 #define TOKEN_FLAG_OPTLINE	0x00002000u

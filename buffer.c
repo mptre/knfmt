@@ -132,6 +132,21 @@ buffer_appendv(struct buffer *bf, const char *fmt, ...)
 	bf->bf_len += n;
 }
 
+/*
+ * Release and take ownership of the underlying buffer.
+ */
+char *
+buffer_release(struct buffer *bf)
+{
+	char *ptr;
+
+	ptr = bf->bf_ptr;
+	bf->bf_ptr = NULL;
+	bf->bf_siz = 0;
+	bf->bf_len = 0;
+	return ptr;
+}
+
 void
 buffer_reset(struct buffer *bf)
 {

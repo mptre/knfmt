@@ -112,7 +112,8 @@ static void		 token_free(struct token *);
 static void		 token_list_free(struct token_list *);
 static const char	*strtoken(enum token_type);
 
-static int	isnum(unsigned char, int);
+static int	 isnum(unsigned char, int);
+static char	*strtrim(const char *, size_t *);
 
 static struct token_hash	*tokens = NULL;
 
@@ -1560,6 +1561,8 @@ static struct token *
 lexer_comment(struct lexer *lx, int block)
 {
 	struct lexer_state st;
+	struct token *tk;
+	char *str;
 	int cstyle;
 	unsigned char ch;
 
@@ -1603,10 +1606,14 @@ lexer_comment(struct lexer *lx, int block)
 		 */
 		lexer_eat_spaces(lx, NULL, 0);
 		lexer_eat_lines(lx, NULL, 2);
-		return lexer_emit(lx, &st, &tkcomment);
 	}
 
-	return lexer_emit(lx, &st, &tkcomment);
+	tk = lexer_emit(lx, &st, &tkcomment);
+	if ((str = strtrim(tk->tk_str, &tk->tk_len)) != NULL) {
+		tk->tk_str = str;
+		tk->tk_flags |= TOKEN_FLAG_DIRTY;
+	}
+	return tk;
 }
 
 static struct token *
@@ -2246,6 +2253,9 @@ token_free(struct token *tk)
 		return;
 	}
 
+	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
+		free((void *)tk->tk_str);
+
 	free(tk);
 }
 
@@ -2257,6 +2267,8 @@ token_list_free(struct token_list *tl)
 	while ((tmp = TAILQ_FIRST(tl)) != NULL) {
 		TAILQ_REMOVE(tl, tmp, tk_entry);
 		token_branch_unlink(tmp);
+		if (tmp->tk_flags & TOKEN_FLAG_DIRTY)
+			free((void *)tmp->tk_str);
 		free(tmp);
 	}
 }
@@ -2280,4 +2292,57 @@ isnum(unsigned char ch, int prefix)
 	ch = tolower(ch);
 	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
 	    ch == 'u' || ch == '.';
+}
+
+/*
+ * Trim trailing whitespace from each line in src. Returns NULL if no such
+ * whitespace is found, an optimization for the common case.
+ */
+static char *
+strtrim(const char *src, size_t *srclen)
+{
+	struct buffer *bf = NULL;
+	char *dst;
+	size_t len = *srclen;
+	size_t co = 0;	/* copy offset in src */
+	size_t so = 0;	/* current start offset in src */
+
+	while (len > 0) {
+		const char *nl;
+		size_t eo;
+		int nspaces = 0;
+
+		nl = memchr(&src[so], '\n', len);
+		if (nl == NULL)
+			break;
+		eo = nl - src;
+		for (; eo > 0; eo--) {
+			if (src[eo - 1] == ' ' || src[eo - 1] == '\t')
+				nspaces++;
+			else
+				break;
+		}
+		if (nspaces == 0)
+			goto next;
+
+		if (bf == NULL)
+			bf = buffer_alloc(*srclen);
+		buffer_append(bf, &src[co], eo - co);
+		buffer_appendc(bf, '\n');
+		co = (nl - src) + 1;
+
+next:
+		len -= (nl - &src[so]) + 1;
+		so += (nl - &src[so]) + 1;
+	}
+
+	if (bf == NULL)
+		return NULL;
+
+	if (so - co > 1)
+		buffer_append(bf, &src[co], so - co);
+	*srclen = bf->bf_len;
+	dst = buffer_release(bf);
+	buffer_free(bf);
+	return dst;
 }
