@@ -1425,7 +1425,7 @@ out:
 	}
 
 	/* Consume hard lines, will be hanging of the emitted token. */
-	if ((nlines = lexer_eat_lines(lx, &tmp, 1)) > 0) {
+	if ((nlines = lexer_eat_lines(lx, &tmp, 0)) > 0) {
 		if (nlines == 1)
 			tmp->tk_flags |= TOKEN_FLAG_OPTLINE;
 		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
@@ -1468,15 +1468,16 @@ lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 		if (ch == '\r') {
 			continue;
 		} else if (ch == '\n') {
-			nlines++;
 			oldst = lx->lx_st;
+			if (++nlines == threshold)
+				break;
 		} else if (ch != ' ' && ch != '\t') {
 			lexer_ungetc(lx);
 			break;
 		}
 	}
 	lx->lx_st = oldst;
-	if (nlines < threshold || lexer_eof(lx))
+	if (nlines == 0 || nlines < threshold || lexer_eof(lx))
 		return 0;
 	if (tk != NULL)
 		*tk = lexer_emit(lx, &st, &tkline);
@@ -1611,8 +1612,8 @@ lexer_comment(struct lexer *lx, int block)
 
 	if (block) {
 		/*
-		 * For block comments, consume trailing whitespace and hard
-		 * lines(s), will be hanging of the comment token.
+		 * For block comments, consume trailing whitespace and up to 2
+		 * hard lines(s), will be hanging of the comment token.
 		 */
 		lexer_eat_spaces(lx, NULL, 0);
 		lexer_eat_lines(lx, NULL, 2);
@@ -1623,6 +1624,11 @@ lexer_comment(struct lexer *lx, int block)
 		tk->tk_str = str;
 		tk->tk_flags |= TOKEN_FLAG_DIRTY;
 	}
+
+	/* Discard any remaining hard line(s). */
+	if (block)
+		lexer_eat_lines(lx, NULL, 0);
+
 	return tk;
 }
 
@@ -1631,6 +1637,7 @@ lexer_cpp(struct lexer *lx)
 {
 	struct lexer_state cmpst, st;
 	struct token cpp;
+	struct token *tk;
 	enum token_type type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
@@ -1676,12 +1683,17 @@ lexer_cpp(struct lexer *lx)
 	else if (lexer_buffer_strcmp(lx, &cmpst, "endif") == 0)
 		type = TOKEN_CPP_ENDIF;
 
-	/* Consume hard line(s), will be hanging of the cpp token. */
+	/* Consume up to 2 hard line(s), will be hanging of the cpp token. */
 	lexer_eat_lines(lx, NULL, 2);
 
 	cpp = tkcpp;
 	cpp.tk_type = type;
-	return lexer_emit(lx, &st, &cpp);
+	tk = lexer_emit(lx, &st, &cpp);
+
+	/* Discard any remaining hard line(s). */
+	lexer_eat_lines(lx, NULL, 0);
+
+	return tk;
 }
 
 static struct token *
