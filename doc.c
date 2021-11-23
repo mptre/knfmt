@@ -487,10 +487,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_VERBATIM: {
 		unsigned int end, oldpos;
 
-		end = doc_diff_verbatim(dc, st);
-
 		if (doc_is_mute(st))
 			break;
+
+		end = doc_diff_verbatim(dc, st);
 
 		/*
 		 * A verbatim block is either a comment or preprocessor
