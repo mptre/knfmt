@@ -510,8 +510,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (isblock && st->st_pos > 0)
 			doc_print(dc, st, "\n", 1, 0);
 
-		doc_print(dc, st, dc->dc_str, dc->dc_len,
-		    DOC_PRINT_FLAG_INDENT);
+		doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
 
 		/* Restore the indentation after emitting a verbatim block. */
 		if (isblock) {
