@@ -414,6 +414,9 @@ lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
 		return NULL;
 	}
 
+	if (UNLIKELY(cf->cf_verbose >= 3))
+		lexer_dump(lx);
+
 	buffer_appendc(lx->lx_bf, '\0');
 
 	return lx;
@@ -1221,11 +1224,12 @@ lexer_dump(const struct lexer *lx)
 
 	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
 		struct token *prefix, *suffix;
+		int nfixes = 0;
 
 		i++;
 
 		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			fprintf(stderr, "%6u   prefix %s",
+			fprintf(stderr, "[L] %-6u   prefix %s",
 			    i, token_sprintf(prefix));
 			if (prefix->tk_branch.br_pv != NULL)
 				fprintf(stderr, ", pv %s",
@@ -1234,12 +1238,18 @@ lexer_dump(const struct lexer *lx)
 				fprintf(stderr, ", nx %s",
 				    token_sprintf(prefix->tk_branch.br_nx));
 			fprintf(stderr, "\n");
+			nfixes++;
 		}
-		fprintf(stderr, "%6u %s\n", i, token_sprintf(tk));
+
+		fprintf(stderr, "[L] %-6u %s\n", i, token_sprintf(tk));
 		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-			fprintf(stderr, "%6u   suffix %s\n",
+			fprintf(stderr, "[L] %-6u   suffix %s\n",
 			    i, token_sprintf(suffix));
+			nfixes++;
 		}
+
+		if (nfixes > 0)
+			fprintf(stderr, "[L] -\n");
 	}
 }
 
