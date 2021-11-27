@@ -1586,11 +1586,11 @@ lexer_comment(struct lexer *lx, int block)
 
 	if (lexer_getc(lx, &ch) || ch != '/') {
 		lx->lx_st = st;
-		return 0;
+		return NULL;
 	}
 	if (lexer_getc(lx, &ch) || (ch != '/' && ch != '*')) {
 		lx->lx_st = st;
-		return 0;
+		return NULL;
 	}
 	cstyle = ch == '*';
 
