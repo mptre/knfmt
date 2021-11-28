@@ -1697,12 +1697,14 @@ lexer_cpp(struct lexer *lx)
 		 * Make block comments part of the preprocessor
 		 * directive.
 		 */
-		if (ch == '/' && peek == '*')
+		if (ch == '/' && peek == '*') {
 			comment = 1;
-		else if (comment && ch == '*' && peek == '/')
+		} else if (comment && ch == '*' && peek == '/') {
 			comment = 0;
-		else if (!comment && ch != '\\' && peek == '\n')
+		} else if (!comment && ch != '\\' && peek == '\n') {
+			lexer_ungetc(lx);
 			break;
+		}
 		ch = peek;
 	}
 

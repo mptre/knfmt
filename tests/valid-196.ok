@@ -4,5 +4,4 @@
   #define foo 1
 #endif
 
-
 int x;

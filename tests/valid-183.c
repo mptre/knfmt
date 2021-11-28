@@ -127,7 +127,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 // Base RAM and ROM pointer types for given architecture
 #if defined(__PIC32MX__)
 	#define PTR_BASE		unsigned long
@@ -143,7 +142,6 @@
 	#define ROM_PTR_BASE	unsigned long
 #endif
 
-
 // Definitions that apply to all except Microchip MPLAB C Compiler for PIC18 MCUs (C18)
 #if !defined(COMPILER_MPLAB_C18)
 	#define memcmppgm2ram(a,b,c)	memcmp(a,b,c)
@@ -156,7 +154,6 @@
 	#define strchrpgm(a,b)			strchr(a,b)
 	#define strcatpgm2ram(a,b)		strcat(a,b)
 #endif
-
 
 // Definitions that apply to all 8-bit products
 // (PIC10, PIC12, PIC16, PIC18)
@@ -216,6 +213,5 @@
 		#endif
 	#endif
 #endif
-
 
 #endif
