@@ -56,6 +56,8 @@ struct token_hash {
 static int		 lexer_getc(struct lexer *, unsigned char *);
 static void		 lexer_ungetc(struct lexer *);
 static int		 lexer_read(struct lexer *, struct token **);
+static void		 lexer_eat_buffet(struct lexer *, struct lexer_state *,
+    struct lexer_state *);
 static int		 lexer_eat_lines(struct lexer *, struct token **, int);
 static int		 lexer_eat_spaces(struct lexer *, struct token **);
 static struct token	*lexer_keyword(struct lexer *);
@@ -1453,6 +1455,34 @@ out:
 	return error ? 0 : 1;
 }
 
+/*
+ * Consume empty line(s) until a line with optional whitespace following by
+ * something else is found.
+ */
+static void
+lexer_eat_buffet(struct lexer *lx, struct lexer_state *oldst,
+    struct lexer_state *st)
+{
+
+	int gotspaces = 0;
+
+	*oldst = *st = lx->lx_st;
+
+	for (;;) {
+		if (lexer_eat_lines(lx, NULL, 0)) {
+			*st = lx->lx_st;
+			gotspaces = 0;
+		} else if (gotspaces) {
+			break;
+		}
+
+		if (lexer_eat_spaces(lx, NULL))
+			gotspaces = 1;
+		else
+			break;
+	}
+}
+
 static int
 lexer_eat_lines(struct lexer *lx, struct token **tk, int threshold)
 {
@@ -1573,27 +1603,28 @@ lexer_keyword1(struct lexer *lx)
 static struct token *
 lexer_comment(struct lexer *lx, int block)
 {
-	struct lexer_state st;
+	struct lexer_state oldst, st;
 	struct token *tk;
 	char *str;
 	int cstyle;
 	unsigned char ch;
 
-	/* Stamp the state which marks the start of the comment. */
-	st = lx->lx_st;
-
-	lexer_eat_spaces(lx, NULL);
-
+	if (block) {
+		lexer_eat_buffet(lx, &oldst, &st);
+	} else {
+		oldst = st = lx->lx_st;
+		lexer_eat_spaces(lx, NULL);
+	}
 	if (lexer_getc(lx, &ch) || ch != '/') {
-		lx->lx_st = st;
+		lx->lx_st = oldst;
 		return NULL;
 	}
 	if (lexer_getc(lx, &ch) || (ch != '/' && ch != '*')) {
-		lx->lx_st = st;
+		lx->lx_st = oldst;
 		return NULL;
 	}
-	cstyle = ch == '*';
 
+	cstyle = ch == '*';
 	ch = '\0';
 	for (;;) {
 		unsigned char peek;
@@ -1637,17 +1668,16 @@ lexer_comment(struct lexer *lx, int block)
 static struct token *
 lexer_cpp(struct lexer *lx)
 {
-	struct lexer_state cmpst, st;
+	struct lexer_state cmpst, oldst, st;
 	struct token cpp;
 	struct token *tk;
 	enum token_type type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
 
-	st = lx->lx_st;
-
+	lexer_eat_buffet(lx, &oldst, &st);
 	if (lexer_getc(lx, &ch) || ch != '#') {
-		lx->lx_st = st;
+		lx->lx_st = oldst;
 		return NULL;
 	}
 
