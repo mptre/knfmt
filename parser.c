@@ -2020,21 +2020,37 @@ parser_peek_expr(struct parser *pr, const struct token *stop)
 	};
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *ident, *nx, *semi;
 	int peek = 0;
 
 	if (lexer_peek_if_type(lx, NULL, 0))
 		return 0;
-	if (!lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &tk))
+	if (!lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &semi))
 		return 0;
 
 	lexer_peek_enter(lx, &s);
-	if (expr_peek(&ea) && lexer_peek_if(lx, TOKEN_SEMI, NULL))
+	if (expr_peek(&ea) && lexer_pop(lx, &nx) && nx == semi)
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 	if (!peek)
 		return 0;
-	return 1;
+
+	/*
+	 * Do not confuse a loop construct hidden behind cpp followed by a
+	 * statement which is a sole expression:
+	 *
+	 * 	foreach()
+	 * 		func();
+	 */
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+	    lexer_pop(lx, &nx) && nx != semi &&
+	    token_cmp(ident, nx) < 0 && token_cmp(nx, semi) <= 0)
+		peek = 0;
+	lexer_peek_leave(lx, &s);
+
+	return peek;
 }
 
 /*
