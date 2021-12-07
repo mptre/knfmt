@@ -111,6 +111,7 @@ static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static enum parser_peek	parser_peek_else(struct parser *, struct token **);
+static int		parser_peek_expr(struct parser *, const struct token *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
 static void		parser_trim_brace(struct token *);
@@ -1489,35 +1490,16 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 	 * parser_exec_decl() being able to detect declarations making use of
 	 * preprocessor directives such as the ones provided by queue(3).
 	 */
-	if (!lexer_peek_if_type(lx, NULL, 0) &&
-	    lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &tk)) {
-		const struct expr_exec_arg ea = {
-			.ea_cf		= pr->pr_cf,
-			.ea_lx		= lx,
-			.ea_dc		= NULL,
-			.ea_stop	= tk,
-			.ea_recover	= parser_exec_expr_recover,
-			.ea_arg		= pr,
-			.ea_flags	= 0,
-		};
-		struct lexer_state s;
+	if (parser_peek_expr(pr, stop)) {
 		struct doc *expr;
-		int peek = 0;
 
-		lexer_peek_enter(lx, &s);
-		if (expr_peek(&ea) && lexer_peek_if(lx, TOKEN_SEMI, NULL))
-			peek = 1;
-		lexer_peek_leave(lx, &s);
-
-		if (peek) {
-			if (parser_exec_expr(pr, dc, &expr, NULL, 0))
-				return parser_error(pr);
-			if (lexer_expect(lx, TOKEN_SEMI, &tk))
-				doc_token(tk, expr);
-			if (lexer_is_branch(lx))
-				doc_alloc(DOC_HARDLINE, dc);
-			return parser_ok(pr);
-		}
+		if (parser_exec_expr(pr, dc, &expr, NULL, 0))
+			return parser_error(pr);
+		if (lexer_expect(lx, TOKEN_SEMI, &tk))
+			doc_token(tk, expr);
+		if (lexer_is_branch(lx))
+			doc_alloc(DOC_HARDLINE, dc);
+		return parser_ok(pr);
 	}
 
 	if (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_FLAG_BREAK) == PARSER_OK)
@@ -2022,6 +2004,37 @@ parser_peek_else(struct parser *pr, struct token **tk)
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
+}
+
+static int
+parser_peek_expr(struct parser *pr, const struct token *stop)
+{
+	const struct expr_exec_arg ea = {
+		.ea_cf		= pr->pr_cf,
+		.ea_lx		= pr->pr_lx,
+		.ea_dc		= NULL,
+		.ea_stop	= stop,
+		.ea_recover	= parser_exec_expr_recover,
+		.ea_arg		= pr,
+		.ea_flags	= 0,
+	};
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+	int peek = 0;
+
+	if (lexer_peek_if_type(lx, NULL, 0))
+		return 0;
+	if (!lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &tk))
+		return 0;
+
+	lexer_peek_enter(lx, &s);
+	if (expr_peek(&ea) && lexer_peek_if(lx, TOKEN_SEMI, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return 0;
+	return 1;
 }
 
 /*
