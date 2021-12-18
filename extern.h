@@ -132,9 +132,9 @@ TAILQ_HEAD(token_list, token);
 
 struct token {
 	enum token_type		 tk_type;
+	int			 tk_refs;
 	unsigned int		 tk_lno;
 	unsigned int		 tk_cno;
-	unsigned int		 tk_markers;
 	unsigned int		 tk_flags;
 #define TOKEN_FLAG_TYPE		0x00000001u
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
@@ -176,6 +176,8 @@ struct token {
 	TAILQ_ENTRY(token)	 tk_entry;
 };
 
+void	 token_ref(struct token *);
+void	 token_rele(struct token *);
 int	 token_cmp(const struct token *, const struct token *);
 int	 token_has_dangling(const struct token *);
 int	 token_has_line(const struct token *, int);

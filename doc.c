@@ -23,10 +23,7 @@ struct doc {
 	union {
 		struct doc_list	 dc_list;
 		struct doc	*dc_doc;
-		struct {
-			unsigned int	tk_lno;
-			unsigned int	tk_flags;
-		} dc_tk;
+		struct token	*dc_tk;
 	};
 
 	/* value */
@@ -233,9 +230,13 @@ doc_free(struct doc *dc)
 		doc_free(dc->dc_doc);
 		break;
 
-	case DOC_ALIGN:
 	case DOC_LITERAL:
 	case DOC_VERBATIM:
+		if (dc->dc_tk != NULL)
+			token_rele(dc->dc_tk);
+		break;
+
+	case DOC_ALIGN:
 	case DOC_LINE:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
@@ -353,8 +354,9 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	}
 
 	token = __doc_alloc(type, dc, 0, fun, lno);
-	token->dc_tk.tk_lno = tk->tk_lno;
-	token->dc_tk.tk_flags = tk->tk_flags;
+	/* Must be mutable for reference counting. */
+	token->dc_tk = (struct token *)tk;
+	token_ref(token->dc_tk);
 	token->dc_str = tk->tk_str;
 	token->dc_len = tk->tk_len;
 
@@ -990,13 +992,14 @@ doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st)
 static void
 doc_diff_literal(const struct doc *dc, struct doc_state *st)
 {
-	unsigned int lno = dc->dc_tk.tk_lno;
+	unsigned int lno;
 
 	if (!DOC_DIFF(st))
 		return;
-	if (lno == 0 || st->st_diff.d_end == 0)
+	if (dc->dc_tk == NULL || st->st_diff.d_end == 0)
 		return;
 
+	lno = dc->dc_tk->tk_lno;
 	if (st->st_diff.d_group) {
 		if (lno > st->st_diff.d_end) {
 			/*
@@ -1015,7 +1018,7 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 static unsigned int
 doc_diff_verbatim(const struct doc *dc, struct doc_state *st)
 {
-	unsigned int lno = dc->dc_tk.tk_lno;
+	unsigned int lno = dc->dc_tk->tk_lno;
 	unsigned int n;
 
 	if (!DOC_DIFF(st))
@@ -1106,19 +1109,18 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 		return doc_diff_covers(dc->dc_doc, dd);
 
 	case DOC_LITERAL:
-	case DOC_VERBATIM: {
-		unsigned int lno = dc->dc_tk.tk_lno;
+	case DOC_VERBATIM:
+		if (dc->dc_tk != NULL) {
+			unsigned int lno = dc->dc_tk->tk_lno;
 
-		if (lno > 0) {
 			if (dd->dd_first == 0)
 				dd->dd_first = lno;
-			if (dc->dc_tk.tk_flags & TOKEN_FLAG_DIFF) {
+			if (dc->dc_tk->tk_flags & TOKEN_FLAG_DIFF) {
 				dd->dd_chunk = lno;
 				return 1;
 			}
 		}
 		break;
-	}
 
 	case DOC_HARDLINE:
 		return -1;

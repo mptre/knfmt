@@ -110,8 +110,8 @@ static int		 token_branch_unlink(struct token *);
 static struct token	*token_get_branch(struct token *);
 static struct token	*token_find_prefix(const struct token *,
     enum token_type);
-static void		 token_free(struct token *);
 static void		 token_list_free(struct token_list *);
+static void		 token_remove(struct token_list *, struct token *);
 static const char	*strtoken(enum token_type);
 
 static int	 isnum(unsigned char, int);
@@ -167,6 +167,26 @@ token_cmp(const struct token *t1, const struct token *t2)
 		return 1;
 	/* Intentionally not comparing the column. */
 	return 0;
+}
+
+void
+token_ref(struct token *tk)
+{
+	tk->tk_refs++;
+}
+
+void
+token_rele(struct token *tk)
+{
+	assert(tk->tk_refs > 0);
+	if (--tk->tk_refs > 0)
+		return;
+
+	token_list_free(&tk->tk_prefixes);
+	token_list_free(&tk->tk_suffixes);
+	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
+		free((void *)tk->tk_str);
+	free(tk);
 }
 
 /*
@@ -289,8 +309,7 @@ token_trim(struct token *tk, enum token_type type, unsigned int flags)
 
 		if (suffix->tk_type == type &&
 		    (flags == 0 || (suffix->tk_flags & flags))) {
-			TAILQ_REMOVE(&tk->tk_suffixes, suffix, tk_entry);
-			token_free(suffix);
+			token_remove(&tk->tk_suffixes, suffix);
 			ntrim++;
 		}
 	}
@@ -432,9 +451,13 @@ lexer_free(struct lexer *lx)
 	if (lx == NULL)
 		return;
 
+	if (lx->lx_unmute != NULL)
+		token_rele(lx->lx_unmute);
+
 	while ((tk = TAILQ_FIRST(&lx->lx_tokens)) != NULL) {
 		TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
-		token_free(tk);
+		assert(tk->tk_refs == 1);
+		token_rele(tk);
 	}
 	buffer_free(lx->lx_bf);
 	free(lx->lx_lines.l_off);
@@ -493,8 +516,7 @@ lexer_recover_leave(struct lexer_recover_markers *lm)
 
 		if (tk == NULL)
 			break;
-		if (--tk->tk_markers == 0 && (tk->tk_flags & TOKEN_FLAG_FREE))
-			token_free(tk);
+		token_rele(tk);
 	}
 }
 
@@ -518,7 +540,7 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
 		if (lm->lm_markers[i + 1] == NULL)
 			break;
 
-		lm->lm_markers[i]->tk_markers--;
+		token_rele(lm->lm_markers[i]);
 		lm->lm_markers[i] = lm->lm_markers[i + 1];
 		lm->lm_markers[i + 1] = NULL;
 	}
@@ -529,8 +551,8 @@ lexer_recover_mark(struct lexer *lx, struct lexer_recover_markers *lm)
 			break;
 	}
 	assert(i < NMARKERS);
-	tk->tk_markers++;
 	lm->lm_markers[i] = tk;
+	token_ref(tk);
 }
 
 void
@@ -548,8 +570,8 @@ lexer_recover_purge(struct lexer_recover_markers *lm)
 			break;
 		if ((tk->tk_flags & TOKEN_FLAG_FREE) == 0)
 			markers.lm_markers[j++] = tk;
-		else if (--tk->tk_markers == 0)
-			token_free(tk);
+		else
+			token_rele(tk);
 	}
 
 	for (i = 0; i < NMARKERS; i++)
@@ -666,12 +688,8 @@ __lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 		if (rm == seek)
 			seek = dst;
 
-		if (rm == lx->lx_unmute)
-			lx->lx_unmute = NULL;
-
 		nx = TAILQ_NEXT(rm, tk_entry);
-		TAILQ_REMOVE(&lx->lx_tokens, rm, tk_entry);
-		token_free(rm);
+		token_remove(&lx->lx_tokens, rm);
 		if (nx == dst)
 			break;
 		rm = nx;
@@ -682,10 +700,13 @@ __lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 	 * emitted again. While here, disarm any previous unmute token as it
 	 * might be crossed again.
 	 */
-	if (lx->lx_unmute != NULL)
+	if (lx->lx_unmute != NULL) {
 		lx->lx_unmute->tk_flags &= ~TOKEN_FLAG_UNMUTE;
+		token_rele(lx->lx_unmute);
+	}
 	dst->tk_flags |= TOKEN_FLAG_UNMUTE;
 	lx->lx_unmute = dst;
+	token_ref(lx->lx_unmute);
 
 	/* Rewind causing the seek token to be next one to emit. */
 	lexer_trace(lx, "seek to %s", token_sprintf(seek));
@@ -1824,6 +1845,7 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	if (t == NULL)
 		err(1, NULL);
 	*t = *tk;
+	t->tk_refs = 1;
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
@@ -1995,7 +2017,7 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 			/* Completely unlink any branch. */
 			while (token_branch_unlink(pr) == 0)
 				continue;
-			token_free(pr);
+			token_rele(pr);
 			if (pr == dstpre)
 				break;
 		}
@@ -2042,8 +2064,7 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 		nx = TAILQ_NEXT(src, tk_entry);
 		lexer_trace(lx, "removing %s", token_sprintf(src));
 		flags |= src->tk_flags & TOKEN_FLAG_UNMUTE;
-		TAILQ_REMOVE(&lx->lx_tokens, src, tk_entry);
-		token_free(src);
+		token_remove(&lx->lx_tokens, src);
 		if (nx == dst)
 			break;
 		src = nx;
@@ -2290,31 +2311,6 @@ token_find_prefix(const struct token *tk, enum token_type type)
 }
 
 static void
-token_free(struct token *tk)
-{
-	if (tk == NULL)
-		return;
-
-	token_list_free(&tk->tk_prefixes);
-	token_list_free(&tk->tk_suffixes);
-
-	if (tk->tk_markers > 0) {
-		/*
-		 * Token is still being used as a recover marker, postpone
-		 * freeing to lexer_recover_purge() once the last reference is
-		 * released.
-		 */
-		tk->tk_flags |= TOKEN_FLAG_FREE;
-		return;
-	}
-
-	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
-		free((void *)tk->tk_str);
-
-	free(tk);
-}
-
-static void
 token_list_free(struct token_list *tl)
 {
 	struct token *tmp;
@@ -2322,10 +2318,18 @@ token_list_free(struct token_list *tl)
 	while ((tmp = TAILQ_FIRST(tl)) != NULL) {
 		TAILQ_REMOVE(tl, tmp, tk_entry);
 		token_branch_unlink(tmp);
-		if (tmp->tk_flags & TOKEN_FLAG_DIRTY)
-			free((void *)tmp->tk_str);
-		free(tmp);
+		token_remove(tl, tmp);
 	}
+}
+
+static void
+token_remove(struct token_list *tl, struct token *tk)
+{
+	TAILQ_REMOVE(tl, tk, tk_entry);
+	token_list_free(&tk->tk_prefixes);
+	token_list_free(&tk->tk_suffixes);
+	tk->tk_flags |= TOKEN_FLAG_FREE;
+	token_rele(tk);
 }
 
 static const char *
