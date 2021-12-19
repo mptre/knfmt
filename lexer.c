@@ -872,7 +872,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 		    &t)) {
 			if (t->tk_flags & TOKEN_FLAG_IDENT)
 				lexer_if(lx, TOKEN_IDENT, &t);
-			/* Recognize constructs like `struct s[]' for instance. */
+			/* Recognize constructs like `struct s[]'. */
 			(void)lexer_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE,
 			    &t);
 			peek = 1;
