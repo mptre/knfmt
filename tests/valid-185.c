@@ -7,12 +7,12 @@ main(void)
 {
 	switch (port) {
 	default:
-#ifdef DIAGNOSTIC		
+#ifdef DIAGNOSTIC
 		printf("eso_set_gain: bad port %u", port);
 		return;
 		/* NOTREACHED */
 #else
 		return;
-#endif		
+#endif
 	}
 }

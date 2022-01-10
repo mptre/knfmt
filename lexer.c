@@ -1692,6 +1692,7 @@ lexer_cpp(struct lexer *lx)
 	struct lexer_state cmpst, oldst, st;
 	struct token cpp;
 	struct token *tk;
+	char *str;
 	enum token_type type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
@@ -1743,6 +1744,10 @@ lexer_cpp(struct lexer *lx)
 	cpp = tkcpp;
 	cpp.tk_type = type;
 	tk = lexer_emit(lx, &st, &cpp);
+	if ((str = strtrim(tk->tk_str, &tk->tk_len)) != NULL) {
+		tk->tk_str = str;
+		tk->tk_flags |= TOKEN_FLAG_DIRTY;
+	}
 
 	/* Discard any remaining hard line(s). */
 	lexer_eat_lines(lx, NULL, 0);
