@@ -2,7 +2,7 @@
 
 ## News
 
-- Discard exceesive whitespace from comments and cpp macros.
+- Discard excessive whitespace from comments and cpp macros.
   (15502ff, 15680c8, 96b9f63, 83e8501)
   (Anton Lindqvist)
 
