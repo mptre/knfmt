@@ -1,3 +1,17 @@
+# v1.2.0 - 2022-01-12
+
+## News
+
+- Discard exceesive whitespace from comments and cpp macros.
+  (15502ff, 15680c8, 96b9f63, 83e8501)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Do not confuse loop constructs hidden behind cpp macros.
+  (6fe7e69)
+  (Anton Lindqvist)
+
 # v1.1.0 - 2021-11-22
 
 ## News
