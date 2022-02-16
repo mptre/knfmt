@@ -430,7 +430,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 			return parser_error(pr);
 		parser_trim_brace(rbrace);
 		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
-			token_trim(lbrace, TOKEN_SPACE, 0);
+			token_trim(lbrace);
 			doc_token(lbrace, concat);
 		}
 
@@ -750,7 +750,7 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 		return parser_error(pr);
 	doline = token_has_line(lbrace, 1);
 	if (flags & PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM)
-		token_trim(lbrace, TOKEN_SPACE, 0);
+		token_trim(lbrace);
 	doc_token(lbrace, dc);
 
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
@@ -1536,7 +1536,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		 * function lacks local variables.
 		 */
 		if (ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM)
-			token_trim(lbrace, TOKEN_SPACE, 0);
+			token_trim(lbrace);
 		doc_token(lbrace, ps->ps_head);
 	}
 
@@ -1576,7 +1576,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, ps->ps_tail));
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk)) {
 		if (lexer_peek_if(lx, TOKEN_ELSE, NULL))
-			token_trim(tk, TOKEN_SPACE, 0);
+			token_trim(tk);
 		doc_token(tk, concat);
 	}
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
@@ -1608,7 +1608,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_error(pr);
 	/* Never break after the right parenthesis. */
-	token_trim(rparen, TOKEN_SPACE, TOKEN_FLAG_OPTLINE);
+	token_trim(rparen);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	if (tkelse != NULL) {
@@ -1704,7 +1704,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 	}
 	if (!lexer_expect(lx, TOKEN_COLON, &tk))
 		return parser_error(pr);
-	token_trim(tk, TOKEN_SPACE, 0);
+	token_trim(tk);
 	doc_token(tk, lhs);
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
@@ -2124,7 +2124,7 @@ parser_trim_brace(struct token *rbrace)
 	if (pv != NULL &&
 	    !token_has_prefix(rbrace, TOKEN_COMMENT) &&
 	    !token_has_prefix(rbrace, TOKEN_CPP))
-		token_trim(pv, TOKEN_SPACE, 0);
+		token_trim(pv);
 }
 
 /*

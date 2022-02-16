@@ -290,11 +290,11 @@ token_is_decl(const struct token *tk, enum token_type type)
 }
 
 /*
- * Remove all suffixes from the given token matching the given type and optional
- * flags. Returns the number of removed suffixes.
+ * Remove all space suffixes from the given token. Returns the number of removed
+ * suffixes.
  */
 int
-token_trim(struct token *tk, enum token_type type, unsigned int flags)
+token_trim(struct token *tk)
 {
 	struct token *suffix, *tmp;
 	int ntrim = 0;
@@ -307,8 +307,7 @@ token_trim(struct token *tk, enum token_type type, unsigned int flags)
 		if (suffix->tk_flags & TOKEN_FLAG_OPTSPACE)
 			continue;
 
-		if (suffix->tk_type == type &&
-		    (flags == 0 || (suffix->tk_flags & flags))) {
+		if (suffix->tk_type == TOKEN_SPACE) {
 			token_remove(&tk->tk_suffixes, suffix);
 			ntrim++;
 		}
@@ -768,7 +767,7 @@ out:
 	if (st->st_tok == NULL)
 		return 0;
 	if (lx->lx_peek == 0 && lx->lx_trim)
-		token_trim(st->st_tok, TOKEN_SPACE, 0);
+		token_trim(st->st_tok);
 	*tk = st->st_tok;
 	return 1;
 }

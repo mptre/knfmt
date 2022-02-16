@@ -584,8 +584,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		/* Never break before the binary operator. */
 		pv = TAILQ_PREV(ex->ex_tk, token_list, tk_entry);
 		lno = ex->ex_tk->tk_lno - pv->tk_lno;
-		if (token_trim(pv, TOKEN_SPACE, TOKEN_FLAG_OPTLINE) > 0 &&
-		    lno == 1) {
+		if (token_trim(pv) > 0 && lno == 1) {
 			/*
 			 * The operator is not positioned at the end of the
 			 * line. Push it to the previous line and preserve
@@ -701,8 +700,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 				/* Never break before the closing parens. */
 				pv = TAILQ_PREV(rparen, token_list, tk_entry);
 				if (pv != NULL)
-					token_trim(pv,
-					    TOKEN_SPACE, TOKEN_FLAG_OPTLINE);
+					token_trim(pv);
 			}
 
 			concat = expr_doc(ex->ex_rhs, es, concat);
