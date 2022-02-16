@@ -1281,8 +1281,6 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 			return parser_error(pr);
 
 		while ((peek = parser_peek_else(pr, &tkelse))) {
-			lexer_back(lx, &tk);
-
 			if (lexer_back(lx, &tk) && tk->tk_type == TOKEN_RBRACE)
 				doc_literal(" ", dc);
 			else
@@ -1576,8 +1574,11 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	 * single line.
 	 */
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, ps->ps_tail));
-	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
+	if (lexer_expect(lx, TOKEN_RBRACE, &tk)) {
+		if (lexer_peek_if(lx, TOKEN_ELSE, NULL))
+			token_trim(tk, TOKEN_SPACE, 0);
 		doc_token(tk, concat);
+	}
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, concat);
 	ps->ps_rbrace = concat;

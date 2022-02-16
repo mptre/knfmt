@@ -301,7 +301,7 @@ token_trim(struct token *tk, enum token_type type, unsigned int flags)
 
 	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
 		/*
-		 * Optional spaces are never emitted and must there be
+		 * Optional spaces are never emitted and must therefore be
 		 * preserved.
 		 */
 		if (suffix->tk_flags & TOKEN_FLAG_OPTSPACE)
