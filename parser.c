@@ -307,7 +307,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 	decl = doc_alloc(DOC_CONCAT, dc);
 	memset(&rl, 0, sizeof(rl));
-	ruler_init(&rl);
+	ruler_init(&rl, 0);
 
 	lexer_recover_enter(&lm);
 	for (;;) {
@@ -574,7 +574,7 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 	int error;
 
 	memset(&rl, 0, sizeof(rl));
-	ruler_init(&rl);
+	ruler_init(&rl, 0);
 	optional = doc_alloc_optional(DOC_OPTIONAL_STICKY, dc);
 	concat = doc_alloc(DOC_CONCAT, optional);
 	pb.pb_dc = concat;

@@ -16,7 +16,7 @@ static int	isnexttoken(const struct token *, enum token_type);
 static int	minimize(const struct ruler_column *);
 
 void
-ruler_init(struct ruler *rl)
+ruler_init(struct ruler *rl, unsigned int len)
 {
 	size_t i;
 
@@ -28,6 +28,7 @@ ruler_init(struct ruler *rl)
 	}
 
 	rl->rl_columns.b_len = 0;
+	rl->rl_len = len;
 }
 
 void
@@ -140,7 +141,7 @@ ruler_exec(struct ruler *rl)
 	}
 
 	/* Reset the ruler paving the way for reuse. */
-	ruler_init(rl);
+	ruler_init(rl, rl->rl_len);
 }
 
 static int
