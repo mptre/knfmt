@@ -107,7 +107,7 @@ static int	doc_is_mute(const struct doc_state *);
 static int	doc_parens_align(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 
-#define DOC_DIFF(st) 							\
+#define DOC_DIFF(st)							\
 	(((st)->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&		\
 	((st)->st_flags & DOC_STATE_FLAG_DIFF))
 
@@ -137,7 +137,8 @@ static void	__doc_diff_leave(const struct doc *, struct doc_state *,
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
 
-#define DOC_TRACE(st)	(TRACE((st)->st_cf) &&	\
+#define DOC_TRACE(st)							\
+	(TRACE((st)->st_cf) &&						\
 	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
 
 #define doc_trace(dc, st, fmt, ...) do {				\

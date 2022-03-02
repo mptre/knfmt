@@ -222,12 +222,12 @@ void	lexer_recover_leave(struct lexer_recover_markers *);
 void	lexer_recover_mark(struct lexer *, struct lexer_recover_markers *);
 void	lexer_recover_purge(struct lexer_recover_markers *);
 
-#define lexer_recover(a, b)						\
+#define lexer_recover(a, b) \
 	__lexer_recover((a), (b), __func__, __LINE__)
 int	__lexer_recover(struct lexer *, struct lexer_recover_markers *,
     const char *, int);
 
-#define lexer_branch(a, b)						\
+#define lexer_branch(a, b) \
 	__lexer_branch((a), (b), __func__, __LINE__)
 int	__lexer_branch(struct lexer *, struct token **, const char *, int);
 
