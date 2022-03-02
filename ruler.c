@@ -12,6 +12,8 @@ struct ruler_datum {
 	unsigned int	 rd_nspaces;
 };
 
+static void	ruler_reset(struct ruler *);
+
 static int	isdecl(const struct token *);
 static int	isnexttoken(const struct token *, enum token_type);
 static int	minimize(const struct ruler_column *);
@@ -19,16 +21,7 @@ static int	minimize(const struct ruler_column *);
 void
 ruler_init(struct ruler *rl, unsigned int len)
 {
-	size_t i;
-
-	for (i = 0; i < rl->rl_columns.b_len; i++) {
-		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
-
-		free(rc->rc_datums.b_ptr);
-		memset(rc, 0, sizeof(*rc));
-	}
-
-	rl->rl_columns.b_len = 0;
+	memset(rl, 0, sizeof(*rl));
 	rl->rl_len = len;
 }
 
@@ -153,7 +146,7 @@ ruler_exec(struct ruler *rl)
 	}
 
 	/* Reset the ruler paving the way for reuse. */
-	ruler_init(rl, rl->rl_len);
+	ruler_reset(rl);
 }
 
 static int
@@ -186,6 +179,21 @@ minimize(const struct ruler_column *rc)
 	 * datums will overlap.
 	 */
 	return minspaces >= rc->rc_nspaces;
+}
+
+static void
+ruler_reset(struct ruler *rl)
+{
+	size_t i;
+
+	for (i = 0; i < rl->rl_columns.b_len; i++) {
+		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
+
+		free(rc->rc_datums.b_ptr);
+		memset(rc, 0, sizeof(*rc));
+	}
+
+	rl->rl_columns.b_len = 0;
 }
 
 static int

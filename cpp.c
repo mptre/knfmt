@@ -27,7 +27,6 @@ cpp_exec(const struct token *tk, const struct config *cf)
 
 	bf = buffer_alloc(len);
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	memset(&rl, 0, sizeof(rl));
 	ruler_init(&rl, cf->cf_mw - cf->cf_tw);
 
 	for (;;) {
