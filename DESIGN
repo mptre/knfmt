@@ -67,6 +67,11 @@ parser_exec_expr_recover() and the cpp section below.
 [2] https://craftinginterpreters.com/compiling-expressions.html
 [3] https://quasilyte.dev/blog/post/pratt-parsers-go/
 
+cpp.c
+=====
+
+Formatting of cpp constructs, such as alignment of line continuations.
+
 doc.c
 =====
 
@@ -153,6 +158,9 @@ on a single line. Once all lines that must be aligned are emitted the parser
 calls ruler_exec() which calculates the needed alignment for each line and
 column. The ruler is at this point aware of all columns and can therefore deduce
 the longest one calculate the necessary alignment accordingly.
+
+It can also operate in a fixed width mode which is used while aligning cpp line
+continuations.
 
 error.c
 =======

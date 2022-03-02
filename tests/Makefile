@@ -241,9 +241,12 @@ TESTS+=	valid-196.c
 TESTS+=	valid-197.c
 TESTS+=	valid-198.c
 TESTS+=	valid-199.c
+TESTS+=	valid-200.c
+TESTS+=	valid-201.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
+TESTS+=	../cpp.c
 TESTS+=	../diff.c
 TESTS+=	../doc.c
 TESTS+=	../error.c

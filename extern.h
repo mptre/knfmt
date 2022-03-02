@@ -326,6 +326,12 @@ struct doc	*expr_exec(const struct expr_exec_arg *);
 int		 expr_peek(const struct expr_exec_arg *);
 
 /*
+ * cpp -------------------------------------------------------------------------
+ */
+
+char	*cpp_exec(const struct token *, const struct config *);
+
+/*
  * doc -------------------------------------------------------------------------
  */
 
@@ -347,8 +353,10 @@ enum doc_type {
 	DOC_OPTIONAL,
 };
 
+#define DOC_EXEC_FLAG_NODIFF	0x00000001u
+
 void		doc_exec(const struct doc *, struct lexer *, struct buffer *,
-    const struct config *);
+    const struct config *, unsigned int);
 unsigned int	doc_width(const struct doc *, struct buffer *,
     const struct config *);
 void		doc_free(struct doc *);
@@ -387,6 +395,8 @@ struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
 
 #define doc_literal(a, b) \
 	__doc_literal((a), strlen(a), (b), __func__, __LINE__)
+#define doc_literal_n(a, b, c) \
+	__doc_literal((a), (b), (c), __func__, __LINE__)
 struct doc	*__doc_literal(const char *, size_t, struct doc *,
     const char *, int);
 

@@ -223,7 +223,7 @@ parser_exec(struct parser *pr)
 		return NULL;
 	}
 
-	doc_exec(dc, pr->pr_lx, pr->pr_bf, pr->pr_cf);
+	doc_exec(dc, pr->pr_lx, pr->pr_bf, pr->pr_cf, 0);
 	doc_free(dc);
 	return pr->pr_bf;
 }

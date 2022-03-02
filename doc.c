@@ -86,6 +86,7 @@ struct doc_state {
 	int			st_mute;
 	unsigned int		st_flags;
 #define DOC_STATE_FLAG_WIDTH	0x00000001u
+#define DOC_STATE_FLAG_DIFF	0x00000002u
 };
 
 /*
@@ -108,7 +109,7 @@ static int	doc_has_list(const struct doc *);
 
 #define DOC_DIFF(st) 							\
 	(((st)->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&		\
-	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
+	((st)->st_flags & DOC_STATE_FLAG_DIFF))
 
 static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);
@@ -168,7 +169,7 @@ static unsigned int	countlines(const char *, size_t);
 
 void
 doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
-    const struct config *cf)
+    const struct config *cf, unsigned int flags)
 {
 	struct doc_state st;
 
@@ -180,6 +181,8 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_mode = BREAK;
 	st.st_diff.d_beg = 1;
 	st.st_fits.f_fits = -1;
+	if ((flags & DOC_EXEC_FLAG_NODIFF) == 0)
+		st.st_flags = DOC_STATE_FLAG_DIFF;
 
 	doc_exec1(dc, &st);
 	doc_diff_exit(dc, &st);
@@ -488,6 +491,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_VERBATIM: {
+		char *cpp;
 		unsigned int end, oldpos;
 
 		if (doc_is_mute(st))
@@ -513,7 +517,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (isblock && st->st_pos > 0)
 			doc_print(dc, st, "\n", 1, 0);
 
-		doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
+		if (dc->dc_tk->tk_type == TOKEN_CPP &&
+		    (cpp = cpp_exec(dc->dc_tk, st->st_cf)) != NULL) {
+			doc_print(dc, st, cpp, strlen(cpp), 0);
+			free(cpp);
+		} else {
+			doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
+		}
 
 		/* Restore the indentation after emitting a verbatim block. */
 		if (isblock) {

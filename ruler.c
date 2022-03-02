@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <err.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -110,19 +111,24 @@ void
 ruler_exec(struct ruler *rl)
 {
 	size_t i;
+	unsigned int fixedlen = rl->rl_len;
 
 	for (i = 0; i < rl->rl_columns.b_len; i++) {
 		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
 		size_t j;
 		unsigned int maxlen;
 
-		if (rc->rc_ntabs == 0)
+		if (rc->rc_ntabs == 0 && fixedlen == 0)
 			continue;
 
-		maxlen = rc->rc_len;
-		if (!minimize(rc)) {
-			/* Round up the longest datum to a multiple of 8. */
-			maxlen += 8 - (maxlen % 8);
+		if (fixedlen > 0) {
+			maxlen = fixedlen;
+		} else {
+			maxlen = rc->rc_len;
+			if (!minimize(rc)) {
+				/* Ceil the longest datum to multiple of 8. */
+				maxlen += 8 - (maxlen % 8);
+			}
 		}
 
 		for (j = 0; j < rc->rc_datums.b_len; j++) {
@@ -131,6 +137,12 @@ ruler_exec(struct ruler *rl)
 
 			if (rd->rd_len == 0)
 				continue;
+
+			if (rd->rd_len > maxlen) {
+				assert(fixedlen > 0);
+				doc_set_indent(rd->rd_dc, 0);
+				continue;
+			}
 
 			indent = maxlen - rd->rd_len;
 			if (indent % 8 > 0)
