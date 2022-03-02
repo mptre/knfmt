@@ -354,6 +354,7 @@ enum doc_type {
 };
 
 #define DOC_EXEC_FLAG_NODIFF	0x00000001u
+#define DOC_EXEC_FLAG_NOTRACE	0x00000002u
 
 void		doc_exec(const struct doc *, struct lexer *, struct buffer *,
     const struct config *, unsigned int);

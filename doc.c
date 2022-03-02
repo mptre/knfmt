@@ -87,6 +87,7 @@ struct doc_state {
 	unsigned int		st_flags;
 #define DOC_STATE_FLAG_WIDTH	0x00000001u
 #define DOC_STATE_FLAG_DIFF	0x00000002u
+#define DOC_STATE_FLAG_TRACE	0x00000004u
 };
 
 /*
@@ -139,7 +140,7 @@ static void	doc_print(const struct doc *, struct doc_state *, const char *,
 
 #define DOC_TRACE(st)							\
 	(TRACE((st)->st_cf) &&						\
-	((st)->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
+	((st)->st_flags & DOC_STATE_FLAG_TRACE))
 
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if (DOC_TRACE(st))						\
@@ -183,7 +184,9 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_diff.d_beg = 1;
 	st.st_fits.f_fits = -1;
 	if ((flags & DOC_EXEC_FLAG_NODIFF) == 0)
-		st.st_flags = DOC_STATE_FLAG_DIFF;
+		st.st_flags |= DOC_STATE_FLAG_DIFF;
+	if ((flags & DOC_EXEC_FLAG_NOTRACE) == 0)
+		st.st_flags |= DOC_STATE_FLAG_TRACE;
 
 	doc_exec1(dc, &st);
 	doc_diff_exit(dc, &st);
