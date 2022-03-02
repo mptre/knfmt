@@ -386,8 +386,9 @@ struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
     const char *, int);
 
 #define doc_literal(a, b) \
-	__doc_literal((a), (b), __func__, __LINE__)
-struct doc	*__doc_literal(const char *, struct doc *, const char *, int);
+	__doc_literal((a), strlen(a), (b), __func__, __LINE__)
+struct doc	*__doc_literal(const char *, size_t, struct doc *,
+    const char *, int);
 
 #define doc_token(a, b) \
 	__doc_token((a), (b), DOC_LITERAL, __func__, __LINE__)

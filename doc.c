@@ -319,13 +319,14 @@ __doc_alloc_indent(enum doc_type type, int val, struct doc *dc,
 }
 
 struct doc *
-__doc_literal(const char *str, struct doc *dc, const char *fun, int lno)
+__doc_literal(const char *str, size_t len, struct doc *dc, const char *fun,
+    int lno)
 {
 	struct doc *literal;
 
 	literal = __doc_alloc(DOC_LITERAL, dc, 0, fun, lno);
 	literal->dc_str = str;
-	literal->dc_len = strlen(str);
+	literal->dc_len = len;
 	return literal;
 }
 
