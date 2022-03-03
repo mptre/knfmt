@@ -371,9 +371,6 @@ void		doc_set_indent(struct doc *, int);
 struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
     int);
 
-#define doc_alloc_align(a, b) \
-	__doc_alloc(DOC_ALIGN, (b), (a), __func__, __LINE__)
-
 #define doc_alloc_optional(a, b) \
 	__doc_alloc(DOC_OPTIONAL, (b), (a), __func__, __LINE__)
 
@@ -435,9 +432,12 @@ struct ruler_column {
 
 void	ruler_init(struct ruler *, unsigned int);
 void	ruler_free(struct ruler *);
-void	ruler_insert(struct ruler *, const struct token *, struct doc *,
-    unsigned int, unsigned int, unsigned int);
 void	ruler_exec(struct ruler *);
+
+#define ruler_insert(a, b, c, d, e, f) \
+	__ruler_insert((a), (b), (c), (d), (e), (f), __func__, __LINE__)
+void	__ruler_insert(struct ruler *, const struct token *, struct doc *,
+    unsigned int, unsigned int, unsigned int, const char *, int);
 
 /*
  * util ------------------------------------------------------------------------

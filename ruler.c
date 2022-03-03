@@ -46,8 +46,9 @@ ruler_free(struct ruler *rl)
  * in order to insert the alignment in the document.
  */
 void
-ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
-    unsigned int col, unsigned int len, unsigned int nspaces)
+__ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
+    unsigned int col, unsigned int len, unsigned int nspaces, const char *fun,
+    int lno)
 {
 	struct ruler_column *rc;
 	struct ruler_datum *rd;
@@ -97,7 +98,7 @@ ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 		rc->rc_ntabs++;
 
 out:
-	rd->rd_dc = doc_alloc_align(1, dc);
+	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, 1, fun, lno);
 }
 
 void
