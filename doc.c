@@ -107,6 +107,7 @@ static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_is_mute(const struct doc_state *);
 static int	doc_parens_align(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
+static void	doc_position(struct doc_state *, const char *, size_t);
 
 #define DOC_DIFF(st)							\
 	(((st)->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&		\
@@ -753,7 +754,7 @@ doc_fits1(const struct doc *parent, struct doc_state *st)
 			continue;
 
 		case DOC_LITERAL:
-			st->st_pos += dc->dc_len;
+			doc_position(st, dc->dc_str, dc->dc_len);
 			break;
 
 		case DOC_VERBATIM:
@@ -870,7 +871,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		doc_trim(dc, st);
 
 	buffer_append(st->st_bf, str, len);
-	st->st_pos += len;
+	doc_position(st, str, len);
 
 	if (newline) {
 		st->st_pos = 0;
@@ -1222,6 +1223,22 @@ doc_has_list(const struct doc *dc)
 		break;
 	}
 	return 0;
+}
+
+/*
+ * Increment the position, with respect to tabs.
+ */
+static void
+doc_position(struct doc_state *st, const char *str, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (str[i] == '\t')
+			st->st_pos += 8 - (st->st_pos % 8);
+		else
+			st->st_pos += 1;
+	}
 }
 
 static void

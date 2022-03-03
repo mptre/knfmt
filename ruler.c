@@ -53,6 +53,16 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	struct ruler_column *rc;
 	struct ruler_datum *rd;
 
+	/* No space wanted at all if the following token is a semicolon. */
+	if (isnexttoken(tk, TOKEN_SEMI))
+		return;
+
+	/* Only a space is wanted for enum/struct/union declarations. */
+	if (isdecl(tk)) {
+		__doc_alloc(DOC_ALIGN, dc, 1, fun, lno);
+		return;
+	}
+
 	if (col > rl->rl_columns.b_len) {
 		struct ruler_column *ptr = rl->rl_columns.b_ptr;
 
@@ -79,14 +89,7 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	rd = &rc->rc_datums.b_ptr[rc->rc_datums.b_len++];
 	memset(rd, 0, sizeof(*rd));
 
-	/* No space wanted at all if the following token is a semicolon. */
-	if (isnexttoken(tk, TOKEN_SEMI))
-		return;
-
-	/* Only a space is wanted for enum/struct/union declarations. */
-	if (isdecl(tk))
-		goto out;
-
+	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, 1, fun, lno);
 	rd->rd_len = len;
 	rd->rd_nspaces = nspaces;
 
@@ -96,9 +99,6 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 		rc->rc_nspaces = rd->rd_nspaces;
 	if (token_has_tabs(tk))
 		rc->rc_ntabs++;
-
-out:
-	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, 1, fun, lno);
 }
 
 void
@@ -128,9 +128,6 @@ ruler_exec(struct ruler *rl)
 		for (j = 0; j < rc->rc_datums.b_len; j++) {
 			struct ruler_datum *rd = &rc->rc_datums.b_ptr[j];
 			unsigned int indent;
-
-			if (rd->rd_len == 0)
-				continue;
 
 			if (rd->rd_len > maxlen) {
 				assert(fixedlen > 0);

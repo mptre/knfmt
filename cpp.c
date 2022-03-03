@@ -30,22 +30,18 @@ cpp_exec(const struct token *tk, const struct config *cf)
 	ruler_init(&rl, cf->cf_mw - cf->cf_tw);
 
 	for (;;) {
-		struct doc *concat = dc;
+		struct doc *concat;
 		const char *ep, *sp;
-		unsigned int indent = 0;
+
+		concat = doc_alloc(DOC_CONCAT, dc);
 
 		sp = str;
 		ep = nextline(sp, len, &nx);
 		if (ep == NULL)
 			break;
 
-		for (; isspace((unsigned char)sp[0]); sp++)
-			indent += sp[0] == '\t' ? cf->cf_tw : 1;
-		if (indent > 0)
-			concat = doc_alloc_indent(indent, concat);
 		if (nlines > 0)
 			doc_alloc(DOC_HARDLINE, concat);
-
 		if (ep - sp > 0)
 			doc_literal_n(sp, ep - sp, concat);
 		ruler_insert(&rl, tk, concat, 1, doc_width(dc, bf, cf), 0);
