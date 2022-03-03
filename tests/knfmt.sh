@@ -9,6 +9,20 @@ commstrip() {
 	awk '!p && !length($0) {p=1; next} p {print}' "$1"
 }
 
+# hascomm file
+#
+# Returns zero if the given file has a comment.
+hascomm() {
+	local _f
+
+	_f="$1"; : "${_f:?}"
+
+	if ! head -1 "$_f" | grep -q '^/\*$'; then
+		echo "${_f}: missing test case comment" 1>&2
+		return 1
+	fi
+}
+
 # Enable hardening malloc(3) options on OpenBSD.
 case "$(uname -s)" in
 OpenBSD)	export MALLOC_OPTIONS="RS";;
@@ -20,6 +34,15 @@ export ASAN_OPTIONS="exitcode=66"
 _wrkdir="$(mktemp -dt knfmt.XXXXXX)"
 trap "rm -rf ${_wrkdir}" 0
 _out="${_wrkdir}/out"
+
+case "$1" in
+valid-183.c)
+	# Ignore windows line endings test case.
+	;;
+error-*|valid-*)
+	hascomm "$1" || exit 1
+	;;
+esac
 
 case "$1" in
 diff-*)

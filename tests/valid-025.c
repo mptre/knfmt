@@ -1,4 +1,6 @@
-/* Long expression with parenthesis. */
+/*
+ * Long expression with parenthesis.
+ */
 
 int
 main(void)

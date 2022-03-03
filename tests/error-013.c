@@ -1,3 +1,7 @@
+/*
+ * Broken code hidden behind cpp.
+ */
+
 int
 main(void)
 {

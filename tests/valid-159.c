@@ -1,3 +1,7 @@
+/*
+ * Long expression with parenthesis
+ */
+
 int
 main(void)
 {

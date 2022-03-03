@@ -1,3 +1,7 @@
+/*
+ * Broken code hidden behind cpp.
+ */
+
 #ifndef __LIBPAYLOAD__
 
 /* loops per microsecond */

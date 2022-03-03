@@ -1,3 +1,7 @@
+/*
+ * Broken code hidden behind cpp
+ */
+
 /*	$OpenBSD: if_otus.c,v 1.69 2021/02/25 02:48:20 dlg Exp $	*/
 
 /*-

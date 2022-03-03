@@ -1,3 +1,7 @@
+/*
+ * Cast in brace initializers.
+ */
+
 struct wsmouse_parameters	cfg_tapping = {
 	(struct wsmouse_param[]){
 	    { WSMOUSECFG_TAP_ONE_BTNMAP,	0 },

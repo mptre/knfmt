@@ -1,3 +1,7 @@
+/*
+ * Long expression.
+ */
+
 int
 main(void)
 {

@@ -1,3 +1,7 @@
+/*
+ * Invalid cpp directives.
+ */
+
 const ct sgs	k[] = {
 [	{
 		KERN,

@@ -1,3 +1,7 @@
+/*
+ * Broken code hidden behind cpp.
+ */
+
 const struct programmer_entry	programmer_table[] = {
 #if CONFIG_INTERNAL == 1
 #if defined(__i386__) || defined(__x86_64__)
