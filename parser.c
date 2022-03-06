@@ -14,10 +14,8 @@
 enum parser_peek {
 	PARSER_PEEK_FUNCDECL	= 1,
 	PARSER_PEEK_FUNCIMPL	= 2,
-	PARSER_PEEK_ELSE	= 3,
-	PARSER_PEEK_ELSEIF	= 4,
-	PARSER_PEEK_CPPX	= 5,
-	PARSER_PEEK_CPPINIT	= 6,
+	PARSER_PEEK_CPPX	= 3,
+	PARSER_PEEK_CPPINIT	= 4,
 };
 
 struct parser {
@@ -89,7 +87,6 @@ static int	parser_exec_func_arg(struct parser *, struct doc *,
     struct doc **, const struct token *);
 
 #define PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE	0x00000001u
-#define PARSER_EXEC_STMT_EXPR_FLAG_ELSE		0x00000002u
 
 static int	parser_exec_stmt(struct parser *, struct doc *,
     const struct token *);
@@ -110,7 +107,6 @@ static int	parser_exec_attributes(struct parser *, struct doc *,
 static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
-static enum parser_peek	parser_peek_else(struct parser *, struct token **);
 static int		parser_peek_expr(struct parser *, const struct token *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
@@ -1272,28 +1268,26 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_ok(pr);
 
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
-		struct token *tkelse;
-		enum parser_peek peek;
+		struct token *tkelse, *tkif;
 
 		if (parser_exec_stmt_expr(pr, dc, tk, 0))
 			return parser_error(pr);
 
-		while ((peek = parser_peek_else(pr, &tkelse))) {
+		while (lexer_peek_if(lx, TOKEN_ELSE, &tkelse)) {
 			if (lexer_back(lx, &tk) && tk->tk_type == TOKEN_RBRACE)
 				doc_literal(" ", dc);
 			else
 				doc_alloc(DOC_HARDLINE, dc);
+			if (lexer_expect(lx, TOKEN_ELSE, &tk))
+				doc_token(tk, dc);
+			doc_literal(" ", dc);
 
-			if (peek == PARSER_PEEK_ELSEIF) {
-				if (parser_exec_stmt_expr(pr, dc, tkelse,
-				    PARSER_EXEC_STMT_EXPR_FLAG_ELSE))
+			if (lexer_peek_if(lx, TOKEN_IF, &tkif) &&
+			    token_cmp(tkelse, tkif) == 0) {
+				if (parser_exec_stmt_expr(pr, dc, tkif, 0))
 					return parser_error(pr);
 			} else {
-				if (lexer_expect(lx, TOKEN_ELSE, &tk))
-					doc_token(tk, dc);
-				if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-					doc_literal(" ", dc);
-				} else {
+				if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 					dc = doc_alloc_indent(pr->pr_cf->cf_tw,
 					    dc);
 					doc_alloc(DOC_HARDLINE, dc);
@@ -1594,13 +1588,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 {
 	struct doc *expr, *stmt;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tkelse = NULL;
 	struct token *rparen, *stop, *tk;
-
-	if (flags & PARSER_EXEC_STMT_EXPR_FLAG_ELSE) {
-		if (lexer_expect(lx, TOKEN_ELSE, &tk))
-			tkelse = tk;
-	}
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
@@ -1609,10 +1597,6 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	token_trim(rparen);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	if (tkelse != NULL) {
-		doc_token(tkelse, stmt);
-		doc_literal(" ", stmt);
-	}
 	doc_token(tk, stmt);
 	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
@@ -1978,29 +1962,6 @@ parser_peek_func(struct parser *pr, struct token **type)
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 out:
-	lexer_peek_leave(lx, &s);
-	return peek;
-}
-
-static enum parser_peek
-parser_peek_else(struct parser *pr, struct token **tk)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct token *tkelse, *tkif;
-	enum parser_peek peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_ELSE, &tkelse)) {
-		if (lexer_if(lx, TOKEN_IF, &tkif) &&
-		    token_cmp(tkelse, tkif) == 0) {
-			peek = PARSER_PEEK_ELSEIF;
-			*tk = tkif;
-		} else {
-			peek = PARSER_PEEK_ELSE;
-			*tk = tkelse;
-		}
-	}
 	lexer_peek_leave(lx, &s);
 	return peek;
 }
