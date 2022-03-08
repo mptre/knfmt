@@ -171,7 +171,8 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("char x[]", "char");
 	error |= test_lexer_peek_if_type("va_list ap;", "va_list");
 	error |= test_lexer_peek_if_type("struct s *M(v)", "struct s *");
-	error |= test_lexer_peek_if_type("const struct filterops *const sysfilt_ops[]",
+	error |= test_lexer_peek_if_type(
+	    "const struct filterops *const sysfilt_ops[]",
 	    "const struct filterops * const");
 	error |= test_lexer_peek_if_type("long __guard_local __attribute__",
 	    "long");
