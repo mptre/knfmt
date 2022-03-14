@@ -783,8 +783,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 static struct doc *
 expr_doc_indent_parens(const struct expr_state *es, struct doc *dc)
 {
-	if ((es->es_ea->ea_flags & EXPR_EXEC_FLAG_PARENS) == 0 ||
-	    es->es_parens > 1)
+	if (es->es_parens > 0)
 		return doc_alloc_indent(DOC_INDENT_PARENS, dc);
 	return dc;
 }

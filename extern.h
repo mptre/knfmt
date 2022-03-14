@@ -318,8 +318,7 @@ struct expr_exec_arg {
 	unsigned int		 ea_flags;
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
 #define EXPR_EXEC_FLAG_HARDLINE		0x00000002u
-#define EXPR_EXEC_FLAG_PARENS		0x00000004u
-#define EXPR_EXEC_FLAG_NOINDENT		0x00000008u
+#define EXPR_EXEC_FLAG_NOINDENT		0x00000004u
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);
