@@ -24,5 +24,8 @@ TESTS \
 	valid*.c \
 	-- \
 TESTS \
+	simple*.c \
+	-- \
+TESTS \
 	../!(compat-*).c ../!(compat-*|config).h \
 	../compat-pledge.c

@@ -23,6 +23,37 @@ hascomm() {
 	fi
 }
 
+# testcase file [-- knfmt-options]
+#
+# Run test case.
+testcase() {
+	local _file
+
+	_file="$1"; : "${_file:?}"; shift
+	[ "${1:-}" = "--" ] && shift
+
+	_ok="${_file%.c}.ok"
+	if [ -e "$_ok" ]; then
+		_tmp="${_wrkdir}/tmp"
+		commstrip "$_file" >"$_tmp"
+		if ! ${EXEC:-} "${KNFMT}" -v "$@" "$_tmp" 2>&1 |
+			diff -u -L "$_file" -L "$_ok" "$_ok" - >"$_out" 2>&1
+		then
+			cat "$_out" 1>&2
+			return 1
+		fi
+	else
+		if ! ${EXEC:-} "${KNFMT}" -dv "$@" "$_file" >"$_out" 2>&1; then
+			cat "$_out" 1>&2
+			return 1
+		fi
+	fi
+	if ! cmp -s /dev/null "$_out"; then
+		cat "$_out" 1>&2
+		return 1
+	fi
+}
+
 # Enable hardening malloc(3) options on OpenBSD.
 case "$(uname -s)" in
 OpenBSD)	export MALLOC_OPTIONS="RS";;
@@ -39,7 +70,7 @@ case "$1" in
 valid-183.c)
 	# Ignore windows line endings test case.
 	;;
-error-*|valid-*)
+error-*|simple-*|valid-*)
 	hascomm "$1" || exit 1
 	;;
 esac
@@ -64,26 +95,10 @@ error-*)
 		exit 1
 	fi
 	;;
+simple-*)
+	testcase "$1" -- -s
+	;;
 *)
-	_ok="${1%.c}.ok"
-	if [ -e "$_ok" ]; then
-		_tmp="${_wrkdir}/tmp"
-		commstrip "$1" >"$_tmp"
-		if ! ${EXEC:-} "${KNFMT}" -v "$_tmp" 2>&1 |
-			diff -u -L "$1" -L "$_ok" "$_ok" - >"$_out" 2>&1
-		then
-			cat "$_out" 1>&2
-			exit 1
-		fi
-	else
-		if ! ${EXEC:-} "${KNFMT}" -dv "$1" >"$_out" 2>&1; then
-			cat "$_out" 1>&2
-			exit 1
-		fi
-	fi
-	if ! cmp -s /dev/null "$_out"; then
-		cat "$_out" 1>&2
-		exit 1
-	fi
+	testcase "$1"
 	;;
 esac

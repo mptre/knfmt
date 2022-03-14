@@ -169,6 +169,8 @@ DISTFILES+=	tests/error-013.c
 DISTFILES+=	tests/error-014.c
 DISTFILES+=	tests/error-015.c
 DISTFILES+=	tests/knfmt.sh
+DISTFILES+=	tests/simple-001.c
+DISTFILES+=	tests/simple-001.ok
 DISTFILES+=	tests/valid-001.c
 DISTFILES+=	tests/valid-002.c
 DISTFILES+=	tests/valid-003.c
@@ -429,7 +431,7 @@ dist:
 .PHONY: dist
 
 format: ${PROG_knfmt}
-	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -i ${KNFMT}
+	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -is ${KNFMT}
 .PHONY: format
 
 install: all
@@ -441,7 +443,7 @@ install: all
 
 lint: ${PROG_knfmt}
 	cd ${.CURDIR} && mandoc -Tlint -Wstyle knfmt.1
-	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -d ${KNFMT}
+	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -ds ${KNFMT}
 .PHONY: lint
 
 test: ${PROG_knfmt} test-${PROG_test}

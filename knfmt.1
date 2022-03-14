@@ -6,10 +6,10 @@
 .Nd kernel normal form formatter
 .Sh SYNOPSIS
 .Nm
-.Op Fl di
+.Op Fl dis
 .Op Ar
 .Nm
-.Op Fl Ddi
+.Op Fl Ddis
 .Sh DESCRIPTION
 The
 .Nm
@@ -27,6 +27,8 @@ Produce a diff for each given
 .It Fl i
 In place edit of
 .Ar file .
+.It Fl s
+Simplify the source code.
 .It Ar file
 One or many files to format.
 If omitted, defaults to reading from standard input.

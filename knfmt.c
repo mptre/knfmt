@@ -43,7 +43,7 @@ main(int argc, char *argv[])
 	TAILQ_INIT(&files);
 	config_init(&cf);
 
-	while ((ch = getopt(argc, argv, "Ddiv")) != -1) {
+	while ((ch = getopt(argc, argv, "Ddisv")) != -1) {
 		switch (ch) {
 		case 'D':
 			cf.cf_flags |= CONFIG_FLAG_DIFFPARSE;
@@ -53,6 +53,9 @@ main(int argc, char *argv[])
 			break;
 		case 'i':
 			cf.cf_flags |= CONFIG_FLAG_INPLACE;
+			break;
+		case 's':
+			cf.cf_flags |= CONFIG_FLAG_SIMPLE;
 			break;
 		case 'v':
 			cf.cf_verbose++;
@@ -105,7 +108,7 @@ out:
 static __dead void
 usage(void)
 {
-	fprintf(stderr, "usage: knfmt [-Ddi] [file ...]\n");
+	fprintf(stderr, "usage: knfmt [-Ddis] [file ...]\n");
 	exit(1);
 }
 

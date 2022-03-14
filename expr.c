@@ -77,12 +77,14 @@ struct expr_rule {
 
 struct expr_state {
 	const struct expr_exec_arg	*es_ea;
-#define es_cf	es_ea->ea_cf
-#define es_lx	es_ea->ea_lx
-#define es_stop	es_ea->ea_stop
+#define es_cf		es_ea->ea_cf
+#define es_lx		es_ea->ea_lx
+#define es_stop		es_ea->ea_stop
+#define es_flags	es_ea->ea_flags
 
 	const struct expr_rule		*es_er;
 	struct token			*es_tk;
+	unsigned int			 es_depth;
 	unsigned int			 es_parens;	/* number of nested parenthesis */
 	unsigned int			 es_soft;	/* number of soft lines */
 };
@@ -555,6 +557,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 {
 	struct doc *concat, *group;
 
+	es->es_depth++;
+
 	group = doc_alloc(DOC_GROUP, parent);
 	doc_annotate(group, strexpr(ex->ex_type));
 	concat = doc_alloc(DOC_CONCAT, group);
@@ -651,8 +655,13 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_token(ex->ex_tk, concat);
 		break;
 
-	case EXPR_PARENS:
-		if (ex->ex_tokens[0] != NULL)
+	case EXPR_PARENS: {
+		int noparens;
+
+		noparens = es->es_depth == 1 &&
+		    (es->es_cf->cf_flags & CONFIG_FLAG_SIMPLE) &&
+		    (es->es_flags & EXPR_EXEC_FLAG_NOPARENS);
+		if (!noparens && ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_lhs != NULL) {
 			es->es_parens++;
@@ -660,9 +669,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 			es->es_parens--;
 		}
-		if (ex->ex_tokens[1] != NULL)
+		if (!noparens && ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], concat);	/* ) */
 		break;
+	}
 
 	case EXPR_SQUARES:
 		/* Do not break the left expression. */
@@ -776,6 +786,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	if ((es->es_cf->cf_flags & CONFIG_FLAG_TEST) &&
 	    ex->ex_type != EXPR_PARENS)
 		doc_literal(")", concat);
+
+	es->es_depth--;
 
 	return concat;
 }

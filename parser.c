@@ -1427,7 +1427,8 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 			 * expression is present.
 			 */
 			line = doc_literal(" ", concat);
-			if (parser_exec_expr(pr, concat, NULL, NULL, 0))
+			if (parser_exec_expr(pr, concat, NULL, NULL,
+			    EXPR_EXEC_FLAG_NOPARENS))
 				doc_remove(line, concat);
 		}
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))

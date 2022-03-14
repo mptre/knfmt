@@ -23,6 +23,7 @@ struct config {
 #define CONFIG_FLAG_DIFF		0x00000001u
 #define CONFIG_FLAG_DIFFPARSE		0x00000002u
 #define CONFIG_FLAG_INPLACE		0x00000004u
+#define CONFIG_FLAG_SIMPLE		0x00000008u
 #define CONFIG_FLAG_TEST		0x80000000u
 
 	unsigned int	cf_verbose;
@@ -319,6 +320,7 @@ struct expr_exec_arg {
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
 #define EXPR_EXEC_FLAG_HARDLINE		0x00000002u
 #define EXPR_EXEC_FLAG_NOINDENT		0x00000004u
+#define EXPR_EXEC_FLAG_NOPARENS		0x00000008u
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);
