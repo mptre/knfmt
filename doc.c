@@ -96,11 +96,14 @@ struct doc_state {
 struct doc_diff {
 	unsigned int	dd_first;	/* first token in group */
 	unsigned int	dd_chunk;	/* first token covered by the chunk */
+	int		dd_covers;	/* doc_diff_covers() return value */
 };
 
 static void	doc_exec1(const struct doc *, struct doc_state *);
+static void	doc_walk(const struct doc *, struct doc_state *,
+    int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int	doc_fits(const struct doc *, struct doc_state *);
-static int	doc_fits1(const struct doc *, struct doc_state *);
+static int	doc_fits1(const struct doc *, struct doc_state *, void *);
 static void	doc_indent(const struct doc *, struct doc_state *, int);
 static void	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_trim(const struct doc *, struct doc_state *);
@@ -124,7 +127,8 @@ static unsigned int	doc_diff_verbatim(const struct doc *,
 static void		doc_diff_exit(const struct doc *, struct doc_state *);
 static void		doc_diff_emit(const struct doc *, struct doc_state *,
     unsigned int, unsigned int);
-static int		doc_diff_covers(const struct doc *, struct doc_diff *);
+static int		doc_diff_covers(const struct doc *, struct doc_state *,
+    void *);
 static int		doc_diff_is_mute(const struct doc_state *);
 
 #define doc_diff_leave(a, b, c) \
@@ -658,6 +662,58 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	doc_trace_leave(dc, st);
 }
 
+static void
+doc_walk(const struct doc *root, struct doc_state *st,
+    int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
+{
+	struct doc_stack ds;
+	/* Only the dc_stack field is mutated, therefore cheat a bit. */
+	struct doc *dc = (struct doc *)root;
+
+	/* Recursion flatten into a loop for increased performance. */
+	TAILQ_INIT(&ds);
+	TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
+	while (!TAILQ_EMPTY(&ds)) {
+		dc = TAILQ_LAST(&ds, doc_stack);
+		TAILQ_REMOVE(&ds, dc, dc_stack);
+
+		if (!cb(dc, st, arg))
+			break;
+
+		switch (dc->dc_type) {
+		case DOC_CONCAT: {
+			const struct doc_list *dl = &dc->dc_list;
+
+			TAILQ_FOREACH_REVERSE(dc, dl, doc_stack, dc_entry) {
+				TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
+			}
+			continue;
+		}
+
+		case DOC_GROUP:
+		case DOC_INDENT:
+		case DOC_DEDENT:
+		case DOC_OPTIONAL:
+			TAILQ_INSERT_TAIL(&ds, dc->dc_doc, dc_stack);
+			continue;
+
+		case DOC_ALIGN:
+		case DOC_LITERAL:
+		case DOC_VERBATIM:
+		case DOC_LINE:
+		case DOC_SOFTLINE:
+		case DOC_HARDLINE:
+		case DOC_NEWLINE:
+		case DOC_OPTLINE:
+		case DOC_MUTE:
+			break;
+		}
+	}
+
+	while ((dc = TAILQ_FIRST(&ds)) != NULL)
+		TAILQ_REMOVE(&ds, dc, dc_stack);
+}
+
 static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
@@ -692,7 +748,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		fst.st_bf = NULL;
 		fst.st_mode = MUNGE;
 		fst.st_fits.f_optline = 0;
-		st->st_fits.f_fits = doc_fits1(dc, &fst);
+		doc_walk(dc, &fst, doc_fits1, &st->st_fits.f_fits);
 		st->st_fits.f_pos = st->st_pos;
 		st->st_fits.f_ppos = fst.st_pos;
 		if (!st->st_fits.f_fits &&
@@ -719,76 +775,45 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 }
 
 static int
-doc_fits1(const struct doc *parent, struct doc_state *st)
+doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 {
-	struct doc_stack ds;
-	/* Only the dc_stack field is mutated, therefore cheat a bit. */
-	struct doc *dc = (struct doc *)parent;
-	int fits = 1;
+	int *fits = (int *)arg;
 
-	/* Recursion flatten into a loop for increased performance. */
-	TAILQ_INIT(&ds);
-	TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
-	while (!TAILQ_EMPTY(&ds)) {
-		dc = TAILQ_LAST(&ds, doc_stack);
-		TAILQ_REMOVE(&ds, dc, dc_stack);
+	switch (dc->dc_type) {
+	case DOC_LITERAL:
+		doc_position(st, dc->dc_str, dc->dc_len);
+		break;
 
-		switch (dc->dc_type) {
-		case DOC_CONCAT: {
-			const struct doc_list *dl = &dc->dc_list;
+	case DOC_VERBATIM:
+		break;
 
-			TAILQ_FOREACH_REVERSE(dc, dl, doc_stack, dc_entry) {
-				TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
-			}
-			continue;
-		}
+	case DOC_LINE:
+		st->st_pos++;
+		break;
 
-		case DOC_GROUP:
-		case DOC_INDENT:
-		case DOC_DEDENT:
-		case DOC_OPTIONAL:
-			TAILQ_INSERT_TAIL(&ds, dc->dc_doc, dc_stack);
-			continue;
+	case DOC_OPTLINE:
+		if (st->st_optline && st->st_fits.f_optline == 0)
+			st->st_fits.f_optline = st->st_pos;
+		break;
 
-		case DOC_ALIGN:
-			continue;
-
-		case DOC_LITERAL:
-			doc_position(st, dc->dc_str, dc->dc_len);
-			break;
-
-		case DOC_VERBATIM:
-			continue;
-
-		case DOC_LINE:
-			st->st_pos++;
-			break;
-
-		case DOC_SOFTLINE:
-			continue;
-
-		case DOC_HARDLINE:
-		case DOC_NEWLINE:
-			continue;
-
-		case DOC_OPTLINE:
-			if (st->st_optline && st->st_fits.f_optline == 0)
-				st->st_fits.f_optline = st->st_pos;
-			continue;
-
-		case DOC_MUTE:
-			continue;
-		}
-
-		if (st->st_pos > st->st_cf->cf_mw) {
-			fits = 0;
-			break;
-		}
+	case DOC_CONCAT:
+	case DOC_GROUP:
+	case DOC_INDENT:
+	case DOC_DEDENT:
+	case DOC_OPTIONAL:
+	case DOC_ALIGN:
+	case DOC_SOFTLINE:
+	case DOC_HARDLINE:
+	case DOC_NEWLINE:
+	case DOC_MUTE:
+		break;
 	}
 
-	while ((dc = TAILQ_FIRST(&ds)) != NULL)
-		TAILQ_REMOVE(&ds, dc, dc_stack);
-	return fits;
+	if (st->st_pos > st->st_cf->cf_mw) {
+		*fits = 0;
+		return 0;
+	}
+	return 1;
 }
 
 static void
@@ -926,7 +951,8 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * the first group covering a single line to be found.
 	 */
 	memset(&dd, 0, sizeof(dd));
-	switch (doc_diff_covers(dc, &dd)) {
+	doc_walk(dc, st, doc_diff_covers, &dd);
+	switch (dd.dd_covers) {
 	case -1:
 		/*
 		 * The group spans multiple lines. Ignore it and keep evaluating
@@ -1104,26 +1130,11 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
  * chunk.
  */
 static int
-doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
+doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 {
+	struct doc_diff *dd = (struct doc_diff *)arg;
+
 	switch (dc->dc_type) {
-	case DOC_CONCAT: {
-		const struct doc *concat;
-
-		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
-			int c;
-
-			if ((c = doc_diff_covers(concat, dd)) != 0)
-				return c;
-		}
-		break;
-	}
-	case DOC_GROUP:
-	case DOC_INDENT:
-	case DOC_DEDENT:
-	case DOC_OPTIONAL:
-		return doc_diff_covers(dc->dc_doc, dd);
-
 	case DOC_LITERAL:
 	case DOC_VERBATIM:
 		if (dc->dc_tk != NULL) {
@@ -1133,14 +1144,21 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 				dd->dd_first = lno;
 			if (dc->dc_tk->tk_flags & TOKEN_FLAG_DIFF) {
 				dd->dd_chunk = lno;
-				return 1;
+				dd->dd_covers = 1;
+				return 0;
 			}
 		}
 		break;
 
 	case DOC_HARDLINE:
-		return -1;
+		dd->dd_covers = -1;
+		return 0;
 
+	case DOC_CONCAT:
+	case DOC_GROUP:
+	case DOC_INDENT:
+	case DOC_DEDENT:
+	case DOC_OPTIONAL:
 	case DOC_ALIGN:
 	case DOC_LINE:
 	case DOC_SOFTLINE:
@@ -1150,7 +1168,7 @@ doc_diff_covers(const struct doc *dc, struct doc_diff *dd)
 		break;
 	}
 
-	return 0;
+	return 1;
 }
 
 /*
