@@ -1912,13 +1912,14 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 
 /*
  * Intended to be called while entering a section of the source code with one or
- * many statements potentially wrapped in curly braces. The statements will
- * silently be formatted in order to determine if each statement spans a single
- * line, making the curly braces redundant and thus removed. Once this routine
- * returns, parsing continues as usual.
+ * many statements potentially wrapped in curly braces ahead. The statements
+ * will silently be formatted in order to determine if each statement fits on a
+ * single line, making the curly braces redundant and thus removed. Once this
+ * routine returns, parsing continues as usual.
  *
  * The return value is used to signal when a nested statement is entered which
- * is ignored as we only handle one scope at a time.
+ * is ignored as only one scope is handled at a time. The same return value must
+ * later on be passed to parser_simple_stmt_leave().
  */
 static int
 parser_simple_stmt_enter(struct parser *pr, const struct token *stop)

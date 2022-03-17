@@ -95,7 +95,7 @@ error-*)
 		exit 1
 	fi
 	;;
-simple-*)
+simple-*|../*)
 	testcase "$1" -- -s
 	;;
 *)
