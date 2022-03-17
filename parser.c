@@ -1625,7 +1625,8 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 			token_trim(tk);
 		doc_token(tk, concat);
 	}
-	if (lexer_if(lx, TOKEN_SEMI, &tk))
+	if (lexer_if(lx, TOKEN_SEMI, &tk) &&
+	    (pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
 		doc_token(tk, concat);
 	ps->ps_rbrace = concat;
 
