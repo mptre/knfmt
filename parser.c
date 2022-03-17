@@ -467,7 +467,8 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 			doc_token(tk, concat);
 
-		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
+		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
+		    !lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
 			doc_literal(" ", concat);
 	} else if (token_is_decl(end, TOKEN_ENUM)) {
 		struct token *rbrace;

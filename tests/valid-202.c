@@ -1,5 +1,5 @@
 /*
- * Extra space before attribute.
+ * Bug: extra space before attribute.
  */
 
 struct s {
