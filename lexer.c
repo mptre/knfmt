@@ -784,6 +784,29 @@ lexer_back(const struct lexer *lx, struct token **tk)
 	return 1;
 }
 
+void
+lexer_remove(struct lexer *lx, struct token *tk)
+{
+	struct token *pv, *tmp;
+
+	pv = TAILQ_PREV(tk, token_list, tk_entry);
+	if (pv == NULL)
+		pv = TAILQ_NEXT(tk, tk_entry);
+	assert(pv != NULL);
+
+	while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
+		tmp = TAILQ_FIRST(&tk->tk_prefixes);
+		TAILQ_REMOVE(&tk->tk_prefixes, tmp, tk_entry);
+		TAILQ_INSERT_TAIL(&pv->tk_suffixes, tmp, tk_entry);
+	}
+	while (!TAILQ_EMPTY(&tk->tk_suffixes)) {
+		tmp = TAILQ_FIRST(&tk->tk_suffixes);
+		TAILQ_REMOVE(&tk->tk_suffixes, tmp, tk_entry);
+		TAILQ_INSERT_TAIL(&pv->tk_suffixes, tmp, tk_entry);
+	}
+	token_remove(&lx->lx_tokens, tk);
+}
+
 int
 __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
     const char *fun, int lno)

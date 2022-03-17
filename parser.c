@@ -6,6 +6,17 @@
 
 #include "extern.h"
 
+struct simple_stmt {
+	struct doc		*ss_root;
+	struct doc		*ss_indent;
+	struct token		*ss_lbrace;
+	struct token		*ss_rbrace;
+
+	TAILQ_ENTRY(simple_stmt) ss_entry;
+};
+
+TAILQ_HEAD(simple_stmt_list, simple_stmt);
+
 /* Sentinel used to signal that the parser consumed something. */
 #define PARSER_OK	0
 /* Sentinel used to signal that nothing was found. */
@@ -25,6 +36,12 @@ struct parser {
 	struct lexer		*pr_lx;
 	struct buffer		*pr_bf;
 	unsigned int		 pr_error;
+	unsigned int		 pr_nblocks;	/* # indented stmt blocks */
+
+	struct {
+		struct simple_stmt_list	se_stmts;
+		int			se_depth;
+	} pr_simple;
 };
 
 struct parser_exec_func_proto_arg {
@@ -90,6 +107,8 @@ static int	parser_exec_func_arg(struct parser *, struct doc *,
 
 static int	parser_exec_stmt(struct parser *, struct doc *,
     const struct token *);
+static int	parser_exec_stmt1(struct parser *, struct doc *,
+    const struct token *);
 static int	parser_exec_stmt_block(struct parser *,
     struct parser_exec_stmt_block_arg *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
@@ -103,6 +122,13 @@ static int	parser_exec_type(struct parser *, struct doc *,
 
 static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, unsigned int, enum doc_type);
+
+static int			 parser_simple_stmt_enter(struct parser *,
+    const struct token *);
+static void			 parser_simple_stmt_leave(struct parser *, int);
+static struct doc		*parser_simple_stmt_block(struct parser *,
+    struct doc *);
+static struct simple_stmt	*parser_simple_stmt_alloc(struct parser *);
 
 static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
@@ -121,6 +147,8 @@ static int	parser_halted(const struct parser *);
 static int	parser_ok(const struct parser *);
 static void	parser_reset(struct parser *);
 
+static int	linecount(const char *, size_t, int);
+
 struct parser *
 parser_alloc(const struct file *fe, struct error *er, const struct config *cf)
 {
@@ -138,6 +166,7 @@ parser_alloc(const struct file *fe, struct error *er, const struct config *cf)
 	pr->pr_er = er;
 	pr->pr_cf = cf;
 	pr->pr_lx = lx;
+	TAILQ_INIT(&pr->pr_simple.se_stmts);
 	return pr;
 }
 
@@ -1255,6 +1284,23 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 static int
 parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 {
+	struct lexer *lx = pr->pr_lx;
+	int simple = -1;
+	int error;
+
+	if (lexer_peek_if(lx, TOKEN_IF, NULL) ||
+	    lexer_peek_if(lx, TOKEN_FOR, NULL) ||
+	    lexer_peek_if(lx, TOKEN_WHILE, NULL) ||
+	    lexer_peek_if(lx, TOKEN_IDENT, NULL))
+		simple = parser_simple_stmt_enter(pr, stop);
+	error = parser_exec_stmt1(pr, dc, stop);
+	parser_simple_stmt_leave(pr, simple);
+	return error;
+}
+
+static int
+parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
+{
 	struct parser_exec_stmt_block_arg ps = {
 		.ps_head	= dc,
 		.ps_tail	= dc,
@@ -1304,13 +1350,14 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 	    lexer_peek_if(lx, TOKEN_SWITCH, &tk))
 		return parser_exec_stmt_expr(pr, dc, tk, 0);
 
-	if (lexer_if(lx, TOKEN_FOR, &tk)) {
+	if (lexer_peek_if(lx, TOKEN_FOR, NULL)) {
 		struct doc *expr = NULL;
 		struct doc *loop, *space;
 		unsigned int flags;
 
 		loop = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		doc_token(tk, loop);
+		if (lexer_expect(lx, TOKEN_FOR, &tk))
+			doc_token(tk, loop);
 		doc_literal(" ", loop);
 
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
@@ -1512,13 +1559,20 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 static int
 parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 {
-	struct doc *concat, *indent, *line;
+	struct doc *concat, *dc, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *seek, *tk;
+	int doswitch = ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
 	int nstmt = 0;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return PARSER_NOTHING;
+
+	if (!doswitch)
+		pr->pr_nblocks++;
+
+	dc = parser_simple_stmt_block(pr, ps->ps_tail);
+
 	parser_trim_brace(rbrace);
 
 	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
@@ -1536,8 +1590,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	if (!lexer_peek(lx, &seek))
 		seek = NULL;
 
-	indent = ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH ?
-	    ps->ps_tail : doc_alloc_indent(pr->pr_cf->cf_tw, ps->ps_tail);
+	indent = doswitch ? dc : doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 	line = doc_alloc(DOC_HARDLINE, indent);
 	while (parser_exec_stmt(pr, indent, rbrace) == PARSER_OK) {
 		nstmt++;
@@ -1575,6 +1628,9 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, concat);
 	ps->ps_rbrace = concat;
+
+	if (!doswitch)
+		pr->pr_nblocks--;
 
 	return parser_ok(pr);
 }
@@ -1855,6 +1911,130 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 }
 
 /*
+ * Intended to be called while entering a section of the source code with one or
+ * many statements potentially wrapped in curly braces. The statements will
+ * silently be formatted in order to determine if each statement spans a single
+ * line, making the curly braces redundant and thus removed. Once this routine
+ * returns, parsing continues as usual.
+ *
+ * The return value is used to signal when a nested statement is entered which
+ * is ignored as we only handle one scope at a time.
+ */
+static int
+parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
+{
+	struct lexer_state s;
+	struct buffer *bf = pr->pr_bf;
+	struct lexer *lx = pr->pr_lx;
+	struct simple_stmt *ss;
+	int nstmts = 0;
+	int nfits = 0;
+	int error;
+
+	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
+		return 0;
+	if (++pr->pr_simple.se_depth > 1)
+		return 1;
+
+	assert(TAILQ_EMPTY(&pr->pr_simple.se_stmts));
+
+	ss = parser_simple_stmt_alloc(pr);
+	lexer_peek_enter(lx, &s);
+	error = parser_exec_stmt1(pr, ss->ss_indent, stop);
+	lexer_peek_leave(lx, &s);
+	if (error)
+		goto out;
+
+	TAILQ_FOREACH(ss, &pr->pr_simple.se_stmts, ss_entry) {
+		/* Skip root document since it covers all statements. */
+		if (nstmts++ == 0)
+			continue;
+
+		doc_exec(ss->ss_root, lx, bf, pr->pr_cf,
+		    DOC_EXEC_FLAG_NODIFF | DOC_EXEC_FLAG_NOTRACE);
+		if (linecount(bf->bf_ptr, bf->bf_len, 1)) {
+			nfits++;
+		} else {
+			/*
+			 * No point in continuing as at least one statement
+			 * spans over multiple lines.
+			 */
+			break;
+		}
+	}
+	if (nstmts > 1 && nstmts - 1 == nfits) {
+		TAILQ_FOREACH(ss, &pr->pr_simple.se_stmts, ss_entry) {
+			if (ss->ss_lbrace == NULL || ss->ss_rbrace == NULL)
+				continue;
+			lexer_remove(lx, ss->ss_lbrace);
+			lexer_remove(lx, ss->ss_rbrace);
+		}
+	}
+
+out:
+	while (!TAILQ_EMPTY(&pr->pr_simple.se_stmts)) {
+		ss = TAILQ_FIRST(&pr->pr_simple.se_stmts);
+		TAILQ_REMOVE(&pr->pr_simple.se_stmts, ss, ss_entry);
+		doc_free(ss->ss_root);
+		if (ss->ss_lbrace != NULL)
+			token_rele(ss->ss_lbrace);
+		if (ss->ss_rbrace != NULL)
+			token_rele(ss->ss_rbrace);
+		free(ss);
+	}
+
+	pr->pr_simple.se_depth--;
+
+	return 0;
+}
+
+static void
+parser_simple_stmt_leave(struct parser *pr, int simple)
+{
+	if (simple == 1)
+		pr->pr_simple.se_depth--;
+}
+
+static struct doc *
+parser_simple_stmt_block(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct simple_stmt *ss;
+	struct token *lbrace, *rbrace;
+
+	/* Ignore nested statements, they will be handled later on. */
+	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0 ||
+	    pr->pr_simple.se_depth != 1)
+		return dc;
+
+	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
+	    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+		return dc;
+
+	ss = parser_simple_stmt_alloc(pr);
+	token_ref(lbrace);
+	ss->ss_lbrace = lbrace;
+	token_ref(rbrace);
+	ss->ss_rbrace = rbrace;
+	return ss->ss_indent;
+}
+
+static struct simple_stmt *
+parser_simple_stmt_alloc(struct parser *pr)
+{
+	struct simple_stmt *ss;
+
+	ss = calloc(1, sizeof(*ss));
+	if (ss == NULL)
+		err(1, NULL);
+	ss->ss_root = doc_alloc(DOC_CONCAT, NULL);
+	ss->ss_indent = doc_alloc_indent(pr->pr_nblocks * pr->pr_cf->cf_tw,
+	    ss->ss_root);
+	TAILQ_INSERT_TAIL(&pr->pr_simple.se_stmts, ss, ss_entry);
+	return ss;
+}
+
+/*
  * Returns non-zero if the next tokens denotes a X macro. That is, something
  * that looks like a function call but is not followed by a semicolon nor comma
  * if being part of an initializer. One example are the macros provided by
@@ -2115,4 +2295,27 @@ parser_reset(struct parser *pr)
 {
 	error_reset(pr->pr_er);
 	pr->pr_error = 0;
+}
+
+/*
+ * Count the number of lines. Returns non-zero if it's equal count and zero
+ * otherwise.
+ */
+static int
+linecount(const char *str, size_t len, int count)
+{
+	int n = 0;
+
+	while (len > 0) {
+		const char *p;
+
+		p = memchr(str, '\n', len);
+		if (p == NULL)
+			break;
+		if (++n > count)
+			break;
+		len -= (p - str) + 1;
+		str = &p[1];
+	}
+	return n == count;
 }

@@ -245,6 +245,7 @@ TESTS+=	valid-200.c
 TESTS+=	valid-201.c
 
 TESTS+=	simple-001.c
+TESTS+=	simple-002.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c

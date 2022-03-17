@@ -1,0 +1,94 @@
+void
+test_func(void)
+{
+}
+
+void
+test_block(void)
+{
+	{
+		return 0;
+	}
+}
+
+void
+test_do_while(void)
+{
+	do {
+		continue;
+	} while (1);
+}
+
+void
+test_while(void)
+{
+	while (1)
+		continue;
+}
+
+void
+test_for(void)
+{
+	for (;;)
+		continue;
+}
+
+void
+test_switch1(void)
+{
+	switch (1) {
+	default:
+	}
+}
+
+void
+test_switch2(void)
+{
+	if (0) {
+		switch (1) {
+		case 1: {
+			TAILQ_FOREACH_REVERSE(dc, dl, doc_stack, dc_entry)
+				TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
+
+			break;
+		}
+		}
+	}
+}
+
+void
+test_if1(void)
+{
+	if (0)
+		return 0;
+	else
+		return 1;
+}
+
+void
+test_if2(void)
+{
+	if (0) {
+	}
+}
+
+void
+test_if3(void)
+{
+	if (0) {
+		if (1) {
+			if (2) {
+				if (3) {
+					if (4) {
+						if (5) {
+							if (6) {
+								int x = 1111 +
+								    2222;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -236,6 +236,7 @@ int	lexer_is_branch(const struct lexer *);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
+void	lexer_remove(struct lexer *, struct token *);
 
 #define lexer_expect(a, b, c) \
 	__lexer_expect((a), (b), (c), __func__, __LINE__)
