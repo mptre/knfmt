@@ -14,18 +14,11 @@ DISTFILES \
 
 cd tests
 mkls "$@" \
-TESTS \
-	diff*.c \
-	-- \
-TESTS \
-	error*.c \
-	-- \
-TESTS \
-	valid*.c \
-	-- \
-TESTS \
-	simple*.c \
-	-- \
+TESTS diff*.c -- \
+TESTS error*.c -- \
+TESTS valid*.c -- \
+TESTS simple*.c -- \
+TESTS bug*.c -- \
 TESTS \
 	../!(compat-*).c ../!(compat-*|config).h \
 	../compat-pledge.c

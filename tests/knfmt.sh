@@ -70,12 +70,14 @@ case "$1" in
 valid-183.c)
 	# Ignore windows line endings test case.
 	;;
-error-*|simple-*|valid-*)
+bug-*|error-*|simple-*|valid-*)
 	hascomm "$1" || exit 1
 	;;
 esac
 
 case "$1" in
+bug-*)
+	;;
 diff-*)
 	_base="${1%.c}"
 	_ok="${_base}.ok"
