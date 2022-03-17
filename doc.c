@@ -362,9 +362,8 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	if (tk->tk_flags & TOKEN_FLAG_UNMUTE)
 		__doc_alloc(DOC_MUTE, dc, -1, fun, lno);
 
-	TAILQ_FOREACH(tmp, &tk->tk_prefixes, tk_entry) {
+	TAILQ_FOREACH(tmp, &tk->tk_prefixes, tk_entry)
 		__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
-	}
 
 	token = __doc_alloc(type, dc, 0, fun, lno);
 	/* Must be mutable for reference counting. */
@@ -415,9 +414,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (ndocs > 1)
 			st->st_fits.f_fits = -1;
 
-		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
+		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry)
 			doc_exec1(concat, st);
-		}
+
 		break;
 	}
 
@@ -684,9 +683,9 @@ doc_walk(const struct doc *root, struct doc_state *st,
 		case DOC_CONCAT: {
 			const struct doc_list *dl = &dc->dc_list;
 
-			TAILQ_FOREACH_REVERSE(dc, dl, doc_stack, dc_entry) {
+			TAILQ_FOREACH_REVERSE(dc, dl, doc_stack, dc_entry)
 				TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
-			}
+
 			continue;
 		}
 
