@@ -249,6 +249,8 @@ TESTS+=	simple-001.c
 TESTS+=	simple-002.c
 TESTS+=	simple-003.c
 
+TESTS+=	bug-001.c
+TESTS+=	bug-002.c
 TESTS+=	bug-003.c
 
 TESTS+=	../buffer.c
