@@ -1,5 +1,5 @@
 /*
- * queue(3) macro confused as declaration.
+ * Bug: queue(3) macro confused as declaration.
  */
 
 int

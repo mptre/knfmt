@@ -893,53 +893,37 @@ comma:
 
 /*
  * Parse a declaration making use of preprocessor directives such as the ones
- * provided by queue(3):
- *
- * 	TAILQ_HEAD(x, y);
- * 	TAILQ_HEAD(x, y) z;
- * 	TAILQ_HEAD(x, y) z[S];
- * 	TAILQ_HEAD(x, y) *z;
- * 	TAILQ_HEAD(x, y) z = TAILQ_HEAD_INITIALIZER(z);
- *
- * In addition, detect various macros:
- *
- * 	UMQ_FIXED_EP_DEF() = {
+ * provided by queue(3).
  */
 static int
 parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *ident, *tk;
+	struct token *end, *macro, *tk;
 	struct doc *expr = dc;
-	int semi = 1;
 	int iscpp = 0;
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
 	    NULL))
 		continue;
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	if (lexer_if(lx, TOKEN_IDENT, &macro) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end)) {
-		if (lexer_if(lx, TOKEN_SEMI, NULL)) {
-			iscpp = 1;
-		} else {
-			for (;;) {
-				if (!lexer_if(lx, TOKEN_STAR, &tk))
-					break;
-				end = tk;
-			}
+		struct token *ident;
 
-			if (lexer_if(lx, TOKEN_IDENT, NULL) &&
-			    (lexer_if(lx, TOKEN_LSQUARE, NULL) ||
-			     lexer_if(lx, TOKEN_SEMI, NULL) ||
-			     lexer_if(lx, TOKEN_EQUAL, NULL) ||
-			     lexer_if(lx, TOKEN_COMMA, NULL)))
-				iscpp = 1;
-			else if (lexer_if(lx, TOKEN_EQUAL, NULL) &&
-			    lexer_if(lx, TOKEN_LBRACE, NULL))
-				iscpp = 1;
+		for (;;) {
+			if (!lexer_if(lx, TOKEN_STAR, &tk))
+				break;
+			end = tk;
 		}
+
+		if (lexer_if(lx, TOKEN_SEMI, NULL) ||
+		    lexer_if(lx, TOKEN_EQUAL, NULL))
+			iscpp = 1;
+		else if (lexer_peek_until(lx, TOKEN_IDENT, &ident) &&
+		    token_cmp(macro, ident) == 0)
+			iscpp = 1;
 	}
 	lexer_peek_leave(lx, &s);
 	if (!iscpp) {
@@ -953,7 +937,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	if (parser_exec_decl_init(pr, dc, NULL, 0))
 		return parser_error(pr);
-	if (semi && lexer_expect(lx, TOKEN_SEMI, &tk))
+	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, expr);
 
 	return parser_ok(pr);

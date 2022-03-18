@@ -73,7 +73,6 @@ DISTFILES+=	t.c
 DISTFILES+=	tests/GNUmakefile
 DISTFILES+=	tests/Makefile
 DISTFILES+=	tests/bug-001.c
-DISTFILES+=	tests/bug-002.c
 DISTFILES+=	tests/bug-003.c
 DISTFILES+=	tests/diff-001.c
 DISTFILES+=	tests/diff-001.ok
@@ -408,6 +407,7 @@ DISTFILES+=	tests/valid-199.ok
 DISTFILES+=	tests/valid-200.c
 DISTFILES+=	tests/valid-201.c
 DISTFILES+=	tests/valid-202.c
+DISTFILES+=	tests/valid-203.c
 DISTFILES+=	token.h
 DISTFILES+=	util.c
 
