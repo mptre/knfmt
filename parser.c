@@ -1590,11 +1590,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		if (lexer_peek_if(lx, TOKEN_RBRACE, &tk) && tk == rbrace)
 			break;
 
-		if (lexer_back(lx, &tk) && tk->tk_type == TOKEN_RBRACE &&
-		    lexer_peek_if(lx, TOKEN_ELSE, NULL))
-			doc_literal(" ", indent);
-		else
-			doc_alloc(DOC_HARDLINE, indent);
+		doc_alloc(DOC_HARDLINE, indent);
 	}
 	/* Do not keep the hard line if the statement block is empty. */
 	if (nstmt == 0)
