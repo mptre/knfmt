@@ -423,9 +423,19 @@ lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
 
 	/* Remove any pending broken branches. */
 	while ((br = TAILQ_FIRST(&lx->lx_branches)) != NULL) {
+		struct token *tk, *pv;
+
 		TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
-		while (token_branch_unlink(br->br_cpp) == 0)
-			continue;
+		tk = br->br_cpp;
+		do {
+			pv = tk->tk_branch.br_pv;
+			lexer_trace(lx, "broken branch: %s%s%s",
+			    token_sprintf(tk),
+			    pv ? " -> " : "", pv ? token_sprintf(pv) : "");
+			while (token_branch_unlink(tk) == 0)
+				continue;
+			tk = pv;
+		} while (tk != NULL);
 		free(br);
 	}
 
