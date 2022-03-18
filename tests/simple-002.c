@@ -68,8 +68,10 @@ test_if1(void)
 {
 	if (0) {
 		return 0;
-	} else {
+	} else if (1) {
 		return 1;
+	} else {
+		return 2;
 	}
 }
 
@@ -97,5 +99,16 @@ test_if3(void)
 				}
 			}
 		}
+	}
+}
+
+void
+test_if3(void)
+{
+	if (0) {
+		int x = 0;
+		return x;
+	} else {
+		return 1;
 	}
 }
