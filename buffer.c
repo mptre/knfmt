@@ -60,7 +60,8 @@ buffer_read(const char *path)
 		if (n == 0)
 			break;
 		bf->bf_len += n;
-		buffer_grow(bf, 1);
+		if (bf->bf_len > bf->bf_siz / 2)
+			buffer_grow(bf, 1);
 	}
 
 	close(fd);
@@ -165,9 +166,6 @@ static void
 buffer_grow(struct buffer *bf, unsigned int shift)
 {
 	size_t newsiz;
-
-	if (bf->bf_len < bf->bf_siz / 2)
-		return;
 
 	newsiz = bf->bf_siz << shift;
 	bf->bf_ptr = realloc(bf->bf_ptr, newsiz);
