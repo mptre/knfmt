@@ -251,7 +251,9 @@ TESTS+=	simple-002.c
 TESTS+=	simple-003.c
 
 TESTS+=	bug-001.c
+TESTS+=	bug-002.c
 TESTS+=	bug-003.c
+TESTS+=	bug-004.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
