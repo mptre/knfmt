@@ -72,7 +72,7 @@ static void	lexer_line_alloc(struct lexer *, unsigned int);
 
 static int	lexer_find_token(const struct lexer *,
     const struct lexer_state *, struct token **);
-static int	lexer_buffer_strcmp(const struct lexer *,
+static int	lexer_buffer_streq(const struct lexer *,
     const struct lexer_state *, const char *);
 
 static struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
@@ -1752,12 +1752,12 @@ lexer_cpp(struct lexer *lx)
 		ch = peek;
 	}
 
-	if (lexer_buffer_strcmp(lx, &cmpst, "if") == 0)
+	if (lexer_buffer_streq(lx, &cmpst, "if"))
 		type = TOKEN_CPP_IF;
-	else if (lexer_buffer_strcmp(lx, &cmpst, "else") == 0 ||
-	    lexer_buffer_strcmp(lx, &cmpst, "elif") == 0)
+	else if (lexer_buffer_streq(lx, &cmpst, "else") ||
+	    lexer_buffer_streq(lx, &cmpst, "elif"))
 		type = TOKEN_CPP_ELSE;
-	else if (lexer_buffer_strcmp(lx, &cmpst, "endif") == 0)
+	else if (lexer_buffer_streq(lx, &cmpst, "endif"))
 		type = TOKEN_CPP_ENDIF;
 
 	/* Consume up to 2 hard line(s), will be hanging of the cpp token. */
@@ -1848,18 +1848,20 @@ lexer_find_token(const struct lexer *lx, const struct lexer_state *st,
 }
 
 static int
-lexer_buffer_strcmp(const struct lexer *lx, const struct lexer_state *st,
+lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
     const char *str)
 {
 	const char *buf;
 	size_t buflen, len;
 
-	buf = &lx->lx_bf->bf_ptr[st->st_off];
 	buflen = lx->lx_st.st_off - st->st_off;
+	if (buflen == 0)
+		return 0;
 	len = strlen(str);
 	if (len > buflen)
 		return 0;
-	return strncmp(buf, str, len);
+	buf = &lx->lx_bf->bf_ptr[st->st_off];
+	return strncmp(buf, str, len) == 0;
 }
 
 static struct token *
