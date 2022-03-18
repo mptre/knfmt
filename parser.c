@@ -886,6 +886,8 @@ comma:
 		doc_token(tk, dc);
 		if (token_has_line(tk, 2))
 			ruler_exec(rl);
+	} else if (!lexer_peek(lx, &tk) || tk != stop) {
+		return parser_error(pr);
 	}
 
 	return parser_ok(pr);
