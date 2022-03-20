@@ -1494,7 +1494,7 @@ out:
 }
 
 /*
- * Consume empty line(s) until a line with optional whitespace following by
+ * Consume empty line(s) until a line with optional whitespace followed by
  * something else is found.
  */
 static void

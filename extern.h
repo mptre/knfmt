@@ -140,7 +140,11 @@ struct token {
 #define TOKEN_FLAG_TYPE		0x00000001u
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
 #define TOKEN_FLAG_STORAGE	0x00000004u
-#define TOKEN_FLAG_IDENT	0x00000008u	/* optionally following ident */
+/*
+ * Token optionally be followed by an identifier. Only applicable to struct,
+ * enum and union.
+ */
+#define TOKEN_FLAG_IDENT	0x00000008u
 #define TOKEN_FLAG_DANGLING	0x00000010u
 #define TOKEN_FLAG_ASSIGN	0x00000020u
 #define TOKEN_FLAG_AMBIGUOUS	0x00000040u
@@ -150,7 +154,15 @@ struct token {
 #define TOKEN_FLAG_DIRTY	0x00000400u
 #define TOKEN_FLAG_CPP		0x00000800u
 #define TOKEN_FLAG_FREE		0x00001000u
+/*
+ * Token followed by exactly one new line. Dangling suffix and is only emitted
+ * in certain contexts.
+ */
 #define TOKEN_FLAG_OPTLINE	0x00002000u
+/*
+ * Token followed by whitespace (spaces and tabs). Dangling suffix and is never
+ * emitted.
+ */
 #define TOKEN_FLAG_OPTSPACE	0x00004000u
 #define TOKEN_FLAG_SPACE	0x00008000u
 #define TOKEN_FLAG_DIFF		0x00010000u
