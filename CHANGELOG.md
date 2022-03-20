@@ -1,3 +1,33 @@
+# 2.0.0 - XXXX-XX-XX
+
+## Changes
+
+- Align cpp line continuations, i.e. backslashes.
+  (c1e20b7)
+  (Anton Lindqvist)
+
+## News
+
+- Trim empty lines before else statements.
+  (7033277)
+  (Anton Lindqvist)
+
+- Add simple mode (`-s`) intended to simplify the source code.
+  Currently limited to removing parenthesis around return expression and
+  removing redundant curly braces around one line statements.
+  (eca73ec, 27f4087, 524dc73)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Remove extra space before attribute succeeding struct declarations.
+  (81ed102)
+  (Anton Lindqvist)
+
+- Do not confuse queue(3) macros as declarations.
+  (33ed4b4)
+  (Anton Lindqvist)
+
 # v1.2.0 - 2022-01-12
 
 ## News
