@@ -39,7 +39,6 @@ struct lexer {
 
 	int			 lx_eof;
 	int			 lx_peek;
-	int			 lx_trim;
 	enum token_type		 lx_expect;
 
 	struct token		*lx_unmute;
@@ -776,8 +775,6 @@ lexer_pop(struct lexer *lx, struct token **tk)
 out:
 	if (st->st_tok == NULL)
 		return 0;
-	if (lx->lx_peek == 0 && lx->lx_trim)
-		token_trim(st->st_tok);
 	*tk = st->st_tok;
 	return 1;
 }
@@ -1242,18 +1239,6 @@ __lexer_until(struct lexer *lx, enum token_type type, const struct token *stop,
 		}
 	}
 	return 0;
-}
-
-void
-lexer_trim_enter(struct lexer *lx)
-{
-	lx->lx_trim++;
-}
-
-void
-lexer_trim_leave(struct lexer *lx)
-{
-	lx->lx_trim--;
 }
 
 const struct diffchunk *

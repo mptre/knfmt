@@ -98,8 +98,6 @@ static int	parser_exec_func_decl(struct parser *, struct doc *,
 static int	parser_exec_func_impl(struct parser *, struct doc *);
 static int	parser_exec_func_proto(struct parser *,
     struct parser_exec_func_proto_arg *);
-static int	parser_exec_func_proto1(struct parser *,
-    struct parser_exec_func_proto_arg *);
 static int	parser_exec_func_arg(struct parser *, struct doc *,
     struct doc **, const struct token *);
 
@@ -1102,18 +1100,6 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 static int
 parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 {
-	int error;
-
-	lexer_trim_enter(pr->pr_lx);
-	error = parser_exec_func_proto1(pr, pf);
-	lexer_trim_leave(pr->pr_lx);
-	return error;
-}
-
-static int
-parser_exec_func_proto1(struct parser *pr,
-    struct parser_exec_func_proto_arg *pf)
-{
 	struct doc *dc = pf->pf_dc;
 	struct doc *concat, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
@@ -1155,6 +1141,7 @@ parser_exec_func_proto1(struct parser *pr,
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 			doc_token(tk, indent);
 	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
+		token_trim(tk);
 		if (isimpl) {
 			doc_token(tk, indent);
 		} else {
@@ -1169,8 +1156,10 @@ parser_exec_func_proto1(struct parser *pr,
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_error(pr);
+	parser_trim_brace(rparen);
 
-	indent = doc_alloc_indent(pr->pr_cf->cf_sw, concat);
+	indent = doc_alloc_indent(pr->pr_cf->cf_sw,
+	    doc_alloc_optional(1, concat));
 	while (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen) ==
 	    PARSER_OK)
 		continue;
@@ -1206,8 +1195,10 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	int error = 0;
 
 	/* Consume any left parenthesis before emitting a soft line. */
-	if (lexer_if(lx, TOKEN_LPAREN, &tk))
+	if (lexer_if(lx, TOKEN_LPAREN, &tk)) {
+		token_trim(tk);
 		doc_token(tk, dc);
+	}
 
 	/*
 	 * Let each argument begin with a soft line, causing a line to be
@@ -1813,6 +1804,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 
 		if (!lexer_pop(lx, &tk))
 			return parser_error(pr);
+		token_trim(tk);
 
 		if (tk->tk_flags & TOKEN_FLAG_TYPE_ARGS) {
 			struct doc *indent;

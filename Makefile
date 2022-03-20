@@ -414,6 +414,7 @@ DISTFILES+=	tests/valid-201.c
 DISTFILES+=	tests/valid-202.c
 DISTFILES+=	tests/valid-203.c
 DISTFILES+=	tests/valid-204.c
+DISTFILES+=	tests/valid-205.c
 DISTFILES+=	token.h
 DISTFILES+=	util.c
 

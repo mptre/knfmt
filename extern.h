@@ -278,9 +278,6 @@ int	lexer_peek_until_stop(struct lexer *, enum token_type,
 int	__lexer_until(struct lexer *, enum token_type, const struct token *,
     struct token **, const char *, int);
 
-void	lexer_trim_enter(struct lexer *);
-void	lexer_trim_leave(struct lexer *);
-
 const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
     unsigned int);
 
