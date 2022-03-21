@@ -593,12 +593,11 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc)
 {
 	struct parser_exec_decl_braces_arg pb;
 	struct ruler rl;
-	struct doc *concat, *optional;
+	struct doc *concat;
 	int error;
 
 	ruler_init(&rl, 0);
-	optional = doc_alloc_optional(DOC_OPTIONAL_STICKY, dc);
-	concat = doc_alloc(DOC_CONCAT, optional);
+	concat = doc_alloc(DOC_CONCAT, dc);
 	pb.pb_dc = concat;
 	pb.pb_rl = &rl;
 	pb.pb_col = 0;

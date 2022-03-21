@@ -393,7 +393,6 @@ struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
  */
 #define DOC_INDENT_PARENS	111	/* entering parenthesis */
 #define DOC_INDENT_FORCE	222	/* force indentation */
-#define DOC_OPTIONAL_STICKY	333	/* always allow optional line(s) */
 
 #define doc_alloc_indent(a, b) \
 	__doc_alloc_indent(DOC_INDENT, (a), (b), __func__, __LINE__)

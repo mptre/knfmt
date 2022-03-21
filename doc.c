@@ -640,20 +640,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_OPTIONAL: {
-		if (st->st_optline != DOC_OPTIONAL_STICKY) {
-			int oldoptline = st->st_optline;
+		int oldoptline = st->st_optline;
 
-			if (dc->dc_int == DOC_OPTIONAL_STICKY)
-				st->st_optline = DOC_OPTIONAL_STICKY;
-			else
-				st->st_optline++;
-			doc_exec1(dc->dc_doc, st);
-			/* Note, could already be cleared by doc_print(). */
-			if (oldoptline <= st->st_optline)
-				st->st_optline = oldoptline;
-		} else {
-			doc_exec1(dc->dc_doc, st);
-		}
+		st->st_optline++;
+		doc_exec1(dc->dc_doc, st);
+		/* Note, could already be cleared by doc_print(). */
+		if (oldoptline <= st->st_optline)
+			st->st_optline = oldoptline;
 		break;
 	}
 	}
@@ -880,9 +873,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		 * Suppress optional line(s) while emitting a line. Mixing the
 		 * two results in odd formatting.
 		 */
-		if ((flags & DOC_PRINT_FLAG_NEWLINE) == 0 &&
-		    st->st_optline > 0 &&
-		    st->st_optline < DOC_OPTIONAL_STICKY) {
+		if ((flags & DOC_PRINT_FLAG_NEWLINE) == 0 && st->st_optline) {
 			doc_trace(dc, st, "%s: optline %d -> 0",
 			    __func__, st->st_optline);
 			st->st_optline = 0;
@@ -1446,8 +1437,6 @@ intstr(const struct doc *dc)
 		return "PARENS";
 	case DOC_INDENT_FORCE:
 		return "FORCE";
-	case DOC_OPTIONAL_STICKY:
-		return "STICKY";
 	}
 	return NULL;
 }
@@ -1456,7 +1445,7 @@ static const char *
 statestr(const struct doc_state *st, unsigned int depth, char *buf,
     size_t bufsiz)
 {
-	char mute[16], optline[16];
+	char mute[16];
 	unsigned char mode = 'U';
 	int n;
 
@@ -1474,13 +1463,8 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 	else
 		(void)snprintf(mute, sizeof(mute), "%d", st->st_mute);
 
-	if (st->st_optline >= DOC_OPTIONAL_STICKY)
-		(void)snprintf(optline, sizeof(optline), "S");
-	else
-		(void)snprintf(optline, sizeof(optline), "%d", st->st_optline);
-
-	n = snprintf(buf, bufsiz, "[D] [%c C=%-3u D=%-3u U=%s O=%s]",
-	    mode, st->st_pos, depth, mute, optline);
+	n = snprintf(buf, bufsiz, "[D] [%c C=%-3u D=%-3u U=%s O=%d]",
+	    mode, st->st_pos, depth, mute, st->st_optline);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 	return buf;
