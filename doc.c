@@ -252,7 +252,6 @@ doc_free(struct doc *dc)
 	case DOC_LINE:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
-	case DOC_NEWLINE:
 	case DOC_OPTLINE:
 	case DOC_MUTE:
 		break;
@@ -597,14 +596,6 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
 		break;
 
-	case DOC_NEWLINE:
-		/*
-		 * Signal to doc_print() that we've got pending hard line(s) to
-		 * emit.
-		 */
-		st->st_newline = dc->dc_int;
-		break;
-
 	case DOC_OPTLINE:
 		/*
 		 * Signal to doc_print() to emit a hard line on the next
@@ -685,7 +676,6 @@ doc_walk(const struct doc *root, struct doc_state *st,
 		case DOC_LINE:
 		case DOC_SOFTLINE:
 		case DOC_HARDLINE:
-		case DOC_NEWLINE:
 		case DOC_OPTLINE:
 		case DOC_MUTE:
 			break;
@@ -786,7 +776,6 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 	case DOC_ALIGN:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
-	case DOC_NEWLINE:
 	case DOC_MUTE:
 		break;
 	}
@@ -1142,7 +1131,6 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 	case DOC_ALIGN:
 	case DOC_LINE:
 	case DOC_SOFTLINE:
-	case DOC_NEWLINE:
 	case DOC_OPTLINE:
 	case DOC_MUTE:
 		break;
@@ -1331,7 +1319,6 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
-	case DOC_NEWLINE:
 		fprintf(stderr, "(%d)", dc->dc_int);
 		break;
 	}
@@ -1364,7 +1351,6 @@ __doc_trace_leave(const struct doc *dc, struct doc_state *st)
 	case DOC_LINE:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
-	case DOC_NEWLINE:
 	case DOC_OPTLINE:
 	case DOC_MUTE:
 	case DOC_OPTIONAL:
@@ -1403,7 +1389,6 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_LINE);
 	CASE(DOC_SOFTLINE);
 	CASE(DOC_HARDLINE);
-	CASE(DOC_NEWLINE);
 	CASE(DOC_OPTLINE);
 	CASE(DOC_MUTE);
 	CASE(DOC_OPTIONAL);
