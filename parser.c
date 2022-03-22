@@ -1537,13 +1537,25 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 static int
 parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 {
+	struct lexer_state s;
 	struct doc *concat, *dc, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *seek, *tk;
 	int doswitch = ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
 	int nstmt = 0;
+	int peek = 0;
 
-	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+	lexer_peek_enter(lx, &s);
+	if (lexer_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace)) {
+		struct token *semi;
+
+		if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) &&
+		    lexer_peek_if(lx, TOKEN_SEMI, &semi))
+			lexer_remove(lx, semi);
+		peek = 1;
+	}
+	lexer_peek_leave(lx, &s);
+	if (!peek)
 		return PARSER_NOTHING;
 
 	if (!doswitch)
@@ -1599,8 +1611,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 			token_trim(tk);
 		doc_token(tk, concat);
 	}
-	if (lexer_if(lx, TOKEN_SEMI, &tk) &&
-	    (pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
+	if (lexer_if(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, concat);
 	ps->ps_rbrace = concat;
 
