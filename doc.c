@@ -719,8 +719,10 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		/* Should not perform any printing. */
 		fst.st_bf = NULL;
 		fst.st_mode = MUNGE;
+		fst.st_fits.f_fits = 1;
 		fst.st_fits.f_optline = 0;
-		doc_walk(dc, &fst, doc_fits1, &st->st_fits.f_fits);
+		doc_walk(dc, &fst, doc_fits1, NULL);
+		st->st_fits.f_fits = fst.st_fits.f_fits;
 		st->st_fits.f_pos = st->st_pos;
 		st->st_fits.f_ppos = fst.st_pos;
 		if (!st->st_fits.f_fits &&
@@ -747,10 +749,8 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 }
 
 static int
-doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
+doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 {
-	int *fits = (int *)arg;
-
 	switch (dc->dc_type) {
 	case DOC_LITERAL:
 		doc_position(st, dc->dc_str, dc->dc_len);
@@ -781,7 +781,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 	}
 
 	if (st->st_pos > st->st_cf->cf_mw) {
-		*fits = 0;
+		st->st_fits.f_fits = 0;
 		return 0;
 	}
 	return 1;

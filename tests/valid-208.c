@@ -1,5 +1,5 @@
 /*
- * Extraneous new line due to OPTLINE followed by LINE in break mode.
+ * Bug: extraneous new line due to OPTLINE followed by LINE in break mode.
  */
 
 int
