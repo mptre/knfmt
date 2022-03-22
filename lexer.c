@@ -189,15 +189,6 @@ token_rele(struct token *tk)
 }
 
 /*
- * Returns non-zero if the given token has dangling tokens.
- */
-int
-token_has_dangling(const struct token *tk)
-{
-	return !TAILQ_EMPTY(&tk->tk_prefixes) || !TAILQ_EMPTY(&tk->tk_suffixes);
-}
-
-/*
  * Returns non-zero if the given token has at least nlines number of trailing
  * hard line(s).
  */
