@@ -382,9 +382,6 @@ void		doc_set_indent(struct doc *, int);
 struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
     int);
 
-#define doc_alloc_optional(a, b) \
-	__doc_alloc(DOC_OPTIONAL, (b), (a), __func__, __LINE__)
-
 /*
  * Sentinels honored by document allocation routines. The numbers are something
  * arbitrary large enough to never conflict with any actual value. Since the

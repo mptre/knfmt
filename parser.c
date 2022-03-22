@@ -1157,11 +1157,11 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 		return parser_error(pr);
 	parser_trim_brace(rparen);
 
-	indent = doc_alloc_indent(pr->pr_cf->cf_sw,
-	    doc_alloc_optional(1, concat));
-	while (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen) ==
-	    PARSER_OK)
-		continue;
+	indent = doc_alloc_indent(pr->pr_cf->cf_sw, concat);
+	for (;;) {
+		if (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen))
+			break;
+	}
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);
@@ -1206,6 +1206,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	 */
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_alloc(DOC_SOFTLINE, concat);
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, concat));
 
 	/* A type will missing when emitting the final right parenthesis. */
 	if (lexer_peek_if_type(lx, &end, LEXER_TYPE_FLAG_ARG) &&

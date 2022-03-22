@@ -198,7 +198,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	}
 
 	dc = doc_alloc(DOC_GROUP, ea->ea_dc);
-	optional = doc_alloc_optional(1, dc);
+	optional = doc_alloc(DOC_OPTIONAL, dc);
 	indent = (ea->ea_flags & EXPR_EXEC_FLAG_NOINDENT) == 0 ?
 	    doc_alloc_indent(ea->ea_cf->cf_sw, optional) :
 	    doc_alloc(DOC_CONCAT, optional);
