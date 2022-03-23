@@ -44,7 +44,7 @@ cpp_exec(const struct token *tk, const struct config *cf)
 			doc_alloc(DOC_HARDLINE, concat);
 		if (ep - sp > 0)
 			doc_literal_n(sp, ep - sp, concat);
-		ruler_insert(&rl, tk, concat, 1, doc_width(dc, bf, cf), 0);
+		ruler_insert(&rl, tk, concat, 1, doc_width(concat, bf, cf), 0);
 		doc_literal("\\", concat);
 
 		len -= nx - str;
