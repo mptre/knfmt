@@ -1806,6 +1806,18 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			if (align == NULL)
 				break;
 		}
+
+		/*
+		 * No alignment wanted if the first non-pointer token is
+		 * followed by a semi.
+		 */
+		if (align != NULL) {
+			const struct token *nx;
+
+			nx = TAILQ_NEXT(align, tk_entry);
+			if (nx != NULL && nx->tk_type == TOKEN_SEMI)
+				align = NULL;
+		}
 	}
 
 	for (;;) {
@@ -1832,8 +1844,13 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		doc_token(tk, concat);
 
 		if (tk == align) {
-			ruler_insert(rl, tk, concat, 1, parser_width(pr, dc),
-			    nspaces);
+			if (token_is_decl(tk, TOKEN_ENUM) ||
+			    token_is_decl(tk, TOKEN_STRUCT) ||
+			    token_is_decl(tk, TOKEN_UNION))
+				doc_alloc(DOC_LINE, concat);
+			else
+				ruler_insert(rl, tk, concat, 1,
+				    parser_width(pr, dc), nspaces);
 			didalign = 1;
 		}
 

@@ -272,10 +272,11 @@ token_is_decl(const struct token *tk, enum token_type type)
 	if (nx == NULL || nx->tk_type != TOKEN_LBRACE)
 		return 0;
 
-	if (tk->tk_type == TOKEN_IDENT)
+	if (tk->tk_type == TOKEN_IDENT) {
 		tk = TAILQ_PREV(tk, token_list, tk_entry);
-	if (tk == NULL)
-		return 0;
+		if (tk == NULL)
+			return 0;
+	}
 	return tk->tk_type == type;
 }
 

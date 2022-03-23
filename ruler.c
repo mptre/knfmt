@@ -14,8 +14,6 @@ struct ruler_datum {
 
 static void	ruler_reset(struct ruler *);
 
-static int	isdecl(const struct token *);
-static int	isnexttoken(const struct token *, enum token_type);
 static int	minimize(const struct ruler_column *);
 
 void
@@ -52,16 +50,6 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 {
 	struct ruler_column *rc;
 	struct ruler_datum *rd;
-
-	/* No space wanted at all if the following token is a semicolon. */
-	if (isnexttoken(tk, TOKEN_SEMI))
-		return;
-
-	/* Only a space is wanted for enum/struct/union declarations. */
-	if (isdecl(tk)) {
-		__doc_alloc(DOC_ALIGN, dc, 1, fun, lno);
-		return;
-	}
 
 	if (col > rl->rl_columns.b_len) {
 		struct ruler_column *ptr = rl->rl_columns.b_ptr;
@@ -192,21 +180,4 @@ ruler_reset(struct ruler *rl)
 	}
 
 	rl->rl_columns.b_len = 0;
-}
-
-static int
-isdecl(const struct token *tk)
-{
-	return token_is_decl(tk, TOKEN_ENUM) ||
-	    token_is_decl(tk, TOKEN_STRUCT) ||
-	    token_is_decl(tk, TOKEN_UNION);
-}
-
-static int
-isnexttoken(const struct token *tk, enum token_type type)
-{
-	tk = TAILQ_NEXT(tk, tk_entry);
-	if (tk == NULL)
-		return 0;
-	return tk->tk_type == type;
 }
