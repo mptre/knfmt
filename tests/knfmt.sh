@@ -23,12 +23,20 @@ hascomm() {
 	fi
 }
 
-# testcase file [-- knfmt-options]
+# testcase [-q] file [-- knfmt-options]
 #
 # Run test case.
 testcase() {
+	local _quiet=0
 	local _file
 
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-q)	_quiet=1;;
+		*)	break;;
+		esac
+		shift
+	done
 	_file="$1"; : "${_file:?}"; shift
 	[ "${1:-}" = "--" ] && shift
 
@@ -48,7 +56,7 @@ testcase() {
 			return 1
 		fi
 	fi
-	if ! cmp -s /dev/null "$_out"; then
+	if [ "$_quiet" -eq 0 ] && ! cmp -s /dev/null "$_out"; then
 		cat "$_out" 1>&2
 		return 1
 	fi
@@ -99,6 +107,9 @@ error-*)
 	;;
 simple-*|../*)
 	testcase "$1" -- -s
+	;;
+trace-*)
+	testcase -q "$1" -- -vvv
 	;;
 *)
 	testcase "$1"

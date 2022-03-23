@@ -18,6 +18,7 @@ TESTS diff*.c -- \
 TESTS error*.c -- \
 TESTS valid*.c -- \
 TESTS simple*.c -- \
+TESTS trace*.c -- \
 TESTS bug*.c -- \
 TESTS \
 	../!(compat-*).c ../!(compat-*|config).h \
