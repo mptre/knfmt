@@ -30,8 +30,8 @@
     if (argc > 0)
         usage();
     ```
-  * Do not mix presence and absence around if/else statements if at least one
-    statement cannot fit on a single line:
+  * Do not mix presence and absence of curly braces around if/else statements if
+    at least one statement cannot fit on a single line:
     ```
     # before
     if (argc > 0) {
