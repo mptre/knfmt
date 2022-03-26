@@ -112,3 +112,12 @@ test_if3(void)
 		return 1;
 	}
 }
+
+void
+test_if4(void)
+{
+	if (0) {
+		exit(1);
+		/* NOTREACHED */
+	}
+}

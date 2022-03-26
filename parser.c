@@ -1984,7 +1984,8 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 
 		doc_exec(ss->ss_root, lx, bf, pr->pr_cf,
 		    DOC_EXEC_FLAG_NODIFF | DOC_EXEC_FLAG_NOTRACE);
-		if (!linecount(bf->bf_ptr, bf->bf_len, 1)) {
+		if (!linecount(bf->bf_ptr, bf->bf_len, 1) ||
+		    token_has_prefix(ss->ss_rbrace, TOKEN_COMMENT)) {
 			/*
 			 * No point in continuing as at least one statement
 			 * spans over multiple lines.
