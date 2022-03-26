@@ -1316,6 +1316,7 @@ lexer_dump(const struct lexer *lx)
 		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
 			str = token_sprintf(suffix);
 			fprintf(stderr, "[L] %-6u   suffix %s\n", i, str);
+			free(str);
 			nfixes++;
 		}
 
