@@ -12,10 +12,46 @@
   (7033277)
   (Anton Lindqvist)
 
-- Add simple mode (`-s`) intended to simplify the source code.
-  Currently limited to removing parenthesis around return expression and
-  removing redundant curly braces around one line statements.
-  (eca73ec, 27f4087, 524dc73)
+- Add simple mode (`-s`) intended to simplify the source code:
+  * Removal of redundant parenthesis around return expressions:
+    ```
+    # before
+    return (x);
+    # after
+    return x;
+    ```
+  * Removal of redundant curly braces around oneline statements:
+    ```
+    # before
+    if (argc > 0) {
+        usage();
+    }
+    # after
+    if (argc > 0)
+        usage();
+    ```
+  * Do not mix presence and absence around if/else statements if at least one
+    statement cannot fit on a single line:
+    ```
+    # before
+    if (argc > 0) {
+        int n = argc - 1;
+        return n;
+    } else
+        return 0;
+    # after
+    if (argc > 0) {
+        int n = argc - 1;
+        return n;
+    } else {
+        return 0;
+    }
+    ```
+  (eca73ec, 27f4087, 524dc73, 9ba092a)
+  (Anton Lindqvist)
+
+- Honor existing new lines among functions arguments.
+  (4e4a38a)
   (Anton Lindqvist)
 
 ## Bug fixes
