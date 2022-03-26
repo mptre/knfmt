@@ -1286,27 +1286,36 @@ lexer_dump(const struct lexer *lx)
 
 	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
 		struct token *prefix, *suffix;
+		char *str;
 		int nfixes = 0;
 
 		i++;
 
 		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			fprintf(stderr, "[L] %-6u   prefix %s",
-			    i, token_sprintf(prefix));
-			if (prefix->tk_branch.br_pv != NULL)
-				fprintf(stderr, ", pv %s",
-				    token_sprintf(prefix->tk_branch.br_pv));
-			if (prefix->tk_branch.br_nx != NULL)
-				fprintf(stderr, ", nx %s",
-				    token_sprintf(prefix->tk_branch.br_nx));
+			str = token_sprintf(prefix);
+			fprintf(stderr, "[L] %-6u   prefix %s", i, str);
+			free(str);
+
+			if (prefix->tk_branch.br_pv != NULL) {
+				str = token_sprintf(prefix->tk_branch.br_pv);
+				fprintf(stderr, ", pv %s", str);
+				free(str);
+			}
+			if (prefix->tk_branch.br_nx != NULL) {
+				str = token_sprintf(prefix->tk_branch.br_nx);
+				fprintf(stderr, ", nx %s", str);
+			}
 			fprintf(stderr, "\n");
 			nfixes++;
 		}
 
-		fprintf(stderr, "[L] %-6u %s\n", i, token_sprintf(tk));
+		str = token_sprintf(tk);
+		fprintf(stderr, "[L] %-6u %s\n", i, str);
+		free(str);
+
 		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-			fprintf(stderr, "[L] %-6u   suffix %s\n",
-			    i, token_sprintf(suffix));
+			str = token_sprintf(suffix);
+			fprintf(stderr, "[L] %-6u   suffix %s\n", i, str);
 			nfixes++;
 		}
 
