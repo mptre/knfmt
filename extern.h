@@ -247,6 +247,8 @@ int	lexer_is_branch(const struct lexer *);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
+void	lexer_insert_before(struct lexer *, struct token *, enum token_type,
+    const char *);
 void	lexer_remove(struct lexer *, struct token *);
 
 #define lexer_expect(a, b, c) \

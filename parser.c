@@ -11,6 +11,8 @@ struct simple_stmt {
 	struct doc		*ss_indent;
 	struct token		*ss_lbrace;
 	struct token		*ss_rbrace;
+	unsigned int		 ss_flags;
+#define SIMPLE_STMT_FLAG_BRACES		0x00000001u
 
 	TAILQ_ENTRY(simple_stmt) ss_entry;
 };
@@ -126,7 +128,11 @@ static int			 parser_simple_stmt_enter(struct parser *,
 static void			 parser_simple_stmt_leave(struct parser *, int);
 static struct doc		*parser_simple_stmt_block(struct parser *,
     struct doc *);
-static struct simple_stmt	*parser_simple_stmt_alloc(struct parser *);
+static struct simple_stmt	*parser_simple_stmt_alloc(struct parser *,
+    unsigned int);
+static struct simple_stmt	*parser_simple_stmt_ifelse_enter(struct parser *);
+static void			 parser_simple_stmt_ifelse_leave(
+    struct parser *, struct simple_stmt *);
 
 static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
@@ -1287,6 +1293,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tmp;
+	int error;
 
 	if (parser_exec_stmt_block(pr, &ps) == PARSER_OK)
 		return parser_ok(pr);
@@ -1311,13 +1318,23 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 				if (parser_exec_stmt_expr(pr, dc, tkif, 0))
 					return parser_error(pr);
 			} else {
-				if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+				if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+					if (parser_exec_stmt(pr, dc, stop))
+						return parser_error(pr);
+				} else {
+					struct simple_stmt *simple;
+
 					dc = doc_alloc_indent(pr->pr_cf->cf_tw,
 					    dc);
 					doc_alloc(DOC_HARDLINE, dc);
+
+					simple = parser_simple_stmt_ifelse_enter(pr);
+					error = parser_exec_stmt(pr, dc, stop);
+					parser_simple_stmt_ifelse_leave(pr,
+					    simple);
+					if (error)
+						parser_error(pr);
 				}
-				if (parser_exec_stmt(pr, dc, stop))
-					return parser_error(pr);
 			}
 		}
 
@@ -1402,7 +1419,6 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 
 	if (lexer_if(lx, TOKEN_DO, &tk)) {
 		struct doc *concat = dc;
-		int error;
 
 		doc_token(tk, concat);
 		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
@@ -1676,10 +1692,17 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 		return parser_exec_stmt_block(pr, &ps);
 	} else {
 		struct doc *indent;
+		struct simple_stmt *simple = NULL;
+		int error;
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 		doc_alloc(DOC_HARDLINE, indent);
-		return parser_exec_stmt(pr, indent, NULL);
+		if (type->tk_type == TOKEN_IF)
+			simple = parser_simple_stmt_ifelse_enter(pr);
+		error = parser_exec_stmt(pr, indent, NULL);
+		if (type->tk_type == TOKEN_IF)
+			parser_simple_stmt_ifelse_leave(pr, simple);
+		return error;
 	}
 }
 
@@ -1930,10 +1953,12 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 {
 	struct lexer_state s;
 	struct buffer *bf = pr->pr_bf;
+	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
+	struct simple_stmt_list *stmts;
 	struct simple_stmt *ss;
-	int nstmts = 0;
-	int nfits = 0;
+	struct token *rbrace = NULL;
+	int oneline = 1;
 	int error;
 
 	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
@@ -1941,45 +1966,56 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 	if (++pr->pr_simple.se_depth > 1)
 		return 1;
 
-	assert(TAILQ_EMPTY(&pr->pr_simple.se_stmts));
+	stmts = &pr->pr_simple.se_stmts;
+	assert(TAILQ_EMPTY(stmts));
 
-	ss = parser_simple_stmt_alloc(pr);
+	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
-	error = parser_exec_stmt1(pr, ss->ss_indent, stop);
+	error = parser_exec_stmt1(pr, dc, stop);
+	lexer_peek(lx, &rbrace);
 	lexer_peek_leave(lx, &s);
-	if (error)
+	doc_free(dc);
+	if (error || TAILQ_EMPTY(stmts))
 		goto out;
 
-	TAILQ_FOREACH(ss, &pr->pr_simple.se_stmts, ss_entry) {
-		/* Skip root document since it covers all statements. */
-		if (nstmts++ == 0)
+	TAILQ_FOREACH(ss, stmts, ss_entry) {
+		if ((ss->ss_flags & SIMPLE_STMT_FLAG_BRACES) == 0)
 			continue;
 
 		doc_exec(ss->ss_root, lx, bf, pr->pr_cf,
 		    DOC_EXEC_FLAG_NODIFF | DOC_EXEC_FLAG_NOTRACE);
-		if (linecount(bf->bf_ptr, bf->bf_len, 1)) {
-			nfits++;
-		} else {
+		if (!linecount(bf->bf_ptr, bf->bf_len, 1)) {
 			/*
 			 * No point in continuing as at least one statement
 			 * spans over multiple lines.
 			 */
+			oneline = 0;
 			break;
 		}
 	}
-	if (nstmts > 1 && nstmts - 1 == nfits) {
-		TAILQ_FOREACH(ss, &pr->pr_simple.se_stmts, ss_entry) {
-			if (ss->ss_lbrace == NULL || ss->ss_rbrace == NULL)
+
+	if (oneline) {
+		TAILQ_FOREACH(ss, stmts, ss_entry) {
+			if ((ss->ss_flags & SIMPLE_STMT_FLAG_BRACES) == 0)
 				continue;
 			lexer_remove(lx, ss->ss_lbrace);
 			lexer_remove(lx, ss->ss_rbrace);
 		}
+	} else {
+		TAILQ_FOREACH(ss, stmts, ss_entry) {
+			if (ss->ss_flags & SIMPLE_STMT_FLAG_BRACES)
+				continue;
+			lexer_insert_before(lx, ss->ss_lbrace,
+			    TOKEN_LBRACE, "{");
+			lexer_insert_before(lx, ss->ss_rbrace,
+			    TOKEN_RBRACE, "}");
+		}
 	}
 
 out:
-	while (!TAILQ_EMPTY(&pr->pr_simple.se_stmts)) {
-		ss = TAILQ_FIRST(&pr->pr_simple.se_stmts);
-		TAILQ_REMOVE(&pr->pr_simple.se_stmts, ss, ss_entry);
+	while (!TAILQ_EMPTY(stmts)) {
+		ss = TAILQ_FIRST(stmts);
+		TAILQ_REMOVE(stmts, ss, ss_entry);
 		doc_free(ss->ss_root);
 		if (ss->ss_lbrace != NULL)
 			token_rele(ss->ss_lbrace);
@@ -2016,7 +2052,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return dc;
 
-	ss = parser_simple_stmt_alloc(pr);
+	ss = parser_simple_stmt_alloc(pr, SIMPLE_STMT_FLAG_BRACES);
 	token_ref(lbrace);
 	ss->ss_lbrace = lbrace;
 	token_ref(rbrace);
@@ -2025,7 +2061,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 }
 
 static struct simple_stmt *
-parser_simple_stmt_alloc(struct parser *pr)
+parser_simple_stmt_alloc(struct parser *pr, unsigned int flags)
 {
 	struct simple_stmt *ss;
 
@@ -2035,8 +2071,44 @@ parser_simple_stmt_alloc(struct parser *pr)
 	ss->ss_root = doc_alloc(DOC_CONCAT, NULL);
 	ss->ss_indent = doc_alloc_indent(pr->pr_nblocks * pr->pr_cf->cf_tw,
 	    ss->ss_root);
+	ss->ss_flags = flags;
 	TAILQ_INSERT_TAIL(&pr->pr_simple.se_stmts, ss, ss_entry);
 	return ss;
+}
+
+static struct simple_stmt *
+parser_simple_stmt_ifelse_enter(struct parser *pr)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct simple_stmt *ss;
+	struct token *lbrace;
+
+	if (pr->pr_simple.se_depth != 1)
+		return NULL;
+
+	if (!lexer_peek(lx, &lbrace))
+		return NULL;
+
+	ss = parser_simple_stmt_alloc(pr, 0);
+	token_ref(lbrace);
+	ss->ss_lbrace = lbrace;
+	return ss;
+}
+
+static void
+parser_simple_stmt_ifelse_leave(struct parser *pr, struct simple_stmt *ss)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *rbrace;
+
+	if (ss == NULL)
+		return;
+
+	if (!lexer_peek(lx, &rbrace))
+		return;
+
+	token_ref(rbrace);
+	ss->ss_rbrace = rbrace;
 }
 
 /*
