@@ -119,7 +119,7 @@ static void	doc_position(struct doc_state *, const char *, size_t);
 static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);
 static void		doc_diff_group_leave(const struct doc *,
-    struct doc_state *);
+    struct doc_state *, int);
 static void		doc_diff_literal(const struct doc *,
     struct doc_state *);
 static unsigned int	doc_diff_verbatim(const struct doc *,
@@ -411,9 +411,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_GROUP: {
 		unsigned int oldmode;
-		int leave;
+		int diff;
 
-		leave = doc_diff_group_enter(dc, st);
+		diff = doc_diff_group_enter(dc, st);
 		switch (st->st_mode) {
 		case MUNGE:
 			if (st->st_refit == 0) {
@@ -429,8 +429,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			st->st_mode = oldmode;
 			break;
 		}
-		if (leave)
-			doc_diff_group_leave(dc, st);
+		doc_diff_group_leave(dc, st, diff);
 
 		break;
 	}
@@ -489,24 +488,17 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_VERBATIM: {
 		char *cpp;
-		unsigned int end, oldpos;
+		unsigned int diff, oldpos;
 
 		if (doc_is_mute(st))
 			break;
 
-		end = doc_diff_verbatim(dc, st);
+		diff = doc_diff_verbatim(dc, st);
 
-		/*
-		 * A verbatim block is either a comment or preprocessor
-		 * directive.
-		 */
 		int isblock = dc->dc_len > 1 &&
 		    dc->dc_str[dc->dc_len - 1] == '\n';
 
-		/*
-		 * Verbatims must never be indented, therefore trim the current
-		 * line.
-		 */
+		/* Verbatims must never be indented. */
 		doc_trim(dc, st);
 		oldpos = st->st_pos;
 
@@ -556,8 +548,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			doc_indent(dc, st, indent);
 		}
 
-		if (end > 0)
-			doc_diff_leave(dc, st, end);
+		doc_diff_leave(dc, st, diff);
 
 		break;
 	}
@@ -992,9 +983,10 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st)
+doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st,
+    int enter)
 {
-	if (!DOC_DIFF(st))
+	if (enter == 0 || !DOC_DIFF(st))
 		return;
 	assert(st->st_diff.d_group == 1);
 	st->st_diff.d_group = 0;
@@ -1153,6 +1145,9 @@ static void
 __doc_diff_leave(const struct doc *dc, struct doc_state *st, unsigned int end,
     const char *fun)
 {
+	if (end == 0)
+		return;
+
 	assert(st->st_diff.d_end > 0);
 	st->st_diff.d_beg = st->st_diff.d_end + end;
 	st->st_diff.d_end = 0;
