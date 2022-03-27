@@ -929,6 +929,9 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 		else if (lexer_peek_until(lx, TOKEN_IDENT, &ident) &&
 		    token_cmp(macro, ident) == 0)
 			iscpp = 1;
+		else if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+		    lexer_if(lx, TOKEN_SEMI, NULL))
+			iscpp = 1;
 	}
 	lexer_peek_leave(lx, &s);
 	if (!iscpp) {
