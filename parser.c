@@ -1960,7 +1960,6 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 	struct lexer *lx = pr->pr_lx;
 	struct simple_stmt_list *stmts;
 	struct simple_stmt *ss;
-	struct token *rbrace = NULL;
 	int oneline = 1;
 	int error;
 
@@ -1975,7 +1974,6 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_exec_stmt1(pr, dc, stop);
-	lexer_peek(lx, &rbrace);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
 	if (error || TAILQ_EMPTY(stmts))
