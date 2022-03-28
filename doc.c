@@ -581,7 +581,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_HARDLINE:
-		/* Take note of new line(s), later emitted by doc_print(). */
+		/* Take note of new line, later emitted by doc_print(). */
 		if (st->st_mute)
 			st->st_newline = 1;
 		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
@@ -589,7 +589,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_OPTLINE:
 		/*
-		 * Signal to doc_print() to emit a hard line on the next
+		 * Instruct doc_print() to emit a new line on the next
 		 * invocation. Necessary in order to get indentation right.
 		 */
 		if (st->st_optline)
@@ -701,7 +701,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	if (DOC_TRACE(st))
 		st->st_stats.s_nfits++;
 
-	if (st->st_newline > 0) {
+	if (st->st_newline) {
 		/* Pending hard line(s), assume that everything fits. */
 		optline = 1;
 	} else if (st->st_fits.f_fits == -1 ||
@@ -816,19 +816,14 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	if (doc_is_mute(st) && (flags & DOC_PRINT_FLAG_FORCE) == 0)
 		return;
 
-	/* Emit any pending hard line(s). */
-	if (st->st_newline > 0) {
+	/* Emit pending new line. */
+	if (st->st_newline) {
 		int space = len == 1 && str[0] == ' ';
-		int n;
 
 		/* DOC_OPTLINE has the same semantics as DOC_LINE. */
 		st->st_refit = 1;
-
-		n = st->st_newline;
 		st->st_newline = 0;
-		for (; n > 0; n--)
-			doc_print(dc, st, "\n", 1,
-			    (n - 1 == 0 ? flags : 0) | DOC_PRINT_FLAG_NEWLINE);
+		doc_print(dc, st, "\n", 1, flags | DOC_PRINT_FLAG_NEWLINE);
 		if (newline || space)
 			return;
 	}
