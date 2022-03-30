@@ -19,10 +19,14 @@ struct simple_stmt {
 
 TAILQ_HEAD(simple_stmt_list, simple_stmt);
 
-/* Sentinel used to signal that the parser consumed something. */
-#define GOOD	0
-/* Sentinel used to signal that nothing was found. */
-#define NONE	1
+/*
+ * Return values for parser exec routines. Only one of the following may be
+ * returned but disjoint values are favored allowing the caller to catch
+ * multiple return values.
+ */
+#define GOOD	0x00000001u
+#define FAIL	0x00000002u
+#define NONE	0x00000004u
 
 enum parser_peek {
 	PARSER_PEEK_FUNCDECL	= 1,
@@ -211,6 +215,8 @@ parser_exec(struct parser *pr)
 	for (;;) {
 		struct doc *concat;
 		struct token *tk;
+		unsigned int dflags = PARSER_EXEC_DECL_FLAG_BREAK |
+		    PARSER_EXEC_DECL_FLAG_LINE;
 		int r;
 
 		concat = doc_alloc(DOC_CONCAT, dc);
@@ -223,9 +229,8 @@ parser_exec(struct parser *pr)
 
 		lexer_recover_mark(lx, &lm);
 
-		if (parser_exec_decl(pr, concat,
-		    PARSER_EXEC_DECL_FLAG_BREAK | PARSER_EXEC_DECL_FLAG_LINE) &&
-		    parser_exec_func_impl(pr, concat))
+		if (parser_exec_decl(pr, concat, dflags) & (FAIL | NONE) &&
+		    parser_exec_func_impl(pr, concat) & (FAIL | NONE))
 			error = 1;
 		else if (parser_halted(pr))
 			error = 1;
@@ -300,8 +305,11 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 		    (nx->tk_type == TOKEN_RPAREN ||
 		     nx->tk_type == TOKEN_COMMA ||
 		     nx->tk_type == TOKEN_EOF)) {
+			int error;
+
 			dc = doc_alloc(DOC_CONCAT, NULL);
-			if (parser_exec_type(pr, dc, tk, NULL)) {
+			error = parser_exec_type(pr, dc, tk, NULL);
+			if (error & (FAIL | NONE)) {
 				doc_free(dc);
 				return NULL;
 			}
@@ -316,7 +324,7 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 		 */
 		dc = doc_alloc(DOC_GROUP, NULL);
 		indent = doc_alloc_indent(-pr->pr_cf->cf_sw, dc);
-		if (parser_exec_decl_braces(pr, indent)) {
+		if (parser_exec_decl_braces(pr, indent) & (FAIL | NONE)) {
 			doc_free(dc);
 			return NULL;
 		}
@@ -342,27 +350,25 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	for (;;) {
 		struct doc *concat, *group;
 		struct token *tk;
+		int error, r;
 
 		lexer_recover_mark(lx, &lm);
 
 		group = doc_alloc(DOC_GROUP, decl);
 		concat = doc_alloc(DOC_CONCAT, group);
-		if (parser_exec_decl1(pr, concat, &rl)) {
-			int r;
-
-			if (parser_halted(pr) && (r = lexer_recover(lx, &lm))) {
-				/*
-				 * Let the ruler align what we got so far as
-				 * some documents it might refer to are about
-				 * the be removed.
-				 */
-				ruler_exec(&rl);
-				while (r-- > 0)
-					doc_remove_tail(concat);
-				parser_reset(pr);
-				continue;
-			}
-
+		error = parser_exec_decl1(pr, concat, &rl);
+		if (error & FAIL && (r = lexer_recover(lx, &lm))) {
+			/*
+			 * Let the ruler align what we got so far as some
+			 * documents it might refer to are about the be removed.
+			 */
+			ruler_exec(&rl);
+			while (r-- > 0)
+				doc_remove_tail(concat);
+			parser_reset(pr);
+			continue;
+		}
+		if (error & (FAIL | NONE)) {
 			if (line != NULL)
 				doc_remove(line, decl);
 			doc_remove(group, decl);
@@ -438,7 +444,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
-	if (parser_exec_type(pr, concat, end, rl))
+	if (parser_exec_type(pr, concat, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	/* Presence of semicolon implies that this declaration is done. */
@@ -489,14 +495,14 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		if (parser_exec_decl_braces_fields(pr, concat, rl, rbrace,
 		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM |
-		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM))
+		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM) & (FAIL | NONE))
 			return parser_fail(pr);
 
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			doc_literal(" ", concat);
 	}
 
-	if (parser_exec_decl_init(pr, concat, NULL, 0))
+	if (parser_exec_decl_init(pr, concat, NULL, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	parser_exec_attributes(pr, concat, NULL, pr->pr_cf->cf_tw, DOC_LINE);
@@ -531,13 +537,16 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 				doc_literal(" ", dc);
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &assign)) {
+			int error;
+
 			if (!didalign)
 				doc_literal(" ", dc);
 			doc_token(assign, dc);
 			doc_literal(" ", dc);
 
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-				if (parser_exec_decl_braces(pr, dc))
+				error = parser_exec_decl_braces(pr, dc);
+				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			} else {
 				struct token *estop = NULL;
@@ -555,8 +564,9 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (token_has_line(assign, 1))
 					flags |= EXPR_EXEC_FLAG_HARDLINE;
 
-				if (parser_exec_expr(pr, dc, NULL,
-				    estop != NULL ? estop : stop, flags))
+				error = parser_exec_expr(pr, dc, NULL,
+				    estop != NULL ? estop : stop, flags);
+				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			}
 		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
@@ -622,12 +632,14 @@ parser_exec_decl_braces1(struct parser *pr,
 	struct token *lbrace, *rbrace, *tk;
 	unsigned int w = 0;
 	int align = 1;
+	int error;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_fail(pr);
 
-	if (parser_exec_decl_braces_fields(pr, pb->pb_dc, pb->pb_rl,
-	    rbrace, 0) == GOOD)
+	error = parser_exec_decl_braces_fields(pr, pb->pb_dc, pb->pb_rl,
+	    rbrace, 0);
+	if (error & GOOD)
 		return parser_good(pr);
 
 	/*
@@ -681,7 +693,7 @@ parser_exec_decl_braces1(struct parser *pr,
 			unsigned int col = pb->pb_col;
 
 			pb->pb_dc = concat;
-			if (parser_exec_decl_braces1(pr, pb))
+			if (parser_exec_decl_braces1(pr, pb) & (FAIL | NONE))
 				return parser_fail(pr);
 			pb->pb_dc = dc;
 			/*
@@ -695,7 +707,8 @@ parser_exec_decl_braces1(struct parser *pr,
 
 			expr = concat;
 		} else if (parser_peek_cppx(pr) || parser_peek_cpp_init(pr)) {
-			if (parser_exec_decl_cppx(pr, concat, pb->pb_rl))
+			error = parser_exec_decl_cppx(pr, concat, pb->pb_rl);
+			if (error & (FAIL | NONE))
 				return parser_fail(pr);
 			expr = concat;
 		} else {
@@ -703,8 +716,9 @@ parser_exec_decl_braces1(struct parser *pr,
 			    &tk))
 				tk = rbrace;
 
-			if (parser_exec_expr(pr, concat, &expr, tk,
-			    EXPR_EXEC_FLAG_NOINDENT))
+			error = parser_exec_expr(pr, concat, &expr, tk,
+			    EXPR_EXEC_FLAG_NOINDENT);
+			if (error & (FAIL | NONE))
 				return parser_fail(pr);
 		}
 
@@ -788,6 +802,7 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 
 	for (;;) {
 		struct doc *concat;
+		int error;
 
 		if (lexer_is_branch(lx))
 			break;
@@ -800,7 +815,8 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 		}
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
-		if (parser_exec_decl_braces_field(pr, concat, rl, rbrace))
+		error = parser_exec_decl_braces_field(pr, concat, rl, rbrace);
+		if (error & (FAIL | NONE))
 			return parser_fail(pr);
 		if (doline)
 			line = doc_alloc(DOC_HARDLINE, indent);
@@ -835,7 +851,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 
 		if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
 			doc_token(tk, dc);
-			if (parser_exec_expr(pr, dc, &expr, NULL, 0))
+			if (parser_exec_expr(pr, dc, &expr, NULL, 0) & FAIL)
 				return parser_fail(pr);
 			if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
 				doc_token(tk, expr);
@@ -851,9 +867,12 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			 * preprocessor directives.
 			 */
 			if (lexer_if(lx, TOKEN_LPAREN, &tk)) {
+				int error;
+
 				doc_token(tk, dc);
-				if (parser_exec_expr(pr, dc, &expr, NULL, 0) ==
-				    NONE)
+				error = parser_exec_expr(pr, dc, &expr,
+				    NULL, 0);
+				if (error & NONE)
 					expr = dc;
 				if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 					doc_token(tk, expr);
@@ -881,7 +900,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 
 	ruler_insert(rl, tk, dc, 1, parser_width(pr, dc), 0);
 
-	if (parser_exec_decl_init(pr, dc, stop, 1))
+	if (parser_exec_decl_init(pr, dc, stop, 1) & (FAIL | NONE))
 		return parser_fail(pr);
 
 comma:
@@ -940,10 +959,10 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 		return parser_none(pr);
 	}
 
-	if (parser_exec_type(pr, dc, end, rl))
+	if (parser_exec_type(pr, dc, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
-	if (parser_exec_decl_init(pr, dc, NULL, 0))
+	if (parser_exec_decl_init(pr, dc, NULL, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, expr);
@@ -986,7 +1005,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop))
 			stop = rbrace;
-		if (parser_exec_expr(pr, arg, &expr, stop, 0))
+		if (parser_exec_expr(pr, arg, &expr, stop, 0) & (FAIL | NONE))
 			return parser_fail(pr);
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, expr);
@@ -1044,7 +1063,7 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct token *tk;
 
 	pf.pf_dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	if (parser_exec_func_proto(pr, &pf))
+	if (parser_exec_func_proto(pr, &pf) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
@@ -1078,13 +1097,13 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 	pf.pf_type = type;
 
-	if (parser_exec_func_proto(pr, &pf))
+	if (parser_exec_func_proto(pr, &pf) & (FAIL | NONE))
 		return parser_fail(pr);
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL))
 		return parser_fail(pr);
 
 	doc_alloc(DOC_HARDLINE, dc);
-	if (parser_exec_stmt_block(pr, &ps))
+	if (parser_exec_stmt_block(pr, &ps) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	doc_alloc(DOC_HARDLINE, dc);
@@ -1115,7 +1134,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	int error = 1;
 	int isimpl = pf->pf_line == DOC_HARDLINE;
 
-	if (parser_exec_type(pr, dc, pf->pf_type, pf->pf_rl))
+	if (parser_exec_type(pr, dc, pf->pf_type, pf->pf_rl) & (FAIL | NONE))
 		return parser_fail(pr);
 	/*
 	 * Hard line after the return type is only wanted for function
@@ -1143,7 +1162,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 			doc_token(tk, indent);
 		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 			return parser_fail(pr);
-		while (parser_exec_func_arg(pr, indent, NULL, rparen) == GOOD)
+		while (parser_exec_func_arg(pr, indent, NULL, rparen) & GOOD)
 			continue;
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 			doc_token(tk, indent);
@@ -1166,16 +1185,14 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	parser_trim_brace(rparen);
 
 	indent = doc_alloc_indent(pr->pr_cf->cf_sw, concat);
-	for (;;) {
-		if (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen))
-			break;
-	}
+	while (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen) & GOOD)
+		continue;
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, kr);
 	doc_alloc(DOC_HARDLINE, indent);
-	while (parser_exec_decl(pr, indent, 0) == GOOD)
+	while (parser_exec_decl(pr, indent, 0) & GOOD)
 		error = 0;
 	if (error)
 		doc_remove(kr, dc);
@@ -1218,7 +1235,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 
 	/* A type will missing when emitting the final right parenthesis. */
 	if (lexer_peek_if_type(lx, &end, LEXER_TYPE_FLAG_ARG) &&
-	    parser_exec_type(pr, concat, end, NULL) == NONE)
+	    parser_exec_type(pr, concat, end, NULL) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	/* Put the argument identifier in its own group to trigger a refit. */
@@ -1237,8 +1254,8 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_peek_if(lx, TOKEN_EOF, NULL))
 			return parser_fail(pr);
 
-		if (parser_exec_attributes(pr, concat, NULL, 0, DOC_LINE) ==
-		    GOOD)
+		if (parser_exec_attributes(pr, concat, NULL, 0,
+		    DOC_LINE) & GOOD)
 			break;
 
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
@@ -1262,8 +1279,10 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	}
 
 	/* Take the next branch if available. */
-	if (lexer_branch(lx, NULL))
+	if (lexer_branch(lx, NULL)) {
+		parser_reset(pr);
 		error = 0;
+	}
 	return error ? error : parser_good(pr);
 }
 
@@ -1303,7 +1322,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
 		struct token *tkelse, *tkif;
 
-		if (parser_exec_stmt_expr(pr, dc, tk, 0))
+		if (parser_exec_stmt_expr(pr, dc, tk, 0) & (FAIL | NONE))
 			return parser_fail(pr);
 
 		while (lexer_peek_if(lx, TOKEN_ELSE, &tkelse)) {
@@ -1317,11 +1336,13 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 
 			if (lexer_peek_if(lx, TOKEN_IF, &tkif) &&
 			    token_cmp(tkelse, tkif) == 0) {
-				if (parser_exec_stmt_expr(pr, dc, tkif, 0))
+				error = parser_exec_stmt_expr(pr, dc, tkif, 0);
+				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			} else {
 				if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-					if (parser_exec_stmt(pr, dc, stop))
+					error = parser_exec_stmt(pr, dc, stop);
+					if (error & FAIL)
 						return parser_fail(pr);
 				} else {
 					struct simple_stmt *simple;
@@ -1334,7 +1355,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 					error = parser_exec_stmt(pr, dc, stop);
 					parser_simple_stmt_ifelse_leave(pr,
 					    simple);
-					if (error)
+					if (error & (FAIL | NONE))
 						parser_fail(pr);
 				}
 			}
@@ -1361,9 +1382,9 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			doc_token(tk, loop);
 
 		/* Declarations are allowed in the first expression. */
-		if (parser_exec_decl(pr, loop, 0) == NONE) {
+		if (parser_exec_decl(pr, loop, 0) & NONE) {
 			/* Let the semicolon hang of the expression unless empty. */
-			if (parser_exec_expr(pr, loop, &expr, NULL, 0) == NONE)
+			if (parser_exec_expr(pr, loop, &expr, NULL, 0) & NONE)
 				expr = loop;
 			if (lexer_expect(lx, TOKEN_SEMI, &tk))
 				doc_token(tk, expr);
@@ -1378,7 +1399,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		 */
 		flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
 		/* Let the semicolon hang of the expression unless empty. */
-		if (parser_exec_expr(pr, loop, &expr, NULL, flags)) {
+		if (parser_exec_expr(pr, loop, &expr, NULL, flags) & NONE) {
 			/* Expression empty, remove the space. */
 			doc_remove(space, expr);
 			expr = loop;
@@ -1398,7 +1419,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		 */
 		flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
 		/* Let the semicolon hang of the expression unless empty. */
-		if (parser_exec_expr(pr, loop, &expr, NULL, flags)) {
+		if (parser_exec_expr(pr, loop, &expr, NULL, flags) & NONE) {
 			/* Expression empty, remove the space. */
 			doc_remove(space, expr);
 			expr = loop;
@@ -1439,7 +1460,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			error = parser_exec_stmt(pr, indent, stop);
 			doc_alloc(DOC_HARDLINE, concat);
 		}
-		if (error)
+		if (error & (FAIL | NONE))
 			return parser_fail(pr);
 
 		if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
@@ -1470,7 +1491,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 			 */
 			line = doc_literal(" ", concat);
 			if (parser_exec_expr(pr, concat, NULL, NULL,
-			    EXPR_EXEC_FLAG_NOPARENS))
+			    EXPR_EXEC_FLAG_NOPARENS) & (FAIL | NONE))
 				doc_remove(line, concat);
 		}
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
@@ -1526,7 +1547,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	if (parser_peek_expr(pr, stop)) {
 		struct doc *expr;
 
-		if (parser_exec_expr(pr, dc, &expr, NULL, 0))
+		if (parser_exec_expr(pr, dc, &expr, NULL, 0) & (FAIL | NONE))
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, expr);
@@ -1667,7 +1688,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	 * statement on a single line.
 	 */
 	stop = TAILQ_NEXT(rparen, tk_entry);
-	if (parser_exec_expr(pr, stmt, &expr, stop, 0))
+	if (parser_exec_expr(pr, stmt, &expr, stop, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	if (lexer_is_branch(lx))
@@ -1748,7 +1769,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		return parser_fail(pr);
 	if (kw->tk_type == TOKEN_CASE) {
 		doc_alloc(DOC_LINE, lhs);
-		if (parser_exec_expr(pr, lhs, NULL, NULL, 0) == NONE)
+		if (parser_exec_expr(pr, lhs, NULL, NULL, 0) & (FAIL | NONE))
 			return parser_fail(pr);
 	}
 	if (!lexer_expect(lx, TOKEN_COLON, &tk))
@@ -1758,7 +1779,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_alloc(DOC_LINE, lhs);
-		if (parser_exec_stmt(pr, dc, stop))
+		if (parser_exec_stmt(pr, dc, stop) & FAIL)
 			return parser_fail(pr);
 	}
 
@@ -1786,7 +1807,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		else
 			line = doc_alloc(DOC_HARDLINE, indent);
 
-		if (parser_exec_stmt(pr, indent, stop)) {
+		if (parser_exec_stmt(pr, indent, stop) & NONE) {
 			/* No statement, remove the line. */
 			doc_remove(line, indent);
 			break;
@@ -1927,7 +1948,7 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			doc_token(tk, concat);
-		if (parser_exec_expr(pr, concat, NULL, NULL, 0))
+		if (parser_exec_expr(pr, concat, NULL, NULL, 0) & (FAIL | NONE))
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 			doc_token(tk, concat);
@@ -1974,7 +1995,7 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 	error = parser_exec_stmt1(pr, dc, stop);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
-	if (error || TAILQ_EMPTY(stmts))
+	if (error & (FAIL | NONE) || TAILQ_EMPTY(stmts))
 		goto out;
 
 	TAILQ_FOREACH(ss, stmts, ss_entry) {
@@ -2309,7 +2330,7 @@ __parser_fail(struct parser *pr, const char *fun, int lno)
 	struct token *tk;
 
 	if (parser_halted(pr))
-		return 1;
+		return FAIL;
 	pr->pr_error = 1;
 
 	error_write(pr->pr_er, "%s: ", pr->pr_fe->fe_path);
@@ -2325,7 +2346,7 @@ __parser_fail(struct parser *pr, const char *fun, int lno)
 	} else {
 		error_write(pr->pr_er, "%s", "(null)\n");
 	}
-	return 1;
+	return FAIL;
 }
 
 /*
@@ -2362,15 +2383,13 @@ parser_halted(const struct parser *pr)
 static int
 parser_good(const struct parser *pr)
 {
-	if (lexer_get_error(pr->pr_lx))
-		return NONE;
-	return GOOD;
+	return parser_halted(pr) ? FAIL : GOOD;
 }
 
 static int
-parser_none(const struct parser *UNUSED(pr))
+parser_none(const struct parser *pr)
 {
-	return NONE;
+	return parser_halted(pr) ? FAIL : NONE;
 }
 
 static void

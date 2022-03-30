@@ -14,7 +14,7 @@ addr2str(
 #ifdef INET6
 	if (addr->ss_family == AF_INET6) {
 		if (!inet_ntop(AF_INET6,
-			&((struct sockaddr_in6 *)addr)->sin6_addr, str, len))
+		    &((struct sockaddr_in6 *)addr)->sin6_addr, str, len))
 			strlcpy(str, "[unknown ip6, inet_ntop failed]", len);
 		return;
 	}
