@@ -232,8 +232,6 @@ parser_exec(struct parser *pr)
 		if (parser_exec_decl(pr, concat, dflags) & (FAIL | NONE) &&
 		    parser_exec_func_impl(pr, concat) & (FAIL | NONE))
 			error = 1;
-		else if (parser_halted(pr))
-			error = 1;
 
 		if (error && (r = lexer_recover(lx, &lm))) {
 			while (r-- > 0)
@@ -525,9 +523,6 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 	for (;;) {
 		struct doc *expr;
 		struct token *assign, *tk;
-
-		if (parser_halted(pr))
-			return parser_fail(pr);
 
 		if (lexer_peek(lx, &tk) && tk == stop)
 			break;
