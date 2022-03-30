@@ -949,7 +949,9 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 			 */
 			ident = 0;
 			lexer_peek_enter(lx, &ss);
-			if (ntokens == 0 && lexer_if(lx, TOKEN_IDENT, NULL) &&
+			if ((flags &
+			    (LEXER_TYPE_FLAG_CAST | LEXER_TYPE_FLAG_ARG)) &&
+			    ntokens == 0 && lexer_if(lx, TOKEN_IDENT, NULL) &&
 			    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
 			     lexer_if(lx, TOKEN_COMMA, NULL)))
 				ident = 1;

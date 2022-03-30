@@ -143,7 +143,6 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("void *", "void *");
 	error |= test_lexer_peek_if_type("void *p", "void *");
 	error |= test_lexer_peek_if_type("size_t", "size_t");
-	error |= test_lexer_peek_if_type("size_t)", "size_t");
 	error |= test_lexer_peek_if_type("size_t s)", "size_t");
 	error |= test_lexer_peek_if_type("size_t *", "size_t *");
 	error |= test_lexer_peek_if_type("size_t *p", "size_t *");
@@ -198,6 +197,8 @@ main(int argc, char *argv[])
 	    "const foo_t)", "const foo_t");
 	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_ARG,
 	    "const foo_t)", "const");
+	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_ARG,
+	    "size_t)", "size_t");
 
 	error |= test_lexer_read("<", "LESS");
 	error |= test_lexer_read("<x", "LESS IDENT");
