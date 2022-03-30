@@ -147,6 +147,8 @@ static int		parser_peek_line(struct parser *, const struct token *);
 static void		parser_trim_brace(struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
+static int	parser_branch(struct parser *, struct token **);
+
 #define parser_fail(a) \
 	__parser_fail((a), __func__, __LINE__)
 static int	__parser_fail(struct parser *, const char *, int);
@@ -238,9 +240,8 @@ parser_exec(struct parser *pr)
 				doc_remove_tail(dc);
 			parser_reset(pr);
 			error = 0;
-		} else if (lexer_branch(lx, &seek)) {
+		} else if (parser_branch(pr, &seek)) {
 			lexer_recover_purge(&lm);
-			parser_reset(pr);
 			error = 0;
 		} else if (error) {
 			break;
@@ -396,7 +397,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 		}
 
 		/* Take the next branch if available. */
-		if (lexer_branch(lx, NULL))
+		if (parser_branch(pr, NULL))
 			lexer_recover_purge(&lm);
 	}
 	lexer_recover_leave(&lm);
@@ -1274,10 +1275,8 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	}
 
 	/* Take the next branch if available. */
-	if (lexer_branch(lx, NULL)) {
-		parser_reset(pr);
+	if (parser_branch(pr, NULL))
 		error = 0;
-	}
 	return error ? error : parser_good(pr);
 }
 
@@ -1618,7 +1617,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	while (parser_exec_stmt(pr, indent, rbrace) == GOOD) {
 		nstmt++;
 
-		if (lexer_branch(lx, &seek))
+		if (parser_branch(pr, &seek))
 			continue;
 		if (!lexer_peek(lx, &seek))
 			seek = NULL;
@@ -2367,6 +2366,15 @@ static unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
 	return doc_width(dc, pr->pr_bf, pr->pr_cf);
+}
+
+static int
+parser_branch(struct parser *pr, struct token **tk)
+{
+	if (!lexer_branch(pr->pr_lx, tk))
+		return 0;
+	parser_reset(pr);
+	return 1;
 }
 
 static int
