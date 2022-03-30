@@ -23,15 +23,18 @@ hascomm() {
 	fi
 }
 
-# testcase [-q] file [-- knfmt-options]
+# testcase [-b] [-q] file [-- knfmt-options]
 #
 # Run test case.
 testcase() {
+	local _err=0
+	local _bug=0
 	local _quiet=0
 	local _file
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
+		-b)	_bug=1; _quiet=1;;
 		-q)	_quiet=1;;
 		*)	break;;
 		esac
@@ -51,9 +54,14 @@ testcase() {
 			return 1
 		fi
 	else
-		if ! ${EXEC:-} "${KNFMT}" -dv "$@" "$_file" >"$_out" 2>&1; then
-			cat "$_out" 1>&2
-			return 1
+		${EXEC:-} "${KNFMT}" -dv "$@" "$_file" >"$_out" 2>&1 || _err="$?"
+		if [ "$_err" -ne 0 ]; then
+			if [ "$_bug" -eq 1 ] && [ "$_err" -eq 1 ]; then
+				:
+			else
+				cat "$_out" 1>&2
+				return 1
+			fi
 		fi
 	fi
 	if [ "$_quiet" -eq 0 ] && ! cmp -s /dev/null "$_out"; then
@@ -85,6 +93,7 @@ esac
 
 case "$1" in
 bug-*)
+	testcase -b "$1" -- -s
 	;;
 diff-*)
 	_base="${1%.c}"
