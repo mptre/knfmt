@@ -94,6 +94,7 @@ struct doc_state {
  * Line numbers extracted from a document group that covers a diff chunk.
  */
 struct doc_diff {
+	unsigned int	dd_threshold;	/* last seen token */
 	unsigned int	dd_first;	/* first token in group */
 	unsigned int	dd_chunk;	/* first token covered by the chunk */
 	int		dd_covers;	/* doc_diff_covers() return value */
@@ -906,6 +907,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * the first group covering a single line to be found.
 	 */
 	memset(&dd, 0, sizeof(dd));
+	dd.dd_threshold = st->st_diff.d_beg;
 	doc_walk(dc, st, doc_diff_covers, &dd);
 	switch (dd.dd_covers) {
 	case -1:
@@ -1095,6 +1097,15 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 	case DOC_VERBATIM:
 		if (dc->dc_tk != NULL) {
 			unsigned int lno = dc->dc_tk->tk_lno;
+
+			/*
+			 * If the current line number is less than the last one
+			 * from the previous diff chunk, we have seen this
+			 * document before. This could happen while traversing
+			 * the same source code again after branching.
+			 */
+			if (lno < dd->dd_threshold)
+				return 0;
 
 			if (dd->dd_first == 0)
 				dd->dd_first = lno;

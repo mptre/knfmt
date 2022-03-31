@@ -582,14 +582,11 @@ lexer_recover_purge(struct lexer_recover_markers *lm)
  * Try to recover after encountering invalid code.
  */
 int
-__lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
-    const char *fun, int lno)
+lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm)
 {
 	struct token *back, *br, *dst, *src, *start;
 	int nmarkers = 0;
 	int m;
-
-	lexer_trace(lx, "from %s:%d", fun, lno);
 
 	lexer_recover_purge(lm);
 
@@ -657,7 +654,7 @@ __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
  * Returns non-zero if the lexer took the next branch.
  */
 int
-lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
+lexer_branch(struct lexer *lx, struct token **tk)
 {
 	struct token *br, *dst, *rm, *seek;
 
@@ -668,7 +665,6 @@ lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 	dst = br->tk_branch.br_nx->tk_token;
 	seek = tk != NULL ? *tk : dst;
 
-	lexer_trace(lx, "from %s:%d", fun, lno);
 	lexer_trace(lx, "branch from %s to %s, covering [%s, %s)",
 	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
 	    token_sprintf(br->tk_token),
