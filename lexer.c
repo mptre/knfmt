@@ -657,7 +657,7 @@ __lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm,
  * Returns non-zero if the lexer took the next branch.
  */
 int
-__lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
+lexer_branch(struct lexer *lx, struct token **tk, const char *fun, int lno)
 {
 	struct token *br, *dst, *rm, *seek;
 

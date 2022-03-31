@@ -147,7 +147,10 @@ static int		parser_peek_line(struct parser *, const struct token *);
 static void		parser_trim_brace(struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
-static int	parser_branch(struct parser *, struct token **);
+#define parser_branch(a, b) \
+	__parser_branch((a), (b), __func__, __LINE__)
+static int	__parser_branch(struct parser *, struct token **, const char *,
+    int);
 
 #define parser_fail(a) \
 	__parser_fail((a), __func__, __LINE__)
@@ -2369,9 +2372,9 @@ parser_width(struct parser *pr, const struct doc *dc)
 }
 
 static int
-parser_branch(struct parser *pr, struct token **tk)
+__parser_branch(struct parser *pr, struct token **tk, const char *fun, int lno)
 {
-	if (!lexer_branch(pr->pr_lx, tk))
+	if (!lexer_branch(pr->pr_lx, tk, fun, lno))
 		return 0;
 	parser_reset(pr);
 	return 1;
