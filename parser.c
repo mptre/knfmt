@@ -1433,7 +1433,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_exec_stmt(pr, dc, stop);
 	}
 
-	if (parser_exec_stmt_case(pr, dc, stop) == GOOD)
+	if (parser_exec_stmt_case(pr, dc, stop) & GOOD)
 		return parser_good(pr);
 
 	if (lexer_if(lx, TOKEN_DO, &tk)) {
@@ -1509,7 +1509,10 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_good(pr);
 	}
 
-	if (parser_exec_stmt_label(pr, dc) == GOOD) {
+	error = parser_exec_stmt_label(pr, dc);
+	if (error & FAIL)
+		return parser_fail(pr);
+	if (error & GOOD) {
 		struct token *nx;
 
 		/*
@@ -1804,7 +1807,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		else
 			line = doc_alloc(DOC_HARDLINE, indent);
 
-		if (parser_exec_stmt(pr, indent, stop) & NONE) {
+		if (parser_exec_stmt(pr, indent, stop) & (FAIL | NONE)) {
 			/* No statement, remove the line. */
 			doc_remove(line, indent);
 			break;
