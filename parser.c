@@ -1561,7 +1561,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 
 		if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) &&
 		    lexer_peek_if(lx, TOKEN_SEMI, &semi))
-			lexer_remove(lx, semi);
+			lexer_remove(lx, semi, 1);
 		peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
@@ -1986,8 +1986,8 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 		TAILQ_FOREACH(ss, stmts, ss_entry) {
 			if ((ss->ss_flags & SIMPLE_STMT_FLAG_BRACES) == 0)
 				continue;
-			lexer_remove(lx, ss->ss_lbrace);
-			lexer_remove(lx, ss->ss_rbrace);
+			lexer_remove(lx, ss->ss_lbrace, 1);
+			lexer_remove(lx, ss->ss_rbrace, 1);
 		}
 	} else {
 		TAILQ_FOREACH(ss, stmts, ss_entry) {

@@ -187,6 +187,7 @@ struct token {
 	struct token_list	 tk_suffixes;
 
 	TAILQ_ENTRY(token)	 tk_entry;
+	TAILQ_ENTRY(token)	 tk_stamp;
 };
 
 void	 token_ref(struct token *);
@@ -246,7 +247,7 @@ int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
 void	lexer_insert_before(struct lexer *, struct token *, enum token_type,
     const char *);
-void	lexer_remove(struct lexer *, struct token *);
+void	lexer_remove(struct lexer *, struct token *, int);
 
 #define lexer_expect(a, b, c) \
 	__lexer_expect((a), (b), (c), __func__, __LINE__)
