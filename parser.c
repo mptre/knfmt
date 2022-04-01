@@ -1698,17 +1698,20 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	struct lexer_state s;
 	struct doc *dedent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *ident, *tk;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &tk) && lexer_if(lx, TOKEN_COLON, &tk))
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if(lx, TOKEN_COLON, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 	if (!peek)
 		return parser_none(pr);
 
 	dedent = doc_alloc_dedent(dc);
+	if (token_has_indent(ident))
+		doc_literal(" ", dedent);
 	if (lexer_expect(lx, TOKEN_IDENT, &tk))
 		doc_token(tk, dedent);
 	if (lexer_expect(lx, TOKEN_COLON, &tk))

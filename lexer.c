@@ -190,6 +190,17 @@ token_rele(struct token *tk)
 }
 
 /*
+ * Returns non-zero if the given token is preceded with whitespace.
+ * Such whitespace is never emitted by the lexer we therefore have to resort to
+ * inspecting the source code through the underlying lexer buffer.
+ */
+int
+token_has_indent(const struct token *tk)
+{
+	return tk->tk_off > 0 && tk->tk_str[-1] == ' ';
+}
+
+/*
  * Returns non-zero if the given token has at least nlines number of trailing
  * hard line(s).
  */
