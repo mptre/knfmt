@@ -1282,7 +1282,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	struct token *tk, *tmp;
 	int error;
 
-	if (parser_exec_stmt_block(pr, &ps) == GOOD)
+	if (parser_exec_stmt_block(pr, &ps) & GOOD)
 		return parser_good(pr);
 
 	if (lexer_peek_if(lx, TOKEN_IF, &tk)) {
@@ -1523,7 +1523,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_good(pr);
 	}
 
-	if (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_FLAG_BREAK) == GOOD)
+	if (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_FLAG_BREAK) & GOOD)
 		return parser_good(pr);
 
 	/*
