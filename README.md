@@ -23,6 +23,10 @@ This option is compatible with the options mentioned above:
 
 	$ git diff | knfmt -Dd
 
+It can subjectively try to simplify the source code:
+
+	$ knfmt -s knfmt.c
+
 The implementation is further described in [DESIGN][design].
 
 [design]: DESIGN
