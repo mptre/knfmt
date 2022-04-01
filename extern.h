@@ -215,11 +215,6 @@ struct lexer_state {
 	size_t		 st_off;
 };
 
-struct lexer_recover_markers {
-#define NMARKERS	2
-	struct token	*lm_markers[NMARKERS];
-};
-
 void		 lexer_init(void);
 void		 lexer_shutdown(void);
 struct lexer	*lexer_alloc(const struct file *, struct error *,
@@ -232,13 +227,7 @@ int			 lexer_get_lines(const struct lexer *, unsigned int,
     unsigned int, const char **, size_t *);
 
 void	lexer_stamp(struct lexer *);
-
-void	lexer_recover_enter(struct lexer_recover_markers *);
-void	lexer_recover_leave(struct lexer_recover_markers *);
-void	lexer_recover_mark(struct lexer *, struct lexer_recover_markers *);
-void	lexer_recover_purge(struct lexer_recover_markers *);
-int	lexer_recover(struct lexer *, struct lexer_recover_markers *);
-
+int	lexer_recover(struct lexer *);
 int	lexer_branch(struct lexer *);
 
 int	lexer_is_branch(const struct lexer *);

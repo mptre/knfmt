@@ -200,7 +200,6 @@ parser_get_lexer(struct parser *pr)
 const struct buffer *
 parser_exec(struct parser *pr)
 {
-	struct lexer_recover_markers lm;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
 	int error = 0;
@@ -208,11 +207,9 @@ parser_exec(struct parser *pr)
 	pr->pr_bf = buffer_alloc(lexer_get_buffer(lx)->bf_siz);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 
-	lexer_recover_enter(&lm);
 	for (;;) {
 		struct doc *concat;
 		struct token *tk;
-		int r;
 
 		concat = doc_alloc(DOC_CONCAT, dc);
 
@@ -223,8 +220,6 @@ parser_exec(struct parser *pr)
 			break;
 		}
 
-		lexer_recover_mark(lx, &lm);
-
 		error = 0;
 		error |= parser_exec_decl(pr, concat,
 		    PARSER_EXEC_DECL_FLAG_BREAK | PARSER_EXEC_DECL_FLAG_LINE);
@@ -233,12 +228,13 @@ parser_exec(struct parser *pr)
 		if (error & GOOD) {
 			lexer_stamp(lx);
 		} else if (error & BRCH) {
-			if (lexer_branch(lx)) {
+			if (lexer_branch(lx))
 				parser_reset(pr);
-				lexer_recover_purge(&lm);
-			}
 		} else if (error & (FAIL | NONE)) {
-			if ((r = lexer_recover(lx, &lm))) {
+			int r;
+
+			r = lexer_recover(lx);
+			if (r > 0) {
 				while (r-- > 0)
 					doc_remove_tail(dc);
 				parser_reset(pr);
@@ -247,7 +243,6 @@ parser_exec(struct parser *pr)
 			}
 		}
 	}
-	lexer_recover_leave(&lm);
 	if (error) {
 		doc_free(dc);
 		parser_fail(pr);
