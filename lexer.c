@@ -533,8 +533,6 @@ lexer_stamp(struct lexer *lx)
 		token_ref(tk);
 		TAILQ_INSERT_TAIL(&lx->lx_stamps, tk, tk_stamp);
 	}
-	lexer_trace(lx, "%s: stamp %s", __func__,
-	    tk ? token_sprintf(tk) : "(null)");
 }
 
 /*
