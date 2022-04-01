@@ -176,6 +176,9 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 	int error = 1;
 	int srcfd = -1;
 
+	if (buffer_cmp(src, dst) == 0)
+		return 0;
+
 	srcfd = tmpfd(src->bf_ptr, srcpath, sizeof(srcpath));
 	if (srcfd == -1)
 		goto out;
