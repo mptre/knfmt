@@ -1,5 +1,5 @@
 /*
- * AFL
+ * Was error-005.c, not really valid but the forgiving expression accepts it.
  */
 
 int

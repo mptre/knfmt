@@ -2094,23 +2094,10 @@ static struct token *
 lexer_branch_next(const struct lexer *lx)
 {
 	struct token *tk;
-	int i;
 
 	if (!lexer_back(lx, &tk))
 		return NULL;
-
-	for (i = 0; i < 2; i++) {
-		struct token *br;
-
-		br = token_get_branch(tk);
-		if (br != NULL)
-			return br;
-
-		tk = TAILQ_NEXT(tk, tk_entry);
-		if (tk == NULL)
-			break;
-	}
-	return NULL;
+	return token_get_branch(tk);
 }
 
 static void
