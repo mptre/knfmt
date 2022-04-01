@@ -229,13 +229,15 @@ int			 lexer_get_error(const struct lexer *);
 int			 lexer_get_lines(const struct lexer *, unsigned int,
     unsigned int, const char **, size_t *);
 
+void	lexer_stamp(struct lexer *);
+
 void	lexer_recover_enter(struct lexer_recover_markers *);
 void	lexer_recover_leave(struct lexer_recover_markers *);
 void	lexer_recover_mark(struct lexer *, struct lexer_recover_markers *);
 void	lexer_recover_purge(struct lexer_recover_markers *);
 int	lexer_recover(struct lexer *, struct lexer_recover_markers *);
 
-int	lexer_branch(struct lexer *, struct token **);
+int	lexer_branch(struct lexer *);
 
 int	lexer_is_branch(const struct lexer *);
 

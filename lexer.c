@@ -41,6 +41,7 @@ struct lexer {
 	int			 lx_peek;
 	enum token_type		 lx_expect;
 
+	struct token		*lx_stamp;
 	struct token		*lx_unmute;
 
 	struct token_list	 lx_tokens;
@@ -500,6 +501,18 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 	return 1;
 }
 
+/*
+ * Take note of the last consumed token, later used while branching and
+ * recovering.
+ */
+void
+lexer_stamp(struct lexer *lx)
+{
+	lx->lx_stamp = lx->lx_st.st_tok;
+	lexer_trace(lx, "%s: stamp %s", __func__,
+	    lx->lx_stamp ? token_sprintf(lx->lx_stamp) : "(null)");
+}
+
 void
 lexer_recover_enter(struct lexer_recover_markers *lm)
 {
@@ -654,7 +667,7 @@ lexer_recover(struct lexer *lx, struct lexer_recover_markers *lm)
  * Returns non-zero if the lexer took the next branch.
  */
 int
-lexer_branch(struct lexer *lx, struct token **tk)
+lexer_branch(struct lexer *lx)
 {
 	struct token *br, *dst, *rm, *seek;
 
@@ -663,7 +676,7 @@ lexer_branch(struct lexer *lx, struct token **tk)
 		return 0;
 
 	dst = br->tk_branch.br_nx->tk_token;
-	seek = tk != NULL ? *tk : dst;
+	seek = lx->lx_stamp;
 
 	lexer_trace(lx, "branch from %s to %s, covering [%s, %s)",
 	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
@@ -704,12 +717,11 @@ lexer_branch(struct lexer *lx, struct token **tk)
 	lx->lx_unmute = dst;
 	token_ref(lx->lx_unmute);
 
-	/* Rewind causing the seek token to be next one to emit. */
-	lexer_trace(lx, "seek to %s", token_sprintf(seek));
-	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
+	/* Rewind to last stamped token. */
+	lexer_trace(lx, "seek to %s",
+	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
+	lx->lx_st.st_tok = seek;
 	lx->lx_st.st_err = 0;
-	if (tk != NULL)
-		*tk = seek;
 	return 1;
 }
 
@@ -2133,8 +2145,11 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 static void
 lexer_recover_reset(struct lexer *lx, struct token *seek)
 {
+	struct token *pv;
+
 	lexer_trace(lx, "seek to %s", token_sprintf(seek));
-	lx->lx_st.st_tok = TAILQ_PREV(seek, token_list, tk_entry);
+	pv = TAILQ_PREV(seek, token_list, tk_entry);
+	lx->lx_st.st_tok = lx->lx_stamp = pv;
 	lx->lx_st.st_err = 0;
 }
 
