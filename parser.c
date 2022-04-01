@@ -494,6 +494,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
     const struct token *stop, int didalign)
 {
 	struct lexer *lx = pr->pr_lx;
+	int error;
 
 	for (;;) {
 		struct doc *expr = NULL;
@@ -507,8 +508,6 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 				doc_literal(" ", dc);
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &assign)) {
-			int error;
-
 			if (!didalign)
 				doc_literal(" ", dc);
 			doc_token(assign, dc);
@@ -546,7 +545,8 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 
 			doc_token(tk, dc);
 			/* Let the remaning tokens hang of the expression. */
-			if (parser_exec_expr(pr, dc, &expr, NULL, 0) & NONE)
+			error = parser_exec_expr(pr, dc, &expr, NULL, 0);
+			if (error & (FAIL | NONE))
 				expr = dc;
 			if (lexer_expect(lx, rhs, &tk))
 				doc_token(tk, expr);
