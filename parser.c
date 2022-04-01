@@ -496,7 +496,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 	struct lexer *lx = pr->pr_lx;
 
 	for (;;) {
-		struct doc *expr;
+		struct doc *expr = NULL;
 		struct token *assign, *tk;
 
 		if (lexer_peek(lx, &tk) && tk == stop)
@@ -546,7 +546,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 
 			doc_token(tk, dc);
 			/* Let the remaning tokens hang of the expression. */
-			if (parser_exec_expr(pr, dc, &expr, NULL, 0) == NONE)
+			if (parser_exec_expr(pr, dc, &expr, NULL, 0) & NONE)
 				expr = dc;
 			if (lexer_expect(lx, rhs, &tk))
 				doc_token(tk, expr);
@@ -817,7 +817,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 	    comma : rbrace;
 
 	for (;;) {
-		struct doc *expr;
+		struct doc *expr = NULL;
 
 		if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
 			doc_token(tk, dc);
@@ -965,7 +965,8 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	w = parser_width(pr, concat);
 
 	for (;;) {
-		struct doc *arg, *expr;
+		struct doc *expr = NULL;
+		struct doc *arg;
 		struct token *stop;
 
 		if (lexer_peek_if(lx, TOKEN_RPAREN, NULL))
@@ -1626,7 +1627,8 @@ static int
 parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
     const struct token *type, unsigned int flags)
 {
-	struct doc *expr, *stmt;
+	struct doc *expr = NULL;
+	struct doc *stmt;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *stop, *tk;
 
