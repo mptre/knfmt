@@ -176,6 +176,7 @@ DISTFILES+=	tests/error-016.c
 DISTFILES+=	tests/error-017.c
 DISTFILES+=	tests/error-018.c
 DISTFILES+=	tests/error-019.c
+DISTFILES+=	tests/error-020.c
 DISTFILES+=	tests/knfmt.sh
 DISTFILES+=	tests/simple-001.c
 DISTFILES+=	tests/simple-001.ok
