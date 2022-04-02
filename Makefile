@@ -161,6 +161,7 @@ DISTFILES+=	tests/error-001.c
 DISTFILES+=	tests/error-002.c
 DISTFILES+=	tests/error-003.c
 DISTFILES+=	tests/error-004.c
+DISTFILES+=	tests/error-005.c
 DISTFILES+=	tests/error-007.c
 DISTFILES+=	tests/error-008.c
 DISTFILES+=	tests/error-009.c

@@ -813,10 +813,12 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 
 	for (;;) {
 		struct doc *expr = NULL;
+		int error;
 
 		if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
 			doc_token(tk, dc);
-			if (parser_exec_expr(pr, dc, &expr, NULL, 0) & FAIL)
+			error = parser_exec_expr(pr, dc, &expr, NULL, 0);
+			if (error & (FAIL | NONE))
 				return parser_fail(pr);
 			if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
 				doc_token(tk, expr);
@@ -832,12 +834,10 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			 * preprocessor directives.
 			 */
 			if (lexer_if(lx, TOKEN_LPAREN, &tk)) {
-				int error;
-
 				doc_token(tk, dc);
 				error = parser_exec_expr(pr, dc, &expr,
 				    NULL, 0);
-				if (error & NONE)
+				if (error & (FAIL | NONE))
 					expr = dc;
 				if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 					doc_token(tk, expr);
