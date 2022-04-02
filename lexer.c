@@ -2002,8 +2002,8 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 
 	if (dstpre != NULL) {
 		/*
-		 * Remove all prefixes hanging of the destination covered by the new
-		 * prefix token.
+		 * Remove all prefixes hanging of the destination covered by the
+		 * new prefix token.
 		 */
 		while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
 			struct token *pr;
@@ -2029,8 +2029,8 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 		struct token *pv;
 
 		/*
-		 * Keep any existing prefix not covered by the new prefix token by
-		 * moving them to the destination.
+		 * Keep any existing prefix not covered by the new prefix token
+		 * by moving them to the destination.
 		 */
 		pv = TAILQ_PREV(srcpre, token_list, tk_entry);
 		for (;;) {
