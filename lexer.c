@@ -740,23 +740,32 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
 void
 lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 {
-	struct token *pv, *tmp;
-
 	if (keepfixes) {
-		pv = TAILQ_PREV(tk, token_list, tk_entry);
-		if (pv == NULL)
-			pv = TAILQ_NEXT(tk, tk_entry);
-		assert(pv != NULL);
+		struct token *fix, *nx, *pv;
 
+		nx = TAILQ_NEXT(tk, tk_entry);
+		assert(nx != NULL);
 		while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
-			tmp = TAILQ_FIRST(&tk->tk_prefixes);
-			TAILQ_REMOVE(&tk->tk_prefixes, tmp, tk_entry);
-			TAILQ_INSERT_TAIL(&pv->tk_suffixes, tmp, tk_entry);
+			fix = TAILQ_FIRST(&tk->tk_prefixes);
+			TAILQ_REMOVE(&tk->tk_prefixes, fix, tk_entry);
+			TAILQ_INSERT_TAIL(&nx->tk_prefixes, fix, tk_entry);
+			switch (fix->tk_type) {
+			case TOKEN_CPP_IF:
+			case TOKEN_CPP_ELSE:
+			case TOKEN_CPP_ENDIF:
+				fix->tk_token = nx;
+				break;
+			default:
+				break;
+			}
 		}
+
+		pv = TAILQ_PREV(tk, token_list, tk_entry);
+		assert(pv != NULL);
 		while (!TAILQ_EMPTY(&tk->tk_suffixes)) {
-			tmp = TAILQ_FIRST(&tk->tk_suffixes);
-			TAILQ_REMOVE(&tk->tk_suffixes, tmp, tk_entry);
-			TAILQ_INSERT_TAIL(&pv->tk_suffixes, tmp, tk_entry);
+			fix = TAILQ_FIRST(&tk->tk_suffixes);
+			TAILQ_REMOVE(&tk->tk_suffixes, fix, tk_entry);
+			TAILQ_INSERT_TAIL(&pv->tk_suffixes, fix, tk_entry);
 		}
 	}
 
