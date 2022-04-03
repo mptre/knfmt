@@ -1564,17 +1564,17 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 
 	parser_trim_brace(rbrace);
 
-	if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
-		/*
-		 * Optionally remove empty lines after the opening left brace.
-		 * An empty line is however allowed in the beginning of a
-		 * function implementation, a convention used by some when the
-		 * function lacks local variables.
-		 */
-		if (ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM)
-			token_trim(lbrace);
-		doc_token(lbrace, ps->ps_head);
-	}
+	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
+		return parser_fail(pr);
+	/*
+	 * Optionally remove empty lines after the opening left brace.
+	 * An empty line is however allowed in the beginning of a
+	 * function implementation, a convention used by some when the
+	 * function lacks local variables.
+	 */
+	if (ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM)
+		token_trim(lbrace);
+	doc_token(lbrace, ps->ps_head);
 
 	indent = doswitch ? dc : doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 	line = doc_alloc(DOC_HARDLINE, indent);
