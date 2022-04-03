@@ -332,6 +332,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	struct doc *line = NULL;
 	struct lexer *lx = pr->pr_lx;
 	int ndecl = 0;
+	int error;
 
 	decl = doc_alloc(DOC_CONCAT, dc);
 	ruler_init(&rl, 0);
@@ -339,7 +340,6 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	for (;;) {
 		struct doc *concat, *group;
 		struct token *tk;
-		int error;
 
 		group = doc_alloc(DOC_GROUP, decl);
 		concat = doc_alloc(DOC_CONCAT, group);
@@ -377,7 +377,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	}
 	if (ndecl == 0)
 		doc_remove(decl, dc);
-	else
+	else if ((error & FAIL) == 0)
 		ruler_exec(&rl);
 	ruler_free(&rl);
 
