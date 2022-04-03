@@ -220,10 +220,10 @@ parser_exec(struct parser *pr)
 			break;
 		}
 
-		error = 0;
-		error |= parser_exec_decl(pr, concat,
+		error = parser_exec_decl(pr, concat,
 		    PARSER_EXEC_DECL_FLAG_BREAK | PARSER_EXEC_DECL_FLAG_LINE);
-		error |= parser_exec_func_impl(pr, concat);
+		if (error == NONE)
+			error = parser_exec_func_impl(pr, concat);
 
 		if (error & GOOD) {
 			lexer_stamp(lx);
