@@ -746,14 +746,22 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		nx = TAILQ_NEXT(tk, tk_entry);
 		assert(nx != NULL);
 		while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
-			fix = TAILQ_FIRST(&tk->tk_prefixes);
+			fix = TAILQ_LAST(&tk->tk_prefixes, token_list);
 			TAILQ_REMOVE(&tk->tk_prefixes, fix, tk_entry);
-			TAILQ_INSERT_TAIL(&nx->tk_prefixes, fix, tk_entry);
+			TAILQ_INSERT_HEAD(&nx->tk_prefixes, fix, tk_entry);
 			switch (fix->tk_type) {
 			case TOKEN_CPP_IF:
 			case TOKEN_CPP_ELSE:
 			case TOKEN_CPP_ENDIF:
 				fix->tk_token = nx;
+				if (fix->tk_branch.br_nx != NULL &&
+				    fix->tk_branch.br_nx->tk_token == nx) {
+					lexer_trace(lx, "%s -> %s. discard "
+					    "empty branch",
+					    token_sprintf(fix),
+					    token_sprintf(fix->tk_branch.br_nx));
+					token_branch_unlink(fix);
+				}
 				break;
 			default:
 				break;
