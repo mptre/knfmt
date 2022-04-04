@@ -661,30 +661,28 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	if (st->st_tok == NULL) {
 		st->st_tok = TAILQ_FIRST(&lx->lx_tokens);
 	} else if (st->st_tok->tk_type != TOKEN_EOF) {
+		struct token *br;
+
 		/* Do not move passed a branch. */
 		if (lx->lx_peek == 0 && token_is_branch(st->st_tok))
 			return 0;
 
 		st->st_tok = TAILQ_NEXT(st->st_tok, tk_entry);
-		if (st->st_tok == NULL || !token_is_branch(st->st_tok))
+		if (st->st_tok == NULL)
+			goto out;
+		br = token_get_branch(st->st_tok);
+		if (br == NULL)
 			goto out;
 
 		if (lx->lx_peek == 0) {
-			/*
-			 * While not peeking, instruct the parser to halt.
-			 * Calling lexer_branch() allows the parser to continue
-			 * execution by taking the next branch.
-			 */
-			lexer_trace(lx, "halt at %s",
-			    token_sprintf(st->st_tok));
+			/* While not peeking, instruct the parser to halt. */
+			lexer_trace(lx, "halt %s", token_sprintf(st->st_tok));
 			return 0;
 		} else {
-			struct token *br = st->st_tok;
-
 			/* While peeking, act as taking the current branch. */
 			while (br->tk_branch.br_nx != NULL)
 				br = br->tk_branch.br_nx;
-			st->st_tok = br;
+			st->st_tok = br->tk_token;
 		}
 	}
 
@@ -803,10 +801,11 @@ __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
 	}
 
 err:
+	lexer_emit_error(lx, type, t, fun, lno);
+	if (!lexer_is_branch(lx))
+		lx->lx_st.st_tok = pv;
 	if (lx->lx_expect == TOKEN_NONE)
 		lx->lx_expect = type;
-	lx->lx_st.st_tok = pv;
-	lexer_emit_error(lx, type, t, fun, lno);
 	return 0;
 }
 

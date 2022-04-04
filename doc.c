@@ -598,8 +598,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
-		if (!DOC_DIFF(st) &&
-		    (st->st_flags & DOC_STATE_FLAG_WIDTH) == 0) {
+		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0) {
 			/*
 			 * Take note of the previously emitted indentation
 			 * before going mute.
@@ -1080,6 +1079,8 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 
 	st->st_newline = 0;
 	doc_trim(dc, st);
+	if (st->st_pos > 0)
+		doc_print(dc, st, "\n", 1, 0);
 	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
 }
 
