@@ -51,7 +51,7 @@ enum expr_type {
 
 struct expr {
 	enum expr_type		 ex_type;
-	const struct token	*ex_tk;
+	struct token		*ex_tk;
 	struct expr		*ex_lhs;
 	struct expr		*ex_rhs;
 	struct token		*ex_beg;
@@ -542,19 +542,14 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		struct doc *lhs;
 		struct token *pv;
 		unsigned int lno;
-		int doreorder = 0;
 		int dospace;
 
 		/* Never break before the binary operator. */
 		pv = TAILQ_PREV(ex->ex_tk, token_list, tk_entry);
 		lno = ex->ex_tk->tk_lno - pv->tk_lno;
 		if (token_trim(pv) > 0 && lno == 1) {
-			/*
-			 * The operator is not positioned at the end of the
-			 * line. Push it to the previous line and preserve
-			 * spaces before it.
-			 */
-			doreorder = 1;
+			/* Operator not positioned at the end of the line. */
+			token_add_optline(ex->ex_tk);
 		}
 
 		lhs = expr_doc(ex->ex_lhs, es, concat);
@@ -562,15 +557,13 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		if (dospace)
 			doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
-		if (doreorder)
-			doc_alloc(DOC_OPTLINE, lhs);
 
 		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
 			doc_literal(" ", concat);
 		} else {
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			if (doreorder || dospace)
+			if (dospace)
 				doc_alloc(DOC_LINE, concat);
 			else
 				doc_alloc(DOC_SOFTLINE, concat);

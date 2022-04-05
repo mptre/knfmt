@@ -107,6 +107,7 @@ static void	__lexer_trace(const struct lexer *, const char *, const char *,
     ...)
 	__attribute__((__format__(printf, 3, 4)));
 
+static struct token	*token_alloc(const struct token *);
 static void		 token_branch_link(struct token *, struct token *);
 static int		 token_branch_unlink(struct token *);
 static struct token	*token_get_branch(struct token *);
@@ -189,6 +190,16 @@ token_rele(struct token *tk)
 	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
 		free((void *)tk->tk_str);
 	free(tk);
+}
+
+void
+token_add_optline(struct token *tk)
+{
+	struct token *suffix;
+
+	suffix = token_alloc(&tkline);
+	suffix->tk_flags |= TOKEN_FLAG_OPTLINE;
+	TAILQ_INSERT_TAIL(&tk->tk_suffixes, suffix, tk_entry);
 }
 
 /*
@@ -1846,11 +1857,7 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 {
 	struct token *t;
 
-	t = calloc(1, sizeof(*t));
-	if (t == NULL)
-		err(1, NULL);
-	*t = *tk;
-	t->tk_refs = 1;
+	t = token_alloc(tk);
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
@@ -1862,8 +1869,6 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	}
 	if ((t->tk_flags & TOKEN_FLAG_DANGLING) == 0)
 		TAILQ_INSERT_TAIL(&lx->lx_tokens, t, tk_entry);
-	TAILQ_INIT(&t->tk_prefixes);
-	TAILQ_INIT(&t->tk_suffixes);
 	return t;
 }
 
@@ -1986,18 +1991,12 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 	off = srcpre->tk_off;
 	len = (dstpre->tk_off + dstpre->tk_len) - off;
 
-	prefix = malloc(sizeof(*prefix));
-	if (prefix == NULL)
-		err(1, NULL);
-	*prefix = tkcpp;
-	prefix->tk_refs = 1;
+	prefix = token_alloc(&tkcpp);
 	prefix->tk_lno = srcpre->tk_lno;
 	prefix->tk_cno = srcpre->tk_cno;
 	prefix->tk_off = off;
 	prefix->tk_str = &lx->lx_bf->bf_ptr[off];
 	prefix->tk_len = len;
-	TAILQ_INIT(&prefix->tk_prefixes);
-	TAILQ_INIT(&prefix->tk_suffixes);
 
 	/*
 	 * Remove all prefixes hanging of the destination covered by the new
@@ -2201,6 +2200,21 @@ __lexer_trace(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fprintf(stderr, "\n");
+}
+
+static struct token *
+token_alloc(const struct token *def)
+{
+	struct token *tk;
+
+	tk = calloc(1, sizeof(*tk));
+	if (tk == NULL)
+		err(1, NULL);
+	*tk = *def;
+	tk->tk_refs = 1;
+	TAILQ_INIT(&tk->tk_prefixes);
+	TAILQ_INIT(&tk->tk_suffixes);
+	return tk;
 }
 
 static void
