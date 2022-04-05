@@ -54,6 +54,10 @@
   (4e4a38a)
   (Anton Lindqvist)
 
+- Honor space before goto labels.
+  (2c107cd)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Remove extra space before attribute succeeding struct declarations.
