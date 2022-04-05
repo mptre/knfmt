@@ -137,15 +137,20 @@ struct token {
 	unsigned int		 tk_lno;
 	unsigned int		 tk_cno;
 	unsigned int		 tk_flags;
+/* Token denotes a type keyword, see token.h. */
 #define TOKEN_FLAG_TYPE		0x00000001u
+/* Token denotes a qualifier keyword, see token.h. */
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
+/* Token denotes a storage keyword, see token.h. */
 #define TOKEN_FLAG_STORAGE	0x00000004u
 /*
  * Token optionally be followed by an identifier. Only applicable to struct,
  * enum and union.
  */
 #define TOKEN_FLAG_IDENT	0x00000008u
+/* Token is either a prefix or suffix. */
 #define TOKEN_FLAG_DANGLING	0x00000010u
+/* Token denotes an assignment operator, see token.h. */
 #define TOKEN_FLAG_ASSIGN	0x00000020u
 #define TOKEN_FLAG_AMBIGUOUS	0x00000040u
 #define TOKEN_FLAG_BINARY	0x00000080u
@@ -161,7 +166,12 @@ struct token {
 #define TOKEN_FLAG_OPTLINE	0x00002000u
 /* Token followed by spaces or tabs. Dangling suffix and never emitted. */
 #define TOKEN_FLAG_OPTSPACE	0x00004000u
+/*
+ * Token may be surrounded by spaces. Only applicable to binary operators, see
+ * token.h.
+ */
 #define TOKEN_FLAG_SPACE	0x00008000u
+/* Token covered by diff chunk. */
 #define TOKEN_FLAG_DIFF		0x00010000u
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
