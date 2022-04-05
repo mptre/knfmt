@@ -786,7 +786,7 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 		if (doline)
 			line = doc_alloc(DOC_HARDLINE, indent);
 		else
-			line = doc_literal(" ", indent);
+			doc_literal(" ", indent);
 	}
 	if (line != NULL)
 		doc_remove(line, indent);
@@ -848,7 +848,9 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			 * allowed to omit any initialization, alignment is not
 			 * desired in such scenario.
 			 */
-			if (lexer_peek_if(lx, TOKEN_COMMA, NULL))
+			if (lexer_peek_if(lx, TOKEN_COMMA, NULL) ||
+			    (lexer_peek_if(lx, TOKEN_RBRACE, &tk) &&
+			     tk == rbrace))
 				goto comma;
 		} else {
 			if (tk == NULL) {
