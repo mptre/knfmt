@@ -40,9 +40,9 @@ struct doc {
 };
 
 struct doc_state_indent {
-	int	i_cur;
-	int	i_pre;
-	int	i_mute;
+	int	i_cur;	/* current indent */
+	int	i_pre;	/* last emitted indent */
+	int	i_mute;	/* last emitted indent before going mute */
 };
 
 struct doc_state {
