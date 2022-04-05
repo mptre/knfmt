@@ -1295,8 +1295,9 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 				doc_literal(" ", dc);
 			else
 				doc_alloc(DOC_HARDLINE, dc);
-			if (lexer_expect(lx, TOKEN_ELSE, &tk))
-				doc_token(tk, dc);
+			if (!lexer_expect(lx, TOKEN_ELSE, &tk))
+				break;
+			doc_token(tk, dc);
 			doc_literal(" ", dc);
 
 			if (lexer_peek_if(lx, TOKEN_IF, &tkif) &&
