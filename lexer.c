@@ -1979,81 +1979,67 @@ static struct token *
 lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
     struct token *dst, struct token *dstpre)
 {
-	struct lexer_state st;
-	struct token *prefix;
-	size_t off, oldoff;
+	struct token *prefix, *pv;
+	size_t off, len;
 	unsigned int flags = 0;
-	int dosrc = 0;
 
-	if (srcpre != NULL) {
-		dosrc = 1;
-	} else {
-		srcpre = TAILQ_FIRST(&src->tk_prefixes);
-		if (srcpre == NULL)
-			srcpre = src;
-	}
+	off = srcpre->tk_off;
+	len = (dstpre->tk_off + dstpre->tk_len) - off;
 
-	if (dstpre != NULL)
-		off = dstpre->tk_off + dstpre->tk_len;
-	else
-		off = dst->tk_off;
+	prefix = malloc(sizeof(*prefix));
+	if (prefix == NULL)
+		err(1, NULL);
+	*prefix = tkcpp;
+	prefix->tk_refs = 1;
+	prefix->tk_lno = srcpre->tk_lno;
+	prefix->tk_cno = srcpre->tk_cno;
+	prefix->tk_off = off;
+	prefix->tk_str = &lx->lx_bf->bf_ptr[off];
+	prefix->tk_len = len;
+	TAILQ_INIT(&prefix->tk_prefixes);
+	TAILQ_INIT(&prefix->tk_suffixes);
 
-	memset(&st, 0, sizeof(st));
-	st.st_off = srcpre->tk_off;
-	st.st_lno = srcpre->tk_lno;
-	st.st_cno = srcpre->tk_cno;
-	oldoff = lx->lx_st.st_off;
-	lx->lx_st.st_off = off;
-	prefix = lexer_emit(lx, &st, &tkcpp);
-	lx->lx_st.st_off = oldoff;
+	/*
+	 * Remove all prefixes hanging of the destination covered by the new
+	 * prefix token.
+	 */
+	while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
+		struct token *pr;
 
-	if (dstpre != NULL) {
-		/*
-		 * Remove all prefixes hanging of the destination covered by the
-		 * new prefix token.
-		 */
-		while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
-			struct token *pr;
-
-			pr = TAILQ_FIRST(&dst->tk_prefixes);
-			lexer_trace(lx, "removing prefix %s",
-			    token_sprintf(pr));
-			TAILQ_REMOVE(&dst->tk_prefixes, pr, tk_entry);
-			/* Completely unlink any branch. */
-			while (token_branch_unlink(pr) == 0)
-				continue;
-			token_rele(pr);
-			if (pr == dstpre)
-				break;
-		}
+		pr = TAILQ_FIRST(&dst->tk_prefixes);
+		lexer_trace(lx, "removing prefix %s",
+		    token_sprintf(pr));
+		TAILQ_REMOVE(&dst->tk_prefixes, pr, tk_entry);
+		/* Completely unlink any branch. */
+		while (token_branch_unlink(pr) == 0)
+			continue;
+		token_rele(pr);
+		if (pr == dstpre)
+			break;
 	}
 
 	lexer_trace(lx, "add prefix %s to %s", token_sprintf(prefix),
 	    token_sprintf(dst));
 	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
 
-	if (dosrc) {
-		struct token *pv;
+	/*
+	 * Keep any existing prefix not covered by the new prefix token
+	 * by moving them to the destination.
+	 */
+	pv = TAILQ_PREV(srcpre, token_list, tk_entry);
+	for (;;) {
+		struct token *tmp;
 
-		/*
-		 * Keep any existing prefix not covered by the new prefix token
-		 * by moving them to the destination.
-		 */
-		pv = TAILQ_PREV(srcpre, token_list, tk_entry);
-		for (;;) {
-			struct token *tmp;
+		if (pv == NULL)
+			break;
 
-			if (pv == NULL)
-				break;
-
-			lexer_trace(lx, "keeping prefix %s", token_sprintf(pv));
-			tmp = TAILQ_PREV(pv, token_list, tk_entry);
-			TAILQ_REMOVE(&src->tk_prefixes, pv, tk_entry);
-			TAILQ_INSERT_HEAD(&dst->tk_prefixes, pv, tk_entry);
-			if (pv->tk_token != NULL)
-				pv->tk_token = dst;
-			pv = tmp;
-		}
+		lexer_trace(lx, "keeping prefix %s", token_sprintf(pv));
+		tmp = TAILQ_PREV(pv, token_list, tk_entry);
+		TAILQ_REMOVE(&src->tk_prefixes, pv, tk_entry);
+		TAILQ_INSERT_HEAD(&dst->tk_prefixes, pv, tk_entry);
+		if (pv->tk_token != NULL)
+			pv->tk_token = dst;
+		pv = tmp;
 	}
 
 	/*
