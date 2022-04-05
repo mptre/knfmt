@@ -965,6 +965,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 		struct doc *expr = NULL;
 		struct doc *arg;
 		struct token *stop;
+		int error;
 
 		if (lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 			break;
@@ -973,7 +974,8 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop))
 			stop = rbrace;
-		if (parser_exec_expr(pr, arg, &expr, stop, 0) & (FAIL | NONE))
+		error = parser_exec_expr(pr, arg, &expr, stop, 0);
+		if (error & (FAIL | NONE | BRCH))
 			return parser_fail(pr);
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, expr);
