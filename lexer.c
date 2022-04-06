@@ -2310,8 +2310,10 @@ static void
 token_remove(struct token_list *tl, struct token *tk)
 {
 	TAILQ_REMOVE(tl, tk, tk_entry);
-	token_list_free(&tk->tk_prefixes);
-	token_list_free(&tk->tk_suffixes);
+	if ((tk->tk_flags & TOKEN_FLAG_DANGLING) == 0) {
+		token_list_free(&tk->tk_prefixes);
+		token_list_free(&tk->tk_suffixes);
+	}
 	token_rele(tk);
 }
 
