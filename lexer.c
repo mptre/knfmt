@@ -1960,7 +1960,7 @@ lexer_peek_if_type_ident(struct lexer *lx)
 
 /*
  * Fold tokens covered by [src, dst) into a prefix hanging of dst. The prefix
- * will span [srcpre, dstpre) where srcpre must be a prefix of src and dstpre a
+ * will span [srcpre, dstpre] where srcpre must be a prefix of src and dstpre a
  * prefix of dst.
  */
 static void
