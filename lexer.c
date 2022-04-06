@@ -42,7 +42,6 @@ struct lexer {
 
 	int			 lx_eof;
 	int			 lx_peek;
-	enum token_type		 lx_expect;
 
 	struct token		*lx_unmute;
 
@@ -420,7 +419,6 @@ lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
 	lx->lx_bf = bf;
 	lx->lx_diff = &fe->fe_diff;
 	lx->lx_path = fe->fe_path;
-	lx->lx_expect = TOKEN_NONE;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	TAILQ_INIT(&lx->lx_tokens);
@@ -801,8 +799,6 @@ err:
 	lexer_emit_error(lx, type, t, fun, lno);
 	if (!lexer_is_branch(lx))
 		lx->lx_st.st_tok = pv;
-	if (lx->lx_expect == TOKEN_NONE)
-		lx->lx_expect = type;
 	return 0;
 }
 
