@@ -86,9 +86,8 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
 
-static struct token	*lexer_recover_fold(struct lexer *, struct token *,
+static void		 lexer_branch_fold(struct lexer *, struct token *,
     struct token *, struct token *, struct token *);
-
 static struct token	*lexer_branch_find(struct token *, int);
 static struct token	*lexer_branch_next(const struct lexer *);
 static void		 lexer_branch_enter(struct lexer *, struct token *,
@@ -590,7 +589,7 @@ lexer_recover(struct lexer *lx)
 	}
 
 	/* Turn the whole branch into a prefix hanging of the destination. */
-	lexer_recover_fold(lx, src, br, dst, br->tk_branch.br_nx);
+	lexer_branch_fold(lx, src, br, dst, br->tk_branch.br_nx);
 
 	lexer_trace(lx, "seek to %s, removing %d document(s)",
 	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
@@ -1964,8 +1963,8 @@ lexer_peek_if_type_ident(struct lexer *lx)
  * will span [srcpre, dstpre) where srcpre must be a prefix of src and dstpre a
  * prefix of dst.
  */
-static struct token *
-lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
+static void
+lexer_branch_fold(struct lexer *lx, struct token *src, struct token *srcpre,
     struct token *dst, struct token *dstpre)
 {
 	struct token *prefix, *pv;
@@ -2047,8 +2046,6 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 	dst->tk_flags |= flags;
 
 	lexer_branch_purge(lx, dst);
-
-	return prefix;
 }
 
 static struct token *
