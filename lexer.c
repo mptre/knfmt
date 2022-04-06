@@ -2313,7 +2313,6 @@ token_list_free(struct token_list *tl)
 	struct token *tmp;
 
 	while ((tmp = TAILQ_FIRST(tl)) != NULL) {
-		TAILQ_REMOVE(tl, tmp, tk_entry);
 		token_branch_unlink(tmp);
 		token_remove(tl, tmp);
 	}
