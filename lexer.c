@@ -97,6 +97,7 @@ static void		 lexer_branch_leave(struct lexer *, struct token *,
     struct token *);
 static void		 lexer_branch_link(struct lexer *, struct token *,
     struct token *);
+static void		 lexer_branch_purge(struct lexer *, struct token *);
 
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (TRACE((lx)->lx_cf))						\
@@ -110,6 +111,8 @@ static void	__lexer_trace(const struct lexer *, const char *, const char *,
 static struct token	*token_alloc(const struct token *);
 static void		 token_branch_link(struct token *, struct token *);
 static int		 token_branch_unlink(struct token *);
+static void		 token_branch_move(struct token *, struct token *,
+    struct token *);
 static struct token	*token_get_branch(struct token *);
 static struct token	*token_find_prefix(const struct token *,
     enum token_type);
@@ -753,24 +756,9 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 			fix = TAILQ_LAST(&tk->tk_prefixes, token_list);
 			TAILQ_REMOVE(&tk->tk_prefixes, fix, tk_entry);
 			TAILQ_INSERT_HEAD(&nx->tk_prefixes, fix, tk_entry);
-			switch (fix->tk_type) {
-			case TOKEN_CPP_IF:
-			case TOKEN_CPP_ELSE:
-			case TOKEN_CPP_ENDIF:
-				fix->tk_token = nx;
-				if (fix->tk_branch.br_nx != NULL &&
-				    fix->tk_branch.br_nx->tk_token == nx) {
-					lexer_trace(lx, "%s -> %s. discard "
-					    "empty branch",
-					    token_sprintf(fix),
-					    token_sprintf(fix->tk_branch.br_nx));
-					token_branch_unlink(fix);
-				}
-				break;
-			default:
-				break;
-			}
+			token_branch_move(fix, tk, nx);
 		}
+		lexer_branch_purge(lx, nx);
 
 		pv = TAILQ_PREV(tk, token_list, tk_entry);
 		assert(pv != NULL);
@@ -785,6 +773,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		TAILQ_REMOVE(&lx->lx_stamps, tk, tk_stamp);
 		token_rele(tk);
 	}
+
 	token_remove(&lx->lx_tokens, tk);
 }
 
@@ -2031,8 +2020,7 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 		tmp = TAILQ_PREV(pv, token_list, tk_entry);
 		TAILQ_REMOVE(&src->tk_prefixes, pv, tk_entry);
 		TAILQ_INSERT_HEAD(&dst->tk_prefixes, pv, tk_entry);
-		if (pv->tk_token != NULL)
-			pv->tk_token = dst;
+		token_branch_move(pv, src, dst);
 		pv = tmp;
 	}
 
@@ -2057,6 +2045,8 @@ lexer_recover_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 
 	/* Propagate preserved flags. */
 	dst->tk_flags |= flags;
+
+	lexer_branch_purge(lx, dst);
 
 	return prefix;
 }
@@ -2184,6 +2174,26 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 	br->br_cpp = cpp;
 }
 
+/*
+ * Purge empty branches associated with the given token. Such branches cannot
+ * cause any tokens to be removed since they only span a single token.
+ */
+static void
+lexer_branch_purge(struct lexer *lx, struct token *tk)
+{
+	struct token *prefix;
+
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		struct token *nx = prefix->tk_branch.br_nx;
+
+		if (nx != NULL && nx->tk_token == tk) {
+			lexer_trace(lx, "discard empty branch from %s to %s",
+			    token_sprintf(prefix), token_sprintf(nx));
+			token_branch_unlink(prefix);
+		}
+	}
+}
+
 static void
 __lexer_trace(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
     ...)
@@ -2265,6 +2275,26 @@ token_branch_unlink(struct token *tk)
 		return 0;
 	}
 	return -1;
+}
+
+/*
+ * Associated the given branch prefix token with another parent. Must be called
+ * after moving a prefix.
+ */
+static void
+token_branch_move(struct token *tk, struct token *src,
+    struct token *MAYBE_UNUSED(dst))
+{
+	switch (tk->tk_type) {
+	case TOKEN_CPP_IF:
+	case TOKEN_CPP_ELSE:
+	case TOKEN_CPP_ENDIF:
+		assert(tk->tk_token == src);
+		tk->tk_token = dst;
+		break;
+	default:
+		break;
+	}
 }
 
 /*
