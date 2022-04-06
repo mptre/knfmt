@@ -89,7 +89,6 @@ static int	lexer_peek_if_type_ident(struct lexer *lx);
 static void		 lexer_branch_fold(struct lexer *, struct token *,
     struct token *, struct token *, struct token *);
 static struct token	*lexer_branch_find(struct token *, int);
-static struct token	*lexer_branch_next(const struct lexer *);
 static void		 lexer_branch_enter(struct lexer *, struct token *,
     struct token *);
 static void		 lexer_branch_leave(struct lexer *, struct token *,
@@ -605,9 +604,11 @@ lexer_recover(struct lexer *lx)
 int
 lexer_branch(struct lexer *lx)
 {
-	struct token *br, *dst, *rm, *seek;
+	struct token *br, *dst, *rm, *seek, *tk;
 
-	br = lexer_branch_next(lx);
+	if (!lexer_back(lx, &tk))
+		return 0;
+	br = token_get_branch(tk);
 	if (br == NULL)
 		return 0;
 
@@ -660,7 +661,9 @@ lexer_branch(struct lexer *lx)
 int
 lexer_is_branch(const struct lexer *lx)
 {
-	return lexer_branch_next(lx) != NULL;
+	struct token *tk;
+
+	return lexer_back(lx, &tk) && token_get_branch(tk) != NULL;
 }
 
 int
@@ -2069,16 +2072,6 @@ lexer_branch_find(struct token *tk, int next)
 	}
 
 	return NULL;
-}
-
-static struct token *
-lexer_branch_next(const struct lexer *lx)
-{
-	struct token *tk;
-
-	if (!lexer_back(lx, &tk))
-		return NULL;
-	return token_get_branch(tk);
 }
 
 static void
