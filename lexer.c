@@ -2093,8 +2093,10 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 
 	br = TAILQ_LAST(&lx->lx_branches, branch_list);
 	/* Silently ignore broken branch. */
-	if (br == NULL)
+	if (br == NULL) {
+		token_branch_unlink(cpp);
 		return;
+	}
 
 	/*
 	 * Discard branches hanging of the same token, such branch cannot cause
@@ -2138,8 +2140,10 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 
 	br = TAILQ_LAST(&lx->lx_branches, branch_list);
 	/* Silently ignore broken branch. */
-	if (br == NULL)
+	if (br == NULL) {
+		token_branch_unlink(cpp);
 		return;
+	}
 
 	/*
 	 * Discard branches hanging of the same token, such branch cannot cause
