@@ -2221,9 +2221,12 @@ token_branch_link(struct token *src, struct token *dst)
 }
 
 /*
- * Unlink any branch associated with the given token. Returns 1 if the branch is
- * completely unlinked, 0 if the branch is not completely unlinked and -1 if
- * it's not a branch token.
+ * Unlink any branch associated with the given token. Returns one of the
+ * following:
+ *
+ *     1    Branch completely unlinked.
+ *     0    Branch not completely unlinked.
+ *     -1   Not a branch token.
  */
 static int
 token_branch_unlink(struct token *tk)
