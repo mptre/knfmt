@@ -2037,8 +2037,6 @@ lexer_branch_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 		lexer_trace(lx, "removing %s", token_sprintf(src));
 		flags |= src->tk_flags & TOKEN_FLAG_UNMUTE;
 		lexer_remove(lx, src, 0);
-		if (nx == dst)
-			break;
 		src = nx;
 	}
 
