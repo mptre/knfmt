@@ -722,15 +722,10 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
 {
 	struct token *pv, *tk, *tmp, *suffix;
 
-	tk = calloc(1, sizeof(*tk));
-	if (tk == NULL)
-		err(1, NULL);
+	tk = token_alloc(NULL);
 	tk->tk_type = type;
-	tk->tk_refs = 1;
 	tk->tk_str = str;
 	tk->tk_len = strlen(str);
-	TAILQ_INIT(&tk->tk_prefixes);
-	TAILQ_INIT(&tk->tk_suffixes);
 
 	pv = TAILQ_PREV(before, token_list, tk_entry);
 	if (pv != NULL) {
@@ -2210,7 +2205,8 @@ token_alloc(const struct token *def)
 	tk = calloc(1, sizeof(*tk));
 	if (tk == NULL)
 		err(1, NULL);
-	*tk = *def;
+	if (def != NULL)
+		*tk = *def;
 	tk->tk_refs = 1;
 	TAILQ_INIT(&tk->tk_prefixes);
 	TAILQ_INIT(&tk->tk_suffixes);
