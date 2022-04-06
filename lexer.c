@@ -2312,7 +2312,6 @@ token_remove(struct token_list *tl, struct token *tk)
 	TAILQ_REMOVE(tl, tk, tk_entry);
 	token_list_free(&tk->tk_prefixes);
 	token_list_free(&tk->tk_suffixes);
-	tk->tk_flags |= TOKEN_FLAG_FREE;
 	token_rele(tk);
 }
 
