@@ -85,8 +85,7 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
 
-static void		 lexer_branch_fold(struct lexer *, struct token *,
-    struct token *, struct token *, struct token *);
+static void		 lexer_branch_fold(struct lexer *, struct token *);
 static struct token	*lexer_branch_find(struct token *, int);
 static void		 lexer_branch_enter(struct lexer *, struct token *,
     struct token *);
@@ -585,8 +584,8 @@ lexer_recover(struct lexer *lx)
 		ndocs++;
 	}
 
-	/* Turn the whole branch into a prefix hanging of the destination. */
-	lexer_branch_fold(lx, src, br, dst, br->tk_branch.br_nx);
+	/* Turn the whole branch into a prefix. */
+	lexer_branch_fold(lx, br);
 
 	lexer_trace(lx, "seek to %s, removing %d document(s)",
 	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
@@ -1958,24 +1957,25 @@ lexer_peek_if_type_ident(struct lexer *lx)
 }
 
 /*
- * Fold tokens covered by [src, dst) into a prefix hanging of dst. The prefix
- * will span [srcpre, dstpre] where srcpre must be a prefix of src and dstpre a
- * prefix of dst.
+ * Fold tokens covered by the branch into a prefix.
  */
 static void
-lexer_branch_fold(struct lexer *lx, struct token *src, struct token *srcpre,
-    struct token *dst, struct token *dstpre)
+lexer_branch_fold(struct lexer *lx, struct token *src)
 {
-	struct token *prefix, *pv;
+	struct token *dst, *prefix, *pv, *rm;
 	size_t off, len;
 	unsigned int flags = 0;
 
-	off = srcpre->tk_off;
-	len = (dstpre->tk_off + dstpre->tk_len) - off;
+	/* Grab a reference since the branch is about to be removed. */
+	dst = src->tk_branch.br_nx;
+	token_ref(dst);
+
+	off = src->tk_off;
+	len = (dst->tk_off + dst->tk_len) - off;
 
 	prefix = token_alloc(&tkcpp);
-	prefix->tk_lno = srcpre->tk_lno;
-	prefix->tk_cno = srcpre->tk_cno;
+	prefix->tk_lno = src->tk_lno;
+	prefix->tk_cno = src->tk_cno;
 	prefix->tk_off = off;
 	prefix->tk_str = &lx->lx_bf->bf_ptr[off];
 	prefix->tk_len = len;
@@ -1984,30 +1984,30 @@ lexer_branch_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 	 * Remove all prefixes hanging of the destination covered by the new
 	 * prefix token.
 	 */
-	while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
+	while (!TAILQ_EMPTY(&dst->tk_token->tk_prefixes)) {
 		struct token *pr;
 
-		pr = TAILQ_FIRST(&dst->tk_prefixes);
+		pr = TAILQ_FIRST(&dst->tk_token->tk_prefixes);
 		lexer_trace(lx, "removing prefix %s",
 		    token_sprintf(pr));
-		TAILQ_REMOVE(&dst->tk_prefixes, pr, tk_entry);
+		TAILQ_REMOVE(&dst->tk_token->tk_prefixes, pr, tk_entry);
 		/* Completely unlink any branch. */
 		while (token_branch_unlink(pr) == 0)
 			continue;
 		token_rele(pr);
-		if (pr == dstpre)
+		if (pr == dst)
 			break;
 	}
 
 	lexer_trace(lx, "add prefix %s to %s", token_sprintf(prefix),
-	    token_sprintf(dst));
-	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+	    token_sprintf(dst->tk_token));
+	TAILQ_INSERT_HEAD(&dst->tk_token->tk_prefixes, prefix, tk_entry);
 
 	/*
 	 * Keep any existing prefix not covered by the new prefix token
 	 * by moving them to the destination.
 	 */
-	pv = TAILQ_PREV(srcpre, token_list, tk_entry);
+	pv = TAILQ_PREV(src, token_list, tk_entry);
 	for (;;) {
 		struct token *tmp;
 
@@ -2016,9 +2016,9 @@ lexer_branch_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 
 		lexer_trace(lx, "keeping prefix %s", token_sprintf(pv));
 		tmp = TAILQ_PREV(pv, token_list, tk_entry);
-		TAILQ_REMOVE(&src->tk_prefixes, pv, tk_entry);
-		TAILQ_INSERT_HEAD(&dst->tk_prefixes, pv, tk_entry);
-		token_branch_move(pv, src, dst);
+		TAILQ_REMOVE(&src->tk_token->tk_prefixes, pv, tk_entry);
+		TAILQ_INSERT_HEAD(&dst->tk_token->tk_prefixes, pv, tk_entry);
+		token_branch_move(pv, src->tk_token, dst->tk_token);
 		pv = tmp;
 	}
 
@@ -2026,23 +2026,25 @@ lexer_branch_fold(struct lexer *lx, struct token *src, struct token *srcpre,
 	 * Remove all tokens up to the destination covered by the new prefix
 	 * token.
 	 */
+	rm = src->tk_token;
 	for (;;) {
 		struct token *nx;
 
-		if (src == dst)
+		if (rm == dst->tk_token)
 			break;
 
-		nx = TAILQ_NEXT(src, tk_entry);
-		lexer_trace(lx, "removing %s", token_sprintf(src));
-		flags |= src->tk_flags & TOKEN_FLAG_UNMUTE;
-		lexer_remove(lx, src, 0);
-		src = nx;
+		nx = TAILQ_NEXT(rm, tk_entry);
+		lexer_trace(lx, "removing %s", token_sprintf(rm));
+		flags |= rm->tk_flags & TOKEN_FLAG_UNMUTE;
+		lexer_remove(lx, rm, 0);
+		rm = nx;
 	}
 
 	/* Propagate preserved flags. */
-	dst->tk_flags |= flags;
+	dst->tk_token->tk_flags |= flags;
 
-	lexer_branch_purge(lx, dst);
+	lexer_branch_purge(lx, dst->tk_token);
+	token_rele(dst);
 }
 
 static struct token *
