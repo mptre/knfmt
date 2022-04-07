@@ -112,7 +112,6 @@ static void		 token_branch_move(struct token *, struct token *,
 static struct token	*token_get_branch(struct token *);
 static struct token	*token_find_prefix(const struct token *,
     enum token_type);
-static void		 token_list_free(struct token_list *);
 static void		 token_remove(struct token_list *, struct token *);
 static const char	*strtoken(enum token_type);
 
@@ -185,8 +184,16 @@ token_rele(struct token *tk)
 		return;
 
 	if ((tk->tk_flags & TOKEN_FLAG_DANGLING) == 0) {
-		token_list_free(&tk->tk_prefixes);
-		token_list_free(&tk->tk_suffixes);
+		struct token *fix;
+
+		while ((fix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL) {
+			token_branch_unlink(fix);
+			token_remove(&tk->tk_prefixes, fix);
+		}
+		while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL) {
+			token_branch_unlink(fix);
+			token_remove(&tk->tk_suffixes, fix);
+		}
 	}
 	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
 		free((void *)tk->tk_str);
@@ -618,8 +625,9 @@ lexer_branch(struct lexer *lx)
 	    token_sprintf(br->tk_token),
 	    token_sprintf(br->tk_branch.br_nx->tk_token));
 
-	rm = br->tk_token;
+	token_branch_unlink(br);
 
+	rm = br->tk_token;
 	for (;;) {
 		struct token *nx;
 
@@ -2316,24 +2324,9 @@ token_find_prefix(const struct token *tk, enum token_type type)
 }
 
 static void
-token_list_free(struct token_list *tl)
-{
-	struct token *tmp;
-
-	while ((tmp = TAILQ_FIRST(tl)) != NULL) {
-		token_branch_unlink(tmp);
-		token_remove(tl, tmp);
-	}
-}
-
-static void
 token_remove(struct token_list *tl, struct token *tk)
 {
 	TAILQ_REMOVE(tl, tk, tk_entry);
-	if ((tk->tk_flags & TOKEN_FLAG_DANGLING) == 0) {
-		token_list_free(&tk->tk_prefixes);
-		token_list_free(&tk->tk_suffixes);
-	}
 	token_rele(tk);
 }
 
