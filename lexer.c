@@ -180,12 +180,13 @@ token_ref(struct token *tk)
 void
 token_rele(struct token *tk)
 {
-	assert(tk->tk_refs > 0);
 	if (--tk->tk_refs > 0)
 		return;
 
-	token_list_free(&tk->tk_prefixes);
-	token_list_free(&tk->tk_suffixes);
+	if ((tk->tk_flags & TOKEN_FLAG_DANGLING) == 0) {
+		token_list_free(&tk->tk_prefixes);
+		token_list_free(&tk->tk_suffixes);
+	}
 	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
 		free((void *)tk->tk_str);
 	free(tk);
