@@ -180,6 +180,7 @@ token_ref(struct token *tk)
 void
 token_rele(struct token *tk)
 {
+	assert(tk->tk_refs > 0);
 	if (--tk->tk_refs > 0)
 		return;
 
