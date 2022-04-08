@@ -21,11 +21,10 @@ execution. Followed by some noteworthy topics in no particular order.
 lexer.c
 =======
 
-The lexer turns source code into a list of tokens. It does so by reading the
-source code into memory and then constructs a list of tokens. The lexer owns the
-memory associated with the tokens. This has several advantages as all tokens are
-therefore constant and pointers to them can be compared for equality and remains
-valid until lexer_free() is invoked.
+The lexer turns source code into a list of tokens and owns the associated
+memory. This has several advantages as all tokens are constant and pointers to
+them can be compared for equality and remains valid until lexer_free() is
+invoked.
 
 In general terms, the lexer API is divided into two categories:
 
@@ -66,11 +65,6 @@ parser_exec_expr_recover() and the cpp section below.
 [1] https://en.wikipedia.org/wiki/Operator-precedence_parser#Pratt_parsing
 [2] https://craftinginterpreters.com/compiling-expressions.html
 [3] https://quasilyte.dev/blog/post/pratt-parsers-go/
-
-cpp.c
-=====
-
-Formatting of cpp constructs, such as alignment of line continuations.
 
 doc.c
 =====
@@ -144,6 +138,11 @@ The following type of documents are available:
 
 * DOC_OPTIONAL
   Allow DOC_OPTLINE to be emitted.
+
+cpp.c
+=====
+
+Formatting of cpp constructs, such as alignment of line continuations.
 
 ruler.c
 =======
@@ -226,20 +225,19 @@ described in the cpp section above. Preprocessor branches can literally be
 present anywhere in the source code. Letting the parser cope with this fact
 would make the implementation tedious.
 
-Instead the lexer keeps track of all branches, see lexer_cpp() and lexer_read().
-Upon entering a branch continuation denoted by #else or #elif, lexer_pop() will
-halt while consuming tokens but move passed the branch continuation while
-peeking. This gives the parser the impression of traversing valid grammar and
-language constructs can still be detected. At some point, the parser must call
-lexer_branch() in order to take the next available branch continuation. The
-aforementioned routine will remove any tokens associated with the branch just
-taken[2] and then seek backwards to the token given by parser[1]. This seek
-token must be positioned at the beginning of some language construct that the
-parser can recognize[1]; effectively making the parser traverse the same tokens
-again but this time with the previous branch removed. This has the advantage of
-not requiring any explicit handling of branches inside the parser implementation
-as it reuses existing logic. However, calls to lexer_is_branch() are carefully
-sprinkled inside the parser as some parsing must be avoided while branching.
+Instead, the lexer keeps track of all branches, see lexer_cpp() and
+lexer_read(). Upon entering a branch continuation denoted by #else or #elif,
+lexer_pop() will halt while consuming tokens but move passed the branch
+continuation while peeking. This gives the parser the impression of traversing
+valid grammar and language constructs can still be detected. At some point, the
+parser must call lexer_branch() in order to take the next available branch
+continuation. lexer_branch() will remove any tokens associated with the branch
+just taken[2] and then seek backwards to the last stamped token by the
+parser[1]. The stamped token must be positioned at the beginning of some
+language construct that the parser can recognize[1]; effectively making the
+parser traverse the same tokens again but this time with the previous branch
+removed. This has the advantage of not requiring any explicit handling of
+branches inside the parser implementation as it reuses existing logic.
 
 One caveat with approach is caused by the parser potentially traversing the same
 code more than once as it seeks backwards[1]. While traversing a branch
