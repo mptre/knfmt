@@ -1324,6 +1324,9 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 					if (error & (FAIL | NONE))
 						parser_fail(pr);
 				}
+
+				/* Terminate if/else chain. */
+				break;
 			}
 		}
 
