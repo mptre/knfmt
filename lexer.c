@@ -354,8 +354,8 @@ token_sprintf(const struct token *tk)
 	for (i = 0; i < 2; i++) {
 		int n;
 
-		n = snprintf(buf, bufsiz, "%s<%u:%u>(\"%s\")", type,
-		    tk->tk_lno, tk->tk_cno, val);
+		n = snprintf(buf, bufsiz, "%s<%u:%u>(\"%s\")",
+		    type, tk->tk_lno, tk->tk_cno, val);
 		if (n < 0 || (buf != NULL && n >= bufsiz))
 			errc(1, ENAMETOOLONG, "snprintf");
 		if (buf == NULL) {
