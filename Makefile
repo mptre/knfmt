@@ -180,6 +180,7 @@ DISTFILES+=	tests/error-020.c
 DISTFILES+=	tests/error-021.c
 DISTFILES+=	tests/error-022.c
 DISTFILES+=	tests/error-023.c
+DISTFILES+=	tests/error-024.c
 DISTFILES+=	tests/knfmt.sh
 DISTFILES+=	tests/simple-001.c
 DISTFILES+=	tests/simple-001.ok

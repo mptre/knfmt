@@ -2119,14 +2119,16 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 
 		lexer_trace(lx, "%s -> %s. discard empty branch",
 		    token_sprintf(br->br_cpp), token_sprintf(cpp));
-		pv = br->br_cpp->tk_branch.br_pv;
+
 		/*
 		 * Prevent the previous branch from being exhausted if we're
 		 * about to link it again below.
 		 */
+		pv = br->br_cpp->tk_branch.br_pv;
 		if (pv != NULL)
 			br->br_cpp->tk_branch.br_pv = NULL;
 		token_branch_unlink(br->br_cpp);
+
 		/*
 		 * If this is an empty else branch, try to link with the
 		 * previous one instead.
@@ -2139,6 +2141,8 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 		token_branch_link(br->br_cpp, cpp);
 		lexer_trace(lx, "%s -> %s", token_sprintf(br->br_cpp),
 		    token_sprintf(cpp));
+	} else {
+		token_branch_unlink(cpp);
 	}
 
 	TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
