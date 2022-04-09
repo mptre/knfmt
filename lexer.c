@@ -663,7 +663,7 @@ lexer_branch(struct lexer *lx)
 }
 
 /*
- * Returns the next branch continuation token if present.
+ * Returns non-zero if the current token denotes a branch continuation.
  */
 int
 lexer_is_branch(const struct lexer *lx)
