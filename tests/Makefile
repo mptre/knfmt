@@ -50,6 +50,7 @@ TESTS+=	error-021.c
 TESTS+=	error-022.c
 TESTS+=	error-023.c
 TESTS+=	error-024.c
+TESTS+=	error-025.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c

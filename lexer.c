@@ -756,8 +756,10 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
 void
 lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 {
+	struct token *fix;
+
 	if (keepfixes) {
-		struct token *fix, *nx, *pv;
+		struct token *nx, *pv;
 
 		nx = TAILQ_NEXT(tk, tk_entry);
 		assert(nx != NULL);
@@ -776,6 +778,9 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 			TAILQ_REMOVE(&tk->tk_suffixes, fix, tk_entry);
 			TAILQ_INSERT_TAIL(&pv->tk_suffixes, fix, tk_entry);
 		}
+	} else {
+		TAILQ_FOREACH(fix, &tk->tk_prefixes, tk_entry)
+			token_branch_unlink(fix);
 	}
 
 	if (TAILQ_INSERTED(tk, tk_stamp)) {
