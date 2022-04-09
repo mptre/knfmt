@@ -562,7 +562,7 @@ lexer_stamp(struct lexer *lx)
 int
 lexer_recover(struct lexer *lx)
 {
-	struct token *back, *br, *dst, *seek, *src;
+	struct token *back, *br, *dst, *seek, *src, *tmp;
 	int ndocs = 1;
 
 	back = lx->lx_st.st_tok;
@@ -586,15 +586,30 @@ lexer_recover(struct lexer *lx)
 	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
 	    token_sprintf(src), token_sprintf(dst));
 
-	/* Find first stamped token before the branch. */
-	TAILQ_FOREACH_REVERSE(seek, &lx->lx_stamps, token_list, tk_stamp) {
-		if (token_cmp(seek, br) < 0)
+	/*
+	 * Find the offset of the first stamped token before the branch.
+	 * Must be done before getting rid of the branch as stamped tokens might
+	 * be removed.
+	 */
+	TAILQ_FOREACH_REVERSE(tmp, &lx->lx_stamps, token_list, tk_stamp) {
+		if (token_cmp(tmp, br) < 0)
 			break;
 		ndocs++;
 	}
 
-	/* Turn the whole branch into a prefix. */
+	/*
+	 * Turn the whole branch into a prefix. Since the branch is about to be
+	 * removed, grab a reference since it's needed below.
+	 */
+	token_ref(br);
 	lexer_branch_fold(lx, br);
+
+	/* Find first stamped token before the branch. */
+	TAILQ_FOREACH_REVERSE(seek, &lx->lx_stamps, token_list, tk_stamp) {
+		if (token_cmp(seek, br) < 0)
+			break;
+	}
+	token_rele(br);
 
 	lexer_trace(lx, "seek to %s, removing %d document(s)",
 	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
@@ -736,6 +751,8 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
 
 	tk = token_alloc(NULL);
 	tk->tk_type = type;
+	tk->tk_lno = before->tk_lno;
+	tk->tk_cno = 0;
 	tk->tk_str = str;
 	tk->tk_len = strlen(str);
 
