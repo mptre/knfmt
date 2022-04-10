@@ -2084,15 +2084,14 @@ static struct token *
 lexer_branch_find(struct token *tk, int next)
 {
 	for (;;) {
-		struct token *br;
+		struct token *prefix;
 
-		br = token_find_prefix(tk, TOKEN_CPP_IF);
-		if (br != NULL)
-			return br;
-
-		br = token_find_prefix(tk, TOKEN_CPP_ENDIF);
-		if (br != NULL)
-			return br->tk_branch.br_pv;
+		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+			if (prefix->tk_type == TOKEN_CPP_IF)
+				return prefix;
+			if (prefix->tk_type == TOKEN_CPP_ENDIF)
+				return prefix->tk_branch.br_pv;
+		}
 
 		if (next)
 			tk = TAILQ_NEXT(tk, tk_entry);
