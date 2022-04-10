@@ -1,5 +1,5 @@
 /*
- * Statement repeated due to branching.
+ * Was bug-003.c. Statement repeated due to branching.
  */
 
 int
