@@ -566,14 +566,12 @@ lexer_recover(struct lexer *lx)
 	struct token *back, *br, *dst, *seek, *src, *tmp;
 	int ndocs = 1;
 
-	back = lx->lx_st.st_tok;
-	if (back == NULL)
-		return 0;
-
 	/*
 	 * Find the first branch by looking backward and forward from the back
 	 * token. Note, we could be inside a branch.
 	 */
+	back = lx->lx_st.st_tok != NULL ?
+	    lx->lx_st.st_tok : TAILQ_FIRST(&lx->lx_tokens);
 	lexer_trace(lx, "back %s", token_sprintf(back));
 	br = lexer_branch_find(back, 0);
 	if (br == NULL)

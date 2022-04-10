@@ -162,7 +162,6 @@ DISTFILES+=	tests/error-002.c
 DISTFILES+=	tests/error-003.c
 DISTFILES+=	tests/error-004.c
 DISTFILES+=	tests/error-005.c
-DISTFILES+=	tests/error-006.c
 DISTFILES+=	tests/error-007.c
 DISTFILES+=	tests/error-008.c
 DISTFILES+=	tests/error-009.c
@@ -450,6 +449,9 @@ DISTFILES+=	tests/valid-214.c
 DISTFILES+=	tests/valid-215.c
 DISTFILES+=	tests/valid-216.c
 DISTFILES+=	tests/valid-217.c
+DISTFILES+=	tests/valid-218.c
+DISTFILES+=	tests/valid-218.ok
+DISTFILES+=	tests/valid-219.c
 DISTFILES+=	token.h
 DISTFILES+=	util.c
 
