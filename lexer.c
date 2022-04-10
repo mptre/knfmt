@@ -597,7 +597,7 @@ lexer_recover(struct lexer *lx)
 	}
 
 	/*
-	 * Turn the whole branch into a prefix. Since the branch is about to be
+	 * Turn the whole branch into a prefix. As the branch is about to be
 	 * removed, grab a reference since it's needed below.
 	 */
 	token_ref(br);
