@@ -548,6 +548,7 @@ lexer_stamp(struct lexer *lx)
 
 	tk = lx->lx_st.st_tok;
 	if (tk != NULL && !TAILQ_INSERTED(tk, tk_stamp)) {
+		lexer_trace(lx, "stamp %s", token_sprintf(tk));
 		token_ref(tk);
 		TAILQ_INSERT_TAIL(&lx->lx_stamps, tk, tk_stamp);
 	}
