@@ -1,5 +1,5 @@
 /*
- * Broken code hidden behind cpp.
+ * Was error-012.c. Broken code hidden behind cpp.
  */
 
 #ifndef __LIBPAYLOAD__

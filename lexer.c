@@ -570,13 +570,13 @@ lexer_recover(struct lexer *lx)
 		return 0;
 
 	/*
-	 * Find the first branch by looking forward and backward from the back
+	 * Find the first branch by looking backward and forward from the back
 	 * token. Note, we could be inside a branch.
 	 */
 	lexer_trace(lx, "back %s", token_sprintf(back));
-	br = lexer_branch_find(back, 1);
+	br = lexer_branch_find(back, 0);
 	if (br == NULL)
-		br = lexer_branch_find(back, 0);
+		br = lexer_branch_find(back, 1);
 	if (br == NULL)
 		return 0;
 
