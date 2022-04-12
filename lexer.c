@@ -107,11 +107,11 @@ static void	__lexer_trace(const struct lexer *, const char *, const char *,
 static struct token	*token_alloc(const struct token *);
 static void		 token_branch_link(struct token *, struct token *);
 static int		 token_branch_unlink(struct token *);
-static void		 token_branch_move(struct token *, struct token *,
-    struct token *);
 static struct token	*token_get_branch(struct token *);
 static struct token	*token_find_prefix(const struct token *,
     enum token_type);
+static void		 token_move_prefix(struct token *, struct token *,
+    struct token *);
 static void		 token_remove(struct token_list *, struct token *);
 static const char	*strtoken(enum token_type);
 
@@ -787,9 +787,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		assert(nx != NULL);
 		while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
 			fix = TAILQ_LAST(&tk->tk_prefixes, token_list);
-			TAILQ_REMOVE(&tk->tk_prefixes, fix, tk_entry);
-			TAILQ_INSERT_HEAD(&nx->tk_prefixes, fix, tk_entry);
-			token_branch_move(fix, tk, nx);
+			token_move_prefix(fix, tk, nx);
 		}
 		lexer_branch_purge(lx, nx);
 
@@ -2053,9 +2051,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 
 		lexer_trace(lx, "keeping prefix %s", token_sprintf(pv));
 		tmp = TAILQ_PREV(pv, token_list, tk_entry);
-		TAILQ_REMOVE(&src->tk_token->tk_prefixes, pv, tk_entry);
-		TAILQ_INSERT_HEAD(&dst->tk_token->tk_prefixes, pv, tk_entry);
-		token_branch_move(pv, src->tk_token, dst->tk_token);
+		token_move_prefix(pv, src->tk_token, dst->tk_token);
 		pv = tmp;
 	}
 
@@ -2308,26 +2304,6 @@ token_branch_unlink(struct token *tk)
 }
 
 /*
- * Associated the given branch prefix token with another parent. Must be called
- * after moving a prefix.
- */
-static void
-token_branch_move(struct token *tk, struct token *MAYBE_UNUSED(src),
-    struct token *dst)
-{
-	switch (tk->tk_type) {
-	case TOKEN_CPP_IF:
-	case TOKEN_CPP_ELSE:
-	case TOKEN_CPP_ENDIF:
-		assert(tk->tk_token == src);
-		tk->tk_token = dst;
-		break;
-	default:
-		break;
-	}
-}
-
-/*
  * Returns the branch continuation associated with the given token if present.
  */
 static struct token *
@@ -2351,6 +2327,27 @@ token_find_prefix(const struct token *tk, enum token_type type)
 			return prefix;
 	}
 	return NULL;
+}
+
+/*
+ * Associated the given prefix token with another token.
+ */
+static void
+token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
+{
+	TAILQ_REMOVE(&src->tk_prefixes, prefix, tk_entry);
+	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+
+	switch (prefix->tk_type) {
+	case TOKEN_CPP_IF:
+	case TOKEN_CPP_ELSE:
+	case TOKEN_CPP_ENDIF:
+		assert(prefix->tk_token == src);
+		prefix->tk_token = dst;
+		break;
+	default:
+		break;
+	}
 }
 
 static void
