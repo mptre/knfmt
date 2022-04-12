@@ -2312,8 +2312,8 @@ token_branch_unlink(struct token *tk)
  * after moving a prefix.
  */
 static void
-token_branch_move(struct token *tk, struct token *src,
-    struct token *MAYBE_UNUSED(dst))
+token_branch_move(struct token *tk, struct token *MAYBE_UNUSED(src),
+    struct token *dst)
 {
 	switch (tk->tk_type) {
 	case TOKEN_CPP_IF:
