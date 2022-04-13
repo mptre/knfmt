@@ -879,13 +879,10 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 		return parser_fail(pr);
 
 comma:
-	if (lexer_if(lx, TOKEN_COMMA, &tk)) {
+	if (lexer_if(lx, TOKEN_COMMA, &tk))
 		doc_token(tk, dc);
-		if (token_has_line(tk, 2))
-			ruler_exec(rl);
-	} else if (!lexer_peek(lx, &tk) || tk != stop) {
+	else if (!lexer_peek(lx, &tk) || tk != stop)
 		return parser_fail(pr);
-	}
 
 	return parser_good(pr);
 }
