@@ -444,7 +444,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
 		doc_alloc(DOC_HARDLINE, indent);
-		while (parser_exec_decl(pr, indent, 0) == GOOD)
+		while (parser_exec_decl(pr, indent, 0) & GOOD)
 			continue;
 		doc_alloc(DOC_HARDLINE, concat);
 
@@ -1838,7 +1838,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 
 			doc_token(tk, dc);
 			indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
-			while (parser_exec_func_arg(pr, indent, NULL, end) ==
+			while (parser_exec_func_arg(pr, indent, NULL, end) &
 			    GOOD)
 				continue;
 			break;
