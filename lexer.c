@@ -189,10 +189,8 @@ token_rele(struct token *tk)
 			token_branch_unlink(fix);
 			token_remove(&tk->tk_prefixes, fix);
 		}
-		while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL) {
-			token_branch_unlink(fix);
+		while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
 			token_remove(&tk->tk_suffixes, fix);
-		}
 	}
 	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
 		free((void *)tk->tk_str);
