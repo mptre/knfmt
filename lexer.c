@@ -93,7 +93,6 @@ static void		 lexer_branch_leave(struct lexer *, struct token *,
     struct token *);
 static void		 lexer_branch_link(struct lexer *, struct token *,
     struct token *);
-static void		 lexer_branch_purge(struct lexer *, struct token *);
 
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (TRACE((lx)->lx_cf))						\
@@ -789,7 +788,6 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 			fix = TAILQ_LAST(&tk->tk_prefixes, token_list);
 			token_move_prefix(fix, tk, nx);
 		}
-		lexer_branch_purge(lx, nx);
 
 		pv = TAILQ_PREV(tk, token_list, tk_entry);
 		assert(pv != NULL);
@@ -2076,7 +2074,6 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	/* Propagate preserved flags. */
 	dst->tk_token->tk_flags |= flags;
 
-	lexer_branch_purge(lx, dst->tk_token);
 	token_rele(dst);
 }
 
@@ -2200,26 +2197,6 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 	br->br_cpp = cpp;
 }
 
-/*
- * Purge empty branches associated with the given token. Such branches cannot
- * cause any tokens to be removed since they only span a single token.
- */
-static void
-lexer_branch_purge(struct lexer *lx, struct token *tk)
-{
-	struct token *prefix;
-
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-		struct token *nx = prefix->tk_branch.br_nx;
-
-		if (nx != NULL && nx->tk_token == tk) {
-			lexer_trace(lx, "discard empty branch from %s to %s",
-			    token_sprintf(prefix), token_sprintf(nx));
-			token_branch_unlink(prefix);
-		}
-	}
-}
-
 static void
 __lexer_trace(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
     ...)
@@ -2341,10 +2318,19 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	switch (prefix->tk_type) {
 	case TOKEN_CPP_IF:
 	case TOKEN_CPP_ELSE:
-	case TOKEN_CPP_ENDIF:
+	case TOKEN_CPP_ENDIF: {
+		struct token *nx = prefix->tk_branch.br_nx;
+
 		assert(prefix->tk_token == src);
-		prefix->tk_token = dst;
+
+		/* Discard empty branch. */
+		if (nx != NULL && nx->tk_token == dst)
+			token_branch_unlink(prefix);
+		else
+			prefix->tk_token = dst;
 		break;
+	}
+
 	default:
 		break;
 	}
