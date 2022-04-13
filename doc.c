@@ -69,22 +69,22 @@ struct doc_state {
 		unsigned int	f_ppos;
 	} st_fits;
 
-	struct doc_state_indent	st_indent;
+	struct doc_state_indent	 st_indent;
 
 	struct {
 		unsigned int	s_nfits;
 		unsigned int	s_nfits_cache;
 	} st_stats;
 
-	unsigned int		st_pos;
-	unsigned int		st_depth;
-	unsigned int		st_refit;
-	unsigned int		st_parens;
-	unsigned int		st_nlines;
-	unsigned int		st_newline;
-	int			st_optline;
-	int			st_mute;
-	unsigned int		st_flags;
+	unsigned int		 st_pos;
+	unsigned int		 st_depth;
+	unsigned int		 st_refit;
+	unsigned int		 st_parens;
+	unsigned int		 st_nlines;
+	unsigned int		 st_newline;
+	int			 st_optline;
+	int			 st_mute;
+	unsigned int		 st_flags;
 #define DOC_STATE_FLAG_WIDTH	0x00000001u
 #define DOC_STATE_FLAG_DIFF	0x00000002u
 #define DOC_STATE_FLAG_TRACE	0x00000004u
