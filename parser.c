@@ -152,7 +152,7 @@ static unsigned int	parser_width(struct parser *, const struct doc *);
 	__parser_fail((a), __func__, __LINE__)
 static int	__parser_fail(struct parser *, const char *, int);
 
-static int	parser_halted(const struct parser *);
+static int	parser_get_error(const struct parser *);
 static int	parser_good(const struct parser *);
 static int	parser_none(const struct parser *);
 static void	parser_reset(struct parser *);
@@ -2288,7 +2288,7 @@ __parser_fail(struct parser *pr, const char *fun, int lno)
 {
 	struct token *tk;
 
-	if (parser_halted(pr))
+	if (parser_get_error(pr))
 		goto out;
 	pr->pr_error = 1;
 
@@ -2338,7 +2338,7 @@ parser_width(struct parser *pr, const struct doc *dc)
 }
 
 static int
-parser_halted(const struct parser *pr)
+parser_get_error(const struct parser *pr)
 {
 	return pr->pr_error || lexer_get_error(pr->pr_lx);
 }
@@ -2348,7 +2348,7 @@ parser_good(const struct parser *pr)
 {
 	if (lexer_is_branch(pr->pr_lx))
 		return BRCH;
-	return parser_halted(pr) ? FAIL : GOOD;
+	return parser_get_error(pr) ? FAIL : GOOD;
 }
 
 static int
@@ -2356,7 +2356,7 @@ parser_none(const struct parser *pr)
 {
 	if (lexer_is_branch(pr->pr_lx))
 		return BRCH;
-	return parser_halted(pr) ? FAIL : NONE;
+	return parser_get_error(pr) ? FAIL : NONE;
 }
 
 static void
