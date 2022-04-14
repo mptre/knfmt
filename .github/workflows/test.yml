@@ -32,6 +32,7 @@ jobs:
 
         include:
           - os: ubuntu-latest
+            deps_os: uthash-dev
             nproc: nproc
 
           - os: macos-latest
@@ -48,23 +49,19 @@ jobs:
 
           - mode: musl
             cc: musl-gcc
-            dependenices: musl-tools
+            deps_mode: musl-tools
 
           - mode: valgrind
-            dependenices: valgrind
+            deps_mode: valgrind
             exec: valgrind
             valgrind: --quiet --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=all --show-leak-kinds=all
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: ubuntu-dependenices
-        if: ${{matrix.os == 'ubuntu-latest'}}
-        run: sudo apt-get update && sudo apt-get install uthash-dev
-
       - name: dependenices
-        if: ${{matrix.dependenices}}
-        run: sudo apt-get update && sudo apt-get install ${{matrix.dependenices}}
+        if: ${{matrix.deps_os || matrix.deps_mode}}
+        run: sudo apt-get update && sudo apt-get install ${{matrix.deps_os}} ${{matrix.deps_mode}}
 
       - name: test
         env:
