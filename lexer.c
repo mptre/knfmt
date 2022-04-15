@@ -1351,14 +1351,14 @@ static int
 lexer_read(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state st;
-	struct token_list dangling;
+	struct token_list prefixes;
 	struct token *t, *tmp;
 	int error = 0;
 	int ncomments = 0;
 	int nlines;
 	unsigned char ch;
 
-	TAILQ_INIT(&dangling);
+	TAILQ_INIT(&prefixes);
 	st = lx->lx_st;
 
 	if (lx->lx_st.st_err)
@@ -1371,7 +1371,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 	for (;;) {
 		if ((tmp = lexer_comment(lx, 1)) != NULL ||
 		    (tmp = lexer_cpp(lx)) != NULL)
-			TAILQ_INSERT_TAIL(&dangling, tmp, tk_entry);
+			TAILQ_INSERT_TAIL(&prefixes, tmp, tk_entry);
 		else
 			break;
 	}
@@ -1446,7 +1446,7 @@ eof:
 	*tk = lexer_emit(lx, &st, &tkeof);
 
 out:
-	TAILQ_CONCAT(&(*tk)->tk_prefixes, &dangling, tk_entry);
+	TAILQ_CONCAT(&(*tk)->tk_prefixes, &prefixes, tk_entry);
 
 	/*
 	 * Consume trailing/interwined comments, will be hanging of the emitted
