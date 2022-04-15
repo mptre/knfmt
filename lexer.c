@@ -1028,13 +1028,13 @@ lexer_if(struct lexer *lx, enum token_type type, struct token **tk)
 int
 lexer_peek_if_flags(struct lexer *lx, unsigned int flags, struct token **tk)
 {
-	struct lexer_state s;
-	int peek;
+	struct token *t;
 
-	lexer_peek_enter(lx, &s);
-	peek = lexer_if_flags(lx, flags, tk);
-	lexer_peek_leave(lx, &s);
-	return peek;
+	if (!lexer_peek(lx, &t) || (t->tk_flags & flags) == 0)
+		return 0;
+	if (tk != NULL)
+		*tk = t;
+	return 1;
 }
 
 /*
@@ -1044,16 +1044,11 @@ lexer_peek_if_flags(struct lexer *lx, unsigned int flags, struct token **tk)
 int
 lexer_if_flags(struct lexer *lx, unsigned int flags, struct token **tk)
 {
-	struct lexer_state s;
 	struct token *t;
-	int error = 0;
 
-	lexer_peek_enter(lx, &s);
-	if (!lexer_pop(lx, &t) || (t->tk_flags & flags) == 0)
-		error = 1;
-	lexer_peek_leave(lx, &s);
-	if (error || !lexer_pop(lx, &t))
+	if (!lexer_peek_if_flags(lx, flags, &t))
 		return 0;
+	lx->lx_st.st_tok = t;
 	if (tk != NULL)
 		*tk = t;
 	return 1;
