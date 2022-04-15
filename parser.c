@@ -996,9 +996,6 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	return parser_good(pr);
 }
 
-/*
- * Parse an expression. Returns zero if one was found.
- */
 static int
 parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
     const struct token *stop, unsigned int flags)
@@ -1022,9 +1019,6 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 	return parser_good(pr);
 }
 
-/*
- * Parse a function declaration. Returns zero if one was found.
- */
 static int
 parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *type)
@@ -1047,9 +1041,6 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 	return parser_good(pr);
 }
 
-/*
- * Parse a function implementation. Returns zero if one was found.
- */
 static int
 parser_exec_func_impl(struct parser *pr, struct doc *dc)
 {
@@ -1097,7 +1088,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 /*
  * Parse a function prototype, i.e. return type, identifier, arguments and
  * optional attributes. The caller is expected to already have parsed the
- * return type. Returns zero if one was found.
+ * return type.
  */
 static int
 parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
@@ -1180,7 +1171,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 
 /*
  * Parse one function argument as part of either a declaration or
- * implementation. Returns zero if an argument was consumed.
+ * implementation.
  */
 static int
 parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
@@ -1627,7 +1618,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 
 /*
  * Parse a statement consisting of a keyword, expression wrapped in parenthesis
- * and following statement(s). Returns zero if such sequence was consumed.
+ * and following statement(s).
  */
 static int
 parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
@@ -1784,7 +1775,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 }
 
 /*
- * Parse token(s) denoting a type. Returns zero if a type was consumed.
+ * Parse token(s) denoting a type.
  */
 static int
 parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
