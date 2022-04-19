@@ -65,15 +65,12 @@ struct doc_state {
 	struct {
 		int		f_fits;
 		unsigned int	f_optline;
-		unsigned int	f_pos;
-		unsigned int	f_ppos;
 	} st_fits;
 
 	struct doc_state_indent	 st_indent;
 
 	struct {
 		unsigned int	s_nfits;
-		unsigned int	s_nfits_cache;
 	} st_stats;
 
 	unsigned int		 st_pos;
@@ -188,7 +185,6 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_lx = lx;
 	st.st_mode = BREAK;
 	st.st_diff.d_beg = 1;
-	st.st_fits.f_fits = -1;
 	if ((flags & DOC_EXEC_FLAG_NODIFF) == 0)
 		st.st_flags |= DOC_STATE_FLAG_DIFF;
 	if ((flags & DOC_EXEC_FLAG_NOTRACE) == 0)
@@ -198,8 +194,7 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	doc_diff_exit(dc, &st);
 	buffer_appendc(bf, '\0');
 
-	doc_trace(dc, &st, "%s: nfits %u/%u", __func__,
-	    st.st_stats.s_nfits_cache, st.st_stats.s_nfits);
+	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
 }
 
 unsigned int
@@ -212,7 +207,6 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_cf = cf;
 	st.st_bf = bf;
 	st.st_mode = MUNGE;
-	st.st_fits.f_fits = -1;
 	st.st_flags = DOC_STATE_FLAG_WIDTH;
 	doc_exec1(dc, &st);
 
@@ -391,18 +385,6 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	switch (dc->dc_type) {
 	case DOC_CONCAT: {
 		struct doc *concat;
-		int ndocs = 0;
-
-		/*
-		 * If the document has more than one child the cache must be
-		 * invalidated since it spans over all children.
-		 */
-		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry) {
-			if (++ndocs > 1)
-				break;
-		}
-		if (ndocs > 1)
-			st->st_fits.f_fits = -1;
 
 		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry)
 			doc_exec1(concat, st);
@@ -680,8 +662,7 @@ doc_walk(const struct doc *root, struct doc_state *st,
 static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
-	struct doc_state fst;
-	int cached = 0;
+	unsigned int pos = 0;
 	int optline = 0;
 
 	/*
@@ -704,8 +685,9 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	if (st->st_newline) {
 		/* Pending hard line(s), assume that everything fits. */
 		optline = 1;
-	} else if (st->st_fits.f_fits == -1 ||
-	    st->st_fits.f_pos != st->st_pos) {
+	} else {
+		struct doc_state fst;
+
 		memcpy(&fst, st, sizeof(fst));
 		/* Should not perform any printing. */
 		fst.st_bf = NULL;
@@ -714,27 +696,12 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		fst.st_fits.f_optline = 0;
 		doc_walk(dc, &fst, doc_fits1, NULL);
 		st->st_fits.f_fits = fst.st_fits.f_fits;
-		st->st_fits.f_pos = st->st_pos;
-		st->st_fits.f_ppos = fst.st_pos;
-		if (!st->st_fits.f_fits &&
-		    fst.st_fits.f_optline > 0 &&
-		    fst.st_fits.f_optline <= st->st_cf->cf_mw) {
-			/* Honoring an optional line makes everything fit. */
-			st->st_fits.f_fits = 1;
-			st->st_fits.f_ppos = fst.st_fits.f_optline;
-			optline = 1;
-		}
-	} else {
-		if (DOC_TRACE(st))
-			st->st_stats.s_nfits_cache++;
-		cached = 1;
+		pos = fst.st_pos;
+		optline = fst.st_fits.f_optline;
 	}
-	doc_trace(dc, st, "%s: %u %s %u, cached %d, optline %d",
-	    __func__,
-	    st->st_fits.f_ppos,
-	    st->st_fits.f_fits ? "<=" : ">",
-	    st->st_cf->cf_mw,
-	    cached, optline);
+	doc_trace(dc, st, "%s: %u %s %u, optline %d", __func__,
+	    pos, st->st_fits.f_fits ? "<=" : ">", st->st_cf->cf_mw,
+	    optline);
 
 	return st->st_fits.f_fits;
 }
@@ -755,8 +722,10 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 		break;
 
 	case DOC_OPTLINE:
-		if (st->st_optline && st->st_fits.f_optline == 0)
-			st->st_fits.f_optline = st->st_pos;
+		if (st->st_optline) {
+			st->st_fits.f_optline = 1;
+			return 0;
+		}
 		break;
 
 	case DOC_CONCAT:
