@@ -228,8 +228,9 @@ parser_exec(struct parser *pr)
 		if (error & GOOD) {
 			lexer_stamp(lx);
 		} else if (error & BRCH) {
-			if (lexer_branch(lx))
-				parser_reset(pr);
+			if (!lexer_branch(lx))
+				break;
+			parser_reset(pr);
 		} else if (error & (FAIL | NONE)) {
 			int r;
 
