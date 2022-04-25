@@ -1083,13 +1083,11 @@ lexer_peek_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
 			break;
 	}
 	lexer_peek_leave(lx, &s);
-
-	if (lx->lx_st.st_err == 0 && pair == 0) {
-		if (tk != NULL)
-			*tk = t;
-		return 1;
-	}
-	return 0;
+	if (pair > 0)
+		return 0;
+	if (tk != NULL)
+		*tk = t;
+	return 1;
 }
 
 /*
