@@ -395,7 +395,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat;
-	struct token *beg, *end, *fun, *tk;
+	struct token *beg, *end, *fun, *semi, *tk;
 	enum parser_peek peek;
 
 	if (!lexer_peek(lx, &beg))
@@ -478,7 +478,9 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 			doc_literal(" ", concat);
 	}
 
-	if (parser_exec_decl_init(pr, concat, NULL, 0) & (FAIL | NONE))
+	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
+		return parser_fail(pr);
+	if (parser_exec_decl_init(pr, concat, semi, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	parser_exec_attributes(pr, concat, NULL, pr->pr_cf->cf_tw, DOC_LINE);
@@ -521,12 +523,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			} else {
-				struct token *estop = NULL;
 				unsigned int flags = 0;
-
-				if (stop == NULL)
-					(void)lexer_peek_until_loose(lx,
-					    TOKEN_COMMA, NULL, &estop);
 
 				/*
 				 * Honor hard line after assignment which must
@@ -536,8 +533,8 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (token_has_line(assign, 1))
 					flags |= EXPR_EXEC_FLAG_HARDLINE;
 
-				error = parser_exec_expr(pr, dc, NULL,
-				    estop != NULL ? estop : stop, flags);
+				error = parser_exec_expr(pr, dc, NULL, stop,
+				    flags);
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			}
@@ -899,6 +896,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	struct lexer *lx = pr->pr_lx;
 	struct token *end, *macro, *tk;
 	struct doc *expr = dc;
+	struct token *semi;
 	int iscpp = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -935,7 +933,9 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (parser_exec_type(pr, dc, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
-	if (parser_exec_decl_init(pr, dc, NULL, 0) & (FAIL | NONE))
+	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
+		return parser_fail(pr);
+	if (parser_exec_decl_init(pr, dc, semi, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, expr);

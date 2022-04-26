@@ -1,8 +1,0 @@
-#if_var
-
-void
-f(void)
-
-#else
-n{}
-#endif
