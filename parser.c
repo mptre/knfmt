@@ -74,15 +74,19 @@ struct parser_exec_stmt_block_arg {
 #define PARSER_EXEC_STMT_BLOCK_FLAG_TRIM	0x00000002u
 };
 
+/* Honor grouped declarations. */
 #define PARSER_EXEC_DECL_FLAG_BREAK	0x00000001u
+/* Emit hard line after declaration(s). */
 #define PARSER_EXEC_DECL_FLAG_LINE	0x00000002u
+/* Parsing of declarations on root level. */
+#define PARSER_EXEC_DECL_FLAG_ROOT	0x00000004u
 
 #define PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM	0x00000001u
 #define PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM	0x00000002u
 
 static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl1(struct parser *, struct doc *,
-    struct ruler *);
+    struct ruler *, unsigned int);
 static int	parser_exec_decl_init(struct parser *, struct doc *,
     const struct token *, int);
 static int	parser_exec_decl_braces(struct parser *, struct doc *);
@@ -93,7 +97,7 @@ static int	parser_exec_decl_braces_fields(struct parser *, struct doc *,
 static int	parser_exec_decl_braces_field(struct parser *, struct doc *,
     struct ruler *, const struct token *);
 static int	parser_exec_decl_cpp(struct parser *, struct doc *,
-    struct ruler *);
+    struct ruler *, unsigned int);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
     struct ruler *);
 
@@ -221,7 +225,8 @@ parser_exec(struct parser *pr)
 		}
 
 		error = parser_exec_decl(pr, concat,
-		    PARSER_EXEC_DECL_FLAG_BREAK | PARSER_EXEC_DECL_FLAG_LINE);
+		    PARSER_EXEC_DECL_FLAG_BREAK | PARSER_EXEC_DECL_FLAG_LINE |
+		    PARSER_EXEC_DECL_FLAG_ROOT);
 		if (error == NONE)
 			error = parser_exec_func_impl(pr, concat);
 
@@ -344,7 +349,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 		group = doc_alloc(DOC_GROUP, decl);
 		concat = doc_alloc(DOC_CONCAT, group);
-		error = parser_exec_decl1(pr, concat, &rl);
+		error = parser_exec_decl1(pr, concat, &rl, flags);
 		if (error & (FAIL | NONE)) {
 			if (line != NULL)
 				doc_remove(line, decl);
@@ -391,7 +396,8 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 }
 
 static int
-parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
+parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
+    unsigned int flags)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat;
@@ -403,7 +409,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	if (!lexer_peek_if_type(lx, &end, 0)) {
 		/* No type found, this declaration could make use of cpp. */
-		return parser_exec_decl_cpp(pr, dc, rl);
+		return parser_exec_decl_cpp(pr, dc, rl, flags);
 	}
 
 	/*
@@ -890,7 +896,8 @@ comma:
  * provided by queue(3).
  */
 static int
-parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
+parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
+    unsigned int flags)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
@@ -913,8 +920,10 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl)
 			end = tk;
 		}
 
-		if (lexer_if(lx, TOKEN_SEMI, NULL) ||
-		    lexer_if(lx, TOKEN_EQUAL, NULL))
+		if (lexer_if(lx, TOKEN_EQUAL, NULL))
+			iscpp = 1;
+		else if ((flags & PARSER_EXEC_DECL_FLAG_ROOT) &&
+		    lexer_if(lx, TOKEN_SEMI, NULL))
 			iscpp = 1;
 		else if (lexer_peek_until(lx, TOKEN_IDENT, &ident) &&
 		    token_cmp(macro, ident) == 0)
