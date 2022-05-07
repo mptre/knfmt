@@ -85,7 +85,6 @@ struct expr_state {
 	struct token			*es_tk;
 	unsigned int			 es_depth;
 	unsigned int			 es_parens;	/* number of nested parenthesis */
-	unsigned int			 es_soft;	/* number of soft lines */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -111,10 +110,9 @@ static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
 
-#define expr_doc_soft(a, b) \
-	__expr_doc_soft((a), (b), __func__, __LINE__)
-static struct doc	*__expr_doc_soft(const struct expr_state *,
-    struct doc *, const char *, int);
+#define expr_doc_soft(a) \
+	__expr_doc_soft((a), __func__, __LINE__)
+static struct doc	*__expr_doc_soft(struct doc *, const char *, int);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
@@ -585,7 +583,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			doc_alloc(DOC_LINE, ternary);
 
 		/* The true expression can be empty, GNU extension. */
-		ternary = expr_doc_soft(es, concat);
+		ternary = expr_doc_soft(concat);
 		if (ex->ex_rhs != NULL) {
 			ternary = expr_doc(ex->ex_rhs, es, ternary);
 			doc_alloc(DOC_LINE, ternary);
@@ -594,7 +592,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			doc_token(ex->ex_tokens[1], ternary);	/* : */
 		doc_alloc(DOC_LINE, ternary);
 
-		ternary = expr_doc_soft(es, concat);
+		ternary = expr_doc_soft(concat);
 		concat = expr_doc(ex->ex_ternary, es, ternary);
 		break;
 	}
@@ -632,14 +630,11 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	}
 
 	case EXPR_SQUARES:
-		/* Do not break the left expression. */
-		es->es_soft++;
 		if (ex->ex_lhs != NULL)
 			concat = expr_doc(ex->ex_lhs, es, concat);
-		es->es_soft--;
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* [ */
-		concat = expr_doc_soft(es, concat);
+		concat = expr_doc_soft(concat);
 		if (ex->ex_rhs != NULL)
 			concat = expr_doc(ex->ex_rhs, es, concat);
 		if (ex->ex_tokens[1] != NULL)
@@ -657,10 +652,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		struct token *lparen = ex->ex_tokens[0];
 		struct token *rparen = ex->ex_tokens[1];
 
-		/* Do not break the left expression. */
-		es->es_soft++;
 		concat = expr_doc(ex->ex_lhs, es, concat);
-		es->es_soft--;
 		if (lparen != NULL)
 			doc_token(lparen, concat);
 		if (ex->ex_rhs != NULL) {
@@ -689,10 +681,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_alloc(DOC_LINE, lhs);
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
 		doc_alloc(DOC_SOFTLINE, concat);
-		es->es_soft++;
 		if (ex->ex_rhs != NULL)
 			concat = expr_doc(ex->ex_rhs, es, concat);
-		es->es_soft--;
 		break;
 	}
 
@@ -786,12 +776,8 @@ expr_doc_has_spaces(const struct expr *ex)
  * suitable one has already been emitted.
  */
 static struct doc *
-__expr_doc_soft(const struct expr_state *es, struct doc *dc, const char *fun,
-    int lno)
+__expr_doc_soft(struct doc *dc, const char *fun, int lno)
 {
-	if (es->es_soft > 0)
-		return dc;
-
 	dc = __doc_alloc(DOC_CONCAT, __doc_alloc(DOC_GROUP, dc, 0, fun, lno),
 	    0, fun, lno);
 	__doc_alloc(DOC_SOFTLINE, dc, 0, fun, lno);
