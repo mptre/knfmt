@@ -496,8 +496,8 @@ install: all
 .PHONY: install
 
 lint: ${PROG_knfmt}
-	cd ${.CURDIR} && mandoc -Tlint -Wstyle knfmt.1
 	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -ds ${KNFMT}
+	cd ${.CURDIR} && mandoc -Tlint -Wstyle knfmt.1
 .PHONY: lint
 
 test: ${PROG_knfmt} test-${PROG_test}
