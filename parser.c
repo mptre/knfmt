@@ -1554,6 +1554,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *tk;
 	int doswitch = ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
+	int doindent = !doswitch && pr->pr_simple.se_depth == 0;
 	int nstmt = 0;
 	int peek = 0;
 	int error;
@@ -1571,7 +1572,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	if (!peek)
 		return parser_none(pr);
 
-	if (!doswitch)
+	if (doindent)
 		pr->pr_nblocks++;
 
 	dc = parser_simple_stmt_block(pr, ps->ps_tail);
@@ -1620,7 +1621,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		doc_token(tk, concat);
 	ps->ps_rbrace = concat;
 
-	if (!doswitch)
+	if (doindent)
 		pr->pr_nblocks--;
 
 	return parser_good(pr);

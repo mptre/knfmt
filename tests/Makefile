@@ -283,6 +283,7 @@ TESTS+=	simple-005.c
 TESTS+=	simple-006.c
 TESTS+=	simple-007.c
 TESTS+=	simple-008.c
+TESTS+=	simple-009.c
 
 TESTS+=	trace-001.c
 
