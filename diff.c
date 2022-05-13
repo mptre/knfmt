@@ -157,9 +157,8 @@ diff_parse(struct file_list *files, const struct config *cf)
 			const struct diffchunk *du;
 
 			diff_trace("%s:", fe->fe_path);
-			TAILQ_FOREACH(du, &fe->fe_diff.di_chunks, du_entry) {
+			TAILQ_FOREACH(du, &fe->fe_diff.di_chunks, du_entry)
 				diff_trace("  %u-%u", du->du_beg, du->du_end);
-			}
 		}
 	}
 
