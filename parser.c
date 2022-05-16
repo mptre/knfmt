@@ -124,6 +124,8 @@ static int	parser_exec_stmt_if(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_for(struct parser *, struct doc *,
     const struct token *);
+static int	parser_exec_stmt_dowhile(struct parser *, struct doc *,
+    const struct token *);
 static int	parser_exec_stmt_return(struct parser *, struct doc *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
@@ -1300,42 +1302,14 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 		return parser_good(pr);
 	if (parser_exec_stmt_for(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
+	if (parser_exec_stmt_dowhile(pr, dc, rbrace) & GOOD)
+		return parser_good(pr);
 	if (parser_exec_stmt_case(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
 	    lexer_peek_if(lx, TOKEN_SWITCH, &tk))
 		return parser_exec_stmt_expr(pr, dc, tk, 0);
-
-	if (lexer_if(lx, TOKEN_DO, &tk)) {
-		struct doc *concat = dc;
-
-		doc_token(tk, concat);
-		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-			doc_literal(" ", concat);
-			error = parser_exec_stmt_block(pr, &ps);
-			/*
-			 * The following while statement is intended to fit on
-			 * the same line as the right brace.
-			 */
-			concat = ps.ps_rbrace;
-			doc_literal(" ", concat);
-		} else {
-			struct doc *indent;
-
-			indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
-			doc_alloc(DOC_HARDLINE, indent);
-			error = parser_exec_stmt(pr, indent, rbrace);
-			doc_alloc(DOC_HARDLINE, concat);
-		}
-		if (error & (FAIL | NONE))
-			return parser_fail(pr);
-
-		if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
-			return parser_exec_stmt_expr(pr, concat, tk,
-			    PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE);
-		return parser_fail(pr);
-	}
 
 	if (lexer_if(lx, TOKEN_BREAK, &tk) ||
 	    lexer_if(lx, TOKEN_CONTINUE, &tk)) {
@@ -1628,6 +1602,51 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc,
 		doc_alloc(DOC_HARDLINE, dc);
 	}
 	return parser_exec_stmt(pr, dc, rbrace);
+}
+
+static int
+parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc,
+    const struct token *rbrace)
+{
+	struct parser_exec_stmt_block_arg ps = {
+		.ps_head	= dc,
+		.ps_tail	= dc,
+		.ps_flags	= PARSER_EXEC_STMT_BLOCK_FLAG_TRIM,
+		.ps_rbrace	= NULL,
+	};
+	struct lexer *lx = pr->pr_lx;
+	struct doc *concat = dc;
+	struct token *tk;
+	int error;
+
+	if (!lexer_if(lx, TOKEN_DO, &tk))
+		return parser_none(pr);
+
+	doc_token(tk, concat);
+	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+		doc_literal(" ", concat);
+		error = parser_exec_stmt_block(pr, &ps);
+		/*
+		 * The following while statement is intended to fit on the same
+		 * line as the right brace.
+		 */
+		concat = ps.ps_rbrace;
+		doc_literal(" ", concat);
+	} else {
+		struct doc *indent;
+
+		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
+		doc_alloc(DOC_HARDLINE, indent);
+		error = parser_exec_stmt(pr, indent, rbrace);
+		doc_alloc(DOC_HARDLINE, concat);
+	}
+	if (error & (FAIL | NONE))
+		return parser_fail(pr);
+
+	if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
+		return parser_exec_stmt_expr(pr, concat, tk,
+		    PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE);
+	return parser_fail(pr);
 }
 
 static int
