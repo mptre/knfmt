@@ -1586,12 +1586,11 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc,
 	unsigned int flags;
 	int error;
 
-	if (!lexer_peek_if(lx, TOKEN_FOR, NULL))
+	if (!lexer_if(lx, TOKEN_FOR, &tk))
 		return parser_none(pr);
 
 	loop = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	if (lexer_expect(lx, TOKEN_FOR, &tk))
-		doc_token(tk, loop);
+	doc_token(tk, loop);
 	doc_literal(" ", loop);
 
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
