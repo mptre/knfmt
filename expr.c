@@ -691,9 +691,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_token(ex->ex_tk, lhs);
 		doc_alloc(DOC_LINE, lhs);
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
-		doc_alloc(DOC_SOFTLINE, concat);
-		if (ex->ex_rhs != NULL)
+		if (ex->ex_rhs != NULL) {
+			concat = expr_doc_soft(concat, NULL, 1);
 			concat = expr_doc(ex->ex_rhs, es, concat);
+		}
 		break;
 	}
 
