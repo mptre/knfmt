@@ -109,6 +109,7 @@ static int	doc_is_mute(const struct doc_state *);
 static int	doc_parens_align(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
 static void	doc_position(struct doc_state *, const char *, size_t);
+static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
 #define DOC_DIFF(st)							\
 	(((st)->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&		\
@@ -369,6 +370,18 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 		__doc_alloc(DOC_MUTE, dc, 1, fun, lno);
 
 	return dc;
+}
+
+/*
+ * Returns the maximum value associated with the given document.
+ */
+int
+doc_max(const struct doc *dc)
+{
+	int weight = 0;
+
+	doc_walk(dc, NULL, doc_max1, &weight);
+	return weight;
 }
 
 void
@@ -1196,6 +1209,22 @@ doc_position(struct doc_state *st, const char *str, size_t len)
 		else
 			st->st_pos += 1;
 	}
+}
+
+static int
+doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
+{
+	int *weight = arg;
+
+	switch (dc->dc_type) {
+	case DOC_SOFTLINE:
+		if (dc->dc_int > *weight)
+			*weight = dc->dc_int;
+		break;
+	default:
+		break;
+	}
+	return 1;
 }
 
 static void

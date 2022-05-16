@@ -274,6 +274,7 @@ TESTS+=	valid-219.c
 TESTS+=	valid-220.c
 TESTS+=	valid-221.c
 TESTS+=	valid-223.c
+TESTS+=	valid-224.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -289,7 +290,6 @@ TESTS+=	trace-001.c
 
 TESTS+=	bug-002.c
 TESTS+=	bug-004.c
-TESTS+=	bug-005.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c

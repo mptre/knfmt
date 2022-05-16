@@ -1,5 +1,5 @@
 /*
- * Long binary expression, probably missing a soft line.
+ * Long binary expression.
  */
 
 int

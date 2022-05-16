@@ -405,6 +405,8 @@ struct doc	*__doc_literal(const char *, size_t, struct doc *,
 struct doc	*__doc_token(const struct token *, struct doc *, enum doc_type,
     const char *, int);
 
+int	doc_max(const struct doc *);
+
 void	doc_annotate(struct doc *, const char *);
 
 /*

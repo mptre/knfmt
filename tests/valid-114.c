@@ -144,12 +144,15 @@ otus_attachhook(struct device *self)
 
 	if (sc->eeprom.baseEepHeader.opCapFlags & AR5416_OPFLAGS_11G) {
 		/* Set supported .11b and .11g rates. */
-		ic->ic_sup_rates[IEEE80211_MODE_11B] = ieee80211_std_rateset_11b;
-		ic->ic_sup_rates[IEEE80211_MODE_11G] = ieee80211_std_rateset_11g;
+		ic->ic_sup_rates[IEEE80211_MODE_11B] =
+		    ieee80211_std_rateset_11b;
+		ic->ic_sup_rates[IEEE80211_MODE_11G] =
+		    ieee80211_std_rateset_11g;
 	}
 	if (sc->eeprom.baseEepHeader.opCapFlags & AR5416_OPFLAGS_11A) {
 		/* Set supported .11a rates. */
-		ic->ic_sup_rates[IEEE80211_MODE_11A] = ieee80211_std_rateset_11a;
+		ic->ic_sup_rates[IEEE80211_MODE_11A] =
+		    ieee80211_std_rateset_11a;
 	}
 
 	/* Build the list of supported channels. */
