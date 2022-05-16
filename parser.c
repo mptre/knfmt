@@ -1333,7 +1333,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 	 * Note, the ordering of operations is of importance here. Interpret the
 	 * following tokens as an expression if the same expression spans to the
 	 * first semi colon. Calling parser_exec_decl() first and treating
-	 * everything else as an expression has the side effect of treating
+	 * everything else as an expression has the unwanted effect of treating
 	 * function calls as declarations. This in turn is caused by
 	 * parser_exec_decl() being able to detect declarations making use of
 	 * preprocessor directives such as the ones provided by queue(3).
@@ -1413,10 +1413,8 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	line = doc_alloc(DOC_HARDLINE, indent);
 	while ((error = parser_exec_stmt(pr, indent, rbrace)) & GOOD) {
 		nstmt++;
-
 		if (lexer_peek_if(lx, TOKEN_RBRACE, &tk) && tk == rbrace)
 			break;
-
 		doc_alloc(DOC_HARDLINE, indent);
 	}
 	/* Do not keep the hard line if the statement block is empty. */
