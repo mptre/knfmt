@@ -1262,7 +1262,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 }
 
 static int
-parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
+parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
 	int simple = -1;
@@ -1272,14 +1272,14 @@ parser_exec_stmt(struct parser *pr, struct doc *dc, const struct token *stop)
 	    lexer_peek_if(lx, TOKEN_FOR, NULL) ||
 	    lexer_peek_if(lx, TOKEN_WHILE, NULL) ||
 	    lexer_peek_if(lx, TOKEN_IDENT, NULL))
-		simple = parser_simple_stmt_enter(pr, stop);
-	error = parser_exec_stmt1(pr, dc, stop);
+		simple = parser_simple_stmt_enter(pr, rbrace);
+	error = parser_exec_stmt1(pr, dc, rbrace);
 	parser_simple_stmt_leave(pr, simple);
 	return error;
 }
 
 static int
-parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
+parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 {
 	struct parser_exec_stmt_block_arg ps = {
 		.ps_head	= dc,
@@ -1293,11 +1293,11 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 
 	if (parser_exec_stmt_block(pr, &ps) & GOOD)
 		return parser_good(pr);
-	if (parser_exec_stmt_if(pr, dc, stop) & GOOD)
+	if (parser_exec_stmt_if(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
-	if (parser_exec_stmt_for(pr, dc, stop) & GOOD)
+	if (parser_exec_stmt_for(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
-	if (parser_exec_stmt_case(pr, dc, stop) & GOOD)
+	if (parser_exec_stmt_case(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
@@ -1322,7 +1322,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 
 			indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
 			doc_alloc(DOC_HARDLINE, indent);
-			error = parser_exec_stmt(pr, indent, stop);
+			error = parser_exec_stmt(pr, indent, rbrace);
 			doc_alloc(DOC_HARDLINE, concat);
 		}
 		if (error & (FAIL | NONE))
@@ -1387,12 +1387,12 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		 * A label is not necessarily followed by a hard line, there
 		 * could be another statement on the same line.
 		 */
-		if (lexer_back(lx, &tk) && lexer_peek(lx, &nx) && nx != stop &&
-		    token_cmp(tk, nx) == 0) {
+		if (lexer_back(lx, &tk) && lexer_peek(lx, &nx) &&
+		    nx != rbrace && token_cmp(tk, nx) == 0) {
 			struct doc *indent;
 
 			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
-			return parser_exec_stmt(pr, indent, stop);
+			return parser_exec_stmt(pr, indent, rbrace);
 		}
 
 		return parser_good(pr);
@@ -1412,7 +1412,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 	 * parser_exec_decl() being able to detect declarations making use of
 	 * preprocessor directives such as the ones provided by queue(3).
 	 */
-	if (parser_peek_expr(pr, stop)) {
+	if (parser_peek_expr(pr, rbrace)) {
 		struct doc *expr;
 
 		if (parser_exec_expr(pr, dc, &expr, NULL, 0) & (FAIL | NONE))
@@ -1520,7 +1520,8 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 }
 
 static int
-parser_exec_stmt_if(struct parser *pr, struct doc *dc, const struct token *stop)
+parser_exec_stmt_if(struct parser *pr, struct doc *dc,
+    const struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk, *tkelse, *tkif;
@@ -1550,7 +1551,7 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc, const struct token *stop)
 				return parser_fail(pr);
 		} else {
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-				error = parser_exec_stmt(pr, dc, stop);
+				error = parser_exec_stmt(pr, dc, rbrace);
 				if (error & FAIL)
 					return parser_fail(pr);
 			} else {
@@ -1560,7 +1561,7 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc, const struct token *stop)
 				doc_alloc(DOC_HARDLINE, dc);
 
 				simple = parser_simple_stmt_ifelse_enter(pr);
-				error = parser_exec_stmt(pr, dc, stop);
+				error = parser_exec_stmt(pr, dc, rbrace);
 				parser_simple_stmt_ifelse_leave(pr, simple);
 				if (error & (FAIL | NONE))
 					parser_fail(pr);
@@ -1576,7 +1577,7 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc, const struct token *stop)
 
 static int
 parser_exec_stmt_for(struct parser *pr, struct doc *dc,
-    const struct token *stop)
+    const struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
@@ -1646,7 +1647,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc,
 		dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 		doc_alloc(DOC_HARDLINE, dc);
 	}
-	return parser_exec_stmt(pr, dc, stop);
+	return parser_exec_stmt(pr, dc, rbrace);
 }
 
 /*
@@ -1745,7 +1746,7 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 
 static int
 parser_exec_stmt_case(struct parser *pr, struct doc *dc,
-    const struct token *stop)
+    const struct token *rbrace)
 {
 	struct doc *indent, *lhs;
 	struct lexer *lx = pr->pr_lx;
@@ -1770,7 +1771,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_alloc(DOC_LINE, lhs);
-		if (parser_exec_stmt(pr, dc, stop) & FAIL)
+		if (parser_exec_stmt(pr, dc, rbrace) & FAIL)
 			return parser_fail(pr);
 	}
 
@@ -1778,6 +1779,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 	for (;;) {
 		struct doc *line;
 		struct token *nx;
+		int error;
 
 		if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
 		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
@@ -1795,7 +1797,8 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		else
 			line = doc_alloc(DOC_HARDLINE, indent);
 
-		if (parser_exec_stmt(pr, indent, stop) & (FAIL | NONE | BRCH)) {
+		error = parser_exec_stmt(pr, indent, rbrace);
+		if (error & (FAIL | NONE | BRCH)) {
 			/* No statement, remove the line. */
 			doc_remove(line, indent);
 			break;
@@ -1959,7 +1962,7 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
  * later on be passed to parser_simple_stmt_leave().
  */
 static int
-parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
+parser_simple_stmt_enter(struct parser *pr, const struct token *rbrace)
 {
 	struct lexer_state s;
 	struct buffer *bf = pr->pr_bf;
@@ -1980,7 +1983,7 @@ parser_simple_stmt_enter(struct parser *pr, const struct token *stop)
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
-	error = parser_exec_stmt1(pr, dc, stop);
+	error = parser_exec_stmt1(pr, dc, rbrace);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
 	if (error & (FAIL | NONE) || TAILQ_EMPTY(stmts))
