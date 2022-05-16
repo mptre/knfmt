@@ -122,6 +122,8 @@ static int	parser_exec_stmt_block(struct parser *,
     struct parser_exec_stmt_block_arg *);
 static int	parser_exec_stmt_if(struct parser *, struct doc *,
     const struct token *);
+static int	parser_exec_stmt_for(struct parser *, struct doc *,
+    const struct token *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
 static int	parser_exec_stmt_label(struct parser *, struct doc *);
@@ -1293,79 +1295,14 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *stop)
 		return parser_good(pr);
 	if (parser_exec_stmt_if(pr, dc, stop) & GOOD)
 		return parser_good(pr);
+	if (parser_exec_stmt_for(pr, dc, stop) & GOOD)
+		return parser_good(pr);
+	if (parser_exec_stmt_case(pr, dc, stop) & GOOD)
+		return parser_good(pr);
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
 	    lexer_peek_if(lx, TOKEN_SWITCH, &tk))
 		return parser_exec_stmt_expr(pr, dc, tk, 0);
-
-	if (lexer_peek_if(lx, TOKEN_FOR, NULL)) {
-		struct doc *expr = NULL;
-		struct doc *loop, *space;
-		unsigned int flags;
-
-		loop = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		if (lexer_expect(lx, TOKEN_FOR, &tk))
-			doc_token(tk, loop);
-		doc_literal(" ", loop);
-
-		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-			doc_token(tk, loop);
-
-		/* Declarations are allowed in the first expression. */
-		if (parser_exec_decl(pr, loop, 0) & NONE) {
-			/* Let the semicolon hang of the expression unless empty. */
-			error = parser_exec_expr(pr, loop, &expr, NULL, 0);
-			if (error & (FAIL | NONE))
-				expr = loop;
-			if (lexer_expect(lx, TOKEN_SEMI, &tk))
-				doc_token(tk, expr);
-		} else {
-			expr = loop;
-		}
-		space = doc_literal(" ", expr);
-
-		/*
-		 * If the expression does not fit, break after the semicolon if
-		 * the previous expression was not empty.
-		 */
-		flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
-		/* Let the semicolon hang of the expression unless empty. */
-		error = parser_exec_expr(pr, loop, &expr, NULL, flags);
-		if (error & (FAIL | NONE)) {
-			/* Expression empty, remove the space. */
-			doc_remove(space, expr);
-			expr = loop;
-		}
-		if (lexer_expect(lx, TOKEN_SEMI, &tk))
-			doc_token(tk, expr);
-		space = doc_literal(" ", expr);
-
-		/*
-		 * If the expression does not fit, break after the semicolon if
-		 * the previous expression was not empty.
-		 */
-		flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
-		/* Let the semicolon hang of the expression unless empty. */
-		error = parser_exec_expr(pr, loop, &expr, NULL, flags);
-		if (error & (FAIL | NONE)) {
-			/* Expression empty, remove the space. */
-			doc_remove(space, expr);
-			expr = loop;
-		}
-		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-			doc_token(tk, expr);
-
-		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-			doc_literal(" ", expr);
-		} else {
-			dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
-			doc_alloc(DOC_HARDLINE, dc);
-		}
-		return parser_exec_stmt(pr, dc, stop);
-	}
-
-	if (parser_exec_stmt_case(pr, dc, stop) & GOOD)
-		return parser_good(pr);
 
 	if (lexer_if(lx, TOKEN_DO, &tk)) {
 		struct doc *concat = dc;
@@ -1635,6 +1572,81 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc, const struct token *stop)
 	}
 
 	return parser_good(pr);
+}
+
+static int
+parser_exec_stmt_for(struct parser *pr, struct doc *dc,
+    const struct token *stop)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct doc *expr = NULL;
+	struct doc *loop, *space;
+	struct token *tk;
+	unsigned int flags;
+	int error;
+
+	if (!lexer_peek_if(lx, TOKEN_FOR, NULL))
+		return parser_none(pr);
+
+	loop = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	if (lexer_expect(lx, TOKEN_FOR, &tk))
+		doc_token(tk, loop);
+	doc_literal(" ", loop);
+
+	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
+		doc_token(tk, loop);
+
+	/* Declarations are allowed in the first expression. */
+	if (parser_exec_decl(pr, loop, 0) & NONE) {
+		/* Let the semicolon hang of the expression unless empty. */
+		error = parser_exec_expr(pr, loop, &expr, NULL, 0);
+		if (error & (FAIL | NONE))
+			expr = loop;
+		if (lexer_expect(lx, TOKEN_SEMI, &tk))
+			doc_token(tk, expr);
+	} else {
+		expr = loop;
+	}
+	space = doc_literal(" ", expr);
+
+	/*
+	 * If the expression does not fit, break after the semicolon if the
+	 * previous expression was not empty.
+	 */
+	flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
+	/* Let the semicolon hang of the expression unless empty. */
+	error = parser_exec_expr(pr, loop, &expr, NULL, flags);
+	if (error & (FAIL | NONE)) {
+		/* Expression empty, remove the space. */
+		doc_remove(space, expr);
+		expr = loop;
+	}
+	if (lexer_expect(lx, TOKEN_SEMI, &tk))
+		doc_token(tk, expr);
+	space = doc_literal(" ", expr);
+
+	/*
+	 * If the expression does not fit, break after the semicolon if
+	 * the previous expression was not empty.
+	 */
+	flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
+	/* Let the semicolon hang of the expression unless empty. */
+	error = parser_exec_expr(pr, loop, &expr, NULL, flags);
+	if (error & (FAIL | NONE)) {
+		/* Expression empty, remove the space. */
+		doc_remove(space, expr);
+		expr = loop;
+	}
+	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+		doc_token(tk, expr);
+
+	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+		doc_literal(" ", expr);
+	} else {
+		dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+		doc_alloc(DOC_HARDLINE, dc);
+	}
+	return parser_exec_stmt(pr, dc, stop);
 }
 
 /*
