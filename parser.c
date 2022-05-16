@@ -129,7 +129,8 @@ static int	parser_exec_stmt_dowhile(struct parser *, struct doc *,
 static int	parser_exec_stmt_return(struct parser *, struct doc *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
-static int	parser_exec_stmt_label(struct parser *, struct doc *);
+static int	parser_exec_stmt_label(struct parser *, struct doc *,
+    const struct token *);
 static int	parser_exec_stmt_case(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_goto(struct parser *, struct doc *);
@@ -1293,7 +1294,6 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
-	int error;
 
 	if (parser_exec_stmt_block(pr, &ps) & GOOD)
 		return parser_good(pr);
@@ -1309,6 +1309,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 		return parser_good(pr);
 	if (parser_exec_stmt_goto(pr, dc) & GOOD)
 		return parser_good(pr);
+	if (parser_exec_stmt_label(pr, dc, rbrace) & GOOD)
+		return parser_good(pr);
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
 	    lexer_peek_if(lx, TOKEN_SWITCH, &tk))
@@ -1319,27 +1321,6 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 		doc_token(tk, dc);
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, dc);
-		return parser_good(pr);
-	}
-
-	error = parser_exec_stmt_label(pr, dc);
-	if (error & FAIL)
-		return parser_fail(pr);
-	if (error & GOOD) {
-		struct token *nx;
-
-		/*
-		 * A label is not necessarily followed by a hard line, there
-		 * could be another statement on the same line.
-		 */
-		if (lexer_back(lx, &tk) && lexer_peek(lx, &nx) &&
-		    nx != rbrace && token_cmp(tk, nx) == 0) {
-			struct doc *indent;
-
-			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
-			return parser_exec_stmt(pr, indent, rbrace);
-		}
-
 		return parser_good(pr);
 	}
 
@@ -1733,12 +1714,13 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 }
 
 static int
-parser_exec_stmt_label(struct parser *pr, struct doc *dc)
+parser_exec_stmt_label(struct parser *pr, struct doc *dc,
+    const struct token *rbrace)
 {
 	struct lexer_state s;
 	struct doc *dedent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *ident, *tk;
+	struct token *ident, *nx, *tk;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -1756,6 +1738,19 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 		doc_token(tk, dedent);
 	if (lexer_expect(lx, TOKEN_COLON, &tk))
 		doc_token(tk, dedent);
+
+	/*
+	 * A label is not necessarily followed by a hard line, there could be
+	 * another statement on the same line.
+	 */
+	if (lexer_back(lx, &tk) && lexer_peek(lx, &nx) && nx != rbrace &&
+	    token_cmp(tk, nx) == 0) {
+		struct doc *indent;
+
+		indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
+		return parser_exec_stmt(pr, indent, rbrace);
+	}
+
 	return parser_good(pr);
 }
 
