@@ -124,6 +124,7 @@ static int	parser_exec_stmt_if(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_for(struct parser *, struct doc *,
     const struct token *);
+static int	parser_exec_stmt_return(struct parser *, struct doc *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
 static int	parser_exec_stmt_label(struct parser *, struct doc *);
@@ -1288,12 +1289,14 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 		.ps_rbrace	= NULL,
 	};
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk, *tmp;
+	struct token *tk;
 	int error;
 
 	if (parser_exec_stmt_block(pr, &ps) & GOOD)
 		return parser_good(pr);
 	if (parser_exec_stmt_if(pr, dc, rbrace) & GOOD)
+		return parser_good(pr);
+	if (parser_exec_stmt_return(pr, dc) & GOOD)
 		return parser_good(pr);
 	if (parser_exec_stmt_for(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
@@ -1339,28 +1342,6 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 		doc_token(tk, dc);
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, dc);
-		return parser_good(pr);
-	}
-
-	if (lexer_if(lx, TOKEN_RETURN, &tk)) {
-		struct doc *concat;
-
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		doc_token(tk, concat);
-		if (lexer_peek_until(lx, TOKEN_SEMI, &tmp)) {
-			struct doc *line;
-
-			/*
-			 * Only insert a space after the return keyword if a
-			 * expression is present.
-			 */
-			line = doc_literal(" ", concat);
-			if (parser_exec_expr(pr, concat, NULL, NULL,
-			    EXPR_EXEC_FLAG_NOPARENS) & (FAIL | NONE))
-				doc_remove(line, concat);
-		}
-		if (lexer_expect(lx, TOKEN_SEMI, &tk))
-			doc_token(tk, concat);
 		return parser_good(pr);
 	}
 
@@ -1647,6 +1628,32 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc,
 		doc_alloc(DOC_HARDLINE, dc);
 	}
 	return parser_exec_stmt(pr, dc, rbrace);
+}
+
+static int
+parser_exec_stmt_return(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct doc *concat;
+	struct token *tk;
+
+	if (!lexer_if(lx, TOKEN_RETURN, &tk))
+		return parser_none(pr);
+
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	doc_token(tk, concat);
+	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
+		int error;
+
+		doc_literal(" ", concat);
+		error = parser_exec_expr(pr, concat, NULL, NULL,
+		    EXPR_EXEC_FLAG_NOPARENS);
+		if (error & (FAIL | NONE))
+			return parser_fail(pr);
+	}
+	if (lexer_expect(lx, TOKEN_SEMI, &tk))
+		doc_token(tk, concat);
+	return parser_good(pr);
 }
 
 /*
