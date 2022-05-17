@@ -72,7 +72,8 @@ struct parser_exec_stmt_block_arg {
 #define PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM	0x00000002u
 
 static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
-static int	parser_exec_decl1(struct parser *, struct doc *,
+static int	parser_exec_decl1(struct parser *, struct doc *, unsigned int);
+static int	parser_exec_decl2(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_init(struct parser *, struct doc *,
     const struct token *, int);
@@ -326,6 +327,12 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 static int
 parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
+	return parser_exec_decl1(pr, dc, flags);
+}
+
+static int
+parser_exec_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
+{
 	struct doc *decl;
 	struct ruler rl;
 	struct doc *line = NULL;
@@ -339,7 +346,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	for (;;) {
 		struct token *tk;
 
-		error = parser_exec_decl1(pr, decl, &rl, flags);
+		error = parser_exec_decl2(pr, decl, &rl, flags);
 		if (error & (FAIL | NONE)) {
 			if (line != NULL)
 				doc_remove(line, decl);
@@ -385,7 +392,7 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 }
 
 static int
-parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
+parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
     unsigned int flags)
 {
 	struct lexer *lx = pr->pr_lx;
