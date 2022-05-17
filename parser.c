@@ -353,16 +353,12 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	ruler_init(&rl, 0);
 
 	for (;;) {
-		struct doc *concat, *group;
 		struct token *tk;
 
-		group = doc_alloc(DOC_GROUP, decl);
-		concat = doc_alloc(DOC_CONCAT, group);
-		error = parser_exec_decl1(pr, concat, &rl, flags);
+		error = parser_exec_decl1(pr, decl, &rl, flags);
 		if (error & (FAIL | NONE)) {
 			if (line != NULL)
 				doc_remove(line, decl);
-			doc_remove(group, decl);
 			break;
 		}
 		ndecl++;
