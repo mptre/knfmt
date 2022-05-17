@@ -378,10 +378,10 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 int
 doc_max(const struct doc *dc)
 {
-	int weight = 0;
+	int max = 0;
 
-	doc_walk(dc, NULL, doc_max1, &weight);
-	return weight;
+	doc_walk(dc, NULL, doc_max1, &max);
+	return max;
 }
 
 void
@@ -1214,12 +1214,12 @@ doc_position(struct doc_state *st, const char *str, size_t len)
 static int
 doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 {
-	int *weight = arg;
+	int *max = arg;
 
 	switch (dc->dc_type) {
 	case DOC_SOFTLINE:
-		if (dc->dc_int > *weight)
-			*weight = dc->dc_int;
+		if (dc->dc_int > *max)
+			*max = dc->dc_int;
 		break;
 	default:
 		break;
