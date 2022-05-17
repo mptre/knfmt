@@ -406,11 +406,8 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat;
-	struct token *beg, *end, *fun, *semi, *tk;
+	struct token *end, *fun, *semi, *tk;
 	enum parser_peek peek;
-
-	if (!lexer_peek(lx, &beg))
-		return parser_none(pr);
 
 	if (!lexer_peek_if_type(lx, &end, 0)) {
 		/* No type found, this declaration could make use of cpp. */
