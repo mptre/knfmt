@@ -531,6 +531,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			} else {
+				const struct token *stop = semi;
 				unsigned int flags = 0;
 
 				/*
@@ -541,7 +542,10 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (token_has_line(assign, 1))
 					flags |= EXPR_EXEC_FLAG_HARDLINE;
 
-				error = parser_exec_expr(pr, dc, NULL, semi,
+				if (lexer_peek_until_loose(lx, TOKEN_COMMA,
+				    semi, &tk))
+					stop = tk;
+				error = parser_exec_expr(pr, dc, NULL, stop,
 				    flags);
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
