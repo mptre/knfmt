@@ -504,7 +504,7 @@ out:
  */
 static int
 parser_exec_decl_init(struct parser *pr, struct doc *dc,
-    const struct token *stop, int didalign)
+    const struct token *semi, int didalign)
 {
 	struct lexer *lx = pr->pr_lx;
 	int error;
@@ -513,7 +513,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 		struct doc *expr = NULL;
 		struct token *assign, *tk;
 
-		if (lexer_peek(lx, &tk) && tk == stop)
+		if (lexer_peek(lx, &tk) && tk == semi)
 			break;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
@@ -541,7 +541,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (token_has_line(assign, 1))
 					flags |= EXPR_EXEC_FLAG_HARDLINE;
 
-				error = parser_exec_expr(pr, dc, NULL, stop,
+				error = parser_exec_expr(pr, dc, NULL, semi,
 				    flags);
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
