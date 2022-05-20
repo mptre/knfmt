@@ -304,6 +304,7 @@ TESTS+=	../knfmt.c
 TESTS+=	../lexer.c
 TESTS+=	../parser.c
 TESTS+=	../ruler.c
+TESTS+=	../simple-stmt.c
 TESTS+=	../t.c
 TESTS+=	../token.h
 TESTS+=	../util.c

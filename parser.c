@@ -6,19 +6,6 @@
 
 #include "extern.h"
 
-struct simple_stmt {
-	struct doc		*ss_root;
-	struct doc		*ss_indent;
-	struct token		*ss_lbrace;
-	struct token		*ss_rbrace;
-	unsigned int		 ss_flags;
-#define SIMPLE_STMT_FLAG_BRACES		0x00000001u
-
-	TAILQ_ENTRY(simple_stmt) ss_entry;
-};
-
-TAILQ_HEAD(simple_stmt_list, simple_stmt);
-
 /*
  * Return values for parser exec routines. Only one of the following may be
  * returned but disjoint values are favored allowing the caller to catch
@@ -46,8 +33,8 @@ struct parser {
 	unsigned int		 pr_nblocks;	/* # indented stmt blocks */
 
 	struct {
-		struct simple_stmt_list	se_stmts;
-		int			se_depth;
+		struct simple_stmt	*se_stmt;
+		int			 se_nstmt;
 	} pr_simple;
 };
 
@@ -141,16 +128,14 @@ static int	parser_exec_type(struct parser *, struct doc *,
 static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, unsigned int, enum doc_type);
 
-static int			 parser_simple_stmt_enter(struct parser *,
+static int		 parser_simple_stmt_enter(struct parser *,
     const struct token *);
-static void			 parser_simple_stmt_leave(struct parser *, int);
-static struct doc		*parser_simple_stmt_block(struct parser *,
+static void		 parser_simple_stmt_leave(struct parser *, int);
+static struct doc	*parser_simple_stmt_block(struct parser *,
     struct doc *);
-static struct simple_stmt	*parser_simple_stmt_alloc(struct parser *,
-    unsigned int);
-static struct simple_stmt	*parser_simple_stmt_ifelse_enter(struct parser *);
-static void			 parser_simple_stmt_ifelse_leave(
-    struct parser *, struct simple_stmt *);
+static void		*parser_simple_stmt_ifelse_enter(struct parser *);
+static void		 parser_simple_stmt_ifelse_leave(struct parser *,
+    void *);
 
 static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
@@ -170,8 +155,6 @@ static int	parser_good(const struct parser *);
 static int	parser_none(const struct parser *);
 static void	parser_reset(struct parser *);
 
-static int	linecount(const char *, size_t, int);
-
 struct parser *
 parser_alloc(const struct file *fe, struct error *er, const struct config *cf)
 {
@@ -189,7 +172,6 @@ parser_alloc(const struct file *fe, struct error *er, const struct config *cf)
 	pr->pr_er = er;
 	pr->pr_cf = cf;
 	pr->pr_lx = lx;
-	TAILQ_INIT(&pr->pr_simple.se_stmts);
 	return pr;
 }
 
@@ -1369,7 +1351,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *rbrace, *tk;
 	int doswitch = ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
-	int doindent = !doswitch && pr->pr_simple.se_depth == 0;
+	int doindent = !doswitch && pr->pr_simple.se_nstmt == 0;
 	int nstmt = 0;
 	int peek = 0;
 	int error;
@@ -1476,7 +1458,7 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc,
 				if (error & FAIL)
 					return parser_fail(pr);
 			} else {
-				struct simple_stmt *simple;
+				void *simple;
 
 				dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 				doc_alloc(DOC_HARDLINE, dc);
@@ -1694,7 +1676,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 		return parser_exec_stmt_block(pr, &ps);
 	} else {
 		struct doc *indent;
-		struct simple_stmt *simple = NULL;
+		void *simple = NULL;
 		int error;
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
@@ -1998,78 +1980,26 @@ static int
 parser_simple_stmt_enter(struct parser *pr, const struct token *rbrace)
 {
 	struct lexer_state s;
-	struct buffer *bf = pr->pr_bf;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
-	struct simple_stmt_list *stmts;
-	struct simple_stmt *ss;
-	int oneline = 1;
 	int error;
 
 	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
 		return 0;
-	if (++pr->pr_simple.se_depth > 1)
+	if (++pr->pr_simple.se_nstmt > 1)
 		return 1;
 
-	stmts = &pr->pr_simple.se_stmts;
-	assert(TAILQ_EMPTY(stmts));
-
+	pr->pr_simple.se_stmt = simple_stmt_enter(lx, pr->pr_cf);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_exec_stmt1(pr, dc, rbrace);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
-	if (error & (FAIL | NONE) || TAILQ_EMPTY(stmts))
-		goto out;
-
-	TAILQ_FOREACH(ss, stmts, ss_entry) {
-		if ((ss->ss_flags & SIMPLE_STMT_FLAG_BRACES) == 0)
-			continue;
-
-		doc_exec(ss->ss_root, lx, bf, pr->pr_cf,
-		    DOC_EXEC_FLAG_NODIFF | DOC_EXEC_FLAG_NOTRACE);
-		if (!linecount(bf->bf_ptr, bf->bf_len, 1) ||
-		    token_has_prefix(ss->ss_rbrace, TOKEN_COMMENT)) {
-			/*
-			 * No point in continuing as at least one statement
-			 * spans over multiple lines.
-			 */
-			oneline = 0;
-			break;
-		}
-	}
-
-	if (oneline) {
-		TAILQ_FOREACH(ss, stmts, ss_entry) {
-			if ((ss->ss_flags & SIMPLE_STMT_FLAG_BRACES) == 0)
-				continue;
-			lexer_remove(lx, ss->ss_lbrace, 1);
-			lexer_remove(lx, ss->ss_rbrace, 1);
-		}
-	} else {
-		TAILQ_FOREACH(ss, stmts, ss_entry) {
-			if (ss->ss_flags & SIMPLE_STMT_FLAG_BRACES)
-				continue;
-			lexer_insert_before(lx, ss->ss_lbrace,
-			    TOKEN_LBRACE, "{");
-			lexer_insert_before(lx, ss->ss_rbrace,
-			    TOKEN_RBRACE, "}");
-		}
-	}
-
-out:
-	while (!TAILQ_EMPTY(stmts)) {
-		ss = TAILQ_FIRST(stmts);
-		TAILQ_REMOVE(stmts, ss, ss_entry);
-		doc_free(ss->ss_root);
-		if (ss->ss_lbrace != NULL)
-			token_rele(ss->ss_lbrace);
-		if (ss->ss_rbrace != NULL)
-			token_rele(ss->ss_rbrace);
-		free(ss);
-	}
-
-	pr->pr_simple.se_depth--;
+	if (error & GOOD)
+		simple_stmt_leave(pr->pr_simple.se_stmt);
+	simple_stmt_free(pr->pr_simple.se_stmt);
+	pr->pr_simple.se_stmt = NULL;
+	pr->pr_simple.se_nstmt--;
 
 	return 0;
 }
@@ -2078,82 +2008,49 @@ static void
 parser_simple_stmt_leave(struct parser *pr, int simple)
 {
 	if (simple == 1)
-		pr->pr_simple.se_depth--;
+		pr->pr_simple.se_nstmt--;
 }
 
 static struct doc *
 parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct simple_stmt *ss;
 	struct token *lbrace, *rbrace;
 
 	/* Ignore nested statements, they will be handled later on. */
 	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0 ||
-	    pr->pr_simple.se_depth != 1)
+	    pr->pr_simple.se_nstmt != 1)
 		return dc;
 
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return dc;
 
-	ss = parser_simple_stmt_alloc(pr, SIMPLE_STMT_FLAG_BRACES);
-	token_ref(lbrace);
-	ss->ss_lbrace = lbrace;
-	token_ref(rbrace);
-	ss->ss_rbrace = rbrace;
-	return ss->ss_indent;
+	return simple_stmt_block(pr->pr_simple.se_stmt, lbrace, rbrace,
+	    pr->pr_nblocks * pr->pr_cf->cf_tw);
 }
 
-static struct simple_stmt *
-parser_simple_stmt_alloc(struct parser *pr, unsigned int flags)
-{
-	struct simple_stmt *ss;
-
-	ss = calloc(1, sizeof(*ss));
-	if (ss == NULL)
-		err(1, NULL);
-	ss->ss_root = doc_alloc(DOC_CONCAT, NULL);
-	ss->ss_indent = doc_alloc_indent(pr->pr_nblocks * pr->pr_cf->cf_tw,
-	    ss->ss_root);
-	ss->ss_flags = flags;
-	TAILQ_INSERT_TAIL(&pr->pr_simple.se_stmts, ss, ss_entry);
-	return ss;
-}
-
-static struct simple_stmt *
+static void *
 parser_simple_stmt_ifelse_enter(struct parser *pr)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct simple_stmt *ss;
 	struct token *lbrace;
 
-	if (pr->pr_simple.se_depth != 1)
+	if (pr->pr_simple.se_nstmt != 1 || !lexer_peek(lx, &lbrace))
 		return NULL;
-
-	if (!lexer_peek(lx, &lbrace))
-		return NULL;
-
-	ss = parser_simple_stmt_alloc(pr, 0);
-	token_ref(lbrace);
-	ss->ss_lbrace = lbrace;
-	return ss;
+	return simple_stmt_ifelse_enter(pr->pr_simple.se_stmt, lbrace,
+	    pr->pr_nblocks * pr->pr_cf->cf_tw);
 }
 
 static void
-parser_simple_stmt_ifelse_leave(struct parser *pr, struct simple_stmt *ss)
+parser_simple_stmt_ifelse_leave(struct parser *pr, void *cookie)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *rbrace;
 
-	if (ss == NULL)
+	if (cookie == NULL || !lexer_peek(lx, &rbrace))
 		return;
-
-	if (!lexer_peek(lx, &rbrace))
-		return;
-
-	token_ref(rbrace);
-	ss->ss_rbrace = rbrace;
+	simple_stmt_ifelse_leave(pr->pr_simple.se_stmt, rbrace, cookie);
 }
 
 /*
@@ -2429,27 +2326,4 @@ parser_reset(struct parser *pr)
 {
 	error_reset(pr->pr_er);
 	pr->pr_error = 0;
-}
-
-/*
- * Count the number of lines. Returns non-zero if it's equal count and zero
- * otherwise.
- */
-static int
-linecount(const char *str, size_t len, int count)
-{
-	int n = 0;
-
-	while (len > 0) {
-		const char *p;
-
-		p = memchr(str, '\n', len);
-		if (p == NULL)
-			break;
-		if (++n > count)
-			break;
-		len -= (p - str) + 1;
-		str = &p[1];
-	}
-	return n == count;
 }
