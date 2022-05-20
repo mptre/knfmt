@@ -10,4 +10,8 @@ main(void)
 
   out1:
 	return 1;
+
+	/* Comment before label. */
+ out2:
+	return 2;
 }

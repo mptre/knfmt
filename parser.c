@@ -1727,10 +1727,18 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc,
 		return parser_none(pr);
 
 	dedent = doc_alloc_dedent(dc);
-	if (token_has_indent(ident))
-		doc_literal(" ", dedent);
-	if (lexer_expect(lx, TOKEN_IDENT, &tk))
-		doc_token(tk, dedent);
+	if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
+		struct doc *label;
+
+		label = doc_token(tk, dedent);
+		/*
+		 * Honor indentation before label but make sure to emit it right
+		 * before the label. Necessary when the label is prefixed with
+		 * comment(s).
+		 */
+		if (token_has_indent(ident))
+			doc_append_before(doc_literal(" ", NULL), label);
+	}
 	if (lexer_expect(lx, TOKEN_COLON, &tk))
 		doc_token(tk, dedent);
 

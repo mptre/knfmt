@@ -294,6 +294,12 @@ doc_append(struct doc *dc, struct doc *parent)
 	}
 }
 
+void
+doc_append_before(struct doc *dc, struct doc *before)
+{
+	TAILQ_INSERT_BEFORE(before, dc, dc_entry);
+}
+
 struct doc *
 __doc_alloc(enum doc_type type, struct doc *parent, int val, const char *fun,
     int lno)

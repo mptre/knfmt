@@ -368,6 +368,7 @@ unsigned int	doc_width(const struct doc *, struct buffer *,
     const struct config *);
 void		doc_free(struct doc *);
 void		doc_append(struct doc *, struct doc *);
+void		doc_append_before(struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);
 void		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, int);
