@@ -369,7 +369,7 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	if (tmp != NULL && token_is_branch(tmp))
 		__doc_alloc(DOC_MUTE, dc, 1, fun, lno);
 
-	return dc;
+	return token;
 }
 
 /*
