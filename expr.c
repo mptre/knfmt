@@ -84,7 +84,7 @@ struct expr_state {
 	const struct expr_rule		*es_er;
 	struct token			*es_tk;
 	unsigned int			 es_depth;
-	unsigned int			 es_parens;	/* number of nested parenthesis */
+	unsigned int			 es_noparens;	/* parens indent disabled */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -629,11 +629,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		if (!noparens && ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_lhs != NULL) {
-			es->es_parens++;
 			concat = expr_doc_indent_parens(es, concat);
 			if (ex->ex_lhs != NULL)
 				concat = expr_doc(ex->ex_lhs, es, concat);
-			es->es_parens--;
 		}
 		if (!noparens && ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], concat);	/* ) */
@@ -663,7 +661,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		struct token *lparen = ex->ex_tokens[0];
 		struct token *rparen = ex->ex_tokens[1];
 
+		es->es_noparens++;
 		concat = expr_doc(ex->ex_lhs, es, concat);
+		es->es_noparens--;
 		if (lparen != NULL)
 			doc_token(lparen, concat);
 		if (ex->ex_rhs != NULL) {
@@ -758,9 +758,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 static struct doc *
 expr_doc_indent_parens(const struct expr_state *es, struct doc *dc)
 {
-	if (es->es_parens > 0)
-		return doc_alloc_indent(DOC_INDENT_PARENS, dc);
-	return dc;
+	if (es->es_noparens > 0)
+		return dc;
+	return doc_alloc_indent(DOC_INDENT_PARENS, dc);
 }
 
 static int
