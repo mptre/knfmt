@@ -128,6 +128,8 @@ static int	parser_exec_type(struct parser *, struct doc *,
 static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, unsigned int, enum doc_type);
 
+static int	parser_simple_active(const struct parser *);
+
 static int		 parser_simple_stmt_enter(struct parser *,
     const struct token *);
 static void		 parser_simple_stmt_leave(struct parser *, int);
@@ -754,7 +756,9 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
 		return parser_fail(pr);
 	doline = token_has_line(lbrace, 1);
-	if (flags & PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM)
+	/* Avoid side effects in simple mode. */
+	if ((flags & PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_TRIM) &&
+	    !parser_simple_active(pr))
 		token_trim(lbrace);
 	doc_token(lbrace, dc);
 
@@ -1963,6 +1967,12 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		*out = concat;
 
 	return parser_good(pr);
+}
+
+static int
+parser_simple_active(const struct parser *pr)
+{
+	return pr->pr_simple.se_nstmt > 0;
 }
 
 /*
