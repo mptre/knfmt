@@ -107,7 +107,7 @@ diff-*)
 	;;
 error-*)
 	_err=0
-	${EXEC:-} ${KNFMT} "$1" >"$_out" 2>&1 || _err="$?"
+	${EXEC:-} ${KNFMT} -s "$1" >"$_out" 2>&1 || _err="$?"
 	if [ "$_err" -ne 1 ]; then
 		cat "$_out" 1>&2
 		echo "${1}; expected exit 1, got ${_err}" 1>&2
