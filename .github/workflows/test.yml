@@ -50,6 +50,7 @@ jobs:
           - mode: musl
             cc: musl-gcc
             deps_mode: musl-tools
+            musl: 1
 
           - mode: valgrind
             deps_mode: valgrind
@@ -70,6 +71,7 @@ jobs:
           CPPFLAGS: ${{matrix.cppflags}}
           DEBUG: -g -O2 ${{matrix.debug}}
           EXEC: ${{matrix.exec}}
+          MUSL: ${{matrix.musl}}
           VALGRIND_OPTS: ${{matrix.valgrind}}
         run: |
           set -ex

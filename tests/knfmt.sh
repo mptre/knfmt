@@ -82,12 +82,23 @@ _wrkdir="$(mktemp -dt knfmt.XXXXXX)"
 trap "rm -rf ${_wrkdir}" 0
 _out="${_wrkdir}/out"
 
+# Ensure presence of test case description.
 case "$1" in
 valid-183.c)
 	# Ignore windows line endings test case.
 	;;
 bug-*|error-*|simple-*|valid-*)
 	hascomm "$1" || exit 1
+	;;
+esac
+
+# Specific exceptions.
+case "$1" in
+simple-010.c)
+	# Sort order discrepancy.
+	[ "${MUSL:-0}" -eq 1 ] && exit 0
+	;;
+*)
 	;;
 esac
 
