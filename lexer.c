@@ -746,7 +746,7 @@ lexer_back(const struct lexer *lx, struct token **tk)
 	return 1;
 }
 
-void
+struct token *
 lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
     enum token_type type, const char *str)
 {
@@ -771,6 +771,7 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
 	}
 
 	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
+	return tk;
 }
 
 void
