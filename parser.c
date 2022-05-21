@@ -1318,7 +1318,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 	 * preprocessor directives such as the ones provided by queue(3).
 	 */
 	if (parser_peek_expr(pr, rbrace)) {
-		struct doc *expr;
+		struct doc *expr = NULL;
 
 		if (parser_exec_expr(pr, dc, &expr, NULL, 0) & (FAIL | NONE))
 			return parser_fail(pr);
