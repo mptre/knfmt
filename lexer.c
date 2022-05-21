@@ -107,10 +107,9 @@ static struct token	*token_alloc(const struct token *);
 static void		 token_branch_link(struct token *, struct token *);
 static int		 token_branch_unlink(struct token *);
 static struct token	*token_get_branch(struct token *);
-static struct token	*token_find_prefix(const struct token *,
-    enum token_type);
 static void		 token_move_prefix(struct token *, struct token *,
     struct token *);
+static struct token	*token_list_find(struct token_list *, enum token_type);
 static void		 token_remove(struct token_list *, struct token *);
 static const char	*strtoken(enum token_type);
 
@@ -244,7 +243,9 @@ token_has_line(const struct token *tk, int nlines)
 int
 token_has_prefix(const struct token *tk, enum token_type type)
 {
-	return token_find_prefix(tk, type) != NULL;
+	struct token_list *list = (struct token_list *)&tk->tk_prefixes;
+
+	return token_list_find(list, type) != NULL;
 }
 
 /*
@@ -2279,22 +2280,10 @@ token_get_branch(struct token *tk)
 {
 	struct token *br;
 
-	br = token_find_prefix(tk, TOKEN_CPP_ELSE);
+	br = token_list_find(&tk->tk_prefixes, TOKEN_CPP_ELSE);
 	if (br == NULL)
 		return NULL;
 	return br->tk_branch.br_pv;
-}
-
-static struct token *
-token_find_prefix(const struct token *tk, enum token_type type)
-{
-	struct token *prefix;
-
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-		if (prefix->tk_type == type)
-			return prefix;
-	}
-	return NULL;
 }
 
 /*
@@ -2325,6 +2314,18 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	default:
 		break;
 	}
+}
+
+static struct token *
+token_list_find(struct token_list *list, enum token_type type)
+{
+	struct token *tk;
+
+	TAILQ_FOREACH(tk, list, tk_entry) {
+		if (tk->tk_type == type)
+			return tk;
+	}
+	return NULL;
 }
 
 static void
