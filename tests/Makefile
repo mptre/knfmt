@@ -51,6 +51,7 @@ TESTS+=	error-024.c
 TESTS+=	error-025.c
 TESTS+=	error-026.c
 TESTS+=	error-027.c
+TESTS+=	error-028.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c
@@ -287,6 +288,7 @@ TESTS+=	simple-006.c
 TESTS+=	simple-007.c
 TESTS+=	simple-008.c
 TESTS+=	simple-009.c
+TESTS+=	simple-010.c
 
 TESTS+=	trace-001.c
 
@@ -305,6 +307,7 @@ TESTS+=	../knfmt.c
 TESTS+=	../lexer.c
 TESTS+=	../parser.c
 TESTS+=	../ruler.c
+TESTS+=	../simple-decl.c
 TESTS+=	../simple-stmt.c
 TESTS+=	../t.c
 TESTS+=	../token.h

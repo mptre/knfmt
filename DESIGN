@@ -50,6 +50,11 @@ therefore not implemented as a distinct step of the execution. It might be
 beneficial to separate the two at some point by letting the parser only be
 concerned with creation of an AST like structure.
 
+simple-*.c
+==========
+
+Various transformations used to subjectively simplify the source code.
+
 expr.c
 ======
 

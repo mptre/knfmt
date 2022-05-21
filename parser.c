@@ -34,7 +34,9 @@ struct parser {
 
 	struct {
 		struct simple_stmt	*se_stmt;
+		struct simple_decl	*se_decl;
 		int			 se_nstmt;
+		int			 se_ndecl;
 	} pr_simple;
 };
 
@@ -130,6 +132,10 @@ static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, unsigned int, enum doc_type);
 
 static int	parser_simple_active(const struct parser *);
+
+static int	parser_simple_decl_active(const struct parser *);
+static int	parser_simple_decl_enter(struct parser *, unsigned int);
+static void	parser_simple_decl_leave(struct parser *, int);
 
 static int		 parser_simple_stmt_enter(struct parser *,
     const struct token *);
@@ -327,7 +333,12 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 static int
 parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
-	return parser_exec_decl1(pr, dc, flags);
+	int error, simple;
+
+	simple = parser_simple_decl_enter(pr, flags);
+	error = parser_exec_decl1(pr, dc, flags);
+	parser_simple_decl_leave(pr, simple);
+	return error;
 }
 
 static int
@@ -397,7 +408,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat;
-	struct token *end, *fun, *semi, *tk;
+	struct token *beg, *end, *fun, *semi, *tk;
 	enum parser_peek peek;
 
 	if (!lexer_peek_if_type(lx, &end, 0)) {
@@ -417,6 +428,10 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
+	if (!lexer_peek(lx, &beg))
+		return parser_fail(pr);
+	if (parser_simple_decl_active(pr))
+		simple_decl_type(pr->pr_simple.se_decl, beg, end);
 	if (parser_exec_type(pr, concat, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
@@ -485,8 +500,11 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	parser_exec_attributes(pr, concat, NULL, pr->pr_cf->cf_tw, DOC_LINE);
 
 out:
-	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, concat);
+	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
+		doc_token(semi, concat);
+		if (parser_simple_decl_active(pr))
+			simple_decl_semi(pr->pr_simple.se_decl, semi);
+	}
 	return parser_good(pr);
 }
 
@@ -502,7 +520,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 
 	for (;;) {
 		struct doc *expr = NULL;
-		struct token *assign, *tk;
+		struct token *assign, *comma, *tk;
 
 		if (lexer_peek(lx, &tk) && tk == semi)
 			break;
@@ -560,9 +578,11 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			doc_token(tk, dc);
 			if (lexer_expect(lx, TOKEN_LITERAL, &tk))
 				doc_token(tk, dc);
-		} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-			doc_token(tk, dc);
+		} else if (lexer_if(lx, TOKEN_COMMA, &comma)) {
+			doc_token(comma, dc);
 			doc_alloc(DOC_LINE, dc);
+			if (parser_simple_decl_active(pr))
+				simple_decl_comma(pr->pr_simple.se_decl, comma);
 		} else if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
 			doc_token(tk, dc);
@@ -1979,7 +1999,7 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 static int
 parser_simple_active(const struct parser *pr)
 {
-	return pr->pr_simple.se_nstmt > 0;
+	return pr->pr_simple.se_nstmt > 0 || pr->pr_simple.se_ndecl > 0;
 }
 
 /*
@@ -2068,6 +2088,46 @@ parser_simple_stmt_ifelse_leave(struct parser *pr, void *cookie)
 	if (cookie == NULL || !lexer_peek(lx, &rbrace))
 		return;
 	simple_stmt_ifelse_leave(pr->pr_simple.se_stmt, rbrace, cookie);
+}
+
+static int
+parser_simple_decl_active(const struct parser *pr)
+{
+	return pr->pr_simple.se_ndecl == 1 && pr->pr_simple.se_decl != NULL;
+}
+
+static int
+parser_simple_decl_enter(struct parser *pr, unsigned int flags)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct doc *dc;
+	int error;
+
+	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
+		return -1;
+
+	if (pr->pr_simple.se_ndecl++ > 0)
+		return 1;
+
+	pr->pr_simple.se_decl = simple_decl_enter(lx, pr->pr_cf);
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	lexer_peek_enter(lx, &s);
+	error = parser_exec_decl1(pr, dc, flags);
+	lexer_peek_leave(lx, &s);
+	doc_free(dc);
+	if (error & GOOD)
+		simple_decl_leave(pr->pr_simple.se_decl);
+	simple_decl_free(pr->pr_simple.se_decl);
+	pr->pr_simple.se_decl = NULL;
+	return 1;
+}
+
+static void
+parser_simple_decl_leave(struct parser *pr, int simple)
+{
+	if (simple == 1)
+		pr->pr_simple.se_ndecl--;
 }
 
 /*

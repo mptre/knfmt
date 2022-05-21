@@ -208,9 +208,11 @@ int	 token_has_tabs(const struct token *);
 int	 token_has_spaces(const struct token *);
 int	 token_is_branch(const struct token *);
 int	 token_is_decl(const struct token *, enum token_type);
+int	 token_is_moveable(const struct token *);
 int	 token_trim(struct token *);
 char	*token_sprintf(const struct token *);
 
+void	token_list_copy(struct token_list *, struct token_list *);
 void	token_list_move(struct token_list *, struct token_list *);
 
 /*
@@ -245,8 +247,14 @@ int	lexer_is_branch(const struct lexer *);
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
 
+struct token	*lexer_copy_after(struct lexer *, struct token *,
+    const struct token *);
 struct token	*lexer_insert_before(struct lexer *, struct token *,
     enum token_type, const char *);
+struct token	*lexer_insert_after(struct lexer *, struct token *,
+    enum token_type, const char *);
+struct token	*lexer_move_after(struct lexer *, struct token *,
+    struct token *);
 void		 lexer_remove(struct lexer *, struct token *, int);
 
 #define lexer_expect(a, b, c) \
@@ -309,6 +317,16 @@ struct lexer	*parser_get_lexer(struct parser *);
 /*
  * simple ----------------------------------------------------------------------
  */
+
+struct simple_decl	*simple_decl_enter(struct lexer *,
+    const struct config *);
+void			 simple_decl_leave(struct simple_decl *);
+void			 simple_decl_free(struct simple_decl *);
+void			 simple_decl_type(struct simple_decl *, struct token *,
+    struct token *);
+void			 simple_decl_semi(struct simple_decl *, struct token *);
+void			 simple_decl_comma(struct simple_decl *,
+    struct token *);
 
 struct simple_stmt	*simple_stmt_enter(struct lexer *,
     const struct config *);

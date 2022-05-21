@@ -312,6 +312,26 @@ token_is_decl(const struct token *tk, enum token_type type)
 }
 
 /*
+ * Returns non-zero if the given token can be moved.
+ */
+int
+token_is_moveable(const struct token *tk)
+{
+	struct token_list *suffixes = (struct token_list *)&tk->tk_suffixes;
+	const struct token *prefix;
+
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		if (prefix->tk_flags & TOKEN_FLAG_CPP)
+			return 0;
+	}
+
+	if (token_list_find(suffixes, TOKEN_COMMENT) != NULL)
+		return 0;
+
+	return 1;
+}
+
+/*
  * Remove all space suffixes from the given token. Returns the number of removed
  * suffixes.
  */
@@ -365,6 +385,19 @@ token_sprintf(const struct token *tk)
 	}
 	free(val);
 	return buf;
+}
+
+void
+token_list_copy(struct token_list *src, struct token_list *dst)
+{
+	struct token *tk;
+
+	TAILQ_FOREACH(tk, src, tk_entry) {
+		struct token *cp;
+
+		cp = token_alloc(tk);
+		TAILQ_INSERT_TAIL(dst, cp, tk_entry);
+	}
 }
 
 void
@@ -758,18 +791,56 @@ lexer_back(const struct lexer *lx, struct token **tk)
 }
 
 struct token *
-lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
-    enum token_type type, const char *str)
+lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 {
 	struct token *tk;
 
-	tk = token_alloc(NULL);
-	tk->tk_type = type;
-	tk->tk_lno = before->tk_lno;
-	tk->tk_cno = 0;
-	tk->tk_str = str;
-	tk->tk_len = strlen(str);
+	tk = token_alloc(src);
+	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
+	return tk;
+}
+
+struct token *
+lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
+    enum token_type type, const char *str)
+{
+	const struct token cp = {
+		.tk_type	= type,
+		.tk_lno		= before->tk_lno,
+		.tk_cno		= before->tk_cno,
+		.tk_str		= str,
+		.tk_len		= strlen(str),
+	};
+	struct token *tk;
+
+	tk = token_alloc(&cp);
 	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
+	return tk;
+}
+
+struct token *
+lexer_insert_after(struct lexer *lx, struct token *after, enum token_type type,
+    const char *str)
+{
+	const struct token cp = {
+		.tk_type	= type,
+		.tk_lno		= after->tk_lno,
+		.tk_cno		= after->tk_cno,
+		.tk_str		= str,
+		.tk_len		= strlen(str),
+	};
+	struct token *tk;
+
+	tk = token_alloc(&cp);
+	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
+	return tk;
+}
+
+struct token *
+lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
+{
+	TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
+	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
 }
 

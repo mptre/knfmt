@@ -1,0 +1,45 @@
+struct a {
+	enum {
+		b,
+	} c;
+};
+
+struct token	*pv, *tk;
+
+int z = 1;
+int b = 1, d = 2;
+int comment; /* comment */
+int comment /* comment */;
+int comment /* comment */, comment /* comment */;
+int a, c, c1, c2, x, y;
+
+struct x	*f;
+struct x	 a;
+
+int rflags = REG_EXTENDED;
+int c, i;
+
+int a = 1;
+int b = 2;
+int c;
+
+int a = 1;
+int b;
+char b;
+
+unsigned int u1 = 0;
+unsigned int u2;
+
+char *v, *x;
+
+struct x {
+	int x;
+	int y;
+};
+
+int ret = 0;
+unsigned char *s = NULL;
+unsigned char *bufp, *sp;
+int first = 1;
+int again, bufsize, i, j, k, m, n;
+size_t num = 0, slen = 0;
