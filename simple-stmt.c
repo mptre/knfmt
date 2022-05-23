@@ -79,12 +79,24 @@ simple_stmt_leave(struct simple_stmt *ss)
 		}
 	} else {
 		TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
+			struct token *pv, *tk;
+
 			if (st->st_flags & STMT_FLAG_BRACES)
 				continue;
-			lexer_insert_before(lx, st->st_lbrace,
+
+			pv = TAILQ_PREV(st->st_lbrace, token_list, tk_entry);
+			tk = lexer_insert_before(lx, st->st_lbrace,
 			    TOKEN_LBRACE, "{");
-			lexer_insert_before(lx, st->st_rbrace,
+			if (pv != NULL)
+				token_list_move(&pv->tk_suffixes,
+				    &tk->tk_suffixes);
+
+			pv = TAILQ_PREV(st->st_rbrace, token_list, tk_entry);
+			tk = lexer_insert_before(lx, st->st_rbrace,
 			    TOKEN_RBRACE, "}");
+			if (pv != NULL)
+				token_list_move(&pv->tk_suffixes,
+				    &tk->tk_suffixes);
 		}
 	}
 

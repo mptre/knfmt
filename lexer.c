@@ -367,6 +367,17 @@ token_sprintf(const struct token *tk)
 	return buf;
 }
 
+void
+token_list_move(struct token_list *src, struct token_list *dst)
+{
+	struct token *tk;
+
+	while ((tk = TAILQ_FIRST(src)) != NULL) {
+		TAILQ_REMOVE(src, tk, tk_entry);
+		TAILQ_INSERT_TAIL(dst, tk, tk_entry);
+	}
+}
+
 /*
  * Populate the token hash map.
  */
@@ -750,7 +761,7 @@ struct token *
 lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
     enum token_type type, const char *str)
 {
-	struct token *pv, *tk, *tmp, *suffix;
+	struct token *tk;
 
 	tk = token_alloc(NULL);
 	tk->tk_type = type;
@@ -758,18 +769,6 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
 	tk->tk_cno = 0;
 	tk->tk_str = str;
 	tk->tk_len = strlen(str);
-
-	pv = TAILQ_PREV(before, token_list, tk_entry);
-	if (pv != NULL) {
-		TAILQ_FOREACH_SAFE(suffix, &pv->tk_suffixes, tk_entry, tmp) {
-			if (suffix->tk_type != TOKEN_SPACE)
-				continue;
-
-			TAILQ_REMOVE(&pv->tk_suffixes, suffix, tk_entry);
-			TAILQ_INSERT_TAIL(&tk->tk_suffixes, suffix, tk_entry);
-		}
-	}
-
 	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
 	return tk;
 }

@@ -211,6 +211,8 @@ int	 token_is_decl(const struct token *, enum token_type);
 int	 token_trim(struct token *);
 char	*token_sprintf(const struct token *);
 
+void	token_list_move(struct token_list *, struct token_list *);
+
 /*
  * lexer -----------------------------------------------------------------------
  */
