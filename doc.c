@@ -1380,8 +1380,8 @@ static char *
 docstr(const struct doc *dc, char *buf, size_t bufsiz)
 {
 	const char *str = NULL;
-	int n;
 	int suffix = dc->dc_suffix != NULL;
+	int n;
 
 	switch (dc->dc_type) {
 #define CASE(t) case t: str = &#t[sizeof("DOC_") - 1]; break

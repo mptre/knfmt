@@ -344,9 +344,9 @@ parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 static int
 parser_exec_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 {
-	struct doc *decl;
 	struct ruler rl;
 	struct doc *line = NULL;
+	struct doc *decl;
 	struct lexer *lx = pr->pr_lx;
 	int ndecl = 0;
 	int error;
@@ -920,9 +920,8 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *macro, *tk;
+	struct token *end, *macro, *semi, *tk;
 	struct doc *expr = dc;
-	struct token *semi;
 	int iscpp = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -1103,7 +1102,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 
 	doc_alloc(DOC_HARDLINE, dc);
 	if (!lexer_peek_if(lx, TOKEN_EOF, NULL)) {
-		struct token *tk, *px;
+		struct token *px, *tk;
 
 		if (!lexer_back(lx, &tk) ||
 		    !lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP, &px) ||

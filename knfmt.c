@@ -171,10 +171,10 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 {
 	char dstpath[PATH_MAX], srcpath[PATH_MAX];
 	pid_t pid;
-	int status;
 	int dstfd = -1;
 	int error = 1;
 	int srcfd = -1;
+	int status;
 
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
@@ -321,8 +321,8 @@ tmpfd(const char *buf, char *path, size_t pathsiz)
 	char tmppath[PATH_MAX];
 	ssize_t siz = sizeof(tmppath);
 	size_t len;
-	int n;
 	int fd = -1;
+	int n;
 
 	n = snprintf(tmppath, siz, "/tmp/knfmt.XXXXXXXX");
 	if (n < 0 || n >= siz) {

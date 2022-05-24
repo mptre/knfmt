@@ -489,7 +489,7 @@ lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
 
 	/* Remove any pending broken branches. */
 	while ((br = TAILQ_FIRST(&lx->lx_branches)) != NULL) {
-		struct token *tk, *pv;
+		struct token *pv, *tk;
 
 		TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
 		tk = br->br_cpp;
@@ -2059,7 +2059,7 @@ static void
 lexer_branch_fold(struct lexer *lx, struct token *src)
 {
 	struct token *dst, *prefix, *pv, *rm;
-	size_t off, len;
+	size_t len, off;
 	unsigned int flags = 0;
 
 	/* Grab a reference since the branch is about to be removed. */
