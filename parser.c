@@ -2002,11 +2002,12 @@ parser_simple_active(const struct parser *pr)
 }
 
 /*
- * Intended to be called while entering a section of the source code with one or
- * many statements potentially wrapped in curly braces ahead. The statements
+ * Called while entering a section of the source code with one or many
+ * statements potentially wrapped in curly braces ahead. The statements
  * will silently be formatted in order to determine if each statement fits on a
- * single line, making the curly braces redundant and thus removed. Once this
- * routine returns, parsing continues as usual.
+ * single line, making the curly braces redundant and thus removed. Otherwise,
+ * curly braces will be added around all covered statements for consistency.
+ * Once this routine returns, parsing continues as usual.
  *
  * The return value is used to signal when a nested statement is entered which
  * is ignored as only one scope is handled at a time. The same return value must
