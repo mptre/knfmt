@@ -120,7 +120,7 @@ simple_decl_leave(struct simple_decl *sd)
 		/* Create new type declaration. */
 		TOKEN_RANGE_FOREACH(tk, &dl->dl_type, tmp) {
 			after = lexer_copy_after(sd->sd_lx, after, tk);
-			token_list_copy(&tk->tk_prefixes, &after->tk_prefixes);
+			/* Intentionally ignore prefixes. */
 			token_list_copy(&tk->tk_suffixes, &after->tk_suffixes);
 		}
 
