@@ -852,6 +852,11 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 	if (keepfixes) {
 		struct token *nx, *pv;
 
+		/*
+		 * Next token must always be present, we're in trouble while
+		 * trying to remove the EOF token which is the only one lacking
+		 * a next token.
+		 */
 		nx = TAILQ_NEXT(tk, tk_entry);
 		assert(nx != NULL);
 		while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
@@ -860,7 +865,8 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		}
 
 		pv = TAILQ_PREV(tk, token_list, tk_entry);
-		assert(pv != NULL);
+		if (pv == NULL)
+			pv = nx;
 		while (!TAILQ_EMPTY(&tk->tk_suffixes)) {
 			fix = TAILQ_FIRST(&tk->tk_suffixes);
 			TAILQ_REMOVE(&tk->tk_suffixes, fix, tk_entry);
