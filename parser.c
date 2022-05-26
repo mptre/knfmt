@@ -1758,6 +1758,8 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc,
 	}
 	if (lexer_expect(lx, TOKEN_COLON, &tk))
 		doc_token(tk, dedent);
+	else
+		return parser_fail(pr);
 
 	/*
 	 * A label is not necessarily followed by a hard line, there could be
