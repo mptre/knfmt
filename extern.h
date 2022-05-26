@@ -456,7 +456,9 @@ struct ruler {
 		size_t			 b_len;
 		size_t			 b_siz;
 	} rl_columns;
-	size_t	rl_len;
+
+	struct ruler_indent_list	*rl_indent;
+	size_t				 rl_len;
 };
 
 struct ruler_column {
@@ -479,6 +481,13 @@ void	ruler_exec(struct ruler *);
 	__ruler_insert((a), (b), (c), (d), (e), (f), __func__, __LINE__)
 void	__ruler_insert(struct ruler *, const struct token *, struct doc *,
     unsigned int, unsigned int, unsigned int, const char *, int);
+
+#define ruler_indent(a, b) \
+	__ruler_indent((a), (b), 1, __func__, __LINE__)
+#define ruler_dedent(a, b) \
+	__ruler_indent((a), (b), -1, __func__, __LINE__)
+struct doc	*__ruler_indent(struct ruler *, struct doc *, int,
+    const char *, int);
 
 /*
  * util ------------------------------------------------------------------------

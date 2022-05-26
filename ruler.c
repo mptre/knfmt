@@ -6,6 +6,16 @@
 
 #include "extern.h"
 
+struct ruler_indent {
+	struct doc			*ri_dc;
+	struct ruler_column		*ri_rc;
+	struct ruler_datum		*ri_rd;
+	int				 ri_indent;
+	TAILQ_ENTRY(ruler_indent)	 ri_entry;
+};
+
+TAILQ_HEAD(ruler_indent_list, ruler_indent);
+
 struct ruler_datum {
 	struct doc	*rd_dc;
 	unsigned int	 rd_len;
@@ -14,7 +24,8 @@ struct ruler_datum {
 
 static void	ruler_reset(struct ruler *);
 
-static int	minimize(const struct ruler_column *);
+static int		minimize(const struct ruler_column *);
+static unsigned int	tabalign(unsigned int);
 
 void
 ruler_init(struct ruler *rl, unsigned int len)
@@ -34,6 +45,16 @@ ruler_free(struct ruler *rl)
 		free(rc->rc_datums.b_ptr);
 	}
 	free(rl->rl_columns.b_ptr);
+
+	if (rl->rl_indent != NULL) {
+		struct ruler_indent *ri;
+
+		while ((ri = TAILQ_FIRST(rl->rl_indent)) != NULL) {
+			TAILQ_REMOVE(rl->rl_indent, ri, ri_entry);
+			free(ri);
+		}
+		free(rl->rl_indent);
+	}
 }
 
 /*
@@ -89,16 +110,62 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 		rc->rc_ntabs++;
 }
 
+/*
+ * Returns an indent document which will cause everything that does not fit on
+ * the current line to be aligned with the column on the previous line. Used to
+ * align long declarations:
+ *
+ * 	int x, y,
+ * 	    z;
+ */
+struct doc *
+__ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
+    int lno)
+{
+	struct ruler_column *rc;
+	struct ruler_datum *rd;
+	struct ruler_indent *ri;
+
+	if (rl == NULL)
+		return dc;
+
+	/* Not applicable to fixed alignment. */
+	assert(rl->rl_len == 0);
+
+	if (rl->rl_columns.b_len == 0)
+		return dc;
+	rc = &rl->rl_columns.b_ptr[0];
+	if (rc->rc_datums.b_len == 0)
+		return dc;
+	rd = &rc->rc_datums.b_ptr[rc->rc_datums.b_len - 1];
+
+	if (rl->rl_indent == NULL) {
+		rl->rl_indent = malloc(sizeof(*rl->rl_indent));
+		if (rl->rl_indent == NULL)
+			err(1, NULL);
+		TAILQ_INIT(rl->rl_indent);
+	}
+	ri = calloc(1, sizeof(*ri));
+	if (ri == NULL)
+		err(1, NULL);
+	ri->ri_rc = rc;
+	ri->ri_rd = rd;
+	ri->ri_indent = indent;
+	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
+	TAILQ_INSERT_TAIL(rl->rl_indent, ri, ri_entry);
+	return ri->ri_dc;
+}
+
 void
 ruler_exec(struct ruler *rl)
 {
-	size_t i;
+	struct ruler_indent *ri;
+	size_t i, j;
 	unsigned int fixedlen = rl->rl_len;
+	unsigned int maxlen;
 
 	for (i = 0; i < rl->rl_columns.b_len; i++) {
 		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
-		size_t j;
-		unsigned int maxlen;
 
 		if (rc->rc_ntabs == 0 && fixedlen == 0)
 			continue;
@@ -109,7 +176,7 @@ ruler_exec(struct ruler *rl)
 			maxlen = rc->rc_len;
 			if (!minimize(rc)) {
 				/* Ceil the longest datum to multiple of 8. */
-				maxlen += 8 - (maxlen % 8);
+				maxlen = tabalign(maxlen);
 			}
 		}
 
@@ -125,12 +192,35 @@ ruler_exec(struct ruler *rl)
 
 			indent = maxlen - rd->rd_len;
 			if (indent % 8 > 0)
-				indent += 8 - (indent % 8);
+				indent = tabalign(indent);
 			indent += rc->rc_nspaces - rd->rd_nspaces;
 			doc_set_indent(rd->rd_dc, indent);
 		}
 	}
 
+	if (rl->rl_indent == NULL)
+		goto out;
+	TAILQ_FOREACH(ri, rl->rl_indent, ri_entry) {
+		const struct ruler_column *rc = ri->ri_rc;
+		const struct ruler_datum *rd = ri->ri_rd;
+		unsigned int indent;
+
+		if (rc->rc_ntabs == 0) {
+			maxlen = 0;
+		} else {
+			maxlen = rc->rc_len;
+			if (!minimize(rc))
+				maxlen = tabalign(maxlen);
+		}
+		if (rc->rc_ntabs == 0)
+			indent = rd->rd_len;
+		else
+			indent = maxlen;
+		indent += rc->rc_nspaces - rd->rd_nspaces;
+		doc_set_indent(ri->ri_dc, ri->ri_indent * indent);
+	}
+
+out:
 	/* Reset the ruler paving the way for reuse. */
 	ruler_reset(rl);
 }
@@ -165,6 +255,15 @@ minimize(const struct ruler_column *rc)
 	 * datums will overlap.
 	 */
 	return minspaces >= rc->rc_nspaces;
+}
+
+/*
+ * Ceil to multiple of 8.
+ */
+static unsigned int
+tabalign(unsigned int len)
+{
+	return len + (8 - (len % 8));
 }
 
 static void
