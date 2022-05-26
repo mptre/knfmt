@@ -402,11 +402,14 @@ static int
 isident(const struct token_range *tr)
 {
 	struct token *tk, *tmp;
+	int nident = 0;
 
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
 		switch (tk->tk_type) {
 		case TOKEN_STAR:
+			break;
 		case TOKEN_IDENT:
+			nident++;
 			break;
 		default:
 			return 0;
@@ -415,7 +418,7 @@ isident(const struct token_range *tr)
 		if (!token_is_moveable(tk))
 			return 0;
 	}
-	return 1;
+	return nident;
 }
 
 static void
