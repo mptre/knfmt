@@ -172,9 +172,7 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 	char dstpath[PATH_MAX], srcpath[PATH_MAX];
 	pid_t pid;
 	int dstfd = -1;
-	int error = 1;
 	int srcfd = -1;
-	int status;
 
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
@@ -205,21 +203,17 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 		_exit(1);
 	}
 
-	if (waitpid(pid, &status, 0) == -1) {
+	if (waitpid(pid, NULL, 0) == -1) {
 		warn("waitpid");
 		goto out;
 	}
-	if (WIFSIGNALED(status))
-		error = WTERMSIG(status);
-	if (WIFEXITED(status))
-		error = WEXITSTATUS(status);
 
 out:
 	if (srcfd != -1)
 		close(srcfd);
 	if (dstfd != -1)
 		close(dstfd);
-	return error;
+	return 1;
 }
 
 static int
