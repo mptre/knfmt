@@ -51,7 +51,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 	if (TAILQ_EMPTY(&ss->ss_list))
 		return;
 
-	bf = buffer_alloc(lexer_get_buffer(lx)->bf_siz);
+	bf = buffer_alloc(1024);
 
 	TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
 		if ((st->st_flags & STMT_FLAG_BRACES) == 0)
