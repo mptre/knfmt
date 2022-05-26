@@ -515,9 +515,11 @@ static int
 parser_exec_decl_init(struct parser *pr, struct doc *dc,
     const struct token *semi, int didalign)
 {
-	struct doc *concat = dc;
+	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
 	int error;
+
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
 	for (;;) {
 		struct doc *expr = NULL;
@@ -584,6 +586,8 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			doc_alloc(DOC_LINE, concat);
 			if (parser_simple_decl_active(pr))
 				simple_decl_comma(pr->pr_simple.se_decl, comma);
+			concat = doc_alloc(DOC_CONCAT,
+			    doc_alloc(DOC_GROUP, dc));
 		} else if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
 			doc_token(tk, concat);
