@@ -1124,9 +1124,8 @@ lexer_if_flags(struct lexer *lx, unsigned int flags, struct token **tk)
 {
 	struct token *t;
 
-	if (!lexer_peek_if_flags(lx, flags, &t))
+	if (!lexer_peek_if_flags(lx, flags, &t) || !lexer_pop(lx, &t))
 		return 0;
-	lx->lx_st.st_tok = t;
 	if (tk != NULL)
 		*tk = t;
 	return 1;
