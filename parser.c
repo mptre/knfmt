@@ -1811,7 +1811,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 	for (;;) {
 		struct doc *line;
 		struct token *nx;
-		int error;
+		int dobreak, error;
 
 		if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
 		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
@@ -1819,6 +1819,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 
 		if (!lexer_peek(lx, &nx))
 			return parser_fail(pr);
+		dobreak = nx->tk_type == TOKEN_BREAK;
 
 		/*
 		 * Allow following statement(s) to be placed on the same line as
@@ -1835,7 +1836,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 			doc_remove(line, indent);
 			break;
 		}
-		if (nx->tk_type == TOKEN_BREAK)
+		if (dobreak)
 			break;
 	}
 
