@@ -1,3 +1,55 @@
+# 2.1.0 - YYYY-MM-DD
+
+## News
+
+- Introduce simple declarations, separate uninitialized stack local variable
+  declarations are now merged into a single declaration.
+  (74f069b)
+  (Anton Lindqvist)
+
+   ```
+   # before
+   int a = 1, x, y;
+   int z;
+   # after
+   int a = 1;
+   int x, y, z;
+   ```
+
+- Align variable declarations spanning multiple lines.
+  (d593084, bc966c0)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Fix struct fields alignment bug.
+  (016e39b)
+  (Anton Lindqvist)
+
+- Align enum just like struct.
+  (a030abe)
+  (Anton Lindqvist)
+
+- Do not confuse function call expression as a cpp declaration.
+  (ddb8c6d)
+  (Anton Lindqvist)
+
+- Fix simple statement indentation bug.
+  (0659e5d)
+  (Anton Lindqvist)
+
+- Fix break of long expressions.
+  (28fc084)
+  (Anton Lindqvist)
+
+- Fix label indentation bug.
+  (c57b45b)
+  (Anton Lindqvist)
+
+- Fix function pointer call parenthesis alignment bug.
+  (251f634)
+  (Anton Lindqvist)
+
 # 2.0.0 - 2022-04-13
 
 ## Changes
