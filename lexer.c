@@ -2380,11 +2380,13 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 
 		assert(prefix->tk_token == src);
 
-		/* Discard empty branch. */
-		if (nx != NULL && nx->tk_token == dst)
-			token_branch_unlink(prefix);
-		else
+		if (nx != NULL && nx->tk_token == dst) {
+			/* Discard empty branch. */
+			while (token_branch_unlink(prefix) == 0)
+				continue;
+		} else {
 			prefix->tk_token = dst;
+		}
 		break;
 	}
 
