@@ -515,6 +515,7 @@ static int
 parser_exec_decl_init(struct parser *pr, struct doc *dc,
     const struct token *semi, int didalign)
 {
+	struct doc *concat = dc;
 	struct lexer *lx = pr->pr_lx;
 	int error;
 
@@ -526,17 +527,17 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			break;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-			doc_token(tk, dc);
+			doc_token(tk, concat);
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
-				doc_literal(" ", dc);
+				doc_literal(" ", concat);
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &assign)) {
 			if (!didalign)
-				doc_literal(" ", dc);
-			doc_token(assign, dc);
-			doc_literal(" ", dc);
+				doc_literal(" ", concat);
+			doc_token(assign, concat);
+			doc_literal(" ", concat);
 
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-				error = parser_exec_decl_braces(pr, dc);
+				error = parser_exec_decl_braces(pr, concat);
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			} else {
@@ -554,7 +555,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 				if (lexer_peek_until_loose(lx, TOKEN_COMMA,
 				    semi, &tk))
 					stop = tk;
-				error = parser_exec_expr(pr, dc, NULL, stop,
+				error = parser_exec_expr(pr, concat, NULL, stop,
 				    flags);
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
@@ -564,31 +565,31 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc,
 			enum token_type rhs = tk->tk_type == TOKEN_LSQUARE ?
 			    TOKEN_RSQUARE : TOKEN_RPAREN;
 
-			doc_token(tk, dc);
+			doc_token(tk, concat);
 			/* Let the remaning tokens hang of the expression. */
-			error = parser_exec_expr(pr, dc, &expr, NULL, 0);
+			error = parser_exec_expr(pr, concat, &expr, NULL, 0);
 			if (error & (FAIL | NONE))
-				expr = dc;
+				expr = concat;
 			if (lexer_expect(lx, rhs, &tk))
 				doc_token(tk, expr);
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
-				doc_literal(" ", dc);
+				doc_literal(" ", concat);
 		} else if (lexer_if(lx, TOKEN_COLON, &tk)) {
 			/* Handle bitfields. */
-			doc_token(tk, dc);
+			doc_token(tk, concat);
 			if (lexer_expect(lx, TOKEN_LITERAL, &tk))
-				doc_token(tk, dc);
+				doc_token(tk, concat);
 		} else if (lexer_if(lx, TOKEN_COMMA, &comma)) {
-			doc_token(comma, dc);
-			doc_alloc(DOC_LINE, dc);
+			doc_token(comma, concat);
+			doc_alloc(DOC_LINE, concat);
 			if (parser_simple_decl_active(pr))
 				simple_decl_comma(pr->pr_simple.se_decl, comma);
 		} else if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
-			doc_token(tk, dc);
-			doc_literal(" ", dc);
+			doc_token(tk, concat);
+			doc_literal(" ", concat);
 		} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
-			doc_token(tk, dc);
+			doc_token(tk, concat);
 		} else {
 			break;
 		}
