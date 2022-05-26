@@ -246,8 +246,8 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 	simple_decl_var_end(sd, semi);
 
 	/*
-	 * If all variables will be moved, ensure deletion of everything
-	 * including the semicolon.
+	 * If the declaration is empty, ensure deletion of everything including
+	 * the semicolon.
 	 */
 	if (dt->dt_nrejects == 0)
 		dt->dt_tr.tr_end = semi;
