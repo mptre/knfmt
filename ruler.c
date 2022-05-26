@@ -8,8 +8,7 @@
 
 struct ruler_indent {
 	struct doc			*ri_dc;
-	struct ruler_column		*ri_rc;
-	struct ruler_datum		*ri_rd;
+	unsigned int			 ri_rd;
 	int				 ri_indent;
 	TAILQ_ENTRY(ruler_indent)	 ri_entry;
 };
@@ -23,6 +22,7 @@ struct ruler_datum {
 };
 
 static void	ruler_reset(struct ruler *);
+static void	ruler_reset_indent(struct ruler *);
 
 static int		minimize(const struct ruler_column *);
 static unsigned int	tabalign(unsigned int);
@@ -46,15 +46,7 @@ ruler_free(struct ruler *rl)
 	}
 	free(rl->rl_columns.b_ptr);
 
-	if (rl->rl_indent != NULL) {
-		struct ruler_indent *ri;
-
-		while ((ri = TAILQ_FIRST(rl->rl_indent)) != NULL) {
-			TAILQ_REMOVE(rl->rl_indent, ri, ri_entry);
-			free(ri);
-		}
-		free(rl->rl_indent);
-	}
+	ruler_reset_indent(rl);
 }
 
 /*
@@ -123,7 +115,6 @@ __ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
     int lno)
 {
 	struct ruler_column *rc;
-	struct ruler_datum *rd;
 	struct ruler_indent *ri;
 
 	if (rl == NULL)
@@ -137,7 +128,6 @@ __ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
 	rc = &rl->rl_columns.b_ptr[0];
 	if (rc->rc_datums.b_len == 0)
 		return dc;
-	rd = &rc->rc_datums.b_ptr[rc->rc_datums.b_len - 1];
 
 	if (rl->rl_indent == NULL) {
 		rl->rl_indent = malloc(sizeof(*rl->rl_indent));
@@ -148,8 +138,7 @@ __ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
 	ri = calloc(1, sizeof(*ri));
 	if (ri == NULL)
 		err(1, NULL);
-	ri->ri_rc = rc;
-	ri->ri_rd = rd;
+	ri->ri_rd = rc->rc_datums.b_len - 1;
 	ri->ri_indent = indent;
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
 	TAILQ_INSERT_TAIL(rl->rl_indent, ri, ri_entry);
@@ -201,8 +190,8 @@ ruler_exec(struct ruler *rl)
 	if (rl->rl_indent == NULL)
 		goto out;
 	TAILQ_FOREACH(ri, rl->rl_indent, ri_entry) {
-		const struct ruler_column *rc = ri->ri_rc;
-		const struct ruler_datum *rd = ri->ri_rd;
+		const struct ruler_column *rc = &rl->rl_columns.b_ptr[0];
+		const struct ruler_datum *rd = &rc->rc_datums.b_ptr[ri->ri_rd];
 		unsigned int indent;
 
 		if (rc->rc_ntabs == 0) {
@@ -277,6 +266,22 @@ ruler_reset(struct ruler *rl)
 		free(rc->rc_datums.b_ptr);
 		memset(rc, 0, sizeof(*rc));
 	}
-
 	rl->rl_columns.b_len = 0;
+	ruler_reset_indent(rl);
+}
+
+static void
+ruler_reset_indent(struct ruler *rl)
+{
+	struct ruler_indent *ri;
+
+	if (rl->rl_indent == NULL)
+		return;
+
+	while ((ri = TAILQ_FIRST(rl->rl_indent)) != NULL) {
+		TAILQ_REMOVE(rl->rl_indent, ri, ri_entry);
+		free(ri);
+	}
+	free(rl->rl_indent);
+	rl->rl_indent = NULL;
 }
