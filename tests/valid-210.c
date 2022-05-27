@@ -14,4 +14,7 @@ main(void)
 	/* Comment before label. */
  out2:
 	return 2;
+
+	out3:
+	return 3;
 }

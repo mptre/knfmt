@@ -214,7 +214,8 @@ token_add_optline(struct token *tk)
 int
 token_has_indent(const struct token *tk)
 {
-	return tk->tk_off > 0 && tk->tk_str[-1] == ' ';
+	return tk->tk_off > 0 &&
+	    (tk->tk_str[-1] == ' ' || tk->tk_str[-1] == '\t');
 }
 
 /*
