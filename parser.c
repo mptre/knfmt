@@ -24,7 +24,7 @@ enum parser_peek {
 };
 
 struct parser {
-	const struct file	*pr_fe;
+	const char		*pr_path;
 	struct error		*pr_er;
 	const struct config	*pr_cf;
 	struct lexer		*pr_lx;
@@ -165,19 +165,15 @@ static int	parser_none(const struct parser *);
 static void	parser_reset(struct parser *);
 
 struct parser *
-parser_alloc(const struct file *fe, struct error *er, const struct config *cf)
+parser_alloc(const char *path, struct lexer *lx, struct error *er,
+    const struct config *cf)
 {
 	struct parser *pr;
-	struct lexer *lx;
-
-	lx = lexer_alloc(fe, er, cf);
-	if (lx == NULL)
-		return NULL;
 
 	pr = calloc(1, sizeof(*pr));
 	if (pr == NULL)
 		err(1, NULL);
-	pr->pr_fe = fe;
+	pr->pr_path = path;
 	pr->pr_er = er;
 	pr->pr_cf = cf;
 	pr->pr_lx = lx;
@@ -190,15 +186,8 @@ parser_free(struct parser *pr)
 	if (pr == NULL)
 		return;
 
-	lexer_free(pr->pr_lx);
 	buffer_free(pr->pr_bf);
 	free(pr);
-}
-
-struct lexer *
-parser_get_lexer(struct parser *pr)
-{
-	return pr->pr_lx;
 }
 
 const struct buffer *
@@ -2349,7 +2338,7 @@ __parser_fail(struct parser *pr, const char *fun, int lno)
 		goto out;
 	pr->pr_error = 1;
 
-	error_write(pr->pr_er, "%s: ", pr->pr_fe->fe_path);
+	error_write(pr->pr_er, "%s: ", pr->pr_path);
 	if (pr->pr_cf->cf_verbose > 0)
 		error_write(pr->pr_er, "%s:%d: ", fun, lno);
 	error_write(pr->pr_er, "%s", "error at ");

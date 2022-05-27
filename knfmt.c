@@ -139,10 +139,16 @@ static int
 fileformat(const struct file *fe, struct error *er, const struct config *cf)
 {
 	const struct buffer *dst, *src;
-	struct parser *pr;
+	struct lexer *lx;
+	struct parser *pr = NULL;
 	int error = 0;
 
-	pr = parser_alloc(fe, er, cf);
+	lx = lexer_alloc(fe, er, cf);
+	if (lx == NULL) {
+		error = 1;
+		goto out;
+	}
+	pr = parser_alloc(fe->fe_path, lx, er, cf);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
@@ -153,7 +159,7 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 		goto out;
 	}
 
-	src = lexer_get_buffer(parser_get_lexer(pr));
+	src = lexer_get_buffer(lx);
 	if (cf->cf_flags & CONFIG_FLAG_DIFF)
 		error = filediff(src, dst, fe->fe_path);
 	else if (cf->cf_flags & CONFIG_FLAG_INPLACE)
@@ -163,6 +169,7 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 
 out:
 	parser_free(pr);
+	lexer_free(lx);
 	return error;
 }
 
