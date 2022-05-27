@@ -15,6 +15,7 @@
 #define FAIL	0x00000002u
 #define NONE	0x00000004u
 #define BRCH	0x00000008u
+#define HALT	(FAIL | NONE | BRCH)
 
 enum parser_peek {
 	PARSER_PEEK_FUNCDECL	= 1,
@@ -684,8 +685,7 @@ parser_exec_decl_braces1(struct parser *pr,
 			unsigned int col = pb->pb_col;
 
 			pb->pb_dc = concat;
-			error = parser_exec_decl_braces1(pr, pb);
-			if (error & (FAIL | NONE | BRCH))
+			if (parser_exec_decl_braces1(pr, pb) & HALT)
 				return parser_fail(pr);
 			pb->pb_dc = dc;
 			/*
@@ -700,7 +700,7 @@ parser_exec_decl_braces1(struct parser *pr,
 			expr = concat;
 		} else if (parser_peek_cppx(pr) || parser_peek_cpp_init(pr)) {
 			error = parser_exec_decl_cppx(pr, concat, pb->pb_rl);
-			if (error & (FAIL | NONE | BRCH))
+			if (error & HALT)
 				return parser_fail(pr);
 			expr = concat;
 		} else {
@@ -710,7 +710,7 @@ parser_exec_decl_braces1(struct parser *pr,
 
 			error = parser_exec_expr(pr, concat, &expr, tk,
 			    EXPR_EXEC_FLAG_NOINDENT);
-			if (error & (FAIL | NONE | BRCH))
+			if (error & HALT)
 				return parser_fail(pr);
 		}
 
@@ -810,7 +810,7 @@ parser_exec_decl_braces_fields(struct parser *pr, struct doc *dc,
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
 		error = parser_exec_decl_braces_field(pr, concat, &rl, rbrace);
-		if (error & (FAIL | NONE | BRCH)) {
+		if (error & HALT) {
 			ruler_free(&rl);
 			return parser_fail(pr);
 		}
@@ -1010,7 +1010,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 		if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop))
 			stop = rbrace;
 		error = parser_exec_expr(pr, arg, &expr, stop, 0);
-		if (error & (FAIL | NONE | BRCH))
+		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, expr);
@@ -1685,7 +1685,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	 * statement on a single line.
 	 */
 	stop = TAILQ_NEXT(rparen, tk_entry);
-	if (parser_exec_expr(pr, stmt, &expr, stop, 0) & (FAIL | NONE | BRCH))
+	if (parser_exec_expr(pr, stmt, &expr, stop, 0) & HALT)
 		return parser_fail(pr);
 
 	if (flags & PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE) {
@@ -1808,7 +1808,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 	for (;;) {
 		struct doc *line;
 		struct token *nx;
-		int dobreak, error;
+		int dobreak;
 
 		if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
 		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
@@ -1827,8 +1827,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc,
 		else
 			line = doc_alloc(DOC_HARDLINE, indent);
 
-		error = parser_exec_stmt(pr, indent, rbrace);
-		if (error & (FAIL | NONE | BRCH)) {
+		if (parser_exec_stmt(pr, indent, rbrace) & HALT) {
 			/* No statement, remove the line. */
 			doc_remove(line, indent);
 			break;
