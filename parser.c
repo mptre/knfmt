@@ -544,8 +544,10 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 			dedent = ruler_dedent(rl, concat);
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 				error = parser_exec_decl_braces(pr, dedent);
-				if (error & (FAIL | NONE))
+				if (error & (FAIL | NONE)) {
+					doc_remove(dedent, concat);
 					return parser_fail(pr);
+				}
 			} else {
 				const struct token *stop = semi;
 				unsigned int flags = 0;
@@ -563,8 +565,10 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 					stop = tk;
 				error = parser_exec_expr(pr, dedent, NULL,
 				    stop, flags);
-				if (error & (FAIL | NONE))
+				if (error & (FAIL | NONE)) {
+					doc_remove(dedent, concat);
 					return parser_fail(pr);
+				}
 			}
 		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
 		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
