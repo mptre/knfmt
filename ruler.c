@@ -118,16 +118,16 @@ __ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
 	struct ruler_indent *ri;
 
 	if (rl == NULL)
-		return dc;
+		goto err;
 
 	/* Not applicable to fixed alignment. */
 	assert(rl->rl_len == 0);
 
 	if (rl->rl_columns.b_len == 0)
-		return dc;
+		goto err;
 	rc = &rl->rl_columns.b_ptr[0];
 	if (rc->rc_datums.b_len == 0)
-		return dc;
+		goto err;
 
 	if (rl->rl_indent == NULL) {
 		rl->rl_indent = malloc(sizeof(*rl->rl_indent));
@@ -143,6 +143,9 @@ __ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
 	TAILQ_INSERT_TAIL(rl->rl_indent, ri, ri_entry);
 	return ri->ri_dc;
+
+err:
+	return __doc_alloc(DOC_CONCAT, dc, 0, fun, lno);
 }
 
 void
