@@ -1068,7 +1068,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	st->st_newline = 0;
 	doc_trim(dc, st);
 	if (st->st_pos > 0)
-		doc_print(dc, st, "\n", 1, 0);
+		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_FORCE);
 	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
 }
 
