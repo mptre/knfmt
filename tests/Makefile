@@ -302,6 +302,8 @@ TESTS+=	trace-001.c
 
 TESTS+=	bug-002.c
 TESTS+=	bug-004.c
+TESTS+=	bug-005.c
+TESTS+=	bug-006.c
 
 TESTS+=	../buffer.c
 TESTS+=	../compat-pledge.c
