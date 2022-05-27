@@ -406,6 +406,7 @@ token_list_move(struct token_list *src, struct token_list *dst)
 	struct token *tk;
 
 	while ((tk = TAILQ_FIRST(src)) != NULL) {
+		assert((tk->tk_flags & TOKEN_FLAG_CPP) == 0);
 		TAILQ_REMOVE(src, tk, tk_entry);
 		TAILQ_INSERT_TAIL(dst, tk, tk_entry);
 	}
