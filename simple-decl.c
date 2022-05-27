@@ -144,10 +144,14 @@ simple_decl_leave(struct simple_decl *sd)
 				    ident);
 		}
 
-		/* Move line break(s) to the new semicolon. */
 		cp = lexer_insert_after(sd->sd_lx, after, TOKEN_SEMI, ";");
-		token_list_move(&dl->dl_semi->tk_prefixes, &cp->tk_prefixes);
-		token_list_move(&dl->dl_semi->tk_suffixes, &cp->tk_suffixes);
+		if (token_is_moveable(dl->dl_semi)) {
+			/* Move line break(s) to the new semicolon. */
+			token_list_move(&dl->dl_semi->tk_prefixes,
+			    &cp->tk_prefixes);
+			token_list_move(&dl->dl_semi->tk_suffixes,
+			    &cp->tk_suffixes);
+		}
 	}
 
 	/* Remove by now empty declarations. */
