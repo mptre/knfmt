@@ -386,6 +386,9 @@ parser_stub_destroy(struct parser_stub *ps)
 	parser_free(ps->ps_pr);
 	ps->ps_pr = NULL;
 
+	lexer_free(ps->ps_lx);
+	ps->ps_lx = NULL;
+
 	file_free(ps->ps_fe);
 
 	if (ps->ps_fd[0] != -1)
