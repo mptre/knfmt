@@ -1685,7 +1685,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	 * statement on a single line.
 	 */
 	stop = TAILQ_NEXT(rparen, tk_entry);
-	if (parser_exec_expr(pr, stmt, &expr, stop, 0) & (FAIL | NONE))
+	if (parser_exec_expr(pr, stmt, &expr, stop, 0) & (FAIL | NONE | BRCH))
 		return parser_fail(pr);
 
 	if (flags & PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE) {

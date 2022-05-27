@@ -196,6 +196,7 @@ DISTFILES+=	tests/error-032.c
 DISTFILES+=	tests/error-033.c
 DISTFILES+=	tests/error-034.c
 DISTFILES+=	tests/error-035.c
+DISTFILES+=	tests/error-036.c
 DISTFILES+=	tests/knfmt.sh
 DISTFILES+=	tests/simple-001.c
 DISTFILES+=	tests/simple-001.ok
