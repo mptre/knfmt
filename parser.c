@@ -1530,9 +1530,11 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc,
 
 	/* Declarations are allowed in the first expression. */
 	if (parser_exec_decl(pr, loop, 0) & NONE) {
-		/* Let the semicolon hang of the expression unless empty. */
 		error = parser_exec_expr(pr, loop, &expr, NULL, 0);
-		if (error & HALT)
+		if (error & (FAIL | BRCH))
+			return parser_fail(pr);
+		/* Let the semicolon hang of the expression unless empty. */
+		if (error & NONE)
 			expr = loop;
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, expr);
@@ -1548,7 +1550,9 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc,
 	flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
 	/* Let the semicolon hang of the expression unless empty. */
 	error = parser_exec_expr(pr, loop, &expr, NULL, flags);
-	if (error & HALT) {
+	if (error & (FAIL | BRCH))
+		return parser_fail(pr);
+	if (error & NONE) {
 		/* Expression empty, remove the space. */
 		doc_remove(space, expr);
 		expr = loop;
@@ -1564,7 +1568,9 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc,
 	flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
 	/* Let the semicolon hang of the expression unless empty. */
 	error = parser_exec_expr(pr, loop, &expr, NULL, flags);
-	if (error & HALT) {
+	if (error & (FAIL | BRCH))
+		return parser_fail(pr);
+	if (error & NONE) {
 		/* Expression empty, remove the space. */
 		doc_remove(space, expr);
 		expr = loop;
