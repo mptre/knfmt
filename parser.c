@@ -31,7 +31,8 @@ struct parser {
 	struct lexer		*pr_lx;
 	struct buffer		*pr_bf;
 	unsigned int		 pr_error;
-	unsigned int		 pr_nblocks;	/* # indented stmt blocks */
+	unsigned int		 pr_nblocks;	/* # stmt blocks */
+	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
 	struct {
 		struct simple_stmt	*se_stmt;
@@ -1399,7 +1400,8 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		return parser_none(pr);
 
 	if (doindent)
-		pr->pr_nblocks++;
+		pr->pr_nindent++;
+	pr->pr_nblocks++;
 
 	dc = parser_simple_stmt_block(pr, ps->ps_tail);
 
@@ -1446,7 +1448,8 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	ps->ps_rbrace = concat;
 
 	if (doindent)
-		pr->pr_nblocks--;
+		pr->pr_nindent--;
+	pr->pr_nblocks--;
 
 	return parser_good(pr);
 }
@@ -2071,7 +2074,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 		return dc;
 
 	return simple_stmt_block(pr->pr_simple.se_stmt, lbrace, rbrace,
-	    pr->pr_nblocks * pr->pr_cf->cf_tw);
+	    pr->pr_nindent * pr->pr_cf->cf_tw);
 }
 
 static void *
@@ -2083,7 +2086,7 @@ parser_simple_stmt_ifelse_enter(struct parser *pr)
 	if (pr->pr_simple.se_nstmt != 1 || !lexer_peek(lx, &lbrace))
 		return NULL;
 	return simple_stmt_ifelse_enter(pr->pr_simple.se_stmt, lbrace,
-	    pr->pr_nblocks * pr->pr_cf->cf_tw);
+	    pr->pr_nindent * pr->pr_cf->cf_tw);
 }
 
 static void
@@ -2100,7 +2103,8 @@ parser_simple_stmt_ifelse_leave(struct parser *pr, void *cookie)
 static int
 parser_simple_decl_active(const struct parser *pr)
 {
-	return pr->pr_simple.se_nstmt == 0 &&
+	return pr->pr_nblocks > 0 &&
+	    pr->pr_simple.se_nstmt == 0 &&
 	    pr->pr_simple.se_ndecl == 1 &&
 	    pr->pr_simple.se_decl != NULL;
 }

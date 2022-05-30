@@ -4,42 +4,49 @@ struct a {
 	} c;
 };
 
-struct token	*pv, *tk;
+int x;
+int y;
 
-int z = 1;
-int b = 1, d = 2;
-int comment; /* comment */
-int comment /* comment */;
-int comment /* comment */, comment /* comment */;
-int a, c, c1, c2, x, y;
+int
+main(void)
+{
+	struct token	*pv, *tk;
 
-struct x	*f;
-struct x	 a;
+	int z = 1;
+	int b = 1, d = 2;
+	int comment; /* comment */
+	int comment /* comment */;
+	int comment /* comment */, comment /* comment */;
+	int a, c, c1, c2, x, y;
 
-int rflags = REG_EXTENDED;
-int c, i;
+	struct x	*f;
+	struct x	 a;
 
-int a = 1;
-int b = 2;
-int c;
+	int rflags = REG_EXTENDED;
+	int c, i;
 
-int a = 1;
-int b;
-char b;
+	int a = 1;
+	int b = 2;
+	int c;
 
-unsigned int u1 = 0;
-unsigned int u2;
+	int a = 1;
+	int b;
+	char b;
 
-char *v, *x;
+	unsigned int u1 = 0;
+	unsigned int u2;
 
-struct x {
-	int x;
-	int y;
-};
+	char *v, *x;
 
-int ret = 0;
-unsigned char *s = NULL;
-unsigned char *bufp, *sp;
-int first = 1;
-int again, bufsize, i, j, k, m, n;
-size_t num = 0, slen = 0;
+	struct x {
+		int x;
+		int y;
+	};
+
+	int ret = 0;
+	unsigned char *s = NULL;
+	unsigned char *bufp, *sp;
+	int first = 1;
+	int again, bufsize, i, j, k, m, n;
+	size_t num = 0, slen = 0;
+}
