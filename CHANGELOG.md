@@ -50,6 +50,10 @@
   (251f634)
   (Anton Lindqvist)
 
+- Fix switch case statement indent bug.
+  (fe41357)
+  (Anton Lindqvist)
+
 # 2.0.0 - 2022-04-13
 
 ## Changes
