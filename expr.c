@@ -240,7 +240,7 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 
 	/* Only consider unary operators. */
 	er = expr_rule_find(es->es_tk, 1);
-	if (er == NULL || er->er_type == TOKEN_LITERAL) {
+	if (er == NULL || es->es_tk->tk_type == TOKEN_IDENT) {
 		/*
 		 * Even if a literal operator was found, let the parser recover
 		 * before continuing. Otherwise, pointer types can be
