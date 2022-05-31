@@ -851,6 +851,8 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 {
 	struct token *fix;
 
+	assert(tk->tk_type != TOKEN_EOF);
+
 	if (keepfixes) {
 		struct token *nx, *pv;
 
