@@ -284,7 +284,7 @@ simple_decl_comma(struct simple_decl *sd, struct token *comma)
 	dv = simple_decl_var_end(sd, comma);
 	if (dv != NULL && dv->dv_delim == NULL) {
 		dv->dv_delim = comma;
-	} else {
+	} else if (token_is_moveable(comma)) {
 		/*
 		 * If the next variable ends up being moved, the preceding
 		 * comma must be removed.

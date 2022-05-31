@@ -1,0 +1,15 @@
+/*
+ * Group variable declarations.
+ */
+
+G ooutS
+#if 0
+,x,
+#else
+y,
+#else
+z,
+#endif
+
+#if 0
+;
