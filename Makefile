@@ -1,6 +1,6 @@
 include ${.CURDIR}/config.mk
 
-VERSION=	2.0.0
+VERSION=	2.1.0
 
 SRCS+=	buffer.c
 SRCS+=	compat-errc.c
