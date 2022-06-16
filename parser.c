@@ -584,8 +584,12 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_alloc(DOC_LINE, concat);
 			if (parser_simple_decl_active(pr))
 				simple_decl_comma(pr->pr_simple.se_decl, comma);
+			/* Break before the argument. */
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, dc));
+			doc_alloc(DOC_SOFTLINE, concat);
+			concat = doc_alloc(DOC_CONCAT,
+			    doc_alloc(DOC_GROUP, concat));
 		} else if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
 			doc_token(tk, concat);

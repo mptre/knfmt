@@ -1,6 +1,6 @@
 int
 main(void)
 {
-	uint64_t high_mask, *hva, low_mask, mask, pt_paddr, pte, pte_paddr, pte_size,
-		 shift_width;
+	uint64_t high_mask, *hva, low_mask, mask, pt_paddr, pte, pte_paddr,
+		 pte_size, shift_width;
 }
