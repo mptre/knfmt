@@ -99,6 +99,8 @@ static int	parser_exec_expr(struct parser *, struct doc *, struct doc **,
 static int	parser_exec_func_decl(struct parser *, struct doc *,
     struct ruler *, const struct token *);
 static int	parser_exec_func_impl(struct parser *, struct doc *);
+static int	parser_exec_func_impl1(struct parser *, struct doc *,
+    struct ruler *, const struct token *);
 static int	parser_exec_func_proto(struct parser *,
     struct parser_exec_func_proto_arg *);
 static int	parser_exec_func_arg(struct parser *, struct doc *,
@@ -1072,10 +1074,29 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 static int
 parser_exec_func_impl(struct parser *pr, struct doc *dc)
 {
+	struct ruler rl;
+	struct token *type;
+	int error;
+
+	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
+		return parser_none(pr);
+
+	ruler_init(&rl, 0);
+	error = parser_exec_func_impl1(pr, dc, &rl, type);
+	if (error & GOOD)
+		ruler_exec(&rl);
+	ruler_free(&rl);
+	return error;
+}
+
+static int
+parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
+    const struct token *type)
+{
 	struct parser_exec_func_proto_arg pf = {
 		.pf_dc		= dc,
-		.pf_rl		= NULL,
-		.pf_type	= NULL,
+		.pf_rl		= rl,
+		.pf_type	= type,
 		.pf_line	= DOC_HARDLINE,
 	};
 	struct parser_exec_stmt_block_arg ps = {
@@ -1085,11 +1106,6 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 		.ps_rbrace	= NULL,
 	};
 	struct lexer *lx = pr->pr_lx;
-	struct token *type;
-
-	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
-		return parser_none(pr);
-	pf.pf_type = type;
 
 	if (parser_exec_func_proto(pr, &pf) & (FAIL | NONE))
 		return parser_fail(pr);
