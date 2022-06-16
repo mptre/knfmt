@@ -1142,33 +1142,32 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	 * line.
 	 */
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	indent = isimpl ? concat : doc_alloc_indent(pr->pr_cf->cf_sw, concat);
 
 	if (pf->pf_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning a function pointer. */
 		if (!isimpl)
-			doc_alloc(pf->pf_line, indent);
+			doc_alloc(pf->pf_line, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-			doc_token(tk, indent);
+			doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_STAR, &tk))
-			doc_token(tk, indent);
+			doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
-			doc_token(tk, indent);
+			doc_token(tk, concat);
 		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 			return parser_fail(pr);
-		while (parser_exec_func_arg(pr, indent, NULL, rparen) & GOOD)
+		while (parser_exec_func_arg(pr, concat, NULL, rparen) & GOOD)
 			continue;
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-			doc_token(tk, indent);
+			doc_token(tk, concat);
 	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
 		token_trim(tk);
 		if (isimpl) {
-			doc_token(tk, indent);
+			doc_token(tk, concat);
 		} else {
 			struct doc *ident;
 
 			ident = doc_alloc(DOC_CONCAT,
-			    doc_alloc(DOC_GROUP, indent));
+			    doc_alloc(DOC_GROUP, concat));
 			doc_alloc(pf->pf_line, ident);
 			doc_token(tk, ident);
 		}
