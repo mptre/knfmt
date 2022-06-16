@@ -173,6 +173,10 @@ struct token {
 #define TOKEN_FLAG_SPACE	0x00008000u
 /* Token covered by diff chunk. */
 #define TOKEN_FLAG_DIFF		0x00010000u
+/*
+ * Token denotes the start of arguments to a function pointer type.
+ * Only applicable to TOKEN_LPAREN.
+ */
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
