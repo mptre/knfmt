@@ -1140,7 +1140,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	struct doc *dc = pf->pf_dc;
 	struct doc *concat, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rparen, *tk;
+	struct token *lparen, *rparen, *tk;
 	int error = 1;
 	int isimpl = pf->pf_line == DOC_HARDLINE;
 
@@ -1160,21 +1160,25 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
 	if (pf->pf_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
-		/* Function returning a function pointer. */
+		/* Function returning function pointer. */
 		if (!isimpl)
 			doc_alloc(pf->pf_line, concat);
-		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-			doc_token(tk, concat);
+		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
+			doc_token(lparen, concat);
 		if (lexer_expect(lx, TOKEN_STAR, &tk))
 			doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
 			doc_token(tk, concat);
 		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 			return parser_fail(pr);
+		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
+			doc_token(lparen, concat);
 		while (parser_exec_func_arg(pr, concat, NULL, rparen) & GOOD)
 			continue;
-		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-			doc_token(tk, concat);
+		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
+			doc_token(rparen, concat);
+		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
+			doc_token(rparen, concat);
 	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
 		token_trim(tk);
 		if (isimpl) {
@@ -1191,11 +1195,20 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_fail(pr);
-	parser_trim_brace(rparen);
-
+	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
+		token_trim(lparen);
+		doc_token(lparen, concat);
+	}
 	indent = doc_alloc_indent(pr->pr_cf->cf_sw, concat);
 	while (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen) & GOOD)
 		continue;
+	/* Can be empty if arguments are absent. */
+	if (pf->pf_out == NULL)
+		pf->pf_out = concat;
+	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
+		parser_trim_brace(rparen);
+		doc_token(rparen, pf->pf_out);
+	}
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);
@@ -1222,16 +1235,12 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 {
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end = NULL;
 	struct token *pv = NULL;
-	struct token *tk;
+	struct token *tk, *type;
 	int error = 0;
 
-	/* Consume any left parenthesis before emitting a soft line. */
-	if (lexer_if(lx, TOKEN_LPAREN, &tk)) {
-		token_trim(tk);
-		doc_token(tk, dc);
-	}
+	if (!lexer_peek_if_type(lx, &type, LEXER_TYPE_FLAG_ARG))
+		return parser_none(pr);
 
 	/*
 	 * Let each argument begin with a soft line, causing a line to be
@@ -1242,9 +1251,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	doc_alloc(DOC_SOFTLINE, concat);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, concat));
 
-	/* A type will missing when emitting the final right parenthesis. */
-	if (lexer_peek_if_type(lx, &end, LEXER_TYPE_FLAG_ARG) &&
-	    parser_exec_type(pr, concat, end, NULL) & (FAIL | NONE))
+	if (parser_exec_type(pr, concat, type, NULL) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	/* Put the argument identifier in its own group to trigger a refit. */
@@ -1253,7 +1260,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		*out = concat;
 
 	/* Put a line between the type and identifier when wanted. */
-	if (end != NULL && end->tk_type != TOKEN_STAR &&
+	if (type->tk_type != TOKEN_STAR &&
 	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
@@ -1272,6 +1279,8 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 			doc_alloc(DOC_LINE, concat);
 			break;
 		}
+		if (lexer_peek(lx, &tk) && tk == rparen)
+			break;
 
 		if (!lexer_pop(lx, &tk)) {
 			error = parser_fail(pr);
@@ -1282,8 +1291,6 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		    tk->tk_type == TOKEN_IDENT)
 			doc_alloc(DOC_LINE, concat);
 		doc_token(tk, concat);
-		if (tk == rparen)
-			return parser_none(pr);
 		pv = tk;
 	}
 
@@ -1933,12 +1940,16 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 
 		if (tk->tk_flags & TOKEN_FLAG_TYPE_ARGS) {
 			struct doc *indent;
+			struct token *lparen = tk;
+			struct token *rparen;
 
-			doc_token(tk, dc);
+			doc_token(lparen, dc);
 			indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
 			while (parser_exec_func_arg(pr, indent, NULL, end) &
 			    GOOD)
 				continue;
+			if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
+				doc_token(rparen, dc);
 			break;
 		}
 
