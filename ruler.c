@@ -17,6 +17,7 @@ TAILQ_HEAD(ruler_indent_list, ruler_indent);
 
 struct ruler_datum {
 	struct doc	*rd_dc;
+	unsigned int	 rd_indent;
 	unsigned int	 rd_len;
 	unsigned int	 rd_nspaces;
 };
@@ -90,7 +91,8 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	rd = &rc->rc_datums.b_ptr[rc->rc_datums.b_len++];
 	memset(rd, 0, sizeof(*rd));
 
-	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, 1, fun, lno);
+	rd->rd_indent = 1;
+	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, rd->rd_indent, fun, lno);
 	rd->rd_len = len;
 	rd->rd_nspaces = nspaces;
 
@@ -186,6 +188,7 @@ ruler_exec(struct ruler *rl)
 			if (indent % 8 > 0)
 				indent = tabalign(indent);
 			indent += rc->rc_nspaces - rd->rd_nspaces;
+			rd->rd_indent = indent;
 			doc_set_indent(rd->rd_dc, indent);
 		}
 	}
@@ -198,17 +201,13 @@ ruler_exec(struct ruler *rl)
 		unsigned int indent;
 
 		if (rc->rc_ntabs == 0) {
-			maxlen = 0;
+			indent = rd->rd_len + rd->rd_indent;
 		} else {
-			maxlen = rc->rc_len;
+			indent = rc->rc_len;
 			if (!minimize(rc))
-				maxlen = tabalign(maxlen);
+				indent = tabalign(indent);
+			indent += rc->rc_nspaces - rd->rd_nspaces;
 		}
-		if (rc->rc_ntabs == 0)
-			indent = rd->rd_len;
-		else
-			indent = maxlen;
-		indent += rc->rc_nspaces - rd->rd_nspaces;
 		doc_set_indent(ri->ri_dc, ri->ri_indent * indent);
 	}
 

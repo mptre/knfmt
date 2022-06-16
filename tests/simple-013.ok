@@ -1,10 +1,10 @@
 G ooutS
 #if 0
- , x,
+  , x,
 #else
- y,
+  y,
 #else
- z,
+  z,
 #endif
 
 #if 0
