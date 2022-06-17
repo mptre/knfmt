@@ -742,7 +742,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 }
 
 /*
- * Insert a soft line before the given expression, unless a more suitable one
+ * Insert a soft line before the given expression, unless a more suitable one is
  * nested under the same expression.
  */
 static struct doc *
