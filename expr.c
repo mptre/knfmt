@@ -106,6 +106,8 @@ static void		 expr_free(struct expr *);
 
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_break(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
@@ -564,21 +566,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			    doc_alloc(DOC_GROUP, concat));
 			doc_alloc(dospace ? DOC_LINE : DOC_SOFTLINE, concat);
 		}
-		if (ex->ex_rhs != NULL) {
-			struct doc *rhs, *softline;
-
-			concat = expr_doc_soft(concat, &softline, 1);
-			concat = rhs = doc_alloc(DOC_CONCAT, concat);
-			concat = expr_doc(ex->ex_rhs, es, concat);
-			/*
-			 * Last resort soft line. All expression soft line(s)
-			 * has a associated weight. A zero max weight implies
-			 * that we rather break right here. Otherwise, there's a
-			 * more suitable nested soft line that must be favored.
-			 */
-			if (doc_max(rhs) > 0)
-				doc_remove(softline, rhs);
-		}
+		if (ex->ex_rhs != NULL)
+			concat = expr_doc_break(ex->ex_rhs, es, concat);
 
 		break;
 	}
@@ -750,6 +739,30 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_literal(")", concat);
 
 	es->es_depth--;
+
+	return concat;
+}
+
+/*
+ * Insert a soft line before the given expression, unless a more suitable one
+ * nested under the same expression.
+ */
+static struct doc *
+expr_doc_break(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	struct doc *concat, *parent, *softline;
+
+	dc = expr_doc_soft(dc, &softline, 1);
+	parent = doc_alloc(DOC_CONCAT, dc);
+	concat = expr_doc(ex, es, parent);
+	/*
+	 * All soft line(s) allocated using expr_doc_soft() has a associated
+	 * weight. A zero max weight implies that we rather break right here.
+	 * Otherwise, there's a more suitable nested soft line that must be
+	 * favored.
+	 */
+	if (doc_max(parent) > 0)
+		doc_remove(softline, dc);
 
 	return concat;
 }
