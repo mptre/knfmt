@@ -2,10 +2,9 @@ DESIGN
 ======
 
 I've always wanted a tool capable of formatting source code according to
-style(9) from OpenBSD. It shouldn't require one to fiddle with a bunch of knobs
-nor supply needed include path(s) in order to do get the desired formatting
-right. There are other tools out there but they didn't manage to satisfy my
-requirements.
+style(9) from OpenBSD. It shouldn't require one to fiddle with knobs nor supply
+needed include path(s) in order to do get the desired formatting right. There
+are other tools out there but they didn't manage to satisfy my requirements.
 
 Another motivation for knfmt was the discovery of a paper entitled "A prettier
 printer" by Philip Wadler[1]. I found his work both novel and elegant. This was
