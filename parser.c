@@ -1698,27 +1698,31 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	struct doc *expr = NULL;
 	struct doc *stmt;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rparen, *stop, *tk;
+	struct token *lparen, *rparen, *tk;
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_fail(pr);
-	/* Never break after the right parenthesis. */
-	token_trim(rparen);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_token(tk, stmt);
 	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
 
+	if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
+		doc_token(lparen, stmt);
 	/*
 	 * The tokens after the expression must be nested underneath the same
 	 * expression since we want to fit everything until the following
 	 * statement on a single line.
 	 */
-	stop = TAILQ_NEXT(rparen, tk_entry);
-	if (parser_exec_expr(pr, stmt, &expr, stop, 0) & HALT)
+	if (parser_exec_expr(pr, stmt, &expr, rparen, 0) & HALT)
 		return parser_fail(pr);
+	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
+		/* Never break after the right parenthesis. */
+		token_trim(rparen);
+		doc_token(rparen, expr);
+	}
 
 	if (flags & PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE) {
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
