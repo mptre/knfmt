@@ -1719,8 +1719,16 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	if (parser_exec_expr(pr, stmt, &expr, rparen, 0) & HALT)
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
+		struct token *lbrace;
+
 		/* Never break after the right parenthesis. */
 		token_trim(rparen);
+		/* Move suffixes if the left brace is about to move. */
+		if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) &&
+		    token_cmp(rparen, lbrace) < 0) {
+			token_list_move(&rparen->tk_suffixes,
+			    &lbrace->tk_suffixes);
+		}
 		doc_token(rparen, expr);
 	}
 
