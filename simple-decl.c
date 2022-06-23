@@ -383,7 +383,6 @@ decl_hash_init(struct decl_hash *dh, const struct token_range *tr)
 	unsigned int ntokens = 0;
 
 	bf = buffer_alloc(64);
-	tk = tr->tr_beg;
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
 		if (ntokens++ > 0)
 			buffer_appendc(bf, ' ');
