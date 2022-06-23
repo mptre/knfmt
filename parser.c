@@ -156,7 +156,7 @@ static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static int		parser_peek_expr(struct parser *, const struct token *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
-static void		parser_trim_brace(struct token *);
+static void		parser_token_trim(struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
 #define parser_fail(a) \
@@ -444,7 +444,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 			return parser_fail(pr);
-		parser_trim_brace(rbrace);
+		parser_token_trim(rbrace);
 		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
 			token_trim(lbrace);
 			doc_token(lbrace, concat);
@@ -473,7 +473,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 			return parser_fail(pr);
-		parser_trim_brace(rbrace);
+		parser_token_trim(rbrace);
 
 		error = parser_exec_decl_braces_fields(pr, concat, rbrace,
 		    PARSER_EXEC_DECL_BRACES_FIELDS_FLAG_ENUM |
@@ -1210,7 +1210,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	if (pf->pf_out == NULL)
 		pf->pf_out = concat;
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
-		parser_trim_brace(rparen);
+		parser_token_trim(rparen);
 		doc_token(rparen, pf->pf_out);
 	}
 
@@ -1431,7 +1431,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 
 	dc = parser_simple_stmt_block(pr, ps->ps_tail);
 
-	parser_trim_brace(rbrace);
+	parser_token_trim(rbrace);
 
 	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
 		return parser_fail(pr);
@@ -2403,18 +2403,18 @@ out:
 }
 
 /*
- * Trim hard line(s) from the given right brace as part of block, unless the
- * right brace is preceeded with prefixes intended to be emitted.
+ * Trim hard line(s) from the given token, unless the preceeding token has
+ * prefixes intended to be emitted.
  */
 static void
-parser_trim_brace(struct token *rbrace)
+parser_token_trim(struct token *tk)
 {
 	struct token *pv;
 
-	pv = TAILQ_PREV(rbrace, token_list, tk_entry);
+	pv = TAILQ_PREV(tk, token_list, tk_entry);
 	if (pv != NULL &&
-	    !token_has_prefix(rbrace, TOKEN_COMMENT) &&
-	    !token_has_prefix(rbrace, TOKEN_CPP))
+	    !token_has_prefix(tk, TOKEN_COMMENT) &&
+	    !token_has_prefix(tk, TOKEN_CPP))
 		token_trim(pv);
 }
 
