@@ -122,13 +122,13 @@ filelist(int argc, char **argv, struct file_list *files,
 		return diff_parse(files, cf);
 
 	if (argc == 0) {
-		fe = file_alloc("/dev/stdin", 0);
+		fe = file_alloc("/dev/stdin");
 		TAILQ_INSERT_TAIL(files, fe, fe_entry);
 	} else {
 		int i;
 
 		for (i = 0; i < argc; i++) {
-			fe = file_alloc(argv[i], 0);
+			fe = file_alloc(argv[i]);
 			TAILQ_INSERT_TAIL(files, fe, fe_entry);
 		}
 	}

@@ -372,7 +372,7 @@ parser_stub_create(struct parser_stub *ps, const char *src)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 
 	error_init(&ps->ps_er, &cf);
-	ps->ps_fe = file_alloc(ps->ps_path, 0);
+	ps->ps_fe = file_alloc(ps->ps_path);
 	ps->ps_lx = lexer_alloc(ps->ps_fe, &ps->ps_er, &cf);
 	ps->ps_pr = parser_alloc(ps->ps_path, ps->ps_lx, &ps->ps_er, &cf);
 }

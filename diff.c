@@ -36,15 +36,16 @@ files_free(struct file_list *files)
 }
 
 struct file *
-file_alloc(char *path, unsigned int flags)
+file_alloc(const char *path)
 {
 	struct file *fe;
 
 	fe = calloc(1, sizeof(*fe));
 	if (fe == NULL)
 		err(1, NULL);
-	fe->fe_path = path;
-	fe->fe_flags = flags;
+	fe->fe_path = strdup(path);
+	if (fe->fe_path == NULL)
+		err(1, NULL);
 	TAILQ_INIT(&fe->fe_diff.di_chunks);
 	return fe;
 }
@@ -61,9 +62,7 @@ file_free(struct file *fe)
 		TAILQ_REMOVE(&fe->fe_diff.di_chunks, du, du_entry);
 		free(du);
 	}
-
-	if (fe->fe_flags & FILE_FLAG_FREE)
-		free(fe->fe_path);
+	free(fe->fe_path);
 	free(fe);
 }
 
@@ -119,7 +118,7 @@ diff_parse(struct file_list *files, const struct config *cf)
 		int el, sl;
 
 		if (matchpath(buf, &path)) {
-			fe = file_alloc(path, FILE_FLAG_FREE);
+			fe = file_alloc(path);
 			TAILQ_INSERT_TAIL(files, fe, fe_entry);
 
 			buf = skipline(buf);

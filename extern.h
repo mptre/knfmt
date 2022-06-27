@@ -107,8 +107,6 @@ int	diff_covers(const struct diff *, unsigned int);
 struct file {
 	struct diff		 fe_diff;
 	char			*fe_path;
-	unsigned int		 fe_flags;
-#define FILE_FLAG_FREE		0x00000001u	/* fe_path must be freed */
 
 	TAILQ_ENTRY(file)	 fe_entry;
 };
@@ -117,7 +115,7 @@ TAILQ_HEAD(file_list, file);
 
 void	files_free(struct file_list *);
 
-struct file	*file_alloc(char *, unsigned int);
+struct file	*file_alloc(const char *);
 void		 file_free(struct file *);
 
 /*
