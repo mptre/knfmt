@@ -478,8 +478,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_ALIGN:
-		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0)
-			doc_indent1(dc, st, dc->dc_int);
+		doc_indent1(dc, st, dc->dc_int);
 		break;
 
 	case DOC_LITERAL:
