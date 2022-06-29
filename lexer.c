@@ -1374,7 +1374,7 @@ lexer_dump(const struct lexer *lx)
 static int
 lexer_getc(struct lexer *lx, unsigned char *ch)
 {
-	struct buffer *bf = lx->lx_bf;
+	const struct buffer *bf = lx->lx_bf;
 	unsigned char c;
 
 	if (lx->lx_st.st_off == bf->bf_len) {
