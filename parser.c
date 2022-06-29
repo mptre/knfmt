@@ -29,7 +29,7 @@ struct parser {
 	struct error		*pr_er;
 	const struct config	*pr_cf;
 	struct lexer		*pr_lx;
-	struct buffer		*pr_bf;
+	struct buffer		*pr_bf;		/* scratch buffer */
 	unsigned int		 pr_error;
 	unsigned int		 pr_nblocks;	/* # stmt blocks */
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
@@ -202,7 +202,6 @@ parser_exec(struct parser *pr)
 	struct lexer *lx = pr->pr_lx;
 	int error = 0;
 
-	bf = pr->pr_bf = buffer_alloc(lexer_get_buffer(lx)->bf_siz);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 
 	for (;;) {
@@ -246,14 +245,12 @@ parser_exec(struct parser *pr)
 	if (error) {
 		doc_free(dc);
 		parser_fail(pr);
-		buffer_free(bf);
-		pr->pr_bf = NULL;
 		return NULL;
 	}
 
-	doc_exec(dc, pr->pr_lx, pr->pr_bf, pr->pr_cf, 0);
+	bf = buffer_alloc(lexer_get_buffer(lx)->bf_siz);
+	doc_exec(dc, pr->pr_lx, bf, pr->pr_cf, 0);
 	doc_free(dc);
-	pr->pr_bf = NULL;
 	return bf;
 }
 
@@ -2428,6 +2425,8 @@ parser_token_trim(struct token *tk)
 static unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
+	if (pr->pr_bf == NULL)
+		pr->pr_bf = buffer_alloc(1024);
 	return doc_width(dc, pr->pr_bf, pr->pr_cf);
 }
 
