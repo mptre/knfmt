@@ -11,7 +11,7 @@
 
 static void	diff_end(struct diff *, unsigned int);
 
-static int	matchpath(char *, char **);
+static int	matchpath(char *, char *, size_t);
 static int	matchchunk(char *, int *, int *);
 static int	matchline(const char *, int, struct file *);
 
@@ -114,10 +114,10 @@ diff_parse(struct file_list *files, const struct config *cf)
 	buf = bf->bf_ptr;
 
 	for (;;) {
-		char *path;
+		char path[PATH_MAX];
 		int el, sl;
 
-		if (matchpath(buf, &path)) {
+		if (matchpath(buf, path, sizeof(path))) {
 			fe = file_alloc(path);
 			TAILQ_INSERT_TAIL(files, fe, fe_entry);
 
@@ -193,11 +193,12 @@ diff_end(struct diff *di, unsigned int lno)
 }
 
 static int
-matchpath(char *str, char **path)
+matchpath(char *str, char *path, size_t pathsiz)
 {
 	regmatch_t rm[2];
 	const char *buf;
 	size_t len;
+	int n;
 
 	if (xregexec(&repath, str, rm, 2))
 		return 0;
@@ -209,9 +210,9 @@ matchpath(char *str, char **path)
 		buf += 2;
 		len -= 2;
 	}
-	*path = strndup(buf, len);
-	if (*path == NULL)
-		err(1, NULL);
+	n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
+	if (n < 0 || (size_t)n >= pathsiz)
+		errx(1, "%.*s: path too long", (int)len, buf);
 	return 1;
 }
 
