@@ -515,8 +515,6 @@ lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
 	if (UNLIKELY(cf->cf_verbose >= 3))
 		lexer_dump(lx);
 
-	buffer_appendc(lx->lx_bf, '\0');
-
 	return lx;
 }
 

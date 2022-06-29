@@ -25,7 +25,7 @@ static int	filewrite(const struct buffer *, const struct buffer *,
     const char *);
 static int	fileattr(const char *, const char *);
 
-static int	tmpfd(const char *, char *, size_t);
+static int	tmpfd(const char *, size_t, char *, size_t);
 
 int
 main(int argc, char *argv[])
@@ -165,7 +165,7 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 	else if (cf->cf_flags & CONFIG_FLAG_INPLACE)
 		error = filewrite(src, dst, fe->fe_path);
 	else
-		printf("%s", dst->bf_ptr);
+		printf("%.*s", (int)dst->bf_len, dst->bf_ptr);
 
 out:
 	parser_free(pr);
@@ -184,10 +184,10 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	srcfd = tmpfd(src->bf_ptr, srcpath, sizeof(srcpath));
+	srcfd = tmpfd(src->bf_ptr, src->bf_len, srcpath, sizeof(srcpath));
 	if (srcfd == -1)
 		goto out;
-	dstfd = tmpfd(dst->bf_ptr, dstpath, sizeof(dstpath));
+	dstfd = tmpfd(dst->bf_ptr, dst->bf_len, dstpath, sizeof(dstpath));
 	if (dstfd == -1)
 		goto out;
 
@@ -247,7 +247,7 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 	}
 
 	buf = dst->bf_ptr;
-	len = strlen(buf);
+	len = dst->bf_len;
 	while (len > 0) {
 		ssize_t nw;
 
@@ -317,11 +317,10 @@ fileattr(const char *srcpath, const char *dstpath)
  * the last reference to the file.
  */
 static int
-tmpfd(const char *buf, char *path, size_t pathsiz)
+tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
 {
 	char tmppath[PATH_MAX];
 	ssize_t siz = sizeof(tmppath);
-	size_t len;
 	int fd = -1;
 	int n;
 
@@ -340,17 +339,16 @@ tmpfd(const char *buf, char *path, size_t pathsiz)
 		goto err;
 	}
 
-	len = strlen(buf);
-	while (len > 0) {
+	while (buflen > 0) {
 		ssize_t nw;
 
-		nw = write(fd, buf, len);
+		nw = write(fd, buf, buflen);
 		if (nw == -1) {
 			warn("write");
 			goto err;
 		}
 		buf += nw;
-		len -= nw;
+		buflen -= nw;
 	}
 	if (lseek(fd, 0, SEEK_SET) == -1) {
 		warn("lseek");

@@ -193,7 +193,6 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 
 	doc_exec1(dc, &st);
 	doc_diff_exit(dc, &st);
-	buffer_appendc(bf, '\0');
 
 	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
 }

@@ -248,6 +248,7 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 
 	bf = buffer_alloc(128);
 	doc_exec(group, ps.ps_lx, bf, &cf, 0);
+	buffer_appendc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
