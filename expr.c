@@ -425,7 +425,7 @@ expr_exec_sizeof(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 		ex->ex_sizeof = 1;
 	}
 
-	ex->ex_lhs = expr_exec1(es, PC0);
+	ex->ex_lhs = expr_exec1(es, PC(es->es_er->er_pc));
 
 	if (ex->ex_sizeof && lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
 		ex->ex_tokens[1] = tk;	/* ) */

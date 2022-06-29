@@ -127,6 +127,7 @@ main(int argc, char *argv[])
 	error |= test_expr_exec("x * y", "((x) * (y))");
 	error |= test_expr_exec("x & y", "((x) & (y))");
 	error |= test_expr_exec("sizeof x", "(sizeof (x))");
+	error |= test_expr_exec("sizeof x * y", "((sizeof (x)) * (y))");
 	error |= test_expr_exec("sizeof char", "(sizeof (char))");
 	error |= test_expr_exec("sizeof char *", "(sizeof (char *))");
 	error |= test_expr_exec("sizeof struct s", "(sizeof (struct s))");
