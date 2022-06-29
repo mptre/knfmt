@@ -138,7 +138,7 @@ filelist(int argc, char **argv, struct file_list *files,
 static int
 fileformat(const struct file *fe, struct error *er, const struct config *cf)
 {
-	const struct buffer *dst;
+	struct buffer *dst = NULL;
 	struct buffer *src;
 	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
@@ -173,6 +173,7 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 		printf("%.*s", (int)dst->bf_len, dst->bf_ptr);
 
 out:
+	buffer_free(dst);
 	parser_free(pr);
 	lexer_free(lx);
 	buffer_free(src);
