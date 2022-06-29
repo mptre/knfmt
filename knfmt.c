@@ -138,12 +138,18 @@ filelist(int argc, char **argv, struct file_list *files,
 static int
 fileformat(const struct file *fe, struct error *er, const struct config *cf)
 {
-	const struct buffer *dst, *src;
-	struct lexer *lx;
+	const struct buffer *dst;
+	struct buffer *src;
+	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
 	int error = 0;
 
-	lx = lexer_alloc(fe, er, cf);
+	src = buffer_read(fe->fe_path);
+	if (src == NULL) {
+		error = 1;
+		goto out;
+	}
+	lx = lexer_alloc(fe, src, er, cf);
 	if (lx == NULL) {
 		error = 1;
 		goto out;
@@ -159,7 +165,6 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 		goto out;
 	}
 
-	src = lexer_get_buffer(lx);
 	if (cf->cf_flags & CONFIG_FLAG_DIFF)
 		error = filediff(src, dst, fe->fe_path);
 	else if (cf->cf_flags & CONFIG_FLAG_INPLACE)
@@ -170,6 +175,7 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 out:
 	parser_free(pr);
 	lexer_free(lx);
+	buffer_free(src);
 	return error;
 }
 

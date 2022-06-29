@@ -231,8 +231,8 @@ struct lexer_state {
 
 void		 lexer_init(void);
 void		 lexer_shutdown(void);
-struct lexer	*lexer_alloc(const struct file *, struct error *,
-    const struct config *);
+struct lexer	*lexer_alloc(const struct file *, const struct buffer *,
+    struct error *, const struct config *);
 void		 lexer_free(struct lexer *);
 
 const struct buffer	*lexer_get_buffer(const struct lexer *);

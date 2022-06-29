@@ -30,7 +30,7 @@ struct lexer {
 	struct error		*lx_er;
 	const struct config	*lx_cf;
 	const struct diff	*lx_diff;
-	struct buffer		*lx_bf;
+	const struct buffer	*lx_bf;
 	const char		*lx_path;
 
 	/* Line number to buffer offset mapping. */
@@ -452,16 +452,12 @@ lexer_shutdown(void)
 }
 
 struct lexer *
-lexer_alloc(const struct file *fe, struct error *er, const struct config *cf)
+lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
+    const struct config *cf)
 {
 	struct branch *br;
-	struct buffer *bf;
 	struct lexer *lx;
 	int error = 0;
-
-	bf = buffer_read(fe->fe_path);
-	if (bf == NULL)
-		return NULL;
 
 	lx = calloc(1, sizeof(*lx));
 	if (lx == NULL)
@@ -538,7 +534,6 @@ lexer_free(struct lexer *lx)
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
-	buffer_free(lx->lx_bf);
 	free(lx->lx_lines.l_off);
 	free(lx);
 }

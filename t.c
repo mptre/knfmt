@@ -35,9 +35,9 @@ struct parser_stub {
 	char		 ps_path[PATH_MAX];
 	struct error	 ps_er;
 	struct file	*ps_fe;
-	struct parser	*ps_pr;
+	struct buffer	*ps_bf;
 	struct lexer	*ps_lx;
-	int		 ps_fd[2];
+	struct parser	*ps_pr;
 };
 
 static void	parser_stub_create(struct parser_stub *, const char *);
@@ -354,27 +354,11 @@ __test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
 static void
 parser_stub_create(struct parser_stub *ps, const char *src)
 {
-	ssize_t len, n;
-
-	if (pipe(ps->ps_fd) == -1)
-		err(1, "pipe");
-	len = strlen(src);
-	n = write(ps->ps_fd[1], src, len);
-	if (n == -1)
-		err(1, "write");
-	if (n != len)
-		errx(1, "write: %ld < %ld", n, len);
-	close(ps->ps_fd[1]);
-	ps->ps_fd[1] = -1;
-
-	len = sizeof(ps->ps_path);
-	n = snprintf(ps->ps_path, len, "/dev/fd/%d", ps->ps_fd[0]);
-	if (n < 0 || n > len)
-		errc(1, ENAMETOOLONG, "%s", __func__);
-
 	error_init(&ps->ps_er, &cf);
-	ps->ps_fe = file_alloc(ps->ps_path);
-	ps->ps_lx = lexer_alloc(ps->ps_fe, &ps->ps_er, &cf);
+	ps->ps_bf = buffer_alloc(128);
+	buffer_append(ps->ps_bf, src, strlen(src));
+	ps->ps_fe = file_alloc("test.c");
+	ps->ps_lx = lexer_alloc(ps->ps_fe, ps->ps_bf, &ps->ps_er, &cf);
 	ps->ps_pr = parser_alloc(ps->ps_path, ps->ps_lx, &ps->ps_er, &cf);
 }
 
@@ -392,12 +376,8 @@ parser_stub_destroy(struct parser_stub *ps)
 
 	file_free(ps->ps_fe);
 
-	if (ps->ps_fd[0] != -1)
-		close(ps->ps_fd[0]);
-	ps->ps_fd[0] = -1;
-	if (ps->ps_fd[1] != -1)
-		close(ps->ps_fd[1]);
-	ps->ps_fd[1] = -1;
+	buffer_free(ps->ps_bf);
+	ps->ps_bf = NULL;
 }
 
 static __dead void
