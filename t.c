@@ -8,48 +8,57 @@
 
 #include "extern.h"
 
+struct context;
+
 #define test_expr_exec(a, b)						\
-	__test_expr_exec((a), (b), "test_expr_exec", __LINE__);		\
-	if (xflag && error) goto out
-static int	__test_expr_exec(const char *, const char *, const char *, int);
+	__test_expr_exec(&cx, (a), (b), "test_expr_exec", __LINE__);	\
+	if (xflag && error) goto out;					\
+	context_reset(&cx)
+static int	__test_expr_exec(struct context *, const char *, const char *,
+    const char *, int);
 
 #define test_lexer_peek_if_type(a, b)					\
-	__test_lexer_peek_if_type((a), (b), 0,				\
+	__test_lexer_peek_if_type(&cx, (a), (b), 0,			\
 		"test_lexer_peek_if_type", __LINE__);			\
-	if (xflag && error) goto out
+	if (xflag && error) goto out;					\
+	context_reset(&cx)
 #define test_lexer_peek_if_type_flags(a, b, c)				\
-	__test_lexer_peek_if_type((b), (c), (a),			\
+	__test_lexer_peek_if_type(&cx, (b), (c), (a),			\
 		"test_lexer_peek_if_type", __LINE__);			\
-	if (xflag && error) goto out
-static int	__test_lexer_peek_if_type(const char *, const char *,
+	if (xflag && error) goto out;					\
+	context_reset(&cx)
+static int	__test_lexer_peek_if_type(struct context *, const char *,
+    const char *,
     unsigned int, const char *, int);
 
 #define test_lexer_read(a, b)						\
-	__test_lexer_read((a), (b), "test_lexer_read",			\
+	__test_lexer_read(&cx, (a), (b), "test_lexer_read",		\
 		__LINE__);						\
-	if (xflag && error) goto out
-static int	__test_lexer_read(const char *, const char *, const char *,
+	if (xflag && error) goto out;					\
+	context_reset(&cx)
+static int	__test_lexer_read(struct context *, const char *, const char *,
+    const char *,
     int);
 
-struct parser_stub {
-	char		 ps_path[PATH_MAX];
-	struct error	 ps_er;
-	struct file	*ps_fe;
-	struct buffer	*ps_bf;
-	struct lexer	*ps_lx;
-	struct parser	*ps_pr;
+struct context {
+	struct config	 cx_cf;
+	struct error	 cx_er;
+	struct file	*cx_fe;
+	struct buffer	*cx_bf;
+	struct lexer	*cx_lx;
+	struct parser	*cx_pr;
 };
 
-static void	parser_stub_create(struct parser_stub *, const char *);
-static void	parser_stub_destroy(struct parser_stub *);
+static void	context_init(struct context *, const char *);
+static void	context_reset(struct context *);
+static void	context_shutdown(struct context *);
 
 static __dead void	usage(void);
-
-static struct config	cf;
 
 int
 main(int argc, char *argv[])
 {
+	struct context cx;
 	int error = 0;
 	int xflag = 0;
 	int ch;
@@ -63,9 +72,6 @@ main(int argc, char *argv[])
 			usage();
 		}
 	}
-
-	config_init(&cf);
-	cf.cf_flags |= CONFIG_FLAG_TEST;
 
 	lexer_init();
 	diff_init();
@@ -213,16 +219,18 @@ main(int argc, char *argv[])
 	error |= test_lexer_read(".x", "PERIOD IDENT");
 
 out:
+	context_shutdown(&cx);
 	diff_shutdown();
 	lexer_shutdown();
 	return error;
 }
 
 static int
-__test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
+__test_expr_exec(struct context *cx, const char *src, const char *exp,
+    const char *fun, int lno)
 {
 	struct expr_exec_arg ea = {
-		.ea_cf		= &cf,
+		.ea_cf		= &cx->cx_cf,
 		.ea_lx		= NULL,
 		.ea_dc		= NULL,
 		.ea_stop	= NULL,
@@ -230,62 +238,62 @@ __test_expr_exec(const char *src, const char *exp, const char *fun, int lno)
 		.ea_arg		= NULL,
 		.ea_flags	= 0,
 	};
-	struct parser_stub ps;
 	struct buffer *bf = NULL;
 	struct doc *group;
 	const char *act;
 	int error = 0;
 
-	parser_stub_create(&ps, src);
+	context_init(cx, src);
+
 	group = doc_alloc(DOC_GROUP, NULL);
-	ea.ea_lx = ps.ps_lx;
+	ea.ea_lx = cx->cx_lx;
 	ea.ea_dc = doc_alloc(DOC_CONCAT, group);
-	ea.ea_arg = ps.ps_pr;
+	ea.ea_arg = cx->cx_pr;
 	if (expr_exec(&ea) == NULL) {
-		warnx("%s:%d: expr_exec() failure", fun, lno);
+		fprintf(stderr, "%s:%d: expr_exec() failure\n", fun, lno);
 		error = 1;
 		goto out;
 	}
 
 	bf = buffer_alloc(128);
-	doc_exec(group, ps.ps_lx, bf, &cf, 0);
+	doc_exec(group, cx->cx_lx, bf, &cx->cx_cf, 0);
 	buffer_appendc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
-		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
-		    act);
+		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
+		    fun, lno, exp, act);
 		error = 1;
 	}
 
 out:
 	doc_free(group);
 	buffer_free(bf);
-	parser_stub_destroy(&ps);
 	return error;
 }
 
 static int
-__test_lexer_peek_if_type(const char *src, const char *exp, unsigned int flags,
+__test_lexer_peek_if_type(struct context *cx, const char *src, const char *exp,
+    unsigned int flags,
     const char *fun, int lno)
 {
-	struct parser_stub ps;
 	struct buffer *bf = NULL;
 	struct token *end, *tk;
 	const char *act;
 	int error = 0;
 	int ntokens = 0;
 
-	parser_stub_create(&ps, src);
+	context_init(cx, src);
 
-	if (!lexer_peek_if_type(ps.ps_lx, &end, flags)) {
-		warnx("%s:%d: lexer_peek_if_type() failure", fun, lno);
+	if (!lexer_peek_if_type(cx->cx_lx, &end, flags)) {
+		fprintf(stderr, "%s:%d: lexer_peek_if_type() failure\n",
+		    fun, lno);
 		error = 1;
 		goto out;
 	}
 
 	bf = buffer_alloc(128);
 	for (;;) {
-		if (!lexer_pop(ps.ps_lx, &tk))
+		if (!lexer_pop(cx->cx_lx, &tk))
 			errx(1, "%s:%d: out of tokens", fun, lno);
 
 		if (ntokens++ > 0)
@@ -298,27 +306,26 @@ __test_lexer_peek_if_type(const char *src, const char *exp, unsigned int flags,
 	buffer_appendc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
-		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
-		    act);
+		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
+		    fun, lno, exp, act);
 		error = 1;
 	}
 
 out:
 	buffer_free(bf);
-	parser_stub_destroy(&ps);
 	return error;
 }
 
 static int
-__test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
+__test_lexer_read(struct context *cx, const char *src, const char *exp,
+    const char *fun, int lno)
 {
 	struct buffer *bf = NULL;
-	struct parser_stub ps;
 	const char *act;
 	int error = 0;
 	int ntokens = 0;
 
-	parser_stub_create(&ps, src);
+	context_init(cx, src);
 
 	bf = buffer_alloc(128);
 	for (;;) {
@@ -326,7 +333,7 @@ __test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
 		const char *end;
 		char *str;
 
-		if (!lexer_pop(ps.ps_lx, &tk))
+		if (!lexer_pop(cx->cx_lx, &tk))
 			errx(1, "%s:%d: out of tokens", fun, lno);
 		if (tk->tk_type == TOKEN_EOF)
 			break;
@@ -342,43 +349,56 @@ __test_lexer_read(const char *src, const char *exp, const char *fun, int lno)
 	buffer_appendc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
-		warnx("%s:%d:\n\texp\t\"%s\"\n\tgot\t\"%s\"", fun, lno, exp,
-		    act);
+		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
+		    fun, lno, exp, act);
 		error = 1;
 	}
 
 	buffer_free(bf);
-	parser_stub_destroy(&ps);
 	return error;
 }
 
 static void
-parser_stub_create(struct parser_stub *ps, const char *src)
+context_init(struct context *cx, const char *src)
 {
-	error_init(&ps->ps_er, &cf);
-	ps->ps_bf = buffer_alloc(128);
-	buffer_append(ps->ps_bf, src, strlen(src));
-	ps->ps_fe = file_alloc("test.c");
-	ps->ps_lx = lexer_alloc(ps->ps_fe, ps->ps_bf, &ps->ps_er, &cf);
-	ps->ps_pr = parser_alloc(ps->ps_path, ps->ps_lx, &ps->ps_er, &cf);
+	static const char *path = "test.c";
+
+	config_init(&cx->cx_cf);
+	cx->cx_cf.cf_flags |= CONFIG_FLAG_TEST;
+	error_init(&cx->cx_er, &cx->cx_cf);
+	cx->cx_bf = buffer_alloc(128);
+	buffer_append(cx->cx_bf, src, strlen(src));
+	cx->cx_fe = file_alloc(path);
+	cx->cx_lx = lexer_alloc(cx->cx_fe, cx->cx_bf, &cx->cx_er, &cx->cx_cf);
+	cx->cx_pr = parser_alloc(path, cx->cx_lx, &cx->cx_er, &cx->cx_cf);
 }
 
 static void
-parser_stub_destroy(struct parser_stub *ps)
+context_reset(struct context *cx)
 {
-	error_flush(&ps->ps_er);
-	error_close(&ps->ps_er);
+	error_flush(&cx->cx_er);
 
-	parser_free(ps->ps_pr);
-	ps->ps_pr = NULL;
+	parser_free(cx->cx_pr);
+	cx->cx_pr = NULL;
 
-	lexer_free(ps->ps_lx);
-	ps->ps_lx = NULL;
+	lexer_free(cx->cx_lx);
+	cx->cx_lx = NULL;
 
-	file_free(ps->ps_fe);
+	file_free(cx->cx_fe);
+	cx->cx_fe = NULL;
 
-	buffer_free(ps->ps_bf);
-	ps->ps_bf = NULL;
+	buffer_reset(cx->cx_bf);
+}
+
+static void
+context_shutdown(struct context *cx)
+{
+	context_reset(cx);
+
+	error_close(&cx->cx_er);
+
+	buffer_free(cx->cx_bf);
+	cx->cx_bf = NULL;
 }
 
 static __dead void
