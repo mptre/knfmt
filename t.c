@@ -385,6 +385,7 @@ context_free(struct context *cx)
 	context_reset(cx);
 	error_close(&cx->cx_er);
 	buffer_free(cx->cx_bf);
+	free(cx);
 }
 
 static void
