@@ -11,31 +11,31 @@
 struct context;
 
 #define test_expr_exec(a, b)						\
-	__test_expr_exec(&cx, (a), (b), "test_expr_exec", __LINE__);	\
+	__test_expr_exec(cx, (a), (b), "test_expr_exec", __LINE__);	\
 	if (xflag && error) goto out;					\
-	context_reset(&cx)
+	context_reset(cx)
 static int	__test_expr_exec(struct context *, const char *, const char *,
     const char *, int);
 
 #define test_lexer_peek_if_type(a, b)					\
-	__test_lexer_peek_if_type(&cx, (a), (b), 0,			\
+	__test_lexer_peek_if_type(cx, (a), (b), 0,			\
 		"test_lexer_peek_if_type", __LINE__);			\
 	if (xflag && error) goto out;					\
-	context_reset(&cx)
+	context_reset(cx)
 #define test_lexer_peek_if_type_flags(a, b, c)				\
-	__test_lexer_peek_if_type(&cx, (b), (c), (a),			\
+	__test_lexer_peek_if_type(cx, (b), (c), (a),			\
 		"test_lexer_peek_if_type", __LINE__);			\
 	if (xflag && error) goto out;					\
-	context_reset(&cx)
+	context_reset(cx)
 static int	__test_lexer_peek_if_type(struct context *, const char *,
     const char *,
     unsigned int, const char *, int);
 
 #define test_lexer_read(a, b)						\
-	__test_lexer_read(&cx, (a), (b), "test_lexer_read",		\
+	__test_lexer_read(cx, (a), (b), "test_lexer_read",		\
 		__LINE__);						\
 	if (xflag && error) goto out;					\
-	context_reset(&cx)
+	context_reset(cx)
 static int	__test_lexer_read(struct context *, const char *, const char *,
     const char *,
     int);
@@ -43,22 +43,23 @@ static int	__test_lexer_read(struct context *, const char *, const char *,
 struct context {
 	struct config	 cx_cf;
 	struct error	 cx_er;
-	struct file	*cx_fe;
 	struct buffer	*cx_bf;
+	struct file	*cx_fe;
 	struct lexer	*cx_lx;
 	struct parser	*cx_pr;
 };
 
-static void	context_init(struct context *, const char *);
-static void	context_reset(struct context *);
-static void	context_shutdown(struct context *);
+static struct context	*context_alloc(void);
+static void		 context_free(struct context *);
+static void		 context_init(struct context *, const char *);
+static void		 context_reset(struct context *);
 
 static __dead void	usage(void);
 
 int
 main(int argc, char *argv[])
 {
-	struct context cx;
+	struct context *cx;
 	int error = 0;
 	int xflag = 0;
 	int ch;
@@ -75,6 +76,7 @@ main(int argc, char *argv[])
 
 	lexer_init();
 	diff_init();
+	cx = context_alloc();
 
 	error |= test_expr_exec("1", "(1)");
 	error |= test_expr_exec("x", "(x)");
@@ -219,7 +221,7 @@ main(int argc, char *argv[])
 	error |= test_lexer_read(".x", "PERIOD IDENT");
 
 out:
-	context_shutdown(&cx);
+	context_free(cx);
 	diff_shutdown();
 	lexer_shutdown();
 	return error;
@@ -358,15 +360,38 @@ __test_lexer_read(struct context *cx, const char *src, const char *exp,
 	return error;
 }
 
-static void
-context_init(struct context *cx, const char *src)
+static struct context	*
+context_alloc(void)
 {
-	static const char *path = "test.c";
+	struct context *cx;
+
+	cx = calloc(1, sizeof(*cx));
+	if (cx == NULL)
+		err(1, NULL);
 
 	config_init(&cx->cx_cf);
 	cx->cx_cf.cf_flags |= CONFIG_FLAG_TEST;
 	error_init(&cx->cx_er, &cx->cx_cf);
 	cx->cx_bf = buffer_alloc(128);
+	return cx;
+}
+
+static void
+context_free(struct context *cx)
+{
+	if (cx == NULL)
+		return;
+
+	context_reset(cx);
+	error_close(&cx->cx_er);
+	buffer_free(cx->cx_bf);
+}
+
+static void
+context_init(struct context *cx, const char *src)
+{
+	static const char *path = "test.c";
+
 	buffer_append(cx->cx_bf, src, strlen(src));
 	cx->cx_fe = file_alloc(path);
 	cx->cx_lx = lexer_alloc(cx->cx_fe, cx->cx_bf, &cx->cx_er, &cx->cx_cf);
@@ -388,17 +413,6 @@ context_reset(struct context *cx)
 	cx->cx_fe = NULL;
 
 	buffer_reset(cx->cx_bf);
-}
-
-static void
-context_shutdown(struct context *cx)
-{
-	context_reset(cx);
-
-	error_close(&cx->cx_er);
-
-	buffer_free(cx->cx_bf);
-	cx->cx_bf = NULL;
 }
 
 static __dead void
