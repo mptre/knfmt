@@ -159,7 +159,7 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 		error = 1;
 		goto out;
 	}
-	dst = parser_exec(pr);
+	dst = parser_exec(pr, src->bf_len);
 	if (dst == NULL) {
 		error = 1;
 		goto out;

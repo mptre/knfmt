@@ -195,7 +195,7 @@ parser_free(struct parser *pr)
 }
 
 struct buffer *
-parser_exec(struct parser *pr)
+parser_exec(struct parser *pr, size_t sizhint)
 {
 	struct buffer *bf;
 	struct doc *dc;
@@ -248,7 +248,7 @@ parser_exec(struct parser *pr)
 		return NULL;
 	}
 
-	bf = buffer_alloc(lexer_get_buffer(lx)->bf_siz);
+	bf = buffer_alloc(sizhint);
 	doc_exec(dc, pr->pr_lx, bf, pr->pr_cf, 0);
 	doc_free(dc);
 	return bf;

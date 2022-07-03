@@ -538,12 +538,6 @@ lexer_free(struct lexer *lx)
 	free(lx);
 }
 
-const struct buffer *
-lexer_get_buffer(const struct lexer *lx)
-{
-	return lx->lx_bf;
-}
-
 int
 lexer_get_error(const struct lexer *lx)
 {

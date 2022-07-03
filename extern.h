@@ -235,9 +235,8 @@ struct lexer	*lexer_alloc(const struct file *, const struct buffer *,
     struct error *, const struct config *);
 void		 lexer_free(struct lexer *);
 
-const struct buffer	*lexer_get_buffer(const struct lexer *);
-int			 lexer_get_error(const struct lexer *);
-int			 lexer_get_lines(const struct lexer *, unsigned int,
+int	lexer_get_error(const struct lexer *);
+int	lexer_get_lines(const struct lexer *, unsigned int,
     unsigned int, const char **, size_t *);
 
 void	lexer_stamp(struct lexer *);
@@ -311,7 +310,7 @@ void	lexer_dump(const struct lexer *);
 struct parser	*parser_alloc(const char *, struct lexer *, struct error *,
     const struct config *);
 void		 parser_free(struct parser *);
-struct buffer	*parser_exec(struct parser *);
+struct buffer	*parser_exec(struct parser *, size_t);
 struct doc	*parser_exec_expr_recover(unsigned int, void *);
 
 /*
