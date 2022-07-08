@@ -12,6 +12,7 @@
 
 #define UNLIKELY(x)	__builtin_expect((x), 0)
 
+#define DIFF(cf)	((cf)->cf_flags & CONFIG_FLAG_DIFFPARSE)
 #define TRACE(cf)	(UNLIKELY((cf)->cf_verbose >= 2))
 
 /*

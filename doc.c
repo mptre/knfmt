@@ -114,9 +114,8 @@ static int	doc_has_list(const struct doc *);
 static void	doc_position(struct doc_state *, const char *, size_t);
 static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
-#define DOC_DIFF(st)							\
-	(((st)->st_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&		\
-	((st)->st_flags & DOC_STATE_FLAG_DIFF))
+#define DOC_DIFF(st) \
+	(DIFF((st)->st_cf) && ((st)->st_flags & DOC_STATE_FLAG_DIFF))
 
 static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);

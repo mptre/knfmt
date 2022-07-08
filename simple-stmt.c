@@ -129,8 +129,14 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
     struct token *rbrace, int indent)
 {
 	struct stmt *st;
+	int braces = 1;
 
-	st = simple_stmt_alloc(ss, indent, STMT_FLAG_BRACES);
+	/* Make sure both braces are covered by a diff chunk. */
+	if (DIFF(ss->ss_cf) &&
+	    ((lbrace->tk_flags & TOKEN_FLAG_DIFF) == 0 ||
+	     (rbrace->tk_flags & TOKEN_FLAG_DIFF) == 0))
+		braces = 0;
+	st = simple_stmt_alloc(ss, indent, braces ? STMT_FLAG_BRACES : 0);
 	token_ref(lbrace);
 	st->st_lbrace = lbrace;
 	token_ref(rbrace);

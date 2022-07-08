@@ -1,0 +1,12 @@
+--- diff-simple-001.c
++++ diff-simple-001.c
+@@ -1,8 +1,7 @@
+ int
+ main(void)
+ {
+-	for (i = 0; i < 16; i++) {
+-		/* comment */
++	for (i = 0; i < 32; i++) {
+ 		x += i;
+ 	}
+ }

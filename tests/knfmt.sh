@@ -109,7 +109,8 @@ bug-*)
 diff-*)
 	_base="${1%.c}"
 	_ok="${_base}.ok"
-	if ! ${EXEC:-} "${KNFMT}" -D <"${_base}.patch" 2>&1 | \
+	_simple="$([ "${_base#*-simple-}" = "${_base}" ] || echo -s)"
+	if ! ${EXEC:-} "${KNFMT}" -D${_simple:+s}  <"${_base}.patch" 2>&1 | \
 		diff -u -L "$1" -L "$_ok" "$_ok" - >"$_out" 2>&1
 	then
 		cat "$_out" 1>&2

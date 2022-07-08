@@ -14,7 +14,8 @@ DISTFILES \
 
 cd tests
 mkls "$@" \
-TESTS diff*.c -- \
+TESTS diff-[0-9]*.c -- \
+TESTS diff-simple-[0-9]*.c -- \
 TESTS error*.c -- \
 TESTS valid*.c -- \
 TESTS simple*.c -- \
