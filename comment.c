@@ -53,7 +53,7 @@ nextline(const char *str, size_t len)
 	return &p[1];
 }
 
-static const char	*
+static const char *
 skipws(const char *str, size_t len)
 {
 	size_t i = 0;

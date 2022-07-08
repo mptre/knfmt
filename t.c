@@ -360,7 +360,7 @@ __test_lexer_read(struct context *cx, const char *src, const char *exp,
 	return error;
 }
 
-static struct context	*
+static struct context *
 context_alloc(void)
 {
 	struct context *cx;
