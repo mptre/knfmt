@@ -39,3 +39,18 @@ strnice(const char *str, size_t len)
 	*buf = '\0';
 	return p;
 }
+
+size_t
+strwidth(const char *str, size_t len, size_t pos)
+{
+	size_t oldpos = pos;
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (str[i] == '\t')
+			pos += 8 - (pos % 8);
+		else
+			pos += 1;
+	}
+	return pos - oldpos;
+}

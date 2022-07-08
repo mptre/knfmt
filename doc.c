@@ -1241,14 +1241,7 @@ doc_has_list(const struct doc *dc)
 static void
 doc_position(struct doc_state *st, const char *str, size_t len)
 {
-	size_t i;
-
-	for (i = 0; i < len; i++) {
-		if (str[i] == '\t')
-			st->st_pos += 8 - (st->st_pos % 8);
-		else
-			st->st_pos += 1;
-	}
+	st->st_pos += strwidth(str, len, st->st_pos);
 }
 
 static int

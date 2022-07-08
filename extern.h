@@ -495,3 +495,4 @@ struct doc	*__ruler_indent(struct ruler *, struct doc *, int,
  */
 
 char	*strnice(const char *, size_t);
+size_t	 strwidth(const char *, size_t, size_t);
