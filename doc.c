@@ -56,10 +56,11 @@ struct doc_state {
 	} st_mode;
 
 	struct {
-		int		d_group;
-		int		d_mute;
-		unsigned int	d_beg;
-		unsigned int	d_end;
+		const struct token	*d_verbatim;
+		int			 d_group;
+		int			 d_mute;
+		unsigned int		 d_beg;
+		unsigned int		 d_end;
 	} st_diff;
 
 	struct {
@@ -88,13 +89,15 @@ struct doc_state {
 };
 
 /*
- * Line numbers extracted from a document group that covers a diff chunk.
+ * Tokens and line numbers extracted from a group document that covers a diff
+ * chunk.
  */
 struct doc_diff {
-	unsigned int	dd_threshold;	/* last seen token */
-	unsigned int	dd_first;	/* first token in group */
-	unsigned int	dd_chunk;	/* first token covered by the chunk */
-	int		dd_covers;	/* doc_diff_covers() return value */
+	const struct token	*dd_verbatim;	/* last verbatim token not covered by chunk */
+	unsigned int		 dd_threshold;	/* last seen token */
+	unsigned int		 dd_first;	/* first token in group */
+	unsigned int		 dd_chunk;	/* first token covered by chunk */
+	int			 dd_covers;	/* doc_diff_covers() return value */
 };
 
 static void	doc_exec1(const struct doc *, struct doc_state *);
@@ -489,9 +492,15 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_VERBATIM: {
 		char *cpp;
 		unsigned int diff, oldpos;
+		int unmute = 0;
 
-		if (doc_is_mute(st))
-			break;
+		if (doc_is_mute(st)) {
+			if (DOC_DIFF(st) &&
+			    st->st_diff.d_verbatim == dc->dc_tk)
+				unmute = 1;
+			else
+				break;
+		}
 
 		diff = doc_diff_verbatim(dc, st);
 
@@ -513,6 +522,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		} else {
 			doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
 		}
+
+		/* Restore indentation in diff mode. */
+		if (unmute)
+			st->st_diff.d_verbatim = NULL;
 
 		/* Restore the indentation after emitting a verbatim block. */
 		if (isblock) {
@@ -871,6 +884,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 {
 	struct doc_diff dd;
 	const struct diffchunk *du;
+	unsigned int end;
 
 	if (!DOC_DIFF(st))
 		return 0;
@@ -912,6 +926,14 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 			doc_diff_leave(dc, st, 1);
 		st->st_diff.d_group = 1;
 		return 1;
+	case 1:
+		/*
+		 * The group is covered by a diff chunk. Make sure to leave any
+		 * previous diff chunk if we're entering a new one.
+		 */
+		if (st->st_diff.d_end > 0 && dd.dd_first > st->st_diff.d_end)
+			doc_diff_leave(dc, st, 1);
+		break;
 	}
 
 	st->st_diff.d_group = 1;
@@ -950,6 +972,23 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 */
 	st->st_diff.d_mute = st->st_mute;
 	st->st_mute = 0;
+	if (dd.dd_verbatim != NULL) {
+		const struct token *tk = dd.dd_verbatim;
+
+		/*
+		 * The diff chunk is preceeded with one or many verbatim tokens
+		 * inside the same group, caused by verbatim tokens not being
+		 * placed in seperate groups. Such verbatim tokens must
+		 * not be formatted and we therefore stay mute until moving past
+		 * the last verbatim token not covered by the diff chunk.
+		 */
+		st->st_diff.d_verbatim = tk;
+		end = tk->tk_lno + countlines(tk->tk_str, tk->tk_len);
+		doc_trace(dc, st, "%s: verbatim mute [%u-%u)", __func__,
+		    st->st_diff.d_beg, end);
+	} else {
+		end = dd.dd_first;
+	}
 
 	/*
 	 * Emit any preceding line(s) not covered by the diff chunk. It is of
@@ -958,7 +997,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * represents something intended to fit on a single line but the diff
 	 * chunk might only touch a subset of the group.
 	 */
-	doc_diff_emit(dc, st, st->st_diff.d_beg, dd.dd_first);
+	doc_diff_emit(dc, st, st->st_diff.d_beg, end);
 	st->st_pos = 0;
 	doc_indent(dc, st, st->st_indent.i_cur);
 	return 1;
@@ -1080,8 +1119,11 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 	struct doc_diff *dd = (struct doc_diff *)arg;
 
 	switch (dc->dc_type) {
-	case DOC_LITERAL:
 	case DOC_VERBATIM:
+		if ((dc->dc_tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
+			dd->dd_verbatim = dc->dc_tk;
+		/* FALLTHROUGH */
+	case DOC_LITERAL:
 		if (dc->dc_tk != NULL) {
 			unsigned int lno = dc->dc_tk->tk_lno;
 
@@ -1131,7 +1173,8 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 static int
 doc_diff_is_mute(const struct doc_state *st)
 {
-	return DOC_DIFF(st) && st->st_diff.d_end == 0;
+	return DOC_DIFF(st) &&
+	    (st->st_diff.d_end == 0 || st->st_diff.d_verbatim != NULL);
 }
 
 static void
@@ -1142,6 +1185,7 @@ __doc_diff_leave(const struct doc *dc, struct doc_state *st, unsigned int end,
 		return;
 
 	assert(st->st_diff.d_end > 0);
+	assert(st->st_diff.d_verbatim == NULL);
 	st->st_diff.d_beg = st->st_diff.d_end + end;
 	st->st_diff.d_end = 0;
 	st->st_mute = st->st_diff.d_mute;

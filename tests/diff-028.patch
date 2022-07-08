@@ -1,0 +1,14 @@
+--- diff-028.c
++++ diff-028.c
+@@ -1,8 +1,9 @@
+ int
+ main(void)
+ {
+-	for (i = 2; i < nintr/16; i++) {
++	nconfigs = 2 * (nlines + 1);
++	for (i = 2; i < nintr / nconfigs; i++) {
+ 		/* irq 32 - N */
+-		bus_space_write_4(sc->sc_iot, sc->sc_d_ioh, ICD_ICRn(i*16), 0);
++		bus_space_write_4(sc->sc_iot, sc->sc_d_ioh, ICD_ICRn(i * nconfigs), 0);
+ 	}
+ }
