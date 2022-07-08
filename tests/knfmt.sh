@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 set -e
 
@@ -79,7 +79,7 @@ esac
 export ASAN_OPTIONS="exitcode=66"
 
 _wrkdir="$(mktemp -dt knfmt.XXXXXX)"
-trap "rm -rf ${_wrkdir}" 0
+trap 'rm -rf ${_wrkdir}' 0
 _out="${_wrkdir}/out"
 
 # Ensure presence of test case description.
@@ -109,7 +109,7 @@ bug-*)
 diff-*)
 	_base="${1%.c}"
 	_ok="${_base}.ok"
-	if ! ${EXEC:-} ${KNFMT} -D <"${_base}.patch" 2>&1 | \
+	if ! ${EXEC:-} "${KNFMT}" -D <"${_base}.patch" 2>&1 | \
 		diff -u -L "$1" -L "$_ok" "$_ok" - >"$_out" 2>&1
 	then
 		cat "$_out" 1>&2
@@ -118,7 +118,7 @@ diff-*)
 	;;
 error-*)
 	_err=0
-	${EXEC:-} ${KNFMT} -s "$1" >"$_out" 2>&1 || _err="$?"
+	${EXEC:-} "${KNFMT}" -s "$1" >"$_out" 2>&1 || _err="$?"
 	if [ "$_err" -ne 1 ]; then
 		cat "$_out" 1>&2
 		echo "${1}; expected exit 1, got ${_err}" 1>&2
