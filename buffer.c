@@ -133,6 +133,22 @@ buffer_appendv(struct buffer *bf, const char *fmt, ...)
 	bf->bf_len += n;
 }
 
+size_t
+buffer_indent(struct buffer *bf, int indent, size_t pos)
+{
+	size_t oldpos = pos;
+
+	for (; indent >= 8; indent -= 8) {
+		buffer_appendc(bf, '\t');
+		pos += 8 - (pos % 8);
+	}
+	for (; indent > 0; indent--) {
+		buffer_appendc(bf, ' ');
+		pos++;
+	}
+	return pos - oldpos;
+}
+
 /*
  * Release and take ownership of the underlying buffer.
  */

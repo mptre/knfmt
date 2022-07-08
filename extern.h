@@ -52,6 +52,7 @@ void		 buffer_append(struct buffer *, const char *, size_t);
 void		 buffer_appendc(struct buffer *, char);
 void		 buffer_appendv(struct buffer *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
+size_t		 buffer_indent(struct buffer *, int, size_t);
 char		*buffer_release(struct buffer *);
 void		 buffer_reset(struct buffer *);
 int		 buffer_cmp(const struct buffer *, const struct buffer *);

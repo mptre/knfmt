@@ -795,14 +795,7 @@ doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 	if (doc_is_mute(st))
 		return;
 
-	for (; indent >= 8; indent -= 8) {
-		buffer_appendc(st->st_bf, '\t');
-		st->st_pos += 8 - (st->st_pos % 8);
-	}
-	for (; indent > 0; indent--) {
-		buffer_appendc(st->st_bf, ' ');
-		st->st_pos++;
-	}
+	st->st_pos += buffer_indent(st->st_bf, indent, st->st_pos);
 }
 
 static void
