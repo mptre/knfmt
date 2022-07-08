@@ -489,7 +489,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_VERBATIM: {
-		char *cpp;
+		char *str;
 		unsigned int diff, oldpos;
 		int unmute = 0;
 
@@ -514,10 +514,14 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (isblock && st->st_pos > 0)
 			doc_print(dc, st, "\n", 1, 0);
 
-		if (dc->dc_tk->tk_type == TOKEN_CPP &&
-		    (cpp = cpp_exec(dc->dc_tk, st->st_cf)) != NULL) {
-			doc_print(dc, st, cpp, strlen(cpp), 0);
-			free(cpp);
+		if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
+		    (str = comment_exec(dc->dc_tk, st->st_cf))) {
+			doc_print(dc, st, str, strlen(str), 0);
+			free(str);
+		} else if (dc->dc_tk->tk_type == TOKEN_CPP &&
+		    (str = cpp_exec(dc->dc_tk, st->st_cf)) != NULL) {
+			doc_print(dc, st, str, strlen(str), 0);
+			free(str);
 		} else {
 			doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
 		}

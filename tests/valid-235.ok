@@ -1,0 +1,12 @@
+int
+main(void)
+{
+	/*
+	 * foo
+	 */
+
+	/* comment */
+	// comment
+
+	int x; // comment
+}

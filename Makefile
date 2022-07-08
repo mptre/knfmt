@@ -3,6 +3,7 @@ include ${.CURDIR}/config.mk
 VERSION=	2.1.0
 
 SRCS+=	buffer.c
+SRCS+=	comment.c
 SRCS+=	compat-errc.c
 SRCS+=	compat-pledge.c
 SRCS+=	compat-reallocarray.c
@@ -32,6 +33,7 @@ DEPS_test=	${SRCS_test:.c=.d}
 PROG_test=	t
 
 KNFMT+=	buffer.c
+KNFMT+=	comment.c
 KNFMT+=	compat-pledge.c
 KNFMT+=	cpp.c
 KNFMT+=	diff.c
@@ -55,6 +57,7 @@ DISTFILES+=	LICENSE
 DISTFILES+=	Makefile
 DISTFILES+=	README.md
 DISTFILES+=	buffer.c
+DISTFILES+=	comment.c
 DISTFILES+=	compat-errc.c
 DISTFILES+=	compat-pledge.c
 DISTFILES+=	compat-queue.h
@@ -506,6 +509,8 @@ DISTFILES+=	tests/valid-233.c
 DISTFILES+=	tests/valid-233.ok
 DISTFILES+=	tests/valid-234.c
 DISTFILES+=	tests/valid-234.ok
+DISTFILES+=	tests/valid-235.c
+DISTFILES+=	tests/valid-235.ok
 DISTFILES+=	token.h
 DISTFILES+=	util.c
 

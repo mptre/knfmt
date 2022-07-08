@@ -299,6 +299,7 @@ TESTS+=	valid-231.c
 TESTS+=	valid-232.c
 TESTS+=	valid-233.c
 TESTS+=	valid-234.c
+TESTS+=	valid-235.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -323,6 +324,7 @@ TESTS+=	bug-005.c
 TESTS+=	bug-006.c
 
 TESTS+=	../buffer.c
+TESTS+=	../comment.c
 TESTS+=	../compat-pledge.c
 TESTS+=	../cpp.c
 TESTS+=	../diff.c
