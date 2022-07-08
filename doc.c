@@ -1255,11 +1255,8 @@ doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 
 	switch (dc->dc_type) {
 	case DOC_SOFTLINE:
-		if (dc->dc_int > *max) {
+		if (dc->dc_int > *max)
 			*max = dc->dc_int;
-			if (*max > 0)
-				return 0;
-		}
 		break;
 	default:
 		break;
