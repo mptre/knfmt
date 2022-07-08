@@ -107,7 +107,7 @@ static void		 expr_free(struct expr *);
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_break(struct expr *, struct expr_state *,
-    struct doc *);
+    struct doc *, int);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
@@ -567,7 +567,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			doc_alloc(dospace ? DOC_LINE : DOC_SOFTLINE, concat);
 		}
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc_break(ex->ex_rhs, es, concat);
+			concat = expr_doc_break(ex->ex_rhs, es, concat, 1);
 
 		break;
 	}
@@ -680,7 +680,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_token(ex->ex_tk, lhs);
 		doc_alloc(DOC_LINE, lhs);
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc_break(ex->ex_rhs, es, concat);
+			concat = expr_doc_break(ex->ex_rhs, es, concat, 2);
 		break;
 	}
 
@@ -746,11 +746,14 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
  * nested under the same expression.
  */
 static struct doc *
-expr_doc_break(struct expr *ex, struct expr_state *es, struct doc *dc)
+expr_doc_break(struct expr *ex, struct expr_state *es, struct doc *dc,
+    int scalar)
 {
 	struct doc *concat, *parent, *softline;
+	int weight;
 
-	dc = expr_doc_soft(dc, &softline, 1);
+	weight = es->es_depth * scalar;
+	dc = expr_doc_soft(dc, &softline, weight);
 	parent = doc_alloc(DOC_CONCAT, dc);
 	concat = expr_doc(ex, es, parent);
 	/*
@@ -759,7 +762,7 @@ expr_doc_break(struct expr *ex, struct expr_state *es, struct doc *dc)
 	 * Otherwise, there's a more suitable nested soft line that must be
 	 * favored.
 	 */
-	if (doc_max(parent) > 0)
+	if (doc_max(parent) > weight)
 		doc_remove(softline, dc);
 
 	return concat;
