@@ -28,8 +28,17 @@ static void	ruler_reset_indent(struct ruler *);
 static int		minimize(const struct ruler_column *);
 static unsigned int	tabalign(unsigned int);
 
+/*
+ * Initialize ruler, the given length is interpreted as follows:
+ *
+ *     >0    Maximum alignment, the aligment for all columns will be less or
+ *           equal to this length.
+ *      0    Use the alignment necessary to align all columns.
+ *     <0    Fixed alignment, unconditionally align all columns to this length
+ *           with its sign inverted.
+ */
 void
-ruler_init(struct ruler *rl, unsigned int len)
+ruler_init(struct ruler *rl, int len)
 {
 	memset(rl, 0, sizeof(*rl));
 	rl->rl_len = len;
@@ -155,7 +164,7 @@ ruler_exec(struct ruler *rl)
 {
 	struct ruler_indent *ri;
 	size_t i, j;
-	unsigned int fixedlen = rl->rl_len;
+	int fixedlen = rl->rl_len;
 	unsigned int maxlen;
 
 	for (i = 0; i < rl->rl_columns.b_len; i++) {
@@ -164,7 +173,7 @@ ruler_exec(struct ruler *rl)
 		if (rc->rc_ntabs == 0 && fixedlen == 0)
 			continue;
 
-		if (fixedlen > 0) {
+		if (fixedlen != 0) {
 			maxlen = fixedlen;
 		} else {
 			maxlen = rc->rc_len;
@@ -178,6 +187,10 @@ ruler_exec(struct ruler *rl)
 			struct ruler_datum *rd = &rc->rc_datums.b_ptr[j];
 			unsigned int indent;
 
+			if (fixedlen < 0) {
+				doc_set_indent(rd->rd_dc, -fixedlen);
+				continue;
+			}
 			if (rd->rd_len > maxlen) {
 				assert(fixedlen > 0);
 				doc_set_indent(rd->rd_dc, 0);

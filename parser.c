@@ -1086,7 +1086,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
 		return parser_none(pr);
 
-	ruler_init(&rl, 0);
+	ruler_init(&rl, -1);
 	error = parser_exec_func_impl1(pr, dc, &rl, type);
 	if (error & GOOD)
 		ruler_exec(&rl);

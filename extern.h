@@ -465,7 +465,7 @@ struct ruler {
 	} rl_columns;
 
 	struct ruler_indent_list	*rl_indent;
-	size_t				 rl_len;
+	int				 rl_len;
 };
 
 struct ruler_column {
@@ -480,7 +480,7 @@ struct ruler_column {
 	size_t	rc_ntabs;
 };
 
-void	ruler_init(struct ruler *, unsigned int);
+void	ruler_init(struct ruler *, int);
 void	ruler_free(struct ruler *);
 void	ruler_exec(struct ruler *);
 

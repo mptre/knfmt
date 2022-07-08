@@ -1,0 +1,4 @@
+static const char *
+skipws(const char *str, size_t len)
+{
+}
