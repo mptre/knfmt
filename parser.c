@@ -275,9 +275,8 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 	    (flags & EXPR_RECOVER_FLAG_CAST) ? LEXER_TYPE_FLAG_CAST : 0)) {
 		struct token *nx, *pv;
 
-		if (!lexer_peek(lx, &pv))
+		if (!lexer_back(lx, &pv))
 			return NULL;
-		pv = TAILQ_PREV(pv, token_list, tk_entry);
 		nx = TAILQ_NEXT(tk, tk_entry);
 		if (pv != NULL && nx != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
