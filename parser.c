@@ -92,6 +92,7 @@ static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
     struct ruler *);
+static int	parser_exec_decl_cppdefs(struct parser *, struct doc *);
 
 static int	parser_exec_expr(struct parser *, struct doc *, struct doc **,
     const struct token *, unsigned int flags);
@@ -403,6 +404,9 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct doc *concat;
 	struct token *beg, *end, *fun, *semi, *tk;
 	enum parser_peek peek;
+
+	if (parser_exec_decl_cppdefs(pr, dc) & GOOD)
+		return parser_good(pr);
 
 	if (!lexer_peek_if_type(lx, &end, 0)) {
 		/* No type found, this declaration could make use of cpp. */
@@ -1027,6 +1031,30 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 		doc_token(tk, dc);
 
+	return parser_good(pr);
+}
+
+/*
+ * Parse usage of macros from cdefs.h, such as __BEGIN_HIDDEN_DECLS.
+ */
+static int
+parser_exec_decl_cppdefs(struct parser *pr, struct doc *dc)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *ident, *nx;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) && lexer_peek(lx, &nx) &&
+	    (nx->tk_lno - ident->tk_lno > 1 || nx->tk_type == TOKEN_EOF))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_IDENT, &ident))
+		doc_token(ident, dc);
 	return parser_good(pr);
 }
 
