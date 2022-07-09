@@ -271,17 +271,7 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
-		struct token *pv;
-
-		pv = TAILQ_PREV(tk, token_list, tk_entry);
-		if (pv != NULL &&
-		    (pv->tk_type == TOKEN_LPAREN ||
-		     pv->tk_type == TOKEN_COMMA)) {
-			dc = doc_alloc(DOC_CONCAT, NULL);
-			doc_token(tk, dc);
-		}
-	} else if (lexer_peek_if_type(lx, &tk,
+	if (lexer_peek_if_type(lx, &tk,
 	    (flags & EXPR_RECOVER_FLAG_CAST) ? LEXER_TYPE_FLAG_CAST : 0)) {
 		struct token *nx, *pv;
 
@@ -304,6 +294,16 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 				doc_free(dc);
 				return NULL;
 			}
+		}
+	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
+		struct token *pv;
+
+		pv = TAILQ_PREV(tk, token_list, tk_entry);
+		if (pv != NULL &&
+		    (pv->tk_type == TOKEN_LPAREN ||
+		     pv->tk_type == TOKEN_COMMA)) {
+			dc = doc_alloc(DOC_CONCAT, NULL);
+			doc_token(tk, dc);
 		}
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		struct doc *indent;
