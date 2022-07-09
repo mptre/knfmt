@@ -11,6 +11,7 @@ struct stmt {
 	struct token		*st_rbrace;
 	unsigned int		 st_flags;
 #define STMT_FLAG_BRACES		0x00000001u
+#define STMT_FLAG_IGNORE		0x00000002u
 
 	TAILQ_ENTRY(stmt)	 st_entry;
 };
@@ -54,7 +55,8 @@ simple_stmt_leave(struct simple_stmt *ss)
 	bf = buffer_alloc(1024);
 
 	TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
-		if ((st->st_flags & STMT_FLAG_BRACES) == 0)
+		if ((st->st_flags & STMT_FLAG_IGNORE) ||
+		    (st->st_flags & STMT_FLAG_BRACES) == 0)
 			continue;
 
 		doc_exec(st->st_root, lx, bf, ss->ss_cf,
@@ -72,8 +74,10 @@ simple_stmt_leave(struct simple_stmt *ss)
 
 	if (oneline) {
 		TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
-			if ((st->st_flags & STMT_FLAG_BRACES) == 0)
+			if ((st->st_flags & STMT_FLAG_IGNORE) ||
+			    (st->st_flags & STMT_FLAG_BRACES) == 0)
 				continue;
+
 			lexer_remove(lx, st->st_lbrace, 1);
 			lexer_remove(lx, st->st_rbrace, 1);
 		}
@@ -81,7 +85,8 @@ simple_stmt_leave(struct simple_stmt *ss)
 		TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
 			struct token *pv, *tk;
 
-			if (st->st_flags & STMT_FLAG_BRACES)
+			if (st->st_flags &
+			    (STMT_FLAG_IGNORE | STMT_FLAG_BRACES))
 				continue;
 
 			pv = TAILQ_PREV(st->st_lbrace, token_list, tk_entry);
@@ -129,14 +134,14 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
     struct token *rbrace, int indent)
 {
 	struct stmt *st;
-	int braces = 1;
+	unsigned int flags = STMT_FLAG_BRACES;
 
 	/* Make sure both braces are covered by a diff chunk. */
 	if (DIFF(ss->ss_cf) &&
 	    ((lbrace->tk_flags & TOKEN_FLAG_DIFF) == 0 ||
 	     (rbrace->tk_flags & TOKEN_FLAG_DIFF) == 0))
-		braces = 0;
-	st = simple_stmt_alloc(ss, indent, braces ? STMT_FLAG_BRACES : 0);
+		flags |= STMT_FLAG_IGNORE;
+	st = simple_stmt_alloc(ss, indent, flags);
 	token_ref(lbrace);
 	st->st_lbrace = lbrace;
 	token_ref(rbrace);

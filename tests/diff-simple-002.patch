@@ -1,0 +1,15 @@
+--- diff-simple-002.c
++++ diff-simple-002.c
+@@ -8,10 +8,10 @@
+ 	if (ci == NULL)
+ 		ci = &cpu_info_primary;
+ 
+-	if (irqno < 16) {
++	if (irqno <= SGI_MAX) {
+ 		/* SGI are only EDGE */
+ 		type = IST_EDGE_RISING;
+-	} else if (irqno < 32) {
++	} else if (irqno <= PPI_MAX) {
+ 		/* PPI are only LEVEL */
+ 		type = IST_LEVEL_HIGH;
+ 	}
