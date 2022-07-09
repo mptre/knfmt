@@ -84,6 +84,7 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
+static int	lexer_peek_if_type_cpp(struct lexer *lx);
 
 static void		 lexer_branch_fold(struct lexer *, struct token *);
 static struct token	*lexer_branch_find(struct token *, int);
@@ -978,6 +979,9 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 			if (ntokens == 0)
 				break;
 			peek = 1;
+		} else if (lexer_peek_if_type_cpp(lx)) {
+			lexer_if(lx, TOKEN_IDENT, NULL);
+			lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &t);
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
 			struct lexer_state ss;
 			int ident;
@@ -2045,6 +2049,28 @@ lexer_peek_if_type_ident(struct lexer *lx)
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 
+	return peek;
+}
+
+/*
+ * Detect usage of types hidden behind cpp such as STACK_OF(X509).
+ */
+static int
+lexer_peek_if_type_cpp(struct lexer *lx)
+{
+	struct lexer_state s;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
+	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
+	    (lexer_if(lx, TOKEN_IDENT, NULL) ||
+	     lexer_if(lx, TOKEN_STAR, NULL) ||
+	     lexer_if(lx, TOKEN_EOF, NULL)))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
 	return peek;
 }
 
