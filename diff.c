@@ -36,7 +36,7 @@ files_free(struct file_list *files)
 }
 
 struct file *
-file_alloc(const char *path)
+file_alloc(const char *path, const struct config *cf)
 {
 	struct file *fe;
 
@@ -47,6 +47,7 @@ file_alloc(const char *path)
 	if (fe->fe_path == NULL)
 		err(1, NULL);
 	TAILQ_INIT(&fe->fe_diff.di_chunks);
+	error_init(&fe->fe_error, cf);
 	return fe;
 }
 
@@ -63,6 +64,7 @@ file_free(struct file *fe)
 		free(du);
 	}
 	free(fe->fe_path);
+	error_close(&fe->fe_error);
 	free(fe);
 }
 
@@ -118,7 +120,7 @@ diff_parse(struct file_list *files, const struct config *cf)
 		int el, sl;
 
 		if (matchpath(buf, path, sizeof(path))) {
-			fe = file_alloc(path);
+			fe = file_alloc(path, cf);
 			TAILQ_INSERT_TAIL(files, fe, fe_entry);
 
 			buf = skipline(buf);

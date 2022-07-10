@@ -108,6 +108,7 @@ int	diff_covers(const struct diff *, unsigned int);
 
 struct file {
 	struct diff		 fe_diff;
+	struct error		 fe_error;
 	char			*fe_path;
 
 	TAILQ_ENTRY(file)	 fe_entry;
@@ -117,7 +118,7 @@ TAILQ_HEAD(file_list, file);
 
 void	files_free(struct file_list *);
 
-struct file	*file_alloc(const char *);
+struct file	*file_alloc(const char *, const struct config *);
 void		 file_free(struct file *);
 
 /*

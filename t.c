@@ -42,7 +42,6 @@ static int	__test_lexer_read(struct context *, const char *, const char *,
 
 struct context {
 	struct config	 cx_cf;
-	struct error	 cx_er;
 	struct buffer	*cx_bf;
 	struct file	*cx_fe;
 	struct lexer	*cx_lx;
@@ -377,7 +376,6 @@ context_alloc(void)
 
 	config_init(&cx->cx_cf);
 	cx->cx_cf.cf_flags |= CONFIG_FLAG_TEST;
-	error_init(&cx->cx_er, &cx->cx_cf);
 	cx->cx_bf = buffer_alloc(128);
 	return cx;
 }
@@ -389,7 +387,6 @@ context_free(struct context *cx)
 		return;
 
 	context_reset(cx);
-	error_close(&cx->cx_er);
 	buffer_free(cx->cx_bf);
 	free(cx);
 }
@@ -400,22 +397,24 @@ context_init(struct context *cx, const char *src)
 	static const char *path = "test.c";
 
 	buffer_append(cx->cx_bf, src, strlen(src));
-	cx->cx_fe = file_alloc(path);
-	cx->cx_lx = lexer_alloc(cx->cx_fe, cx->cx_bf, &cx->cx_er, &cx->cx_cf);
-	cx->cx_pr = parser_alloc(path, cx->cx_lx, &cx->cx_er, &cx->cx_cf);
+	cx->cx_fe = file_alloc(path, &cx->cx_cf);
+	cx->cx_lx = lexer_alloc(cx->cx_fe, cx->cx_bf, &cx->cx_fe->fe_error,
+	    &cx->cx_cf);
+	cx->cx_pr = parser_alloc(path, cx->cx_lx, &cx->cx_fe->fe_error,
+	    &cx->cx_cf);
 }
 
 static void
 context_reset(struct context *cx)
 {
-	error_flush(&cx->cx_er);
-
 	parser_free(cx->cx_pr);
 	cx->cx_pr = NULL;
 
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;
 
+	if (cx->cx_fe != NULL)
+		error_flush(&cx->cx_fe->fe_error);
 	file_free(cx->cx_fe);
 	cx->cx_fe = NULL;
 

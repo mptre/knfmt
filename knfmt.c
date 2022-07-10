@@ -17,8 +17,7 @@ static __dead void	usage(void);
 
 static int	filelist(int, char **, struct file_list *,
     const struct config *);
-static int	fileformat(const struct file *, struct error *,
-    const struct config *);
+static int	fileformat(struct file *, const struct config *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const char *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -32,8 +31,7 @@ main(int argc, char *argv[])
 {
 	struct file_list files;
 	struct config cf;
-	struct error er;
-	const struct file *fe;
+	struct file *fe;
 	int error = 0;
 	int ch;
 
@@ -80,7 +78,6 @@ main(int argc, char *argv[])
 			err(1, "pledge");
 	}
 
-	error_init(&er, &cf);
 	diff_init();
 	lexer_init();
 
@@ -89,17 +86,15 @@ main(int argc, char *argv[])
 		goto out;
 	}
 	TAILQ_FOREACH(fe, &files, fe_entry) {
-		if (fileformat(fe, &er, &cf)) {
+		if (fileformat(fe, &cf)) {
 			error = 1;
-			error_flush(&er);
+			error_flush(&fe->fe_error);
 		}
-		error_reset(&er);
 	}
 
 out:
 	lexer_shutdown();
 	diff_shutdown();
-	error_close(&er);
 	files_free(&files);
 
 	return error;
@@ -122,13 +117,13 @@ filelist(int argc, char **argv, struct file_list *files,
 		return diff_parse(files, cf);
 
 	if (argc == 0) {
-		fe = file_alloc("/dev/stdin");
+		fe = file_alloc("/dev/stdin", cf);
 		TAILQ_INSERT_TAIL(files, fe, fe_entry);
 	} else {
 		int i;
 
 		for (i = 0; i < argc; i++) {
-			fe = file_alloc(argv[i]);
+			fe = file_alloc(argv[i], cf);
 			TAILQ_INSERT_TAIL(files, fe, fe_entry);
 		}
 	}
@@ -136,7 +131,7 @@ filelist(int argc, char **argv, struct file_list *files,
 }
 
 static int
-fileformat(const struct file *fe, struct error *er, const struct config *cf)
+fileformat(struct file *fe, const struct config *cf)
 {
 	struct buffer *dst = NULL;
 	struct buffer *src;
@@ -149,12 +144,12 @@ fileformat(const struct file *fe, struct error *er, const struct config *cf)
 		error = 1;
 		goto out;
 	}
-	lx = lexer_alloc(fe, src, er, cf);
+	lx = lexer_alloc(fe, src, &fe->fe_error, cf);
 	if (lx == NULL) {
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(fe->fe_path, lx, er, cf);
+	pr = parser_alloc(fe->fe_path, lx, &fe->fe_error, cf);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
