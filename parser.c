@@ -1700,6 +1700,7 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	token_trim(tk);
 	doc_token(tk, concat);
 	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
 		int error;
