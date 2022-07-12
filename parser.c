@@ -1431,28 +1431,25 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 static int
 parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 {
-	struct lexer_state s;
 	struct doc *concat, *dc, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *rbrace, *tk;
+	struct token *lbrace, *nx, *rbrace, *tk;
 	int doswitch = ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
 	int doindent = !doswitch && pr->pr_simple.se_nstmt == 0;
 	int nstmt = 0;
-	int peek = 0;
 	int error;
 
-	lexer_peek_enter(lx, &s);
-	if (lexer_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace)) {
-		struct token *semi;
-
-		if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) &&
-		    lexer_peek_if(lx, TOKEN_SEMI, &semi))
-			lexer_remove(lx, semi, 1);
-		peek = 1;
-	}
-	lexer_peek_leave(lx, &s);
-	if (!peek)
+	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_none(pr);
+
+	/*
+	 * Remove semi before emitting the right brace in order to honor
+	 * optional lines.
+	 */
+	nx = TAILQ_NEXT(rbrace, tk_entry);
+	if (nx != NULL && nx->tk_type == TOKEN_SEMI &&
+	    (pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE))
+		lexer_remove(lx, nx, 1);
 
 	if (doindent)
 		pr->pr_nindent++;
