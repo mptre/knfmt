@@ -123,6 +123,8 @@ static int	parser_exec_stmt_dowhile(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_return(struct parser *, struct doc *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *,
+    const struct token *);
+static int	parser_exec_stmt_kw_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
 static int	parser_exec_stmt_label(struct parser *, struct doc *,
     const struct token *);
@@ -133,6 +135,8 @@ static int	parser_exec_stmt_switch(struct parser *, struct doc *);
 static int	parser_exec_stmt_while(struct parser *, struct doc *);
 static int	parser_exec_stmt_break(struct parser *, struct doc *);
 static int	parser_exec_stmt_continue(struct parser *, struct doc *);
+static int	parser_exec_stmt_cpp(struct parser *, struct doc *);
+static int	parser_exec_stmt_semi(struct parser *, struct doc *);
 
 static int	parser_exec_type(struct parser *, struct doc *,
     const struct token *, struct ruler *);
@@ -158,7 +162,6 @@ static void		 parser_simple_stmt_ifelse_leave(struct parser *,
 static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
-static int		parser_peek_expr(struct parser *, const struct token *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
 static void		parser_token_trim(struct token *);
@@ -1359,69 +1362,36 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 		.ps_flags	= PARSER_EXEC_STMT_BLOCK_FLAG_TRIM,
 		.ps_rbrace	= NULL,
 	};
-	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
-
-	/* Most likely statement comes first. */
-	if (parser_exec_stmt_if(pr, dc, rbrace) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_return(pr, dc) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_case(pr, dc, rbrace) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_break(pr, dc) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_goto(pr, dc) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_block(pr, &ps) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_for(pr, dc, rbrace) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_while(pr, dc) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_label(pr, dc, rbrace) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_switch(pr, dc) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_continue(pr, dc) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_dowhile(pr, dc, rbrace) & GOOD)
-		return parser_good(pr);
-
-	if (lexer_if(lx, TOKEN_SEMI, &tk)) {
-		doc_token(tk, dc);
-		return parser_good(pr);
-	}
 
 	/*
-	 * Note, the ordering of operations is of importance here. Interpret the
-	 * following tokens as an expression if the same expression spans to the
-	 * first semi colon. Calling parser_exec_decl() first and treating
-	 * everything else as an expression has the unwanted effect of treating
-	 * function calls as declarations. This in turn is caused by
-	 * parser_exec_decl() being able to detect declarations making use of
-	 * preprocessor directives such as the ones provided by queue(3).
+	 * Most likely statement comes first with some crucial exceptions:
+	 *
+	 *     1. Detect blocks before expressions as the expression parser can
+	 *        also detect blocks through recovery using the parser.
+	 *
+	 *     2. Detect expressions before declarations as functions calls
+	 *        would otherwise be treated as declarations. This in turn is
+	 *        caused by parser_exec_decl() being able to detect declarations
+	 *        making use of preprocessor directives such as the ones
+	 *        provided by queue(3).
 	 */
-	if (parser_peek_expr(pr, rbrace)) {
-		struct doc *expr = NULL;
-
-		if (parser_exec_expr(pr, dc, &expr, NULL, 0) & HALT)
-			return parser_fail(pr);
-		if (lexer_expect(lx, TOKEN_SEMI, &tk))
-			doc_token(tk, expr);
+	if ((parser_exec_stmt_block(pr, &ps) & GOOD) ||
+	    (parser_exec_stmt_expr(pr, dc, rbrace) & GOOD) ||
+	    (parser_exec_stmt_if(pr, dc, rbrace) & GOOD) ||
+	    (parser_exec_stmt_return(pr, dc) & GOOD) ||
+	    (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_FLAG_BREAK) & GOOD) ||
+	    (parser_exec_stmt_case(pr, dc, rbrace) & GOOD) ||
+	    (parser_exec_stmt_break(pr, dc) & GOOD) ||
+	    (parser_exec_stmt_goto(pr, dc) & GOOD) ||
+	    (parser_exec_stmt_for(pr, dc, rbrace) & GOOD) ||
+	    (parser_exec_stmt_while(pr, dc) & GOOD) ||
+	    (parser_exec_stmt_label(pr, dc, rbrace) & GOOD) ||
+	    (parser_exec_stmt_switch(pr, dc) & GOOD) ||
+	    (parser_exec_stmt_continue(pr, dc) & GOOD) ||
+	    (parser_exec_stmt_cpp(pr, dc) & GOOD) ||
+	    (parser_exec_stmt_dowhile(pr, dc, rbrace) & GOOD) ||
+	    (parser_exec_stmt_semi(pr, dc) & GOOD))
 		return parser_good(pr);
-	}
-
-	if (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_FLAG_BREAK) & GOOD)
-		return parser_good(pr);
-
-	/*
-	 * Last resort, see if this is a loop construct hidden behind cpp such
-	 * as queue(3).
-	 */
-	if (lexer_peek_if(lx, TOKEN_IDENT, &tk))
-		return parser_exec_stmt_expr(pr, dc, tk, 0);
-
 	return parser_none(pr);
 }
 
@@ -1516,7 +1486,7 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc,
 	if (!lexer_peek_if(lx, TOKEN_IF, &tk))
 		return parser_none(pr);
 
-	if (parser_exec_stmt_expr(pr, dc, tk, 0) & (FAIL | NONE))
+	if (parser_exec_stmt_kw_expr(pr, dc, tk, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	while (lexer_peek_if(lx, TOKEN_ELSE, &tkelse)) {
@@ -1533,7 +1503,7 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc,
 
 		if (lexer_peek_if(lx, TOKEN_IF, &tkif) &&
 		    token_cmp(tkelse, tkif) == 0) {
-			error = parser_exec_stmt_expr(pr, dc, tkif, 0);
+			error = parser_exec_stmt_kw_expr(pr, dc, tkif, 0);
 			if (error & (FAIL | NONE))
 				return parser_fail(pr);
 		} else {
@@ -1682,7 +1652,7 @@ parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc,
 		return parser_fail(pr);
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
-		return parser_exec_stmt_expr(pr, concat, tk,
+		return parser_exec_stmt_kw_expr(pr, concat, tk,
 		    PARSER_EXEC_STMT_EXPR_FLAG_DOWHILE);
 	return parser_fail(pr);
 }
@@ -1714,12 +1684,66 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 	return parser_good(pr);
 }
 
-/*
- * Parse a statement consisting of a keyword, expression wrapped in parenthesis
- * and following statement(s).
- */
 static int
 parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
+    const struct token *rbrace)
+{
+	const struct expr_exec_arg ea = {
+		.ea_cf		= pr->pr_cf,
+		.ea_lx		= pr->pr_lx,
+		.ea_dc		= NULL,
+		.ea_stop	= rbrace,
+		.ea_recover	= parser_exec_expr_recover,
+		.ea_arg		= pr,
+		.ea_flags	= 0,
+	};
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct doc *expr = NULL;
+	struct token *ident, *nx, *semi;
+	int peek = 0;
+
+	if (lexer_peek_if_type(lx, NULL, 0) ||
+	    !lexer_peek_until_stop(lx, TOKEN_SEMI, rbrace, &semi))
+		return parser_none(pr);
+
+	lexer_peek_enter(lx, &s);
+	if (expr_peek(&ea) && lexer_pop(lx, &nx) && nx == semi)
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return parser_none(pr);
+
+	/*
+	 * Do not confuse a loop construct hidden behind cpp followed by a
+	 * statement which is a sole expression:
+	 *
+	 * 	foreach()
+	 * 		func();
+	 */
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+	    lexer_pop(lx, &nx) && nx != semi &&
+	    token_cmp(ident, nx) < 0 && token_cmp(nx, semi) <= 0)
+		peek = 0;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return parser_none(pr);
+
+	if (parser_exec_expr(pr, dc, &expr, NULL, 0) & HALT)
+		return parser_fail(pr);
+	if (lexer_expect(lx, TOKEN_SEMI, &semi))
+		doc_token(semi, expr);
+	return parser_good(pr);
+}
+
+/*
+ * Parse a statement consisting of a keyword, expression wrapped in parenthesis
+ * and followed by additional nested statement(s).
+ */
+static int
+parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
     const struct token *type, unsigned int flags)
 {
 	struct doc *expr = NULL;
@@ -1933,7 +1957,7 @@ parser_exec_stmt_switch(struct parser *pr, struct doc *dc)
 	struct token *tk;
 
 	if (lexer_peek_if(lx, TOKEN_SWITCH, &tk))
-		return parser_exec_stmt_expr(pr, dc, tk, 0);
+		return parser_exec_stmt_kw_expr(pr, dc, tk, 0);
 	return parser_none(pr);
 }
 
@@ -1945,7 +1969,7 @@ parser_exec_stmt_while(struct parser *pr, struct doc *dc)
 	struct token *tk;
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
-		return parser_exec_stmt_expr(pr, dc, tk, 0);
+		return parser_exec_stmt_kw_expr(pr, dc, tk, 0);
 	return parser_none(pr);
 }
 
@@ -1974,6 +1998,33 @@ parser_exec_stmt_continue(struct parser *pr, struct doc *dc)
 		doc_token(tk, dc);
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, dc);
+		return parser_good(pr);
+	}
+	return parser_none(pr);
+}
+
+/*
+ * Parse statement hidden behind cpp, such as a loop construct from queue(3).
+ */
+static int
+parser_exec_stmt_cpp(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *ident;
+
+	if (lexer_peek_if(lx, TOKEN_IDENT, &ident))
+		return parser_exec_stmt_kw_expr(pr, dc, ident, 0);
+	return parser_none(pr);
+}
+
+static int
+parser_exec_stmt_semi(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *semi;
+
+	if (lexer_if(lx, TOKEN_SEMI, &semi)) {
+		doc_token(semi, dc);
 		return parser_good(pr);
 	}
 	return parser_none(pr);
@@ -2371,53 +2422,6 @@ parser_peek_func(struct parser *pr, struct token **type)
 	}
 out:
 	lexer_peek_leave(lx, &s);
-	return peek;
-}
-
-static int
-parser_peek_expr(struct parser *pr, const struct token *stop)
-{
-	const struct expr_exec_arg ea = {
-		.ea_cf		= pr->pr_cf,
-		.ea_lx		= pr->pr_lx,
-		.ea_dc		= NULL,
-		.ea_stop	= stop,
-		.ea_recover	= parser_exec_expr_recover,
-		.ea_arg		= pr,
-		.ea_flags	= 0,
-	};
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct token *ident, *nx, *semi;
-	int peek = 0;
-
-	if (lexer_peek_if_type(lx, NULL, 0))
-		return 0;
-	if (!lexer_peek_until_stop(lx, TOKEN_SEMI, stop, &semi))
-		return 0;
-
-	lexer_peek_enter(lx, &s);
-	if (expr_peek(&ea) && lexer_pop(lx, &nx) && nx == semi)
-		peek = 1;
-	lexer_peek_leave(lx, &s);
-	if (!peek)
-		return 0;
-
-	/*
-	 * Do not confuse a loop construct hidden behind cpp followed by a
-	 * statement which is a sole expression:
-	 *
-	 * 	foreach()
-	 * 		func();
-	 */
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
-	    lexer_pop(lx, &nx) && nx != semi &&
-	    token_cmp(ident, nx) < 0 && token_cmp(nx, semi) <= 0)
-		peek = 0;
-	lexer_peek_leave(lx, &s);
-
 	return peek;
 }
 
