@@ -1703,8 +1703,11 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	struct token *ident, *nx, *semi;
 	int peek = 0;
 
-	if (lexer_peek_if_type(lx, NULL, 0) ||
-	    !lexer_peek_until_stop(lx, TOKEN_SEMI, rbrace, &semi))
+	if (lexer_peek_if_type(lx, NULL, 0))
+		return parser_none(pr);
+	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
+		return parser_none(pr);
+	if (rbrace != NULL && token_cmp(semi, rbrace) > 0)
 		return parser_none(pr);
 
 	lexer_peek_enter(lx, &s);

@@ -1258,39 +1258,17 @@ lexer_peek_until_loose(struct lexer *lx, enum token_type type,
 }
 
 /*
- * Peek until the given token type is encountered but abort while trying to move
- * beyond the given stop token. Returns non-zero if such token was found.
+ * Consume token(s) until the given token type is encountered. Returns non-zero
+ * if such token is found.
  */
 int
-lexer_peek_until_stop(struct lexer *lx, enum token_type type,
-    const struct token *stop, struct token **tk)
-{
-	struct lexer_state s;
-	int peek;
-
-	lexer_peek_enter(lx, &s);
-	peek = __lexer_until(lx, type, stop, tk, __func__, __LINE__);
-	lexer_peek_leave(lx, &s);
-	return peek;
-}
-
-/*
- * Consume token(s) until the given token type is encountered but abort while
- * trying to move beyond the given stop token. Returns non-zero if such token is
- * found.
- */
-int
-__lexer_until(struct lexer *lx, enum token_type type, const struct token *stop,
-    struct token **tk, const char *fun, int lno)
+lexer_until(struct lexer *lx, enum token_type type, struct token **tk)
 {
 	for (;;) {
-		struct token *t = NULL;
+		struct token *t;
 
-		if (!lexer_pop(lx, &t) || t->tk_type == TOKEN_EOF ||
-		    (stop != NULL && stop == t)) {
-			lexer_emit_error(lx, type, t, fun, lno);
+		if (!lexer_pop(lx, &t) || t->tk_type == TOKEN_EOF)
 			return 0;
-		}
 		if (t->tk_type == type) {
 			if (tk != NULL)
 				*tk = t;

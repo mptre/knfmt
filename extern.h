@@ -294,12 +294,7 @@ int	lexer_peek_if_prefix_flags(struct lexer *, unsigned int,
 int	lexer_peek_until(struct lexer *, enum token_type, struct token **);
 int	lexer_peek_until_loose(struct lexer *, enum token_type,
     const struct token *, struct token **);
-int	lexer_peek_until_stop(struct lexer *, enum token_type,
-    const struct token *, struct token **);
-#define lexer_until(a, b, c) \
-	__lexer_until((a), (b), NULL, (c), __func__, __LINE__)
-int	__lexer_until(struct lexer *, enum token_type, const struct token *,
-    struct token **, const char *, int);
+int	lexer_until(struct lexer *, enum token_type, struct token **);
 
 const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
     unsigned int);
