@@ -50,19 +50,22 @@ enum expr_type {
 };
 
 struct expr {
-	enum expr_type	 ex_type;
-	struct token	*ex_tk;
-	struct expr	*ex_lhs;
-	struct expr	*ex_rhs;
-	struct token	*ex_beg;
-	struct token	*ex_end;
-	struct token	*ex_tokens[2];
+	enum expr_type		 ex_type;
+	struct token		*ex_tk;
+	struct expr		*ex_lhs;
+	struct expr		*ex_rhs;
+	struct token		*ex_beg;
+	struct token		*ex_end;
+	struct token		*ex_tokens[2];
 
 	union {
-		struct expr	*ex_ternary;
-		struct doc	*ex_dc;
-		int		 ex_sizeof;
+		struct expr		*ex_ternary;
+		struct doc		*ex_dc;
+		int			 ex_sizeof;
+		TAILQ_HEAD(, expr)	 ex_concat;
 	};
+
+	TAILQ_ENTRY(expr)	 ex_entry;
 };
 
 struct expr_state;
@@ -330,13 +333,19 @@ expr_exec_binary(struct expr_state *es, struct expr *lhs)
 static struct expr *
 expr_exec_concat(struct expr_state *es, struct expr *lhs)
 {
-	struct expr *ex;
+	struct expr *ex, *rhs;
 
 	assert(lhs != NULL);
 
-	ex = expr_alloc(EXPR_CONCAT, es);
-	ex->ex_lhs = lhs;
-	ex->ex_rhs = expr_exec_literal(es, NULL);
+	if (lhs->ex_type == EXPR_CONCAT) {
+		ex = lhs;
+	} else {
+		ex = expr_alloc(EXPR_CONCAT, es);
+		TAILQ_INIT(&ex->ex_concat);
+		TAILQ_INSERT_TAIL(&ex->ex_concat, lhs, ex_entry);
+	}
+	rhs = expr_exec_literal(es, NULL);
+	TAILQ_INSERT_TAIL(&ex->ex_concat, rhs, ex_entry);
 	return ex;
 }
 
@@ -506,10 +515,18 @@ expr_free(struct expr *ex)
 
 	expr_free(ex->ex_lhs);
 	expr_free(ex->ex_rhs);
-	if (ex->ex_type == EXPR_TERNARY)
+	if (ex->ex_type == EXPR_TERNARY) {
 		expr_free(ex->ex_ternary);
-	else if (ex->ex_type == EXPR_RECOVER)
+	} else if (ex->ex_type == EXPR_CONCAT) {
+		struct expr *concat;
+
+		while ((concat = TAILQ_FIRST(&ex->ex_concat)) != NULL) {
+			TAILQ_REMOVE(&ex->ex_concat, concat, ex_entry);
+			expr_free(concat);
+		}
+	} else if (ex->ex_type == EXPR_RECOVER) {
 		doc_free(ex->ex_dc);
+	}
 	free(ex);
 }
 
@@ -711,11 +728,19 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		}
 		break;
 
-	case EXPR_CONCAT:
-		concat = expr_doc(ex->ex_lhs, es, concat);
-		doc_alloc(DOC_LINE, concat);
-		concat = expr_doc(ex->ex_rhs, es, concat);
+	case EXPR_CONCAT: {
+		struct expr *e;
+		struct doc *tmp = NULL;
+
+		TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {
+			tmp = expr_doc(e, es, concat);
+			if (TAILQ_NEXT(e, ex_entry) != NULL)
+				doc_alloc(DOC_LINE, concat);
+		}
+		if (tmp != NULL)
+			concat = tmp;
 		break;
+	}
 
 	case EXPR_LITERAL:
 		doc_token(ex->ex_tk, concat);
