@@ -129,6 +129,10 @@ static int	parser_exec_stmt_label(struct parser *, struct doc *,
 static int	parser_exec_stmt_case(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_goto(struct parser *, struct doc *);
+static int	parser_exec_stmt_switch(struct parser *, struct doc *);
+static int	parser_exec_stmt_while(struct parser *, struct doc *);
+static int	parser_exec_stmt_break(struct parser *, struct doc *);
+static int	parser_exec_stmt_continue(struct parser *, struct doc *);
 
 static int	parser_exec_type(struct parser *, struct doc *,
     const struct token *, struct ruler *);
@@ -1358,34 +1362,31 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	if (parser_exec_stmt_block(pr, &ps) & GOOD)
-		return parser_good(pr);
+	/* Most likely statement comes first. */
 	if (parser_exec_stmt_if(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
 	if (parser_exec_stmt_return(pr, dc) & GOOD)
 		return parser_good(pr);
-	if (parser_exec_stmt_for(pr, dc, rbrace) & GOOD)
-		return parser_good(pr);
-	if (parser_exec_stmt_dowhile(pr, dc, rbrace) & GOOD)
-		return parser_good(pr);
 	if (parser_exec_stmt_case(pr, dc, rbrace) & GOOD)
+		return parser_good(pr);
+	if (parser_exec_stmt_break(pr, dc) & GOOD)
 		return parser_good(pr);
 	if (parser_exec_stmt_goto(pr, dc) & GOOD)
 		return parser_good(pr);
+	if (parser_exec_stmt_block(pr, &ps) & GOOD)
+		return parser_good(pr);
+	if (parser_exec_stmt_for(pr, dc, rbrace) & GOOD)
+		return parser_good(pr);
+	if (parser_exec_stmt_while(pr, dc) & GOOD)
+		return parser_good(pr);
 	if (parser_exec_stmt_label(pr, dc, rbrace) & GOOD)
 		return parser_good(pr);
-
-	if (lexer_peek_if(lx, TOKEN_WHILE, &tk) ||
-	    lexer_peek_if(lx, TOKEN_SWITCH, &tk))
-		return parser_exec_stmt_expr(pr, dc, tk, 0);
-
-	if (lexer_if(lx, TOKEN_BREAK, &tk) ||
-	    lexer_if(lx, TOKEN_CONTINUE, &tk)) {
-		doc_token(tk, dc);
-		if (lexer_expect(lx, TOKEN_SEMI, &tk))
-			doc_token(tk, dc);
+	if (parser_exec_stmt_switch(pr, dc) & GOOD)
 		return parser_good(pr);
-	}
+	if (parser_exec_stmt_continue(pr, dc) & GOOD)
+		return parser_good(pr);
+	if (parser_exec_stmt_dowhile(pr, dc, rbrace) & GOOD)
+		return parser_good(pr);
 
 	if (lexer_if(lx, TOKEN_SEMI, &tk)) {
 		doc_token(tk, dc);
@@ -1926,6 +1927,59 @@ parser_exec_stmt_goto(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, concat);
 	return parser_good(pr);
+}
+
+static int
+parser_exec_stmt_switch(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	if (lexer_peek_if(lx, TOKEN_SWITCH, &tk))
+		return parser_exec_stmt_expr(pr, dc, tk, 0);
+	return parser_none(pr);
+}
+
+static int
+parser_exec_stmt_while(struct parser *pr, struct doc *dc)
+{
+
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
+		return parser_exec_stmt_expr(pr, dc, tk, 0);
+	return parser_none(pr);
+}
+
+static int
+parser_exec_stmt_break(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	if (lexer_if(lx, TOKEN_BREAK, &tk)) {
+		doc_token(tk, dc);
+		if (lexer_expect(lx, TOKEN_SEMI, &tk))
+			doc_token(tk, dc);
+		return parser_good(pr);
+	}
+	return parser_none(pr);
+}
+
+static int
+parser_exec_stmt_continue(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	if (lexer_if(lx, TOKEN_CONTINUE, &tk)) {
+		doc_token(tk, dc);
+		if (lexer_expect(lx, TOKEN_SEMI, &tk))
+			doc_token(tk, dc);
+		return parser_good(pr);
+	}
+	return parser_none(pr);
 }
 
 /*
