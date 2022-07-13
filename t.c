@@ -200,9 +200,9 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("void (*)",
 	    "void ( * )");
 	error |= test_lexer_peek_if_type("char (*v)[1]", "char");
-	error |= test_lexer_peek_if_type("STACK_OF(X509_EXTENSION)",
-	    "STACK_OF ( X509_EXTENSION )");
-	error |= test_lexer_peek_if_type("STACK_OF(X509_EXTENSION)*",
+	error |= test_lexer_peek_if_type("STACK_OF(X509_EXTENSION) x",
+	    "STACK_OF ( X509_EXTENSION ) x");
+	error |= test_lexer_peek_if_type("STACK_OF(X509_EXTENSION) *",
 	    "STACK_OF ( X509_EXTENSION ) *");
 	error |= test_lexer_peek_if_type("const STACK_OF(X509_EXTENSION)*",
 	    "const STACK_OF ( X509_EXTENSION ) *");

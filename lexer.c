@@ -2037,17 +2037,22 @@ static int
 lexer_peek_if_type_cpp(struct lexer *lx)
 {
 	struct lexer_state s;
+	struct token *nx = NULL;
+	struct token *ident;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
 	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
-	    (lexer_if(lx, TOKEN_IDENT, NULL) ||
-	     lexer_if(lx, TOKEN_STAR, NULL) ||
-	     lexer_if(lx, TOKEN_EOF, NULL)))
-		peek = 1;
+	    (lexer_if(lx, TOKEN_IDENT, &nx) ||
+	     lexer_if(lx, TOKEN_STAR, NULL))) {
+		/* Ugly, do not confuse cppx. */
+		peek = nx == NULL ||
+		    ident->tk_len != nx->tk_len ||
+		    strncmp(ident->tk_str, nx->tk_str, nx->tk_len) != 0;
+	}
 	lexer_peek_leave(lx, &s);
 	return peek;
 }
