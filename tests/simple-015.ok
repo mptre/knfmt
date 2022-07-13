@@ -1,0 +1,6 @@
+int
+main(void)
+{
+	size_t len, x;
+	ssize_t linelen;
+}
