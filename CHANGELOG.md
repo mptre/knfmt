@@ -1,3 +1,47 @@
+# 3.0.0 - YYYY-MM-DD
+
+## Changes
+
+- Replace spaces in comment indentation.
+  (d541ebf)
+  (Anton Lindqvist)
+
+## News
+
+- Add support for usage of cdefs.h macros.
+  (2757635)
+  (Anton Lindqvist)
+
+- Add support for OpenSSL type macros such as STACK_OF.
+  (b56e61e)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Fix alignment of variable declarations spanning multiple lines bug.
+  (b3984fc)
+  (Anton Lindqvist)
+
+- Break variable declarations spanning multiple lines even earlier.
+  (258ce60)
+  (Anton Lindqvist)
+
+- Fix break of long expressions bug.
+  (c27db83, 40dedf7, 728f641, 67440df)
+  (Anton Lindqvist)
+
+- Move comment when moving braces.
+  (b031d14)
+  (Anton Lindqvist)
+
+- Fix multiple diff mode bugs.
+  (2ad115c, 3edecea, b9b470d)
+  (Anton Lindqvist)
+
+- Never break before return expression.
+  (c1e9cb1)
+  (Anton Lindqvist)
+
 # 2.1.0 - 2022-06-01
 
 ## News
