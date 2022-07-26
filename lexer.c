@@ -1975,8 +1975,8 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 static void
 token_prolong(struct token *dst, struct token *src)
 {
-	assert(dst->tk_type == src->tk_type);
-	assert(dst->tk_off + dst->tk_len == src->tk_off);
+	assert(src->tk_type == dst->tk_type);
+	assert(src->tk_off >= dst->tk_off + dst->tk_len);
 	dst->tk_len += src->tk_len;
 	token_rele(src);
 }
