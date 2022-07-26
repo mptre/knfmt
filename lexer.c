@@ -112,6 +112,7 @@ static void		 token_move_prefix(struct token *, struct token *,
     struct token *);
 static struct token	*token_list_find(struct token_list *, enum token_type);
 static void		 token_remove(struct token_list *, struct token *);
+static void		 token_prolong(struct token *, struct token *);
 static const char	*strtoken(enum token_type);
 
 static int	 isnum(unsigned char, int);
@@ -1414,11 +1415,18 @@ lexer_read(struct lexer *lx, struct token **tk)
 	 * the emitted token.
 	 */
 	for (;;) {
-		if ((tmp = lexer_comment(lx, 1)) != NULL ||
-		    (tmp = lexer_cpp(lx)) != NULL)
-			TAILQ_INSERT_TAIL(&prefixes, tmp, tk_entry);
-		else
+		struct token *last;
+
+		if ((tmp = lexer_comment(lx, 1)) == NULL &&
+		    (tmp = lexer_cpp(lx)) == NULL)
 			break;
+
+		if (tmp->tk_type == TOKEN_COMMENT &&
+		    (last = TAILQ_LAST(&prefixes, token_list)) != NULL &&
+		    last->tk_type == TOKEN_COMMENT)
+			token_prolong(last, tmp);
+		else
+			TAILQ_INSERT_TAIL(&prefixes, tmp, tk_entry);
 	}
 
 	if ((*tk = lexer_keyword(lx)) != NULL)
@@ -1958,6 +1966,19 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 	error_write(lx->lx_er, "expected type %s got %s\n", strtoken(type),
 	    str ? str : "(null)");
 	free(str);
+}
+
+/*
+ * Prolong the dst token to also cover the src token. They are required to be of
+ * the same type and be adjacent to each other.
+ */
+static void
+token_prolong(struct token *dst, struct token *src)
+{
+	assert(dst->tk_type == src->tk_type);
+	assert(dst->tk_off + dst->tk_len == src->tk_off);
+	dst->tk_len += src->tk_len;
+	token_rele(src);
 }
 
 static int
