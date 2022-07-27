@@ -1,0 +1,12 @@
+/*
+ * Long expression.
+ */
+
+int
+main(void)
+{
+	if (0) {
+		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+			return 0;
+	}
+}

@@ -553,7 +553,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	case EXPR_UNARY:
 		doc_token(ex->ex_tk, concat);
 		if (ex->ex_lhs != NULL)
-			expr_doc(ex->ex_lhs, es, concat);
+			concat = expr_doc(ex->ex_lhs, es, concat);
 		break;
 
 	case EXPR_BINARY: {
