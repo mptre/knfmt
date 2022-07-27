@@ -453,7 +453,8 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_token(tk, concat);
 		}
 
-		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
+		    &rbrace))
 			return parser_fail(pr);
 		parser_token_trim(rbrace);
 		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
@@ -482,7 +483,8 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_token(tk, concat);
 		}
 
-		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
+		    &rbrace))
 			return parser_fail(pr);
 		parser_token_trim(rbrace);
 
@@ -1207,7 +1209,8 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 			doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
 			doc_token(tk, concat);
-		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
+		    &rparen))
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
 			doc_token(lparen, concat);
