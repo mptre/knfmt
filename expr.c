@@ -678,7 +678,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 					token_trim(pv);
 			}
 
-			concat = expr_doc(ex->ex_rhs, es, concat);
+			concat = expr_doc_soft(ex->ex_rhs, es, concat, 2);
 		}
 		if (rparen)
 			doc_token(rparen, concat);
@@ -693,7 +693,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_token(ex->ex_tk, lhs);
 		doc_alloc(DOC_LINE, lhs);
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc_soft(ex->ex_rhs, es, concat, 2);
+			concat = expr_doc_soft(ex->ex_rhs, es, concat, 3);
 		break;
 	}
 
@@ -796,12 +796,9 @@ expr_doc_has_spaces(const struct expr *ex)
  */
 static struct doc *
 __expr_doc_soft(struct expr *ex, struct expr_state *es, struct doc *dc,
-    int scalar, const char *fun, int lno)
+    int weight, const char *fun, int lno)
 {
 	struct doc *concat, *parent, *softline;
-	int weight;
-
-	weight = es->es_depth * scalar;
 
 	dc = __doc_alloc(DOC_CONCAT, __doc_alloc(DOC_GROUP, dc, 0, fun, lno),
 	    0, fun, lno);
@@ -809,12 +806,10 @@ __expr_doc_soft(struct expr *ex, struct expr_state *es, struct doc *dc,
 	parent = doc_alloc(DOC_CONCAT, dc);
 	concat = expr_doc(ex, es, parent);
 	/*
-	 * All soft line(s) allocated using expr_doc_soft() has a associated
-	 * weight. A zero max weight implies that we rather break right here.
-	 * Otherwise, there's a more suitable nested soft line that must be
-	 * favored.
+	 * Honor the soft line with the highest weight. Using greater than or
+	 * equal is of importance as we want to maximize the column utilisation.
 	 */
-	if (doc_max(parent) > weight)
+	if (doc_max(parent) >= weight)
 		doc_remove(softline, dc);
 
 	return concat;
