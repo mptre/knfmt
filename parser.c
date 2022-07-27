@@ -855,6 +855,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 	struct token *tk = NULL;
 	struct token *comma;
 	const struct token *stop;
+	int ntokens = 0;
 
 	stop = lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &comma) ?
 	    comma : rbrace;
@@ -900,17 +901,16 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			    (lexer_peek_if(lx, TOKEN_RBRACE, &tk) &&
 			     tk == rbrace))
 				goto comma;
+		} else if (ntokens == 0) {
+			/* Assume the field name is omitted. */
+			error = parser_exec_expr(pr, dc, NULL, stop, 0);
+			if (error & HALT)
+				return parser_fail(pr);
+			goto comma;
 		} else {
-			if (tk == NULL) {
-				/*
-				 * Nothing found so far, the field name could be
-				 * omitted.
-				 */
-				(void)parser_exec_expr(pr, dc, NULL, stop, 0);
-				goto comma;
-			}
 			break;
 		}
+		ntokens++;
 	}
 
 	ruler_insert(rl, tk, dc, 1, parser_width(pr, dc), 0);
@@ -919,11 +919,10 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 		return parser_fail(pr);
 
 comma:
-	if (lexer_if(lx, TOKEN_COMMA, &tk))
-		doc_token(tk, dc);
-	else if (!lexer_peek(lx, &tk) || tk != stop)
+	if (!lexer_peek(lx, &tk) || tk != stop)
 		return parser_fail(pr);
-
+	else if (lexer_if(lx, TOKEN_COMMA, &tk))
+		doc_token(tk, dc);
 	return parser_good(pr);
 }
 
