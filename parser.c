@@ -2409,11 +2409,9 @@ parser_peek_func(struct parser *pr, struct token **type)
 		if (!lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
 			goto out;
 
-		for (;;) {
-			if (!lexer_if(lx, TOKEN_ATTRIBUTE, NULL) ||
-			    !lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
-				break;
-		}
+		while (lexer_if(lx, TOKEN_ATTRIBUTE, NULL) &&
+		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
+			continue;
 
 		if (lexer_if(lx, TOKEN_SEMI, NULL))
 			peek = PARSER_PEEK_FUNCDECL;
