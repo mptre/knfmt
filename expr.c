@@ -109,16 +109,14 @@ static void		 expr_free(struct expr *);
 
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
-static struct doc	*expr_doc_break(struct expr *, struct expr_state *,
-    struct doc *, int);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
 
-#define expr_doc_soft(a, b, c) \
-	__expr_doc_soft((a), (b), (c), __func__, __LINE__)
-static struct doc	*__expr_doc_soft(struct doc *, struct doc **, int,
-    const char *, int);
+#define expr_doc_soft(a, b, c, d) \
+	__expr_doc_soft((a), (b), (c), (d), __func__, __LINE__)
+static struct doc	*__expr_doc_soft(struct expr *, struct expr_state *,
+    struct doc *, int, const char *, int);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
@@ -584,7 +582,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			doc_alloc(dospace ? DOC_LINE : DOC_SOFTLINE, concat);
 		}
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc_break(ex->ex_rhs, es, concat, 1);
+			concat = expr_doc_soft(ex->ex_rhs, es, concat, 1);
 
 		break;
 	}
@@ -600,17 +598,16 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			doc_alloc(DOC_LINE, ternary);
 
 		/* The true expression can be empty, GNU extension. */
-		ternary = expr_doc_soft(concat, NULL, 1);
+		ternary = concat;
 		if (ex->ex_rhs != NULL) {
-			ternary = expr_doc(ex->ex_rhs, es, ternary);
+			ternary = expr_doc_soft(ex->ex_rhs, es, ternary, 2);
 			doc_alloc(DOC_LINE, ternary);
 		}
+
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], ternary);	/* : */
 		doc_alloc(DOC_LINE, ternary);
-
-		ternary = expr_doc_soft(concat, NULL, 1);
-		concat = expr_doc(ex->ex_ternary, es, ternary);
+		concat = expr_doc_soft(ex->ex_ternary, es, ternary, 2);
 		break;
 	}
 
@@ -649,9 +646,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* [ */
-		concat = expr_doc_soft(concat, NULL, 0);
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc(ex->ex_rhs, es, concat);
+			concat = expr_doc_soft(ex->ex_rhs, es, concat, 1);
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], concat);	/* ] */
 		break;
@@ -697,7 +693,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		doc_token(ex->ex_tk, lhs);
 		doc_alloc(DOC_LINE, lhs);
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc_break(ex->ex_rhs, es, concat, 2);
+			concat = expr_doc_soft(ex->ex_rhs, es, concat, 2);
 		break;
 	}
 
@@ -766,33 +762,6 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	return concat;
 }
 
-/*
- * Insert a soft line before the given expression, unless a more suitable one is
- * nested under the same expression.
- */
-static struct doc *
-expr_doc_break(struct expr *ex, struct expr_state *es, struct doc *dc,
-    int scalar)
-{
-	struct doc *concat, *parent, *softline;
-	int weight;
-
-	weight = es->es_depth * scalar;
-	dc = expr_doc_soft(dc, &softline, weight);
-	parent = doc_alloc(DOC_CONCAT, dc);
-	concat = expr_doc(ex, es, parent);
-	/*
-	 * All soft line(s) allocated using expr_doc_soft() has a associated
-	 * weight. A zero max weight implies that we rather break right here.
-	 * Otherwise, there's a more suitable nested soft line that must be
-	 * favored.
-	 */
-	if (doc_max(parent) > weight)
-		doc_remove(softline, dc);
-
-	return concat;
-}
-
 static struct doc *
 expr_doc_indent_parens(const struct expr_state *es, struct doc *dc)
 {
@@ -821,18 +790,34 @@ expr_doc_has_spaces(const struct expr *ex)
 	return 0;
 }
 
+/*
+ * Insert a soft line before the given expression, unless a more suitable one is
+ * nested under the same expression.
+ */
 static struct doc *
-__expr_doc_soft(struct doc *dc, struct doc **softline, int weight,
-    const char *fun, int lno)
+__expr_doc_soft(struct expr *ex, struct expr_state *es, struct doc *dc,
+    int scalar, const char *fun, int lno)
 {
-	struct doc *tmp;
+	struct doc *concat, *parent, *softline;
+	int weight;
+
+	weight = es->es_depth * scalar;
 
 	dc = __doc_alloc(DOC_CONCAT, __doc_alloc(DOC_GROUP, dc, 0, fun, lno),
 	    0, fun, lno);
-	tmp = __doc_alloc(DOC_SOFTLINE, dc, weight, fun, lno);
-	if (softline != NULL)
-		*softline = tmp;
-	return dc;
+	softline = __doc_alloc(DOC_SOFTLINE, dc, weight, fun, lno);
+	parent = doc_alloc(DOC_CONCAT, dc);
+	concat = expr_doc(ex, es, parent);
+	/*
+	 * All soft line(s) allocated using expr_doc_soft() has a associated
+	 * weight. A zero max weight implies that we rather break right here.
+	 * Otherwise, there's a more suitable nested soft line that must be
+	 * favored.
+	 */
+	if (doc_max(parent) > weight)
+		doc_remove(softline, dc);
+
+	return concat;
 }
 
 static const struct expr_rule *
