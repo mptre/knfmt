@@ -1,0 +1,8 @@
+int
+main(void)
+{
+	int z;	/* comment */
+	int x, y;
+
+	return 0;
+}

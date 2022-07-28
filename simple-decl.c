@@ -110,8 +110,9 @@ simple_decl_leave(struct simple_decl *sd)
 	struct token *tmp;
 
 	for (dl = sd->sd_vars; dl != NULL; dl = dl->dl_hh.next) {
-		struct token *after = dl->dl_semi;
-		struct token *cp, *tk;
+		struct token *semi = dl->dl_semi;
+		struct token *after = semi;
+		struct token *cp, *fix, *tk;
 		size_t i;
 
 		if (dl->dl_len == 0)
@@ -145,12 +146,13 @@ simple_decl_leave(struct simple_decl *sd)
 		}
 
 		cp = lexer_insert_after(sd->sd_lx, after, TOKEN_SEMI, ";");
-		if (token_is_moveable(dl->dl_semi)) {
-			/* Move line break(s) to the new semicolon. */
-			token_list_move(&dl->dl_semi->tk_prefixes,
-			    &cp->tk_prefixes);
-			token_list_move(&dl->dl_semi->tk_suffixes,
-			    &cp->tk_suffixes);
+		/* Move line break(s) to the new semicolon. */
+		TAILQ_FOREACH_SAFE(fix, &semi->tk_suffixes, tk_entry, tmp) {
+			if (fix->tk_type == TOKEN_COMMENT)
+				continue;
+
+			TAILQ_REMOVE(&semi->tk_suffixes, fix, tk_entry);
+			TAILQ_INSERT_TAIL(&cp->tk_suffixes, fix, tk_entry);
 		}
 	}
 
