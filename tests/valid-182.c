@@ -1,5 +1,5 @@
 /*
- * No hard line after cpp.
+ * No hard line before cpp after function implementation.
  */
 
 #if 0
