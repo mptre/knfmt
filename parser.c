@@ -162,6 +162,7 @@ static void		 parser_simple_stmt_ifelse_leave(struct parser *,
 static enum parser_peek	parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
+static int		parser_peek_func_line(struct parser *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
 static void		parser_token_trim(struct token *);
@@ -1155,16 +1156,9 @@ parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 	doc_alloc(DOC_HARDLINE, dc);
 	if (parser_exec_stmt_block(pr, &ps) & (FAIL | NONE))
 		return parser_fail(pr);
-
 	doc_alloc(DOC_HARDLINE, dc);
-	if (!lexer_peek_if(lx, TOKEN_EOF, NULL)) {
-		struct token *px, *tk;
-
-		if (!lexer_back(lx, &tk) ||
-		    !lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP, &px) ||
-		    px->tk_lno - tk->tk_lno > 1)
-			doc_alloc(DOC_HARDLINE, dc);
-	}
+	if (parser_peek_func_line(pr))
+		doc_alloc(DOC_HARDLINE, dc);
 
 	return parser_good(pr);
 }
@@ -2426,6 +2420,37 @@ parser_peek_func(struct parser *pr, struct token **type)
 out:
 	lexer_peek_leave(lx, &s);
 	return peek;
+}
+
+/*
+ * Returns non-zero if the right brace of a function implementation can be
+ * followed by a hard line.
+ */
+static int
+parser_peek_func_line(struct parser *pr)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *cpp, *ident, *rbrace;
+	struct lexer_state s;
+	int annotated = 0;
+
+	if (lexer_peek_if(lx, TOKEN_EOF, NULL) || !lexer_back(lx, &rbrace))
+		return 0;
+
+	if (lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP, &cpp))
+		return cpp->tk_lno - rbrace->tk_lno > 1;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+	    lexer_if(lx, TOKEN_SEMI, NULL) &&
+	    ident->tk_lno - rbrace->tk_lno == 1)
+		annotated = 1;
+	lexer_peek_leave(lx, &s);
+	if (annotated)
+		return 0;
+
+	return 1;
 }
 
 /*
