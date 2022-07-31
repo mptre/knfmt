@@ -1423,7 +1423,8 @@ lexer_read(struct lexer *lx, struct token **tk)
 
 		if (tmp->tk_type == TOKEN_COMMENT &&
 		    (last = TAILQ_LAST(&prefixes, token_list)) != NULL &&
-		    last->tk_type == TOKEN_COMMENT)
+		    last->tk_type == TOKEN_COMMENT &&
+		    token_cmp(tmp, last) == 0)
 			token_prolong(last, tmp);
 		else
 			TAILQ_INSERT_TAIL(&prefixes, tmp, tk_entry);
