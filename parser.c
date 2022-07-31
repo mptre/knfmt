@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -176,6 +177,8 @@ static int	parser_get_error(const struct parser *);
 static int	parser_good(const struct parser *);
 static int	parser_none(const struct parser *);
 static void	parser_reset(struct parser *);
+
+static int	iscpp(const char *, size_t);
 
 struct parser *
 parser_alloc(const char *path, struct lexer *lx, struct error *er,
@@ -1055,9 +1058,13 @@ parser_exec_decl_cppdefs(struct parser *pr, struct doc *dc)
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) && lexer_peek(lx, &nx) &&
-	    (nx->tk_lno - ident->tk_lno > 1 || nx->tk_type == TOKEN_EOF))
-		peek = 1;
+	if (lexer_if(lx, TOKEN_IDENT, &ident) && lexer_peek(lx, &nx)) {
+		if (nx->tk_lno - ident->tk_lno >= 1 &&
+		    iscpp(ident->tk_str, ident->tk_len))
+			peek = 1;
+		if (nx->tk_type == TOKEN_EOF)
+			peek = 1;
+	}
 	lexer_peek_leave(lx, &s);
 	if (!peek)
 		return parser_none(pr);
@@ -2568,4 +2575,16 @@ parser_reset(struct parser *pr)
 {
 	error_reset(pr->pr_er);
 	pr->pr_error = 0;
+}
+
+static int
+iscpp(const char *str, size_t len)
+{
+	for (; len > 0; len--, str++) {
+		unsigned char c = *str;
+
+		if (!isupper(c) && !isdigit(c) && c != '_')
+			return 0;
+	}
+	return 1;
 }
