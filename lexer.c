@@ -94,8 +94,12 @@ static void	lexer_branch_leave(struct lexer *, struct token *,
 static void	lexer_branch_link(struct lexer *, struct token *,
     struct token *);
 
+#define LEXER_BRANCH_FLAG_BACKWARD	0x00000001u
+#define LEXER_BRANCH_FLAG_FORWARD	0x00000002u
+#define LEXER_BRANCH_FLAG_INTACT	0x00000004u
+
 static struct token	*lexer_recover_branch(struct token *);
-static struct token	*lexer_recover_branch1(struct token *, int, int);
+static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (TRACE((lx)->lx_cf))						\
@@ -2265,31 +2269,29 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 }
 
 /*
- * Find the best suited branch to fold while trying to recover after
- * encountering invalid source code, relative to the given token.
- * We preferably do not want to fold a partially consumed branch as
- * lexer_branch() already has removed tokens, hence favoring intact branches.
+ * Find the best suited branch to fold relative to the given token while trying
+ * to recover after encountering invalid source code. We do not want to fold a
+ * partially consumed branch as lexer_branch() already has removed tokens making
+ * it impossible to traverse the same source code again since it is no longer
+ * intact. However, when reaching EOF we try to fold even partially consumed
+ * branches.
  */
 static struct token *
 lexer_recover_branch(struct token *tk)
 {
-	struct {
-		int direction;
-		int intact;
-	} strategies[] = {
-		{ .direction = 0, .intact = 1 },
-		{ .direction = 1, .intact = 1 },
-		{ .direction = 0, .intact = 0 },
-		{ .direction = 1, .intact = 0 },
+	unsigned int flags[] = {
+		LEXER_BRANCH_FLAG_BACKWARD | LEXER_BRANCH_FLAG_INTACT,
+		LEXER_BRANCH_FLAG_FORWARD | LEXER_BRANCH_FLAG_INTACT,
+		LEXER_BRANCH_FLAG_BACKWARD,
+		LEXER_BRANCH_FLAG_FORWARD,
 	};
-	size_t nstrategies = sizeof(strategies) / sizeof(strategies[0]);
+	size_t nflags = sizeof(flags) / sizeof(flags[0]);
 	size_t i;
 
-	for (i = 0; i < nstrategies; i++) {
+	for (i = 0; i < nflags; i++) {
 		struct token *br;
 
-		br = lexer_recover_branch1(tk, strategies[i].direction,
-		    strategies[i].intact);
+		br = lexer_recover_branch1(tk, flags[i]);
 		if (br != NULL)
 			return br;
 	}
@@ -2297,7 +2299,7 @@ lexer_recover_branch(struct token *tk)
 }
 
 static struct token *
-lexer_recover_branch1(struct token *tk, int next, int intact)
+lexer_recover_branch1(struct token *tk, unsigned int flags)
 {
 	for (;;) {
 		struct token *prefix;
@@ -2308,7 +2310,7 @@ lexer_recover_branch1(struct token *tk, int next, int intact)
 			if (prefix->tk_type == TOKEN_CPP_ENDIF) {
 				struct token *pv = prefix->tk_branch.br_pv;
 
-				if (intact &&
+				if ((flags & LEXER_BRANCH_FLAG_INTACT) &&
 				    pv->tk_type == TOKEN_CPP_ELSE &&
 				    pv->tk_branch.br_pv == NULL)
 					return NULL;
@@ -2316,10 +2318,12 @@ lexer_recover_branch1(struct token *tk, int next, int intact)
 			}
 		}
 
-		if (next)
+		if (flags & LEXER_BRANCH_FLAG_FORWARD)
 			tk = TAILQ_NEXT(tk, tk_entry);
-		else
+		else if (flags & LEXER_BRANCH_FLAG_BACKWARD)
 			tk = TAILQ_PREV(tk, token_list, tk_entry);
+		else
+			tk = NULL;
 		if (tk == NULL)
 			break;
 	}
