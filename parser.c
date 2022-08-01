@@ -21,7 +21,6 @@
 enum parser_peek {
 	PARSER_PEEK_FUNCDECL	= 1,
 	PARSER_PEEK_FUNCIMPL	= 2,
-	PARSER_PEEK_CPPINIT	= 3,
 };
 
 struct parser {
@@ -161,7 +160,7 @@ static void		 parser_simple_stmt_ifelse_leave(struct parser *,
     void *);
 
 static int		parser_peek_cppx(struct parser *);
-static enum parser_peek	parser_peek_cpp_init(struct parser *);
+static int		parser_peek_cpp_init(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static int		parser_peek_func_line(struct parser *);
 static int		parser_peek_line(struct parser *, const struct token *);
@@ -2447,13 +2446,13 @@ parser_peek_cppx(struct parser *pr)
 /*
  * Returns non-zero if the next tokens denotes an initializer making use of cpp.
  */
-static enum parser_peek
+static int
 parser_peek_cpp_init(struct parser *pr)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct token *comma, *ident, *rparen;
-	enum parser_peek peek = 0;
+	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
@@ -2465,7 +2464,7 @@ parser_peek_cpp_init(struct parser *pr)
 		nx = TAILQ_NEXT(comma, tk_entry);
 		if (pv != NULL && token_cmp(pv, ident) < 0 &&
 		    nx != NULL && token_cmp(nx, comma) > 0)
-			peek = PARSER_PEEK_CPPINIT;
+			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
