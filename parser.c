@@ -21,8 +21,7 @@
 enum parser_peek {
 	PARSER_PEEK_FUNCDECL	= 1,
 	PARSER_PEEK_FUNCIMPL	= 2,
-	PARSER_PEEK_CPPX	= 3,
-	PARSER_PEEK_CPPINIT	= 4,
+	PARSER_PEEK_CPPINIT	= 3,
 };
 
 struct parser {
@@ -161,7 +160,7 @@ static void		*parser_simple_stmt_ifelse_enter(struct parser *);
 static void		 parser_simple_stmt_ifelse_leave(struct parser *,
     void *);
 
-static enum parser_peek	parser_peek_cppx(struct parser *);
+static int		parser_peek_cppx(struct parser *);
 static enum parser_peek	parser_peek_cpp_init(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static int		parser_peek_func_line(struct parser *);
@@ -1004,6 +1003,10 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
+	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, &tk)) {
+		doc_token(tk, concat);
+		doc_alloc(DOC_LINE, concat);
+	}
 	if (lexer_expect(lx, TOKEN_IDENT, &tk))
 		doc_token(tk, concat);
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rbrace))
@@ -2408,18 +2411,22 @@ parser_simple_decl_leave(struct parser *pr, int simple)
  * if being part of an initializer. One example are the macros provided by
  * RBT_PROTOTYPE(9).
  */
-static enum parser_peek
+static int
 parser_peek_cppx(struct parser *pr)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
+	struct token *pv = NULL;
 	struct token *ident, *rparen;
-	enum parser_peek peek = 0;
+	int peek = 0;
 
+	(void)lexer_back(lx, &pv);
 	lexer_peek_enter(lx, &s);
+	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, NULL))
+		continue;
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen)) {
-		const struct token *nx, *pv;
+		const struct token *nx;
 
 		/*
 		 * The previous token must not reside on the same line as the
@@ -2427,12 +2434,11 @@ parser_peek_cppx(struct parser *pr)
 		 * have the same or less indentation. This is of importance in
 		 * order to not confuse loop constructs hidden behind cpp.
 		 */
-		pv = TAILQ_PREV(ident, token_list, tk_entry);
 		nx = TAILQ_NEXT(rparen, tk_entry);
 		if ((pv == NULL || token_cmp(pv, ident) < 0) &&
 		    (nx == NULL || (token_cmp(nx, rparen) > 0 &&
 		     nx->tk_cno <= ident->tk_cno)))
-			peek = PARSER_PEEK_CPPX;
+			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
