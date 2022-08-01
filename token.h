@@ -4,6 +4,10 @@
 #define A(t, s, f)
 #endif
 
+#ifndef S
+#define S(t, s, f)
+#endif
+
 /* keywords */
 T(TOKEN_ASSEMBLY,	"asm",			0)
 T(TOKEN_ATTRIBUTE,	"__attribute__",	0)
@@ -96,22 +100,23 @@ T(TOKEN_COMMA,			",",	0)
 T(TOKEN_BACKSLASH,		"\\",	F(DISCARD))
 
 /* sentinels */
-T(TOKEN_COMMENT,	"",	0)
-T(TOKEN_CPP,		"",	0)
-T(TOKEN_CPP_ELSE,	"",	0)
-T(TOKEN_CPP_ENDIF,	"",	0)
-T(TOKEN_CPP_IF,		"",	0)
-T(TOKEN_EOF,		"",	0)
-T(TOKEN_ERROR,		"",	0)
-T(TOKEN_IDENT,		"",	0)
-T(TOKEN_LITERAL,	"",	0)
-T(TOKEN_SPACE,		"",	0)
-T(TOKEN_STRING,		"",	0)
-T(TOKEN_UNKNOWN,	"",	0)
+S(TOKEN_COMMENT,	"",	0)
+S(TOKEN_CPP,		"",	0)
+S(TOKEN_CPP_ELSE,	"",	0)
+S(TOKEN_CPP_ENDIF,	"",	0)
+S(TOKEN_CPP_IF,		"",	0)
+S(TOKEN_EOF,		"",	0)
+S(TOKEN_ERROR,		"",	0)
+S(TOKEN_IDENT,		"",	0)
+S(TOKEN_LITERAL,	"",	0)
+S(TOKEN_SPACE,		"",	0)
+S(TOKEN_STRING,		"",	0)
+S(TOKEN_UNKNOWN,	"",	0)
 
 /* last */
 T(TOKEN_NONE,	"",	0)
 
-#undef T
 #undef A
 #undef F
+#undef S
+#undef T

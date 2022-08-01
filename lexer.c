@@ -439,17 +439,16 @@ lexer_init(void)
 	.tk_suffixes	= { NULL, NULL },				\
 	.tk_entry	= { NULL, NULL }				\
 }},
-#define A(t, s, f)	T(t, s, f)
+#define A(t, s, f) T(t, s, f)
 #include "token.h"
 	};
 	unsigned int i;
 
 	for (i = 0; keywords[i].th_tk.tk_type != TOKEN_NONE; i++) {
 		struct token_hash *th = &keywords[i];
+		const struct token *tk = &th->th_tk;
 
-		if (th->th_tk.tk_len > 0)
-			HASH_ADD_KEYPTR(th_hh, tokens, th->th_tk.tk_str,
-			    th->th_tk.tk_len, th);
+		HASH_ADD_KEYPTR(th_hh, tokens, tk->tk_str, tk->tk_len, th);
 	}
 }
 
@@ -2481,6 +2480,7 @@ strtoken(enum token_type type)
 {
 	switch (type) {
 #define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
+#define S(t, s, f) T(t, s, f)
 #include "token.h"
 	}
 	return NULL;
