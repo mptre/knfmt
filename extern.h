@@ -356,9 +356,13 @@ struct expr_exec_arg {
 #define EXPR_RECOVER_FLAG_CAST	0x00000001u
 
 	unsigned int		 ea_flags;
+/* Emit a soft line before the expression. */
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
+/* Emit a hard line before the expression. */
 #define EXPR_EXEC_FLAG_HARDLINE		0x00000002u
+/* Do not indent the expression. */
 #define EXPR_EXEC_FLAG_NOINDENT		0x00000004u
+/* Trim redundant parenthesis around top level expression. */
 #define EXPR_EXEC_FLAG_NOPARENS		0x00000008u
 };
 
