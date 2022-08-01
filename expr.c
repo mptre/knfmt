@@ -47,6 +47,7 @@ enum expr_type {
 	EXPR_CONCAT,
 	EXPR_LITERAL,
 	EXPR_RECOVER,
+	EXPR_ASM,
 };
 
 struct expr {
@@ -391,7 +392,8 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 		ex = expr_alloc(EXPR_PARENS, es);
 		ex->ex_lhs = expr_exec1(es, PC0);
 	} else {
-		ex = expr_alloc(EXPR_CALL, es);
+		ex = expr_alloc(es->es_flags & EXPR_EXEC_FLAG_ASM ?
+		    EXPR_ASM : EXPR_CALL, es);
 		ex->ex_lhs = lhs;
 		ex->ex_rhs = expr_exec1(es, PC0);
 	}
@@ -750,6 +752,18 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		 */
 		ex->ex_dc = NULL;
 		break;
+
+	case EXPR_ASM: {
+		struct token *lparen = ex->ex_tokens[0];
+		struct token *rparen = ex->ex_tokens[1];
+
+		expr_doc(ex->ex_lhs, es, concat);
+		doc_alloc(DOC_LINE, concat);
+		doc_token(lparen, concat);
+		expr_doc(ex->ex_rhs, es, concat);
+		doc_token(rparen, concat);
+		break;
+	}
 	}
 
 	/* Testing backdoor, see above. */
@@ -882,6 +896,7 @@ strexpr(enum expr_type type)
 	CASE(EXPR_CONCAT);
 	CASE(EXPR_LITERAL);
 	CASE(EXPR_RECOVER);
+	CASE(EXPR_ASM);
 	}
 	return NULL;
 }
