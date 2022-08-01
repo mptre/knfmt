@@ -1183,7 +1183,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	struct doc *concat, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
-	int error = 1;
+	int nkr = 0;
 	int isimpl = pf->pf_line == DOC_HARDLINE;
 
 	if (parser_exec_type(pr, dc, pf->pf_type, pf->pf_rl) & (FAIL | NONE))
@@ -1258,8 +1258,8 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, kr);
 	doc_alloc(DOC_HARDLINE, indent);
 	while (parser_exec_decl(pr, indent, 0) & GOOD)
-		error = 0;
-	if (error)
+		nkr++;
+	if (nkr == 0)
 		doc_remove(kr, dc);
 
 	parser_exec_attributes(pr, dc, &pf->pf_out, pr->pr_cf->cf_tw,
