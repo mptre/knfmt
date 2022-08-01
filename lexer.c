@@ -275,7 +275,7 @@ token_has_tabs(const struct token *tk)
 }
 
 /*
- * Returns non-zero if the given token has trailing spaces.
+ * Returns non-zero if the given token has trailing spaces, including tabs.
  */
 int
 token_has_spaces(const struct token *tk)
