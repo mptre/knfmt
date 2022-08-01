@@ -5,6 +5,6 @@
 int
 main(void)
 {
-	for (i = 0; i < fooooooooooooooooooooooooooooooooooooooooooooooooo[1337]; i++)
+	for (i = 0; i < fooooooooooooooooooooooooooooooooooooooooooooooooo[1337]; fooooooooooooooooooooooooooooooooooooooooooooooooo[1337]++)
 		continue;
 }
