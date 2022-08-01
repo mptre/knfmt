@@ -48,7 +48,7 @@ testcase() {
 		_tmp="${_wrkdir}/tmp"
 		commstrip "$_file" >"$_tmp"
 		if ! ${EXEC:-} "${KNFMT}" -v "$@" "$_tmp" 2>&1 |
-			diff -u -L "$_file" -L "$_ok" "$_ok" - >"$_out" 2>&1
+			diff -u -L "$_ok" -L "$_file" "$_ok" - >"$_out" 2>&1
 		then
 			cat "$_out" 1>&2
 			return 1
@@ -111,7 +111,7 @@ diff-*)
 	_ok="${_base}.ok"
 	_simple="$([ "${_base#*-simple-}" = "${_base}" ] || echo -s)"
 	if ! ${EXEC:-} "${KNFMT}" -D${_simple:+s}  <"${_base}.patch" 2>&1 | \
-		diff -u -L "$1" -L "$_ok" "$_ok" - >"$_out" 2>&1
+		diff -u -L "$_ok" -L "$1" "$_ok" - >"$_out" 2>&1
 	then
 		cat "$_out" 1>&2
 		exit 1
