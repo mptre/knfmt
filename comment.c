@@ -22,7 +22,7 @@ comment_exec(const struct token *tk, const struct config *UNUSED(cf))
 		const char *ep;
 
 		ep = skipws(sp, len);
-		if (ep != NULL) {
+		if (ep != NULL && (*ep == '*' || *ep == '/')) {
 			buffer_indent(bf, strwidth(sp, ep - sp, 0), 0);
 			len -= ep - sp;
 			sp += ep - sp;
