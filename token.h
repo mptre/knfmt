@@ -5,6 +5,7 @@
 #endif
 
 /* keywords */
+T(TOKEN_ASSEMBLY,	"asm",			0)
 T(TOKEN_ATTRIBUTE,	"__attribute__",	0)
 T(TOKEN_BREAK,		"break",		0)
 T(TOKEN_CASE,		"case",			0)
@@ -40,7 +41,10 @@ T(TOKEN_VOLATILE,	"volatile",		F(QUALIFIER))
 T(TOKEN_WHILE,		"while",		0)
 
 /* keyword aliases. */
+A(TOKEN_ASSEMBLY,	"__asm",	0)
+A(TOKEN_ASSEMBLY,	"__asm__",	0)
 A(TOKEN_ATTRIBUTE,	"__attribute",	0)
+A(TOKEN_VOLATILE,	"__volatile",	F(QUALIFIER))
 
 /* punctuators */
 T(TOKEN_LSQUARE,		"[",	0)
