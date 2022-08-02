@@ -120,10 +120,14 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
  *
  * 	int x, y,
  * 	    z;
+ *
+ * The optional cookie argument can be passed to ruler_remove() in order to
+ * remove the indentation. As the ruler does not own the returned document, the
+ * caller is expected to free it.
  */
 struct doc *
-__ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
-    int lno)
+__ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
+    int indent, const char *fun, int lno)
 {
 	struct ruler_column *rc;
 	struct ruler_indent *ri;
@@ -153,10 +157,22 @@ __ruler_indent(struct ruler *rl, struct doc *dc, int indent, const char *fun,
 	ri->ri_indent = indent;
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
 	TAILQ_INSERT_TAIL(rl->rl_indent, ri, ri_entry);
+	if (cookie != NULL)
+		*cookie = ri;
 	return ri->ri_dc;
 
 err:
 	return __doc_alloc(DOC_CONCAT, dc, 0, fun, lno);
+}
+
+void
+ruler_remove(struct ruler *rl, struct ruler_indent *ri)
+{
+	if (ri == NULL)
+		return;
+
+	TAILQ_REMOVE(rl->rl_indent, ri, ri_entry);
+	free(ri);
 }
 
 void

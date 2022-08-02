@@ -1,0 +1,48 @@
+#ifdef DWC2_LOG_WRITES
+	pr_info("info:: wrote %08x to %p\n", value, hsotg->regs + offset);
+#endif
+
+#if 0
+static inline void dwc2_readl_rep(struct dwc2_hsotg *hsotg, u32 offset,
+				  void *buffer, unsigned int count)
+{
+	if (count) {
+		u32 *buf = buffer;
+
+		do {
+			u32 x = dwc2_readl(hsotg, offset);
+			*buf++ = x;
+		} while (--count);
+	}
+}
+
+static inline void dwc2_writel_rep(struct dwc2_hsotg *hsotg, u32 offset,
+				   const void *buffer, unsigned int count)
+{
+	if (count) {
+		const u32 *buf = buffer;
+
+		do {
+			dwc2_writel(hsotg, *buf++, offset);
+		} while (--count);
+	}
+}
+#endif
+
+/* Reasons for halting a host channel */
+enum dwc2_halt_status {
+	DWC2_HC_XFER_NO_HALT_STATUS,
+	DWC2_HC_XFER_COMPLETE,
+	DWC2_HC_XFER_URB_COMPLETE,
+	DWC2_HC_XFER_ACK,
+	DWC2_HC_XFER_NAK,
+	DWC2_HC_XFER_NYET,
+	DWC2_HC_XFER_STALL,
+	DWC2_HC_XFER_XACT_ERR,
+	DWC2_HC_XFER_FRAME_OVERRUN,
+	DWC2_HC_XFER_BABBLE_ERR,
+	DWC2_HC_XFER_DATA_TOGGLE_ERR,
+	DWC2_HC_XFER_AHB_ERR,
+	DWC2_HC_XFER_PERIODIC_INCOMPLETE,
+	DWC2_HC_XFER_URB_DEQUEUE,
+};

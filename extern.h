@@ -460,6 +460,8 @@ void	doc_annotate(struct doc *, const char *);
  * ruler -----------------------------------------------------------------------
  */
 
+struct ruler_indent;
+
 struct ruler {
 	struct {
 		struct ruler_column	*b_ptr;
@@ -492,12 +494,13 @@ void	ruler_exec(struct ruler *);
 void	__ruler_insert(struct ruler *, const struct token *, struct doc *,
     unsigned int, unsigned int, unsigned int, const char *, int);
 
-#define ruler_indent(a, b) \
-	__ruler_indent((a), (b), 1, __func__, __LINE__)
-#define ruler_dedent(a, b) \
-	__ruler_indent((a), (b), -1, __func__, __LINE__)
-struct doc	*__ruler_indent(struct ruler *, struct doc *, int,
-    const char *, int);
+#define ruler_indent(a, b, c) \
+	__ruler_indent((a), (b), (c), 1, __func__, __LINE__)
+#define ruler_dedent(a, b, c) \
+	__ruler_indent((a), (b), (c), -1, __func__, __LINE__)
+struct doc	*__ruler_indent(struct ruler *, struct doc *,
+    struct ruler_indent **, int, const char *, int);
+void		 ruler_remove(struct ruler *, struct ruler_indent *);
 
 /*
  * util ------------------------------------------------------------------------

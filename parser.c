@@ -524,11 +524,15 @@ static int
 parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *semi, int didalign)
 {
-	struct doc *concat;
+	struct doc *parent = dc;
+	struct doc *concat, *indent;
 	struct lexer *lx = pr->pr_lx;
+	struct ruler_indent *cookie = NULL;
+	int ninit = 0;
 	int error;
 
-	dc = doc_alloc(DOC_CONCAT, ruler_indent(rl, dc));
+	indent = ruler_indent(rl, parent, &cookie);
+	dc = doc_alloc(DOC_CONCAT, indent);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
 	for (;;) {
@@ -551,7 +555,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_literal(" ", concat);
 
 			dedent = doc_alloc(DOC_CONCAT,
-			    ruler_dedent(rl, concat));
+			    ruler_dedent(rl, concat, NULL));
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 				error = parser_exec_decl_braces(pr, dedent);
 				if (error & (FAIL | NONE))
@@ -615,6 +619,11 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 		} else {
 			break;
 		}
+		ninit++;
+	}
+	if (ninit == 0) {
+		ruler_remove(rl, cookie);
+		doc_remove(indent, parent);
 	}
 
 	return parser_good(pr);
