@@ -1,0 +1,57 @@
+/**
+ * dwc2_backup_global_registers() - Backup global controller registers.
+ * When suspending usb bus, registers needs to be backuped
+ * if controller power is disabled once suspended.
+ *
+ * @hsotg: Programming view of the DWC_otg controller
+ */
+STATIC int dwc2_backup_global_registers(struct dwc2_hsotg *hsotg)
+{
+	struct dwc2_gregs_backup *gr;
+
+	dev_dbg(hsotg->dev, "%s\n", __func__);
+
+	/* Backup global regs */
+	gr = &hsotg->gr_backup;
+
+	gr->gotgctl = dwc2_readl(hsotg, GOTGCTL);
+	gr->gintmsk = dwc2_readl(hsotg, GINTMSK);
+	gr->gahbcfg = dwc2_readl(hsotg, GAHBCFG);
+	gr->gusbcfg = dwc2_readl(hsotg, GUSBCFG);
+	gr->grxfsiz = dwc2_readl(hsotg, GRXFSIZ);
+	gr->gnptxfsiz = dwc2_readl(hsotg, GNPTXFSIZ);
+	gr->gdfifocfg = dwc2_readl(hsotg, GDFIFOCFG);
+	gr->pcgcctl1 = dwc2_readl(hsotg, PCGCCTL1);
+	gr->glpmcfg = dwc2_readl(hsotg, GLPMCFG);
+	gr->gi2cctl = dwc2_readl(hsotg, GI2CCTL);
+	gr->pcgcctl = dwc2_readl(hsotg, PCGCTL);
+
+	gr->valid = true;
+	return 0;
+}
+
+/**
+ * dwc2_exit_partial_power_down() - Exit controller from Partial Power Down.
+ *
+ * @hsotg: Programming view of the DWC_otg controller
+ * @rem_wakeup: indicates whether resume is initiated by Reset.
+ * @restore: Controller registers need to be restored
+ */
+int dwc2_exit_partial_power_down(struct dwc2_hsotg *hsotg, int rem_wakeup,
+				 bool restore)
+{
+	struct dwc2_gregs_backup *gr;
+
+	gr = &hsotg->gr_backup;
+
+	/*
+	 * Restore host or device regisers with the same mode core enterted
+	 * to partial power down by checking "GOTGCTL_CURMODE_HOST" backup
+	 * value of the "gotgctl" register.
+	 */
+	if (gr->gotgctl & GOTGCTL_CURMODE_HOST)
+		return dwc2_host_exit_partial_power_down(hsotg, rem_wakeup,
+							 restore);
+	else
+		return dwc2_gadget_exit_partial_power_down(hsotg, restore);
+}

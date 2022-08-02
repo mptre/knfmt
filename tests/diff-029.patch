@@ -1,0 +1,92 @@
+--- diff-029.c
++++ diff-029.c
+@@ -1,57 +1,57 @@
+ /**
+- * dwc2_backup_host_registers() - Backup controller host registers.
++ * dwc2_backup_global_registers() - Backup global controller registers.
+  * When suspending usb bus, registers needs to be backuped
+  * if controller power is disabled once suspended.
+  *
+  * @hsotg: Programming view of the DWC_otg controller
+  */
+-STATIC int dwc2_backup_host_registers(struct dwc2_hsotg *hsotg)
++STATIC int dwc2_backup_global_registers(struct dwc2_hsotg *hsotg)
+ {
+-	struct dwc2_hregs_backup *hr;
+-	int i;
++	struct dwc2_gregs_backup *gr;
+ 
+ 	dev_dbg(hsotg->dev, "%s\n", __func__);
+ 
+-	/* Backup Host regs */
+-	hr = &hsotg->hr_backup;
+-	hr->hcfg = DWC2_READ_4(hsotg, HCFG);
+-	hr->haintmsk = DWC2_READ_4(hsotg, HAINTMSK);
+-	for (i = 0; i < hsotg->core_params->host_channels; ++i)
+-		hr->hcintmsk[i] = DWC2_READ_4(hsotg, HCINTMSK(i));
++	/* Backup global regs */
++	gr = &hsotg->gr_backup;
+ 
+-	hr->hprt0 = DWC2_READ_4(hsotg, HPRT0);
+-	hr->hfir = DWC2_READ_4(hsotg, HFIR);
+-	hr->valid = true;
++	gr->gotgctl = dwc2_readl(hsotg, GOTGCTL);
++	gr->gintmsk = dwc2_readl(hsotg, GINTMSK);
++	gr->gahbcfg = dwc2_readl(hsotg, GAHBCFG);
++	gr->gusbcfg = dwc2_readl(hsotg, GUSBCFG);
++	gr->grxfsiz = dwc2_readl(hsotg, GRXFSIZ);
++	gr->gnptxfsiz = dwc2_readl(hsotg, GNPTXFSIZ);
++	gr->gdfifocfg = dwc2_readl(hsotg, GDFIFOCFG);
++	gr->pcgcctl1 = dwc2_readl(hsotg, PCGCCTL1);
++	gr->glpmcfg = dwc2_readl(hsotg, GLPMCFG);
++	gr->gi2cctl = dwc2_readl(hsotg, GI2CCTL);
++	gr->pcgcctl = dwc2_readl(hsotg, PCGCTL);
+ 
++	gr->valid = true;
+ 	return 0;
+ }
+ 
+ /**
+- * dwc2_backup_global_registers() - Backup global controller registers.
+- * When suspending usb bus, registers needs to be backuped
+- * if controller power is disabled once suspended.
++ * dwc2_exit_partial_power_down() - Exit controller from Partial Power Down.
+  *
+  * @hsotg: Programming view of the DWC_otg controller
++ * @rem_wakeup: indicates whether resume is initiated by Reset.
++ * @restore: Controller registers need to be restored
+  */
+-STATIC int dwc2_backup_global_registers(struct dwc2_hsotg *hsotg)
++int dwc2_exit_partial_power_down(struct dwc2_hsotg *hsotg, int rem_wakeup,
++				 bool restore)
+ {
+ 	struct dwc2_gregs_backup *gr;
+-	int i;
+ 
+-	/* Backup global regs */
+ 	gr = &hsotg->gr_backup;
+ 
+-	gr->gotgctl = DWC2_READ_4(hsotg, GOTGCTL);
+-	gr->gintmsk = DWC2_READ_4(hsotg, GINTMSK);
+-	gr->gahbcfg = DWC2_READ_4(hsotg, GAHBCFG);
+-	gr->gusbcfg = DWC2_READ_4(hsotg, GUSBCFG);
+-	gr->grxfsiz = DWC2_READ_4(hsotg, GRXFSIZ);
+-	gr->gnptxfsiz = DWC2_READ_4(hsotg, GNPTXFSIZ);
+-	gr->hptxfsiz = DWC2_READ_4(hsotg, HPTXFSIZ);
+-	gr->gdfifocfg = DWC2_READ_4(hsotg, GDFIFOCFG);
+-	for (i = 0; i < MAX_EPS_CHANNELS; i++)
+-		gr->dtxfsiz[i] = DWC2_READ_4(hsotg, DPTXFSIZN(i));
+-
+-	gr->valid = true;
+-	return 0;
++	/*
++	 * Restore host or device regisers with the same mode core enterted
++	 * to partial power down by checking "GOTGCTL_CURMODE_HOST" backup
++	 * value of the "gotgctl" register.
++	 */
++	if (gr->gotgctl & GOTGCTL_CURMODE_HOST)
++		return dwc2_host_exit_partial_power_down(hsotg, rem_wakeup,
++							 restore);
++	else
++		return dwc2_gadget_exit_partial_power_down(hsotg, restore);
+ }
