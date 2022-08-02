@@ -1191,7 +1191,7 @@ static int
 parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 {
 	struct doc *dc = pf->pf_dc;
-	struct doc *concat, *indent, *kr;
+	struct doc *concat, *group, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
 	int nkr = 0;
@@ -1210,7 +1210,8 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	 * The function identifier and arguments are intended to fit on a single
 	 * line.
 	 */
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	group = doc_alloc(DOC_GROUP, dc);
+	concat = doc_alloc(DOC_CONCAT, group);
 
 	if (pf->pf_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning function pointer. */
@@ -1245,6 +1246,9 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 			doc_alloc(pf->pf_line, ident);
 			doc_token(tk, ident);
 		}
+	} else {
+		doc_remove(group, dc);
+		return parser_fail(pr);
 	}
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
