@@ -1814,7 +1814,10 @@ lexer_cpp(struct lexer *lx)
 	else if (lexer_buffer_streq(lx, &cmpst, "endif"))
 		type = TOKEN_CPP_ENDIF;
 
-	/* Consume up to 2 hard line(s), will be hanging of the cpp token. */
+	/*
+	 * As cpp tokens are emitted as is, honor up to 2 hard line(s).
+	 * Additional ones are excessive and will be discarded.
+	 */
 	lexer_eat_lines(lx, NULL, 2);
 
 	cpp = tkcpp;
