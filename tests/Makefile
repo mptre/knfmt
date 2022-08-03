@@ -291,6 +291,7 @@ TESTS+=	valid-218.c
 TESTS+=	valid-219.c
 TESTS+=	valid-220.c
 TESTS+=	valid-221.c
+TESTS+=	valid-222.c
 TESTS+=	valid-223.c
 TESTS+=	valid-224.c
 TESTS+=	valid-225.c

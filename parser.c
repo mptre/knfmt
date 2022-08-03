@@ -161,6 +161,7 @@ static void		 parser_simple_stmt_ifelse_leave(struct parser *,
 
 static int		parser_peek_cppx(struct parser *);
 static int		parser_peek_cpp_init(struct parser *);
+static int		parser_peek_decl(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static int		parser_peek_func_line(struct parser *);
 static int		parser_peek_line(struct parser *, const struct token *);
@@ -1455,9 +1456,11 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	 * Optionally remove empty lines after the opening left brace.
 	 * An empty line is however allowed in the beginning of a
 	 * function implementation, a convention used by some when the
-	 * function lacks local variables.
+	 * function lacks local variables. But discard it the following line is
+	 * a declaration.
 	 */
-	if (ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM)
+	if ((ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM) ||
+	    (token_has_line(lbrace, 2) && parser_peek_decl(pr)))
 		token_trim(lbrace);
 	doc_token(lbrace, ps->ps_head);
 
@@ -2481,6 +2484,22 @@ parser_peek_cpp_init(struct parser *pr)
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
+}
+
+static int
+parser_peek_decl(struct parser *pr)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct doc *dc;
+	int error;
+
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	lexer_peek_enter(lx, &s);
+	error = parser_exec_decl(pr, dc, 0);
+	lexer_peek_leave(lx, &s);
+	doc_free(dc);
+	return error & GOOD;
 }
 
 /*
