@@ -72,9 +72,9 @@ static int		 lexer_eof(const struct lexer *);
 
 static void	lexer_line_alloc(struct lexer *, unsigned int);
 
-static int	lexer_find_token(const struct lexer *,
-    const struct lexer_state *, struct token **);
-static int	lexer_buffer_streq(const struct lexer *,
+static struct token	*lexer_find_token(const struct lexer *,
+    const struct lexer_state *);
+static int		 lexer_buffer_streq(const struct lexer *,
     const struct lexer_state *, const char *);
 
 static struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
@@ -1478,7 +1478,8 @@ lexer_read(struct lexer *lx, struct token **tk)
 		}
 		lexer_ungetc(lx);
 
-		if (lexer_find_token(lx, &st, &t)) {
+		t = lexer_find_token(lx, &st);
+		if (t != NULL) {
 			*tk = lexer_emit(lx, &st, t);
 		} else {
 			/* Fallback, treat everything as an identifier. */
@@ -1663,7 +1664,8 @@ lexer_keyword1(struct lexer *lx)
 	for (;;) {
 		struct token *ellipsis, *tmp;
 
-		if (!lexer_find_token(lx, &st, &tmp)) {
+		tmp = lexer_find_token(lx, &st);
+		if (tmp == NULL) {
 			lexer_ungetc(lx);
 			tk = pv;
 			break;
@@ -1833,7 +1835,6 @@ static struct token *
 lexer_ellipsis(struct lexer *lx, const struct lexer_state *st)
 {
 	struct lexer_state oldst;
-	struct token *tk;
 	unsigned char ch;
 	int i;
 
@@ -1845,9 +1846,7 @@ lexer_ellipsis(struct lexer *lx, const struct lexer_state *st)
 			return NULL;
 		}
 	}
-	if (!lexer_find_token(lx, st, &tk))
-		return NULL;
-	return tk;
+	return lexer_find_token(lx, st);
 }
 
 static int
@@ -1882,9 +1881,8 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 	lx->lx_lines.l_off[lx->lx_lines.l_len++] = lx->lx_st.st_off;
 }
 
-static int
-lexer_find_token(const struct lexer *lx, const struct lexer_state *st,
-    struct token **tk)
+static struct token *
+lexer_find_token(const struct lexer *lx, const struct lexer_state *st)
 {
 	struct token_hash *th;
 	const char *key;
@@ -1894,9 +1892,8 @@ lexer_find_token(const struct lexer *lx, const struct lexer_state *st,
 	key = &lx->lx_bf->bf_ptr[st->st_off];
 	HASH_FIND(th_hh, tokens, key, len, th);
 	if (th == NULL)
-		return 0;
-	*tk = &th->th_tk;
-	return 1;
+		return NULL;
+	return &th->th_tk;
 }
 
 static int
