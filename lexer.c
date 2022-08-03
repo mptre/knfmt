@@ -1559,7 +1559,6 @@ static void
 lexer_eat_buffet(struct lexer *lx, struct lexer_state *oldst,
     struct lexer_state *st)
 {
-
 	int gotspaces = 0;
 
 	*oldst = *st = lx->lx_st;

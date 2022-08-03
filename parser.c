@@ -1990,7 +1990,6 @@ parser_exec_stmt_switch(struct parser *pr, struct doc *dc)
 static int
 parser_exec_stmt_while(struct parser *pr, struct doc *dc)
 {
-
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
