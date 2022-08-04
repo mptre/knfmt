@@ -1455,9 +1455,9 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	/*
 	 * Optionally remove empty lines after the opening left brace.
 	 * An empty line is however allowed in the beginning of a
-	 * function implementation, a convention used by some when the
-	 * function lacks local variables. But discard it the following line is
-	 * a declaration.
+	 * function implementation, a convention used when the function lacks
+	 * local variables. But discard it if the following line is a
+	 * declaration.
 	 */
 	if ((ps->ps_flags & PARSER_EXEC_STMT_BLOCK_FLAG_TRIM) ||
 	    (token_has_line(lbrace, 2) && parser_peek_decl(pr)))
