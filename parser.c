@@ -45,8 +45,9 @@ struct parser_exec_func_proto_arg {
 	struct doc		*pf_dc;
 	struct ruler		*pf_rl;
 	const struct token	*pf_type;
-	enum doc_type		 pf_line;
 	struct doc		*pf_out;
+	unsigned int		 pf_flags;
+#define PARSER_EXEC_FUNC_PROTO_FLAG_IMPL	0x00000001u
 };
 
 struct parser_exec_decl_braces_arg {
@@ -1117,7 +1118,7 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct parser_exec_func_proto_arg pf = {
 		.pf_rl		= rl,
 		.pf_type	= type,
-		.pf_line	= DOC_SOFTLINE,
+		.pf_flags	= 0,
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
@@ -1158,7 +1159,7 @@ parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 		.pf_dc		= dc,
 		.pf_rl		= rl,
 		.pf_type	= type,
-		.pf_line	= DOC_HARDLINE,
+		.pf_flags	= PARSER_EXEC_FUNC_PROTO_FLAG_IMPL,
 	};
 	struct parser_exec_stmt_block_arg ps = {
 		.ps_head	= dc,
@@ -1196,7 +1197,6 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
 	int nkr = 0;
-	int isimpl = pf->pf_line == DOC_HARDLINE;
 
 	if (parser_exec_type(pr, dc, pf->pf_type, pf->pf_rl) & (FAIL | NONE))
 		return parser_fail(pr);
@@ -1204,7 +1204,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	 * Hard line after the return type is only wanted for function
 	 * implementations.
 	 */
-	if (isimpl)
+	if (pf->pf_flags & PARSER_EXEC_FUNC_PROTO_FLAG_IMPL)
 		doc_alloc(DOC_HARDLINE, dc);
 
 	/*
@@ -1216,8 +1216,6 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 
 	if (pf->pf_type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning function pointer. */
-		if (!isimpl)
-			doc_alloc(pf->pf_line, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
 			doc_token(lparen, concat);
 		if (lexer_expect(lx, TOKEN_STAR, &tk))
@@ -1237,16 +1235,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 			doc_token(rparen, concat);
 	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
 		token_trim(tk);
-		if (isimpl) {
-			doc_token(tk, concat);
-		} else {
-			struct doc *ident;
-
-			ident = doc_alloc(DOC_CONCAT,
-			    doc_alloc(DOC_GROUP, concat));
-			doc_alloc(pf->pf_line, ident);
-			doc_token(tk, ident);
-		}
+		doc_token(tk, concat);
 	} else {
 		doc_remove(group, dc);
 		return parser_fail(pr);
