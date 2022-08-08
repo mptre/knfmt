@@ -6,6 +6,18 @@
   (d541ebf)
   (Anton Lindqvist)
 
+- Honor no hard line before function annotation.
+  (3f298c9)
+  (Anton Lindqvist)
+
+- Improve handling of cdefs.h macros.
+  (836c2b9)
+  (Anton Lindqvist)
+
+- Conditionally remove empty line in beginning of function implementation.
+  (3e95fe5)
+  (Anton Lindqvist)
+
 ## News
 
 - Add support for usage of cdefs.h macros.
@@ -14,6 +26,14 @@
 
 - Add support for OpenSSL type macros such as STACK_OF.
   (b56e61e)
+  (Anton Lindqvist)
+
+- Improve recovery from broken source code.
+  (2e12e6a, a097a13)
+  (Anton Lindqvist)
+
+- Add support for inline assembler.
+  (4ef029d, 0ca3a92)
   (Anton Lindqvist)
 
 ## Bug fixes
@@ -27,7 +47,7 @@
   (Anton Lindqvist)
 
 - Fix break of long expressions bug.
-  (c27db83, 40dedf7, 728f641, 67440df)
+  (c27db83, 40dedf7, 728f641, 67440df, a31dbf5)
   (Anton Lindqvist)
 
 - Move comment when moving braces.
@@ -35,11 +55,19 @@
   (Anton Lindqvist)
 
 - Fix multiple diff mode bugs.
-  (2ad115c, 3edecea, b9b470d)
+  (2ad115c, 3edecea, b9b470d, 10589bc, 5761b50)
   (Anton Lindqvist)
 
 - Never break before return expression.
   (c1e9cb1)
+  (Anton Lindqvist)
+
+- Fix comment followed by comment bug.
+  (533639e, 831f79f)
+  (Anton Lindqvist)
+
+- Fix detection of mixed field and ordinary brace initializers.
+  (6e60679)
   (Anton Lindqvist)
 
 # 2.1.0 - 2022-06-01
