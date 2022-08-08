@@ -2,4 +2,4 @@
  * Empty enum.
  */
 
-enum { };
+enum {};
