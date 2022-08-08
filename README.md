@@ -37,19 +37,15 @@ The implementation is further described in [DESIGN][design].
 
 ### OpenBSD
 
-```
-# pkg_add knfmt
-```
+	# pkg_add knfmt
 
 ### From source
 
 The installation prefix defaults to `/usr/local` and can be altered using the
 `PREFIX` environment variable when invoking `configure`:
 
-```
-$ ./configure
-$ make install
-```
+	$ ./configure
+	$ make install
 
 ## License
 
