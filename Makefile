@@ -252,6 +252,7 @@ DISTFILES+=	tests/simple-015.c
 DISTFILES+=	tests/simple-015.ok
 DISTFILES+=	tests/simple-016.c
 DISTFILES+=	tests/simple-016.ok
+DISTFILES+=	tests/simple-017.c
 DISTFILES+=	tests/trace-001.c
 DISTFILES+=	tests/valid-001.c
 DISTFILES+=	tests/valid-002.c

@@ -330,7 +330,8 @@ token_is_moveable(const struct token *tk)
 	const struct token *prefix;
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-		if (prefix->tk_flags & TOKEN_FLAG_CPP)
+		if (prefix->tk_type == TOKEN_COMMENT ||
+		    (prefix->tk_flags & TOKEN_FLAG_CPP))
 			return 0;
 	}
 
