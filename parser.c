@@ -874,7 +874,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct lexer *lx = pr->pr_lx;
 	struct token *end, *macro, *semi, *tk;
 	struct doc *expr = dc;
-	int iscpp = 0;
+	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
@@ -891,19 +891,26 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		}
 
 		if (lexer_if(lx, TOKEN_EQUAL, NULL))
-			iscpp = 1;
+			peek = 1;
 		else if ((flags & PARSER_EXEC_DECL_FLAG_ROOT) &&
 		    lexer_if(lx, TOKEN_SEMI, NULL))
-			iscpp = 1;
+			peek = 1;
 		else if (lexer_peek_until(lx, TOKEN_IDENT, &ident) &&
 		    token_cmp(macro, ident) == 0)
-			iscpp = 1;
+			peek = 1;
 		else if (lexer_if(lx, TOKEN_IDENT, NULL) &&
 		    lexer_if(lx, TOKEN_SEMI, NULL))
-			iscpp = 1;
+			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
-	if (!iscpp) {
+	if (!peek) {
+		lexer_peek_enter(lx, &s);
+		if (lexer_if(lx, TOKEN_IDENT, &end) &&
+		    lexer_if(lx, TOKEN_SEMI, NULL))
+			peek = 1;
+		lexer_peek_leave(lx, &s);
+	}
+	if (!peek) {
 		if (parser_peek_cppx(pr))
 			return parser_exec_decl_cppx(pr, dc, rl);
 		return parser_none(pr);
