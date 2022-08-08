@@ -261,7 +261,8 @@ parser_exec(struct parser *pr, size_t sizhint)
 	}
 
 	bf = buffer_alloc(sizhint);
-	doc_exec(dc, pr->pr_lx, bf, pr->pr_cf, 0);
+	doc_exec(dc, pr->pr_lx, bf, pr->pr_cf,
+	    DOC_EXEC_FLAG_DIFF | DOC_EXEC_FLAG_TRACE);
 	doc_free(dc);
 	return bf;
 }

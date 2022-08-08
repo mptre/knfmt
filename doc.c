@@ -188,9 +188,9 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_lx = lx;
 	st.st_mode = BREAK;
 	st.st_diff.d_beg = 1;
-	if ((flags & DOC_EXEC_FLAG_NODIFF) == 0)
+	if (flags & DOC_EXEC_FLAG_DIFF)
 		st.st_flags |= DOC_STATE_FLAG_DIFF;
-	if ((flags & DOC_EXEC_FLAG_NOTRACE) == 0)
+	if (flags & DOC_EXEC_FLAG_TRACE)
 		st.st_flags |= DOC_STATE_FLAG_TRACE;
 
 	doc_exec1(dc, &st);

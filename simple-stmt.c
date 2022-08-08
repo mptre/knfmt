@@ -59,8 +59,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 		    (st->st_flags & STMT_FLAG_BRACES) == 0)
 			continue;
 
-		doc_exec(st->st_root, lx, bf, ss->ss_cf,
-		    DOC_EXEC_FLAG_NODIFF | DOC_EXEC_FLAG_NOTRACE);
+		doc_exec(st->st_root, lx, bf, ss->ss_cf, 0);
 		if (!linecount(bf->bf_ptr, bf->bf_len, 1) ||
 		    token_has_prefix(st->st_rbrace, TOKEN_COMMENT)) {
 			/*

@@ -60,8 +60,7 @@ cpp_exec(const struct token *tk, const struct config *cf)
 	/* Alignment only wanted for multiple lines. */
 	if (nlines > 1)
 		ruler_exec(&rl);
-	doc_exec(dc, NULL, bf, cf,
-	    DOC_EXEC_FLAG_NODIFF | DOC_EXEC_FLAG_NOTRACE);
+	doc_exec(dc, NULL, bf, cf, 0);
 	buffer_appendc(bf, '\0');
 
 	p = buffer_release(bf);
