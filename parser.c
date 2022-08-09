@@ -178,7 +178,7 @@ static int	parser_good(const struct parser *);
 static int	parser_none(const struct parser *);
 static void	parser_reset(struct parser *);
 
-static int	iscpp(const char *, size_t);
+static int	iscdefs(const char *, size_t);
 
 struct parser *
 parser_alloc(const char *path, struct lexer *lx, struct error *er,
@@ -998,13 +998,11 @@ parser_exec_decl_cppdefs(struct parser *pr, struct doc *dc)
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) && lexer_peek(lx, &nx)) {
-		if (nx->tk_lno - ident->tk_lno >= 1 &&
-		    iscpp(ident->tk_str, ident->tk_len))
-			peek = 1;
-		if (nx->tk_type == TOKEN_EOF)
-			peek = 1;
-	}
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_pop(lx, &nx) &&
+	    nx->tk_lno - ident->tk_lno >= 1 &&
+	    iscdefs(ident->tk_str, ident->tk_len))
+		peek = 1;
 	lexer_peek_leave(lx, &s);
 	if (!peek)
 		return parser_none(pr);
@@ -2615,10 +2613,14 @@ parser_reset(struct parser *pr)
 }
 
 static int
-iscpp(const char *str, size_t len)
+iscdefs(const char *str, size_t len)
 {
-	for (; len > 0; len--, str++) {
-		unsigned char c = *str;
+	size_t i;
+
+	if (len < 2 || strncmp(str, "__", 2) != 0)
+		return 0;
+	for (i = 2; i < len; i++) {
+		unsigned char c = str[i];
 
 		if (!isupper(c) && !isdigit(c) && c != '_')
 			return 0;
