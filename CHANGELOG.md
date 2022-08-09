@@ -1,4 +1,4 @@
-# 3.0.0 - YYYY-MM-DD
+# 3.0.0 - 2022-08-09
 
 ## Changes
 
@@ -10,10 +10,6 @@
   (3f298c9)
   (Anton Lindqvist)
 
-- Improve handling of cdefs.h macros.
-  (836c2b9)
-  (Anton Lindqvist)
-
 - Conditionally remove empty line in beginning of function implementation.
   (3e95fe5)
   (Anton Lindqvist)
@@ -21,7 +17,7 @@
 ## News
 
 - Add support for usage of cdefs.h macros.
-  (2757635)
+  (2757635, 836c2b9)
   (Anton Lindqvist)
 
 - Add support for OpenSSL type macros such as STACK_OF.
@@ -38,7 +34,7 @@
 
 ## Bug fixes
 
-- Fix alignment of variable declarations spanning multiple lines bug.
+- Fix alignment of variable declarations spanning multiple lines.
   (b3984fc)
   (Anton Lindqvist)
 
@@ -46,11 +42,11 @@
   (258ce60)
   (Anton Lindqvist)
 
-- Fix break of long expressions bug.
+- Fix break of long expressions.
   (c27db83, 40dedf7, 728f641, 67440df, a31dbf5)
   (Anton Lindqvist)
 
-- Move comment when moving braces.
+- Move comment(s) when moving braces.
   (b031d14)
   (Anton Lindqvist)
 
@@ -58,7 +54,7 @@
   (2ad115c, 3edecea, b9b470d, 10589bc, 5761b50)
   (Anton Lindqvist)
 
-- Never break before return expression.
+- Never break before return expressions.
   (c1e9cb1)
   (Anton Lindqvist)
 
