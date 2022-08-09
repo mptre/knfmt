@@ -1322,9 +1322,9 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 	    (parser_exec_stmt_switch(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_continue(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_asm(pr, dc) & GOOD) ||
-	    (parser_exec_stmt_cpp(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_dowhile(pr, dc, rbrace) & GOOD) ||
-	    (parser_exec_stmt_semi(pr, dc) & GOOD))
+	    (parser_exec_stmt_semi(pr, dc) & GOOD) ||
+	    (parser_exec_stmt_cpp(pr, dc) & GOOD))
 		return parser_good(pr);
 	return parser_none(pr);
 }
