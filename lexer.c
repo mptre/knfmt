@@ -1230,6 +1230,9 @@ lexer_peek_until(struct lexer *lx, enum token_type type, struct token **tk)
  * Peek until the given token type is encountered and it is not nested under any
  * pairs of parenthesis nor braces but halt while trying to move beyond the
  * given stop token. Returns non-zero if such token was found.
+ *
+ * Assuming tk is not NULL and the stop is reached, tk will point to the stop
+ * token.
  */
 int
 lexer_peek_until_loose(struct lexer *lx, enum token_type type,
@@ -1255,8 +1258,8 @@ lexer_peek_until_loose(struct lexer *lx, enum token_type type,
 			nest--;
 	}
 	lexer_peek_leave(lx, &s);
-	if (peek && tk != NULL)
-		*tk = t;
+	if (tk != NULL)
+		*tk = peek ? t : (struct token *)stop;
 	return peek;
 }
 

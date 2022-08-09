@@ -568,7 +568,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
 			} else {
-				const struct token *stop = semi;
+				struct token *stop;
 				unsigned int flags = 0;
 
 				/*
@@ -579,9 +579,8 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 				if (token_has_line(assign, 1))
 					flags |= EXPR_EXEC_FLAG_HARDLINE;
 
-				if (lexer_peek_until_loose(lx, TOKEN_COMMA,
-				    semi, &tk))
-					stop = tk;
+				lexer_peek_until_loose(lx, TOKEN_COMMA, semi,
+				    &stop);
 				error = parser_exec_expr(pr, dedent, NULL,
 				    stop, flags);
 				if (error & HALT)
@@ -743,11 +742,10 @@ parser_exec_decl_braces1(struct parser *pr,
 			if (error & HALT)
 				return parser_fail(pr);
 		} else {
-			if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace,
-			    &tk))
-				tk = rbrace;
+			struct token *stop;
 
-			error = parser_exec_expr(pr, concat, &expr, tk,
+			lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop);
+			error = parser_exec_expr(pr, concat, &expr, stop,
 			    EXPR_EXEC_FLAG_NOINDENT);
 			if (error & HALT)
 				return parser_fail(pr);
@@ -802,11 +800,9 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk = NULL;
-	struct token *comma;
-	const struct token *stop;
+	struct token *stop;
 
-	stop = lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &comma) ?
-	    comma : rbrace;
+	lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop);
 
 	for (;;) {
 		struct doc *expr = NULL;
@@ -969,8 +965,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		arg = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
-		if (!lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop))
-			stop = rbrace;
+		lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop);
 		error = parser_exec_expr(pr, arg, &expr, stop, 0);
 		if (error & HALT)
 			return parser_fail(pr);
