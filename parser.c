@@ -1635,7 +1635,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
-	struct token *ident, *nx, *semi;
+	struct token *ident, *lparen, *nx, *rparen, *semi;
 	int peek = 0;
 
 	if (lexer_peek_if_type(lx, NULL, 0))
@@ -1654,14 +1654,16 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 
 	/*
 	 * Do not confuse a loop construct hidden behind cpp followed by a
-	 * statement which is a sole expression:
+	 * statement which is a sole statement:
 	 *
 	 * 	foreach()
 	 * 		func();
 	 */
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+	    lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
+	    token_cmp(lparen, rparen) == 0 &&
 	    lexer_pop(lx, &nx) && nx != semi &&
 	    token_cmp(ident, nx) < 0 && token_cmp(nx, semi) <= 0)
 		peek = 0;
