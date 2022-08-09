@@ -367,6 +367,8 @@ struct expr_exec_arg {
 #define EXPR_EXEC_FLAG_NOPARENS		0x00000008u
 /* Detect inline assembly operands. */
 #define EXPR_EXEC_FLAG_ASM		0x00000010u
+/* During recovery, signal than a function argument could be present. */
+#define EXPR_EXEC_FLAG_ARG		0x00000020u
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);
