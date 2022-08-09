@@ -933,7 +933,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rbrace, *tk;
+	struct token *rparen, *tk;
 	unsigned int col = 0;
 	unsigned int w;
 
@@ -945,7 +945,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	}
 	if (lexer_expect(lx, TOKEN_IDENT, &tk))
 		doc_token(tk, concat);
-	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rbrace))
+	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, concat);
@@ -967,7 +967,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		arg = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
-		lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop);
+		lexer_peek_until_loose(lx, TOKEN_COMMA, rparen, &stop);
 		error = parser_exec_expr(pr, arg, &expr, stop,
 		    EXPR_EXEC_FLAG_ARG);
 		if (error & HALT)
