@@ -121,8 +121,7 @@ static int	parser_exec_stmt_for(struct parser *, struct doc *,
 static int	parser_exec_stmt_dowhile(struct parser *, struct doc *,
     const struct token *);
 static int	parser_exec_stmt_return(struct parser *, struct doc *);
-static int	parser_exec_stmt_expr(struct parser *, struct doc *,
-    const struct token *);
+static int	parser_exec_stmt_expr(struct parser *, struct doc *);
 static int	parser_exec_stmt_kw_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
 static int	parser_exec_stmt_label(struct parser *, struct doc *,
@@ -1309,7 +1308,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc, const struct token *rbrace)
 	 *        provided by queue(3).
 	 */
 	if ((parser_exec_stmt_block(pr, &ps) & GOOD) ||
-	    (parser_exec_stmt_expr(pr, dc, rbrace) & GOOD) ||
+	    (parser_exec_stmt_expr(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_if(pr, dc, rbrace) & GOOD) ||
 	    (parser_exec_stmt_return(pr, dc) & GOOD) ||
 	    (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_FLAG_BREAK) & GOOD) ||
@@ -1621,14 +1620,13 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 }
 
 static int
-parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
-    const struct token *rbrace)
+parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 {
 	const struct expr_exec_arg ea = {
 		.ea_cf		= pr->pr_cf,
 		.ea_lx		= pr->pr_lx,
 		.ea_dc		= NULL,
-		.ea_stop	= rbrace,
+		.ea_stop	= NULL,
 		.ea_recover	= parser_exec_expr_recover,
 		.ea_arg		= pr,
 		.ea_flags	= 0,
@@ -1642,8 +1640,6 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc,
 	if (lexer_peek_if_type(lx, NULL, 0))
 		return parser_none(pr);
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
-		return parser_none(pr);
-	if (rbrace != NULL && token_cmp(semi, rbrace) > 0)
 		return parser_none(pr);
 
 	lexer_peek_enter(lx, &s);
