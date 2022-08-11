@@ -260,22 +260,18 @@ parser_exec(struct parser *pr, size_t sizhint)
 
 /*
  * Callback routine invoked by expression parser while encountering an invalid
- * expression. This can happen while encountering one of the following
- * constructs:
- *
- * 	type argument, i.e. sizeof
- * 	binary operator used as an argument, i.e. timercmp(3)
- * 	cast expression followed by brace initializer
+ * expression. Returns a document if it managed to recover.
  */
 struct doc *
 parser_exec_expr_recover(unsigned int flags, void *arg)
 {
-	struct doc *dc = NULL;
+	struct doc *dc;
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 	unsigned int lflags = 0;
 
+	/* Handle type arguments, i.e. sizeof. */
 	if (flags & EXPR_EXEC_FLAG_ARG)
 		lflags |= LEXER_TYPE_FLAG_CAST;
 	if (flags & EXPR_EXEC_FLAG_CAST)
@@ -293,16 +289,17 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 		    (nx->tk_type == TOKEN_RPAREN ||
 		     nx->tk_type == TOKEN_COMMA ||
 		     nx->tk_type == TOKEN_EOF)) {
-			int error;
-
 			dc = doc_alloc(DOC_CONCAT, NULL);
-			error = parser_exec_type(pr, dc, tk, NULL);
-			if (error & (FAIL | NONE)) {
-				doc_free(dc);
-				return NULL;
-			}
+			if (parser_exec_type(pr, dc, tk, NULL) & GOOD)
+				return dc;
+			doc_free(dc);
 		}
-	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
+
+		return NULL;
+	}
+
+	/* Handle binary operator used as an argument, i.e. timercmp(3). */
+	if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
 		struct token *pv;
 
 		pv = TAILQ_PREV(tk, token_list, tk_entry);
@@ -311,8 +308,14 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 		     pv->tk_type == TOKEN_COMMA)) {
 			dc = doc_alloc(DOC_CONCAT, NULL);
 			doc_token(tk, dc);
+			return dc;
 		}
-	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+
+		return NULL;
+	}
+
+	/* Handle cast expression followed by brace initializers. */
+	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		struct doc *indent;
 
 		/*
@@ -322,13 +325,14 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 		 */
 		dc = doc_alloc(DOC_GROUP, NULL);
 		indent = doc_alloc_indent(-pr->pr_cf->cf_sw, dc);
-		if (parser_exec_decl_braces(pr, indent, 0) & (FAIL | NONE)) {
-			doc_free(dc);
-			return NULL;
-		}
+		if (parser_exec_decl_braces(pr, indent, 0) & GOOD)
+			return dc;
+		doc_free(dc);
+
+		return NULL;
 	}
 
-	return dc;
+	return NULL;
 }
 
 static int
