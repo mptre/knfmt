@@ -1,3 +1,23 @@
+# 3.0.1 - XXXX-XX-XX
+
+## Bug fixes
+
+- Fix regression using cpp in declarations.
+  (0d117ed)
+  (Anton Lindqvist)
+
+- Stricter detection of loop constructs hidden behind cpp.
+  (1859d3d)
+  (Anton Lindqvist)
+
+- Detect more types as part of declarations using cpp.
+  (553c533)
+  (Anton Lindqvist)
+
+- Stricter detection of cdefs.h macros.
+  (00cfdb8)
+  (Anton Lindqvist)
+
 # 3.0.0 - 2022-08-09
 
 ## Changes
