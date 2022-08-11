@@ -1578,7 +1578,7 @@ parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc)
 		error = parser_exec_stmt(pr, indent);
 		doc_alloc(DOC_HARDLINE, concat);
 	}
-	if (error & (FAIL | NONE))
+	if (error & HALT)
 		return parser_fail(pr);
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
