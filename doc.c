@@ -457,12 +457,6 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		} else {
 			st->st_indent.i_cur -= dc->dc_int;
 		}
-		/*
-		 * While reaching the first column, there's no longer any
-		 * previous indentation to consider.
-		 */
-		if (st->st_indent.i_cur == 0)
-			st->st_indent.i_pre = 0;
 		break;
 	}
 
