@@ -1755,7 +1755,7 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	struct lexer_state s;
 	struct doc *dedent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *ident, *nx, *tk;
+	struct token *colon, *ident, *nx;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -1767,10 +1767,10 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	dedent = doc_alloc_dedent(dc);
-	if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
+	if (lexer_expect(lx, TOKEN_IDENT, &ident)) {
 		struct doc *label;
 
-		label = doc_token(tk, dedent);
+		label = doc_token(ident, dedent);
 		/*
 		 * Honor indentation before label but make sure to emit it right
 		 * before the label. Necessary when the label is prefixed with
@@ -1779,21 +1779,20 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 		if (token_has_indent(ident))
 			doc_append_before(doc_literal(" ", NULL), label);
 	}
-	if (lexer_expect(lx, TOKEN_COLON, &tk))
-		doc_token(tk, dedent);
-	else
-		return parser_fail(pr);
 
-	/*
-	 * A label is not necessarily followed by a hard line, there could be
-	 * another statement on the same line.
-	 */
-	if (lexer_back(lx, &tk) && lexer_peek(lx, &nx) &&
-	    token_cmp(tk, nx) == 0) {
-		struct doc *indent;
+	if (lexer_expect(lx, TOKEN_COLON, &colon)) {
+		doc_token(colon, dedent);
 
-		indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
-		return parser_exec_stmt(pr, indent);
+		/*
+		 * A label is not necessarily followed by a hard line, there
+		 * could be another statement on the same line.
+		 */
+		if (lexer_peek(lx, &nx) && token_cmp(colon, nx) == 0) {
+			struct doc *indent;
+
+			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
+			return parser_exec_stmt(pr, indent);
+		}
 	}
 
 	return parser_good(pr);
