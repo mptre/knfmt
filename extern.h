@@ -354,7 +354,6 @@ struct expr_exec_arg {
 	 */
 	struct doc		*(*ea_recover)(unsigned int, void *);
 	void			*ea_arg;
-#define EXPR_RECOVER_FLAG_CAST	0x00000001u
 
 	unsigned int		 ea_flags;
 /* Emit a soft line before the expression. */
@@ -369,6 +368,8 @@ struct expr_exec_arg {
 #define EXPR_EXEC_FLAG_ASM		0x00000010u
 /* During recovery, signal than a function argument could be present. */
 #define EXPR_EXEC_FLAG_ARG		0x00000020u
+/* During recovery, signal than a cast could be present. */
+#define EXPR_EXEC_FLAG_CAST		0x00000040u
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);

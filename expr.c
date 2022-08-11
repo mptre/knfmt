@@ -303,9 +303,7 @@ expr_exec_recover(struct expr_state *es, unsigned int flags)
 	if (es->es_ea->ea_recover == NULL)
 		return NULL;
 
-	if (es->es_flags & EXPR_EXEC_FLAG_ARG)
-		flags |= EXPR_RECOVER_FLAG_CAST;
-	dc = es->es_ea->ea_recover(flags, es->es_ea->ea_arg);
+	dc = es->es_ea->ea_recover(flags | es->es_flags, es->es_ea->ea_arg);
 	if (dc == NULL)
 		return NULL;
 
@@ -384,7 +382,7 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 				ex->ex_tokens[0] = tk;	/* ( */
 			/* Let the parser emit the type. */
 			ex->ex_lhs = expr_exec_recover(es,
-			    EXPR_RECOVER_FLAG_CAST);
+			    EXPR_EXEC_FLAG_CAST);
 			if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
 				ex->ex_tokens[1] = tk;	/* ) */
 			ex->ex_rhs = expr_exec1(es, PC(es->es_er->er_pc));

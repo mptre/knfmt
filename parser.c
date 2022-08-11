@@ -276,7 +276,9 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 	struct token *tk;
 	unsigned int lflags = 0;
 
-	if (flags & EXPR_RECOVER_FLAG_CAST)
+	if (flags & EXPR_EXEC_FLAG_ARG)
+		lflags |= LEXER_TYPE_FLAG_CAST;
+	if (flags & EXPR_EXEC_FLAG_CAST)
 		lflags |= LEXER_TYPE_FLAG_CAST;
 	if (lexer_peek_if_type(lx, &tk, lflags)) {
 		struct token *nx, *pv;
