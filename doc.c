@@ -554,7 +554,6 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 				 */
 				indent = it->i_pre;
 			}
-			st->st_col = 0;
 			doc_indent(dc, st, indent);
 		}
 
@@ -835,11 +834,8 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	buffer_append(st->st_bf, str, len);
 	doc_column(st, str, len);
 
-	if (newline) {
-		st->st_col = 0;
-		if (flags & DOC_PRINT_FLAG_INDENT)
-			doc_indent(dc, st, st->st_indent.i_cur);
-	}
+	if (newline && (flags & DOC_PRINT_FLAG_INDENT))
+		doc_indent(dc, st, st->st_indent.i_cur);
 }
 
 static void
