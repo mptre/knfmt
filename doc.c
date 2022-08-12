@@ -74,7 +74,7 @@ struct doc_state {
 		unsigned int	s_nfits;
 	} st_stats;
 
-	unsigned int		 st_pos;
+	unsigned int		 st_col;
 	unsigned int		 st_depth;
 	unsigned int		 st_refit;
 	unsigned int		 st_parens;
@@ -111,7 +111,7 @@ static void	doc_trim(const struct doc *, struct doc_state *);
 static int	doc_is_mute(const struct doc_state *);
 static int	doc_parens_align(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
-static void	doc_position(struct doc_state *, const char *, size_t);
+static void	doc_column(struct doc_state *, const char *, size_t);
 static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
 #define DOC_DIFF(st) \
@@ -212,7 +212,7 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_flags = DOC_STATE_FLAG_WIDTH;
 	doc_exec1(dc, &st);
 
-	return st.st_pos;
+	return st.st_col;
 }
 
 void
@@ -502,10 +502,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 		/* Verbatims must never be indented. */
 		doc_trim(dc, st);
-		oldpos = st->st_pos;
+		oldpos = st->st_col;
 
 		/* Verbatim blocks must always start on a new line. */
-		if (isblock && st->st_pos > 0)
+		if (isblock && st->st_col > 0)
 			doc_print(dc, st, "\n", 1, 0);
 
 		if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
@@ -554,7 +554,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 				 */
 				indent = it->i_pre;
 			}
-			st->st_pos = 0;
+			st->st_col = 0;
 			doc_indent(dc, st, indent);
 		}
 
@@ -716,7 +716,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		fst.st_fits.optline = 0;
 		doc_walk(dc, &fst, doc_fits1, NULL);
 		st->st_fits.fits = fst.st_fits.fits;
-		pos = fst.st_pos;
+		pos = fst.st_col;
 		optline = fst.st_fits.optline;
 	}
 	doc_trace(dc, st, "%s: %u %s %u, optline %d", __func__,
@@ -731,14 +731,14 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 {
 	switch (dc->dc_type) {
 	case DOC_LITERAL:
-		doc_position(st, dc->dc_str, dc->dc_len);
+		doc_column(st, dc->dc_str, dc->dc_len);
 		break;
 
 	case DOC_VERBATIM:
 		break;
 
 	case DOC_LINE:
-		st->st_pos++;
+		st->st_col++;
 		break;
 
 	case DOC_OPTLINE:
@@ -760,7 +760,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 		break;
 	}
 
-	if (st->st_pos > st->st_cf->cf_mw) {
+	if (st->st_col > st->st_cf->cf_mw) {
 		st->st_fits.fits = 0;
 		return 0;
 	}
@@ -786,7 +786,7 @@ doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 	if (doc_is_mute(st))
 		return;
 
-	st->st_pos += buffer_indent(st->st_bf, indent, st->st_pos);
+	st->st_col += buffer_indent(st->st_bf, indent, st->st_col);
 }
 
 static void
@@ -833,10 +833,10 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		doc_trim(dc, st);
 
 	buffer_append(st->st_bf, str, len);
-	doc_position(st, str, len);
+	doc_column(st, str, len);
 
 	if (newline) {
-		st->st_pos = 0;
+		st->st_col = 0;
 		if (flags & DOC_PRINT_FLAG_INDENT)
 			doc_indent(dc, st, st->st_indent.i_cur);
 	}
@@ -846,7 +846,7 @@ static void
 doc_trim(const struct doc *dc, struct doc_state *st)
 {
 	struct buffer *bf = st->st_bf;
-	unsigned int oldpos = st->st_pos;
+	unsigned int oldpos = st->st_col;
 
 	while (bf->bf_len > 0) {
 		unsigned char ch;
@@ -855,11 +855,11 @@ doc_trim(const struct doc *dc, struct doc_state *st)
 		if (ch != ' ' && ch != '\t')
 			break;
 		bf->bf_len--;
-		st->st_pos -= ch == '\t' ? 8 - (st->st_pos % 8) : 1;
+		st->st_col -= ch == '\t' ? 8 - (st->st_col % 8) : 1;
 	}
-	if (oldpos > st->st_pos)
+	if (oldpos > st->st_col)
 		doc_trace(dc, st, "%s: trimmed %u character(s)", __func__,
-		    oldpos - st->st_pos);
+		    oldpos - st->st_col);
 }
 
 static int
@@ -981,7 +981,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * chunk might only touch a subset of the group.
 	 */
 	doc_diff_emit(dc, st, st->st_diff.beg, end);
-	st->st_pos = 0;
+	st->st_col = 0;
 	doc_indent(dc, st, st->st_indent.i_cur);
 	return 1;
 }
@@ -1087,7 +1087,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 
 	st->st_newline = 0;
 	doc_trim(dc, st);
-	if (st->st_pos > 0)
+	if (st->st_col > 0)
 		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_FORCE);
 	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
 }
@@ -1231,9 +1231,9 @@ doc_has_list(const struct doc *dc)
  * the document buffer.
  */
 static void
-doc_position(struct doc_state *st, const char *str, size_t len)
+doc_column(struct doc_state *st, const char *str, size_t len)
 {
-	st->st_pos = strwidth(str, len, st->st_pos);
+	st->st_col = strwidth(str, len, st->st_col);
 }
 
 static int
@@ -1464,7 +1464,7 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 		(void)snprintf(mute, sizeof(mute), "%d", st->st_mute);
 
 	n = snprintf(buf, bufsiz, "[D] [%c C=%-3u D=%-3u U=%s O=%d]",
-	    mode, st->st_pos, depth, mute, st->st_optline);
+	    mode, st->st_col, depth, mute, st->st_optline);
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 	return buf;
