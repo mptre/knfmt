@@ -467,9 +467,9 @@ struct ruler_indent;
 
 struct ruler {
 	struct {
-		struct ruler_column	*b_ptr;
-		size_t			 b_len;
-		size_t			 b_siz;
+		struct ruler_column	*ptr;
+		size_t			 len;
+		size_t			 siz;
 	} rl_columns;
 
 	struct ruler_indent_list	*rl_indent;
@@ -478,9 +478,9 @@ struct ruler {
 
 struct ruler_column {
 	struct {
-		struct ruler_datum	*b_ptr;
-		size_t			 b_len;
-		size_t			 b_siz;
+		struct ruler_datum	*ptr;
+		size_t			 len;
+		size_t			 siz;
 	} rc_datums;
 
 	size_t	rc_len;

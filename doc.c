@@ -56,16 +56,16 @@ struct doc_state {
 	} st_mode;
 
 	struct {
-		const struct token	*d_verbatim;
-		int			 d_group;
-		int			 d_mute;
-		unsigned int		 d_beg;
-		unsigned int		 d_end;
+		const struct token	*verbatim;
+		int			 group;
+		int			 mute;
+		unsigned int		 beg;
+		unsigned int		 end;
 	} st_diff;
 
 	struct {
-		int		f_fits;
-		unsigned int	f_optline;
+		int		fits;
+		unsigned int	optline;
 	} st_fits;
 
 	struct doc_state_indent	 st_indent;
@@ -187,7 +187,7 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_bf = bf;
 	st.st_lx = lx;
 	st.st_mode = BREAK;
-	st.st_diff.d_beg = 1;
+	st.st_diff.beg = 1;
 	if (flags & DOC_EXEC_FLAG_DIFF)
 		st.st_flags |= DOC_STATE_FLAG_DIFF;
 	if (flags & DOC_EXEC_FLAG_TRACE)
@@ -489,7 +489,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 		if (doc_is_mute(st)) {
 			if (DOC_DIFF(st) &&
-			    st->st_diff.d_verbatim == dc->dc_tk)
+			    st->st_diff.verbatim == dc->dc_tk)
 				unmute = 1;
 			else
 				break;
@@ -522,7 +522,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 		/* Restore indentation in diff mode. */
 		if (unmute)
-			st->st_diff.d_verbatim = NULL;
+			st->st_diff.verbatim = NULL;
 
 		/* Restore the indentation after emitting a verbatim block. */
 		if (isblock) {
@@ -712,18 +712,18 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		/* Should not perform any printing. */
 		fst.st_bf = NULL;
 		fst.st_mode = MUNGE;
-		fst.st_fits.f_fits = 1;
-		fst.st_fits.f_optline = 0;
+		fst.st_fits.fits = 1;
+		fst.st_fits.optline = 0;
 		doc_walk(dc, &fst, doc_fits1, NULL);
-		st->st_fits.f_fits = fst.st_fits.f_fits;
+		st->st_fits.fits = fst.st_fits.fits;
 		pos = fst.st_pos;
-		optline = fst.st_fits.f_optline;
+		optline = fst.st_fits.optline;
 	}
 	doc_trace(dc, st, "%s: %u %s %u, optline %d", __func__,
-	    pos, st->st_fits.f_fits ? "<=" : ">", st->st_cf->cf_mw,
+	    pos, st->st_fits.fits ? "<=" : ">", st->st_cf->cf_mw,
 	    optline);
 
-	return st->st_fits.f_fits;
+	return st->st_fits.fits;
 }
 
 static int
@@ -743,7 +743,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 
 	case DOC_OPTLINE:
 		if (st->st_optline) {
-			st->st_fits.f_optline = 1;
+			st->st_fits.optline = 1;
 			return 0;
 		}
 		break;
@@ -761,7 +761,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	}
 
 	if (st->st_pos > st->st_cf->cf_mw) {
-		st->st_fits.f_fits = 0;
+		st->st_fits.fits = 0;
 		return 0;
 	}
 	return 1;
@@ -876,7 +876,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * Only applicable while entering the first group. Unless the group
 	 * above us was ignored, see below.
 	 */
-	if (st->st_diff.d_group)
+	if (st->st_diff.group)
 		return 0;
 
 	/*
@@ -889,7 +889,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * the first group covering a single line to be found.
 	 */
 	memset(&dd, 0, sizeof(dd));
-	dd.dd_threshold = st->st_diff.d_beg;
+	dd.dd_threshold = st->st_diff.beg;
 	doc_walk(dc, st, doc_diff_covers, &dd);
 	switch (dd.dd_covers) {
 	case -1:
@@ -905,29 +905,29 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		 * group above us touched lines after the diff chunk due to
 		 * reformatting make sure to reset the state.
 		 */
-		if (st->st_diff.d_end > 0)
+		if (st->st_diff.end > 0)
 			doc_diff_leave(dc, st, 1);
-		st->st_diff.d_group = 1;
+		st->st_diff.group = 1;
 		return 1;
 	case 1:
 		/*
 		 * The group is covered by a diff chunk. Make sure to leave any
 		 * previous diff chunk if we're entering a new one.
 		 */
-		if (st->st_diff.d_end > 0 && dd.dd_first > st->st_diff.d_end)
+		if (st->st_diff.end > 0 && dd.dd_first > st->st_diff.end)
 			doc_diff_leave(dc, st, 1);
 		break;
 	}
 
-	st->st_diff.d_group = 1;
+	st->st_diff.group = 1;
 
 	doc_trace(dc, st, "%s: enter chunk: beg %u, end %u, first %u, "
 	    "chunk %u, seen %d", __func__,
-	    st->st_diff.d_beg, st->st_diff.d_end,
+	    st->st_diff.beg, st->st_diff.end,
 	    dd.dd_first, dd.dd_chunk,
-	    st->st_diff.d_end > 0);
+	    st->st_diff.end > 0);
 
-	if (st->st_diff.d_end > 0) {
+	if (st->st_diff.end > 0) {
 		/*
 		 * The diff chunk is spanning more than one group. Any preceding
 		 * verbatim lines are already emitted at this point.
@@ -947,13 +947,13 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * adjusted. This can happen when reformatting causes lines to be
 	 * merged.
 	 */
-	st->st_diff.d_end = du->du_end;
+	st->st_diff.end = du->du_end;
 
 	/*
 	 * We could still be in a muted section of the document, ignore and then
 	 * restore in doc_diff_leave();
 	 */
-	st->st_diff.d_mute = st->st_mute;
+	st->st_diff.mute = st->st_mute;
 	st->st_mute = 0;
 	if (dd.dd_verbatim != NULL) {
 		const struct token *tk = dd.dd_verbatim;
@@ -965,10 +965,10 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		 * not be formatted and we therefore stay mute until moving past
 		 * the last verbatim token not covered by the diff chunk.
 		 */
-		st->st_diff.d_verbatim = tk;
+		st->st_diff.verbatim = tk;
 		end = tk->tk_lno + countlines(tk->tk_str, tk->tk_len);
 		doc_trace(dc, st, "%s: verbatim mute [%u-%u)", __func__,
-		    st->st_diff.d_beg, end);
+		    st->st_diff.beg, end);
 	} else {
 		end = dd.dd_first;
 	}
@@ -980,7 +980,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * represents something intended to fit on a single line but the diff
 	 * chunk might only touch a subset of the group.
 	 */
-	doc_diff_emit(dc, st, st->st_diff.d_beg, end);
+	doc_diff_emit(dc, st, st->st_diff.beg, end);
 	st->st_pos = 0;
 	doc_indent(dc, st, st->st_indent.i_cur);
 	return 1;
@@ -992,8 +992,8 @@ doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st,
 {
 	if (enter == 0 || !DOC_DIFF(st))
 		return;
-	assert(st->st_diff.d_group == 1);
-	st->st_diff.d_group = 0;
+	assert(st->st_diff.group == 1);
+	st->st_diff.group = 0;
 }
 
 static void
@@ -1003,21 +1003,21 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 
 	if (!DOC_DIFF(st))
 		return;
-	if (dc->dc_tk == NULL || st->st_diff.d_end == 0)
+	if (dc->dc_tk == NULL || st->st_diff.end == 0)
 		return;
 
 	lno = dc->dc_tk->tk_lno;
-	if (st->st_diff.d_group) {
-		if (lno > st->st_diff.d_end) {
+	if (st->st_diff.group) {
+		if (lno > st->st_diff.end) {
 			/*
 			 * The current group spans beyond the diff chunk, adjust
 			 * the end line. This can happen when reformatting
 			 * causes lines to be merged.
 			 */
 			doc_trace(dc, st, "%s: end %u", __func__, lno);
-			st->st_diff.d_end = lno;
+			st->st_diff.end = lno;
 		}
-	} else if (lno > st->st_diff.d_end) {
+	} else if (lno > st->st_diff.end) {
 		doc_diff_leave(dc, st, 1);
 	}
 }
@@ -1030,10 +1030,10 @@ doc_diff_verbatim(const struct doc *dc, struct doc_state *st)
 
 	if (!DOC_DIFF(st))
 		return 0;
-	if (lno == 0 || st->st_diff.d_end == 0)
+	if (lno == 0 || st->st_diff.end == 0)
 		return 0;
 
-	if (lno > st->st_diff.d_end) {
+	if (lno > st->st_diff.end) {
 		doc_diff_leave(dc, st, 1);
 		return 0;
 	}
@@ -1044,10 +1044,10 @@ doc_diff_verbatim(const struct doc *dc, struct doc_state *st)
 	 * document the diff chunk must be left.
 	 */
 	n = countlines(dc->dc_str, dc->dc_len);
-	if (n > 0 && lno + n > st->st_diff.d_end) {
+	if (n > 0 && lno + n > st->st_diff.end) {
 		unsigned int end;
 
-		end = (lno + n) - st->st_diff.d_end;
+		end = (lno + n) - st->st_diff.end;
 		doc_trace(dc, st, "%s: postpone leave: end %u", __func__, end);
 		return end;
 	}
@@ -1060,7 +1060,7 @@ doc_diff_exit(const struct doc *dc, struct doc_state *st)
 {
 	if (!DOC_DIFF(st))
 		return;
-	doc_diff_emit(dc, st, st->st_diff.d_beg, 0);
+	doc_diff_emit(dc, st, st->st_diff.beg, 0);
 }
 
 /*
@@ -1157,7 +1157,7 @@ static int
 doc_diff_is_mute(const struct doc_state *st)
 {
 	return DOC_DIFF(st) &&
-	    (st->st_diff.d_end == 0 || st->st_diff.d_verbatim != NULL);
+	    (st->st_diff.end == 0 || st->st_diff.verbatim != NULL);
 }
 
 static void
@@ -1167,14 +1167,14 @@ __doc_diff_leave(const struct doc *dc, struct doc_state *st, unsigned int end,
 	if (end == 0)
 		return;
 
-	assert(st->st_diff.d_end > 0);
-	assert(st->st_diff.d_verbatim == NULL);
-	st->st_diff.d_beg = st->st_diff.d_end + end;
-	st->st_diff.d_end = 0;
-	st->st_mute = st->st_diff.d_mute;
-	st->st_diff.d_mute = 0;
+	assert(st->st_diff.end > 0);
+	assert(st->st_diff.verbatim == NULL);
+	st->st_diff.beg = st->st_diff.end + end;
+	st->st_diff.end = 0;
+	st->st_mute = st->st_diff.mute;
+	st->st_diff.mute = 0;
 	doc_trace(dc, st, "doc_diff_leave: %s: leave chunk: beg %u",
-	    fun, st->st_diff.d_beg);
+	    fun, st->st_diff.beg);
 }
 
 static int

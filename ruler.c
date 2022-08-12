@@ -49,12 +49,12 @@ ruler_free(struct ruler *rl)
 {
 	size_t i;
 
-	for (i = 0; i < rl->rl_columns.b_len; i++) {
-		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
+	for (i = 0; i < rl->rl_columns.len; i++) {
+		struct ruler_column *rc = &rl->rl_columns.ptr[i];
 
-		free(rc->rc_datums.b_ptr);
+		free(rc->rc_datums.ptr);
 	}
-	free(rl->rl_columns.b_ptr);
+	free(rl->rl_columns.ptr);
 
 	ruler_reset_indent(rl);
 }
@@ -74,30 +74,30 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	struct ruler_column *rc;
 	struct ruler_datum *rd;
 
-	if (col > rl->rl_columns.b_len) {
-		struct ruler_column *ptr = rl->rl_columns.b_ptr;
+	if (col > rl->rl_columns.len) {
+		struct ruler_column *ptr = rl->rl_columns.ptr;
 
 		ptr = reallocarray(ptr, col, sizeof(*ptr));
 		if (ptr == NULL)
 			err(1, NULL);
-		rl->rl_columns.b_ptr = ptr;
-		rl->rl_columns.b_len = col;
-		memset(&rl->rl_columns.b_ptr[col - 1], 0, sizeof(*ptr));
+		rl->rl_columns.ptr = ptr;
+		rl->rl_columns.len = col;
+		memset(&rl->rl_columns.ptr[col - 1], 0, sizeof(*ptr));
 	}
-	rc = &rl->rl_columns.b_ptr[col - 1];
+	rc = &rl->rl_columns.ptr[col - 1];
 
-	if (rc->rc_datums.b_len >= rc->rc_datums.b_siz) {
-		struct ruler_datum *ptr = rc->rc_datums.b_ptr;
+	if (rc->rc_datums.len >= rc->rc_datums.siz) {
+		struct ruler_datum *ptr = rc->rc_datums.ptr;
 
-		if (rc->rc_datums.b_siz == 0)
-			rc->rc_datums.b_siz = 8;
-		ptr = reallocarray(ptr, rc->rc_datums.b_siz, 2 * sizeof(*ptr));
+		if (rc->rc_datums.siz == 0)
+			rc->rc_datums.siz = 8;
+		ptr = reallocarray(ptr, rc->rc_datums.siz, 2 * sizeof(*ptr));
 		if (ptr == NULL)
 			err(1, NULL);
-		rc->rc_datums.b_ptr = ptr;
-		rc->rc_datums.b_siz *= 2;
+		rc->rc_datums.ptr = ptr;
+		rc->rc_datums.siz *= 2;
 	}
-	rd = &rc->rc_datums.b_ptr[rc->rc_datums.b_len++];
+	rd = &rc->rc_datums.ptr[rc->rc_datums.len++];
 	memset(rd, 0, sizeof(*rd));
 
 	rd->rd_indent = 1;
@@ -138,10 +138,10 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	/* Not applicable to fixed alignment. */
 	assert(rl->rl_len == 0);
 
-	if (rl->rl_columns.b_len == 0)
+	if (rl->rl_columns.len == 0)
 		goto err;
-	rc = &rl->rl_columns.b_ptr[0];
-	if (rc->rc_datums.b_len == 0)
+	rc = &rl->rl_columns.ptr[0];
+	if (rc->rc_datums.len == 0)
 		goto err;
 
 	if (rl->rl_indent == NULL) {
@@ -153,7 +153,7 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	ri = calloc(1, sizeof(*ri));
 	if (ri == NULL)
 		err(1, NULL);
-	ri->ri_rd = rc->rc_datums.b_len - 1;
+	ri->ri_rd = rc->rc_datums.len - 1;
 	ri->ri_indent = indent;
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
 	TAILQ_INSERT_TAIL(rl->rl_indent, ri, ri_entry);
@@ -183,8 +183,8 @@ ruler_exec(struct ruler *rl)
 	int fixedlen = rl->rl_len;
 	unsigned int maxlen;
 
-	for (i = 0; i < rl->rl_columns.b_len; i++) {
-		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
+	for (i = 0; i < rl->rl_columns.len; i++) {
+		struct ruler_column *rc = &rl->rl_columns.ptr[i];
 
 		if (rc->rc_ntabs == 0 && fixedlen == 0)
 			continue;
@@ -199,8 +199,8 @@ ruler_exec(struct ruler *rl)
 			}
 		}
 
-		for (j = 0; j < rc->rc_datums.b_len; j++) {
-			struct ruler_datum *rd = &rc->rc_datums.b_ptr[j];
+		for (j = 0; j < rc->rc_datums.len; j++) {
+			struct ruler_datum *rd = &rc->rc_datums.ptr[j];
 			unsigned int indent;
 
 			if (fixedlen < 0) {
@@ -225,8 +225,8 @@ ruler_exec(struct ruler *rl)
 	if (rl->rl_indent == NULL)
 		goto out;
 	TAILQ_FOREACH(ri, rl->rl_indent, ri_entry) {
-		const struct ruler_column *rc = &rl->rl_columns.b_ptr[0];
-		const struct ruler_datum *rd = &rc->rc_datums.b_ptr[ri->ri_rd];
+		const struct ruler_column *rc = &rl->rl_columns.ptr[0];
+		const struct ruler_datum *rd = &rc->rc_datums.ptr[ri->ri_rd];
 		unsigned int indent;
 
 		if (rc->rc_ntabs == 0) {
@@ -251,14 +251,12 @@ minimize(const struct ruler_column *rc)
 	size_t i;
 	unsigned int minspaces = UINT_MAX;
 
-	if (rc->rc_datums.b_len < 2 ||
-	    rc->rc_nspaces == 0 ||
-	    rc->rc_len % 8 > 0)
+	if (rc->rc_datums.len < 2 || rc->rc_nspaces == 0 || rc->rc_len % 8 > 0)
 		return 0;
 
 	/* Find the longest datum with the smallest amount of spaces. */
-	for (i = 0; i < rc->rc_datums.b_len; i++) {
-		const struct ruler_datum *rd = &rc->rc_datums.b_ptr[i];
+	for (i = 0; i < rc->rc_datums.len; i++) {
+		const struct ruler_datum *rd = &rc->rc_datums.ptr[i];
 		unsigned int nspaces;
 
 		if (rd->rd_len < rc->rc_len)
@@ -291,13 +289,13 @@ ruler_reset(struct ruler *rl)
 {
 	size_t i;
 
-	for (i = 0; i < rl->rl_columns.b_len; i++) {
-		struct ruler_column *rc = &rl->rl_columns.b_ptr[i];
+	for (i = 0; i < rl->rl_columns.len; i++) {
+		struct ruler_column *rc = &rl->rl_columns.ptr[i];
 
-		free(rc->rc_datums.b_ptr);
+		free(rc->rc_datums.ptr);
 		memset(rc, 0, sizeof(*rc));
 	}
-	rl->rl_columns.b_len = 0;
+	rl->rl_columns.len = 0;
 	ruler_reset_indent(rl);
 }
 
