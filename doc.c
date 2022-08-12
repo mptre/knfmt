@@ -484,7 +484,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_VERBATIM: {
 		char *str;
-		unsigned int diff, oldpos;
+		unsigned int diff, oldcol;
 		int unmute = 0;
 
 		if (doc_is_mute(st)) {
@@ -502,7 +502,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 		/* Verbatims must never be indented. */
 		doc_trim(dc, st);
-		oldpos = st->st_col;
+		oldcol = st->st_col;
 
 		/* Verbatim blocks must always start on a new line. */
 		if (isblock && st->st_col > 0)
@@ -539,7 +539,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 				indent = it->i_cur < it->i_mute ?
 				    it->i_cur : it->i_mute;
 				it->i_mute = 0;
-			} else if (oldpos > 0) {
+			} else if (oldcol > 0) {
 				/*
 				 * The line is not empty after trimming. Assume
 				 * this a continuation in which the current
@@ -689,7 +689,7 @@ doc_walk(const struct doc *root, struct doc_state *st,
 static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
-	unsigned int pos = 0;
+	unsigned int col = 0;
 	int optline = 0;
 
 	/*
@@ -716,11 +716,11 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		fst.st_fits.optline = 0;
 		doc_walk(dc, &fst, doc_fits1, NULL);
 		st->st_fits.fits = fst.st_fits.fits;
-		pos = fst.st_col;
+		col = fst.st_col;
 		optline = fst.st_fits.optline;
 	}
 	doc_trace(dc, st, "%s: %u %s %u, optline %d", __func__,
-	    pos, st->st_fits.fits ? "<=" : ">", st->st_cf->cf_mw,
+	    col, st->st_fits.fits ? "<=" : ">", st->st_cf->cf_mw,
 	    optline);
 
 	return st->st_fits.fits;
@@ -846,7 +846,7 @@ static void
 doc_trim(const struct doc *dc, struct doc_state *st)
 {
 	struct buffer *bf = st->st_bf;
-	unsigned int oldpos = st->st_col;
+	unsigned int oldcol = st->st_col;
 
 	while (bf->bf_len > 0) {
 		unsigned char ch;
@@ -857,9 +857,9 @@ doc_trim(const struct doc *dc, struct doc_state *st)
 		bf->bf_len--;
 		st->st_col -= ch == '\t' ? 8 - (st->st_col % 8) : 1;
 	}
-	if (oldpos > st->st_col)
+	if (oldcol > st->st_col)
 		doc_trace(dc, st, "%s: trimmed %u character(s)", __func__,
-		    oldpos - st->st_col);
+		    oldcol - st->st_col);
 }
 
 static int
