@@ -28,8 +28,7 @@ static int	__test_expr_exec(struct context *, const char *, const char *,
 	if (xflag && error) goto out;					\
 	context_reset(cx)
 static int	__test_lexer_peek_if_type(struct context *, const char *,
-    const char *,
-    unsigned int, const char *, int);
+    const char *, unsigned int, const char *, int);
 
 #define test_lexer_read(a, b)						\
 	__test_lexer_read(cx, (a), (b), "test_lexer_read",		\
@@ -37,8 +36,14 @@ static int	__test_lexer_peek_if_type(struct context *, const char *,
 	if (xflag && error) goto out;					\
 	context_reset(cx)
 static int	__test_lexer_read(struct context *, const char *, const char *,
-    const char *,
-    int);
+    const char *, int);
+
+#define test_strwidth(a, b, c)						\
+	__test_strwidth((a), (b), (c), "test_strwidth", __LINE__);	\
+	if (xflag && error) goto out;					\
+	context_reset(cx)
+static int	__test_strwidth(const char *, size_t, size_t,
+    const char *, int);
 
 struct context {
 	struct config	 cx_cf;
@@ -225,6 +230,12 @@ main(int argc, char *argv[])
 	error |= test_lexer_read("...", "ELLIPSIS");
 	error |= test_lexer_read(".x", "PERIOD IDENT");
 
+	error |= test_strwidth("int", 0, 3);
+	error |= test_strwidth("int\tx", 0, 9);
+	error |= test_strwidth("int\tx", 3, 9);
+	error |= test_strwidth("int\nx", 0, 1);
+	error |= test_strwidth("int\n", 0, 0);
+
 out:
 	context_free(cx);
 	diff_shutdown();
@@ -363,6 +374,21 @@ __test_lexer_read(struct context *cx, const char *src, const char *exp,
 
 	buffer_free(bf);
 	return error;
+}
+
+static int
+__test_strwidth(const char *str, size_t pos, size_t exp,
+    const char *fun, int lno)
+{
+	size_t act;
+
+	act = strwidth(str, strlen(str), pos);
+	if (exp != act) {
+		fprintf(stderr, "%s:%d:\n\texp %zu\n\tgot %zu\n",
+		    fun, lno, exp, act);
+		return 1;
+	}
+	return 0;
 }
 
 static struct context *

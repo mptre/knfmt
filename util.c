@@ -40,17 +40,21 @@ strnice(const char *str, size_t len)
 	return p;
 }
 
+/*
+ * Returns the width of the last line in the given string, with respect to tabs.
+ */
 size_t
 strwidth(const char *str, size_t len, size_t pos)
 {
-	size_t oldpos = pos;
 	size_t i;
 
 	for (i = 0; i < len; i++) {
-		if (str[i] == '\t')
+		if (str[i] == '\n')
+			pos = 0;
+		else if (str[i] == '\t')
 			pos += 8 - (pos % 8);
 		else
 			pos += 1;
 	}
-	return pos - oldpos;
+	return pos;
 }

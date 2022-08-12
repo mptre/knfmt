@@ -1227,12 +1227,13 @@ doc_has_list(const struct doc *dc)
 }
 
 /*
- * Increment the position, with respect to tabs.
+ * Set the column position, intended to be given the same string just added to
+ * the document buffer.
  */
 static void
 doc_position(struct doc_state *st, const char *str, size_t len)
 {
-	st->st_pos += strwidth(str, len, st->st_pos);
+	st->st_pos = strwidth(str, len, st->st_pos);
 }
 
 static int
