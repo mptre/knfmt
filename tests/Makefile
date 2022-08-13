@@ -327,6 +327,8 @@ TESTS+=	valid-254.c
 TESTS+=	valid-255.c
 TESTS+=	valid-256.c
 TESTS+=	valid-257.c
+TESTS+=	valid-258.c
+TESTS+=	valid-259.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -350,7 +352,6 @@ TESTS+=	trace-001.c
 
 TESTS+=	bug-002.c
 TESTS+=	bug-005.c
-TESTS+=	bug-006.c
 
 TESTS+=	../buffer.c
 TESTS+=	../comment.c

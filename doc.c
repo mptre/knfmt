@@ -42,7 +42,6 @@ struct doc {
 struct doc_state_indent {
 	int	i_cur;	/* current indent */
 	int	i_pre;	/* last emitted indent */
-	int	i_mute;	/* last emitted indent before going mute */
 };
 
 struct doc_state {
@@ -61,6 +60,7 @@ struct doc_state {
 		int			 mute;
 		unsigned int		 beg;
 		unsigned int		 end;
+		unsigned int		 muteline;
 	} st_diff;
 
 	struct {
@@ -80,6 +80,7 @@ struct doc_state {
 	unsigned int		 st_parens;
 	unsigned int		 st_nlines;
 	unsigned int		 st_newline;
+	unsigned int		 st_muteline;	/* missed new line while muted */
 	int			 st_optline;
 	int			 st_mute;
 	unsigned int		 st_flags;
@@ -121,6 +122,10 @@ static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);
 static void		doc_diff_group_leave(const struct doc *,
     struct doc_state *, int);
+static void		doc_diff_mute_enter(const struct doc *,
+    struct doc_state *);
+static void		doc_diff_mute_leave(const struct doc *,
+    struct doc_state *);
 static void		doc_diff_literal(const struct doc *,
     struct doc_state *);
 static unsigned int	doc_diff_verbatim(const struct doc *,
@@ -506,7 +511,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 		/* Verbatim blocks must always start on a new line. */
 		if (isblock && st->st_col > 0)
-			doc_print(dc, st, "\n", 1, 0);
+			st->st_newline = 1;
 
 		if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
 		    (str = comment_exec(dc->dc_tk, st->st_cf))) {
@@ -529,17 +534,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			struct doc_state_indent *it = &st->st_indent;
 			unsigned int indent;
 
-			if (it->i_mute > 0) {
-				/*
-				 * Honor last emitted indentation before going
-				 * mute. However, discard it if the current
-				 * indentation is smaller since it implies that
-				 * we're in a different scope by now.
-				 */
-				indent = it->i_cur < it->i_mute ?
-				    it->i_cur : it->i_mute;
-				it->i_mute = 0;
-			} else if (oldcol > 0) {
+			if (oldcol > 0) {
 				/*
 				 * The line is not empty after trimming. Assume
 				 * this a continuation in which the current
@@ -590,16 +585,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_HARDLINE:
-		/* Take note of new line, later emitted by doc_print(). */
-		if (st->st_mute)
-			st->st_newline = 1;
 		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
 		break;
 
 	case DOC_OPTLINE:
 		/*
-		 * Instruct doc_print() to emit a new line on the next
-		 * invocation. Necessary in order to get indentation right.
+		 * Instruct the next doc_print() invocation to emit a new line.
+		 * Necessary in order to get indentation right.
 		 */
 		if (st->st_optline)
 			st->st_newline = 1;
@@ -608,14 +600,25 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_MUTE:
 		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0) {
 			/*
-			 * Take note of the previously emitted indentation
-			 * before going mute.
+			 * While going mute, check if any new line is missed
+			 * while being inside a diff chunk.
 			 */
 			if (st->st_mute == 0 && dc->dc_int > 0)
-				st->st_indent.i_mute = st->st_indent.i_pre;
+				doc_diff_mute_enter(dc, st);
 
 			if (dc->dc_int > 0 || st->st_mute >= -dc->dc_int)
 				st->st_mute += dc->dc_int;
+
+			/*
+			 * While going unmute, instruct the next doc_print()
+			 * invocation to emit any missed new line.
+			 */
+			if (st->st_mute == 0) {
+				doc_diff_mute_leave(dc, st);
+				st->st_nlines = 0;
+				st->st_newline = st->st_muteline;
+				st->st_muteline = 0;
+			}
 		}
 		break;
 
@@ -782,9 +785,6 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 static void
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 {
-	if (doc_is_mute(st))
-		return;
-
 	st->st_col = buffer_indent(st->st_bf, indent, st->st_col);
 }
 
@@ -792,10 +792,11 @@ static void
 doc_print(const struct doc *dc, struct doc_state *st, const char *str,
     size_t len, unsigned int flags)
 {
+	int ismute = doc_is_mute(st) && (flags & DOC_PRINT_FLAG_FORCE) == 0;
 	int newline = len == 1 && str[0] == '\n';
 
-	if (doc_is_mute(st) && (flags & DOC_PRINT_FLAG_FORCE) == 0)
-		return;
+	if (newline && ismute)
+		st->st_muteline = 1;
 
 	/* Emit pending new line. */
 	if (st->st_newline) {
@@ -830,8 +831,8 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 
 	if (newline)
 		doc_trim(dc, st);
-
-	buffer_append(st->st_bf, str, len);
+	if (!ismute)
+		buffer_append(st->st_bf, str, len);
 	doc_column(st, str, len);
 
 	if (newline && (flags & DOC_PRINT_FLAG_INDENT))
@@ -991,6 +992,28 @@ doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st,
 }
 
 static void
+doc_diff_mute_enter(const struct doc *UNUSED(dc), struct doc_state *st)
+{
+	if (doc_diff_is_mute(st))
+		return;
+	st->st_diff.muteline = 1;
+}
+
+static void
+doc_diff_mute_leave(const struct doc *dc, struct doc_state *st)
+{
+	if (!DOC_DIFF(st))
+		return;
+
+	if (st->st_diff.muteline && st->st_muteline) {
+		doc_trace(dc, st, "%s: muteline %u", __func__,
+		    st->st_diff.muteline);
+		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_FORCE);
+	}
+	st->st_diff.muteline = 0;
+}
+
+static void
 doc_diff_literal(const struct doc *dc, struct doc_state *st)
 {
 	unsigned int lno;
@@ -1079,10 +1102,10 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 		free(s);
 	}
 
+	st->st_nlines = 0;
 	st->st_newline = 0;
+	st->st_muteline = 0;
 	doc_trim(dc, st);
-	if (st->st_col > 0)
-		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_FORCE);
 	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
 	doc_indent(dc, st, st->st_indent.i_cur);
 }
