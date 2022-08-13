@@ -977,8 +977,6 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * chunk might only touch a subset of the group.
 	 */
 	doc_diff_emit(dc, st, st->st_diff.beg, end);
-	st->st_col = 0;
-	doc_indent(dc, st, st->st_indent.i_cur);
 	return 1;
 }
 
@@ -1086,6 +1084,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	if (st->st_col > 0)
 		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_FORCE);
 	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
+	doc_indent(dc, st, st->st_indent.i_cur);
 }
 
 /*
