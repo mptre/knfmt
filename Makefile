@@ -1,6 +1,6 @@
 include ${.CURDIR}/config.mk
 
-VERSION=	3.0.0
+VERSION=	3.0.1
 
 SRCS+=	buffer.c
 SRCS+=	comment.c
