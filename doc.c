@@ -598,27 +598,25 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
-		if ((st->st_flags & DOC_STATE_FLAG_WIDTH) == 0) {
-			/*
-			 * While going mute, check if any new line is missed
-			 * while being inside a diff chunk.
-			 */
-			if (st->st_mute == 0 && dc->dc_int > 0)
-				doc_diff_mute_enter(dc, st);
+		/*
+		 * While going mute, check if any new line is missed while being
+		 * inside a diff chunk.
+		 */
+		if (st->st_mute == 0 && dc->dc_int > 0)
+			doc_diff_mute_enter(dc, st);
 
-			if (dc->dc_int > 0 || st->st_mute >= -dc->dc_int)
-				st->st_mute += dc->dc_int;
+		if (dc->dc_int > 0 || st->st_mute >= -dc->dc_int)
+			st->st_mute += dc->dc_int;
 
-			/*
-			 * While going unmute, instruct the next doc_print()
-			 * invocation to emit any missed new line.
-			 */
-			if (st->st_mute == 0) {
-				doc_diff_mute_leave(dc, st);
-				st->st_nlines = 0;
-				st->st_newline = st->st_muteline;
-				st->st_muteline = 0;
-			}
+		/*
+		 * While going unmute, instruct the next doc_print() invocation
+		 * to emit any missed new line.
+		 */
+		if (st->st_mute == 0) {
+			doc_diff_mute_leave(dc, st);
+			st->st_nlines = 0;
+			st->st_newline = st->st_muteline;
+			st->st_muteline = 0;
 		}
 		break;
 
