@@ -1869,6 +1869,7 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 	if ((lx->lx_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) == 0)
 		return;
 
+	/* We could end up here again after lexer_ungetc(). */
 	if (lno - 1 < lx->lx_lines.len)
 		return;
 
