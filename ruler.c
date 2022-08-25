@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "extern.h"
+#include "vector.h"
 
 struct ruler_column {
 	struct {
@@ -53,20 +54,19 @@ void
 ruler_init(struct ruler *rl, int len)
 {
 	memset(rl, 0, sizeof(*rl));
+	VECTOR_INIT(rl->rl_columns);
 	rl->rl_len = len;
 }
 
 void
 ruler_free(struct ruler *rl)
 {
-	size_t i;
-
-	for (i = 0; i < rl->rl_columns.len; i++) {
-		struct ruler_column *rc = &rl->rl_columns.ptr[i];
+	while (!VECTOR_EMPTY(rl->rl_columns)) {
+		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
 
 		free(rc->rc_datums.ptr);
 	}
-	free(rl->rl_columns.ptr);
+	VECTOR_FREE(rl->rl_columns);
 
 	ruler_reset_indent(rl);
 }
@@ -86,17 +86,9 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	struct ruler_column *rc;
 	struct ruler_datum *rd;
 
-	if (col > rl->rl_columns.len) {
-		struct ruler_column *ptr = rl->rl_columns.ptr;
-
-		ptr = reallocarray(ptr, col, sizeof(*ptr));
-		if (ptr == NULL)
-			err(1, NULL);
-		rl->rl_columns.ptr = ptr;
-		rl->rl_columns.len = col;
-		memset(&rl->rl_columns.ptr[col - 1], 0, sizeof(*ptr));
-	}
-	rc = &rl->rl_columns.ptr[col - 1];
+	while (VECTOR_LENGTH(rl->rl_columns) < col)
+		VECTOR_CALLOC(rl->rl_columns);
+	rc = &rl->rl_columns[col - 1];
 
 	if (rc->rc_datums.len >= rc->rc_datums.siz) {
 		struct ruler_datum *ptr = rc->rc_datums.ptr;
@@ -150,9 +142,9 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	/* Not applicable to fixed alignment. */
 	assert(rl->rl_len == 0);
 
-	if (rl->rl_columns.len == 0)
+	if (VECTOR_LENGTH(rl->rl_columns) == 0)
 		goto err;
-	rc = &rl->rl_columns.ptr[0];
+	rc = &rl->rl_columns[0];
 	if (rc->rc_datums.len == 0)
 		goto err;
 
@@ -195,8 +187,8 @@ ruler_exec(struct ruler *rl)
 	int fixedlen = rl->rl_len;
 	unsigned int maxlen;
 
-	for (i = 0; i < rl->rl_columns.len; i++) {
-		struct ruler_column *rc = &rl->rl_columns.ptr[i];
+	for (i = 0; i < VECTOR_LENGTH(rl->rl_columns); i++) {
+		struct ruler_column *rc = &rl->rl_columns[i];
 
 		if (rc->rc_ntabs == 0 && fixedlen == 0)
 			continue;
@@ -237,7 +229,7 @@ ruler_exec(struct ruler *rl)
 	if (rl->rl_indent == NULL)
 		goto out;
 	TAILQ_FOREACH(ri, rl->rl_indent, ri_entry) {
-		const struct ruler_column *rc = &rl->rl_columns.ptr[0];
+		const struct ruler_column *rc = &rl->rl_columns[0];
 		const struct ruler_datum *rd = &rc->rc_datums.ptr[ri->ri_rd];
 		unsigned int indent;
 
@@ -299,15 +291,11 @@ tabalign(unsigned int len)
 static void
 ruler_reset(struct ruler *rl)
 {
-	size_t i;
-
-	for (i = 0; i < rl->rl_columns.len; i++) {
-		struct ruler_column *rc = &rl->rl_columns.ptr[i];
+	while (!VECTOR_EMPTY(rl->rl_columns)) {
+		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
 
 		free(rc->rc_datums.ptr);
-		memset(rc, 0, sizeof(*rc));
 	}
-	rl->rl_columns.len = 0;
 	ruler_reset_indent(rl);
 }
 

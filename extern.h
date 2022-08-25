@@ -466,12 +466,7 @@ void	doc_annotate(struct doc *, const char *);
 struct ruler_indent;
 
 struct ruler {
-	struct {
-		struct ruler_column	*ptr;
-		size_t			 len;
-		size_t			 siz;
-	} rl_columns;
-
+	struct ruler_column		*rl_columns;	/* VECTOR(ruler_column) */
 	struct ruler_indent_list	*rl_indent;
 	int				 rl_len;
 };
