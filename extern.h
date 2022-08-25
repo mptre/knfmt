@@ -476,18 +476,6 @@ struct ruler {
 	int				 rl_len;
 };
 
-struct ruler_column {
-	struct {
-		struct ruler_datum	*ptr;
-		size_t			 len;
-		size_t			 siz;
-	} rc_datums;
-
-	size_t	rc_len;
-	size_t	rc_nspaces;
-	size_t	rc_ntabs;
-};
-
 void	ruler_init(struct ruler *, int);
 void	ruler_free(struct ruler *);
 void	ruler_exec(struct ruler *);

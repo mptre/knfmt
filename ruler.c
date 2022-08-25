@@ -6,6 +6,18 @@
 
 #include "extern.h"
 
+struct ruler_column {
+	struct {
+		struct ruler_datum	*ptr;
+		size_t			 len;
+		size_t			 siz;
+	} rc_datums;
+
+	size_t	rc_len;
+	size_t	rc_nspaces;
+	size_t	rc_ntabs;
+};
+
 struct ruler_indent {
 	struct doc			*ri_dc;
 	unsigned int			 ri_rd;
