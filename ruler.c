@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <err.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,15 +7,10 @@
 #include "vector.h"
 
 struct ruler_column {
-	struct {
-		struct ruler_datum	*ptr;
-		size_t			 len;
-		size_t			 siz;
-	} rc_datums;
-
-	size_t	rc_len;
-	size_t	rc_nspaces;
-	size_t	rc_ntabs;
+	VECTOR(struct ruler_datum)	rc_datums;
+	size_t				rc_len;
+	size_t				rc_nspaces;
+	size_t				rc_ntabs;
 };
 
 struct ruler_indent {
@@ -64,7 +58,7 @@ ruler_free(struct ruler *rl)
 	while (!VECTOR_EMPTY(rl->rl_columns)) {
 		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
 
-		free(rc->rc_datums.ptr);
+		VECTOR_FREE(rc->rc_datums);
 	}
 	VECTOR_FREE(rl->rl_columns);
 
@@ -86,24 +80,13 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	struct ruler_column *rc;
 	struct ruler_datum *rd;
 
-	while (VECTOR_LENGTH(rl->rl_columns) < col)
-		VECTOR_CALLOC(rl->rl_columns);
+	while (VECTOR_LENGTH(rl->rl_columns) < col) {
+		rc = VECTOR_CALLOC(rl->rl_columns);
+		VECTOR_INIT(rc->rc_datums);
+	}
 	rc = &rl->rl_columns[col - 1];
 
-	if (rc->rc_datums.len >= rc->rc_datums.siz) {
-		struct ruler_datum *ptr = rc->rc_datums.ptr;
-
-		if (rc->rc_datums.siz == 0)
-			rc->rc_datums.siz = 8;
-		ptr = reallocarray(ptr, rc->rc_datums.siz, 2 * sizeof(*ptr));
-		if (ptr == NULL)
-			err(1, NULL);
-		rc->rc_datums.ptr = ptr;
-		rc->rc_datums.siz *= 2;
-	}
-	rd = &rc->rc_datums.ptr[rc->rc_datums.len++];
-	memset(rd, 0, sizeof(*rd));
-
+	rd = VECTOR_CALLOC(rc->rc_datums);
 	rd->rd_indent = 1;
 	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, rd->rd_indent, fun, lno);
 	rd->rd_len = len;
@@ -145,7 +128,7 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	if (VECTOR_LENGTH(rl->rl_columns) == 0)
 		goto err;
 	rc = &rl->rl_columns[0];
-	if (rc->rc_datums.len == 0)
+	if (VECTOR_LENGTH(rc->rc_datums) == 0)
 		goto err;
 
 	if (rl->rl_indent == NULL) {
@@ -157,7 +140,7 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	ri = calloc(1, sizeof(*ri));
 	if (ri == NULL)
 		err(1, NULL);
-	ri->ri_rd = rc->rc_datums.len - 1;
+	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
 	ri->ri_indent = indent;
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
 	TAILQ_INSERT_TAIL(rl->rl_indent, ri, ri_entry);
@@ -203,8 +186,8 @@ ruler_exec(struct ruler *rl)
 			}
 		}
 
-		for (j = 0; j < rc->rc_datums.len; j++) {
-			struct ruler_datum *rd = &rc->rc_datums.ptr[j];
+		for (j = 0; j < VECTOR_LENGTH(rc->rc_datums); j++) {
+			struct ruler_datum *rd = &rc->rc_datums[j];
 			unsigned int indent;
 
 			if (fixedlen < 0) {
@@ -230,7 +213,7 @@ ruler_exec(struct ruler *rl)
 		goto out;
 	TAILQ_FOREACH(ri, rl->rl_indent, ri_entry) {
 		const struct ruler_column *rc = &rl->rl_columns[0];
-		const struct ruler_datum *rd = &rc->rc_datums.ptr[ri->ri_rd];
+		const struct ruler_datum *rd = &rc->rc_datums[ri->ri_rd];
 		unsigned int indent;
 
 		if (rc->rc_ntabs == 0) {
@@ -255,12 +238,13 @@ minimize(const struct ruler_column *rc)
 	size_t i;
 	unsigned int minspaces = UINT_MAX;
 
-	if (rc->rc_datums.len < 2 || rc->rc_nspaces == 0 || rc->rc_len % 8 > 0)
+	if (VECTOR_LENGTH(rc->rc_datums) < 2 ||
+	    rc->rc_nspaces == 0 || rc->rc_len % 8 > 0)
 		return 0;
 
 	/* Find the longest datum with the smallest amount of spaces. */
-	for (i = 0; i < rc->rc_datums.len; i++) {
-		const struct ruler_datum *rd = &rc->rc_datums.ptr[i];
+	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
+		const struct ruler_datum *rd = &rc->rc_datums[i];
 		unsigned int nspaces;
 
 		if (rd->rd_len < rc->rc_len)
@@ -294,7 +278,7 @@ ruler_reset(struct ruler *rl)
 	while (!VECTOR_EMPTY(rl->rl_columns)) {
 		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
 
-		free(rc->rc_datums.ptr);
+		VECTOR_FREE(rc->rc_datums);
 	}
 	ruler_reset_indent(rl);
 }
