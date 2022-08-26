@@ -848,6 +848,8 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			break;
 		}
 	}
+	if (tk == NULL)
+		return parser_fail(pr);
 
 	ruler_insert(rl, tk, dc, 1, parser_width(pr, dc), 0);
 
