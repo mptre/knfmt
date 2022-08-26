@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "extern.h"
+#include "vector.h"
 
 #ifdef HAVE_UTHASH
 #  include <uthash.h>
@@ -34,11 +35,7 @@ struct lexer {
 	const char		*lx_path;
 
 	/* Line number to buffer offset mapping. */
-	struct {
-		unsigned int	*off;
-		size_t		 len;
-		size_t		 siz;
-	} lx_lines;
+	VECTOR(unsigned int)	 lx_lines;
 
 	int			 lx_eof;
 	int			 lx_peek;
@@ -480,6 +477,7 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 	TAILQ_INIT(&lx->lx_tokens);
 	TAILQ_INIT(&lx->lx_stamps);
 	TAILQ_INIT(&lx->lx_branches);
+	VECTOR_INIT(lx->lx_lines);
 	lexer_line_alloc(lx, 1);
 
 	for (;;) {
@@ -542,7 +540,7 @@ lexer_free(struct lexer *lx)
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
-	free(lx->lx_lines.off);
+	VECTOR_FREE(lx->lx_lines);
 	free(lx);
 }
 
@@ -566,11 +564,11 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 	if ((lx->lx_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) == 0)
 		return 0;
 
-	bo = lx->lx_lines.off[beg - 1];
+	bo = lx->lx_lines[beg - 1];
 	if (end == 0)
 		eo = bf->bf_len;
 	else
-		eo = lx->lx_lines.off[end - 1];
+		eo = lx->lx_lines[end - 1];
 	*str = &bf->bf_ptr[bo];
 	*len = eo - bo;
 	return 1;
@@ -1864,28 +1862,14 @@ lexer_eof(const struct lexer *lx)
 static void
 lexer_line_alloc(struct lexer *lx, unsigned int lno)
 {
-	size_t siz;
-
 	if ((lx->lx_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) == 0)
 		return;
 
 	/* We could end up here again after lexer_ungetc(). */
-	if (lno - 1 < lx->lx_lines.len)
+	if (lno - 1 < VECTOR_LENGTH(lx->lx_lines))
 		return;
 
-	siz = lx->lx_lines.siz;
-	if (lx->lx_lines.len + 1 >= siz) {
-		size_t newsiz;
-
-		newsiz = siz == 0 ? 1024 : lx->lx_lines.siz * 2;
-		lx->lx_lines.off = reallocarray(lx->lx_lines.off, newsiz,
-		    sizeof(*lx->lx_lines.off));
-		if (lx->lx_lines.off == NULL)
-			err(1, NULL);
-		lx->lx_lines.siz = newsiz;
-	}
-
-	lx->lx_lines.off[lx->lx_lines.len++] = lx->lx_st.st_off;
+	*VECTOR_ALLOC(lx->lx_lines) = lx->lx_st.st_off;
 }
 
 static struct token *
