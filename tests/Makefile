@@ -347,6 +347,8 @@ TESTS+=	simple-014.c
 TESTS+=	simple-015.c
 TESTS+=	simple-016.c
 TESTS+=	simple-017.c
+TESTS+=	simple-018.c
+TESTS+=	simple-019.c
 
 TESTS+=	trace-001.c
 
@@ -371,6 +373,8 @@ TESTS+=	../simple-stmt.c
 TESTS+=	../t.c
 TESTS+=	../token.h
 TESTS+=	../util.c
+TESTS+=	../vector.c
+TESTS+=	../vector.h
 
 .SUFFIXES: .c .h .fake
 

@@ -19,6 +19,7 @@ SRCS+=	ruler.c
 SRCS+=	simple-decl.c
 SRCS+=	simple-stmt.c
 SRCS+=	util.c
+SRCS+=	vector.c
 
 SRCS_knfmt+=	${SRCS}
 SRCS_knfmt+=	knfmt.c
@@ -50,6 +51,8 @@ KNFMT+=	simple-stmt.c
 KNFMT+=	t.c
 KNFMT+=	token.h
 KNFMT+=	util.c
+KNFMT+=	vector.c
+KNFMT+=	vector.h
 
 DISTFILES+=	CHANGELOG.md
 DISTFILES+=	GNUmakefile
@@ -252,6 +255,10 @@ DISTFILES+=	tests/simple-015.ok
 DISTFILES+=	tests/simple-016.c
 DISTFILES+=	tests/simple-016.ok
 DISTFILES+=	tests/simple-017.c
+DISTFILES+=	tests/simple-018.c
+DISTFILES+=	tests/simple-018.ok
+DISTFILES+=	tests/simple-019.c
+DISTFILES+=	tests/simple-019.ok
 DISTFILES+=	tests/trace-001.c
 DISTFILES+=	tests/valid-001.c
 DISTFILES+=	tests/valid-002.c
@@ -562,6 +569,8 @@ DISTFILES+=	tests/valid-258.c
 DISTFILES+=	tests/valid-259.c
 DISTFILES+=	token.h
 DISTFILES+=	util.c
+DISTFILES+=	vector.c
+DISTFILES+=	vector.h
 
 all: ${PROG_knfmt}
 
