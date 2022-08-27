@@ -1233,7 +1233,7 @@ lexer_peek_until_loose(struct lexer *lx, enum token_type type,
     const struct token *stop, struct token **tk)
 {
 	struct lexer_state s;
-	struct token *t;
+	struct token *t = NULL;
 	int nest = 0;
 	int peek = 0;
 
