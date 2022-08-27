@@ -43,6 +43,7 @@ TESTS+=	error-007.c
 TESTS+=	error-008.c
 TESTS+=	error-009.c
 TESTS+=	error-010.c
+TESTS+=	error-011.c
 TESTS+=	error-013.c
 TESTS+=	error-014.c
 TESTS+=	error-015.c

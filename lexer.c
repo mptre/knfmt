@@ -135,10 +135,6 @@ static struct token		tkeof = {
 	.tk_type	= TOKEN_EOF,
 	.tk_str		= "",
 };
-static struct token		tkerr = {
-	.tk_type	= TOKEN_ERROR,
-	.tk_str		= "",
-};
 static const struct token	tkident = {
 	.tk_type	= TOKEN_IDENT,
 };
@@ -151,15 +147,15 @@ static const struct token	tkline = {
 static const struct token	tklit = {
 	.tk_type	= TOKEN_LITERAL,
 };
+static struct token		tknone = {
+	.tk_type	= TOKEN_NONE,
+};
 static const struct token	tkspace = {
 	.tk_type	= TOKEN_SPACE,
 	.tk_flags	= TOKEN_FLAG_DANGLING,
 };
 static const struct token	tkstr = {
 	.tk_type	= TOKEN_STRING,
-};
-static const struct token	tkunknown = {
-	.tk_type	= TOKEN_UNKNOWN,
 };
 
 int
@@ -1400,6 +1396,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 	struct lexer_state st;
 	struct token_list prefixes;
 	struct token *t, *tmp;
+	char *str;
 	int error = 0;
 	int ncomments = 0;
 	int nlines;
@@ -1407,9 +1404,6 @@ lexer_read(struct lexer *lx, struct token **tk)
 
 	TAILQ_INIT(&prefixes);
 	st = lx->lx_st;
-
-	if (lx->lx_st.st_err)
-		goto err;
 
 	/*
 	 * Consume all comments and preprocessor directives, will be hanging of
@@ -1490,11 +1484,10 @@ lexer_read(struct lexer *lx, struct token **tk)
 		goto out;
 	}
 
-	*tk = lexer_emit(lx, &st, &tkunknown);
-	goto out;
-
-err:
-	*tk = lexer_emit(lx, &st, &tkerr);
+	*tk = lexer_emit(lx, &st, &tknone);
+	str = token_sprintf(*tk);
+	error_write(lx->lx_er, "%s: unknown token %s\n", lx->lx_path, str);
+	free(str);
 	error = 1;
 	goto out;
 

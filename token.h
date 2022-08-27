@@ -106,12 +106,10 @@ S(TOKEN_CPP_ELSE,	"",	0)
 S(TOKEN_CPP_ENDIF,	"",	0)
 S(TOKEN_CPP_IF,		"",	0)
 S(TOKEN_EOF,		"",	0)
-S(TOKEN_ERROR,		"",	0)
 S(TOKEN_IDENT,		"",	0)
 S(TOKEN_LITERAL,	"",	0)
 S(TOKEN_SPACE,		"",	0)
 S(TOKEN_STRING,		"",	0)
-S(TOKEN_UNKNOWN,	"",	0)
 
 /* last */
 T(TOKEN_NONE,	"",	0)
