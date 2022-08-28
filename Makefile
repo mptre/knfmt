@@ -569,6 +569,7 @@ DISTFILES+=	tests/valid-256.c
 DISTFILES+=	tests/valid-257.c
 DISTFILES+=	tests/valid-258.c
 DISTFILES+=	tests/valid-259.c
+DISTFILES+=	tests/valid-260.c
 DISTFILES+=	token.h
 DISTFILES+=	util.c
 DISTFILES+=	vector.c

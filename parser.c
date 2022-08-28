@@ -468,8 +468,8 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
 		doc_alloc(DOC_HARDLINE, indent);
-		while (parser_exec_decl(pr, indent, 0) & GOOD)
-			continue;
+		if (parser_exec_decl(pr, indent, 0) & FAIL)
+			return parser_fail(pr);
 		doc_alloc(DOC_HARDLINE, concat);
 
 		if (lexer_expect(lx, TOKEN_RBRACE, &tk))
@@ -1185,7 +1185,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 	kr = doc_alloc(DOC_GROUP, dc);
 	indent = doc_alloc_indent(pr->pr_cf->cf_tw, kr);
 	doc_alloc(DOC_HARDLINE, indent);
-	while (parser_exec_decl(pr, indent, 0) & GOOD)
+	if (parser_exec_decl(pr, indent, 0) & GOOD)
 		nkr++;
 	if (nkr == 0)
 		doc_remove(kr, dc);

@@ -1,0 +1,7 @@
+/*
+ * Empty struct.
+ */
+
+struct a {
+
+};
