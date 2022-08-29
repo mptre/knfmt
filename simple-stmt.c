@@ -3,21 +3,20 @@
 #include <string.h>
 
 #include "extern.h"
+#include "vector.h"
 
 struct stmt {
-	struct doc		*st_root;
-	struct doc		*st_indent;
-	struct token		*st_lbrace;
-	struct token		*st_rbrace;
-	unsigned int		 st_flags;
+	struct doc	*st_root;
+	struct doc	*st_indent;
+	struct token	*st_lbrace;
+	struct token	*st_rbrace;
+	unsigned int	 st_flags;
 #define STMT_FLAG_BRACES		0x00000001u
 #define STMT_FLAG_IGNORE		0x00000002u
-
-	TAILQ_ENTRY(stmt)	 st_entry;
 };
 
 struct simple_stmt {
-	TAILQ_HEAD(, stmt)	 ss_list;
+	VECTOR(struct stmt)	 ss_stmts;
 	struct lexer		*ss_lx;
 	const struct config	*ss_cf;
 };
@@ -35,7 +34,7 @@ simple_stmt_enter(struct lexer *lx, const struct config *cf)
 	ss = calloc(1, sizeof(*ss));
 	if (ss == NULL)
 		err(1, NULL);
-	TAILQ_INIT(&ss->ss_list);
+	VECTOR_INIT(ss->ss_stmts);
 	ss->ss_lx = lx;
 	ss->ss_cf = cf;
 	return ss;
@@ -46,15 +45,17 @@ simple_stmt_leave(struct simple_stmt *ss)
 {
 	struct buffer *bf = NULL;
 	struct lexer *lx = ss->ss_lx;
-	struct stmt *st;
+	size_t i;
 	int oneline = 1;
 
-	if (TAILQ_EMPTY(&ss->ss_list))
+	if (VECTOR_EMPTY(ss->ss_stmts))
 		return;
 
 	bf = buffer_alloc(1024);
 
-	TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
+	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
+		struct stmt *st = &ss->ss_stmts[i];
+
 		if ((st->st_flags & STMT_FLAG_IGNORE) ||
 		    (st->st_flags & STMT_FLAG_BRACES) == 0)
 			continue;
@@ -72,7 +73,9 @@ simple_stmt_leave(struct simple_stmt *ss)
 	}
 
 	if (oneline) {
-		TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
+		for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
+			struct stmt *st = &ss->ss_stmts[i];
+
 			if ((st->st_flags & STMT_FLAG_IGNORE) ||
 			    (st->st_flags & STMT_FLAG_BRACES) == 0)
 				continue;
@@ -81,7 +84,8 @@ simple_stmt_leave(struct simple_stmt *ss)
 			lexer_remove(lx, st->st_rbrace, 1);
 		}
 	} else {
-		TAILQ_FOREACH(st, &ss->ss_list, st_entry) {
+		for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
+			struct stmt *st = &ss->ss_stmts[i];
 			struct token *pv, *tk;
 
 			if (st->st_flags &
@@ -113,18 +117,17 @@ simple_stmt_free(struct simple_stmt *ss)
 	if (ss == NULL)
 		return;
 
-	while (!TAILQ_EMPTY(&ss->ss_list)) {
+	while (!VECTOR_EMPTY(ss->ss_stmts)) {
 		struct stmt *st;
 
-		st = TAILQ_FIRST(&ss->ss_list);
-		TAILQ_REMOVE(&ss->ss_list, st, st_entry);
+		st = VECTOR_POP(ss->ss_stmts);
 		doc_free(st->st_root);
 		if (st->st_lbrace != NULL)
 			token_rele(st->st_lbrace);
 		if (st->st_rbrace != NULL)
 			token_rele(st->st_rbrace);
-		free(st);
 	}
+	VECTOR_FREE(ss->ss_stmts);
 	free(ss);
 }
 
@@ -175,13 +178,12 @@ simple_stmt_alloc(struct simple_stmt *ss, int indent, unsigned int flags)
 {
 	struct stmt *st;
 
-	st = calloc(1, sizeof(*st));
+	st = VECTOR_CALLOC(ss->ss_stmts);
 	if (st == NULL)
 		err(1, NULL);
 	st->st_root = doc_alloc(DOC_CONCAT, NULL);
 	st->st_indent = doc_alloc_indent(indent, st->st_root);
 	st->st_flags = flags;
-	TAILQ_INSERT_TAIL(&ss->ss_list, st, st_entry);
 	return st;
 }
 
