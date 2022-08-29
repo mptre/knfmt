@@ -6,8 +6,8 @@
 #define VECTOR_INIT(vc) vector_init((void **)&(vc), sizeof(*(vc)))
 void	vector_init(void **, size_t);
 
-#define VECTOR_FREE(vc) vector_free((void *)(vc))
-void	vector_free(void *);
+#define VECTOR_FREE(vc) vector_free((void **)&(vc))
+void	vector_free(void **);
 
 #define VECTOR_ALLOC(vc) __extension__ ({				\
 	size_t _i = vector_alloc((void **)&(vc), 0);			\

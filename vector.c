@@ -32,13 +32,14 @@ vector_init(void **vv, size_t esiz)
 }
 
 void
-vector_free(void *v)
+vector_free(void **vv)
 {
-	struct vector *vc = ptov(v);
+	struct vector *vc = pptov(vv);
 
 	if (vc == NULL)
 		return;
 	free(vc);
+	*vv = NULL;
 }
 
 size_t
@@ -123,6 +124,8 @@ pptov(void **ptr)
 {
 	struct vector **vc = (struct vector **)ptr;
 
+	if (*vc == NULL)
+		return NULL;
 	return &(*vc)[-1];
 }
 
@@ -131,5 +134,7 @@ ptov(void *ptr)
 {
 	struct vector *vc = (struct vector *)ptr;
 
+	if (vc == NULL)
+		return NULL;
 	return &vc[-1];
 }
