@@ -20,11 +20,8 @@
 	((elm)->field.tqe_next != NULL || (elm)->field.tqe_prev != NULL)
 
 struct branch {
-	struct token		*br_cpp;
-	TAILQ_ENTRY(branch)	 br_entry;
+	struct token	*br_cpp;
 };
-
-TAILQ_HEAD(branch_list, branch);
 
 struct lexer {
 	struct lexer_state	 lx_st;
@@ -44,7 +41,7 @@ struct lexer {
 
 	struct token_list	 lx_tokens;
 	struct token_list	 lx_stamps;
-	struct branch_list	 lx_branches;
+	VECTOR(struct branch)	 lx_branches;
 };
 
 struct token_hash {
@@ -457,7 +454,6 @@ struct lexer *
 lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
     const struct config *cf)
 {
-	struct branch *br;
 	struct lexer *lx;
 	int error = 0;
 
@@ -471,10 +467,10 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 	lx->lx_path = fe->fe_path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
+	VECTOR_INIT(lx->lx_lines);
 	TAILQ_INIT(&lx->lx_tokens);
 	TAILQ_INIT(&lx->lx_stamps);
-	TAILQ_INIT(&lx->lx_branches);
-	VECTOR_INIT(lx->lx_lines);
+	VECTOR_INIT(lx->lx_branches);
 	lexer_line_alloc(lx, 1);
 
 	for (;;) {
@@ -489,10 +485,11 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 	}
 
 	/* Remove any pending broken branches. */
-	while ((br = TAILQ_FIRST(&lx->lx_branches)) != NULL) {
+	while (!VECTOR_EMPTY(lx->lx_branches)) {
+		struct branch *br;
 		struct token *pv, *tk;
 
-		TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
+		br = VECTOR_POP(lx->lx_branches);
 		tk = br->br_cpp;
 		do {
 			pv = tk->tk_branch.br_pv;
@@ -503,8 +500,8 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 				continue;
 			tk = pv;
 		} while (tk != NULL);
-		free(br);
 	}
+	VECTOR_FREE(lx->lx_branches);
 
 	if (error) {
 		lexer_free(lx);
@@ -2189,11 +2186,8 @@ lexer_branch_enter(struct lexer *lx, struct token *cpp, struct token *tk)
 
 	cpp->tk_token = tk;
 
-	br = calloc(1, sizeof(*br));
-	if (br == NULL)
-		err(1, NULL);
+	br = VECTOR_ALLOC(lx->lx_branches);
 	br->br_cpp = cpp;
-	TAILQ_INSERT_TAIL(&lx->lx_branches, br, br_entry);
 }
 
 static void
@@ -2201,7 +2195,7 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 {
 	struct branch *br;
 
-	br = TAILQ_LAST(&lx->lx_branches, branch_list);
+	br = VECTOR_LAST(lx->lx_branches);
 	/* Silently ignore broken branch. */
 	if (br == NULL) {
 		token_branch_unlink(cpp);
@@ -2243,8 +2237,7 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 		token_branch_unlink(cpp);
 	}
 
-	TAILQ_REMOVE(&lx->lx_branches, br, br_entry);
-	free(br);
+	VECTOR_POP(lx->lx_branches);
 }
 
 static void
@@ -2252,7 +2245,7 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 {
 	struct branch *br;
 
-	br = TAILQ_LAST(&lx->lx_branches, branch_list);
+	br = VECTOR_LAST(lx->lx_branches);
 	/* Silently ignore broken branch. */
 	if (br == NULL) {
 		token_branch_unlink(cpp);
