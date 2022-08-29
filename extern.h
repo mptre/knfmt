@@ -260,6 +260,8 @@ struct token	*lexer_insert_after(struct lexer *, struct token *,
     enum token_type, const char *);
 struct token	*lexer_move_after(struct lexer *, struct token *,
     struct token *);
+struct token	*lexer_move_before(struct lexer *, struct token *,
+    struct token *);
 void		 lexer_remove(struct lexer *, struct token *, int);
 
 #define lexer_expect(a, b, c) \

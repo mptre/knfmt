@@ -2088,6 +2088,29 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
+	if (pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) {
+		struct token *tk = beg;
+		int ntokens = 0;
+
+		for (;;) {
+			struct token *nx;
+
+			nx = TAILQ_NEXT(tk, tk_entry);
+			if (ntokens > 0 &&
+			    tk->tk_type == TOKEN_STATIC) {
+				token_list_move(&beg->tk_prefixes,
+				    &tk->tk_prefixes);
+				token_list_move(&tk->tk_suffixes,
+				    &beg->tk_suffixes);
+				lexer_move_before(lx, beg, tk);
+			}
+			if (tk == end)
+				break;
+			tk = nx;
+			ntokens++;
+		}
+	}
+
 	for (;;) {
 		struct doc *concat;
 		struct token *tk;

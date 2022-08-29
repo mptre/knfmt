@@ -831,6 +831,16 @@ lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
 	return tk;
 }
 
+struct token *
+lexer_move_before(struct lexer *lx, struct token *before, struct token *tk)
+{
+	TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
+	tk->tk_lno = before->tk_lno;
+	tk->tk_cno = before->tk_cno;
+	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
+	return tk;
+}
+
 void
 lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 {
