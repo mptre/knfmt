@@ -14,13 +14,10 @@ struct ruler_column {
 };
 
 struct ruler_indent {
-	struct doc			*ri_dc;
-	unsigned int			 ri_rd;
-	int				 ri_indent;
-	TAILQ_ENTRY(ruler_indent)	 ri_entry;
+	struct doc	*ri_dc;
+	unsigned int	 ri_rd;
+	int		 ri_indent;
 };
-
-TAILQ_HEAD(ruler_indent_list, ruler_indent);
 
 struct ruler_datum {
 	struct doc	*rd_dc;
@@ -30,7 +27,6 @@ struct ruler_datum {
 };
 
 static void	ruler_reset(struct ruler *);
-static void	ruler_reset_indent(struct ruler *);
 
 static int		minimize(const struct ruler_column *);
 static unsigned int	tabalign(unsigned int);
@@ -61,8 +57,7 @@ ruler_free(struct ruler *rl)
 		VECTOR_FREE(rc->rc_datums);
 	}
 	VECTOR_FREE(rl->rl_columns);
-
-	ruler_reset_indent(rl);
+	VECTOR_FREE(rl->rl_indent);
 }
 
 /*
@@ -131,19 +126,12 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	if (VECTOR_LENGTH(rc->rc_datums) == 0)
 		goto err;
 
-	if (rl->rl_indent == NULL) {
-		rl->rl_indent = malloc(sizeof(*rl->rl_indent));
-		if (rl->rl_indent == NULL)
-			err(1, NULL);
-		TAILQ_INIT(rl->rl_indent);
-	}
-	ri = calloc(1, sizeof(*ri));
-	if (ri == NULL)
-		err(1, NULL);
+	if (rl->rl_indent == NULL)
+		VECTOR_INIT(rl->rl_indent);
+	ri = VECTOR_CALLOC(rl->rl_indent);
 	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
 	ri->ri_indent = indent;
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
-	TAILQ_INSERT_TAIL(rl->rl_indent, ri, ri_entry);
 	if (cookie != NULL)
 		*cookie = ri;
 	return ri->ri_dc;
@@ -157,15 +145,12 @@ ruler_remove(struct ruler *rl, struct ruler_indent *ri)
 {
 	if (ri == NULL)
 		return;
-
-	TAILQ_REMOVE(rl->rl_indent, ri, ri_entry);
-	free(ri);
+	VECTOR_POP(rl->rl_indent);
 }
 
 void
 ruler_exec(struct ruler *rl)
 {
-	struct ruler_indent *ri;
 	size_t i, j;
 	int fixedlen = rl->rl_len;
 	unsigned int maxlen;
@@ -211,7 +196,8 @@ ruler_exec(struct ruler *rl)
 
 	if (rl->rl_indent == NULL)
 		goto out;
-	TAILQ_FOREACH(ri, rl->rl_indent, ri_entry) {
+	for (i = 0; i < VECTOR_LENGTH(rl->rl_indent); i++) {
+		struct ruler_indent *ri = &rl->rl_indent[i];
 		const struct ruler_column *rc = &rl->rl_columns[0];
 		const struct ruler_datum *rd = &rc->rc_datums[ri->ri_rd];
 		unsigned int indent;
@@ -280,21 +266,5 @@ ruler_reset(struct ruler *rl)
 
 		VECTOR_FREE(rc->rc_datums);
 	}
-	ruler_reset_indent(rl);
-}
-
-static void
-ruler_reset_indent(struct ruler *rl)
-{
-	struct ruler_indent *ri;
-
-	if (rl->rl_indent == NULL)
-		return;
-
-	while ((ri = TAILQ_FIRST(rl->rl_indent)) != NULL) {
-		TAILQ_REMOVE(rl->rl_indent, ri, ri_entry);
-		free(ri);
-	}
-	free(rl->rl_indent);
-	rl->rl_indent = NULL;
+	VECTOR_FREE(rl->rl_indent);
 }
