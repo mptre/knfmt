@@ -80,6 +80,7 @@ static void		 lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
+static int	lexer_peek_if_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
 static int	lexer_peek_if_type_cpp(struct lexer *lx);
 
@@ -1028,6 +1029,9 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 			 */
 			if (lexer_back(lx, &align))
 				t->tk_token = align;
+			peek = 1;
+			break;
+		} else if (ntokens > 0 && lexer_peek_if_ptr(lx, &t)) {
 			peek = 1;
 			break;
 		} else {
@@ -2018,6 +2022,23 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 	}
 	lexer_peek_leave(lx, &s);
 
+	return peek;
+}
+
+static int
+lexer_peek_if_ptr(struct lexer *lx, struct token **UNUSED(tk))
+{
+	struct lexer_state s;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
+	    lexer_if(lx, TOKEN_STAR, NULL) &&
+	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
+	    lexer_if(lx, TOKEN_LSQUARE, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
 	return peek;
 }
 
