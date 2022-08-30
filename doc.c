@@ -83,10 +83,7 @@ struct doc_state {
 	unsigned int		 st_muteline;	/* missed new line while muted */
 	int			 st_optline;
 	int			 st_mute;
-	unsigned int		 st_flags;
-#define DOC_STATE_FLAG_WIDTH	0x00000001u
-#define DOC_STATE_FLAG_DIFF	0x00000002u
-#define DOC_STATE_FLAG_TRACE	0x00000004u
+	unsigned int		 st_flags;	/* doc_exec() flags */
 };
 
 /*
@@ -116,7 +113,7 @@ static void	doc_column(struct doc_state *, const char *, size_t);
 static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
 #define DOC_DIFF(st) \
-	(DIFF((st)->st_cf) && ((st)->st_flags & DOC_STATE_FLAG_DIFF))
+	(DIFF((st)->st_cf) && ((st)->st_flags & DOC_EXEC_FLAG_DIFF))
 
 static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);
@@ -151,7 +148,7 @@ static void	doc_print(const struct doc *, struct doc_state *, const char *,
 
 #define DOC_TRACE(st)							\
 	(TRACE((st)->st_cf) &&						\
-	((st)->st_flags & DOC_STATE_FLAG_TRACE))
+	((st)->st_flags & DOC_EXEC_FLAG_TRACE))
 
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if (DOC_TRACE(st))						\
@@ -193,10 +190,7 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_lx = lx;
 	st.st_mode = BREAK;
 	st.st_diff.beg = 1;
-	if (flags & DOC_EXEC_FLAG_DIFF)
-		st.st_flags |= DOC_STATE_FLAG_DIFF;
-	if (flags & DOC_EXEC_FLAG_TRACE)
-		st.st_flags |= DOC_STATE_FLAG_TRACE;
+	st.st_flags = flags;
 
 	doc_exec1(dc, &st);
 	doc_diff_exit(dc, &st);
@@ -214,7 +208,7 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_cf = cf;
 	st.st_bf = bf;
 	st.st_mode = MUNGE;
-	st.st_flags = DOC_STATE_FLAG_WIDTH;
+	st.st_flags = DOC_EXEC_FLAG_WIDTH;
 	doc_exec1(dc, &st);
 
 	return st.st_col;
@@ -696,7 +690,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	 * When calculating the document width using doc_width(), everything is
 	 * expected to fit on a single line.
 	 */
-	if (st->st_flags & DOC_STATE_FLAG_WIDTH)
+	if (st->st_flags & DOC_EXEC_FLAG_WIDTH)
 		return 1;
 
 	if (DOC_TRACE(st))
