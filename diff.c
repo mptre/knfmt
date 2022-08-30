@@ -8,8 +8,9 @@
 #include <string.h>
 
 #include "extern.h"
+#include "vector.h"
 
-static void	diff_end(struct diff *, unsigned int);
+static void	diff_end(struct diffchunk *, unsigned int);
 
 static int	matchpath(char *, char *, size_t);
 static int	matchchunk(char *, int *, int *);
@@ -46,7 +47,7 @@ file_alloc(const char *path, const struct config *cf)
 	fe->fe_path = strdup(path);
 	if (fe->fe_path == NULL)
 		err(1, NULL);
-	TAILQ_INIT(&fe->fe_diff.di_chunks);
+	VECTOR_INIT(fe->fe_diff);
 	error_init(&fe->fe_error, cf);
 	return fe;
 }
@@ -54,15 +55,10 @@ file_alloc(const char *path, const struct config *cf)
 void
 file_free(struct file *fe)
 {
-	struct diffchunk *du;
-
 	if (fe == NULL)
 		return;
 
-	while ((du = TAILQ_FIRST(&fe->fe_diff.di_chunks)) != NULL) {
-		TAILQ_REMOVE(&fe->fe_diff.di_chunks, du, du_entry);
-		free(du);
-	}
+	VECTOR_FREE(fe->fe_diff);
 	free(fe->fe_path);
 	error_close(&fe->fe_error);
 	free(fe);
@@ -144,7 +140,7 @@ diff_parse(struct file_list *files, const struct config *cf)
 					goto err;
 			}
 
-			diff_end(&fe->fe_diff, el);
+			diff_end(fe->fe_diff, el);
 		} else {
 			buf = skipline(buf);
 		}
@@ -155,11 +151,14 @@ diff_parse(struct file_list *files, const struct config *cf)
 
 	if (TRACE(cf)) {
 		TAILQ_FOREACH(fe, files, fe_entry) {
-			const struct diffchunk *du;
+			size_t i;
 
 			diff_trace("%s:", fe->fe_path);
-			TAILQ_FOREACH(du, &fe->fe_diff.di_chunks, du_entry)
+			for (i = 0; i < VECTOR_LENGTH(fe->fe_diff); i++) {
+				const struct diffchunk *du = &fe->fe_diff[i];
+
 				diff_trace("  %u-%u", du->du_beg, du->du_end);
+			}
 		}
 	}
 
@@ -173,11 +172,13 @@ err:
 }
 
 int
-diff_covers(const struct diff *di, unsigned int lno)
+diff_covers(const struct diffchunk *chunks, unsigned int lno)
 {
-	const struct diffchunk *du;
+	size_t i;
 
-	TAILQ_FOREACH(du, &di->di_chunks, du_entry) {
+	for (i = 0; i < VECTOR_LENGTH(chunks); i++) {
+		const struct diffchunk *du = &chunks[i];
+
 		if (lno >= du->du_beg && lno <= du->du_end)
 			return 1;
 	}
@@ -185,11 +186,11 @@ diff_covers(const struct diff *di, unsigned int lno)
 }
 
 static void
-diff_end(struct diff *di, unsigned int lno)
+diff_end(struct diffchunk *chunks, unsigned int lno)
 {
 	struct diffchunk *du;
 
-	du = TAILQ_LAST(&di->di_chunks, diffchunk_list);
+	du = VECTOR_LAST(chunks);
 	if (du != NULL && du->du_end == 0)
 		du->du_end = lno;
 }
@@ -254,17 +255,16 @@ matchline(const char *str, int lno, struct file *fe)
 	if (str[0] == '-')
 		return 0;
 
-	du = TAILQ_LAST(&fe->fe_diff.di_chunks, diffchunk_list);
+	du = VECTOR_LAST(fe->fe_diff);
 	if (str[0] == '+') {
 		if (du == NULL || (du->du_beg > 0 && du->du_end > 0)) {
-			du = calloc(1, sizeof(*du));
+			du = VECTOR_CALLOC(fe->fe_diff);
 			if (du == NULL)
 				err(1, NULL);
 			du->du_beg = lno;
-			TAILQ_INSERT_TAIL(&fe->fe_diff.di_chunks, du, du_entry);
 		}
 	} else {
-		diff_end(&fe->fe_diff, lno - 1);
+		diff_end(fe->fe_diff, lno - 1);
 	}
 	return 1;
 }

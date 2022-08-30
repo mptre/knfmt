@@ -85,29 +85,21 @@ struct buffer	*error_get_buffer(struct error *);
 struct file_list;
 
 struct diffchunk {
-	unsigned int		du_beg;
-	unsigned int		du_end;
-
-	TAILQ_ENTRY(diffchunk)	du_entry;
-};
-
-TAILQ_HEAD(diffchunk_list, diffchunk);
-
-struct diff {
-	struct diffchunk_list	di_chunks;
+	unsigned int	du_beg;
+	unsigned int	du_end;
 };
 
 void	diff_init(void);
 void	diff_shutdown(void);
 int	diff_parse(struct file_list *, const struct config *);
-int	diff_covers(const struct diff *, unsigned int);
+int	diff_covers(const struct diffchunk *, unsigned int);
 
 /*
  * file ------------------------------------------------------------------------
  */
 
 struct file {
-	struct diff		 fe_diff;
+	struct diffchunk	*fe_diff;	/* VECTOR(struct diffchunk) */
 	struct error		 fe_error;
 	char			*fe_path;
 

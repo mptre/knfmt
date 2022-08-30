@@ -27,7 +27,7 @@ struct lexer {
 	struct lexer_state	 lx_st;
 	struct error		*lx_er;
 	const struct config	*lx_cf;
-	const struct diff	*lx_diff;
+	const struct diffchunk	*lx_diff;
 	const struct buffer	*lx_bf;
 	const char		*lx_path;
 
@@ -463,7 +463,7 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 	lx->lx_er = er;
 	lx->lx_cf = cf;
 	lx->lx_bf = bf;
-	lx->lx_diff = &fe->fe_diff;
+	lx->lx_diff = fe->fe_diff;
 	lx->lx_path = fe->fe_path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
@@ -1292,9 +1292,11 @@ lexer_until(struct lexer *lx, enum token_type type, struct token **tk)
 const struct diffchunk *
 lexer_get_diffchunk(const struct lexer *lx, unsigned int beg)
 {
-	const struct diffchunk *du;
+	size_t i;
 
-	TAILQ_FOREACH(du, &lx->lx_diff->di_chunks, du_entry) {
+	for (i = 0; i < VECTOR_LENGTH(lx->lx_diff); i++) {
+		const struct diffchunk *du = &lx->lx_diff[i];
+
 		if (beg >= du->du_beg && beg <= du->du_end)
 			return du;
 	}
