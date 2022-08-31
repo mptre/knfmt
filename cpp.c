@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "extern.h"
+#include "ruler.h"
 
 static const char	*nextline(const char *, size_t, const char **);
 

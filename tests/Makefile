@@ -373,6 +373,7 @@ TESTS+=	../knfmt.c
 TESTS+=	../lexer.c
 TESTS+=	../parser.c
 TESTS+=	../ruler.c
+TESTS+=	../ruler.h
 TESTS+=	../simple-decl.c
 TESTS+=	../simple-stmt.c
 TESTS+=	../t.c

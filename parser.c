@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "extern.h"
+#include "ruler.h"
 
 /*
  * Return values for parser exec routines. Only one of the following may be
