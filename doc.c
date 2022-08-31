@@ -112,6 +112,8 @@ static int	doc_has_list(const struct doc *);
 static void	doc_column(struct doc_state *, const char *, size_t);
 static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
+static void	doc_state_init(struct doc_state *, int, unsigned int);
+
 #define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_FLAG_DIFF))
 
 static int		doc_diff_group_enter(const struct doc *,
@@ -179,17 +181,12 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	struct doc_state st;
 
 	buffer_reset(bf);
-	memset(&st, 0, sizeof(st));
+	doc_state_init(&st, BREAK, flags);
 	st.st_cf = cf;
 	st.st_bf = bf;
 	st.st_lx = lx;
-	st.st_mode = BREAK;
-	st.st_diff.beg = 1;
-	st.st_flags = flags;
-
 	doc_exec1(dc, &st);
 	doc_diff_exit(dc, &st);
-
 	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
 }
 
@@ -199,13 +196,10 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	struct doc_state st;
 
 	buffer_reset(bf);
-	memset(&st, 0, sizeof(st));
+	doc_state_init(&st, MUNGE, 0);
 	st.st_cf = cf;
 	st.st_bf = bf;
-	st.st_mode = MUNGE;
-	st.st_flags = DOC_EXEC_FLAG_WIDTH;
 	doc_exec1(dc, &st);
-
 	return st.st_col;
 }
 
@@ -1255,6 +1249,15 @@ doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 		break;
 	}
 	return 1;
+}
+
+static void
+doc_state_init(struct doc_state *st, int mode, unsigned int flags)
+{
+	memset(st, 0, sizeof(*st));
+	st->st_mode = mode;
+	st->st_diff.beg = 1;
+	st->st_flags = flags;
 }
 
 static void
