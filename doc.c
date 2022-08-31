@@ -112,8 +112,7 @@ static int	doc_has_list(const struct doc *);
 static void	doc_column(struct doc_state *, const char *, size_t);
 static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
-#define DOC_DIFF(st) \
-	(DIFF((st)->st_cf) && ((st)->st_flags & DOC_EXEC_FLAG_DIFF))
+#define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_FLAG_DIFF))
 
 static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);
@@ -146,12 +145,8 @@ static void	__doc_diff_leave(const struct doc *, struct doc_state *,
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
 
-#define DOC_TRACE(st)							\
-	(TRACE((st)->st_cf) &&						\
-	((st)->st_flags & DOC_EXEC_FLAG_TRACE))
-
 #define doc_trace(dc, st, fmt, ...) do {				\
-	if (DOC_TRACE(st))						\
+	if ((st)->st_flags & DOC_EXEC_FLAG_TRACE)			\
 		__doc_trace((dc), (st), (fmt), __VA_ARGS__);		\
 } while (0)
 static void	__doc_trace(const struct doc *, const struct doc_state *,
@@ -159,13 +154,13 @@ static void	__doc_trace(const struct doc *, const struct doc_state *,
 	__attribute__((__format__(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
-	if (DOC_TRACE(st))						\
+	if ((st)->st_flags & DOC_EXEC_FLAG_TRACE)			\
 		__doc_trace_enter((dc), (st));				\
 } while (0)
 static void	__doc_trace_enter(const struct doc *, struct doc_state *);
 
 #define doc_trace_leave(dc, st) do {					\
-	if (DOC_TRACE(st))						\
+	if ((st)->st_flags & DOC_EXEC_FLAG_TRACE)			\
 		__doc_trace_leave((dc), (st));				\
 } while (0)
 static void	__doc_trace_leave(const struct doc *, struct doc_state *);
@@ -693,7 +688,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	if (st->st_flags & DOC_EXEC_FLAG_WIDTH)
 		return 1;
 
-	if (DOC_TRACE(st))
+	if (st->st_flags & DOC_EXEC_FLAG_TRACE)
 		st->st_stats.s_nfits++;
 
 	if (st->st_newline) {
@@ -1086,7 +1081,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	if (!lexer_get_lines(st->st_lx, beg, end, &str, &len))
 		return;
 
-	if (DOC_TRACE(st)) {
+	if (st->st_flags & DOC_EXEC_FLAG_TRACE) {
 		char *s;
 
 		s = strnice(str, len);
