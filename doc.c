@@ -373,9 +373,11 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 int
 doc_max(const struct doc *dc)
 {
+	struct doc_state st;
 	int max = 0;
 
-	doc_walk(dc, NULL, doc_max1, &max);
+	doc_state_init(&st, BREAK, 0);
+	doc_walk(dc, &st, doc_max1, &max);
 	return max;
 }
 
