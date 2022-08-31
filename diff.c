@@ -149,7 +149,7 @@ diff_parse(struct file_list *files, const struct config *cf)
 			break;
 	}
 
-	if (TRACE(cf)) {
+	if (config_trace(cf)) {
 		TAILQ_FOREACH(fe, files, fe_entry) {
 			size_t i;
 

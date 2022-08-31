@@ -255,7 +255,7 @@ parser_exec(struct parser *pr, size_t sizhint)
 	bf = buffer_alloc(sizhint);
 	if (pr->pr_cf->cf_flags & CONFIG_FLAG_DIFFPARSE)
 		flags |= DOC_EXEC_FLAG_DIFF;
-	if (TRACE(pr->pr_cf))
+	if (config_trace(pr->pr_cf))
 		flags |= DOC_EXEC_FLAG_TRACE;
 	doc_exec(dc, pr->pr_lx, bf, pr->pr_cf, flags);
 	doc_free(dc);

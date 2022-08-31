@@ -97,7 +97,7 @@ static struct token	*lexer_recover_branch(struct token *);
 static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
 #define lexer_trace(lx, fmt, ...) do {					\
-	if (TRACE((lx)->lx_cf))						\
+	if (config_trace((lx)->lx_cf))					\
 		__lexer_trace((lx), __func__, (fmt),			\
 		    __VA_ARGS__);					\
 } while (0)
@@ -579,7 +579,7 @@ lexer_stamp(struct lexer *lx)
 
 	tk = lx->lx_st.st_tok;
 	if (tk != NULL && !TAILQ_INSERTED(tk, tk_stamp)) {
-		if (TRACE(lx->lx_cf)) {
+		if (config_trace(lx->lx_cf)) {
 			char *str;
 
 			str = token_sprintf(tk);

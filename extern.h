@@ -12,8 +12,6 @@
 
 #define UNLIKELY(x)	__builtin_expect((x), 0)
 
-#define TRACE(cf)	(UNLIKELY((cf)->cf_verbose >= 2))
-
 /*
  * config ----------------------------------------------------------------------
  */
@@ -33,6 +31,12 @@ struct config {
 };
 
 void	config_init(struct config *);
+
+static inline int
+config_trace(const struct config *cf)
+{
+	return UNLIKELY(cf->cf_verbose >= 2);
+}
 
 /*
  * buffer ----------------------------------------------------------------------
@@ -73,7 +77,7 @@ struct buffer	*error_get_buffer(struct error *);
 
 #define error_write(er, fmt, ...) do {					\
 	buffer_appendv(error_get_buffer((er)), (fmt), __VA_ARGS__);	\
-	if (TRACE((er)->er_cf))						\
+	if (config_trace((er)->er_cf))					\
 		error_flush((er));					\
 } while (0)
 

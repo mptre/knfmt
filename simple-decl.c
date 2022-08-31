@@ -83,7 +83,7 @@ static int		isident(const struct token_range *);
 static unsigned int	nstars(const struct token_range *);
 
 #define simple_trace(sd, fmt, ...) do {					\
-	if (TRACE((sd)->sd_cf))						\
+	if (config_trace((sd)->sd_cf))					\
 		__simple_trace(__func__, (fmt), __VA_ARGS__);		\
 } while (0)
 static void	__simple_trace(const char *, const char *, ...)
