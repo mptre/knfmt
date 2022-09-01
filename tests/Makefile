@@ -333,6 +333,7 @@ TESTS+=	valid-258.c
 TESTS+=	valid-259.c
 TESTS+=	valid-260.c
 TESTS+=	valid-261.c
+TESTS+=	valid-262.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c

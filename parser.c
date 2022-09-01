@@ -1689,6 +1689,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	struct doc *stmt;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
+	int error;
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
@@ -1706,8 +1707,11 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	 * expression since we want to fit everything until the following
 	 * statement on a single line.
 	 */
-	if (parser_exec_expr(pr, stmt, &expr, rparen, 0) & HALT)
+	error = parser_exec_expr(pr, stmt, &expr, rparen, 0);
+	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
+	if (error & NONE)
+		expr = stmt;
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
 		struct token *lbrace;
 
@@ -1743,7 +1747,6 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	} else {
 		struct doc *indent;
 		void *simple = NULL;
-		int error;
 
 		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
 		doc_alloc(DOC_HARDLINE, indent);
