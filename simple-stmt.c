@@ -34,7 +34,8 @@ simple_stmt_enter(struct lexer *lx, const struct config *cf)
 	ss = calloc(1, sizeof(*ss));
 	if (ss == NULL)
 		err(1, NULL);
-	VECTOR_INIT(ss->ss_stmts);
+	if (VECTOR_INIT(ss->ss_stmts) == NULL)
+		err(1, NULL);
 	ss->ss_lx = lx;
 	ss->ss_cf = cf;
 	return ss;
@@ -179,6 +180,8 @@ simple_stmt_alloc(struct simple_stmt *ss, int indent, unsigned int flags)
 	struct stmt *st;
 
 	st = VECTOR_CALLOC(ss->ss_stmts);
+	if (st == NULL)
+		err(1, NULL);
 	if (st == NULL)
 		err(1, NULL);
 	st->st_root = doc_alloc(DOC_CONCAT, NULL);

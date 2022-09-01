@@ -47,7 +47,8 @@ file_alloc(const char *path, const struct config *cf)
 	fe->fe_path = strdup(path);
 	if (fe->fe_path == NULL)
 		err(1, NULL);
-	VECTOR_INIT(fe->fe_diff);
+	if (VECTOR_INIT(fe->fe_diff) == NULL)
+		err(1, NULL);
 	error_init(&fe->fe_error, cf);
 	return fe;
 }
@@ -259,6 +260,8 @@ matchline(const char *str, int lno, struct file *fe)
 	if (str[0] == '+') {
 		if (du == NULL || (du->du_beg > 0 && du->du_end > 0)) {
 			du = VECTOR_CALLOC(fe->fe_diff);
+			if (du == NULL)
+				err(1, NULL);
 			if (du == NULL)
 				err(1, NULL);
 			du->du_beg = lno;

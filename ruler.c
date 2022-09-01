@@ -46,7 +46,8 @@ void
 ruler_init(struct ruler *rl, int len)
 {
 	memset(rl, 0, sizeof(*rl));
-	VECTOR_INIT(rl->rl_columns);
+	if (VECTOR_INIT(rl->rl_columns) == NULL)
+		err(1, NULL);
 	rl->rl_len = len;
 }
 
@@ -79,11 +80,16 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 
 	while (VECTOR_LENGTH(rl->rl_columns) < col) {
 		rc = VECTOR_CALLOC(rl->rl_columns);
-		VECTOR_INIT(rc->rc_datums);
+		if (rc == NULL)
+			err(1, NULL);
+		if (VECTOR_INIT(rc->rc_datums) == NULL)
+			err(1, NULL);
 	}
 	rc = &rl->rl_columns[col - 1];
 
 	rd = VECTOR_CALLOC(rc->rc_datums);
+	if (rd == NULL)
+		err(1, NULL);
 	rd->rd_indent = 1;
 	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, rd->rd_indent, fun, lno);
 	rd->rd_len = len;
@@ -128,9 +134,13 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	if (VECTOR_LENGTH(rc->rc_datums) == 0)
 		goto err;
 
-	if (rl->rl_indent == NULL)
-		VECTOR_INIT(rl->rl_indent);
+	if (rl->rl_indent == NULL) {
+		if (VECTOR_INIT(rl->rl_indent) == NULL)
+			err(1, NULL);
+	}
 	ri = VECTOR_CALLOC(rl->rl_indent);
+	if (ri == NULL)
+		err(1, NULL);
 	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
 	ri->ri_indent = indent;
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);

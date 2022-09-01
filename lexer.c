@@ -467,10 +467,12 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 	lx->lx_path = fe->fe_path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
-	VECTOR_INIT(lx->lx_lines);
+	if (VECTOR_INIT(lx->lx_lines) == NULL)
+		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
 	TAILQ_INIT(&lx->lx_stamps);
-	VECTOR_INIT(lx->lx_branches);
+	if (VECTOR_INIT(lx->lx_branches) == NULL)
+		err(1, NULL);
 	lexer_line_alloc(lx, 1);
 
 	for (;;) {
@@ -1868,6 +1870,8 @@ lexer_eof(const struct lexer *lx)
 static void
 lexer_line_alloc(struct lexer *lx, unsigned int lno)
 {
+	unsigned int *dst;
+
 	if ((lx->lx_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) == 0)
 		return;
 
@@ -1875,7 +1879,10 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 	if (lno - 1 < VECTOR_LENGTH(lx->lx_lines))
 		return;
 
-	*VECTOR_ALLOC(lx->lx_lines) = lx->lx_st.st_off;
+	dst = VECTOR_ALLOC(lx->lx_lines);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = lx->lx_st.st_off;
 }
 
 static struct token *
@@ -2189,6 +2196,8 @@ lexer_branch_enter(struct lexer *lx, struct token *cpp, struct token *tk)
 	cpp->tk_token = tk;
 
 	br = VECTOR_ALLOC(lx->lx_branches);
+	if (br == NULL)
+		err(1, NULL);
 	br->br_cpp = cpp;
 }
 

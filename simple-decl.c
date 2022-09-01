@@ -97,7 +97,8 @@ simple_decl_enter(struct lexer *lx, const struct config *cf)
 	sd = calloc(1, sizeof(*sd));
 	if (sd == NULL)
 		err(1, NULL);
-	VECTOR_INIT(sd->sd_decls);
+	if (VECTOR_INIT(sd->sd_decls) == NULL)
+		err(1, NULL);
 	sd->sd_lx = lx;
 	sd->sd_cf = cf;
 	return sd;
@@ -249,6 +250,8 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	dv->dv_ident.tr_beg = TAILQ_NEXT(end, tk_entry);
 
 	dc = VECTOR_CALLOC(sd->sd_decls);
+	if (dc == NULL)
+		err(1, NULL);
 	dc->dc_tr = tr;
 }
 
@@ -368,7 +371,10 @@ decl_type_slot(struct decl_type *dt, unsigned int n)
 		struct decl_var_list *dl;
 
 		dl = VECTOR_CALLOC(dt->dt_slots);
-		VECTOR_INIT(dl->dl_vars);
+		if (dl == NULL)
+			err(1, NULL);
+		if (VECTOR_INIT(dl->dl_vars) == NULL)
+			err(1, NULL);
 	}
 	return &dt->dt_slots[n];
 }
@@ -406,7 +412,8 @@ simple_decl_type_create(struct simple_decl *sd, struct decl_type *key)
 		if (dt == NULL)
 			err(1, NULL);
 		*dt = *key;
-		VECTOR_INIT(dt->dt_slots);
+		if (VECTOR_INIT(dt->dt_slots) == NULL)
+			err(1, NULL);
 		HASH_ADD_STR(sd->sd_types, dt_str, dt);
 		simple_trace(sd, "new type \"%s\"", key->dt_str);
 	} else {
@@ -468,6 +475,8 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	dv->dv_sort = sort;
 
 	dst = VECTOR_CALLOC(dl->dl_vars);
+	if (dst == NULL)
+		err(1, NULL);
 	*dst = *dv;
 
 	simple_trace(sd, "type \"%s\", slot %u, ident %s",
