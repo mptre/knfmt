@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Anton Lindqvist <anton@basename.se>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
 #include "vector.h"
 
 #include <errno.h>
@@ -13,8 +29,8 @@ struct vector {
 
 static int vector_reserve1(struct vector **, size_t);
 
-static struct vector	*ptov(void *);
-static struct vector	*pptov(void **);
+static struct vector		*ptov(void *);
+static const struct vector	*cptov(const void *);
 
 size_t
 vector_init(void **vv, size_t stride)
@@ -32,7 +48,7 @@ vector_init(void **vv, size_t stride)
 void
 vector_free(void **vv)
 {
-	struct vector *vc = pptov(vv);
+	struct vector *vc = ptov(*vv);
 
 	if (vc == NULL)
 		return;
@@ -43,7 +59,7 @@ vector_free(void **vv)
 size_t
 vector_reserve(void **vv, size_t n)
 {
-	struct vector *vc = pptov(vv);
+	struct vector *vc = ptov(*vv);
 
 	switch (vector_reserve1(&vc, n)) {
 	case 1:
@@ -60,7 +76,7 @@ vector_reserve(void **vv, size_t n)
 size_t
 vector_alloc(void **vv, int zero)
 {
-	struct vector *vc = pptov(vv);
+	struct vector *vc = ptov(*vv);
 
 	switch (vector_reserve1(&vc, 1)) {
 	case 1:
@@ -93,6 +109,14 @@ vector_pop(void *v)
 	return --vc->vc_len;
 }
 
+void
+vector_clear(void *v)
+{
+	struct vector *vc = ptov(v);
+
+	vc->vc_len = 0;
+}
+
 size_t
 vector_first(void *v)
 {
@@ -114,9 +138,9 @@ vector_last(void *v)
 }
 
 size_t
-vector_length(void *v)
+vector_length(const void *v)
 {
-	struct vector *vc = ptov(v);
+	const struct vector *vc = cptov(v);
 
 	return vc->vc_len;
 }
@@ -157,22 +181,18 @@ overflow:
 	return -1;
 }
 
-static struct vector *
-pptov(void **ptr)
+static const struct vector *
+cptov(const void *v)
 {
-	struct vector **vc = (struct vector **)ptr;
+	const struct vector *vc = (struct vector *)v;
 
-	if (*vc == NULL)
-		return NULL;
-	return &(*vc)[-1];
+	return vc == NULL ? NULL : &vc[-1];
 }
 
 static struct vector *
-ptov(void *ptr)
+ptov(void *v)
 {
-	struct vector *vc = (struct vector *)ptr;
+	struct vector *vc = (struct vector *)v;
 
-	if (vc == NULL)
-		return NULL;
-	return &vc[-1];
+	return vc == NULL ? NULL : &vc[-1];
 }
