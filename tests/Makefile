@@ -368,6 +368,7 @@ TESTS+=	../cpp.c
 TESTS+=	../diff.c
 TESTS+=	../doc.c
 TESTS+=	../error.c
+TESTS+=	../error.h
 TESTS+=	../expr.c
 TESTS+=	../extern.h
 TESTS+=	../knfmt.c

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "extern.h"
+#include "error.h"
 #include "ruler.h"
 
 /*

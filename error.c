@@ -1,8 +1,15 @@
+#include "error.h"
+
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "extern.h"
+
+struct error {
+	struct buffer	*er_bf;
+	int		 er_flush;
+};
 
 struct error *
 error_alloc(int flush)

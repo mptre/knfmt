@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "error.h"
 #include "extern.h"
 
 struct context;
@@ -426,9 +427,9 @@ context_init(struct context *cx, const char *src)
 
 	buffer_append(cx->cx_bf, src, strlen(src));
 	cx->cx_fe = file_alloc(path, &cx->cx_cf);
-	cx->cx_lx = lexer_alloc(cx->cx_fe, cx->cx_bf, &cx->cx_fe->fe_error,
+	cx->cx_lx = lexer_alloc(cx->cx_fe, cx->cx_bf, cx->cx_fe->fe_error,
 	    &cx->cx_cf);
-	cx->cx_pr = parser_alloc(path, cx->cx_lx, &cx->cx_fe->fe_error,
+	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_fe->fe_error,
 	    &cx->cx_cf);
 }
 
@@ -442,7 +443,7 @@ context_reset(struct context *cx)
 	cx->cx_lx = NULL;
 
 	if (cx->cx_fe != NULL)
-		error_flush(&cx->cx_fe->fe_error);
+		error_flush(cx->cx_fe->fe_error);
 	file_free(cx->cx_fe);
 	cx->cx_fe = NULL;
 
