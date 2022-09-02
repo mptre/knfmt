@@ -7,9 +7,9 @@
 #include <string.h>
 
 #include "extern.h"
+#include "vector.h"
 
 TAILQ_HEAD(doc_list, doc);
-TAILQ_HEAD(doc_stack, doc);
 
 struct doc {
 	enum doc_type	 dc_type;
@@ -36,7 +36,6 @@ struct doc {
 	};
 
 	TAILQ_ENTRY(doc) dc_entry;
-	TAILQ_ENTRY(doc) dc_stack;
 };
 
 struct doc_state_indent {
@@ -45,9 +44,9 @@ struct doc_state_indent {
 };
 
 struct doc_state {
-	const struct config	*st_cf;
-	struct buffer		*st_bf;
-	struct lexer		*st_lx;
+	const struct config		*st_cf;
+	struct buffer			*st_bf;
+	struct lexer			*st_lx;
 
 	enum {
 		BREAK,
@@ -68,22 +67,24 @@ struct doc_state {
 		unsigned int	optline;
 	} st_fits;
 
-	struct doc_state_indent	 st_indent;
+	struct doc_state_indent		 st_indent;
 
 	struct {
 		unsigned int	s_nfits;
 	} st_stats;
 
-	unsigned int		 st_col;
-	unsigned int		 st_depth;
-	unsigned int		 st_refit;
-	unsigned int		 st_parens;
-	unsigned int		 st_nlines;
-	unsigned int		 st_newline;
-	unsigned int		 st_muteline;	/* missed new line while muted */
-	int			 st_optline;
-	int			 st_mute;
-	unsigned int		 st_flags;	/* doc_exec() flags */
+	VECTOR(const struct doc *)	 st_walk;	/* stack used by doc_walk() */
+
+	unsigned int			 st_col;
+	unsigned int			 st_depth;
+	unsigned int			 st_refit;
+	unsigned int			 st_parens;
+	unsigned int			 st_nlines;
+	unsigned int			 st_newline;
+	unsigned int			 st_muteline;	/* missed new line while muted */
+	int				 st_optline;
+	int				 st_mute;
+	unsigned int			 st_flags;	/* doc_exec() flags */
 };
 
 /*
@@ -113,6 +114,7 @@ static void	doc_column(struct doc_state *, const char *, size_t);
 static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
 static void	doc_state_init(struct doc_state *, int, unsigned int);
+static void	doc_state_reset(struct doc_state *);
 
 #define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_FLAG_DIFF))
 
@@ -186,6 +188,7 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_bf = bf;
 	st.st_lx = lx;
 	doc_exec1(dc, &st);
+	doc_state_reset(&st);
 	doc_diff_exit(dc, &st);
 	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
 }
@@ -200,6 +203,7 @@ doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
 	st.st_cf = cf;
 	st.st_bf = bf;
 	doc_exec1(dc, &st);
+	doc_state_reset(&st);
 	return st.st_col;
 }
 
@@ -378,6 +382,7 @@ doc_max(const struct doc *dc)
 
 	doc_state_init(&st, BREAK, 0);
 	doc_walk(dc, &st, doc_max1, &max);
+	doc_state_reset(&st);
 	return max;
 }
 
@@ -621,19 +626,18 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_walk(const struct doc *root, struct doc_state *st,
+doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
-	struct doc_stack ds;
-	/* Only the dc_stack field is mutated, therefore cheat a bit. */
-	struct doc *dc = (struct doc *)root;
+	if (st->st_walk == NULL) {
+		if (VECTOR_INIT(st->st_walk) == NULL)
+			err(1, NULL);
+	}
 
 	/* Recursion flatten into a loop for increased performance. */
-	TAILQ_INIT(&ds);
-	TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
-	while (!TAILQ_EMPTY(&ds)) {
-		dc = TAILQ_LAST(&ds, doc_stack);
-		TAILQ_REMOVE(&ds, dc, dc_stack);
+	*VECTOR_ALLOC(st->st_walk) = dc;
+	while (!VECTOR_EMPTY(st->st_walk)) {
+		dc = *VECTOR_POP(st->st_walk);
 
 		if (!cb(dc, st, arg))
 			break;
@@ -642,18 +646,17 @@ doc_walk(const struct doc *root, struct doc_state *st,
 		case DOC_CONCAT: {
 			const struct doc_list *dl = &dc->dc_list;
 
-			TAILQ_FOREACH_REVERSE(dc, dl, doc_stack, dc_entry)
-				TAILQ_INSERT_TAIL(&ds, dc, dc_stack);
-
-			continue;
+			TAILQ_FOREACH_REVERSE(dc, dl, doc_list, dc_entry)
+				*VECTOR_ALLOC(st->st_walk) = dc;
+			break;
 		}
 
 		case DOC_GROUP:
 		case DOC_INDENT:
 		case DOC_DEDENT:
 		case DOC_OPTIONAL:
-			TAILQ_INSERT_TAIL(&ds, dc->dc_doc, dc_stack);
-			continue;
+			*VECTOR_ALLOC(st->st_walk) = dc->dc_doc;
+			break;
 
 		case DOC_ALIGN:
 		case DOC_LITERAL:
@@ -666,9 +669,7 @@ doc_walk(const struct doc *root, struct doc_state *st,
 			break;
 		}
 	}
-
-	while ((dc = TAILQ_FIRST(&ds)) != NULL)
-		TAILQ_REMOVE(&ds, dc, dc_stack);
+	VECTOR_CLEAR(st->st_walk);
 }
 
 static int
@@ -699,7 +700,9 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		fst.st_mode = MUNGE;
 		fst.st_fits.fits = 1;
 		fst.st_fits.optline = 0;
+		fst.st_walk = NULL;
 		doc_walk(dc, &fst, doc_fits1, NULL);
+		doc_state_reset(&fst);
 		st->st_fits.fits = fst.st_fits.fits;
 		col = fst.st_col;
 		optline = fst.st_fits.optline;
@@ -1260,6 +1263,12 @@ doc_state_init(struct doc_state *st, int mode, unsigned int flags)
 	st->st_mode = mode;
 	st->st_diff.beg = 1;
 	st->st_flags = flags;
+}
+
+static void
+doc_state_reset(struct doc_state *st)
+{
+	VECTOR_FREE(st->st_walk);
 }
 
 static void
