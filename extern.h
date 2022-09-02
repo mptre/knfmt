@@ -65,11 +65,11 @@ int		 buffer_cmp(const struct buffer *, const struct buffer *);
  */
 
 struct error {
-	const struct config	*er_cf;
-	struct buffer		*er_bf;
+	struct buffer	*er_bf;
+	int		 er_flush;
 };
 
-void		 error_init(struct error *, const struct config *);
+void		 error_init(struct error *, int);
 void		 error_close(struct error *);
 void		 error_reset(struct error *);
 void		 error_flush(struct error *);
@@ -77,8 +77,7 @@ struct buffer	*error_get_buffer(struct error *);
 
 #define error_write(er, fmt, ...) do {					\
 	buffer_appendv(error_get_buffer((er)), (fmt), __VA_ARGS__);	\
-	if (config_trace((er)->er_cf))					\
-		error_flush((er));					\
+	error_flush((er));						\
 } while (0)
 
 /*

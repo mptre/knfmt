@@ -3,10 +3,10 @@
 #include "extern.h"
 
 void
-error_init(struct error *er, const struct config *cf)
+error_init(struct error *er, int flush)
 {
-	er->er_cf = cf;
 	er->er_bf = NULL;
+	er->er_flush = flush;
 }
 
 void
@@ -25,13 +25,12 @@ error_reset(struct error *er)
 void
 error_flush(struct error *er)
 {
-	if (er->er_bf == NULL)
+	if (!er->er_flush || er->er_bf == NULL)
 		return;
 
 	if (er->er_bf->bf_len > 0)
 		fprintf(stderr, "%.*s",
 		    (int)er->er_bf->bf_len, er->er_bf->bf_ptr);
-
 	error_reset(er);
 }
 
