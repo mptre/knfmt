@@ -1,18 +1,30 @@
+#include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "extern.h"
 
-void
-error_init(struct error *er, int flush)
+struct error *
+error_alloc(int flush)
 {
+	struct error *er;
+
+	er = malloc(sizeof(*er));
+	if (er == NULL)
+		err(1, NULL);
 	er->er_bf = NULL;
 	er->er_flush = flush;
+	return er;
 }
 
 void
-error_close(struct error *er)
+error_free(struct error *er)
 {
+	if (er == NULL)
+		return;
+
 	buffer_free(er->er_bf);
+	free(er);
 }
 
 void

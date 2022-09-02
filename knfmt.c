@@ -88,7 +88,7 @@ main(int argc, char *argv[])
 	TAILQ_FOREACH(fe, &files, fe_entry) {
 		if (fileformat(fe, &cf)) {
 			error = 1;
-			error_flush(&fe->fe_error);
+			error_flush(fe->fe_error);
 		}
 	}
 
@@ -144,12 +144,12 @@ fileformat(struct file *fe, const struct config *cf)
 		error = 1;
 		goto out;
 	}
-	lx = lexer_alloc(fe, src, &fe->fe_error, cf);
+	lx = lexer_alloc(fe, src, fe->fe_error, cf);
 	if (lx == NULL) {
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(fe->fe_path, lx, &fe->fe_error, cf);
+	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, cf);
 	if (pr == NULL) {
 		error = 1;
 		goto out;

@@ -69,8 +69,8 @@ struct error {
 	int		 er_flush;
 };
 
-void		 error_init(struct error *, int);
-void		 error_close(struct error *);
+struct error	*error_alloc(int);
+void		 error_free(struct error *);
 void		 error_reset(struct error *);
 void		 error_flush(struct error *);
 struct buffer	*error_get_buffer(struct error *);
@@ -102,7 +102,7 @@ int	diff_covers(const struct diffchunk *, unsigned int);
 
 struct file {
 	struct diffchunk	*fe_diff;	/* VECTOR(struct diffchunk) */
-	struct error		 fe_error;
+	struct error		*fe_error;
 	char			*fe_path;
 
 	TAILQ_ENTRY(file)	 fe_entry;

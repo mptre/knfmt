@@ -49,7 +49,7 @@ file_alloc(const char *path, const struct config *cf)
 		err(1, NULL);
 	if (VECTOR_INIT(fe->fe_diff) == NULL)
 		err(1, NULL);
-	error_init(&fe->fe_error, config_trace(cf));
+	fe->fe_error = error_alloc(config_trace(cf));
 	return fe;
 }
 
@@ -61,7 +61,7 @@ file_free(struct file *fe)
 
 	VECTOR_FREE(fe->fe_diff);
 	free(fe->fe_path);
-	error_close(&fe->fe_error);
+	error_free(fe->fe_error);
 	free(fe);
 }
 
