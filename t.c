@@ -49,9 +49,9 @@ static int	__test_strwidth(const char *, size_t, size_t,
 struct context {
 	struct config	 cx_cf;
 	struct buffer	*cx_bf;
-	struct file	*cx_fe;
 	struct lexer	*cx_lx;
 	struct parser	*cx_pr;
+	struct file_list cx_files;
 };
 
 static struct context	*context_alloc(void);
@@ -424,28 +424,32 @@ static void
 context_init(struct context *cx, const char *src)
 {
 	static const char *path = "test.c";
+	struct file *fe;
+
+	fe = file_alloc(path, &cx->cx_cf);
+	TAILQ_INIT(&cx->cx_files);
+	TAILQ_INSERT_TAIL(&cx->cx_files, fe, fe_entry);
 
 	buffer_append(cx->cx_bf, src, strlen(src));
-	cx->cx_fe = file_alloc(path, &cx->cx_cf);
-	cx->cx_lx = lexer_alloc(cx->cx_fe, cx->cx_bf, cx->cx_fe->fe_error,
-	    &cx->cx_cf);
-	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_fe->fe_error,
-	    &cx->cx_cf);
+	cx->cx_lx = lexer_alloc(fe, cx->cx_bf, fe->fe_error, &cx->cx_cf);
+	cx->cx_pr = parser_alloc(path, cx->cx_lx, fe->fe_error, &cx->cx_cf);
 }
 
 static void
 context_reset(struct context *cx)
 {
+	struct file *fe;
+
 	parser_free(cx->cx_pr);
 	cx->cx_pr = NULL;
 
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;
 
-	if (cx->cx_fe != NULL)
-		error_flush(cx->cx_fe->fe_error);
-	file_free(cx->cx_fe);
-	cx->cx_fe = NULL;
+	fe = TAILQ_FIRST(&cx->cx_files);
+	if (fe != NULL)
+		error_flush(fe->fe_error);
+	files_free(&cx->cx_files);
 
 	buffer_reset(cx->cx_bf);
 }

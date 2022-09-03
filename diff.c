@@ -33,7 +33,10 @@ files_free(struct file_list *files)
 
 	while ((fe = TAILQ_FIRST(files)) != NULL) {
 		TAILQ_REMOVE(files, fe, fe_entry);
-		file_free(fe);
+		VECTOR_FREE(fe->fe_diff);
+		free(fe->fe_path);
+		error_free(fe->fe_error);
+		free(fe);
 	}
 }
 
@@ -52,18 +55,6 @@ file_alloc(const char *path, const struct config *cf)
 		err(1, NULL);
 	fe->fe_error = error_alloc(config_trace(cf));
 	return fe;
-}
-
-void
-file_free(struct file *fe)
-{
-	if (fe == NULL)
-		return;
-
-	VECTOR_FREE(fe->fe_diff);
-	free(fe->fe_path);
-	error_free(fe->fe_error);
-	free(fe);
 }
 
 void

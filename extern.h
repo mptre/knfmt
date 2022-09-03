@@ -93,7 +93,6 @@ TAILQ_HEAD(file_list, file);
 void	files_free(struct file_list *);
 
 struct file	*file_alloc(const char *, const struct config *);
-void		 file_free(struct file *);
 
 /*
  * token -----------------------------------------------------------------------
