@@ -400,13 +400,14 @@ TESTS+=	../util.h
 TESTS+=	../vector.c
 TESTS+=	../vector.h
 
-.SUFFIXES: .c .h .fake
+.SUFFIXES: .c .h .cfake .hfake
 
-.c.fake:
+.c.cfake:
 	sh ${.CURDIR}/knfmt.sh $<
 
-.h.fake:
+.h.hfake:
 	sh ${.CURDIR}/knfmt.sh $<
 
-all: ${TESTS:.c=.fake}
-all: ${TESTS:.h=.fake}
+
+all: ${TESTS:.c=.cfake}
+all: ${TESTS:.h=.hfake}
