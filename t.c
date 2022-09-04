@@ -8,6 +8,7 @@
 
 #include "diff.h"
 #include "error.h"
+#include "expr.h"
 #include "extern.h"
 #include "file.h"
 #include "vector.h"

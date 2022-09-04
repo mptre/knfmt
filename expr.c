@@ -1,3 +1,5 @@
+#include "expr.h"
+
 #include <assert.h>
 #include <err.h>
 #include <stdio.h>

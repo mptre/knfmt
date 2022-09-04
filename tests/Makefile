@@ -371,6 +371,7 @@ TESTS+=	../doc.c
 TESTS+=	../error.c
 TESTS+=	../error.h
 TESTS+=	../expr.c
+TESTS+=	../expr.h
 TESTS+=	../extern.h
 TESTS+=	../file.c
 TESTS+=	../file.h
