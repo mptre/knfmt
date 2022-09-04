@@ -450,19 +450,19 @@ context_init(struct context *cx, const char *src)
 static void
 context_reset(struct context *cx)
 {
-	struct file *fe;
-
 	parser_free(cx->cx_pr);
 	cx->cx_pr = NULL;
 
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;
 
-	fe = &cx->cx_files.fs_vc[0];
-	if (fe != NULL)
-		error_flush(fe->fe_error);
-	if (cx->cx_files.fs_vc != NULL)
+	if (cx->cx_files.fs_vc != NULL) {
+		struct file *fe = VECTOR_FIRST(cx->cx_files.fs_vc);
+
+		if (fe != NULL)
+			error_flush(fe->fe_error);
 		files_free(&cx->cx_files);
+	}
 
 	buffer_reset(cx->cx_bf);
 }
