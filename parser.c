@@ -11,6 +11,7 @@
 #include "expr.h"
 #include "extern.h"
 #include "ruler.h"
+#include "simple-decl.h"
 
 /*
  * Return values for parser exec routines. Only one of the following may be

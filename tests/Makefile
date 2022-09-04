@@ -382,6 +382,7 @@ TESTS+=	../parser.h
 TESTS+=	../ruler.c
 TESTS+=	../ruler.h
 TESTS+=	../simple-decl.c
+TESTS+=	../simple-decl.h
 TESTS+=	../simple-stmt.c
 TESTS+=	../t.c
 TESTS+=	../token-type.h

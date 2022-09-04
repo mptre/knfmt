@@ -1,3 +1,5 @@
+#include "simple-decl.h"
+
 #include <assert.h>
 #include <err.h>
 #include <stdarg.h>
