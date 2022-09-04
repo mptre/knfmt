@@ -243,16 +243,6 @@ const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
 void	lexer_dump(const struct lexer *);
 
 /*
- * parser ----------------------------------------------------------------------
- */
-
-struct parser	*parser_alloc(const char *, struct lexer *, struct error *,
-    const struct config *);
-void		 parser_free(struct parser *);
-struct buffer	*parser_exec(struct parser *, size_t);
-struct doc	*parser_exec_expr_recover(unsigned int, void *);
-
-/*
  * simple ----------------------------------------------------------------------
  */
 

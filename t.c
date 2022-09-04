@@ -11,6 +11,7 @@
 #include "expr.h"
 #include "extern.h"
 #include "file.h"
+#include "parser.h"
 #include "vector.h"
 
 struct context;
