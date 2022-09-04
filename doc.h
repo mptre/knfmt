@@ -1,9 +1,9 @@
 #include <stddef.h>	/* size_t */
 
 struct buffer;
-struct config;
 struct doc;
 struct lexer;
+struct options;
 struct token;
 
 /* Keep in sync with DESIGN. */
@@ -28,9 +28,9 @@ enum doc_type {
 #define DOC_EXEC_FLAG_WIDTH	0x00000004u
 
 void		doc_exec(const struct doc *, struct lexer *, struct buffer *,
-    const struct config *, unsigned int);
+    const struct options *, unsigned int);
 unsigned int	doc_width(const struct doc *, struct buffer *,
-    const struct config *);
+    const struct options *);
 void		doc_free(struct doc *);
 void		doc_append(struct doc *, struct doc *);
 void		doc_append_before(struct doc *, struct doc *);

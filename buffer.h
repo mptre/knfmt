@@ -17,4 +17,3 @@ size_t		 buffer_indent(struct buffer *, int, size_t);
 char		*buffer_release(struct buffer *);
 void		 buffer_reset(struct buffer *);
 int		 buffer_cmp(const struct buffer *, const struct buffer *);
-

@@ -31,7 +31,7 @@ struct branch {
 struct lexer {
 	struct lexer_state	 lx_st;
 	struct error		*lx_er;
-	const struct config	*lx_cf;
+	const struct options	*lx_op;
 	const struct diffchunk	*lx_diff;
 	const struct buffer	*lx_bf;
 	const char		*lx_path;
@@ -102,7 +102,7 @@ static struct token	*lexer_recover_branch(struct token *);
 static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
 #define lexer_trace(lx, fmt, ...) do {					\
-	if (config_trace((lx)->lx_cf))					\
+	if (options_trace((lx)->lx_op))					\
 		__lexer_trace((lx), __func__, (fmt),			\
 		    __VA_ARGS__);					\
 } while (0)
@@ -457,7 +457,7 @@ lexer_shutdown(void)
 
 struct lexer *
 lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
-    const struct config *cf)
+    const struct options *op)
 {
 	struct lexer *lx;
 	int error = 0;
@@ -466,7 +466,7 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 	if (lx == NULL)
 		err(1, NULL);
 	lx->lx_er = er;
-	lx->lx_cf = cf;
+	lx->lx_op = op;
 	lx->lx_bf = bf;
 	lx->lx_diff = fe->fe_diff;
 	lx->lx_path = fe->fe_path;
@@ -515,7 +515,7 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 		return NULL;
 	}
 
-	if (UNLIKELY(cf->cf_verbose >= 3))
+	if (UNLIKELY(op->op_verbose >= 3))
 		lexer_dump(lx);
 
 	return lx;
@@ -562,7 +562,7 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 	const struct buffer *bf = lx->lx_bf;
 	size_t bo, eo;
 
-	if ((lx->lx_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) == 0)
+	if ((lx->lx_op->op_flags & OPTIONS_FLAG_DIFFPARSE) == 0)
 		return 0;
 
 	bo = lx->lx_lines[beg - 1];
@@ -586,7 +586,7 @@ lexer_stamp(struct lexer *lx)
 
 	tk = lx->lx_st.st_tok;
 	if (tk != NULL && !TAILQ_INSERTED(tk, tk_stamp)) {
-		if (config_trace(lx->lx_cf)) {
+		if (options_trace(lx->lx_op)) {
 			char *str;
 
 			str = token_sprintf(tk);
@@ -1877,7 +1877,7 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 {
 	unsigned int *dst;
 
-	if ((lx->lx_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) == 0)
+	if ((lx->lx_op->op_flags & OPTIONS_FLAG_DIFFPARSE) == 0)
 		return;
 
 	/* We could end up here again after lexer_ungetc(). */
@@ -1966,7 +1966,7 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 		return;
 
 	error_write(lx->lx_er, "%s: ", lx->lx_path);
-	if (lx->lx_cf->cf_verbose > 0)
+	if (lx->lx_op->op_verbose > 0)
 		error_write(lx->lx_er, "%s:%d: ", fun, lno);
 	str = tk ? token_sprintf(tk) : NULL;
 	error_write(lx->lx_er, "expected type %s got %s\n", strtoken(type),

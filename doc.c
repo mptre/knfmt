@@ -51,7 +51,7 @@ struct doc_state_indent {
 };
 
 struct doc_state {
-	const struct config		*st_cf;
+	const struct options		*st_op;
 	struct buffer			*st_bf;
 	struct lexer			*st_lx;
 
@@ -185,13 +185,13 @@ static unsigned int	countlines(const char *, size_t);
 
 void
 doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
-    const struct config *cf, unsigned int flags)
+    const struct options *op, unsigned int flags)
 {
 	struct doc_state st;
 
 	buffer_reset(bf);
 	doc_state_init(&st, BREAK, flags);
-	st.st_cf = cf;
+	st.st_op = op;
 	st.st_bf = bf;
 	st.st_lx = lx;
 	doc_exec1(dc, &st);
@@ -201,13 +201,13 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 }
 
 unsigned int
-doc_width(const struct doc *dc, struct buffer *bf, const struct config *cf)
+doc_width(const struct doc *dc, struct buffer *bf, const struct options *op)
 {
 	struct doc_state st;
 
 	buffer_reset(bf);
 	doc_state_init(&st, MUNGE, 0);
-	st.st_cf = cf;
+	st.st_op = op;
 	st.st_bf = bf;
 	doc_exec1(dc, &st);
 	doc_state_reset(&st);
@@ -511,11 +511,11 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			st->st_newline = 1;
 
 		if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
-		    (str = comment_exec(dc->dc_tk, st->st_cf))) {
+		    (str = comment_exec(dc->dc_tk, st->st_op))) {
 			doc_print(dc, st, str, strlen(str), 0);
 			free(str);
 		} else if (dc->dc_tk->tk_type == TOKEN_CPP &&
-		    (str = cpp_exec(dc->dc_tk, st->st_cf)) != NULL) {
+		    (str = cpp_exec(dc->dc_tk, st->st_op)) != NULL) {
 			doc_print(dc, st, str, strlen(str), 0);
 			free(str);
 		} else {
@@ -715,7 +715,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		optline = fst.st_fits.optline;
 	}
 	doc_trace(dc, st, "%s: %u %s %u, optline %d", __func__,
-	    col, st->st_fits.fits ? "<=" : ">", st->st_cf->cf_mw,
+	    col, st->st_fits.fits ? "<=" : ">", st->st_op->op_mw,
 	    optline);
 
 	return st->st_fits.fits;
@@ -755,7 +755,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 		break;
 	}
 
-	if (st->st_col > st->st_cf->cf_mw) {
+	if (st->st_col > st->st_op->op_mw) {
 		st->st_fits.fits = 0;
 		return 0;
 	}

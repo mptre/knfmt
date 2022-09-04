@@ -83,7 +83,7 @@ struct expr_rule {
 
 struct expr_state {
 	const struct expr_exec_arg	*es_ea;
-#define es_cf		es_ea->ea_cf
+#define es_op		es_ea->ea_op
 #define es_lx		es_ea->ea_lx
 #define es_stop		es_ea->ea_stop
 #define es_flags	es_ea->ea_flags
@@ -206,7 +206,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	optional = doc_alloc(DOC_OPTIONAL, dc);
 	indent = ea->ea_flags & EXPR_EXEC_FLAG_NOINDENT ?
 	    doc_alloc(DOC_CONCAT, optional) :
-	    doc_alloc_indent(ea->ea_cf->cf_sw, optional);
+	    doc_alloc_indent(ea->ea_op->op_sw, optional);
 	if (ea->ea_flags & EXPR_EXEC_FLAG_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
 	if (ea->ea_flags & EXPR_EXEC_FLAG_HARDLINE)
@@ -548,7 +548,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	 * Testing backdoor wrapping each expression in parenthesis used for
 	 * validation of operator precedence.
 	 */
-	if ((es->es_cf->cf_flags & CONFIG_FLAG_TEST) &&
+	if ((es->es_op->op_flags & OPTIONS_FLAG_TEST) &&
 	    ex->ex_type != EXPR_PARENS)
 		doc_literal("(", concat);
 
@@ -632,7 +632,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		int noparens;
 
 		noparens = es->es_depth == 1 &&
-		    (es->es_cf->cf_flags & CONFIG_FLAG_SIMPLE) &&
+		    (es->es_op->op_flags & OPTIONS_FLAG_SIMPLE) &&
 		    (es->es_flags & EXPR_EXEC_FLAG_NOPARENS);
 		if (!noparens && ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* ( */
@@ -770,7 +770,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	}
 
 	/* Testing backdoor, see above. */
-	if ((es->es_cf->cf_flags & CONFIG_FLAG_TEST) &&
+	if ((es->es_op->op_flags & OPTIONS_FLAG_TEST) &&
 	    ex->ex_type != EXPR_PARENS)
 		doc_literal(")", concat);
 

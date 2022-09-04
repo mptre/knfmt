@@ -11,7 +11,7 @@ static const char	*nextline(const char *, size_t);
 static const char	*skipws(const char *, size_t);
 
 char *
-comment_exec(const struct token *tk, const struct config *UNUSED(cf))
+comment_exec(const struct token *tk, const struct options *UNUSED(op))
 {
 	struct buffer *bf;
 	const char *sp = tk->tk_str;

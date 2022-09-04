@@ -7,12 +7,12 @@
 #include "extern.h"
 
 void
-config_init(struct config *cf)
+options_init(struct options *op)
 {
-	memset(cf, 0, sizeof(*cf));
-	cf->cf_mw = 80;
-	cf->cf_tw = 8;
-	cf->cf_sw = 4;
+	memset(op, 0, sizeof(*op));
+	op->op_mw = 80;
+	op->op_tw = 8;
+	op->op_sw = 4;
 }
 
 char *

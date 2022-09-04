@@ -10,7 +10,7 @@
 #include "vector.h"
 
 struct file *
-files_alloc(struct files *files, const char *path, const struct config *cf)
+files_alloc(struct files *files, const char *path, const struct options *op)
 {
 	struct file *fe;
 
@@ -22,7 +22,7 @@ files_alloc(struct files *files, const char *path, const struct config *cf)
 		err(1, NULL);
 	if (VECTOR_INIT(fe->fe_diff) == NULL)
 		err(1, NULL);
-	fe->fe_error = error_alloc(config_trace(cf));
+	fe->fe_error = error_alloc(options_trace(op));
 	return fe;
 }
 

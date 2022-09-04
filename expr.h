@@ -1,5 +1,5 @@
 struct expr_exec_arg {
-	const struct config	*ea_cf;
+	const struct options	*ea_op;
 	struct lexer		*ea_lx;
 	struct doc		*ea_dc;
 	const struct token	*ea_stop;

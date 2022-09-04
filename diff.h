@@ -1,5 +1,5 @@
-struct config;
 struct files;
+struct options;
 
 struct diffchunk {
 	unsigned int	du_beg;
@@ -8,5 +8,5 @@ struct diffchunk {
 
 void	diff_init(void);
 void	diff_shutdown(void);
-int	diff_parse(struct files *, const struct config *);
+int	diff_parse(struct files *, const struct options *);
 int	diff_covers(const struct diffchunk *, unsigned int);

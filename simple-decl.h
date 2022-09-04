@@ -1,9 +1,9 @@
-struct config;
+struct options;
 struct lexer;
 struct token;
 
 struct simple_decl	*simple_decl_enter(struct lexer *,
-    const struct config *);
+    const struct options *);
 void			 simple_decl_leave(struct simple_decl *);
 void			 simple_decl_free(struct simple_decl *);
 void			 simple_decl_type(struct simple_decl *, struct token *,

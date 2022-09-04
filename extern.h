@@ -15,29 +15,29 @@
 #define UNLIKELY(x)	__builtin_expect((x), 0)
 
 /*
- * config ----------------------------------------------------------------------
+ * options ---------------------------------------------------------------------
  */
 
-struct config {
-	unsigned int	cf_flags;
-#define CONFIG_FLAG_DIFF		0x00000001u
-#define CONFIG_FLAG_DIFFPARSE		0x00000002u
-#define CONFIG_FLAG_INPLACE		0x00000004u
-#define CONFIG_FLAG_SIMPLE		0x00000008u
-#define CONFIG_FLAG_TEST		0x80000000u
+struct options {
+	unsigned int	op_flags;
+#define OPTIONS_FLAG_DIFF		0x00000001u
+#define OPTIONS_FLAG_DIFFPARSE		0x00000002u
+#define OPTIONS_FLAG_INPLACE		0x00000004u
+#define OPTIONS_FLAG_SIMPLE		0x00000008u
+#define OPTIONS_FLAG_TEST		0x80000000u
 
-	unsigned int	cf_verbose;
-	unsigned int	cf_mw;		/* max width per line */
-	unsigned int	cf_tw;		/* tab width */
-	unsigned int	cf_sw;		/* soft width */
+	unsigned int	op_verbose;
+	unsigned int	op_mw;		/* max width per line */
+	unsigned int	op_tw;		/* tab width */
+	unsigned int	op_sw;		/* soft width */
 };
 
-void	config_init(struct config *);
+void	options_init(struct options *);
 
 static inline int
-config_trace(const struct config *cf)
+options_trace(const struct options *op)
 {
-	return UNLIKELY(cf->cf_verbose >= 2);
+	return UNLIKELY(op->op_verbose >= 2);
 }
 
 /*
@@ -153,7 +153,7 @@ struct lexer_state {
 void		 lexer_init(void);
 void		 lexer_shutdown(void);
 struct lexer	*lexer_alloc(const struct file *, const struct buffer *,
-    struct error *, const struct config *);
+    struct error *, const struct options *);
 void		 lexer_free(struct lexer *);
 
 int	lexer_get_error(const struct lexer *);

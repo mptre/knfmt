@@ -22,7 +22,7 @@ struct stmt {
 struct simple_stmt {
 	VECTOR(struct stmt)	 ss_stmts;
 	struct lexer		*ss_lx;
-	const struct config	*ss_cf;
+	const struct options	*ss_op;
 };
 
 static struct stmt	*simple_stmt_alloc(struct simple_stmt *, int,
@@ -31,7 +31,7 @@ static struct stmt	*simple_stmt_alloc(struct simple_stmt *, int,
 static int	linecount(const char *, size_t, int);
 
 struct simple_stmt *
-simple_stmt_enter(struct lexer *lx, const struct config *cf)
+simple_stmt_enter(struct lexer *lx, const struct options *op)
 {
 	struct simple_stmt *ss;
 
@@ -41,7 +41,7 @@ simple_stmt_enter(struct lexer *lx, const struct config *cf)
 	if (VECTOR_INIT(ss->ss_stmts) == NULL)
 		err(1, NULL);
 	ss->ss_lx = lx;
-	ss->ss_cf = cf;
+	ss->ss_op = op;
 	return ss;
 }
 
@@ -65,7 +65,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 		    (st->st_flags & STMT_FLAG_BRACES) == 0)
 			continue;
 
-		doc_exec(st->st_root, lx, bf, ss->ss_cf, 0);
+		doc_exec(st->st_root, lx, bf, ss->ss_op, 0);
 		if (!linecount(bf->bf_ptr, bf->bf_len, 1) ||
 		    token_has_prefix(st->st_rbrace, TOKEN_COMMENT)) {
 			/*
@@ -144,7 +144,7 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
 	unsigned int flags = STMT_FLAG_BRACES;
 
 	/* Make sure both braces are covered by a diff chunk. */
-	if ((ss->ss_cf->cf_flags & CONFIG_FLAG_DIFFPARSE) &&
+	if ((ss->ss_op->op_flags & OPTIONS_FLAG_DIFFPARSE) &&
 	    ((lbrace->tk_flags & TOKEN_FLAG_DIFF) == 0 ||
 	     (rbrace->tk_flags & TOKEN_FLAG_DIFF) == 0))
 		flags |= STMT_FLAG_IGNORE;

@@ -55,7 +55,7 @@ static int	__test_strwidth(const char *, size_t, size_t,
     const char *, int);
 
 struct context {
-	struct config	 cx_cf;
+	struct options	 cx_op;
 	struct buffer	*cx_bf;
 	struct lexer	*cx_lx;
 	struct parser	*cx_pr;
@@ -259,7 +259,7 @@ __test_expr_exec(struct context *cx, const char *src, const char *exp,
     const char *fun, int lno)
 {
 	struct expr_exec_arg ea = {
-		.ea_cf		= &cx->cx_cf,
+		.ea_op		= &cx->cx_op,
 		.ea_lx		= NULL,
 		.ea_dc		= NULL,
 		.ea_stop	= NULL,
@@ -285,7 +285,7 @@ __test_expr_exec(struct context *cx, const char *src, const char *exp,
 	}
 
 	bf = buffer_alloc(128);
-	doc_exec(group, cx->cx_lx, bf, &cx->cx_cf, 0);
+	doc_exec(group, cx->cx_lx, bf, &cx->cx_op, 0);
 	buffer_appendc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
@@ -411,8 +411,8 @@ context_alloc(void)
 	if (cx == NULL)
 		err(1, NULL);
 
-	config_init(&cx->cx_cf);
-	cx->cx_cf.cf_flags |= CONFIG_FLAG_TEST;
+	options_init(&cx->cx_op);
+	cx->cx_op.op_flags |= OPTIONS_FLAG_TEST;
 	cx->cx_bf = buffer_alloc(128);
 	return cx;
 }
@@ -436,11 +436,11 @@ context_init(struct context *cx, const char *src)
 
 	if (VECTOR_INIT(cx->cx_files.fs_vc) == NULL)
 		err(1, NULL);
-	fe = files_alloc(&cx->cx_files, path, &cx->cx_cf);
+	fe = files_alloc(&cx->cx_files, path, &cx->cx_op);
 
 	buffer_append(cx->cx_bf, src, strlen(src));
-	cx->cx_lx = lexer_alloc(fe, cx->cx_bf, fe->fe_error, &cx->cx_cf);
-	cx->cx_pr = parser_alloc(path, cx->cx_lx, fe->fe_error, &cx->cx_cf);
+	cx->cx_lx = lexer_alloc(fe, cx->cx_bf, fe->fe_error, &cx->cx_op);
+	cx->cx_pr = parser_alloc(path, cx->cx_lx, fe->fe_error, &cx->cx_op);
 }
 
 static void

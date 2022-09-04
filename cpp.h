@@ -1,4 +1,4 @@
-struct config;
+struct options;
 struct token;
 
-char	*cpp_exec(const struct token *, const struct config *);
+char	*cpp_exec(const struct token *, const struct options *);

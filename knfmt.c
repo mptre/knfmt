@@ -21,8 +21,8 @@
 
 static __dead void	usage(void);
 
-static int	filelist(int, char **, struct files *, const struct config *);
-static int	fileformat(struct file *, const struct config *);
+static int	filelist(int, char **, struct files *, const struct options *);
+static int	fileformat(struct file *, const struct options *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const char *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -35,7 +35,7 @@ int
 main(int argc, char *argv[])
 {
 	struct files files;
-	struct config cf;
+	struct options op;
 	size_t i;
 	int error = 0;
 	int ch;
@@ -43,24 +43,24 @@ main(int argc, char *argv[])
 	if (pledge("stdio rpath wpath cpath fattr chown proc exec", NULL) == -1)
 		err(1, "pledge");
 
-	config_init(&cf);
+	options_init(&op);
 
 	while ((ch = getopt(argc, argv, "Ddisv")) != -1) {
 		switch (ch) {
 		case 'D':
-			cf.cf_flags |= CONFIG_FLAG_DIFFPARSE;
+			op.op_flags |= OPTIONS_FLAG_DIFFPARSE;
 			break;
 		case 'd':
-			cf.cf_flags |= CONFIG_FLAG_DIFF;
+			op.op_flags |= OPTIONS_FLAG_DIFF;
 			break;
 		case 'i':
-			cf.cf_flags |= CONFIG_FLAG_INPLACE;
+			op.op_flags |= OPTIONS_FLAG_INPLACE;
 			break;
 		case 's':
-			cf.cf_flags |= CONFIG_FLAG_SIMPLE;
+			op.op_flags |= OPTIONS_FLAG_SIMPLE;
 			break;
 		case 'v':
-			cf.cf_verbose++;
+			op.op_verbose++;
 			break;
 		default:
 			usage();
@@ -68,13 +68,13 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
-	if ((cf.cf_flags & CONFIG_FLAG_DIFFPARSE) && argc > 0)
+	if ((op.op_flags & OPTIONS_FLAG_DIFFPARSE) && argc > 0)
 		usage();
 
-	if (cf.cf_flags & CONFIG_FLAG_DIFF) {
+	if (op.op_flags & OPTIONS_FLAG_DIFF) {
 		if (pledge("stdio rpath wpath cpath proc exec", NULL) == -1)
 			err(1, "pledge");
-	} else if (cf.cf_flags & CONFIG_FLAG_INPLACE) {
+	} else if (op.op_flags & OPTIONS_FLAG_INPLACE) {
 		if (pledge("stdio rpath wpath cpath fattr chown", NULL) == -1)
 			err(1, "pledge");
 	} else {
@@ -89,14 +89,14 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	if (filelist(argc, argv, &files, &cf)) {
+	if (filelist(argc, argv, &files, &op)) {
 		error = 1;
 		goto out;
 	}
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
-		if (fileformat(fe, &cf)) {
+		if (fileformat(fe, &op)) {
 			error = 1;
 			error_flush(fe->fe_error);
 		}
@@ -119,24 +119,24 @@ usage(void)
 
 static int
 filelist(int argc, char **argv, struct files *files,
-    const struct config *cf)
+    const struct options *op)
 {
-	if (cf->cf_flags & CONFIG_FLAG_DIFFPARSE)
-		return diff_parse(files, cf);
+	if (op->op_flags & OPTIONS_FLAG_DIFFPARSE)
+		return diff_parse(files, op);
 
 	if (argc == 0) {
-		files_alloc(files, "/dev/stdin", cf);
+		files_alloc(files, "/dev/stdin", op);
 	} else {
 		int i;
 
 		for (i = 0; i < argc; i++)
-			files_alloc(files, argv[i], cf);
+			files_alloc(files, argv[i], op);
 	}
 	return 0;
 }
 
 static int
-fileformat(struct file *fe, const struct config *cf)
+fileformat(struct file *fe, const struct options *op)
 {
 	struct buffer *dst = NULL;
 	struct buffer *src;
@@ -149,12 +149,12 @@ fileformat(struct file *fe, const struct config *cf)
 		error = 1;
 		goto out;
 	}
-	lx = lexer_alloc(fe, src, fe->fe_error, cf);
+	lx = lexer_alloc(fe, src, fe->fe_error, op);
 	if (lx == NULL) {
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, cf);
+	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, op);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
@@ -165,9 +165,9 @@ fileformat(struct file *fe, const struct config *cf)
 		goto out;
 	}
 
-	if (cf->cf_flags & CONFIG_FLAG_DIFF)
+	if (op->op_flags & OPTIONS_FLAG_DIFF)
 		error = filediff(src, dst, fe->fe_path);
-	else if (cf->cf_flags & CONFIG_FLAG_INPLACE)
+	else if (op->op_flags & OPTIONS_FLAG_INPLACE)
 		error = filewrite(src, dst, fe->fe_path);
 	else
 		printf("%.*s", (int)dst->bf_len, dst->bf_ptr);

@@ -35,7 +35,7 @@ enum parser_peek {
 struct parser {
 	const char		*pr_path;
 	struct error		*pr_er;
-	const struct config	*pr_cf;
+	const struct options	*pr_op;
 	struct lexer		*pr_lx;
 	struct buffer		*pr_bf;		/* scratch buffer */
 	unsigned int		 pr_error;
@@ -182,7 +182,7 @@ static int	iscdefs(const char *, size_t);
 
 struct parser *
 parser_alloc(const char *path, struct lexer *lx, struct error *er,
-    const struct config *cf)
+    const struct options *op)
 {
 	struct parser *pr;
 
@@ -191,7 +191,7 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 		err(1, NULL);
 	pr->pr_path = path;
 	pr->pr_er = er;
-	pr->pr_cf = cf;
+	pr->pr_op = op;
 	pr->pr_lx = lx;
 	return pr;
 }
@@ -262,11 +262,11 @@ parser_exec(struct parser *pr, size_t sizhint)
 	}
 
 	bf = buffer_alloc(sizhint);
-	if (pr->pr_cf->cf_flags & CONFIG_FLAG_DIFFPARSE)
+	if (pr->pr_op->op_flags & OPTIONS_FLAG_DIFFPARSE)
 		flags |= DOC_EXEC_FLAG_DIFF;
-	if (config_trace(pr->pr_cf))
+	if (options_trace(pr->pr_op))
 		flags |= DOC_EXEC_FLAG_TRACE;
-	doc_exec(dc, pr->pr_lx, bf, pr->pr_cf, flags);
+	doc_exec(dc, pr->pr_lx, bf, pr->pr_op, flags);
 	doc_free(dc);
 	return bf;
 }
@@ -337,7 +337,7 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 		 * parser_exec_expr().
 		 */
 		dc = doc_alloc(DOC_GROUP, NULL);
-		indent = doc_alloc_indent(-pr->pr_cf->cf_sw, dc);
+		indent = doc_alloc_indent(-pr->pr_op->op_sw, dc);
 		if (parser_exec_decl_braces(pr, indent, 0) & GOOD)
 			return dc;
 		doc_free(dc);
@@ -479,7 +479,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_token(lbrace, concat);
 		}
 
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
+		indent = doc_alloc_indent(pr->pr_op->op_tw, concat);
 		doc_alloc(DOC_HARDLINE, indent);
 		if (parser_exec_decl(pr, indent, 0) & FAIL)
 			return parser_fail(pr);
@@ -525,7 +525,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (parser_exec_decl_init(pr, concat, rl, semi, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
-	parser_exec_attributes(pr, concat, NULL, pr->pr_cf->cf_tw, DOC_LINE);
+	parser_exec_attributes(pr, concat, NULL, pr->pr_op->op_tw, DOC_LINE);
 
 out:
 	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
@@ -700,7 +700,7 @@ parser_exec_decl_braces1(struct parser *pr,
 
 	if ((pb->pb_flags & PARSER_EXEC_DECL_BRACES_FLAG_INDENT) ||
 	    token_has_line(lbrace, 1)) {
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, braces);
+		indent = doc_alloc_indent(pr->pr_op->op_tw, braces);
 		doc_alloc(DOC_HARDLINE, indent);
 	} else {
 		if (token_has_spaces(lbrace))
@@ -1029,7 +1029,7 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
     const struct token *stop, unsigned int flags)
 {
 	const struct expr_exec_arg ea = {
-		.ea_cf		= pr->pr_cf,
+		.ea_op		= pr->pr_op,
 		.ea_lx		= pr->pr_lx,
 		.ea_dc		= dc,
 		.ea_stop	= stop,
@@ -1183,7 +1183,7 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 		token_trim(lparen);
 		doc_token(lparen, concat);
 	}
-	indent = doc_alloc_indent(pr->pr_cf->cf_sw, concat);
+	indent = doc_alloc_indent(pr->pr_op->op_sw, concat);
 	while (parser_exec_func_arg(pr, indent, &pf->pf_out, rparen) & GOOD)
 		continue;
 	/* Can be empty if arguments are absent. */
@@ -1196,14 +1196,14 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);
-	indent = doc_alloc_indent(pr->pr_cf->cf_tw, kr);
+	indent = doc_alloc_indent(pr->pr_op->op_tw, kr);
 	doc_alloc(DOC_HARDLINE, indent);
 	if (parser_exec_decl(pr, indent, 0) & GOOD)
 		nkr++;
 	if (nkr == 0)
 		doc_remove(kr, dc);
 
-	parser_exec_attributes(pr, dc, &pf->pf_out, pr->pr_cf->cf_tw,
+	parser_exec_attributes(pr, dc, &pf->pf_out, pr->pr_op->op_tw,
 	    DOC_HARDLINE);
 
 	return parser_good(pr);
@@ -1364,7 +1364,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	 */
 	nx = TAILQ_NEXT(rbrace, tk_entry);
 	if (nx != NULL && nx->tk_type == TOKEN_SEMI &&
-	    (pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE))
+	    (pr->pr_op->op_flags & OPTIONS_FLAG_SIMPLE))
 		lexer_remove(lx, nx, 1);
 
 	if (doindent)
@@ -1389,7 +1389,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		token_trim(lbrace);
 	doc_token(lbrace, ps->ps_head);
 
-	indent = doswitch ? dc : doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+	indent = doswitch ? dc : doc_alloc_indent(pr->pr_op->op_tw, dc);
 	line = doc_alloc(DOC_HARDLINE, indent);
 	while ((error = parser_exec_stmt(pr, indent)) & GOOD) {
 		nstmt++;
@@ -1461,7 +1461,7 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc)
 			} else {
 				void *simple;
 
-				dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+				dc = doc_alloc_indent(pr->pr_op->op_tw, dc);
 				doc_alloc(DOC_HARDLINE, dc);
 
 				simple = parser_simple_stmt_ifelse_enter(pr);
@@ -1552,7 +1552,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_literal(" ", expr);
 	} else {
-		dc = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+		dc = doc_alloc_indent(pr->pr_op->op_tw, dc);
 		doc_alloc(DOC_HARDLINE, dc);
 	}
 	return parser_exec_stmt(pr, dc);
@@ -1588,7 +1588,7 @@ parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc)
 	} else {
 		struct doc *indent;
 
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, concat);
+		indent = doc_alloc_indent(pr->pr_op->op_tw, concat);
 		doc_alloc(DOC_HARDLINE, indent);
 		error = parser_exec_stmt(pr, indent);
 		doc_alloc(DOC_HARDLINE, concat);
@@ -1633,7 +1633,7 @@ static int
 parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 {
 	const struct expr_exec_arg ea = {
-		.ea_cf		= pr->pr_cf,
+		.ea_op		= pr->pr_op,
 		.ea_lx		= pr->pr_lx,
 		.ea_dc		= NULL,
 		.ea_stop	= NULL,
@@ -1756,7 +1756,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 		struct doc *indent;
 		void *simple = NULL;
 
-		indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+		indent = doc_alloc_indent(pr->pr_op->op_tw, dc);
 		doc_alloc(DOC_HARDLINE, indent);
 		if (type->tk_type == TOKEN_IF)
 			simple = parser_simple_stmt_ifelse_enter(pr);
@@ -1846,7 +1846,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc)
 			return parser_fail(pr);
 	}
 
-	indent = doc_alloc_indent(pr->pr_cf->cf_tw, dc);
+	indent = doc_alloc_indent(pr->pr_op->op_tw, dc);
 	for (;;) {
 		struct doc *line;
 		struct token *nx;
@@ -2007,7 +2007,7 @@ parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
 		if (token_has_spaces(tk))
 			doc_alloc(DOC_LINE, concat);
 	}
-	opt = doc_alloc_indent(pr->pr_cf->cf_sw, doc_alloc(DOC_OPTIONAL, dc));
+	opt = doc_alloc_indent(pr->pr_op->op_sw, doc_alloc(DOC_OPTIONAL, dc));
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, opt);
 
@@ -2104,7 +2104,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	if (pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) {
+	if (pr->pr_op->op_flags & OPTIONS_FLAG_SIMPLE) {
 		struct token *tk = beg;
 		int ntokens = 0;
 
@@ -2142,7 +2142,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			struct token *rparen;
 
 			doc_token(lparen, dc);
-			indent = doc_alloc_indent(pr->pr_cf->cf_sw, dc);
+			indent = doc_alloc_indent(pr->pr_op->op_sw, dc);
 			while (parser_exec_func_arg(pr, indent, NULL, end) &
 			    GOOD)
 				continue;
@@ -2245,12 +2245,12 @@ parser_simple_stmt_enter(struct parser *pr)
 	struct lexer *lx = pr->pr_lx;
 	int error;
 
-	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
+	if ((pr->pr_op->op_flags & OPTIONS_FLAG_SIMPLE) == 0)
 		return 0;
 	if (++pr->pr_simple.nstmt > 1)
 		return 1;
 
-	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_cf);
+	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_exec_stmt1(pr, dc);
@@ -2279,7 +2279,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	struct token *lbrace, *rbrace;
 
 	/* Ignore nested statements, they will be handled later on. */
-	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0 ||
+	if ((pr->pr_op->op_flags & OPTIONS_FLAG_SIMPLE) == 0 ||
 	    pr->pr_simple.nstmt != 1)
 		return dc;
 
@@ -2288,7 +2288,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 		return dc;
 
 	return simple_stmt_block(pr->pr_simple.stmt, lbrace, rbrace,
-	    pr->pr_nindent * pr->pr_cf->cf_tw);
+	    pr->pr_nindent * pr->pr_op->op_tw);
 }
 
 static void *
@@ -2300,7 +2300,7 @@ parser_simple_stmt_ifelse_enter(struct parser *pr)
 	if (pr->pr_simple.nstmt != 1 || !lexer_peek(lx, &lbrace))
 		return NULL;
 	return simple_stmt_ifelse_enter(pr->pr_simple.stmt, lbrace,
-	    pr->pr_nindent * pr->pr_cf->cf_tw);
+	    pr->pr_nindent * pr->pr_op->op_tw);
 }
 
 static void
@@ -2337,13 +2337,13 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 	struct doc *dc;
 	int error;
 
-	if ((pr->pr_cf->cf_flags & CONFIG_FLAG_SIMPLE) == 0)
+	if ((pr->pr_op->op_flags & OPTIONS_FLAG_SIMPLE) == 0)
 		return -1;
 
 	if (pr->pr_simple.ndecl++ > 0)
 		return 1;
 
-	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_cf);
+	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_exec_decl1(pr, dc, flags);
@@ -2566,7 +2566,7 @@ __parser_fail(struct parser *pr, const char *fun, int lno)
 	pr->pr_error = 1;
 
 	error_write(pr->pr_er, "%s: ", pr->pr_path);
-	if (pr->pr_cf->cf_verbose > 0)
+	if (pr->pr_op->op_verbose > 0)
 		error_write(pr->pr_er, "%s:%d: ", fun, lno);
 	error_write(pr->pr_er, "%s", "error at ");
 	if (lexer_back(pr->pr_lx, &tk)) {
@@ -2609,7 +2609,7 @@ parser_width(struct parser *pr, const struct doc *dc)
 {
 	if (pr->pr_bf == NULL)
 		pr->pr_bf = buffer_alloc(1024);
-	return doc_width(dc, pr->pr_bf, pr->pr_cf);
+	return doc_width(dc, pr->pr_bf, pr->pr_op);
 }
 
 static int

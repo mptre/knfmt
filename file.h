@@ -1,4 +1,4 @@
-struct config;
+struct options;
 
 struct files {
 	struct file	*fs_vc;			/* VECTOR(struct file) */
@@ -11,5 +11,5 @@ struct file {
 };
 
 struct file	*files_alloc(struct files *, const char *,
-    const struct config *);
+    const struct options *);
 void		 files_free(struct files *);

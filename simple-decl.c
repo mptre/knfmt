@@ -71,7 +71,7 @@ struct simple_decl {
 	struct decl_var		 sd_dv;
 
 	struct lexer		*sd_lx;
-	const struct config	*sd_cf;
+	const struct options	*sd_op;
 };
 
 static int	simple_decl_type_create(struct simple_decl *,
@@ -86,14 +86,14 @@ static int		isident(const struct token_range *);
 static unsigned int	nstars(const struct token_range *);
 
 #define simple_trace(sd, fmt, ...) do {					\
-	if (config_trace((sd)->sd_cf))					\
+	if (options_trace((sd)->sd_op))					\
 		__simple_trace(__func__, (fmt), __VA_ARGS__);		\
 } while (0)
 static void	__simple_trace(const char *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
 
 struct simple_decl *
-simple_decl_enter(struct lexer *lx, const struct config *cf)
+simple_decl_enter(struct lexer *lx, const struct options *op)
 {
 	struct simple_decl *sd;
 
@@ -103,7 +103,7 @@ simple_decl_enter(struct lexer *lx, const struct config *cf)
 	if (VECTOR_INIT(sd->sd_decls) == NULL)
 		err(1, NULL);
 	sd->sd_lx = lx;
-	sd->sd_cf = cf;
+	sd->sd_op = op;
 	return sd;
 }
 

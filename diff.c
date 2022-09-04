@@ -65,7 +65,7 @@ diff_shutdown(void)
 }
 
 int
-diff_parse(struct files *files, const struct config *cf)
+diff_parse(struct files *files, const struct options *op)
 {
 	struct file *fe = NULL;
 	char *buf;
@@ -82,7 +82,7 @@ diff_parse(struct files *files, const struct config *cf)
 		int el, sl;
 
 		if (matchpath(buf, path, sizeof(path))) {
-			fe = files_alloc(files, path, cf);
+			fe = files_alloc(files, path, op);
 
 			buf = skipline(buf);
 			if (buf == NULL)
@@ -114,7 +114,7 @@ diff_parse(struct files *files, const struct config *cf)
 			break;
 	}
 
-	if (config_trace(cf)) {
+	if (options_trace(op)) {
 		size_t i;
 
 		for (i = 0; i < VECTOR_LENGTH(files->fs_vc); i++) {
