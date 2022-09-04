@@ -1,5 +1,7 @@
 #include "ruler.h"
 
+#include "config.h"
+
 #include <assert.h>
 #include <err.h>
 #include <stdlib.h>

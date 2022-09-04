@@ -1,5 +1,7 @@
 #include "expr.h"
 
+#include "config.h"
+
 #include <assert.h>
 #include <err.h>
 #include <stdio.h>

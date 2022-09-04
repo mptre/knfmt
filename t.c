@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "config.h"
+
 #include "buffer.h"
 #include "diff.h"
 #include "doc.h"

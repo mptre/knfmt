@@ -1,5 +1,7 @@
 #include "simple-stmt.h"
 
+#include "config.h"
+
 #include <err.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,5 +1,3 @@
-#include "config.h"
-
 #include "token-type.h"
 
 #ifdef HAVE_QUEUE

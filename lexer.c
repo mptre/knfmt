@@ -1,5 +1,7 @@
 #include "lexer.h"
 
+#include "config.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <err.h>

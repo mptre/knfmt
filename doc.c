@@ -1,5 +1,7 @@
 #include "doc.h"
 
+#include "config.h"
+
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
