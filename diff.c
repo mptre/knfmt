@@ -11,7 +11,6 @@
 
 #include "buffer.h"
 #include "error.h"
-#include "extern.h"
 #include "file.h"
 #include "options.h"
 #include "vector.h"
