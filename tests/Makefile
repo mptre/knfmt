@@ -366,6 +366,7 @@ TESTS+=	../comment.c
 TESTS+=	../comment.h
 TESTS+=	../compat-pledge.c
 TESTS+=	../cpp.c
+TESTS+=	../cpp.h
 TESTS+=	../diff.c
 TESTS+=	../diff.h
 TESTS+=	../doc.c

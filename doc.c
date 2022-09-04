@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "comment.h"
+#include "cpp.h"
 #include "diff.h"
 #include "extern.h"
 #include "vector.h"

@@ -243,12 +243,6 @@ const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
 void	lexer_dump(const struct lexer *);
 
 /*
- * cpp -------------------------------------------------------------------------
- */
-
-char	*cpp_exec(const struct token *, const struct config *);
-
-/*
  * doc -------------------------------------------------------------------------
  */
 
