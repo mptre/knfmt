@@ -11,6 +11,7 @@
 
 #include "error.h"
 #include "extern.h"
+#include "file.h"
 #include "vector.h"
 
 #define _PATH_DIFF	"/usr/bin/diff"

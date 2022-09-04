@@ -77,24 +77,6 @@ int	diff_parse(struct files *, const struct config *);
 int	diff_covers(const struct diffchunk *, unsigned int);
 
 /*
- * file ------------------------------------------------------------------------
- */
-
-struct files {
-	struct file	*fs_vc;		/* VECTOR(struct file) */
-};
-
-struct file {
-	struct diffchunk	*fe_diff;	/* VECTOR(struct diffchunk) */
-	struct error		*fe_error;
-	char			*fe_path;
-};
-
-struct file	*files_alloc(struct files *, const char *,
-    const struct config *);
-void		 files_free(struct files *);
-
-/*
  * token -----------------------------------------------------------------------
  */
 
@@ -197,6 +179,9 @@ void	token_list_move(struct token_list *, struct token_list *);
 /*
  * lexer -----------------------------------------------------------------------
  */
+
+struct error;
+struct file;
 
 struct lexer_state {
 	struct token	*st_tok;

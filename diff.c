@@ -9,6 +9,7 @@
 
 #include "error.h"
 #include "extern.h"
+#include "file.h"
 #include "vector.h"
 
 static void	diff_end(struct diffchunk *, unsigned int);
@@ -25,37 +26,6 @@ static void	diff_trace(const char *, ...)
 	__attribute__((__format__(printf, 1, 2)));
 
 static regex_t	rechunk, repath;
-
-struct file *
-files_alloc(struct files *files, const char *path, const struct config *cf)
-{
-	struct file *fe;
-
-	fe = VECTOR_CALLOC(files->fs_vc);
-	if (fe == NULL)
-		err(1, NULL);
-	fe->fe_path = strdup(path);
-	if (fe->fe_path == NULL)
-		err(1, NULL);
-	if (VECTOR_INIT(fe->fe_diff) == NULL)
-		err(1, NULL);
-	fe->fe_error = error_alloc(config_trace(cf));
-	return fe;
-}
-
-void
-files_free(struct files *files)
-{
-	while (!VECTOR_EMPTY(files->fs_vc)) {
-		struct file *fe;
-
-		fe = VECTOR_POP(files->fs_vc);
-		VECTOR_FREE(fe->fe_diff);
-		free(fe->fe_path);
-		error_free(fe->fe_error);
-	}
-	VECTOR_FREE(files->fs_vc);
-}
 
 void
 diff_init(void)

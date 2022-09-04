@@ -8,6 +8,7 @@
 
 #include "error.h"
 #include "extern.h"
+#include "file.h"
 #include "vector.h"
 
 struct context;
