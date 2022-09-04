@@ -14,11 +14,11 @@
 #include "buffer.h"
 #include "diff.h"
 #include "error.h"
-#include "extern.h"
 #include "file.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
+#include "token.h"
 #include "vector.h"
 
 #define _PATH_DIFF	"/usr/bin/diff"

@@ -8,9 +8,9 @@
 
 #include "buffer.h"
 #include "doc.h"
-#include "extern.h"
 #include "lexer.h"
 #include "options.h"
+#include "token.h"
 #include "vector.h"
 
 struct stmt {

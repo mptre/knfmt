@@ -14,9 +14,9 @@
 #include "buffer.h"
 #include "diff.h"
 #include "error.h"
-#include "extern.h"
 #include "file.h"
 #include "options.h"
+#include "token.h"
 #include "util.h"
 #include "vector.h"
 

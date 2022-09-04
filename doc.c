@@ -14,9 +14,9 @@
 #include "comment.h"
 #include "cpp.h"
 #include "diff.h"
-#include "extern.h"
 #include "lexer.h"
 #include "options.h"
+#include "token.h"
 #include "util.h"
 #include "vector.h"
 

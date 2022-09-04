@@ -6,8 +6,8 @@
 #include <string.h>
 
 #include "buffer.h"
-#include "extern.h"
 #include "options.h"
+#include "token.h"
 #include "util.h"
 
 static const char	*nextline(const char *, size_t);

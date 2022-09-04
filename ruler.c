@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "doc.h"
-#include "extern.h"
+#include "token.h"
 #include "vector.h"
 
 struct ruler_column {

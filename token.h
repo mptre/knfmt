@@ -1,14 +1,12 @@
 #include "token-type.h"
 
+#include "config.h"
+
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
 #else
 #  include "compat-queue.h"
 #endif
-
-/*
- * token -----------------------------------------------------------------------
- */
 
 TAILQ_HEAD(token_list, token);
 

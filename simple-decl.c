@@ -10,9 +10,9 @@
 #include <string.h>
 
 #include "buffer.h"
-#include "extern.h"
 #include "lexer.h"
 #include "options.h"
+#include "token.h"
 #include "vector.h"
 
 #ifdef HAVE_UTHASH

@@ -10,8 +10,8 @@
 
 #include "doc.h"
 #include "lexer.h"
-#include "extern.h"
 #include "options.h"
+#include "token.h"
 
 /*
  * Precedence, from lowest to highest.

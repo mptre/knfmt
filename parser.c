@@ -13,12 +13,12 @@
 #include "doc.h"
 #include "error.h"
 #include "expr.h"
-#include "extern.h"
 #include "lexer.h"
 #include "options.h"
 #include "ruler.h"
 #include "simple-decl.h"
 #include "simple-stmt.h"
+#include "token.h"
 
 /*
  * Return values for parser exec routines. Only one of the following may be

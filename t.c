@@ -13,11 +13,11 @@
 #include "doc.h"
 #include "error.h"
 #include "expr.h"
-#include "extern.h"
 #include "file.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
+#include "token.h"
 #include "util.h"
 #include "vector.h"
 
