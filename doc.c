@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "diff.h"
 #include "extern.h"
 #include "vector.h"
 

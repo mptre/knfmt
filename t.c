@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "diff.h"
 #include "error.h"
 #include "extern.h"
 #include "file.h"

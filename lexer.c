@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "diff.h"
 #include "error.h"
 #include "extern.h"
 #include "file.h"
