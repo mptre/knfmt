@@ -9,6 +9,7 @@
 
 #include "buffer.h"
 #include "extern.h"
+#include "lexer.h"
 #include "options.h"
 #include "vector.h"
 

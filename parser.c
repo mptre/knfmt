@@ -12,6 +12,7 @@
 #include "error.h"
 #include "expr.h"
 #include "extern.h"
+#include "lexer.h"
 #include "options.h"
 #include "ruler.h"
 #include "simple-decl.h"

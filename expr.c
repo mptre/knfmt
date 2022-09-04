@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "doc.h"
+#include "lexer.h"
 #include "extern.h"
 #include "options.h"
 
