@@ -460,7 +460,7 @@ context_reset(struct context *cx)
 		struct file *fe = VECTOR_FIRST(cx->cx_files.fs_vc);
 
 		if (fe != NULL)
-			error_flush(fe->fe_error);
+			error_flush(fe->fe_error, 1);
 		files_free(&cx->cx_files);
 	}
 

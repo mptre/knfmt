@@ -44,9 +44,11 @@ error_reset(struct error *er)
 }
 
 void
-error_flush(struct error *er)
+error_flush(struct error *er, int force)
 {
-	if (!er->er_flush || er->er_bf == NULL)
+	if (er->er_bf == NULL)
+		return;
+	if (!force && !er->er_flush)
 		return;
 
 	if (er->er_bf->bf_len > 0)

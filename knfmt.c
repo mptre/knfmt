@@ -102,7 +102,7 @@ main(int argc, char *argv[])
 
 		if (fileformat(fe, &op)) {
 			error = 1;
-			error_flush(fe->fe_error);
+			error_flush(fe->fe_error, 1);
 		}
 	}
 
