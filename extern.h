@@ -64,7 +64,7 @@ int		 buffer_cmp(const struct buffer *, const struct buffer *);
  * diff ------------------------------------------------------------------------
  */
 
-struct file_list;
+struct files;
 
 struct diffchunk {
 	unsigned int	du_beg;
@@ -73,26 +73,26 @@ struct diffchunk {
 
 void	diff_init(void);
 void	diff_shutdown(void);
-int	diff_parse(struct file_list *, const struct config *);
+int	diff_parse(struct files *, const struct config *);
 int	diff_covers(const struct diffchunk *, unsigned int);
 
 /*
  * file ------------------------------------------------------------------------
  */
 
+struct files {
+	struct file	*fs_vc;		/* VECTOR(struct file) */
+};
+
 struct file {
 	struct diffchunk	*fe_diff;	/* VECTOR(struct diffchunk) */
 	struct error		*fe_error;
 	char			*fe_path;
-
-	TAILQ_ENTRY(file)	 fe_entry;
 };
 
-TAILQ_HEAD(file_list, file);
-
-void	files_free(struct file_list *);
-
-struct file	*file_alloc(const char *, const struct config *);
+struct file	*files_alloc(struct files *, const char *,
+    const struct config *);
+void		 files_free(struct files *);
 
 /*
  * token -----------------------------------------------------------------------

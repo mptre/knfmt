@@ -8,6 +8,7 @@
 
 #include "error.h"
 #include "extern.h"
+#include "vector.h"
 
 struct context;
 
@@ -51,7 +52,7 @@ struct context {
 	struct buffer	*cx_bf;
 	struct lexer	*cx_lx;
 	struct parser	*cx_pr;
-	struct file_list cx_files;
+	struct files	 cx_files;
 };
 
 static struct context	*context_alloc(void);
@@ -426,9 +427,9 @@ context_init(struct context *cx, const char *src)
 	static const char *path = "test.c";
 	struct file *fe;
 
-	fe = file_alloc(path, &cx->cx_cf);
-	TAILQ_INIT(&cx->cx_files);
-	TAILQ_INSERT_TAIL(&cx->cx_files, fe, fe_entry);
+	if (VECTOR_INIT(cx->cx_files.fs_vc) == NULL)
+		err(1, NULL);
+	fe = files_alloc(&cx->cx_files, path, &cx->cx_cf);
 
 	buffer_append(cx->cx_bf, src, strlen(src));
 	cx->cx_lx = lexer_alloc(fe, cx->cx_bf, fe->fe_error, &cx->cx_cf);
@@ -446,10 +447,11 @@ context_reset(struct context *cx)
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;
 
-	fe = TAILQ_FIRST(&cx->cx_files);
+	fe = &cx->cx_files.fs_vc[0];
 	if (fe != NULL)
 		error_flush(fe->fe_error);
-	files_free(&cx->cx_files);
+	if (cx->cx_files.fs_vc != NULL)
+		files_free(&cx->cx_files);
 
 	buffer_reset(cx->cx_bf);
 }

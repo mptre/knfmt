@@ -26,26 +26,12 @@ static void	diff_trace(const char *, ...)
 
 static regex_t	rechunk, repath;
 
-void
-files_free(struct file_list *files)
-{
-	struct file *fe;
-
-	while ((fe = TAILQ_FIRST(files)) != NULL) {
-		TAILQ_REMOVE(files, fe, fe_entry);
-		VECTOR_FREE(fe->fe_diff);
-		free(fe->fe_path);
-		error_free(fe->fe_error);
-		free(fe);
-	}
-}
-
 struct file *
-file_alloc(const char *path, const struct config *cf)
+files_alloc(struct files *files, const char *path, const struct config *cf)
 {
 	struct file *fe;
 
-	fe = calloc(1, sizeof(*fe));
+	fe = VECTOR_CALLOC(files->fs_vc);
 	if (fe == NULL)
 		err(1, NULL);
 	fe->fe_path = strdup(path);
@@ -55,6 +41,20 @@ file_alloc(const char *path, const struct config *cf)
 		err(1, NULL);
 	fe->fe_error = error_alloc(config_trace(cf));
 	return fe;
+}
+
+void
+files_free(struct files *files)
+{
+	while (!VECTOR_EMPTY(files->fs_vc)) {
+		struct file *fe;
+
+		fe = VECTOR_POP(files->fs_vc);
+		VECTOR_FREE(fe->fe_diff);
+		free(fe->fe_path);
+		error_free(fe->fe_error);
+	}
+	VECTOR_FREE(files->fs_vc);
 }
 
 void
@@ -92,7 +92,7 @@ diff_shutdown(void)
 }
 
 int
-diff_parse(struct file_list *files, const struct config *cf)
+diff_parse(struct files *files, const struct config *cf)
 {
 	struct file *fe = NULL;
 	char *buf;
@@ -109,8 +109,7 @@ diff_parse(struct file_list *files, const struct config *cf)
 		int el, sl;
 
 		if (matchpath(buf, path, sizeof(path))) {
-			fe = file_alloc(path, cf);
-			TAILQ_INSERT_TAIL(files, fe, fe_entry);
+			fe = files_alloc(files, path, cf);
 
 			buf = skipline(buf);
 			if (buf == NULL)
@@ -143,12 +142,15 @@ diff_parse(struct file_list *files, const struct config *cf)
 	}
 
 	if (config_trace(cf)) {
-		TAILQ_FOREACH(fe, files, fe_entry) {
-			size_t i;
+		size_t i;
 
+		for (i = 0; i < VECTOR_LENGTH(files->fs_vc); i++) {
+			size_t j;
+
+			fe = &files->fs_vc[i];
 			diff_trace("%s:", fe->fe_path);
-			for (i = 0; i < VECTOR_LENGTH(fe->fe_diff); i++) {
-				const struct diffchunk *du = &fe->fe_diff[i];
+			for (j = 0; j < VECTOR_LENGTH(fe->fe_diff); j++) {
+				const struct diffchunk *du = &fe->fe_diff[j];
 
 				diff_trace("  %u-%u", du->du_beg, du->du_end);
 			}

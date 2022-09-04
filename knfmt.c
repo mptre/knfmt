@@ -11,13 +11,13 @@
 
 #include "error.h"
 #include "extern.h"
+#include "vector.h"
 
 #define _PATH_DIFF	"/usr/bin/diff"
 
 static __dead void	usage(void);
 
-static int	filelist(int, char **, struct file_list *,
-    const struct config *);
+static int	filelist(int, char **, struct files *, const struct config *);
 static int	fileformat(struct file *, const struct config *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const char *);
@@ -30,16 +30,15 @@ static int	tmpfd(const char *, size_t, char *, size_t);
 int
 main(int argc, char *argv[])
 {
-	struct file_list files;
+	struct files files;
 	struct config cf;
-	struct file *fe;
+	size_t i;
 	int error = 0;
 	int ch;
 
 	if (pledge("stdio rpath wpath cpath fattr chown proc exec", NULL) == -1)
 		err(1, "pledge");
 
-	TAILQ_INIT(&files);
 	config_init(&cf);
 
 	while ((ch = getopt(argc, argv, "Ddisv")) != -1) {
@@ -81,12 +80,18 @@ main(int argc, char *argv[])
 
 	diff_init();
 	lexer_init();
+	if (VECTOR_INIT(files.fs_vc) == NULL) {
+		error = 1;
+		goto out;
+	}
 
 	if (filelist(argc, argv, &files, &cf)) {
 		error = 1;
 		goto out;
 	}
-	TAILQ_FOREACH(fe, &files, fe_entry) {
+	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
+		struct file *fe = &files.fs_vc[i];
+
 		if (fileformat(fe, &cf)) {
 			error = 1;
 			error_flush(fe->fe_error);
@@ -94,9 +99,9 @@ main(int argc, char *argv[])
 	}
 
 out:
+	files_free(&files);
 	lexer_shutdown();
 	diff_shutdown();
-	files_free(&files);
 
 	return error;
 }
@@ -109,24 +114,19 @@ usage(void)
 }
 
 static int
-filelist(int argc, char **argv, struct file_list *files,
+filelist(int argc, char **argv, struct files *files,
     const struct config *cf)
 {
-	struct file *fe;
-
 	if (cf->cf_flags & CONFIG_FLAG_DIFFPARSE)
 		return diff_parse(files, cf);
 
 	if (argc == 0) {
-		fe = file_alloc("/dev/stdin", cf);
-		TAILQ_INSERT_TAIL(files, fe, fe_entry);
+		files_alloc(files, "/dev/stdin", cf);
 	} else {
 		int i;
 
-		for (i = 0; i < argc; i++) {
-			fe = file_alloc(argv[i], cf);
-			TAILQ_INSERT_TAIL(files, fe, fe_entry);
-		}
+		for (i = 0; i < argc; i++)
+			files_alloc(files, argv[i], cf);
 	}
 	return 0;
 }
