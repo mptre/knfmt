@@ -90,12 +90,12 @@ struct expr_state {
 #define es_op		es_ea->ea_op
 #define es_lx		es_ea->ea_lx
 #define es_stop		es_ea->ea_stop
-#define es_flags	es_ea->ea_flags
 
 	const struct expr_rule		*es_er;
 	struct token			*es_tk;
 	unsigned int			 es_depth;
 	unsigned int			 es_noparens;	/* parens indent disabled */
+	unsigned int			 es_flags;	/* expr_exec_arg flags */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -197,6 +197,7 @@ expr_exec(const struct expr_exec_arg *ea)
 
 	memset(&es, 0, sizeof(es));
 	es.es_ea = ea;
+	es.es_flags = ea->ea_flags;
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
@@ -398,9 +399,15 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 
 		ex = expr_alloc(EXPR_PARENS, es);
 		ex->ex_lhs = expr_exec1(es, PC0);
+	} else if (es->es_flags & EXPR_EXEC_FLAG_ASM) {
+		ex = expr_alloc(EXPR_ASM, es);
+		ex->ex_lhs = lhs;
+		/* Nested parenthesis must be handled as usual. */
+		es->es_flags &= ~EXPR_EXEC_FLAG_ASM;
+		ex->ex_rhs = expr_exec1(es, PC0);
+		es->es_flags |= EXPR_EXEC_FLAG_ASM;
 	} else {
-		ex = expr_alloc(es->es_flags & EXPR_EXEC_FLAG_ASM ?
-		    EXPR_ASM : EXPR_CALL, es);
+		ex = expr_alloc(EXPR_CALL, es);
 		ex->ex_lhs = lhs;
 		ex->ex_rhs = expr_exec1(es, PC0);
 	}
