@@ -1,3 +1,5 @@
+#include "comment.h"
+
 #include <stdlib.h>
 #include <string.h>
 

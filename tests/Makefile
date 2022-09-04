@@ -363,6 +363,7 @@ TESTS+=	bug-005.c
 
 TESTS+=	../buffer.c
 TESTS+=	../comment.c
+TESTS+=	../comment.h
 TESTS+=	../compat-pledge.c
 TESTS+=	../cpp.c
 TESTS+=	../diff.c

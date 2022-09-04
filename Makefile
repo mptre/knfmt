@@ -36,6 +36,7 @@ PROG_test=	t
 
 KNFMT+=	buffer.c
 KNFMT+=	comment.c
+KNFMT+=	comment.h
 KNFMT+=	compat-pledge.c
 KNFMT+=	cpp.c
 KNFMT+=	diff.c
@@ -72,6 +73,7 @@ DISTFILES+=	Makefile
 DISTFILES+=	README.md
 DISTFILES+=	buffer.c
 DISTFILES+=	comment.c
+DISTFILES+=	comment.h
 DISTFILES+=	compat-errc.c
 DISTFILES+=	compat-pledge.c
 DISTFILES+=	compat-queue.h
