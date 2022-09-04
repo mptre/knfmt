@@ -442,7 +442,7 @@ lexer_init(void)
 	.tk_entry	= { NULL, NULL }				\
 }},
 #define A(t, s, f) T(t, s, f)
-#include "token.h"
+#include "token-defs.h"
 	};
 	unsigned int i;
 
@@ -2507,7 +2507,7 @@ strtoken(enum token_type type)
 	switch (type) {
 #define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
 #define S(t, s, f) T(t, s, f)
-#include "token.h"
+#include "token-defs.h"
 	}
 	return NULL;
 }
