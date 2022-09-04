@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include "cdefs.h"
 #include "token-type.h"
 
 #ifdef HAVE_QUEUE
@@ -7,12 +8,6 @@
 #else
 #  include "compat-queue.h"
 #endif
-
-/* Annotate the argument as unused. */
-#define UNUSED(x)	_##x __attribute__((__unused__))
-#define MAYBE_UNUSED(x)	x __attribute__((__unused__))
-
-#define UNLIKELY(x)	__builtin_expect((x), 0)
 
 /*
  * options ---------------------------------------------------------------------

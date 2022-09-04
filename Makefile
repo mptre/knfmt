@@ -36,6 +36,7 @@ PROG_test=	t
 
 KNFMT+=	buffer.c
 KNFMT+=	buffer.h
+KNFMT+=	cdefs.h
 KNFMT+=	comment.c
 KNFMT+=	comment.h
 KNFMT+=	compat-pledge.c
@@ -77,6 +78,7 @@ DISTFILES+=	Makefile
 DISTFILES+=	README.md
 DISTFILES+=	buffer.c
 DISTFILES+=	buffer.h
+DISTFILES+=	cdefs.h
 DISTFILES+=	comment.c
 DISTFILES+=	comment.h
 DISTFILES+=	compat-errc.c
