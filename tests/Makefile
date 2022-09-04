@@ -384,6 +384,7 @@ TESTS+=	../ruler.h
 TESTS+=	../simple-decl.c
 TESTS+=	../simple-decl.h
 TESTS+=	../simple-stmt.c
+TESTS+=	../simple-stmt.h
 TESTS+=	../t.c
 TESTS+=	../token-type.h
 TESTS+=	../token.h
