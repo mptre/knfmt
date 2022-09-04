@@ -2,7 +2,9 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <err.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -12,21 +14,30 @@ strnice(const char *str, size_t len)
 	char *buf, *p;
 	size_t i;
 
-	buf = p = malloc(2 * len + 1);
+	buf = p = malloc(4 * len + 1);
 	if (buf == NULL)
 		err(1, NULL);
 	for (i = 0; i < len; i++) {
-		if (str[i] == '\n') {
+		unsigned char c = str[i];
+
+		if (c == '\n') {
 			*buf++ = '\\';
 			*buf++ = 'n';
-		} else if (str[i] == '\t') {
+		} else if (c == '\t') {
 			*buf++ = '\\';
 			*buf++ = 't';
-		} else if (str[i] == '"') {
+		} else if (c == '"') {
 			*buf++ = '\\';
 			*buf++ = '"';
+		} else if (isprint(c)) {
+			*buf++ = c;
 		} else {
-			*buf++ = str[i];
+			int n;
+
+			n = sprintf(buf, "\\x%02x", c);
+			if (n < 0)
+				err(1, "%s: sprintf", __func__);
+			buf += n;
 		}
 	}
 	*buf = '\0';
