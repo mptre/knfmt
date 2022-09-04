@@ -298,7 +298,7 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 
 		if (!lexer_back(lx, &pv))
 			return NULL;
-		nx = TAILQ_NEXT(tk, tk_entry);
+		nx = token_next(tk);
 		if (pv != NULL && nx != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA ||
@@ -1366,7 +1366,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	 * Remove semi before emitting the right brace in order to honor
 	 * optional lines.
 	 */
-	nx = TAILQ_NEXT(rbrace, tk_entry);
+	nx = token_next(rbrace);
 	if (nx != NULL && nx->tk_type == TOKEN_SEMI &&
 	    (pr->pr_op->op_flags & OPTIONS_FLAG_SIMPLE))
 		lexer_remove(lx, nx, 1);
@@ -2102,7 +2102,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		if (align != NULL) {
 			const struct token *nx;
 
-			nx = TAILQ_NEXT(align, tk_entry);
+			nx = token_next(align);
 			if (nx != NULL && nx->tk_type == TOKEN_SEMI)
 				align = NULL;
 		}
@@ -2115,7 +2115,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		for (;;) {
 			struct token *nx;
 
-			nx = TAILQ_NEXT(tk, tk_entry);
+			nx = token_next(tk);
 			if (ntokens > 0 &&
 			    tk->tk_type == TOKEN_STATIC) {
 				token_list_move(&beg->tk_prefixes,
@@ -2396,7 +2396,7 @@ parser_peek_cppx(struct parser *pr)
 		 * have the same or less indentation. This is of importance in
 		 * order to not confuse loop constructs hidden behind cpp.
 		 */
-		nx = TAILQ_NEXT(rparen, tk_entry);
+		nx = token_next(rparen);
 		if ((pv == NULL || token_cmp(pv, ident) < 0) &&
 		    (nx == NULL || (token_cmp(nx, rparen) > 0 &&
 		     nx->tk_cno <= ident->tk_cno)))
@@ -2424,7 +2424,7 @@ parser_peek_cpp_init(struct parser *pr)
 		const struct token *nx, *pv;
 
 		pv = TAILQ_PREV(ident, token_list, tk_entry);
-		nx = TAILQ_NEXT(comma, tk_entry);
+		nx = token_next(comma);
 		if (pv != NULL && token_cmp(pv, ident) < 0 &&
 		    nx != NULL && token_cmp(nx, comma) > 0)
 			peek = 1;

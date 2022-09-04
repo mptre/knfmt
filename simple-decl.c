@@ -27,10 +27,10 @@ struct token_range {
 };
 
 #define TOKEN_RANGE_FOREACH(var, tr, tvar)				\
-	for ((var) = (tr)->tr_beg, (tvar) = TAILQ_NEXT((var), tk_entry);\
+	for ((var) = (tr)->tr_beg, (tvar) = token_next((var));		\
 	    (var) != NULL;						\
 	    (var) = (var) == (tr)->tr_end ? NULL : (tvar),		\
-	    (tvar) = (var) ? TAILQ_NEXT((var), tk_entry) : NULL)
+	    (tvar) = (var) ? token_next((var)) : NULL)
 
 struct decl {
 	struct token_range	dc_tr;
@@ -254,7 +254,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	/* Pointer(s) are part of the variable. */
 	while (end->tk_type == TOKEN_STAR)
 		end = TAILQ_PREV(end, token_list, tk_entry);
-	dv->dv_ident.tr_beg = TAILQ_NEXT(end, tk_entry);
+	dv->dv_ident.tr_beg = token_next(end);
 
 	dc = VECTOR_CALLOC(sd->sd_decls);
 	if (dc == NULL)
@@ -306,7 +306,7 @@ simple_decl_comma(struct simple_decl *sd, struct token *comma)
 	}
 	/* Another variable after the comma is expected. */
 	dv = simple_decl_var_init(sd);
-	dv->dv_ident.tr_beg = TAILQ_NEXT(comma, tk_entry);
+	dv->dv_ident.tr_beg = token_next(comma);
 	dv->dv_delim = delim;
 }
 

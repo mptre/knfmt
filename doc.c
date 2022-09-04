@@ -375,7 +375,7 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	}
 
 	/* Mute if we're about to branch. */
-	tmp = TAILQ_NEXT(tk, tk_entry);
+	tmp = token_next(tk);
 	if (tmp != NULL && token_is_branch(tmp))
 		__doc_alloc(DOC_MUTE, dc, 1, fun, lno);
 

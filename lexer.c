@@ -309,7 +309,7 @@ token_is_decl(const struct token *tk, enum token_type type)
 {
 	const struct token *nx;
 
-	nx = TAILQ_NEXT(tk, tk_entry);
+	nx = token_next(tk);
 	if (nx == NULL || nx->tk_type != TOKEN_LBRACE)
 		return 0;
 
@@ -396,6 +396,12 @@ token_sprintf(const struct token *tk)
 	}
 	free(val);
 	return buf;
+}
+
+struct token *
+__token_next(struct token *tk)
+{
+	return TAILQ_NEXT(tk, tk_entry);
 }
 
 void
@@ -690,7 +696,7 @@ lexer_branch(struct lexer *lx)
 
 		lexer_trace(lx, "removing %s", token_sprintf(rm));
 
-		nx = TAILQ_NEXT(rm, tk_entry);
+		nx = token_next(rm);
 		lexer_remove(lx, rm, 0);
 		if (nx == dst)
 			break;
@@ -747,7 +753,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 		if (lx->lx_peek == 0 && token_is_branch(st->st_tok))
 			return 0;
 
-		st->st_tok = TAILQ_NEXT(st->st_tok, tk_entry);
+		st->st_tok = token_next(st->st_tok);
 		if (st->st_tok == NULL)
 			goto out;
 		br = token_get_branch(st->st_tok);
@@ -866,7 +872,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		 * trying to remove the EOF token which is the only one lacking
 		 * a next token.
 		 */
-		nx = TAILQ_NEXT(tk, tk_entry);
+		nx = token_next(tk);
 		assert(nx != NULL);
 		while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
 			fix = TAILQ_LAST(&tk->tk_prefixes, token_list);
@@ -1214,7 +1220,7 @@ lexer_peek_if_prefix_flags(struct lexer *lx, unsigned int flags,
 	/* Cannot use lexer_peek() as it would move past cpp branches. */
 	if (!lexer_back(lx, &t))
 		return 0;
-	t = TAILQ_NEXT(t, tk_entry);
+	t = token_next(t);
 	if (t == NULL)
 		return 0;
 	TAILQ_FOREACH(px, &t->tk_prefixes, tk_entry) {
@@ -2183,7 +2189,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 		if (rm == dst->tk_token)
 			break;
 
-		nx = TAILQ_NEXT(rm, tk_entry);
+		nx = token_next(rm);
 		lexer_trace(lx, "removing %s", token_sprintf(rm));
 		flags |= rm->tk_flags & TOKEN_FLAG_UNMUTE;
 		lexer_remove(lx, rm, 0);
@@ -2341,7 +2347,7 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 		}
 
 		if (flags & LEXER_BRANCH_FLAG_FORWARD)
-			tk = TAILQ_NEXT(tk, tk_entry);
+			tk = token_next(tk);
 		else if (flags & LEXER_BRANCH_FLAG_BACKWARD)
 			tk = TAILQ_PREV(tk, token_list, tk_entry);
 		else
