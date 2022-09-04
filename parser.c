@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buffer.h"
 #include "doc.h"
 #include "error.h"
 #include "expr.h"

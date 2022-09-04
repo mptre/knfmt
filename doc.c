@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buffer.h"
 #include "comment.h"
 #include "cpp.h"
 #include "diff.h"

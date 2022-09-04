@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buffer.h"
 #include "extern.h"
 #include "util.h"
 

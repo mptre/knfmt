@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "extern.h"
+#include "buffer.h"
 
 struct error {
 	struct buffer	*er_bf;

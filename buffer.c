@@ -1,3 +1,5 @@
+#include "buffer.h"
+
 #include <err.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -5,8 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "extern.h"
 
 static void	buffer_grow(struct buffer *, unsigned int);
 

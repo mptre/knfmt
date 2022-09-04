@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "buffer.h"
 #include "doc.h"
 #include "extern.h"
 #include "ruler.h"

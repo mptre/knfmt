@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "buffer.h"
 #include "diff.h"
 #include "error.h"
 #include "extern.h"

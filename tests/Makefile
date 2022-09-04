@@ -362,6 +362,7 @@ TESTS+=	bug-002.c
 TESTS+=	bug-005.c
 
 TESTS+=	../buffer.c
+TESTS+=	../buffer.h
 TESTS+=	../comment.c
 TESTS+=	../comment.h
 TESTS+=	../compat-pledge.c
