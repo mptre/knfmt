@@ -13,6 +13,7 @@
 #include "cpp.h"
 #include "diff.h"
 #include "extern.h"
+#include "options.h"
 #include "util.h"
 #include "vector.h"
 

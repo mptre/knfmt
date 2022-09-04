@@ -4,17 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "extern.h"
-
-void
-options_init(struct options *op)
-{
-	memset(op, 0, sizeof(*op));
-	op->op_mw = 80;
-	op->op_tw = 8;
-	op->op_sw = 4;
-}
-
 char *
 strnice(const char *str, size_t len)
 {

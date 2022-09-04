@@ -13,6 +13,7 @@
 #include "error.h"
 #include "extern.h"
 #include "file.h"
+#include "options.h"
 #include "vector.h"
 
 static void	diff_end(struct diffchunk *, unsigned int);

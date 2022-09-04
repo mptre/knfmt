@@ -7,6 +7,7 @@
 #include "buffer.h"
 #include "doc.h"
 #include "extern.h"
+#include "options.h"
 #include "vector.h"
 
 struct stmt {

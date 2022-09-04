@@ -14,6 +14,7 @@
 #include "error.h"
 #include "extern.h"
 #include "file.h"
+#include "options.h"
 #include "parser.h"
 #include "vector.h"
 

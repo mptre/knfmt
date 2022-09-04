@@ -6,6 +6,7 @@
 #include "buffer.h"
 #include "doc.h"
 #include "extern.h"
+#include "options.h"
 #include "ruler.h"
 
 static const char	*nextline(const char *, size_t, const char **);

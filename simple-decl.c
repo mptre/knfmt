@@ -9,6 +9,7 @@
 
 #include "buffer.h"
 #include "extern.h"
+#include "options.h"
 #include "vector.h"
 
 #ifdef HAVE_UTHASH

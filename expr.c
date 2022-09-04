@@ -8,6 +8,7 @@
 
 #include "doc.h"
 #include "extern.h"
+#include "options.h"
 
 /*
  * Precedence, from lowest to highest.

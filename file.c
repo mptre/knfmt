@@ -7,6 +7,7 @@
 #include "diff.h"
 #include "error.h"
 #include "extern.h"
+#include "options.h"
 #include "vector.h"
 
 struct file *

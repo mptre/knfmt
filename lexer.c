@@ -12,6 +12,7 @@
 #include "error.h"
 #include "extern.h"
 #include "file.h"
+#include "options.h"
 #include "util.h"
 #include "vector.h"
 
