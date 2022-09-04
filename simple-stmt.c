@@ -101,14 +101,14 @@ simple_stmt_leave(struct simple_stmt *ss)
 			    (STMT_FLAG_IGNORE | STMT_FLAG_BRACES))
 				continue;
 
-			pv = TAILQ_PREV(st->st_lbrace, token_list, tk_entry);
+			pv = token_prev(st->st_lbrace);
 			tk = lexer_insert_before(lx, st->st_lbrace,
 			    TOKEN_LBRACE, "{");
 			if (pv != NULL)
 				token_list_move(&pv->tk_suffixes,
 				    &tk->tk_suffixes);
 
-			pv = TAILQ_PREV(st->st_rbrace, token_list, tk_entry);
+			pv = token_prev(st->st_rbrace);
 			tk = lexer_insert_before(lx, st->st_rbrace,
 			    TOKEN_RBRACE, "}");
 			if (pv != NULL)

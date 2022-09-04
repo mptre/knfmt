@@ -570,7 +570,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		int dospace;
 
 		/* Never break before the binary operator. */
-		pv = TAILQ_PREV(ex->ex_tk, token_list, tk_entry);
+		pv = token_prev(ex->ex_tk);
 		lno = ex->ex_tk->tk_lno - pv->tk_lno;
 		if (token_trim(pv) > 0 && lno == 1) {
 			/* Operator not positioned at the end of the line. */
@@ -682,7 +682,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 				struct token *pv;
 
 				/* Never break before the closing parens. */
-				pv = TAILQ_PREV(rparen, token_list, tk_entry);
+				pv = token_prev(rparen);
 				if (pv != NULL)
 					token_trim(pv);
 			}
@@ -805,7 +805,7 @@ expr_doc_has_spaces(const struct expr *ex)
 
 	if (token_has_spaces(ex->ex_tk))
 		return 1;
-	pv = TAILQ_PREV(ex->ex_tk, token_list, tk_entry);
+	pv = token_prev(ex->ex_tk);
 	if (token_has_spaces(pv))
 		return 1;
 	return 0;

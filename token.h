@@ -98,5 +98,8 @@ char	*token_sprintf(const struct token *);
 #define token_next(tk) __token_next((struct token *)(tk))
 struct token	*__token_next(struct token *);
 
+#define token_prev(tk) __token_prev((struct token *)(tk))
+struct token	*__token_prev(struct token *);
+
 void	token_list_copy(struct token_list *, struct token_list *);
 void	token_list_move(struct token_list *, struct token_list *);

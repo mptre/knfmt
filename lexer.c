@@ -314,7 +314,7 @@ token_is_decl(const struct token *tk, enum token_type type)
 		return 0;
 
 	if (tk->tk_type == TOKEN_IDENT) {
-		tk = TAILQ_PREV(tk, token_list, tk_entry);
+		tk = token_prev(tk);
 		if (tk == NULL)
 			return 0;
 	}
@@ -402,6 +402,12 @@ struct token *
 __token_next(struct token *tk)
 {
 	return TAILQ_NEXT(tk, tk_entry);
+}
+
+struct token *
+__token_prev(struct token *tk)
+{
+	return TAILQ_PREV(tk, token_list, tk_entry);
 }
 
 void
@@ -879,7 +885,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 			token_move_prefix(fix, tk, nx);
 		}
 
-		pv = TAILQ_PREV(tk, token_list, tk_entry);
+		pv = token_prev(tk);
 		if (pv == NULL)
 			pv = nx;
 		while (!TAILQ_EMPTY(&tk->tk_suffixes)) {
@@ -2165,7 +2171,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	 * Keep any existing prefix not covered by the new prefix token
 	 * by moving them to the destination.
 	 */
-	pv = TAILQ_PREV(src, token_list, tk_entry);
+	pv = token_prev(src);
 	for (;;) {
 		struct token *tmp;
 
@@ -2173,7 +2179,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 			break;
 
 		lexer_trace(lx, "keeping prefix %s", token_sprintf(pv));
-		tmp = TAILQ_PREV(pv, token_list, tk_entry);
+		tmp = token_prev(pv);
 		token_move_prefix(pv, src->tk_token, dst->tk_token);
 		pv = tmp;
 	}
@@ -2349,7 +2355,7 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 		if (flags & LEXER_BRANCH_FLAG_FORWARD)
 			tk = token_next(tk);
 		else if (flags & LEXER_BRANCH_FLAG_BACKWARD)
-			tk = TAILQ_PREV(tk, token_list, tk_entry);
+			tk = token_prev(tk);
 		else
 			tk = NULL;
 		if (tk == NULL)

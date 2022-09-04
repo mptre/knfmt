@@ -319,7 +319,7 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 	if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
 		struct token *pv;
 
-		pv = TAILQ_PREV(tk, token_list, tk_entry);
+		pv = token_prev(tk);
 		if (pv != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
@@ -2090,7 +2090,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			nspaces++;
 			if (align == beg)
 				break;
-			align = TAILQ_PREV(align, token_list, tk_entry);
+			align = token_prev(align);
 			if (align == NULL)
 				break;
 		}
@@ -2423,7 +2423,7 @@ parser_peek_cpp_init(struct parser *pr)
 	    lexer_if(lx, TOKEN_COMMA, &comma)) {
 		const struct token *nx, *pv;
 
-		pv = TAILQ_PREV(ident, token_list, tk_entry);
+		pv = token_prev(ident);
 		nx = token_next(comma);
 		if (pv != NULL && token_cmp(pv, ident) < 0 &&
 		    nx != NULL && token_cmp(nx, comma) > 0)
@@ -2598,7 +2598,7 @@ parser_token_trim(struct token *tk)
 {
 	struct token *pv;
 
-	pv = TAILQ_PREV(tk, token_list, tk_entry);
+	pv = token_prev(tk);
 	if (pv != NULL &&
 	    !token_has_prefix(tk, TOKEN_COMMENT) &&
 	    !token_has_prefix(tk, TOKEN_CPP))

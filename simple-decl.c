@@ -253,7 +253,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	dv = simple_decl_var_init(sd);
 	/* Pointer(s) are part of the variable. */
 	while (end->tk_type == TOKEN_STAR)
-		end = TAILQ_PREV(end, token_list, tk_entry);
+		end = token_prev(end);
 	dv->dv_ident.tr_beg = token_next(end);
 
 	dc = VECTOR_CALLOC(sd->sd_decls);
@@ -450,7 +450,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 
 	assert(dv->dv_ident.tr_end == NULL);
 	/* The delimiter is not part of the identifier. */
-	dv->dv_ident.tr_end = TAILQ_PREV(end, token_list, tk_entry);
+	dv->dv_ident.tr_end = token_prev(end);
 
 	/*
 	 * Allocate the slot even if the variable is about to be rejected since
