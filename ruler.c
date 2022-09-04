@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "doc.h"
 #include "extern.h"
 #include "vector.h"
 

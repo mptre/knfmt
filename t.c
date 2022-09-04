@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "diff.h"
+#include "doc.h"
 #include "error.h"
 #include "expr.h"
 #include "extern.h"

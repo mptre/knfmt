@@ -370,6 +370,7 @@ TESTS+=	../cpp.h
 TESTS+=	../diff.c
 TESTS+=	../diff.h
 TESTS+=	../doc.c
+TESTS+=	../doc.h
 TESTS+=	../error.c
 TESTS+=	../error.h
 TESTS+=	../expr.c
