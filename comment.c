@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "extern.h"
+#include "util.h"
 
 static const char	*nextline(const char *, size_t);
 static const char	*skipws(const char *, size_t);

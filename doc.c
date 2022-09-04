@@ -10,6 +10,7 @@
 #include "cpp.h"
 #include "diff.h"
 #include "extern.h"
+#include "util.h"
 #include "vector.h"
 
 TAILQ_HEAD(doc_list, doc);

@@ -11,6 +11,7 @@
 #include "error.h"
 #include "extern.h"
 #include "file.h"
+#include "util.h"
 #include "vector.h"
 
 #ifdef HAVE_UTHASH

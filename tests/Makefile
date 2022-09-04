@@ -391,6 +391,7 @@ TESTS+=	../t.c
 TESTS+=	../token-type.h
 TESTS+=	../token.h
 TESTS+=	../util.c
+TESTS+=	../util.h
 TESTS+=	../vector.c
 TESTS+=	../vector.h
 

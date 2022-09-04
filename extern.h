@@ -316,10 +316,3 @@ struct doc	*__doc_token(const struct token *, struct doc *, enum doc_type,
 int	doc_max(const struct doc *);
 
 void	doc_annotate(struct doc *, const char *);
-
-/*
- * util ------------------------------------------------------------------------
- */
-
-char	*strnice(const char *, size_t);
-size_t	 strwidth(const char *, size_t, size_t);

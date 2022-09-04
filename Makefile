@@ -64,6 +64,7 @@ KNFMT+=	t.c
 KNFMT+=	token-type.h
 KNFMT+=	token.h
 KNFMT+=	util.c
+KNFMT+=	util.h
 KNFMT+=	vector.c
 KNFMT+=	vector.h
 
@@ -602,6 +603,7 @@ DISTFILES+=	tests/valid-262.c
 DISTFILES+=	token-type.h
 DISTFILES+=	token.h
 DISTFILES+=	util.c
+DISTFILES+=	util.h
 DISTFILES+=	vector.c
 DISTFILES+=	vector.h
 
