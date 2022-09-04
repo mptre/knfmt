@@ -383,6 +383,7 @@ TESTS+=	../ruler.h
 TESTS+=	../simple-decl.c
 TESTS+=	../simple-stmt.c
 TESTS+=	../t.c
+TESTS+=	../token-type.h
 TESTS+=	../token.h
 TESTS+=	../util.c
 TESTS+=	../vector.c

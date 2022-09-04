@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include "token-type.h"
+
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
 #else
@@ -63,12 +65,6 @@ int		 buffer_cmp(const struct buffer *, const struct buffer *);
 /*
  * token -----------------------------------------------------------------------
  */
-
-enum token_type {
-#define T(t, s, f) t,
-#define S(t, s, f) t,
-#include "token.h"
-};
 
 TAILQ_HEAD(token_list, token);
 
