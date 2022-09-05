@@ -137,7 +137,6 @@ diff_parse(struct files *files, const struct options *op)
 
 err:
 	buffer_free(bf);
-	files_free(files);
 	return 1;
 }
 
