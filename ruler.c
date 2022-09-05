@@ -31,6 +31,7 @@ struct ruler_datum {
 	unsigned int	 rd_nspaces;
 };
 
+static void	ruler_exec_indent(struct ruler *);
 static void	ruler_reset(struct ruler *);
 
 static int		minimize(const struct ruler_column *);
@@ -209,8 +210,20 @@ ruler_exec(struct ruler *rl)
 		}
 	}
 
+	ruler_exec_indent(rl);
+
+	/* Reset the ruler paving the way for reuse. */
+	ruler_reset(rl);
+}
+
+static void
+ruler_exec_indent(struct ruler *rl)
+{
+	size_t i;
+
 	if (rl->rl_indent == NULL)
-		goto out;
+		return;
+
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_indent); i++) {
 		struct ruler_indent *ri = &rl->rl_indent[i];
 		const struct ruler_column *rc = &rl->rl_columns[0];
@@ -227,10 +240,6 @@ ruler_exec(struct ruler *rl)
 		}
 		doc_set_indent(ri->ri_dc, ri->ri_indent * indent);
 	}
-
-out:
-	/* Reset the ruler paving the way for reuse. */
-	ruler_reset(rl);
 }
 
 static void
