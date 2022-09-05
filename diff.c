@@ -141,8 +141,8 @@ err:
 	return 1;
 }
 
-int
-diff_covers(const struct diffchunk *chunks, unsigned int lno)
+const struct diffchunk *
+diff_get_chunk(const struct diffchunk *chunks, unsigned int lno)
 {
 	size_t i;
 
@@ -150,9 +150,9 @@ diff_covers(const struct diffchunk *chunks, unsigned int lno)
 		const struct diffchunk *du = &chunks[i];
 
 		if (lno >= du->du_beg && lno <= du->du_end)
-			return 1;
+			return du;
 	}
-	return 0;
+	return NULL;
 }
 
 static void

@@ -579,9 +579,6 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 	const struct buffer *bf = lx->lx_bf;
 	size_t bo, eo;
 
-	if ((lx->lx_op->op_flags & OPTIONS_FLAG_DIFFPARSE) == 0)
-		return 0;
-
 	bo = lx->lx_lines[beg - 1];
 	if (end == 0)
 		eo = bf->bf_len;
@@ -1314,17 +1311,9 @@ lexer_until(struct lexer *lx, enum token_type type, struct token **tk)
 }
 
 const struct diffchunk *
-lexer_get_diffchunk(const struct lexer *lx, unsigned int beg)
+lexer_get_diffchunk(const struct lexer *lx, unsigned int lno)
 {
-	size_t i;
-
-	for (i = 0; i < VECTOR_LENGTH(lx->lx_diff); i++) {
-		const struct diffchunk *du = &lx->lx_diff[i];
-
-		if (beg >= du->du_beg && beg <= du->du_end)
-			return du;
-	}
-	return NULL;
+	return diff_get_chunk(lx->lx_diff, lno);
 }
 
 /*
@@ -1949,7 +1938,7 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
-	if (diff_covers(lx->lx_diff, t->tk_lno))
+	if (diff_get_chunk(lx->lx_diff, t->tk_lno) != NULL)
 		t->tk_flags |= TOKEN_FLAG_DIFF;
 	if (t->tk_str == NULL) {
 		t->tk_str = &lx->lx_bf->bf_ptr[st->st_off];
