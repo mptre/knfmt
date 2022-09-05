@@ -79,6 +79,9 @@ testcase() {
 				cat "$_out" 1>&2
 				return 1
 			fi
+		elif [ "$_exp" -eq 1 ] && cmp -s - /dev/null <"$_out"; then
+			echo "${_file}: expected error message" 1>&2
+			return 1
 		fi
 	fi
 	if [ "$_quiet" -eq 0 ] && ! cmp -s /dev/null "$_out"; then
