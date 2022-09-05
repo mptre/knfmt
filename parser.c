@@ -82,11 +82,11 @@ struct parser_exec_stmt_block_arg {
 };
 
 /* Honor grouped declarations. */
-#define PARSER_EXEC_DECL_FLAG_BREAK	0x00000001u
+#define PARSER_EXEC_DECL_FLAG_BREAK		0x00000001u
 /* Emit hard line after declaration(s). */
-#define PARSER_EXEC_DECL_FLAG_LINE	0x00000002u
+#define PARSER_EXEC_DECL_FLAG_LINE		0x00000002u
 /* Parsing of declarations on root level. */
-#define PARSER_EXEC_DECL_FLAG_ROOT	0x00000004u
+#define PARSER_EXEC_DECL_FLAG_ROOT		0x00000004u
 
 /* Insert space before assignment operator. */
 #define PARSER_EXEC_DECL_INIT_FLAG_ASSIGN	0x00000001u
