@@ -233,6 +233,17 @@ out:
 	ruler_reset(rl);
 }
 
+static void
+ruler_reset(struct ruler *rl)
+{
+	while (!VECTOR_EMPTY(rl->rl_columns)) {
+		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
+
+		VECTOR_FREE(rc->rc_datums);
+	}
+	VECTOR_FREE(rl->rl_indent);
+}
+
 static int
 minimize(const struct ruler_column *rc)
 {
@@ -271,15 +282,4 @@ static unsigned int
 tabalign(unsigned int len)
 {
 	return len + (8 - (len % 8));
-}
-
-static void
-ruler_reset(struct ruler *rl)
-{
-	while (!VECTOR_EMPTY(rl->rl_columns)) {
-		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
-
-		VECTOR_FREE(rc->rc_datums);
-	}
-	VECTOR_FREE(rl->rl_indent);
 }
