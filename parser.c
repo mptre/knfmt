@@ -88,12 +88,15 @@ struct parser_exec_stmt_block_arg {
 /* Parsing of declarations on root level. */
 #define PARSER_EXEC_DECL_FLAG_ROOT	0x00000004u
 
+/* Insert space before assignment operator. */
+#define PARSER_EXEC_DECL_INIT_FLAG_ASSIGN	0x00000001u
+
 static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl1(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl2(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_init(struct parser *, struct doc *,
-    struct ruler *, const struct token *, int);
+    struct ruler *, const struct token *, unsigned int);
 static int	parser_exec_decl_braces(struct parser *, struct doc *,
     unsigned int);
 static int	parser_exec_decl_braces1(struct parser *,
@@ -432,6 +435,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct doc *concat;
 	struct token *beg, *end, *fun, *semi, *tk;
 	enum parser_peek peek;
+	int error;
 
 	if (parser_exec_decl_cppdefs(pr, dc) & GOOD)
 		return parser_good(pr);
@@ -498,7 +502,6 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	} else if (token_is_decl(end, TOKEN_ENUM)) {
 		struct token *lbrace, *rbrace;
 		unsigned int bflags = PARSER_EXEC_DECL_BRACES_FLAG_ENUM;
-		int error;
 
 		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_literal(" ", concat);
@@ -526,7 +529,9 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_fail(pr);
-	if (parser_exec_decl_init(pr, concat, rl, semi, 0) & (FAIL | NONE))
+	error = parser_exec_decl_init(pr, concat, rl, semi,
+	    PARSER_EXEC_DECL_INIT_FLAG_ASSIGN);
+	if (error & (FAIL | NONE))
 		return parser_fail(pr);
 
 	parser_exec_attributes(pr, concat, NULL, pr->pr_op->op_tw, DOC_LINE);
@@ -545,7 +550,7 @@ out:
  */
 static int
 parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *semi, int didalign)
+    const struct token *semi, unsigned int flags)
 {
 	struct doc *parent = dc;
 	struct doc *concat, *indent;
@@ -572,7 +577,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &assign)) {
 			struct doc *dedent;
 
-			if (!didalign)
+			if (flags & PARSER_EXEC_DECL_INIT_FLAG_ASSIGN)
 				doc_literal(" ", concat);
 			doc_token(assign, concat);
 			doc_literal(" ", concat);
@@ -585,7 +590,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 					return parser_fail(pr);
 			} else {
 				struct token *stop;
-				unsigned int flags = 0;
+				unsigned int eflags = 0;
 
 				/*
 				 * Honor hard line after assignment which must
@@ -593,12 +598,12 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 				 * get indentation right.
 				 */
 				if (token_has_line(assign, 1))
-					flags |= EXPR_EXEC_FLAG_HARDLINE;
+					eflags |= EXPR_EXEC_FLAG_HARDLINE;
 
 				lexer_peek_until_loose(lx, TOKEN_COMMA, semi,
 				    &stop);
 				error = parser_exec_expr(pr, dedent, NULL,
-				    stop, flags);
+				    stop, eflags);
 				if (error & HALT)
 					return parser_fail(pr);
 			}
@@ -870,7 +875,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 
 	ruler_insert(rl, tk, dc, 1, parser_width(pr, dc), 0);
 
-	if (parser_exec_decl_init(pr, dc, rl, stop, 1) & (FAIL | NONE))
+	if (parser_exec_decl_init(pr, dc, rl, stop, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
 out:
@@ -890,6 +895,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct token *end, *macro, *semi, *tk;
 	struct doc *expr = dc;
 	int peek = 0;
+	int error;
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
@@ -936,7 +942,9 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_fail(pr);
-	if (parser_exec_decl_init(pr, dc, rl, semi, 0) & (FAIL | NONE))
+	error = parser_exec_decl_init(pr, dc, rl, semi,
+	    PARSER_EXEC_DECL_INIT_FLAG_ASSIGN);
+	if (error & (FAIL | NONE))
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, expr);
