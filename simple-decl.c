@@ -131,7 +131,7 @@ simple_decl_leave(struct simple_decl *sd)
 		size_t slen = VECTOR_LENGTH(dt->dt_slots);
 		for (slot = 0; slot < slen; slot++) {
 			struct decl_var_list *dl = &dt->dt_slots[slot];
-			struct token *fix, *semi;
+			struct token *semi;
 
 			if (VECTOR_LENGTH(dl->dl_vars) == 0)
 				continue;
@@ -179,18 +179,8 @@ simple_decl_leave(struct simple_decl *sd)
 			    TOKEN_SEMI, ";");
 
 			/* Move line break(s) to the new semicolon. */
-			if (semi != NULL) {
-				TAILQ_FOREACH_SAFE(fix, &semi->tk_suffixes,
-				    tk_entry, tmp) {
-					if (fix->tk_type == TOKEN_COMMENT)
-						continue;
-
-					TAILQ_REMOVE(&semi->tk_suffixes,
-					    fix, tk_entry);
-					TAILQ_INSERT_TAIL(&after->tk_suffixes,
-					    fix, tk_entry);
-				}
-			}
+			if (semi != NULL)
+				token_move_suffixes(semi, after, TOKEN_SPACE);
 		}
 	}
 

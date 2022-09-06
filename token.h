@@ -103,3 +103,5 @@ struct token	*__token_prev(struct token *);
 
 void	token_list_copy(struct token_list *, struct token_list *);
 void	token_list_move(struct token_list *, struct token_list *);
+
+void	token_move_suffixes(struct token *, struct token *, enum token_type);

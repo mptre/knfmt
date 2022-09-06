@@ -434,6 +434,20 @@ token_list_move(struct token_list *src, struct token_list *dst)
 	}
 }
 
+void
+token_move_suffixes(struct token *src, struct token *dst, enum token_type type)
+{
+	struct token *suffix, *tmp;
+
+	TAILQ_FOREACH_SAFE(suffix, &src->tk_suffixes, tk_entry, tmp) {
+		if (suffix->tk_type != type)
+			continue;
+
+		TAILQ_REMOVE(&src->tk_suffixes, suffix, tk_entry);
+		TAILQ_INSERT_TAIL(&dst->tk_suffixes, suffix, tk_entry);
+	}
+}
+
 /*
  * Populate the token hash map.
  */
