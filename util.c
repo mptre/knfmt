@@ -6,7 +6,6 @@
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 char *
 strnice(const char *str, size_t len)
