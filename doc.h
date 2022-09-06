@@ -60,7 +60,7 @@ struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
     const char *, int);
 
 #define doc_literal(a, b) \
-	__doc_literal((a), strlen(a), (b), __func__, __LINE__)
+	__doc_literal((a), 0, (b), __func__, __LINE__)
 #define doc_literal_n(a, b, c) \
 	__doc_literal((a), (b), (c), __func__, __LINE__)
 struct doc	*__doc_literal(const char *, size_t, struct doc *,

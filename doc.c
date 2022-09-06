@@ -343,7 +343,7 @@ __doc_literal(const char *str, size_t len, struct doc *dc, const char *fun,
 
 	literal = __doc_alloc(DOC_LITERAL, dc, 0, fun, lno);
 	literal->dc_str = str;
-	literal->dc_len = len;
+	literal->dc_len = len > 0 ? len : strlen(str);
 	return literal;
 }
 
