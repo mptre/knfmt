@@ -920,24 +920,14 @@ __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
     const char *fun, int lno)
 {
 	struct token *t = NULL;
-	struct token *pv;
 
-	if (!lexer_back(lx, &pv))
-		pv = NULL;
-
-	if (!lexer_pop(lx, &t))
-		goto err;
-	if (t->tk_type == type) {
-		if (tk != NULL)
-			*tk = t;
-		return 1;
+	if (!lexer_if(lx, type, &t)) {
+		lexer_emit_error(lx, type, t, fun, lno);
+		return 0;
 	}
-
-err:
-	lexer_emit_error(lx, type, t, fun, lno);
-	if (!lexer_is_branch(lx))
-		lx->lx_st.st_tok = pv;
-	return 0;
+	if (tk != NULL)
+		*tk = t;
+	return 1;
 }
 
 void
