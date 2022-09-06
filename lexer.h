@@ -3,8 +3,8 @@
 #include "token-type.h"
 
 struct buffer;
+struct diffchunk;
 struct error;
-struct file;
 struct options;
 
 struct lexer_state {
@@ -17,8 +17,8 @@ struct lexer_state {
 
 void		 lexer_init(void);
 void		 lexer_shutdown(void);
-struct lexer	*lexer_alloc(const struct file *, const struct buffer *,
-    struct error *, const struct options *);
+struct lexer	*lexer_alloc(const char *, const struct buffer *,
+    struct error *, const struct diffchunk *, const struct options *);
 void		 lexer_free(struct lexer *);
 
 int	lexer_get_error(const struct lexer *);

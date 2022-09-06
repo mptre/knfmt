@@ -11,13 +11,11 @@
 #include "doc.h"
 #include "error.h"
 #include "expr.h"
-#include "file.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
 #include "token.h"
 #include "util.h"
-#include "vector.h"
 
 struct context;
 
@@ -59,9 +57,9 @@ static int	__test_strwidth(const char *, size_t, size_t,
 struct context {
 	struct options	 cx_op;
 	struct buffer	*cx_bf;
+	struct error	*cx_er;
 	struct lexer	*cx_lx;
 	struct parser	*cx_pr;
-	struct files	 cx_files;
 };
 
 static struct context	*context_alloc(void);
@@ -434,15 +432,11 @@ static void
 context_init(struct context *cx, const char *src)
 {
 	static const char *path = "test.c";
-	struct file *fe;
-
-	if (VECTOR_INIT(cx->cx_files.fs_vc) == NULL)
-		err(1, NULL);
-	fe = files_alloc(&cx->cx_files, path, &cx->cx_op);
 
 	buffer_append(cx->cx_bf, src, strlen(src));
-	cx->cx_lx = lexer_alloc(fe, cx->cx_bf, fe->fe_error, &cx->cx_op);
-	cx->cx_pr = parser_alloc(path, cx->cx_lx, fe->fe_error, &cx->cx_op);
+	cx->cx_er = error_alloc(0);
+	cx->cx_lx = lexer_alloc(path, cx->cx_bf, cx->cx_er, NULL, &cx->cx_op);
+	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, &cx->cx_op);
 }
 
 static void
@@ -451,16 +445,14 @@ context_reset(struct context *cx)
 	parser_free(cx->cx_pr);
 	cx->cx_pr = NULL;
 
+	if (cx->cx_er != NULL) {
+		error_flush(cx->cx_er, 1);
+		error_free(cx->cx_er);
+		cx->cx_er = NULL;
+	}
+
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;
-
-	if (cx->cx_files.fs_vc != NULL) {
-		struct file *fe = VECTOR_FIRST(cx->cx_files.fs_vc);
-
-		if (fe != NULL)
-			error_flush(fe->fe_error, 1);
-		files_free(&cx->cx_files);
-	}
 
 	buffer_reset(cx->cx_bf);
 }

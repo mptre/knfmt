@@ -13,7 +13,6 @@
 #include "buffer.h"
 #include "diff.h"
 #include "error.h"
-#include "file.h"
 #include "options.h"
 #include "token.h"
 #include "util.h"
@@ -486,8 +485,8 @@ lexer_shutdown(void)
 }
 
 struct lexer *
-lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
-    const struct options *op)
+lexer_alloc(const char *path, const struct buffer *bf, struct error *er,
+    const struct diffchunk *diff, const struct options *op)
 {
 	struct lexer *lx;
 	int error = 0;
@@ -498,8 +497,8 @@ lexer_alloc(const struct file *fe, const struct buffer *bf, struct error *er,
 	lx->lx_er = er;
 	lx->lx_op = op;
 	lx->lx_bf = bf;
-	lx->lx_diff = fe->fe_diff;
-	lx->lx_path = fe->fe_path;
+	lx->lx_diff = diff;
+	lx->lx_path = path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	if (VECTOR_INIT(lx->lx_lines) == NULL)
@@ -1326,6 +1325,8 @@ lexer_until(struct lexer *lx, enum token_type type, struct token **tk)
 const struct diffchunk *
 lexer_get_diffchunk(const struct lexer *lx, unsigned int lno)
 {
+	if (lx->lx_diff == NULL)
+		return NULL;
 	return diff_get_chunk(lx->lx_diff, lno);
 }
 
@@ -1951,7 +1952,7 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
-	if (diff_get_chunk(lx->lx_diff, t->tk_lno) != NULL)
+	if (lexer_get_diffchunk(lx, t->tk_lno) != NULL)
 		t->tk_flags |= TOKEN_FLAG_DIFF;
 	if (t->tk_str == NULL) {
 		t->tk_str = &lx->lx_bf->bf_ptr[st->st_off];
