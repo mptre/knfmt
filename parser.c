@@ -835,9 +835,16 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 			if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
 				doc_token(tk, expr);
 		} else if (lexer_if(lx, TOKEN_PERIOD, &tk)) {
+			struct token *equal;
+
 			doc_token(tk, dc);
 			if (lexer_expect(lx, TOKEN_IDENT, &tk))
 				doc_token(tk, dc);
+
+			/* Correct alignment, must occur after the ident. */
+			if (lexer_peek_if(lx, TOKEN_EQUAL, &equal) &&
+			    token_has_tabs(equal))
+				token_move_suffixes(equal, tk, TOKEN_SPACE);
 		} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_token(tk, dc);
 
