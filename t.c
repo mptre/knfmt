@@ -442,8 +442,7 @@ context_init(struct context *cx, const char *src)
 static void
 context_reset(struct context *cx)
 {
-	parser_free(cx->cx_pr);
-	cx->cx_pr = NULL;
+	buffer_reset(cx->cx_bf);
 
 	if (cx->cx_er != NULL) {
 		error_flush(cx->cx_er, 1);
@@ -454,7 +453,8 @@ context_reset(struct context *cx)
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;
 
-	buffer_reset(cx->cx_bf);
+	parser_free(cx->cx_pr);
+	cx->cx_pr = NULL;
 }
 
 static __dead void
