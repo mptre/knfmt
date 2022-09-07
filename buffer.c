@@ -49,28 +49,34 @@ buffer_read(const char *path)
 		return NULL;
 	}
 
-	bf = buffer_alloc(1024);
+	bf = buffer_read_fd(fd);
+	if (bf == NULL)
+		warn("read: %s", path);
+	close(fd);
+	return bf;
+}
 
+struct buffer *
+buffer_read_fd(int fd)
+{
+	struct buffer *bf;
+
+	bf = buffer_alloc(1024);
 	for (;;) {
 		ssize_t n;
 
 		n = read(fd, &bf->bf_ptr[bf->bf_len], bf->bf_siz - bf->bf_len);
-		if (n == -1) {
-			warn("read: %s", path);
+		if (n == -1)
 			goto err;
-		}
 		if (n == 0)
 			break;
 		bf->bf_len += n;
 		if (bf->bf_len > bf->bf_siz / 2)
 			buffer_grow(bf, 1);
 	}
-
-	close(fd);
 	return bf;
 
 err:
-	close(fd);
 	buffer_free(bf);
 	return NULL;
 }

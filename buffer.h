@@ -9,6 +9,7 @@ struct buffer {
 
 struct buffer	*buffer_alloc(size_t);
 struct buffer	*buffer_read(const char *);
+struct buffer	*buffer_read_fd(int);
 void		 buffer_free(struct buffer *);
 void		 buffer_append(struct buffer *, const char *, size_t);
 void		 buffer_appendc(struct buffer *, char);
