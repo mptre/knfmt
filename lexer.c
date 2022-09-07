@@ -610,7 +610,7 @@ lexer_stamp(struct lexer *lx)
 {
 	struct token *tk;
 
-	tk = lx->lx_st.st_tok;
+	tk = lx->lx_st.st_tk;
 	if (tk != NULL && !TAILQ_INSERTED(tk, tk_stamp)) {
 		if (options_trace(lx->lx_op)) {
 			char *str;
@@ -636,8 +636,8 @@ lexer_recover(struct lexer *lx)
 	struct token *back, *br, *dst, *seek, *src, *tmp;
 	int ndocs = 1;
 
-	back = lx->lx_st.st_tok != NULL ?
-	    lx->lx_st.st_tok : TAILQ_FIRST(&lx->lx_tokens);
+	back = lx->lx_st.st_tk != NULL ?
+	    lx->lx_st.st_tk : TAILQ_FIRST(&lx->lx_tokens);
 	lexer_trace(lx, "back %s", token_sprintf(back));
 	br = lexer_recover_branch(back);
 	if (br == NULL)
@@ -677,7 +677,7 @@ lexer_recover(struct lexer *lx)
 	lexer_trace(lx, "seek to %s, removing %d document(s)",
 	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
 	    ndocs);
-	lx->lx_st.st_tok = seek;
+	lx->lx_st.st_tk = seek;
 	lx->lx_st.st_err = 0;
 	return ndocs;
 }
@@ -735,7 +735,7 @@ lexer_branch(struct lexer *lx)
 	seek = TAILQ_LAST(&lx->lx_stamps, token_list);
 	lexer_trace(lx, "seek to %s",
 	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
-	lx->lx_st.st_tok = seek;
+	lx->lx_st.st_tk = seek;
 	lx->lx_st.st_err = 0;
 	return 1;
 }
@@ -759,38 +759,38 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	if (TAILQ_EMPTY(&lx->lx_tokens))
 		return 0;
 
-	if (st->st_tok == NULL) {
-		st->st_tok = TAILQ_FIRST(&lx->lx_tokens);
-	} else if (st->st_tok->tk_type != TOKEN_EOF) {
+	if (st->st_tk == NULL) {
+		st->st_tk = TAILQ_FIRST(&lx->lx_tokens);
+	} else if (st->st_tk->tk_type != TOKEN_EOF) {
 		struct token *br;
 
 		/* Do not move passed a branch. */
-		if (lx->lx_peek == 0 && token_is_branch(st->st_tok))
+		if (lx->lx_peek == 0 && token_is_branch(st->st_tk))
 			return 0;
 
-		st->st_tok = token_next(st->st_tok);
-		if (st->st_tok == NULL)
+		st->st_tk = token_next(st->st_tk);
+		if (st->st_tk == NULL)
 			goto out;
-		br = token_get_branch(st->st_tok);
+		br = token_get_branch(st->st_tk);
 		if (br == NULL)
 			goto out;
 
 		if (lx->lx_peek == 0) {
 			/* While not peeking, instruct the parser to halt. */
-			lexer_trace(lx, "halt %s", token_sprintf(st->st_tok));
+			lexer_trace(lx, "halt %s", token_sprintf(st->st_tk));
 			return 0;
 		} else {
 			/* While peeking, act as taking the current branch. */
 			while (br->tk_branch.br_nx != NULL)
 				br = br->tk_branch.br_nx;
-			st->st_tok = br->tk_token;
+			st->st_tk = br->tk_token;
 		}
 	}
 
 out:
-	if (st->st_tok == NULL)
+	if (st->st_tk == NULL)
 		return 0;
-	*tk = st->st_tok;
+	*tk = st->st_tk;
 	return 1;
 }
 
@@ -800,9 +800,9 @@ out:
 int
 lexer_back(const struct lexer *lx, struct token **tk)
 {
-	if (lx->lx_st.st_tok == NULL)
+	if (lx->lx_st.st_tk == NULL)
 		return 0;
-	*tk = lx->lx_st.st_tok;
+	*tk = lx->lx_st.st_tk;
 	return 1;
 }
 
@@ -1088,7 +1088,7 @@ lexer_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 
 	if (!lexer_peek_if_type(lx, &t, flags))
 		return 0;
-	lx->lx_st.st_tok = t;
+	lx->lx_st.st_tk = t;
 	if (tk != NULL)
 		*tk = t;
 	return 1;
@@ -1206,7 +1206,7 @@ lexer_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
 	if (!lexer_peek_if_pair(lx, lhs, rhs, &end))
 		return 0;
 
-	lx->lx_st.st_tok = end;
+	lx->lx_st.st_tk = end;
 	if (tk != NULL)
 		*tk = end;
 	return 1;
