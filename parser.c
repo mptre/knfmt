@@ -214,7 +214,7 @@ parser_free(struct parser *pr)
 struct buffer *
 parser_exec(struct parser *pr, size_t sizhint)
 {
-	struct buffer *bf;
+	struct buffer *bf = NULL;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
 	unsigned int flags = 0;
@@ -261,9 +261,8 @@ parser_exec(struct parser *pr, size_t sizhint)
 		}
 	}
 	if (error) {
-		doc_free(dc);
 		parser_fail(pr);
-		return NULL;
+		goto out;
 	}
 
 	bf = buffer_alloc(sizhint);
@@ -272,6 +271,8 @@ parser_exec(struct parser *pr, size_t sizhint)
 	if (options_trace(pr->pr_op))
 		flags |= DOC_EXEC_FLAG_TRACE;
 	doc_exec(dc, pr->pr_lx, bf, pr->pr_op, flags);
+
+out:
 	doc_free(dc);
 	return bf;
 }
