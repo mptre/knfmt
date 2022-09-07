@@ -1887,7 +1887,7 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 {
 	unsigned int *dst;
 
-	if ((lx->lx_op->op_flags & OPTIONS_FLAG_DIFFPARSE) == 0)
+	if (lx->lx_diff == NULL)
 		return;
 
 	/* We could end up here again after lexer_ungetc(). */
