@@ -2,9 +2,6 @@
 
 struct options {
 	unsigned int	op_verbose;
-	unsigned int	op_mw;		/* max width per line */
-	unsigned int	op_tw;		/* tab width */
-	unsigned int	op_sw;		/* soft width */
 
 	unsigned int	op_flags;
 #define OPTIONS_FLAG_DIFF		0x00000001u

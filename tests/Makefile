@@ -367,6 +367,13 @@ TESTS+=	bug-002.c
 TESTS+=	bug-003.c
 TESTS+=	bug-005.c
 
+TESTS+=	style-AlwaysBreakAfterReturnType-001.c
+TESTS+=	style-ColumnLimit-001.c
+TESTS+=	style-ContinuationIndentWidth-001.c
+TESTS+=	style-IndentWidth-001.c
+TESTS+=	style-UseTab-001.c
+TESTS+=	style-error-001.c
+
 TESTS+=	../buffer.c
 TESTS+=	../buffer.h
 TESTS+=	../cdefs.h
@@ -398,6 +405,8 @@ TESTS+=	../simple-decl.c
 TESTS+=	../simple-decl.h
 TESTS+=	../simple-stmt.c
 TESTS+=	../simple-stmt.h
+TESTS+=	../style.c
+TESTS+=	../style.h
 TESTS+=	../t.c
 TESTS+=	../token-defs.h
 TESTS+=	../token.h

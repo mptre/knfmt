@@ -63,13 +63,13 @@ struct token {
 #define TOKEN_FLAG_TYPE_ARGS	0x08000000u
 #define TOKEN_FLAG_TYPE_FUNC	0x10000000u
 
-	size_t			 tk_off;
-
 	const char		*tk_str;
 	size_t			 tk_len;
+	size_t			 tk_off;
 
 	union {
 		struct token	*tk_token;
+		int		 tk_int;
 	};
 
 	struct {

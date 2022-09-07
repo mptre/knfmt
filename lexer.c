@@ -653,6 +653,23 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	return t;
 }
 
+void
+lexer_error(struct lexer *lx, const char *fmt, ...)
+{
+	va_list ap;
+	struct buffer *bf;
+
+	lx->lx_st.st_err++;
+
+	va_start(ap, fmt);
+	bf = error_begin(lx->lx_er);
+	buffer_printf(bf, "%s: ", lx->lx_path);
+	buffer_vprintf(bf, fmt, ap);
+	buffer_printf(bf, "\n");
+	error_end(lx->lx_er);
+	va_end(ap);
+}
+
 int
 lexer_get_error(const struct lexer *lx)
 {

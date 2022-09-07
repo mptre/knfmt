@@ -16,6 +16,7 @@
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
+#include "style.h"
 #include "vector.h"
 
 #define _PATH_DIFF	"/usr/bin/diff"
@@ -23,7 +24,8 @@
 static __dead void	usage(void);
 
 static int	filelist(int, char **, struct files *, const struct options *);
-static int	fileformat(struct file *, const struct options *);
+static int	fileformat(struct file *, const struct style *,
+    const struct options *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const char *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -37,6 +39,7 @@ main(int argc, char *argv[])
 {
 	struct files files;
 	struct options op;
+	struct style *st = NULL;
 	size_t i;
 	int error = 0;
 	int ch;
@@ -85,7 +88,13 @@ main(int argc, char *argv[])
 
 	diff_init();
 	lexer_init();
+	style_init();
 	if (VECTOR_INIT(files.fs_vc) == NULL) {
+		error = 1;
+		goto out;
+	}
+	st = style_parse(&op);
+	if (st == NULL) {
 		error = 1;
 		goto out;
 	}
@@ -97,14 +106,16 @@ main(int argc, char *argv[])
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
-		if (fileformat(fe, &op)) {
+		if (fileformat(fe, st, &op)) {
 			error = 1;
 			error_flush(fe->fe_error, 1);
 		}
 	}
 
 out:
+	style_free(st);
 	files_free(&files);
+	style_teardown();
 	lexer_shutdown();
 	diff_shutdown();
 
@@ -137,7 +148,7 @@ filelist(int argc, char **argv, struct files *files,
 }
 
 static int
-fileformat(struct file *fe, const struct options *op)
+fileformat(struct file *fe, const struct style *st, const struct options *op)
 {
 	struct buffer *dst = NULL;
 	struct buffer *src;
@@ -162,7 +173,7 @@ fileformat(struct file *fe, const struct options *op)
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, op);
+	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, st, op);
 	if (pr == NULL) {
 		error = 1;
 		goto out;

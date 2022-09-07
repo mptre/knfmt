@@ -2,10 +2,14 @@
 
 #include "config.h"
 
+#include <sys/stat.h>
+
 #include <ctype.h>
 #include <err.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 char *
 strnice(const char *str, size_t len)
@@ -60,4 +64,49 @@ strwidth(const char *str, size_t len, size_t pos)
 			pos += 1;
 	}
 	return pos;
+}
+
+/*
+ * Search for the given filename starting at the current working directory and
+ * traverse upwards. Returns a file descriptor to the file if found, -1 otherwise.
+ */
+int
+searchpath(const char *filename)
+{
+	struct stat sb;
+	dev_t dev = 0;
+	ino_t ino = 0;
+	int fd = -1;
+	int flags = O_RDONLY | O_CLOEXEC;
+	int dirfd;
+
+	dirfd = open(".", flags | O_DIRECTORY);
+	if (dirfd == -1)
+		return -1;
+	if (fstat(dirfd, &sb) == -1)
+		goto out;
+	dev = sb.st_dev;
+	ino = sb.st_ino;
+	for (;;) {
+		fd = openat(dirfd, filename, flags);
+		if (fd >= 0)
+			break;
+
+		fd = openat(dirfd, "..", flags | O_DIRECTORY);
+		close(dirfd);
+		dirfd = fd;
+		fd = -1;
+		if (dirfd == -1)
+			break;
+		if (fstat(dirfd, &sb) == -1)
+			break;
+		if (dev == sb.st_dev && ino == sb.st_ino)
+			break;
+		dev = sb.st_dev;
+		ino = sb.st_ino;
+	}
+
+out:
+	close(dirfd);
+	return fd;
 }

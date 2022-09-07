@@ -1,9 +1,10 @@
 struct options;
 struct lexer;
+struct style;
 struct token;
 
 struct simple_stmt	*simple_stmt_enter(struct lexer *,
-    const struct options *);
+    const struct style *, const struct options *);
 void			 simple_stmt_leave(struct simple_stmt *);
 void			 simple_stmt_free(struct simple_stmt *);
 struct doc		*simple_stmt_block(struct simple_stmt *,

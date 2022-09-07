@@ -14,6 +14,7 @@
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
+#include "style.h"
 #include "token.h"
 #include "util.h"
 
@@ -58,6 +59,7 @@ struct context {
 	struct options	 cx_op;
 	struct buffer	*cx_bf;
 	struct error	*cx_er;
+	struct style	*cx_st;
 	struct lexer	*cx_lx;
 	struct parser	*cx_pr;
 };
@@ -267,6 +269,7 @@ __test_expr_exec(struct context *cx, const char *src, const char *exp,
 
 	group = doc_alloc(DOC_GROUP, NULL);
 	expr = expr_exec(&(const struct expr_exec_arg){
+		.st		= cx->cx_st,
 		.op		= &cx->cx_op,
 		.lx		= cx->cx_lx,
 		.dc		= doc_alloc(DOC_CONCAT, group),
@@ -282,7 +285,7 @@ __test_expr_exec(struct context *cx, const char *src, const char *exp,
 	}
 
 	bf = buffer_alloc(128);
-	doc_exec(group, cx->cx_lx, bf, &cx->cx_op, 0);
+	doc_exec(group, cx->cx_lx, bf, cx->cx_st, &cx->cx_op, 0);
 	buffer_appendc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
@@ -432,6 +435,7 @@ context_init(struct context *cx, const char *src)
 
 	buffer_append(cx->cx_bf, src, strlen(src));
 	cx->cx_er = error_alloc(0);
+	cx->cx_st = style_parse(&cx->cx_op);
 	cx->cx_lx = lexer_alloc(&(const struct lexer_arg){
 		.path		= path,
 		.bf		= cx->cx_bf,
@@ -440,7 +444,8 @@ context_init(struct context *cx, const char *src)
 		.op		= &cx->cx_op,
 		.callbacks	= {.read = NULL, .serialize = NULL, .arg = NULL},
 	});
-	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, &cx->cx_op);
+	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, cx->cx_st,
+	    &cx->cx_op);
 }
 
 static void
@@ -453,6 +458,12 @@ context_reset(struct context *cx)
 		error_free(cx->cx_er);
 		cx->cx_er = NULL;
 	}
+
+	style_free(cx->cx_st);
+	cx->cx_st = NULL;
+
+	parser_free(cx->cx_pr);
+	cx->cx_pr = NULL;
 
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;

@@ -6,6 +6,7 @@
 
 #include "buffer.h"
 #include "options.h"
+#include "style.h"
 #include "token.h"
 #include "util.h"
 
@@ -13,7 +14,8 @@ static const char	*nextline(const char *, size_t);
 static const char	*skipws(const char *, size_t);
 
 char *
-comment_exec(const struct token *tk, const struct options *UNUSED(op))
+comment_exec(const struct token *tk, const struct style *st,
+    const struct options *UNUSED(op))
 {
 	struct buffer *bf;
 	const char *sp = tk->tk_str;
@@ -29,7 +31,8 @@ comment_exec(const struct token *tk, const struct options *UNUSED(op))
 
 		ep = skipws(sp, len);
 		if (ep != NULL && (*ep == '*' || *ep == '/')) {
-			buffer_indent(bf, strwidth(sp, ep - sp, 0), 1, 0);
+			buffer_indent(bf, strwidth(sp, ep - sp, 0),
+			    style(st, UseTab) != Never, 0);
 			len -= ep - sp;
 			sp += ep - sp;
 		}

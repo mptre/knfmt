@@ -27,6 +27,7 @@ struct simple_stmt {
 	VECTOR(struct stmt)	 ss_stmts;
 	struct lexer		*ss_lx;
 	const struct options	*ss_op;
+	const struct style	*ss_st;
 };
 
 static struct stmt	*simple_stmt_alloc(struct simple_stmt *, int,
@@ -35,7 +36,8 @@ static struct stmt	*simple_stmt_alloc(struct simple_stmt *, int,
 static int	linecount(const char *, size_t, int);
 
 struct simple_stmt *
-simple_stmt_enter(struct lexer *lx, const struct options *op)
+simple_stmt_enter(struct lexer *lx, const struct style *st,
+    const struct options *op)
 {
 	struct simple_stmt *ss;
 
@@ -46,6 +48,7 @@ simple_stmt_enter(struct lexer *lx, const struct options *op)
 		err(1, NULL);
 	ss->ss_lx = lx;
 	ss->ss_op = op;
+	ss->ss_st = st;
 	return ss;
 }
 
@@ -69,7 +72,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 		    (st->st_flags & STMT_FLAG_BRACES) == 0)
 			continue;
 
-		doc_exec(st->st_root, lx, bf, ss->ss_op, 0);
+		doc_exec(st->st_root, lx, bf, ss->ss_st, ss->ss_op, 0);
 		if (!linecount(bf->bf_ptr, bf->bf_len, 1) ||
 		    token_has_prefix(st->st_rbrace, TOKEN_COMMENT)) {
 			/*

@@ -2,3 +2,5 @@
 
 char	*strnice(const char *, size_t);
 size_t	 strwidth(const char *, size_t, size_t);
+
+int	searchpath(const char *);

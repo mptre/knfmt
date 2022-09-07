@@ -21,6 +21,7 @@ TESTS valid*.c -- \
 TESTS simple*.c -- \
 TESTS trace*.c -- \
 TESTS bug*.c -- \
+TESTS style*.c -- \
 TESTS \
 	../!(compat-*).c ../!(compat-*|config).h \
 	../compat-pledge.c

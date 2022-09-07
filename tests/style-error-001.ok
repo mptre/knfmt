@@ -1,0 +1,12 @@
+.clang-format: integer Integer<14:14>("2147483648") too large
+.clang-format: integer Integer<15:14>("9999999999") too large
+.clang-format: unknown value Integer<2:29>("0") for option Keyword<2:1>("AlwaysBreakAfterReturnType")
+.clang-format: unknown value Keyword<3:14>("None") for option Keyword<3:1>("ColumnLimit")
+.clang-format: unknown value Keyword<4:26>("None") for option Keyword<4:1>("ContinuationIndentWidth")
+.clang-format: unknown value Keyword<5:14>("None") for option Keyword<5:1>("IndentWidth")
+.clang-format: unknown value Integer<6:9>("0") for option Keyword<6:1>("UseTab")
+.clang-format: unknown option Unknown<7:1>("Nein")
+.clang-format: unknown option Keyword<8:1>("None")
+.clang-format: unknown value String<9:9>("'string'") for option Keyword<9:1>("UseTab")
+.clang-format: unknown option Unknown<10:1>("ForEachMacros")
+.clang-format: unknown value False<13:9>("false") for option Keyword<13:1>("UseTab")

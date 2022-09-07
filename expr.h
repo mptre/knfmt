@@ -1,4 +1,5 @@
 struct expr_exec_arg {
+	const struct style	*st;
 	const struct options	*op;
 	struct lexer		*lx;
 	struct doc		*dc;

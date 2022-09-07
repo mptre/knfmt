@@ -9,6 +9,7 @@
 #include "doc.h"
 #include "options.h"
 #include "ruler.h"
+#include "style.h"
 #include "token.h"
 
 static const char	*nextline(const char *, size_t, const char **);
@@ -18,7 +19,8 @@ static const char	*nextline(const char *, size_t, const char **);
  * continuations.
  */
 char *
-cpp_exec(const struct token *tk, const struct options *op)
+cpp_exec(const struct token *tk, const struct style *st,
+    const struct options *op)
 {
 	struct ruler rl;
 	struct buffer *bf;
@@ -35,7 +37,7 @@ cpp_exec(const struct token *tk, const struct options *op)
 
 	bf = buffer_alloc(len);
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	ruler_init(&rl, op->op_mw - op->op_tw);
+	ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth));
 
 	for (;;) {
 		struct doc *concat;
@@ -52,7 +54,8 @@ cpp_exec(const struct token *tk, const struct options *op)
 			doc_alloc(DOC_HARDLINE, concat);
 		if (ep - sp > 0)
 			doc_literal_n(sp, ep - sp, concat);
-		ruler_insert(&rl, tk, concat, 1, doc_width(concat, bf, op), 0);
+		ruler_insert(&rl, tk, concat, 1,
+		    doc_width(concat, bf, st, op), 0);
 		doc_literal("\\", concat);
 
 		len -= nx - str;
@@ -68,7 +71,7 @@ cpp_exec(const struct token *tk, const struct options *op)
 	/* Alignment only wanted for multiple lines. */
 	if (nlines > 1)
 		ruler_exec(&rl);
-	doc_exec(dc, NULL, bf, op, 0);
+	doc_exec(dc, NULL, bf, st, op, 0);
 	buffer_appendc(bf, '\0');
 
 	p = buffer_release(bf);

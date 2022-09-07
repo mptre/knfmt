@@ -23,11 +23,12 @@ hascomm() {
 	fi
 }
 
-# testcase [-b] [-e] [-q] file [-- knfmt-options]
+# testcase [-b] [-c] [-e] [-q] file [-- knfmt-options]
 #
 # Run test case.
 testcase() {
 	local _bug=0
+	local _clang=0
 	local _diff
 	local _exp=0
 	local _file
@@ -38,6 +39,7 @@ testcase() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-b)	_bug=1; _quiet=1;;
+		-c)	_clang=1;;
 		-e)	_exp=1; _flags="";;
 		-q)	_quiet=1;;
 		*)	break;;
@@ -46,6 +48,11 @@ testcase() {
 	done
 	_file="$1"; : "${_file:?}"; shift
 	[ "${1:-}" = "--" ] && shift
+
+	if [ "$_clang" -eq 1 ]; then
+		sed -n -e '/^[\/ ]\*/s/^[\/\* ]*//p' "$_file" |
+		sed -e '/^$/d' >"${_wrkdir}/.clang-format"
+	fi
 
 	_ok="${_file%.c}.ok"
 	_patch="${_file%.c}.patch"
@@ -143,6 +150,12 @@ error-*)
 	;;
 simple-*|../*)
 	testcase "$_abs" -- -sv
+	;;
+style-error-*)
+	testcase -c -e "$_abs" -- -v
+	;;
+style-*)
+	testcase -c "$_abs" -- -v
 	;;
 trace-*)
 	testcase -q "$_abs" -- -vvv
