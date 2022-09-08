@@ -1047,13 +1047,13 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
     const struct token *stop, unsigned int flags)
 {
 	const struct expr_exec_arg ea = {
-		.ea_op		= pr->pr_op,
-		.ea_lx		= pr->pr_lx,
-		.ea_dc		= dc,
-		.ea_stop	= stop,
-		.ea_recover	= parser_exec_expr_recover,
-		.ea_arg		= pr,
-		.ea_flags	= flags,
+		.op		= pr->pr_op,
+		.lx		= pr->pr_lx,
+		.dc		= dc,
+		.stop		= stop,
+		.recover	= parser_exec_expr_recover,
+		.arg		= pr,
+		.flags		= flags,
 	};
 	struct doc *ex;
 
@@ -1651,13 +1651,13 @@ static int
 parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 {
 	const struct expr_exec_arg ea = {
-		.ea_op		= pr->pr_op,
-		.ea_lx		= pr->pr_lx,
-		.ea_dc		= NULL,
-		.ea_stop	= NULL,
-		.ea_recover	= parser_exec_expr_recover,
-		.ea_arg		= pr,
-		.ea_flags	= 0,
+		.op		= pr->pr_op,
+		.lx		= pr->pr_lx,
+		.dc		= NULL,
+		.stop		= NULL,
+		.recover	= parser_exec_expr_recover,
+		.arg		= pr,
+		.flags		= 0,
 	};
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;

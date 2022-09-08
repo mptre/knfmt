@@ -1,18 +1,18 @@
 struct expr_exec_arg {
-	const struct options	*ea_op;
-	struct lexer		*ea_lx;
-	struct doc		*ea_dc;
-	const struct token	*ea_stop;
+	const struct options	*op;
+	struct lexer		*lx;
+	struct doc		*dc;
+	const struct token	*stop;
 
 	/*
 	 * Callback invoked when an invalid expression is encountered. If the
 	 * same callback returns a document implies that the expression parser
 	 * can continue.
 	 */
-	struct doc		*(*ea_recover)(unsigned int, void *);
-	void			*ea_arg;
+	struct doc		*(*recover)(unsigned int, void *);
+	void			*arg;
 
-	unsigned int		 ea_flags;
+	unsigned int		 flags;
 /* Emit a soft line before the expression. */
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
 /* Emit a hard line before the expression. */

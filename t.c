@@ -258,27 +258,24 @@ static int
 __test_expr_exec(struct context *cx, const char *src, const char *exp,
     const char *fun, int lno)
 {
-	struct expr_exec_arg ea = {
-		.ea_op		= &cx->cx_op,
-		.ea_lx		= NULL,
-		.ea_dc		= NULL,
-		.ea_stop	= NULL,
-		.ea_recover	= parser_exec_expr_recover,
-		.ea_arg		= NULL,
-		.ea_flags	= 0,
-	};
 	struct buffer *bf = NULL;
-	struct doc *group;
+	struct doc *expr, *group;
 	const char *act;
 	int error = 0;
 
 	context_init(cx, src);
 
 	group = doc_alloc(DOC_GROUP, NULL);
-	ea.ea_lx = cx->cx_lx;
-	ea.ea_dc = doc_alloc(DOC_CONCAT, group);
-	ea.ea_arg = cx->cx_pr;
-	if (expr_exec(&ea) == NULL) {
+	expr = expr_exec(&(const struct expr_exec_arg){
+		.op		= &cx->cx_op,
+		.lx		= cx->cx_lx,
+		.dc		= doc_alloc(DOC_CONCAT, group),
+		.stop		= NULL,
+		.recover	= parser_exec_expr_recover,
+		.arg		= cx->cx_pr,
+		.flags		= 0,
+	});
+	if (expr == NULL) {
 		fprintf(stderr, "%s:%d: expr_exec() failure\n", fun, lno);
 		error = 1;
 		goto out;

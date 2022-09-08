@@ -86,9 +86,9 @@ struct expr_rule {
 
 struct expr_state {
 	const struct expr_exec_arg	*es_ea;
-#define es_op		es_ea->ea_op
-#define es_lx		es_ea->ea_lx
-#define es_stop		es_ea->ea_stop
+#define es_op		es_ea->op
+#define es_lx		es_ea->lx
+#define es_stop		es_ea->stop
 
 	const struct expr_rule		*es_er;
 	struct token			*es_tk;
@@ -196,7 +196,7 @@ expr_exec(const struct expr_exec_arg *ea)
 
 	memset(&es, 0, sizeof(es));
 	es.es_ea = ea;
-	es.es_flags = ea->ea_flags;
+	es.es_flags = ea->flags;
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
@@ -206,14 +206,14 @@ expr_exec(const struct expr_exec_arg *ea)
 		return NULL;
 	}
 
-	dc = doc_alloc(DOC_GROUP, ea->ea_dc);
+	dc = doc_alloc(DOC_GROUP, ea->dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
-	indent = ea->ea_flags & EXPR_EXEC_FLAG_NOINDENT ?
+	indent = ea->flags & EXPR_EXEC_FLAG_NOINDENT ?
 	    doc_alloc(DOC_CONCAT, optional) :
-	    doc_alloc_indent(ea->ea_op->op_sw, optional);
-	if (ea->ea_flags & EXPR_EXEC_FLAG_SOFTLINE)
+	    doc_alloc_indent(ea->op->op_sw, optional);
+	if (ea->flags & EXPR_EXEC_FLAG_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
-	if (ea->ea_flags & EXPR_EXEC_FLAG_HARDLINE)
+	if (ea->flags & EXPR_EXEC_FLAG_HARDLINE)
 		doc_alloc(DOC_HARDLINE, indent);
 	expr = expr_doc(ex, &es, indent);
 	expr_free(ex);
@@ -307,10 +307,10 @@ expr_exec_recover(struct expr_state *es, unsigned int flags)
 	struct doc *dc;
 	struct expr *ex;
 
-	if (es->es_ea->ea_recover == NULL)
+	if (es->es_ea->recover == NULL)
 		return NULL;
 
-	dc = es->es_ea->ea_recover(flags | es->es_flags, es->es_ea->ea_arg);
+	dc = es->es_ea->recover(flags | es->es_flags, es->es_ea->arg);
 	if (dc == NULL)
 		return NULL;
 
