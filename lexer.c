@@ -544,7 +544,7 @@ lexer_alloc(const char *path, const struct buffer *bf, struct error *er,
 		return NULL;
 	}
 
-	if (UNLIKELY(op->op_verbose >= 3))
+	if (UNLIKELY(lx->lx_op->op_verbose >= 3))
 		lexer_dump(lx);
 
 	return lx;
