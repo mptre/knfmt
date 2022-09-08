@@ -7,6 +7,14 @@ struct diffchunk;
 struct error;
 struct options;
 
+struct lexer_arg {
+	const char		*path;
+	const struct buffer	*bf;
+	struct error		*er;
+	struct diffchunk	*diff;
+	const struct options	*op;
+};
+
 struct lexer_state {
 	struct token	*st_tk;
 	unsigned int	 st_lno;
@@ -17,8 +25,7 @@ struct lexer_state {
 
 void		 lexer_init(void);
 void		 lexer_shutdown(void);
-struct lexer	*lexer_alloc(const char *, const struct buffer *,
-    struct error *, const struct diffchunk *, const struct options *);
+struct lexer	*lexer_alloc(const struct lexer_arg *);
 void		 lexer_free(struct lexer *);
 
 int	lexer_get_error(const struct lexer *);

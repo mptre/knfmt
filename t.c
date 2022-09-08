@@ -435,7 +435,13 @@ context_init(struct context *cx, const char *src)
 
 	buffer_append(cx->cx_bf, src, strlen(src));
 	cx->cx_er = error_alloc(0);
-	cx->cx_lx = lexer_alloc(path, cx->cx_bf, cx->cx_er, NULL, &cx->cx_op);
+	cx->cx_lx = lexer_alloc(&(const struct lexer_arg){
+		.path	= path,
+		.bf	= cx->cx_bf,
+		.er	= cx->cx_er,
+		.diff	= NULL,
+		.op	= &cx->cx_op,
+	});
 	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, &cx->cx_op);
 }
 

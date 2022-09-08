@@ -485,8 +485,7 @@ lexer_shutdown(void)
 }
 
 struct lexer *
-lexer_alloc(const char *path, const struct buffer *bf, struct error *er,
-    const struct diffchunk *diff, const struct options *op)
+lexer_alloc(const struct lexer_arg *arg)
 {
 	struct lexer *lx;
 	int error = 0;
@@ -494,11 +493,11 @@ lexer_alloc(const char *path, const struct buffer *bf, struct error *er,
 	lx = calloc(1, sizeof(*lx));
 	if (lx == NULL)
 		err(1, NULL);
-	lx->lx_er = er;
-	lx->lx_op = op;
-	lx->lx_bf = bf;
-	lx->lx_diff = diff;
-	lx->lx_path = path;
+	lx->lx_er = arg->er;
+	lx->lx_op = arg->op;
+	lx->lx_bf = arg->bf;
+	lx->lx_diff = arg->diff;
+	lx->lx_path = arg->path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	if (VECTOR_INIT(lx->lx_lines) == NULL)

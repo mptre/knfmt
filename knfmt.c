@@ -150,7 +150,13 @@ fileformat(struct file *fe, const struct options *op)
 		error = 1;
 		goto out;
 	}
-	lx = lexer_alloc(fe->fe_path, src, fe->fe_error, fe->fe_diff, op);
+	lx = lexer_alloc(&(const struct lexer_arg){
+		.path	= fe->fe_path,
+		.bf	= src,
+		.er	= fe->fe_error,
+		.diff	= fe->fe_diff,
+		.op	= op,
+	});
 	if (lx == NULL) {
 		error = 1;
 		goto out;
