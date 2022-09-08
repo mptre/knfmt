@@ -921,6 +921,12 @@ __lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
 	struct token *t = NULL;
 
 	if (!lexer_if(lx, type, &t)) {
+		/*
+		 * Since lexer_if() will not give us a token back in case of
+		 * failure, try to peek at the next one to provide meaningful
+		 * errors.
+		 */
+		lexer_peek(lx, &t);
 		lexer_emit_error(lx, type, t, fun, lno);
 		return 0;
 	}
