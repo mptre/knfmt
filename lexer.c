@@ -153,7 +153,7 @@ static const struct token	tkline = {
 static const struct token	tklit = {
 	.tk_type	= TOKEN_LITERAL,
 };
-static struct token		tknone = {
+static const struct token	tknone = {
 	.tk_type	= TOKEN_NONE,
 };
 static const struct token	tkspace = {
