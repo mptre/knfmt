@@ -48,6 +48,12 @@ void		 lexer_shutdown(void);
 struct lexer	*lexer_alloc(const struct lexer_arg *);
 void		 lexer_free(struct lexer *);
 
+void		 lexer_get_state(const struct lexer *, struct lexer_state *);
+int		 lexer_getc(struct lexer *, unsigned char *);
+void		 lexer_ungetc(struct lexer *);
+struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
+    const struct token *);
+
 int	lexer_get_error(const struct lexer *);
 int	lexer_get_lines(const struct lexer *, unsigned int,
     unsigned int, const char **, size_t *);

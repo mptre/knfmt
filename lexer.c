@@ -60,8 +60,6 @@ struct token_hash {
 	UT_hash_handle	th_hh;
 };
 
-static int		 lexer_getc(struct lexer *, unsigned char *);
-static void		 lexer_ungetc(struct lexer *);
 static struct token	*lexer_read(struct lexer *, void *);
 static void		 lexer_eat_buffet(struct lexer *, struct lexer_state *,
     struct lexer_state *);
@@ -82,9 +80,7 @@ static struct token	*lexer_find_token(const struct lexer *,
 static int		 lexer_buffer_streq(const struct lexer *,
     const struct lexer_state *, const char *);
 
-static struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
-    const struct token *);
-static void		 lexer_emit_error(struct lexer *, enum token_type,
+static void	lexer_emit_error(struct lexer *, enum token_type,
     const struct token *, const char *, int);
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
@@ -583,6 +579,78 @@ lexer_free(struct lexer *lx)
 	}
 	VECTOR_FREE(lx->lx_lines);
 	free(lx);
+}
+
+void
+lexer_get_state(const struct lexer *lx, struct lexer_state *st)
+{
+	*st = lx->lx_st;
+}
+
+int
+lexer_getc(struct lexer *lx, unsigned char *ch)
+{
+	const struct buffer *bf = lx->lx_bf;
+	unsigned char c;
+
+	if (lx->lx_st.st_off == bf->bf_len) {
+		/*
+		 * Do not immediately report EOF. Instead, return something
+		 * that's not expected while reading a token.
+		 */
+		if (lx->lx_eof++ > 0)
+			return 1;
+		*ch = '\0';
+		return 0;
+	}
+	c = bf->bf_ptr[lx->lx_st.st_off++];
+	if (c == '\n') {
+		lx->lx_st.st_lno++;
+		lx->lx_st.st_cno = 1;
+		lexer_line_alloc(lx, lx->lx_st.st_lno);
+	} else {
+		lx->lx_st.st_cno++;
+	}
+	*ch = c;
+	return 0;
+}
+
+void
+lexer_ungetc(struct lexer *lx)
+{
+	if (lx->lx_eof)
+		return;
+
+	assert(lx->lx_st.st_off > 0);
+	lx->lx_st.st_off--;
+
+	if (lx->lx_bf->bf_ptr[lx->lx_st.st_off] == '\n') {
+		assert(lx->lx_st.st_lno > 0);
+		lx->lx_st.st_lno--;
+		lx->lx_st.st_cno = 1;
+	} else {
+		assert(lx->lx_st.st_cno > 0);
+		lx->lx_st.st_cno--;
+	}
+}
+
+struct token *
+lexer_emit(struct lexer *lx, const struct lexer_state *st,
+    const struct token *tk)
+{
+	struct token *t;
+
+	t = token_alloc(tk);
+	t->tk_off = st->st_off;
+	t->tk_lno = st->st_lno;
+	t->tk_cno = st->st_cno;
+	if (lexer_get_diffchunk(lx, t->tk_lno) != NULL)
+		t->tk_flags |= TOKEN_FLAG_DIFF;
+	if (t->tk_str == NULL) {
+		t->tk_str = &lx->lx_bf->bf_ptr[st->st_off];
+		t->tk_len = lx->lx_st.st_off - st->st_off;
+	}
+	return t;
 }
 
 int
@@ -1387,53 +1455,6 @@ lexer_dump(const struct lexer *lx)
 	}
 }
 
-static int
-lexer_getc(struct lexer *lx, unsigned char *ch)
-{
-	const struct buffer *bf = lx->lx_bf;
-	unsigned char c;
-
-	if (lx->lx_st.st_off == bf->bf_len) {
-		/*
-		 * Do not immediately report EOF. Instead, return something
-		 * that's not expected while reading a token.
-		 */
-		if (lx->lx_eof++ > 0)
-			return 1;
-		*ch = '\0';
-		return 0;
-	}
-	c = bf->bf_ptr[lx->lx_st.st_off++];
-	if (c == '\n') {
-		lx->lx_st.st_lno++;
-		lx->lx_st.st_cno = 1;
-		lexer_line_alloc(lx, lx->lx_st.st_lno);
-	} else {
-		lx->lx_st.st_cno++;
-	}
-	*ch = c;
-	return 0;
-}
-
-static void
-lexer_ungetc(struct lexer *lx)
-{
-	if (lx->lx_eof)
-		return;
-
-	assert(lx->lx_st.st_off > 0);
-	lx->lx_st.st_off--;
-
-	if (lx->lx_bf->bf_ptr[lx->lx_st.st_off] == '\n') {
-		assert(lx->lx_st.st_lno > 0);
-		lx->lx_st.st_lno--;
-		lx->lx_st.st_cno = 1;
-	} else {
-		assert(lx->lx_st.st_cno > 0);
-		lx->lx_st.st_cno--;
-	}
-}
-
 static struct token *
 lexer_read(struct lexer *lx, void *UNUSED(arg))
 {
@@ -1947,25 +1968,6 @@ lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
 		return 0;
 	buf = &lx->lx_bf->bf_ptr[st->st_off];
 	return strncmp(buf, str, len) == 0;
-}
-
-static struct token *
-lexer_emit(struct lexer *lx, const struct lexer_state *st,
-    const struct token *tk)
-{
-	struct token *t;
-
-	t = token_alloc(tk);
-	t->tk_off = st->st_off;
-	t->tk_lno = st->st_lno;
-	t->tk_cno = st->st_cno;
-	if (lexer_get_diffchunk(lx, t->tk_lno) != NULL)
-		t->tk_flags |= TOKEN_FLAG_DIFF;
-	if (t->tk_str == NULL) {
-		t->tk_str = &lx->lx_bf->bf_ptr[st->st_off];
-		t->tk_len = lx->lx_st.st_off - st->st_off;
-	}
-	return t;
 }
 
 static void
