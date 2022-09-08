@@ -17,6 +17,7 @@
 #include "simple-decl.h"
 #include "simple-stmt.h"
 #include "token.h"
+#include "token-type.h"
 
 /*
  * Return values for parser exec routines. Only one of the following may be
@@ -608,7 +609,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 			}
 		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
 		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
-			enum token_type rhs = tk->tk_type == TOKEN_LSQUARE ?
+			int rhs = tk->tk_type == TOKEN_LSQUARE ?
 			    TOKEN_RSQUARE : TOKEN_RPAREN;
 
 			doc_token(tk, concat);

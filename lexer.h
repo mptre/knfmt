@@ -1,7 +1,5 @@
 #include <stddef.h>	/* size_t */
 
-#include "token-type.h"
-
 struct buffer;
 struct diffchunk;
 struct error;
@@ -69,10 +67,10 @@ int	lexer_back(const struct lexer *, struct token **);
 
 struct token	*lexer_copy_after(struct lexer *, struct token *,
     const struct token *);
-struct token	*lexer_insert_before(struct lexer *, struct token *,
-    enum token_type, const char *);
-struct token	*lexer_insert_after(struct lexer *, struct token *,
-    enum token_type, const char *);
+struct token	*lexer_insert_before(struct lexer *, struct token *, int,
+    const char *);
+struct token	*lexer_insert_after(struct lexer *, struct token *, int,
+    const char *);
 struct token	*lexer_move_after(struct lexer *, struct token *,
     struct token *);
 struct token	*lexer_move_before(struct lexer *, struct token *,
@@ -81,7 +79,7 @@ void		 lexer_remove(struct lexer *, struct token *, int);
 
 #define lexer_expect(a, b, c) \
 	__lexer_expect((a), (b), (c), __func__, __LINE__)
-int	__lexer_expect(struct lexer *, enum token_type, struct token **,
+int	__lexer_expect(struct lexer *, int, struct token **,
     const char *, int);
 
 void	lexer_peek_enter(struct lexer *, struct lexer_state *);
@@ -95,24 +93,22 @@ int	lexer_peek(struct lexer *, struct token **);
 int	lexer_peek_if_type(struct lexer *, struct token **, unsigned int);
 int	lexer_if_type(struct lexer *, struct token **, unsigned int);
 
-int	lexer_peek_if(struct lexer *, enum token_type, struct token **);
-int	lexer_if(struct lexer *, enum token_type, struct token **);
+int	lexer_peek_if(struct lexer *, int, struct token **);
+int	lexer_if(struct lexer *, int, struct token **);
 
 int	lexer_peek_if_flags(struct lexer *, unsigned int, struct token **);
 int	lexer_if_flags(struct lexer *, unsigned int, struct token **);
 
-int	lexer_peek_if_pair(struct lexer *, enum token_type, enum token_type,
-    struct token **);
-int	lexer_if_pair(struct lexer *, enum token_type, enum token_type,
-    struct token **);
+int	lexer_peek_if_pair(struct lexer *, int, int, struct token **);
+int	lexer_if_pair(struct lexer *, int, int, struct token **);
 
 int	lexer_peek_if_prefix_flags(struct lexer *, unsigned int,
     struct token **);
 
-int	lexer_peek_until(struct lexer *, enum token_type, struct token **);
-int	lexer_peek_until_loose(struct lexer *, enum token_type,
-    const struct token *, struct token **);
-int	lexer_until(struct lexer *, enum token_type, struct token **);
+int	lexer_peek_until(struct lexer *, int, struct token **);
+int	lexer_peek_until_loose(struct lexer *, int, const struct token *,
+    struct token **);
+int	lexer_until(struct lexer *, int, struct token **);
 
 const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
     unsigned int);

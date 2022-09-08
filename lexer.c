@@ -15,6 +15,7 @@
 #include "error.h"
 #include "options.h"
 #include "token.h"
+#include "token-type.h"
 #include "util.h"
 #include "vector.h"
 
@@ -80,8 +81,8 @@ static struct token	*lexer_find_token(const struct lexer *,
 static int		 lexer_buffer_streq(const struct lexer *,
     const struct lexer_state *, const char *);
 
-static void	lexer_emit_error(struct lexer *, enum token_type,
-    const struct token *, const char *, int);
+static void	lexer_emit_error(struct lexer *, int, const struct token *,
+    const char *, int);
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_ptr(struct lexer *, struct token **);
@@ -118,10 +119,10 @@ static int		 token_branch_unlink(struct token *);
 static struct token	*token_get_branch(struct token *);
 static void		 token_move_prefix(struct token *, struct token *,
     struct token *);
-static struct token	*token_list_find(struct token_list *, enum token_type);
+static struct token	*token_list_find(struct token_list *, int);
 static void		 token_remove(struct token_list *, struct token *);
 static void		 token_prolong(struct token *, struct token *);
-static const char	*strtoken(enum token_type);
+static const char	*strtoken(int);
 
 static int	 isnum(unsigned char, int);
 static char	*strtrim(const char *, size_t *);
@@ -248,7 +249,7 @@ token_has_line(const struct token *tk, int nlines)
 }
 
 int
-token_has_prefix(const struct token *tk, enum token_type type)
+token_has_prefix(const struct token *tk, int type)
 {
 	struct token_list *list = (struct token_list *)&tk->tk_prefixes;
 
@@ -302,7 +303,7 @@ token_is_branch(const struct token *tk)
  * type.
  */
 int
-token_is_decl(const struct token *tk, enum token_type type)
+token_is_decl(const struct token *tk, int type)
 {
 	const struct token *nx;
 
@@ -433,7 +434,7 @@ token_list_move(struct token_list *src, struct token_list *dst)
 }
 
 void
-token_move_suffixes(struct token *src, struct token *dst, enum token_type type)
+token_move_suffixes(struct token *src, struct token *dst, int type)
 {
 	struct token *suffix, *tmp;
 
@@ -896,8 +897,8 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 }
 
 struct token *
-lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
-    enum token_type type, const char *str)
+lexer_insert_before(struct lexer *UNUSED(lx), struct token *before, int type,
+    const char *str)
 {
 	const struct token cp = {
 		.tk_type	= type,
@@ -914,7 +915,7 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before,
 }
 
 struct token *
-lexer_insert_after(struct lexer *lx, struct token *after, enum token_type type,
+lexer_insert_after(struct lexer *lx, struct token *after, int type,
     const char *str)
 {
 	const struct token cp = {
@@ -995,7 +996,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 }
 
 int
-__lexer_expect(struct lexer *lx, enum token_type type, struct token **tk,
+__lexer_expect(struct lexer *lx, int type, struct token **tk,
     const char *fun, int lno)
 {
 	struct token *t = NULL;
@@ -1184,7 +1185,7 @@ lexer_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
  * type. Returns non-zero if such token was found.
  */
 int
-lexer_peek_if(struct lexer *lx, enum token_type type, struct token **tk)
+lexer_peek_if(struct lexer *lx, int type, struct token **tk)
 {
 	struct token *t;
 
@@ -1201,7 +1202,7 @@ lexer_peek_if(struct lexer *lx, enum token_type type, struct token **tk)
  * token was found.
  */
 int
-lexer_if(struct lexer *lx, enum token_type type, struct token **tk)
+lexer_if(struct lexer *lx, int type, struct token **tk)
 {
 	struct token *t;
 
@@ -1247,8 +1248,7 @@ lexer_if_flags(struct lexer *lx, unsigned int flags, struct token **tk)
  * Returns non-zero if such tokens was found.
  */
 int
-lexer_peek_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
-    struct token **tk)
+lexer_peek_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
 {
 	struct lexer_state s;
 	struct token *t = NULL;
@@ -1283,8 +1283,7 @@ lexer_peek_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
  * Returns non-zero if such tokens was found.
  */
 int
-lexer_if_pair(struct lexer *lx, enum token_type lhs, enum token_type rhs,
-    struct token **tk)
+lexer_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
 {
 	struct token *end;
 
@@ -1328,7 +1327,7 @@ lexer_peek_if_prefix_flags(struct lexer *lx, unsigned int flags,
  * token was found.
  */
 int
-lexer_peek_until(struct lexer *lx, enum token_type type, struct token **tk)
+lexer_peek_until(struct lexer *lx, int type, struct token **tk)
 {
 	struct lexer_state s;
 	int peek;
@@ -1348,8 +1347,8 @@ lexer_peek_until(struct lexer *lx, enum token_type type, struct token **tk)
  * token.
  */
 int
-lexer_peek_until_loose(struct lexer *lx, enum token_type type,
-    const struct token *stop, struct token **tk)
+lexer_peek_until_loose(struct lexer *lx, int type, const struct token *stop,
+    struct token **tk)
 {
 	struct lexer_state s;
 	struct token *t = NULL;
@@ -1381,7 +1380,7 @@ lexer_peek_until_loose(struct lexer *lx, enum token_type type,
  * if such token is found.
  */
 int
-lexer_until(struct lexer *lx, enum token_type type, struct token **tk)
+lexer_until(struct lexer *lx, int type, struct token **tk)
 {
 	for (;;) {
 		struct token *t;
@@ -1832,7 +1831,7 @@ lexer_cpp(struct lexer *lx)
 	struct token cpp;
 	struct token *tk;
 	char *str;
-	enum token_type type = TOKEN_CPP;
+	int type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
 
@@ -1972,8 +1971,8 @@ lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
 }
 
 static void
-lexer_emit_error(struct lexer *lx, enum token_type type,
-    const struct token *tk, const char *fun, int lno)
+lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
+    const char *fun, int lno)
 {
 	struct buffer *bf;
 	struct token *t;
@@ -2509,7 +2508,7 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 }
 
 static struct token *
-token_list_find(struct token_list *list, enum token_type type)
+token_list_find(struct token_list *list, int type)
 {
 	struct token *tk;
 
@@ -2528,7 +2527,7 @@ token_remove(struct token_list *tl, struct token *tk)
 }
 
 static const char *
-strtoken(enum token_type type)
+strtoken(int type)
 {
 	switch (type) {
 #define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];

@@ -1,5 +1,3 @@
-#include "token-type.h"
-
 #include "config.h"
 
 #ifdef HAVE_QUEUE
@@ -11,7 +9,7 @@
 TAILQ_HEAD(token_list, token);
 
 struct token {
-	enum token_type		 tk_type;
+	int			 tk_type;
 	int			 tk_refs;
 	unsigned int		 tk_lno;
 	unsigned int		 tk_cno;
@@ -86,11 +84,11 @@ void	 token_add_optline(struct token *);
 int	 token_cmp(const struct token *, const struct token *);
 int	 token_has_indent(const struct token *);
 int	 token_has_line(const struct token *, int);
-int	 token_has_prefix(const struct token *, enum token_type);
+int	 token_has_prefix(const struct token *, int);
 int	 token_has_tabs(const struct token *);
 int	 token_has_spaces(const struct token *);
 int	 token_is_branch(const struct token *);
-int	 token_is_decl(const struct token *, enum token_type);
+int	 token_is_decl(const struct token *, int);
 int	 token_is_moveable(const struct token *);
 int	 token_trim(struct token *);
 char	*token_sprintf(const struct token *);
@@ -104,4 +102,4 @@ struct token	*__token_prev(struct token *);
 void	token_list_copy(struct token_list *, struct token_list *);
 void	token_list_move(struct token_list *, struct token_list *);
 
-void	token_move_suffixes(struct token *, struct token *, enum token_type);
+void	token_move_suffixes(struct token *, struct token *, int);

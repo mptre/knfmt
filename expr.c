@@ -11,6 +11,7 @@
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
+#include "token-type.h"
 
 /*
  * Precedence, from lowest to highest.
@@ -80,7 +81,7 @@ struct expr_state;
 struct expr_rule {
 	enum expr_pc	 er_pc;
 	int		 er_rassoc;
-	enum token_type	 er_type;
+	int		 er_type;
 	struct expr	*(*er_func)(struct expr_state *, struct expr *);
 };
 

@@ -15,6 +15,7 @@
 #include "options.h"
 #include "parser.h"
 #include "token.h"
+#include "token-type.h"
 #include "util.h"
 
 struct context;
