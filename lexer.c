@@ -1506,6 +1506,7 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 		else
 			lexer_ungetc(lx);
 	}
+
 	if (ch == '"' || ch == '\'') {
 		unsigned char delim = ch;
 		unsigned char pch = ch;
