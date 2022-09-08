@@ -151,11 +151,12 @@ fileformat(struct file *fe, const struct options *op)
 		goto out;
 	}
 	lx = lexer_alloc(&(const struct lexer_arg){
-		.path	= fe->fe_path,
-		.bf	= src,
-		.er	= fe->fe_error,
-		.diff	= fe->fe_diff,
-		.op	= op,
+		.path		= fe->fe_path,
+		.bf		= src,
+		.er		= fe->fe_error,
+		.diff		= fe->fe_diff,
+		.op		= op,
+		.callbacks	= {.read = NULL, .serialize = NULL, .arg = NULL},
 	});
 	if (lx == NULL) {
 		error = 1;

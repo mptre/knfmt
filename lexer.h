@@ -5,6 +5,7 @@
 struct buffer;
 struct diffchunk;
 struct error;
+struct lexer;
 struct options;
 
 struct lexer_arg {
@@ -13,6 +14,25 @@ struct lexer_arg {
 	struct error		*er;
 	struct diffchunk	*diff;
 	const struct options	*op;
+
+	struct {
+		/*
+		 * Read callback expected to return the next available token.
+		 * Passing NULL will default to a callback capable of detecting
+		 * C tokens.
+		 */
+		struct token	*(*read)(struct lexer *, void *);
+
+		/*
+		 * Serialize callback used to turn the given token into something
+		 * human readable. Passing NULL will default to a callback
+		 * capable of serializing C tokens.
+		 */
+		char		*(*serialize)(const struct token *);
+
+		/* Opaque argument passed to callbacks. */
+		void		*arg;
+	} callbacks;
 };
 
 struct lexer_state {

@@ -39,6 +39,9 @@ struct lexer {
 	const struct buffer	*lx_bf;
 	const char		*lx_path;
 
+	/* Serialize callback passed to lexer_alloc(). */
+	char			*(*lx_serialize)(const struct token *);
+
 	/* Line number to buffer offset mapping. */
 	VECTOR(unsigned int)	 lx_lines;
 
@@ -59,7 +62,7 @@ struct token_hash {
 
 static int		 lexer_getc(struct lexer *, unsigned char *);
 static void		 lexer_ungetc(struct lexer *);
-static int		 lexer_read(struct lexer *, struct token **);
+static struct token	*lexer_read(struct lexer *, void *);
 static void		 lexer_eat_buffet(struct lexer *, struct lexer_state *,
     struct lexer_state *);
 static int		 lexer_eat_lines(struct lexer *, struct token **, int);
@@ -487,6 +490,7 @@ lexer_shutdown(void)
 struct lexer *
 lexer_alloc(const struct lexer_arg *arg)
 {
+	struct token *(*rd)(struct lexer *, void *);
 	struct lexer *lx;
 	int error = 0;
 
@@ -498,6 +502,8 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_bf = arg->bf;
 	lx->lx_diff = arg->diff;
 	lx->lx_path = arg->path;
+	lx->lx_serialize = arg->callbacks.serialize ?
+	    arg->callbacks.serialize : token_sprintf;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	if (VECTOR_INIT(lx->lx_lines) == NULL)
@@ -508,13 +514,19 @@ lexer_alloc(const struct lexer_arg *arg)
 		err(1, NULL);
 	lexer_line_alloc(lx, 1);
 
+	rd = arg->callbacks.read;
+	if (rd == NULL)
+		rd = lexer_read;
+
 	for (;;) {
 		struct token *tk;
 
-		if (!lexer_read(lx, &tk)) {
+		tk = rd(lx, arg->callbacks.arg);
+		if (tk == NULL) {
 			error = 1;
 			break;
 		}
+		TAILQ_INSERT_TAIL(&lx->lx_tokens, tk, tk_entry);
 		if (tk->tk_type == TOKEN_EOF)
 			break;
 	}
@@ -529,8 +541,8 @@ lexer_alloc(const struct lexer_arg *arg)
 		do {
 			pv = tk->tk_branch.br_pv;
 			lexer_trace(lx, "broken branch: %s%s%s",
-			    token_sprintf(tk),
-			    pv ? " -> " : "", pv ? token_sprintf(pv) : "");
+			    lx->lx_serialize(tk),
+			    pv ? " -> " : "", pv ? lx->lx_serialize(pv) : "");
 			while (token_branch_unlink(tk) == 0)
 				continue;
 			tk = pv;
@@ -614,7 +626,7 @@ lexer_stamp(struct lexer *lx)
 		if (options_trace(lx->lx_op)) {
 			char *str;
 
-			str = token_sprintf(tk);
+			str = lx->lx_serialize(tk);
 			lexer_trace(lx, "stamp %s", str);
 			free(str);
 		}
@@ -637,7 +649,7 @@ lexer_recover(struct lexer *lx)
 
 	back = lx->lx_st.st_tk != NULL ?
 	    lx->lx_st.st_tk : TAILQ_FIRST(&lx->lx_tokens);
-	lexer_trace(lx, "back %s", token_sprintf(back));
+	lexer_trace(lx, "back %s", lx->lx_serialize(back));
 	br = lexer_recover_branch(back);
 	if (br == NULL)
 		return 0;
@@ -645,8 +657,8 @@ lexer_recover(struct lexer *lx)
 	src = br->tk_token;
 	dst = br->tk_branch.br_nx->tk_token;
 	lexer_trace(lx, "branch from %s to %s covering [%s, %s)",
-	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
-	    token_sprintf(src), token_sprintf(dst));
+	    lx->lx_serialize(br), lx->lx_serialize(br->tk_branch.br_nx),
+	    lx->lx_serialize(src), lx->lx_serialize(dst));
 
 	/*
 	 * Find the offset of the first stamped token before the branch.
@@ -674,7 +686,7 @@ lexer_recover(struct lexer *lx)
 	token_rele(br);
 
 	lexer_trace(lx, "seek to %s, removing %d document(s)",
-	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
+	    lx->lx_serialize(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
 	    ndocs);
 	lx->lx_st.st_tk = seek;
 	lx->lx_st.st_err = 0;
@@ -698,9 +710,9 @@ lexer_branch(struct lexer *lx)
 	dst = br->tk_branch.br_nx->tk_token;
 
 	lexer_trace(lx, "branch from %s to %s, covering [%s, %s)",
-	    token_sprintf(br), token_sprintf(br->tk_branch.br_nx),
-	    token_sprintf(br->tk_token),
-	    token_sprintf(br->tk_branch.br_nx->tk_token));
+	    lx->lx_serialize(br), lx->lx_serialize(br->tk_branch.br_nx),
+	    lx->lx_serialize(br->tk_token),
+	    lx->lx_serialize(br->tk_branch.br_nx->tk_token));
 
 	token_branch_unlink(br);
 
@@ -708,7 +720,7 @@ lexer_branch(struct lexer *lx)
 	for (;;) {
 		struct token *nx;
 
-		lexer_trace(lx, "removing %s", token_sprintf(rm));
+		lexer_trace(lx, "removing %s", lx->lx_serialize(rm));
 
 		nx = token_next(rm);
 		lexer_remove(lx, rm, 0);
@@ -733,7 +745,7 @@ lexer_branch(struct lexer *lx)
 	/* Rewind to last stamped token. */
 	seek = TAILQ_LAST(&lx->lx_stamps, token_list);
 	lexer_trace(lx, "seek to %s",
-	    token_sprintf(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
+	    lx->lx_serialize(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
 	lx->lx_st.st_tk = seek;
 	lx->lx_st.st_err = 0;
 	return 1;
@@ -776,7 +788,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 
 		if (lx->lx_peek == 0) {
 			/* While not peeking, instruct the parser to halt. */
-			lexer_trace(lx, "halt %s", token_sprintf(st->st_tk));
+			lexer_trace(lx, "halt %s", lx->lx_serialize(st->st_tk));
 			return 0;
 		} else {
 			/* While peeking, act as taking the current branch. */
@@ -1342,29 +1354,29 @@ lexer_dump(const struct lexer *lx)
 		i++;
 
 		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			str = token_sprintf(prefix);
+			str = lx->lx_serialize(prefix);
 			fprintf(stderr, "[L] %-6u   prefix %s", i, str);
 			free(str);
 
 			if (prefix->tk_branch.br_pv != NULL) {
-				str = token_sprintf(prefix->tk_branch.br_pv);
+				str = lx->lx_serialize(prefix->tk_branch.br_pv);
 				fprintf(stderr, ", pv %s", str);
 				free(str);
 			}
 			if (prefix->tk_branch.br_nx != NULL) {
-				str = token_sprintf(prefix->tk_branch.br_nx);
+				str = lx->lx_serialize(prefix->tk_branch.br_nx);
 				fprintf(stderr, ", nx %s", str);
 			}
 			fprintf(stderr, "\n");
 			nfixes++;
 		}
 
-		str = token_sprintf(tk);
+		str = lx->lx_serialize(tk);
 		fprintf(stderr, "[L] %-6u %s\n", i, str);
 		free(str);
 
 		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-			str = token_sprintf(suffix);
+			str = lx->lx_serialize(suffix);
 			fprintf(stderr, "[L] %-6u   suffix %s\n", i, str);
 			free(str);
 			nfixes++;
@@ -1422,18 +1434,15 @@ lexer_ungetc(struct lexer *lx)
 	}
 }
 
-/*
- * Consume the next token. Returns non-zero if such token is found.
- */
-static int
-lexer_read(struct lexer *lx, struct token **tk)
+static struct token *
+lexer_read(struct lexer *lx, void *UNUSED(arg))
 {
 	struct lexer_state st;
 	struct token_list prefixes;
 	struct buffer *bf;
+	struct token *tk = NULL;
 	struct token *t, *tmp;
 	char *str;
-	int error = 0;
 	int ncomments = 0;
 	int nlines;
 	unsigned char ch;
@@ -1461,7 +1470,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 			TAILQ_INSERT_TAIL(&prefixes, tmp, tk_entry);
 	}
 
-	if ((*tk = lexer_keyword(lx)) != NULL)
+	if ((tk = lexer_keyword(lx)) != NULL)
 		goto out;
 
 	st = lx->lx_st;
@@ -1489,7 +1498,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 				break;
 			pch = ch;
 		}
-		*tk = lexer_emit(lx, &st, delim == '"' ? &tkstr : &tklit);
+		tk = lexer_emit(lx, &st, delim == '"' ? &tkstr : &tklit);
 		goto out;
 	}
 
@@ -1499,7 +1508,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 				goto eof;
 		} while (isnum(ch, 0));
 		lexer_ungetc(lx);
-		*tk = lexer_emit(lx, &st, &tklit);
+		tk = lexer_emit(lx, &st, &tklit);
 		goto out;
 	}
 
@@ -1512,28 +1521,28 @@ lexer_read(struct lexer *lx, struct token **tk)
 
 		t = lexer_find_token(lx, &st);
 		if (t != NULL) {
-			*tk = lexer_emit(lx, &st, t);
+			tk = lexer_emit(lx, &st, t);
 		} else {
 			/* Fallback, treat everything as an identifier. */
-			*tk = lexer_emit(lx, &st, &tkident);
+			tk = lexer_emit(lx, &st, &tkident);
 		}
 		goto out;
 	}
 
-	*tk = lexer_emit(lx, &st, &tknone);
-	str = token_sprintf(*tk);
+	t = lexer_emit(lx, &st, &tknone);
+	str = lx->lx_serialize(t);
 	bf = error_begin(lx->lx_er);
 	buffer_printf(bf, "%s: unknown token %s\n", lx->lx_path, str);
 	error_end(lx->lx_er);
 	free(str);
-	error = 1;
-	goto out;
+	token_rele(t);
+	return NULL;
 
 eof:
-	*tk = lexer_emit(lx, &st, &tkeof);
+	tk = lexer_emit(lx, &st, &tkeof);
 
 out:
-	TAILQ_CONCAT(&(*tk)->tk_prefixes, &prefixes, tk_entry);
+	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
 
 	/*
 	 * Consume trailing/interwined comments, will be hanging of the emitted
@@ -1542,7 +1551,7 @@ out:
 	for (;;) {
 		if ((tmp = lexer_comment(lx, 0)) == NULL)
 			break;
-		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
+		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
 		ncomments++;
 	}
 
@@ -1552,36 +1561,36 @@ out:
 	 */
 	if (ncomments == 0 && lexer_eat_spaces(lx, &tmp)) {
 		tmp->tk_flags |= TOKEN_FLAG_OPTSPACE;
-		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
+		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
 	}
 
 	/* Consume hard lines, will be hanging of the emitted token. */
 	if ((nlines = lexer_eat_lines(lx, &tmp, 0)) > 0) {
 		if (nlines == 1)
 			tmp->tk_flags |= TOKEN_FLAG_OPTLINE;
-		TAILQ_INSERT_TAIL(&(*tk)->tk_suffixes, tmp, tk_entry);
+		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
 	}
 
 	/*
 	 * Establish links between cpp branches.
 	 */
-	TAILQ_FOREACH(tmp, &(*tk)->tk_prefixes, tk_entry) {
+	TAILQ_FOREACH(tmp, &tk->tk_prefixes, tk_entry) {
 		switch (tmp->tk_type) {
 		case TOKEN_CPP_IF:
-			lexer_branch_enter(lx, tmp, *tk);
+			lexer_branch_enter(lx, tmp, tk);
 			break;
 		case TOKEN_CPP_ELSE:
-			lexer_branch_link(lx, tmp, *tk);
+			lexer_branch_link(lx, tmp, tk);
 			break;
 		case TOKEN_CPP_ENDIF:
-			lexer_branch_leave(lx, tmp, *tk);
+			lexer_branch_leave(lx, tmp, tk);
 			break;
 		default:
 			break;
 		}
 	}
 
-	return error ? 0 : 1;
+	return tk;
 }
 
 /*
@@ -1956,8 +1965,6 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 		t->tk_str = &lx->lx_bf->bf_ptr[st->st_off];
 		t->tk_len = lx->lx_st.st_off - st->st_off;
 	}
-	if ((t->tk_flags & TOKEN_FLAG_DANGLING) == 0)
-		TAILQ_INSERT_TAIL(&lx->lx_tokens, t, tk_entry);
 	return t;
 }
 
@@ -1988,7 +1995,7 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 	buffer_printf(bf, "%s: ", lx->lx_path);
 	if (lx->lx_op->op_verbose > 0)
 		buffer_printf(bf, "%s:%d: ", fun, lno);
-	str = tk ? token_sprintf(tk) : NULL;
+	str = tk ? lx->lx_serialize(tk) : NULL;
 	buffer_printf(bf, "expected type %s got %s\n", strtoken(type),
 	    str ? str : "(null)");
 	free(str);
@@ -2157,7 +2164,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 
 		pr = TAILQ_FIRST(&dst->tk_token->tk_prefixes);
 		lexer_trace(lx, "removing prefix %s",
-		    token_sprintf(pr));
+		    lx->lx_serialize(pr));
 		TAILQ_REMOVE(&dst->tk_token->tk_prefixes, pr, tk_entry);
 		/* Completely unlink any branch. */
 		while (token_branch_unlink(pr) == 0)
@@ -2167,8 +2174,8 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 			break;
 	}
 
-	lexer_trace(lx, "add prefix %s to %s", token_sprintf(prefix),
-	    token_sprintf(dst->tk_token));
+	lexer_trace(lx, "add prefix %s to %s", lx->lx_serialize(prefix),
+	    lx->lx_serialize(dst->tk_token));
 	TAILQ_INSERT_HEAD(&dst->tk_token->tk_prefixes, prefix, tk_entry);
 
 	/*
@@ -2182,7 +2189,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 		if (pv == NULL)
 			break;
 
-		lexer_trace(lx, "keeping prefix %s", token_sprintf(pv));
+		lexer_trace(lx, "keeping prefix %s", lx->lx_serialize(pv));
 		tmp = token_prev(pv);
 		token_move_prefix(pv, src->tk_token, dst->tk_token);
 		pv = tmp;
@@ -2200,7 +2207,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 			break;
 
 		nx = token_next(rm);
-		lexer_trace(lx, "removing %s", token_sprintf(rm));
+		lexer_trace(lx, "removing %s", lx->lx_serialize(rm));
 		flags |= rm->tk_flags & TOKEN_FLAG_UNMUTE;
 		lexer_remove(lx, rm, 0);
 		rm = nx;
@@ -2217,7 +2224,7 @@ lexer_branch_enter(struct lexer *lx, struct token *cpp, struct token *tk)
 {
 	struct branch *br;
 
-	lexer_trace(lx, "%s", token_sprintf(cpp));
+	lexer_trace(lx, "%s", lx->lx_serialize(cpp));
 
 	cpp->tk_token = tk;
 
@@ -2247,7 +2254,7 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 		struct token *pv;
 
 		lexer_trace(lx, "%s -> %s. discard empty branch",
-		    token_sprintf(br->br_cpp), token_sprintf(cpp));
+		    lx->lx_serialize(br->br_cpp), lx->lx_serialize(cpp));
 
 		/*
 		 * Prevent the previous branch from being exhausted if we're
@@ -2268,8 +2275,8 @@ lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
 	if (br->br_cpp != NULL) {
 		cpp->tk_token = tk;
 		token_branch_link(br->br_cpp, cpp);
-		lexer_trace(lx, "%s -> %s", token_sprintf(br->br_cpp),
-		    token_sprintf(cpp));
+		lexer_trace(lx, "%s -> %s", lx->lx_serialize(br->br_cpp),
+		    lx->lx_serialize(cpp));
 	} else {
 		token_branch_unlink(cpp);
 	}
@@ -2298,8 +2305,8 @@ lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
 		return;
 	}
 
-	lexer_trace(lx, "%s -> %s", token_sprintf(br->br_cpp),
-	    token_sprintf(cpp));
+	lexer_trace(lx, "%s -> %s", lx->lx_serialize(br->br_cpp),
+	    lx->lx_serialize(cpp));
 
 	cpp->tk_token = tk;
 	token_branch_link(br->br_cpp, cpp);
