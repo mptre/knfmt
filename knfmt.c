@@ -300,24 +300,24 @@ err:
 static int
 fileattr(const char *srcpath, const char *dstpath)
 {
-	struct stat dstst, srcst;
+	struct stat dstsb, srcsb;
 
-	if (stat(srcpath, &srcst) == -1) {
+	if (stat(srcpath, &srcsb) == -1) {
 		warn("stat: %s", srcpath);
 		return 1;
 	}
-	if (stat(dstpath, &dstst) == -1) {
+	if (stat(dstpath, &dstsb) == -1) {
 		warn("stat: %s", dstpath);
 		return 1;
 	}
 
-	if (srcst.st_mode != dstst.st_mode &&
-	    chmod(srcpath, dstst.st_mode) == -1) {
+	if (srcsb.st_mode != dstsb.st_mode &&
+	    chmod(srcpath, dstsb.st_mode) == -1) {
 		warn("chmod: %s", srcpath);
 		return 1;
 	}
-	if ((srcst.st_uid != dstst.st_uid || srcst.st_gid != dstst.st_gid) &&
-	    chown(srcpath, dstst.st_uid, dstst.st_gid) == -1) {
+	if ((srcsb.st_uid != dstsb.st_uid || srcsb.st_gid != dstsb.st_gid) &&
+	    chown(srcpath, dstsb.st_uid, dstsb.st_gid) == -1) {
 		warn("chown: %s", srcpath);
 		return 1;
 	}
