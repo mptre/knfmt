@@ -129,38 +129,38 @@ static char	*strtrim(const char *, size_t *);
 
 static struct token_hash	*tokens = NULL;
 
-static const struct token	tkcomment = {
+static const struct token tkcomment = {
 	.tk_type	= TOKEN_COMMENT,
 	.tk_flags	= TOKEN_FLAG_DANGLING,
 };
-static const struct token	tkcpp = {
+static const struct token tkcpp = {
 	.tk_type	= TOKEN_CPP,
 	.tk_flags	= TOKEN_FLAG_DANGLING | TOKEN_FLAG_CPP,
 };
-static struct token		tkeof = {
+static struct token tkeof = {
 	.tk_type	= TOKEN_EOF,
 	.tk_str		= "",
 };
-static const struct token	tkident = {
+static const struct token tkident = {
 	.tk_type	= TOKEN_IDENT,
 };
-static const struct token	tkline = {
+static const struct token tkline = {
 	.tk_type	= TOKEN_SPACE,
 	.tk_str		= "\n",
 	.tk_len		= 1,
 	.tk_flags	= TOKEN_FLAG_DANGLING,
 };
-static const struct token	tklit = {
+static const struct token tklit = {
 	.tk_type	= TOKEN_LITERAL,
 };
-static const struct token	tknone = {
+static const struct token tknone = {
 	.tk_type	= TOKEN_NONE,
 };
-static const struct token	tkspace = {
+static const struct token tkspace = {
 	.tk_type	= TOKEN_SPACE,
 	.tk_flags	= TOKEN_FLAG_DANGLING,
 };
-static const struct token	tkstr = {
+static const struct token tkstr = {
 	.tk_type	= TOKEN_STRING,
 };
 
