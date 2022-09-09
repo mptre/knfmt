@@ -67,7 +67,7 @@ testcase() {
 			return 1
 		fi
 	else
-		${EXEC:-} "${KNFMT}" ${_flags:+-${_flags}} "$@" "$_file" \
+		(cd "$_wrkdir" && ${EXEC:-} "${KNFMT}" ${_flags:+-${_flags}} "$@" "$_file") \
 			>"$_out" 2>&1 || _got="$?"
 	fi
 
@@ -126,26 +126,28 @@ simple-010.c)
 	;;
 esac
 
-case "$1" in
+_rel="$1"
+_abs="$(readlink -f "$_rel")"
+case "$_rel" in
 bug-*)
-	testcase -b "$1" -- -sv
+	testcase -b "$_abs" -- -sv
 	;;
 diff-simple-*)
-	testcase "$1" -- -Dsv
+	testcase "$_rel" -- -Dsv
 	;;
 diff-*)
-	testcase "$1" -- -Dv
+	testcase "$_rel" -- -Dv
 	;;
 error-*)
-	testcase -e -q "$1" -- -s
+	testcase -e -q "$_abs" -- -s
 	;;
 simple-*|../*)
-	testcase "$1" -- -sv
+	testcase "$_abs" -- -sv
 	;;
 trace-*)
-	testcase -q "$1" -- -vvv
+	testcase -q "$_abs" -- -vvv
 	;;
 *)
-	testcase "$1" -- -v
+	testcase "$_abs" -- -v
 	;;
 esac
