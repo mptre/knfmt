@@ -782,7 +782,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 static void
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 {
-	st->st_col = buffer_indent(st->st_bf, indent, st->st_col);
+	st->st_col = buffer_indent(st->st_bf, indent, 1, st->st_col);
 }
 
 static void

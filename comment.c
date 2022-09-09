@@ -29,7 +29,7 @@ comment_exec(const struct token *tk, const struct options *UNUSED(op))
 
 		ep = skipws(sp, len);
 		if (ep != NULL && (*ep == '*' || *ep == '/')) {
-			buffer_indent(bf, strwidth(sp, ep - sp, 0), 0);
+			buffer_indent(bf, strwidth(sp, ep - sp, 0), 1, 0);
 			len -= ep - sp;
 			sp += ep - sp;
 		}
