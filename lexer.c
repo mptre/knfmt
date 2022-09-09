@@ -15,7 +15,6 @@
 #include "error.h"
 #include "options.h"
 #include "token.h"
-#include "token-type.h"
 #include "util.h"
 #include "vector.h"
 

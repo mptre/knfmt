@@ -6,6 +6,12 @@
 #  include "compat-queue.h"
 #endif
 
+enum {
+#define T(t, s, f) t,
+#define S(t, s, f) t,
+#include "token-defs.h"
+};
+
 TAILQ_HEAD(token_list, token);
 
 struct token {

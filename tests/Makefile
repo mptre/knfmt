@@ -400,7 +400,6 @@ TESTS+=	../simple-stmt.c
 TESTS+=	../simple-stmt.h
 TESTS+=	../t.c
 TESTS+=	../token-defs.h
-TESTS+=	../token-type.h
 TESTS+=	../token.h
 TESTS+=	../util.c
 TESTS+=	../util.h

@@ -11,7 +11,6 @@
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
-#include "token-type.h"
 #include "vector.h"
 
 struct stmt {

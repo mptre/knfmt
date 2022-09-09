@@ -17,7 +17,6 @@
 #include "simple-decl.h"
 #include "simple-stmt.h"
 #include "token.h"
-#include "token-type.h"
 
 /*
  * Return values for parser exec routines. Only one of the following may be
