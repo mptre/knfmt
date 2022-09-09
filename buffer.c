@@ -110,15 +110,23 @@ buffer_appendc(struct buffer *bf, char ch)
 void
 buffer_printf(struct buffer *bf, const char *fmt, ...)
 {
-	va_list ap, cp;
+	va_list ap;
+
+	va_start(ap, fmt);
+	buffer_vprintf(bf, fmt, ap);
+	va_end(ap);
+}
+
+void
+buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
+{
+	va_list cp;
 	unsigned int shift = 0;
 	int n;
 
-	va_start(ap, fmt);
 	va_copy(cp, ap);
 
 	n = vsnprintf(NULL, 0, fmt, ap);
-	va_end(ap);
 	if (n < 0)
 		err(1, "vsnprintf");
 

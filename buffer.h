@@ -1,3 +1,4 @@
+#include <stdarg.h>	/* va_list */
 #include <stddef.h>	/* size_t */
 
 struct buffer {
@@ -13,6 +14,7 @@ void		 buffer_append(struct buffer *, const char *, size_t);
 void		 buffer_appendc(struct buffer *, char);
 void		 buffer_printf(struct buffer *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
+void		 buffer_vprintf(struct buffer *, const char *, va_list);
 size_t		 buffer_indent(struct buffer *, int, size_t);
 char		*buffer_release(struct buffer *);
 void		 buffer_reset(struct buffer *);
