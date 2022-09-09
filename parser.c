@@ -2586,18 +2586,18 @@ __parser_fail(struct parser *pr, const char *fun, int lno)
 	pr->pr_error = 1;
 
 	bf = error_begin(pr->pr_er);
-	buffer_appendv(bf, "%s: ", pr->pr_path);
+	buffer_printf(bf, "%s: ", pr->pr_path);
 	if (pr->pr_op->op_verbose > 0)
-		buffer_appendv(bf, "%s:%d: ", fun, lno);
-	buffer_appendv(bf, "error at ");
+		buffer_printf(bf, "%s:%d: ", fun, lno);
+	buffer_printf(bf, "error at ");
 	if (lexer_back(pr->pr_lx, &tk)) {
 		char *str;
 
 		str = token_sprintf(tk);
-		buffer_appendv(bf, "%s\n", str);
+		buffer_printf(bf, "%s\n", str);
 		free(str);
 	} else {
-		buffer_appendv(bf, "(null)\n");
+		buffer_printf(bf, "(null)\n");
 	}
 	error_end(pr->pr_er);
 

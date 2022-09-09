@@ -108,7 +108,7 @@ buffer_appendc(struct buffer *bf, char ch)
 }
 
 void
-buffer_appendv(struct buffer *bf, const char *fmt, ...)
+buffer_printf(struct buffer *bf, const char *fmt, ...)
 {
 	va_list ap, cp;
 	unsigned int shift = 0;
