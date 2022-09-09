@@ -1430,6 +1430,7 @@ lexer_read(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state st;
 	struct token_list prefixes;
+	struct buffer *bf;
 	struct token *t, *tmp;
 	char *str;
 	int error = 0;
@@ -1521,7 +1522,9 @@ lexer_read(struct lexer *lx, struct token **tk)
 
 	*tk = lexer_emit(lx, &st, &tknone);
 	str = token_sprintf(*tk);
-	error_write(lx->lx_er, "%s: unknown token %s\n", lx->lx_path, str);
+	bf = error_begin(lx->lx_er);
+	buffer_appendv(bf, "%s: unknown token %s\n", lx->lx_path, str);
+	error_end(lx->lx_er);
 	free(str);
 	error = 1;
 	goto out;
@@ -1962,6 +1965,7 @@ static void
 lexer_emit_error(struct lexer *lx, enum token_type type,
     const struct token *tk, const char *fun, int lno)
 {
+	struct buffer *bf;
 	struct token *t;
 	char *str;
 
@@ -1980,13 +1984,15 @@ lexer_emit_error(struct lexer *lx, enum token_type type,
 	if (lx->lx_peek > 0)
 		return;
 
-	error_write(lx->lx_er, "%s: ", lx->lx_path);
+	bf = error_begin(lx->lx_er);
+	buffer_appendv(bf, "%s: ", lx->lx_path);
 	if (lx->lx_op->op_verbose > 0)
-		error_write(lx->lx_er, "%s:%d: ", fun, lno);
+		buffer_appendv(bf, "%s:%d: ", fun, lno);
 	str = tk ? token_sprintf(tk) : NULL;
-	error_write(lx->lx_er, "expected type %s got %s\n", strtoken(type),
+	buffer_appendv(bf, "expected type %s got %s\n", strtoken(type),
 	    str ? str : "(null)");
 	free(str);
+	error_end(lx->lx_er);
 }
 
 /*

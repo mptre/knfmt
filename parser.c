@@ -2578,25 +2578,28 @@ parser_peek_line(struct parser *pr, const struct token *stop)
 static int
 __parser_fail(struct parser *pr, const char *fun, int lno)
 {
+	struct buffer *bf;
 	struct token *tk;
 
 	if (parser_get_error(pr))
 		goto out;
 	pr->pr_error = 1;
 
-	error_write(pr->pr_er, "%s: ", pr->pr_path);
+	bf = error_begin(pr->pr_er);
+	buffer_appendv(bf, "%s: ", pr->pr_path);
 	if (pr->pr_op->op_verbose > 0)
-		error_write(pr->pr_er, "%s:%d: ", fun, lno);
-	error_write(pr->pr_er, "%s", "error at ");
+		buffer_appendv(bf, "%s:%d: ", fun, lno);
+	buffer_appendv(bf, "error at ");
 	if (lexer_back(pr->pr_lx, &tk)) {
 		char *str;
 
 		str = token_sprintf(tk);
-		error_write(pr->pr_er, "%s\n", str);
+		buffer_appendv(bf, "%s\n", str);
 		free(str);
 	} else {
-		error_write(pr->pr_er, "%s", "(null)\n");
+		buffer_appendv(bf, "(null)\n");
 	}
+	error_end(pr->pr_er);
 
 out:
 	if (lexer_is_branch(pr->pr_lx))

@@ -36,6 +36,20 @@ error_free(struct error *er)
 	free(er);
 }
 
+struct buffer *
+error_begin(struct error *er)
+{
+	if (er->er_bf == NULL)
+		er->er_bf = buffer_alloc(1024);
+	return er->er_bf;
+}
+
+void
+error_end(struct error *er)
+{
+	error_flush(er, 0);
+}
+
 void
 error_reset(struct error *er)
 {
@@ -55,12 +69,4 @@ error_flush(struct error *er, int force)
 		fprintf(stderr, "%.*s",
 		    (int)er->er_bf->bf_len, er->er_bf->bf_ptr);
 	error_reset(er);
-}
-
-struct buffer *
-error_get_buffer(struct error *er)
-{
-	if (er->er_bf == NULL)
-		er->er_bf = buffer_alloc(1024);
-	return er->er_bf;
 }

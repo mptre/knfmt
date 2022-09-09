@@ -1,13 +1,6 @@
-struct buffer;
-
 struct error	*error_alloc(int);
 void		 error_free(struct error *);
+struct buffer	*error_begin(struct error *);
+void		 error_end(struct error *);
 void		 error_reset(struct error *);
 void		 error_flush(struct error *, int);
-struct buffer	*error_get_buffer(struct error *);
-
-#define error_write(er, fmt, ...) do {					\
-	buffer_appendv(error_get_buffer((er)), (fmt), __VA_ARGS__);	\
-	error_flush((er), 0);						\
-} while (0)
-
