@@ -564,7 +564,7 @@ parser_exec_decl_init(struct parser *pr, struct doc *dc, struct ruler *rl,
 	int ninit = 0;
 	int error;
 
-	indent = ruler_indent(rl, parent, &cookie);
+	indent = ruler_indent(rl, parent, &cookie, 0);
 	dc = doc_alloc(DOC_CONCAT, indent);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
@@ -1211,8 +1211,20 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 		token_trim(lparen);
 		doc_token(lparen, concat);
 	}
-	indent = doc_alloc_indent(style(pr->pr_st, ContinuationIndentWidth),
-	    concat);
+	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
+		unsigned int w;
+
+		w = parser_width(pr, concat);
+		if (style(pr->pr_st, AlwaysBreakAfterReturnType) == None) {
+			indent = doc_alloc(DOC_CONCAT,
+			    ruler_indent(pf->rl, concat, NULL, w));
+		} else {
+			indent = doc_alloc_indent(w, concat);
+		}
+	} else {
+		indent = doc_alloc_indent(
+		    style(pr->pr_st, ContinuationIndentWidth), concat);
+	}
 	while (parser_exec_func_arg(pr, indent, &pf->out, rparen) & GOOD)
 		continue;
 	/* Can be empty if arguments are absent. */

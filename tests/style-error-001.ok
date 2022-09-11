@@ -10,3 +10,4 @@
 .clang-format: unknown value String<9:9>("'string'") for option Keyword<9:1>("UseTab")
 .clang-format: unknown option Unknown<10:1>("ForEachMacros")
 .clang-format: unknown value False<13:9>("false") for option Keyword<13:1>("UseTab")
+.clang-format: unknown value Integer<16:24>("0") for option Keyword<16:1>("AlignAfterOpenBracket")

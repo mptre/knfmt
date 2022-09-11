@@ -65,6 +65,11 @@ style_init(void)
 {
 	static struct style_hash kw[] = {
 #define K(t, s)	{ .sh_key = s, .sh_type = t, }
+		K(AlignAfterOpenBracket,		"AlignAfterOpenBracket"),
+		K(Align,				"Align"),
+		K(DontAlign,				"DontAlign"),
+		K(AlwaysBreak,				"AlwaysBreak"),
+		K(BlockIndent,				"BlockIndent"),
 		K(AlwaysBreakAfterReturnType,		"AlwaysBreakAfterReturnType"),
 		K(None,					"None"),
 		K(All,					"All"),
@@ -150,6 +155,7 @@ style(const struct style *st, int option)
 static void
 style_defaults(struct style *st)
 {
+	st->st_options[AlignAfterOpenBracket] = DontAlign;
 	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
 	st->st_options[ColumnLimit] = 80;
 	st->st_options[ContinuationIndentWidth] = 4;
@@ -202,7 +208,13 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
 
-		if (lexer_if(lx, AlwaysBreakAfterReturnType, &key) &&
+		if (lexer_if(lx, AlignAfterOpenBracket, &key) &&
+		    (lexer_if(lx, Align, &val) ||
+		     lexer_if(lx, DontAlign, &val) ||
+		     lexer_if(lx, AlwaysBreak, &val) ||
+		     lexer_if(lx, BlockIndent, &val))) {
+			st->st_options[key->tk_type] = val->tk_type;
+		} else if (lexer_if(lx, AlwaysBreakAfterReturnType, &key) &&
 		    (lexer_if(lx, None, &val) ||
 		     lexer_if(lx, All, &val) ||
 		     lexer_if(lx, TopLevel, &val) ||

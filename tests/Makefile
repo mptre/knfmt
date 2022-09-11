@@ -368,6 +368,9 @@ TESTS+=	bug-002.c
 TESTS+=	bug-003.c
 TESTS+=	bug-005.c
 
+TESTS+=	style-AlignAfterOpenBracket-001.c
+TESTS+=	style-AlignAfterOpenBracket-002.c
+TESTS+=	style-AlignAfterOpenBracket-003.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ContinuationIndentWidth-001.c

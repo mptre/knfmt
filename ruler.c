@@ -21,6 +21,7 @@ struct ruler_indent {
 	struct doc	*ri_dc;
 	unsigned int	 ri_rd;
 	int		 ri_indent;
+	unsigned int	 ri_extra;
 };
 
 struct ruler_datum {
@@ -108,8 +109,9 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 
 /*
  * Returns an indent document which will cause everything that does not fit on
- * the current line to be aligned with the column on the previous line. Used to
- * align long declarations:
+ * the current line to be aligned with the column on the previous line.
+ * Optionally adding an extra amount of indentation. Used to among other things
+ * to align long declarations:
  *
  * 	int x, y,
  * 	    z;
@@ -120,16 +122,13 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
  */
 struct doc *
 __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
-    int indent, const char *fun, int lno)
+    int indent, unsigned int extra, const char *fun, int lno)
 {
 	struct ruler_column *rc;
 	struct ruler_indent *ri;
 
 	if (rl == NULL)
 		goto err;
-
-	/* Not applicable to fixed alignment. */
-	assert(rl->rl_len == 0);
 
 	if (VECTOR_LENGTH(rl->rl_columns) == 0)
 		goto err;
@@ -146,6 +145,7 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 		err(1, NULL);
 	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
 	ri->ri_indent = indent;
+	ri->ri_extra = extra;
 	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
 	if (cookie != NULL)
 		*cookie = ri;
@@ -237,7 +237,8 @@ ruler_exec_indent(struct ruler *rl)
 				indent = tabalign(indent);
 			indent += rc->rc_nspaces - rd->rd_nspaces;
 		}
-		doc_set_indent(ri->ri_dc, ri->ri_indent * indent);
+		doc_set_indent(ri->ri_dc,
+		    ri->ri_indent * indent + ri->ri_extra);
 	}
 }
 

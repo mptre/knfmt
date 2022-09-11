@@ -3,6 +3,12 @@ struct style;
 
 /* Supported clang format options and values. */
 enum {
+	AlignAfterOpenBracket,
+	Align,
+	DontAlign,
+	AlwaysBreak,
+	BlockIndent,
+
 	AlwaysBreakAfterReturnType,
 	None,
 	All,
