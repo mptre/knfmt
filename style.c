@@ -366,22 +366,24 @@ static char *
 yaml_serialize(const struct token *tk)
 {
 	char *val = NULL;
-	char *str;
+	char *buf;
+	ssize_t bufsiz = 256;
 	int n;
 
+	buf = malloc(bufsiz);
 	if (tk->tk_type < Last) {
 		val = strnice(tk->tk_str, tk->tk_len);
-		n = asprintf(&str, "Keyword<%u:%u>(\"%s\")",
+		n = snprintf(buf, bufsiz, "Keyword<%u:%u>(\"%s\")",
 		    tk->tk_lno, tk->tk_cno, val);
 	} else {
 		val = strnice(tk->tk_str, tk->tk_len);
-		n = asprintf(&str, "%s<%u:%u>(\"%s\")",
+		n = snprintf(buf, bufsiz, "%s<%u:%u>(\"%s\")",
 		    stryaml(tk->tk_type), tk->tk_lno, tk->tk_cno, val);
 	}
 	if (n < 0)
 		err(1, "asprintf");
 	free(val);
-	return str;
+	return buf;
 }
 
 static struct token *
