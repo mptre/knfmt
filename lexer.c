@@ -2597,8 +2597,8 @@ strtrim(const char *src, size_t *srclen)
 
 		if (bf == NULL)
 			bf = buffer_alloc(*srclen);
-		buffer_append(bf, &src[co], eo - co);
-		buffer_appendc(bf, '\n');
+		buffer_puts(bf, &src[co], eo - co);
+		buffer_putc(bf, '\n');
 		co = (nl - src) + 1;
 
 next:
@@ -2610,7 +2610,7 @@ next:
 		return NULL;
 
 	if (so - co > 1)
-		buffer_append(bf, &src[co], so - co);
+		buffer_puts(bf, &src[co], so - co);
 	*srclen = bf->bf_len;
 	dst = buffer_release(bf);
 	buffer_free(bf);

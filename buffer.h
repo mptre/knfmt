@@ -11,8 +11,8 @@ struct buffer	*buffer_alloc(size_t);
 struct buffer	*buffer_read(const char *);
 struct buffer	*buffer_read_fd(int);
 void		 buffer_free(struct buffer *);
-void		 buffer_append(struct buffer *, const char *, size_t);
-void		 buffer_appendc(struct buffer *, char);
+void		 buffer_puts(struct buffer *, const char *, size_t);
+void		 buffer_putc(struct buffer *, char);
 void		 buffer_printf(struct buffer *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
 void		 buffer_vprintf(struct buffer *, const char *, va_list);

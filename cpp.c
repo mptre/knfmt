@@ -72,7 +72,7 @@ cpp_exec(const struct token *tk, const struct style *st,
 	if (nlines > 1)
 		ruler_exec(&rl);
 	doc_exec(dc, NULL, bf, st, op, 0);
-	buffer_appendc(bf, '\0');
+	buffer_putc(bf, '\0');
 
 	p = buffer_release(bf);
 	ruler_free(&rl);

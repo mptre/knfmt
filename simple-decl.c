@@ -341,13 +341,13 @@ decl_type_init(struct decl_type *dt, struct token_range *tr)
 			continue;
 
 		if (ntokens++ > 0)
-			buffer_appendc(bf, ' ');
-		buffer_append(bf, tk->tk_str, tk->tk_len);
+			buffer_putc(bf, ' ');
+		buffer_puts(bf, tk->tk_str, tk->tk_len);
 
 		/* Pointer(s) are not part of the type. */
 		dt->dt_tr.tr_end = tk;
 	}
-	buffer_appendc(bf, '\0');
+	buffer_putc(bf, '\0');
 	dt->dt_str = buffer_release(bf);
 	buffer_free(bf);
 }

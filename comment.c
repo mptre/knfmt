@@ -39,12 +39,12 @@ comment_exec(const struct token *tk, const struct style *st,
 		ep = nextline(sp, len);
 		if (ep == NULL)
 			break;
-		buffer_append(bf, sp, ep - sp);
+		buffer_puts(bf, sp, ep - sp);
 
 		len -= ep - sp;
 		sp += ep - sp;
 	}
-	buffer_appendc(bf, '\0');
+	buffer_putc(bf, '\0');
 
 	p = buffer_release(bf);
 	buffer_free(bf);

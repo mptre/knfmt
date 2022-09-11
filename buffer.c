@@ -92,7 +92,7 @@ buffer_free(struct buffer *bf)
 }
 
 void
-buffer_append(struct buffer *bf, const char *str, size_t len)
+buffer_puts(struct buffer *bf, const char *str, size_t len)
 {
 	if (bf->bf_len + len >= bf->bf_siz) {
 		size_t siz = bf->bf_siz;
@@ -108,9 +108,9 @@ buffer_append(struct buffer *bf, const char *str, size_t len)
 }
 
 void
-buffer_appendc(struct buffer *bf, char ch)
+buffer_putc(struct buffer *bf, char ch)
 {
-	buffer_append(bf, &ch, 1);
+	buffer_puts(bf, &ch, 1);
 }
 
 void
@@ -154,12 +154,12 @@ buffer_indent(struct buffer *bf, int indent, int usetabs, size_t pos)
 {
 	if (usetabs) {
 		for (; indent >= 8; indent -= 8) {
-			buffer_appendc(bf, '\t');
+			buffer_putc(bf, '\t');
 			pos += 8 - (pos % 8);
 		}
 	}
 	for (; indent > 0; indent--) {
-		buffer_appendc(bf, ' ');
+		buffer_putc(bf, ' ');
 		pos++;
 	}
 	return pos;

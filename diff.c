@@ -75,7 +75,7 @@ diff_parse(struct files *files, const struct options *op)
 	bf = buffer_read("/dev/stdin");
 	if (bf == NULL)
 		return 1;
-	buffer_appendc(bf, '\0');
+	buffer_putc(bf, '\0');
 	buf = bf->bf_ptr;
 
 	for (;;) {

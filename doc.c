@@ -838,7 +838,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	if (newline)
 		doc_trim_spaces(dc, st);
 	if (!ismute)
-		buffer_append(st->st_bf, str, len);
+		buffer_puts(st->st_bf, str, len);
 	doc_column(st, str, len);
 
 	if (newline && (flags & DOC_PRINT_FLAG_INDENT))

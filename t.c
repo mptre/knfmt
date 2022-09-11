@@ -286,7 +286,7 @@ __test_expr_exec(struct context *cx, const char *src, const char *exp,
 
 	bf = buffer_alloc(128);
 	doc_exec(group, cx->cx_lx, bf, cx->cx_st, &cx->cx_op, 0);
-	buffer_appendc(bf, '\0');
+	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
@@ -326,13 +326,13 @@ __test_lexer_peek_if_type(struct context *cx, const char *src, const char *exp,
 			errx(1, "%s:%d: out of tokens", fun, lno);
 
 		if (ntokens++ > 0)
-			buffer_appendc(bf, ' ');
-		buffer_append(bf, tk->tk_str, tk->tk_len);
+			buffer_putc(bf, ' ');
+		buffer_puts(bf, tk->tk_str, tk->tk_len);
 
 		if (tk == end)
 			break;
 	}
-	buffer_appendc(bf, '\0');
+	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
@@ -368,14 +368,14 @@ __test_lexer_read(struct context *cx, const char *src, const char *exp,
 			break;
 
 		if (ntokens++ > 0)
-			buffer_appendc(bf, ' ');
+			buffer_putc(bf, ' ');
 		str = token_sprintf(tk);
 		/* Strip of the token position and verbatim representation. */
 		end = strchr(str, '<');
-		buffer_append(bf, str, end - str);
+		buffer_puts(bf, str, end - str);
 		free(str);
 	}
-	buffer_appendc(bf, '\0');
+	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act)) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
@@ -433,7 +433,7 @@ context_init(struct context *cx, const char *src)
 {
 	static const char *path = "test.c";
 
-	buffer_append(cx->cx_bf, src, strlen(src));
+	buffer_puts(cx->cx_bf, src, strlen(src));
 	cx->cx_er = error_alloc(0);
 	cx->cx_st = style_parse(&cx->cx_op);
 	cx->cx_lx = lexer_alloc(&(const struct lexer_arg){
