@@ -235,7 +235,7 @@ ruler_exec_indent(struct ruler *rl)
 			indent = rc->rc_len;
 			if (!minimize(rc))
 				indent = tabalign(indent);
-			indent += rc->rc_nspaces - rd->rd_nspaces;
+			indent += rc->rc_nspaces;
 		}
 		doc_set_indent(ri->ri_dc,
 		    ri->ri_indent * indent + ri->ri_extra);
