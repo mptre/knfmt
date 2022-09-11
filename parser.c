@@ -220,7 +220,7 @@ parser_exec(struct parser *pr, size_t sizhint)
 	struct buffer *bf = NULL;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
-	unsigned int flags = 0;
+	unsigned int flags = DOC_EXEC_FLAG_TRIM;
 	int error = 0;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);

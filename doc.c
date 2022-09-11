@@ -120,6 +120,7 @@ static int	doc_fits1(const struct doc *, struct doc_state *, void *);
 static void	doc_indent(const struct doc *, struct doc_state *, int);
 static void	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_trim_spaces(const struct doc *, struct doc_state *);
+static void	doc_trim_lines(const struct doc *, struct doc_state *);
 static int	doc_is_mute(const struct doc_state *);
 static int	doc_parens_align(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
@@ -202,6 +203,8 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_bf = bf;
 	st.st_lx = lx;
 	doc_exec1(dc, &st);
+	if ((flags & DOC_EXEC_FLAG_TRIM) && (flags & DOC_EXEC_FLAG_DIFF) == 0)
+		doc_trim_lines(dc, &st);
 	doc_state_reset(&st);
 	doc_diff_exit(dc, &st);
 	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
@@ -859,6 +862,28 @@ doc_trim_spaces(const struct doc *dc, struct doc_state *st)
 	}
 	if (oldcol > st->st_col)
 		doc_trace(dc, st, "%s: trimmed %u character(s)", __func__,
+		    oldcol - st->st_col);
+}
+
+/*
+ * Trim trailing consequtive new line(s) from the rendered document.
+ * Necessary if a verbatim document is at the end which may include up to two
+ * new lines.
+ */
+static void
+doc_trim_lines(const struct doc *dc, struct doc_state *st)
+{
+	struct buffer *bf = st->st_bf;
+	unsigned int oldcol = st->st_col;
+
+	while (bf->bf_len > 1 &&
+	    bf->bf_ptr[bf->bf_len - 1] == '\n' &&
+	    bf->bf_ptr[bf->bf_len - 2] == '\n') {
+		bf->bf_len--;
+		st->st_col--;
+	}
+	if (oldcol > st->st_col)
+		doc_trace(dc, st, "%s: trimmed %u line(s)", __func__,
 		    oldcol - st->st_col);
 }
 
