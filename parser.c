@@ -232,7 +232,7 @@ parser_exec(struct parser *pr, size_t sizhint)
 		concat = doc_alloc(DOC_CONCAT, dc);
 
 		/* Always emit EOF token as it could have dangling tokens. */
-		if (lexer_if(lx, TOKEN_EOF, &tk)) {
+		if (lexer_if(lx, LEXER_EOF, &tk)) {
 			doc_token(tk, concat);
 			error = 0;
 			break;
@@ -310,7 +310,7 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 		     pv->tk_type == TOKEN_SIZEOF) &&
 		    (nx->tk_type == TOKEN_RPAREN ||
 		     nx->tk_type == TOKEN_COMMA ||
-		     nx->tk_type == TOKEN_EOF)) {
+		     nx->tk_type == LEXER_EOF)) {
 			dc = doc_alloc(DOC_CONCAT, NULL);
 			if (parser_exec_type(pr, dc, tk, NULL) & GOOD)
 				return dc;
@@ -734,7 +734,7 @@ parser_exec_decl_braces1(struct parser *pr,
 		struct doc *concat;
 		struct token *comma, *nx, *pv;
 
-		if (!lexer_peek(lx, &tk) || tk->tk_type == TOKEN_EOF)
+		if (!lexer_peek(lx, &tk) || tk->tk_type == LEXER_EOF)
 			return parser_fail(pr);
 		if (tk == rbrace)
 			break;
@@ -1280,7 +1280,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		doc_alloc(DOC_LINE, concat);
 
 	for (;;) {
-		if (lexer_peek_if(lx, TOKEN_EOF, NULL))
+		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			return parser_fail(pr);
 
 		if (parser_exec_attributes(pr, concat, NULL, 0,
@@ -2542,7 +2542,7 @@ parser_peek_func_line(struct parser *pr)
 	struct lexer_state s;
 	int annotated = 0;
 
-	if (lexer_peek_if(lx, TOKEN_EOF, NULL) || !lexer_back(lx, &rbrace))
+	if (lexer_peek_if(lx, LEXER_EOF, NULL) || !lexer_back(lx, &rbrace))
 		return 0;
 
 	if (lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP, &cpp))

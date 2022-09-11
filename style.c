@@ -60,12 +60,6 @@ static const char	*stryaml(enum yaml_type);
 
 static struct style_hash *keywords = NULL;
 
-static const struct token tkeof = {
-	.tk_type	= TOKEN_EOF,
-	.tk_str		= "EOF",
-	.tk_len		= 3,
-};
-
 void
 style_init(void)
 {
@@ -205,7 +199,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		struct token *key = NULL;
 		struct token *val = NULL;
 
-		if (lexer_if(lx, TOKEN_EOF, NULL))
+		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
 
 		if (lexer_if(lx, AlwaysBreakAfterReturnType, &key) &&
@@ -363,7 +357,9 @@ again:
 	return tk;
 
 eof:
-	return lexer_emit(lx, &s, &tkeof);
+	tk = lexer_emit(lx, &s, NULL);
+	tk->tk_type = LEXER_EOF;
+	return tk;
 }
 
 static char *
@@ -419,5 +415,7 @@ stryaml(enum yaml_type type)
 	CASE(Unknown);
 #undef CASE
 	}
+	if (type == LEXER_EOF)
+		return "EOF";
 	return NULL;
 }

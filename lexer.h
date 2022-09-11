@@ -1,5 +1,7 @@
 #include <stddef.h>	/* size_t */
 
+#define LEXER_EOF	0x7fffffff
+
 struct buffer;
 struct diffchunk;
 struct error;
@@ -15,7 +17,15 @@ struct lexer_arg {
 
 	struct {
 		/*
-		 * Read callback expected to return the next available token.
+		 * Read callback with the following semantics:
+		 *
+		 *     1. In case of encountering an error, NULL must be
+		 *        returned.
+		 *     2. Signalling the reach of end of file is done by
+		 *        returning a token with type LEXER_EOF.
+		 *     3. If none of the above occurs, the next consumed token
+		 *        is assumed to be returned.
+		 *
 		 * Passing NULL will default to a callback capable of detecting
 		 * C tokens.
 		 */

@@ -137,7 +137,7 @@ static const struct token tkcpp = {
 	.tk_flags	= TOKEN_FLAG_DANGLING | TOKEN_FLAG_CPP,
 };
 static struct token tkeof = {
-	.tk_type	= TOKEN_EOF,
+	.tk_type	= LEXER_EOF,
 	.tk_str		= "",
 };
 static const struct token tkident = {
@@ -523,7 +523,7 @@ lexer_alloc(const struct lexer_arg *arg)
 			break;
 		}
 		TAILQ_INSERT_TAIL(&lx->lx_tokens, tk, tk_entry);
-		if (tk->tk_type == TOKEN_EOF)
+		if (tk->tk_type == LEXER_EOF)
 			break;
 	}
 
@@ -857,7 +857,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 
 	if (st->st_tk == NULL) {
 		st->st_tk = TAILQ_FIRST(&lx->lx_tokens);
-	} else if (st->st_tk->tk_type != TOKEN_EOF) {
+	} else if (st->st_tk->tk_type != LEXER_EOF) {
 		struct token *br;
 
 		/* Do not move passed a branch. */
@@ -973,7 +973,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 {
 	struct token *fix;
 
-	assert(tk->tk_type != TOKEN_EOF);
+	assert(tk->tk_type != LEXER_EOF);
 
 	if (keepfixes) {
 		struct token *nx, *pv;
@@ -1085,7 +1085,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
-		if (lexer_peek_if(lx, TOKEN_EOF, NULL))
+		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			break;
 
 		if (lexer_if_flags(lx,
@@ -1277,7 +1277,7 @@ lexer_peek_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
 	for (;;) {
 		if (!lexer_pop(lx, &t))
 			break;
-		if (t->tk_type == TOKEN_EOF)
+		if (t->tk_type == LEXER_EOF)
 			break;
 		if (t->tk_type == lhs)
 			pair++;
@@ -1373,7 +1373,7 @@ lexer_peek_until_loose(struct lexer *lx, int type, const struct token *stop,
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
-		if (!lexer_pop(lx, &t) || t == stop || t->tk_type == TOKEN_EOF)
+		if (!lexer_pop(lx, &t) || t == stop || t->tk_type == LEXER_EOF)
 			break;
 		if (t->tk_type == type && !nest) {
 			peek = 1;
@@ -1401,7 +1401,7 @@ lexer_until(struct lexer *lx, int type, struct token **tk)
 	for (;;) {
 		struct token *t;
 
-		if (!lexer_pop(lx, &t) || t->tk_type == TOKEN_EOF)
+		if (!lexer_pop(lx, &t) || t->tk_type == LEXER_EOF)
 			return 0;
 		if (t->tk_type == type) {
 			if (tk != NULL)
@@ -2066,7 +2066,7 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 				peek = 1;
 			} else if (ident == NULL &&
 			    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
-			     lexer_if(lx, TOKEN_EOF, NULL))) {
+			     lexer_if(lx, LEXER_EOF, NULL))) {
 				/*
 				 * Function pointer lacking arguments wrapped in
 				 * parenthesis. Be careful here in order to not
@@ -2550,6 +2550,8 @@ strtoken(int type)
 #define S(t, s, f) T(t, s, f)
 #include "token-defs.h"
 	}
+	if (type == LEXER_EOF)
+		return "EOF";
 	return NULL;
 }
 

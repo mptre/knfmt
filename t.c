@@ -364,7 +364,7 @@ __test_lexer_read(struct context *cx, const char *src, const char *exp,
 
 		if (!lexer_pop(cx->cx_lx, &tk))
 			errx(1, "%s:%d: out of tokens", fun, lno);
-		if (tk->tk_type == TOKEN_EOF)
+		if (tk->tk_type == LEXER_EOF)
 			break;
 
 		if (ntokens++ > 0)
