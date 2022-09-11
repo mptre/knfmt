@@ -119,7 +119,7 @@ static int	doc_fits(const struct doc *, struct doc_state *);
 static int	doc_fits1(const struct doc *, struct doc_state *, void *);
 static void	doc_indent(const struct doc *, struct doc_state *, int);
 static void	doc_indent1(const struct doc *, struct doc_state *, int);
-static void	doc_trim(const struct doc *, struct doc_state *);
+static void	doc_trim_spaces(const struct doc *, struct doc_state *);
 static int	doc_is_mute(const struct doc_state *);
 static int	doc_parens_align(const struct doc_state *);
 static int	doc_has_list(const struct doc *);
@@ -474,7 +474,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_DEDENT: {
 		int oldindent;
 
-		doc_trim(dc, st);
+		doc_trim_spaces(dc, st);
 		oldindent = st->st_indent.i_cur;
 		st->st_indent.i_cur = 0;
 		st->st_indent.i_pre = 0;
@@ -512,7 +512,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		    dc->dc_str[dc->dc_len - 1] == '\n';
 
 		/* Verbatims must never be indented. */
-		doc_trim(dc, st);
+		doc_trim_spaces(dc, st);
 		oldcol = st->st_col;
 
 		/* Verbatim blocks must always start on a new line. */
@@ -833,7 +833,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	}
 
 	if (newline)
-		doc_trim(dc, st);
+		doc_trim_spaces(dc, st);
 	if (!ismute)
 		buffer_append(st->st_bf, str, len);
 	doc_column(st, str, len);
@@ -843,7 +843,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 }
 
 static void
-doc_trim(const struct doc *dc, struct doc_state *st)
+doc_trim_spaces(const struct doc *dc, struct doc_state *st)
 {
 	struct buffer *bf = st->st_bf;
 	unsigned int oldcol = st->st_col;
@@ -1108,7 +1108,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	st->st_nlines = 0;
 	st->st_newline = 0;
 	st->st_muteline = 0;
-	doc_trim(dc, st);
+	doc_trim_spaces(dc, st);
 	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
 	doc_indent(dc, st, st->st_indent.i_cur);
 }
