@@ -229,11 +229,18 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			/* nothing */
 		} else if (key != NULL) {
 			lexer_pop(lx, &val);
-			if (op->op_verbose > 0)
+			if (op->op_verbose > 0) {
+				char *strkey, *strval;
+
+				strkey = yaml_serialize(key);
+				strval = val != NULL ?
+				    yaml_serialize(val) : NULL;
 				lexer_error(lx,
 				    "unknown value %s for option %s",
-				    val ? yaml_serialize(val) : "(null)",
-				    yaml_serialize(key));
+				    strval != NULL ? strval : "(null)", strkey);
+				free(strkey);
+				free(strval);
+			}
 		} else {
 			/* Best effort, try to continue parsing. */
 			lexer_pop(lx, &key);
@@ -244,9 +251,15 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			} else {
 				lexer_pop(lx, &val);
 			}
-			if (op->op_verbose > 0)
+			if (op->op_verbose > 0) {
+				char *strkey;
+
+				strkey = key != NULL
+				    ? yaml_serialize(key) : NULL;
 				lexer_error(lx, "unknown option %s",
-				    key ? yaml_serialize(key) : "(null)");
+				    strkey != NULL ? strkey : "(null)");
+				free(strkey);
+			}
 		}
 	}
 
@@ -323,9 +336,13 @@ again:
 		tk = lexer_emit(lx, &s, NULL);
 		tk->tk_type = Integer;
 		tk->tk_int = digit;
-		if (overflow)
-			lexer_error(lx, "integer %s too large",
-			    yaml_serialize(tk));
+		if (overflow) {
+			char *str;
+
+			str = yaml_serialize(tk);
+			lexer_error(lx, "integer %s too large", str);
+			free(str);
+		}
 		return tk;
 	}
 
