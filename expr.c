@@ -209,11 +209,11 @@ expr_exec(const struct expr_exec_arg *ea)
 
 	dc = doc_alloc(DOC_GROUP, ea->dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
-	if (ea->flags & EXPR_EXEC_FLAG_NOINDENT)
-		indent = doc_alloc(DOC_CONCAT, optional);
-	else
+	if (ea->flags & EXPR_EXEC_FLAG_INDENT)
 		indent = doc_alloc_indent(
 		    style(ea->st, ContinuationIndentWidth), optional);
+	else
+		indent = doc_alloc(DOC_CONCAT, optional);
 	if (ea->flags & EXPR_EXEC_FLAG_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
 	if (ea->flags & EXPR_EXEC_FLAG_HARDLINE)
