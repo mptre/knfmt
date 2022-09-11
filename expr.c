@@ -698,7 +698,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 			concat = expr_doc_soft(ex->ex_rhs, es, concat, 2);
 		}
-		if (rparen)
+		if (rparen != NULL)
 			doc_token(rparen, concat);
 		break;
 	}
