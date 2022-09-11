@@ -134,7 +134,7 @@ simple-010.c)
 esac
 
 _rel="$1"
-_abs="$(readlink -f "$_rel")"
+_abs="$(readlink -f "$_rel" 2>/dev/null || echo "${PWD}/${_rel}")"
 case "$_rel" in
 bug-*)
 	testcase -b "$_abs" -- -sv
