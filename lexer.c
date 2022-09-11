@@ -1566,13 +1566,14 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 		goto out;
 	}
 
-	t = lexer_emit(lx, &st, &tknone);
-	str = lx->lx_serialize(t);
+	tk = lexer_emit(lx, &st, &tknone);
+	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
+	str = token_sprintf(tk);
 	bf = error_begin(lx->lx_er);
 	buffer_printf(bf, "%s: unknown token %s\n", lx->lx_path, str);
 	error_end(lx->lx_er);
 	free(str);
-	token_rele(t);
+	token_rele(tk);
 	return NULL;
 
 eof:
