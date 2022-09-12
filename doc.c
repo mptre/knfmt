@@ -1481,9 +1481,11 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 #undef CASE
 	}
 
-	n = snprintf(buf, bufsiz, "%s<%s:%d%s%s>",
+	n = snprintf(buf, bufsiz, "%s<%s:%d%s%s%s>",
 	    str, dc->dc_fun, dc->dc_lno,
-	    suffix ? ", " : "", suffix ? dc->dc_suffix : "");
+	    suffix ? ", \"" : "",
+	    suffix ? dc->dc_suffix : "",
+	    suffix ? "\"" : "");
 	if (n < 0 || n >= (ssize_t)bufsiz)
 		errc(1, ENAMETOOLONG, "%s", __func__);
 
