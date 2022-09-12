@@ -16,11 +16,15 @@ enum {
 	AllDefinitions,
 	TopLevelDefinitions,
 
+	BraceWrapping,
+
 	ColumnLimit,
 /*	Integer,	*/
 
 	ContinuationIndentWidth,
 /*	Integer,	*/
+
+	IncludeCategories,
 
 	IndentWidth,
 /*	Integer,	*/

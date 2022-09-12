@@ -51,6 +51,7 @@ static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *, const struct options *);
 static int	style_parse_yaml1(struct style *, struct lexer *,
     const struct options *);
+static int	style_parse_yaml_nested(struct style *, struct lexer *);
 
 static struct token	*yaml_read(struct lexer *, void *);
 static char		*yaml_serialize(const struct token *);
@@ -77,8 +78,10 @@ style_init(void)
 		K(TopLevel,				"TopLevel"),
 		K(AllDefinitions,			"AllDefinitions"),
 		K(TopLevelDefinitions,			"TopLevelDefinitions"),
+		K(BraceWrapping,			"BraceWrapping"),
 		K(ColumnLimit,				"ColumnLimit"),
 		K(ContinuationIndentWidth,		"ContinuationIndentWidth"),
+		K(IncludeCategories,			"IncludeCategories"),
 		K(IndentWidth,				"IndentWidth"),
 		K(UseTab,				"UseTab"),
 		K(Never,				"Never"),
@@ -238,6 +241,17 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		     lexer_if(lx, AlignWithSpaces, &val) ||
 		     lexer_if(lx, Always, &val))) {
 			st->st_options[key->tk_type] = val->tk_type;
+		} else if (lexer_if(lx, BraceWrapping, &key) ||
+		    lexer_if(lx, IncludeCategories, &key)) {
+			style_parse_yaml_nested(st, lx);
+			if (trace(op, 's') >= 2) {
+				char *strkey;
+
+				strkey = yaml_serialize(key);
+				lexer_error(lx, "skip nested option %s",
+				    strkey);
+				free(strkey);
+			}
 		} else if (lexer_if(lx, DocumentEnd, NULL)) {
 			/* nothing */
 		} else if (key != NULL) {
@@ -277,6 +291,17 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 	}
 
 	return trace(op, 's') >= 2 ? lexer_get_error(lx) : 0;
+}
+
+static int
+style_parse_yaml_nested(struct style *UNUSED(st), struct lexer *lx)
+{
+	struct token *key, *val;
+
+	while (lexer_peek(lx, &key) && token_has_indent(key) &&
+	    lexer_pop(lx, &key) && lexer_pop(lx, &val))
+		continue;
+	return 0;
 }
 
 static struct token *

@@ -15,5 +15,9 @@
  * ColumnLimit: 2147483648 # addition overflow
  * ColumnLimit: 9999999999 # multiplication overflow
  * AlignAfterOpenBracket: 0
+ * BraceWrapping: # skip nested option
+ *   AfterClass: false
+ *   AfterControlStatement: false
+ * UseTab: Never # should be fine if the above is skipped
  * ...
  */

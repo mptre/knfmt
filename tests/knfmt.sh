@@ -50,7 +50,7 @@ testcase() {
 	[ "${1:-}" = "--" ] && shift
 
 	if [ "$_clang" -eq 1 ]; then
-		sed -n -e '/^[\/ ]\*/s/^[\/\* ]*//p' "$_file" |
+		sed -n -e '/^[\/ ]\* /s/^[\/ ]\* //p' "$_file" |
 		sed -e '/^$/d' >"${_wrkdir}/.clang-format"
 	fi
 
