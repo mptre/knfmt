@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "buffer.h"
+#include "cdefs.h"
 #include "error.h"
 #include "lexer.h"
 #include "options.h"

@@ -1,5 +1,3 @@
-#include "cdefs.h"
-
 struct options {
 	unsigned int	op_verbose;
 
@@ -12,9 +10,4 @@ struct options {
 };
 
 void	options_init(struct options *);
-
-static inline int
-options_trace(const struct options *op)
-{
-	return UNLIKELY(op->op_verbose >= 2);
-}
+int	options_trace(const struct options *);

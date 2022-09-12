@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "buffer.h"
+#include "cdefs.h"
 #include "comment.h"
 #include "cpp.h"
 #include "diff.h"

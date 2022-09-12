@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "buffer.h"
+#include "cdefs.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
