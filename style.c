@@ -242,7 +242,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			/* nothing */
 		} else if (key != NULL) {
 			lexer_pop(lx, &val);
-			if (trace(op, 's')) {
+			if (trace(op, 's') >= 2) {
 				char *strkey, *strval;
 
 				strkey = yaml_serialize(key);
@@ -264,7 +264,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			} else {
 				lexer_pop(lx, &val);
 			}
-			if (trace(op, 's')) {
+			if (trace(op, 's') >= 2) {
 				char *strkey;
 
 				strkey = key != NULL
@@ -276,7 +276,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		}
 	}
 
-	return lexer_get_error(lx);
+	return trace(op, 's') >= 2 ? lexer_get_error(lx) : 0;
 }
 
 static struct token *

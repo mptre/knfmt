@@ -152,7 +152,7 @@ simple-*|../*)
 	testcase "$_abs" -- -svl
 	;;
 style-error-*)
-	testcase -c -e "$_abs" -- -vls
+	testcase -c -e "$_abs" -- -vlss
 	;;
 style-*)
 	testcase -c "$_abs" -- -vl
