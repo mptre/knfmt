@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buffer.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -87,12 +88,14 @@ struct expr_rule {
 
 struct expr_state {
 	const struct expr_exec_arg	*es_ea;
+#define es_st		es_ea->st
 #define es_op		es_ea->op
 #define es_lx		es_ea->lx
 #define es_stop		es_ea->stop
 
 	const struct expr_rule		*es_er;
 	struct token			*es_tk;
+	struct buffer			*es_bf;
 	unsigned int			 es_depth;
 	unsigned int			 es_noparens;	/* parens indent disabled */
 	unsigned int			 es_flags;	/* expr_exec_arg flags */
@@ -120,11 +123,15 @@ static struct doc	*expr_doc(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
+static unsigned int	 expr_doc_width(struct expr_state *,
+    const struct doc *);
 
 #define expr_doc_soft(a, b, c, d) \
 	__expr_doc_soft((a), (b), (c), (d), __func__, __LINE__)
 static struct doc	*__expr_doc_soft(struct expr *, struct expr_state *,
     struct doc *, int, const char *, int);
+
+static void	expr_state_reset(struct expr_state *);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
@@ -202,7 +209,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
 		return NULL;
-	if (lexer_get_error(es.es_lx)) {
+	if (lexer_get_error(ea->lx)) {
 		expr_free(ex);
 		return NULL;
 	}
@@ -220,6 +227,7 @@ expr_exec(const struct expr_exec_arg *ea)
 		doc_alloc(DOC_HARDLINE, indent);
 	expr = expr_doc(ex, &es, indent);
 	expr_free(ex);
+	expr_state_reset(&es);
 	return expr;
 }
 
@@ -239,6 +247,7 @@ expr_peek(const struct expr_exec_arg *ea)
 	if (ex != NULL && error == 0)
 		peek = 1;
 	expr_free(ex);
+	expr_state_reset(&es);
 	return peek;
 }
 
@@ -686,6 +695,13 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		es->es_noparens--;
 		if (lparen != NULL)
 			doc_token(lparen, concat);
+		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
+			unsigned int w;
+
+			w = expr_doc_width(es, es->es_ea->dc) -
+			    style(es->es_st, ContinuationIndentWidth);
+			concat = doc_alloc_indent(w, concat);
+		}
 		if (ex->ex_rhs != NULL) {
 			if (rparen != NULL) {
 				struct token *pv;
@@ -820,6 +836,14 @@ expr_doc_has_spaces(const struct expr *ex)
 	return 0;
 }
 
+static unsigned int
+expr_doc_width(struct expr_state *es, const struct doc *dc)
+{
+	if (es->es_bf == NULL)
+		es->es_bf = buffer_alloc(1024);
+	return doc_width(dc, es->es_bf, es->es_st, es->es_op);
+}
+
 /*
  * Insert a soft line before the given expression, unless a more suitable one is
  * nested under the same expression.
@@ -843,6 +867,12 @@ __expr_doc_soft(struct expr *ex, struct expr_state *es, struct doc *dc,
 		doc_remove(softline, dc);
 
 	return concat;
+}
+
+static void
+expr_state_reset(struct expr_state *es)
+{
+	buffer_free(es->es_bf);
 }
 
 static const struct expr_rule *
