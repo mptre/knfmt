@@ -24,7 +24,7 @@ files_alloc(struct files *files, const char *path, const struct options *op)
 		err(1, NULL);
 	if (VECTOR_INIT(fe->fe_diff) == NULL)
 		err(1, NULL);
-	fe->fe_error = error_alloc(options_trace(op));
+	fe->fe_error = error_alloc(trace(op, 'l') >= 2);
 	return fe;
 }
 

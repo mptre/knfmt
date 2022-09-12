@@ -49,7 +49,7 @@ main(int argc, char *argv[])
 
 	options_init(&op);
 
-	while ((ch = getopt(argc, argv, "Ddisv")) != -1) {
+	while ((ch = getopt(argc, argv, "Ddisv:")) != -1) {
 		switch (ch) {
 		case 'D':
 			op.op_flags |= OPTIONS_FLAG_DIFFPARSE;
@@ -64,7 +64,8 @@ main(int argc, char *argv[])
 			op.op_flags |= OPTIONS_FLAG_SIMPLE;
 			break;
 		case 'v':
-			op.op_verbose++;
+			if (options_trace_parse(&op, optarg))
+				exit(1);
 			break;
 		default:
 			usage();

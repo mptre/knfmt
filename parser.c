@@ -271,7 +271,7 @@ parser_exec(struct parser *pr, size_t sizhint)
 	bf = buffer_alloc(sizhint);
 	if (pr->pr_op->op_flags & OPTIONS_FLAG_DIFFPARSE)
 		flags |= DOC_EXEC_FLAG_DIFF;
-	if (options_trace(pr->pr_op))
+	if (trace(pr->pr_op, 'd'))
 		flags |= DOC_EXEC_FLAG_TRACE;
 	doc_exec(dc, pr->pr_lx, bf, pr->pr_st, pr->pr_op, flags);
 
@@ -2628,7 +2628,7 @@ __parser_fail(struct parser *pr, const char *fun, int lno)
 
 	bf = error_begin(pr->pr_er);
 	buffer_printf(bf, "%s: ", pr->pr_path);
-	if (pr->pr_op->op_verbose > 0)
+	if (trace(pr->pr_op, 'l'))
 		buffer_printf(bf, "%s:%d: ", fun, lno);
 	buffer_printf(bf, "error at ");
 	if (lexer_back(pr->pr_lx, &tk)) {

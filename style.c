@@ -242,7 +242,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			/* nothing */
 		} else if (key != NULL) {
 			lexer_pop(lx, &val);
-			if (op->op_verbose > 0) {
+			if (trace(op, 's')) {
 				char *strkey, *strval;
 
 				strkey = yaml_serialize(key);
@@ -264,7 +264,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			} else {
 				lexer_pop(lx, &val);
 			}
-			if (op->op_verbose > 0) {
+			if (trace(op, 's')) {
 				char *strkey;
 
 				strkey = key != NULL

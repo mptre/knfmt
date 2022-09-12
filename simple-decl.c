@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "buffer.h"
+#include "cdefs.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
@@ -89,7 +90,7 @@ static int		isident(const struct token_range *);
 static unsigned int	nstars(const struct token_range *);
 
 #define simple_trace(sd, fmt, ...) do {					\
-	if (options_trace((sd)->sd_op))					\
+	if (UNLIKELY(trace((sd)->sd_op, 'S')))				\
 		__simple_trace(__func__, (fmt), __VA_ARGS__);		\
 } while (0)
 static void	__simple_trace(const char *, const char *, ...)

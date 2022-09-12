@@ -1,5 +1,7 @@
+#define NTRACES	5
+
 struct options {
-	unsigned int	op_verbose;
+	unsigned int	op_trace[NTRACES];
 
 	unsigned int	op_flags;
 #define OPTIONS_FLAG_DIFF		0x00000001u
@@ -10,4 +12,6 @@ struct options {
 };
 
 void	options_init(struct options *);
-int	options_trace(const struct options *);
+int	options_trace_parse(struct options *, const char *);
+
+unsigned int	trace(const struct options *, unsigned char);

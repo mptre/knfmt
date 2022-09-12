@@ -105,7 +105,7 @@ static struct token	*lexer_recover_branch(struct token *);
 static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
 #define lexer_trace(lx, fmt, ...) do {					\
-	if (options_trace((lx)->lx_op))					\
+	if (UNLIKELY(trace((lx)->lx_op, 'l') >= 2))			\
 		__lexer_trace((lx), __func__, (fmt),			\
 		    __VA_ARGS__);					\
 } while (0)
@@ -552,7 +552,7 @@ lexer_alloc(const struct lexer_arg *arg)
 		return NULL;
 	}
 
-	if (UNLIKELY(lx->lx_op->op_verbose >= 3))
+	if (UNLIKELY(trace(lx->lx_op, 'l') >= 3))
 		lexer_dump(lx);
 
 	return lx;
@@ -709,7 +709,7 @@ lexer_stamp(struct lexer *lx)
 
 	tk = lx->lx_st.st_tk;
 	if (tk != NULL && !TAILQ_INSERTED(tk, tk_stamp)) {
-		if (options_trace(lx->lx_op)) {
+		if (UNLIKELY(trace(lx->lx_op, 'l') >= 2)) {
 			char *str;
 
 			str = lx->lx_serialize(tk);
@@ -2013,7 +2013,7 @@ lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
 
 	bf = error_begin(lx->lx_er);
 	buffer_printf(bf, "%s: ", lx->lx_path);
-	if (lx->lx_op->op_verbose > 0)
+	if (trace(lx->lx_op, 'l'))
 		buffer_printf(bf, "%s:%d: ", fun, lno);
 	str = tk ? lx->lx_serialize(tk) : NULL;
 	buffer_printf(bf, "expected type %s got %s\n", strtoken(type),

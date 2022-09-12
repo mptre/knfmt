@@ -115,7 +115,7 @@ diff_parse(struct files *files, const struct options *op)
 			break;
 	}
 
-	if (options_trace(op)) {
+	if (trace(op, 'D')) {
 		size_t i;
 
 		for (i = 0; i < VECTOR_LENGTH(files->fs_vc); i++) {

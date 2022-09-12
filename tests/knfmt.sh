@@ -137,30 +137,30 @@ _rel="$1"
 _abs="$(readlink -f "$_rel" 2>/dev/null || echo "${PWD}/${_rel}")"
 case "$_rel" in
 bug-*)
-	testcase -b "$_abs" -- -sv
+	testcase -b "$_abs" -- -svl
 	;;
 diff-simple-*)
-	testcase "$_rel" -- -Dsv
+	testcase "$_rel" -- -Dsvl
 	;;
 diff-*)
-	testcase "$_rel" -- -Dv
+	testcase "$_rel" -- -Dvl
 	;;
 error-*)
 	testcase -e -q "$_abs" -- -s
 	;;
 simple-*|../*)
-	testcase "$_abs" -- -sv
+	testcase "$_abs" -- -svl
 	;;
 style-error-*)
-	testcase -c -e "$_abs" -- -v
+	testcase -c -e "$_abs" -- -vls
 	;;
 style-*)
-	testcase -c "$_abs" -- -v
+	testcase -c "$_abs" -- -vl
 	;;
 trace-*)
-	testcase -q "$_abs" -- -vvv
+	testcase -q "$_abs" -- -vdDlllsS
 	;;
 *)
-	testcase "$_abs" -- -v
+	testcase "$_abs" -- -vl
 	;;
 esac
