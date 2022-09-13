@@ -13,6 +13,9 @@ struct expr_exec_arg {
 	struct doc		*(*recover)(unsigned int, void *);
 	void			*arg;
 
+	/* Indentation to use if EXPR_EXEC_FLAG_INDENT is present. */
+	unsigned int		 indent;
+
 	unsigned int		 flags;
 /* Emit a soft line before the expression. */
 #define EXPR_EXEC_FLAG_SOFTLINE		0x00000001u
