@@ -804,9 +804,9 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
     size_t len, unsigned int flags)
 {
 	int ismute = doc_is_mute(st) && (flags & DOC_PRINT_FLAG_FORCE) == 0;
-	int newline = len == 1 && str[0] == '\n';
+	int isnewline = len == 1 && str[0] == '\n';
 
-	if (newline && ismute)
+	if (isnewline && ismute)
 		st->st_muteline = 1;
 
 	/* Emit pending new line. */
@@ -817,11 +817,11 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		st->st_refit = 1;
 		st->st_newline = 0;
 		doc_print(dc, st, "\n", 1, flags | DOC_PRINT_FLAG_NEWLINE);
-		if (newline || space)
+		if (isnewline || space)
 			return;
 	}
 
-	if (newline) {
+	if (isnewline) {
 		/* Never emit more than two consecutive lines. */
 		if (st->st_nlines >= 2)
 			return;
@@ -840,13 +840,13 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		st->st_nlines = 0;
 	}
 
-	if (newline)
+	if (isnewline)
 		doc_trim_spaces(dc, st);
 	if (!ismute)
 		buffer_puts(st->st_bf, str, len);
 	doc_column(st, str, len);
 
-	if (newline && (flags & DOC_PRINT_FLAG_INDENT))
+	if (isnewline && (flags & DOC_PRINT_FLAG_INDENT))
 		doc_indent(dc, st, st->st_indent.i_cur);
 }
 
