@@ -23,6 +23,11 @@ enum {
 
 	BraceWrapping,
 
+	BreakBeforeBinaryOperators,
+/*	None,	*/
+	NonAssignment,
+/*	All,	*/
+
 	ColumnLimit,
 /*	Integer,	*/
 

@@ -78,6 +78,7 @@ style_init(void)
 		K(AlwaysBreakAfterReturnType,		"AlwaysBreakAfterReturnType"),
 		K(BlockIndent,				"BlockIndent"),
 		K(BraceWrapping,			"BraceWrapping"),
+		K(BreakBeforeBinaryOperators,		"BreakBeforeBinaryOperators"),
 		K(ColumnLimit,				"ColumnLimit"),
 		K(ContinuationIndentWidth,		"ContinuationIndentWidth"),
 		K(DontAlign,				"DontAlign"),
@@ -87,6 +88,7 @@ style_init(void)
 		K(IndentWidth,				"IndentWidth"),
 		K(Left,					"Left"),
 		K(Never,				"Never"),
+		K(NonAssignment,			"NonAssignment"),
 		K(None,					"None"),
 		K(Right,				"Right"),
 		K(TopLevel,				"TopLevel"),
@@ -165,6 +167,7 @@ style_defaults(struct style *st)
 	st->st_options[AlignAfterOpenBracket] = DontAlign;
 	st->st_options[AlignEscapedNewlines] = Right;
 	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
+	st->st_options[BreakBeforeBinaryOperators] = None;
 	st->st_options[ColumnLimit] = 80;
 	st->st_options[ContinuationIndentWidth] = 4;
 	st->st_options[IndentWidth] = 8;
@@ -234,6 +237,11 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		     lexer_if(lx, TopLevel, &val) ||
 		     lexer_if(lx, AllDefinitions, &val) ||
 		     lexer_if(lx, TopLevelDefinitions, &val))) {
+			st->st_options[key->tk_type] = val->tk_type;
+		} else if (lexer_if(lx, BreakBeforeBinaryOperators, &key) &&
+		    (lexer_if(lx, None, &val) ||
+		     lexer_if(lx, NonAssignment, &val) ||
+		     lexer_if(lx, All, &val))) {
 			st->st_options[key->tk_type] = val->tk_type;
 		} else if (lexer_if(lx, ColumnLimit, &key) &&
 		    lexer_if(lx, Integer, &val)) {

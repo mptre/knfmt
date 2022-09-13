@@ -583,16 +583,25 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 	case EXPR_BINARY: {
 		struct doc *lhs;
-		struct token *pv;
 		unsigned int lno;
-		int dospace;
+		int dospace, s;
 
-		/* Never break before the binary operator. */
-		pv = token_prev(ex->ex_tk);
-		lno = ex->ex_tk->tk_lno - pv->tk_lno;
-		if (token_trim(pv) > 0 && lno == 1) {
-			/* Operator not positioned at the end of the line. */
-			token_add_optline(ex->ex_tk);
+		s = style(es->es_st, BreakBeforeBinaryOperators);
+		if (s == None) {
+			struct token *pv;
+
+			pv = token_prev(ex->ex_tk);
+			lno = ex->ex_tk->tk_lno - pv->tk_lno;
+			if (token_trim(pv) > 0 && lno == 1)
+				token_add_optline(ex->ex_tk);
+		} else if (s == NonAssignment) {
+			struct token *nx, *pv;
+
+			pv = token_prev(ex->ex_tk);
+			nx = token_next(ex->ex_tk);
+			lno = nx->tk_lno - ex->ex_tk->tk_lno;
+			if (token_trim(ex->ex_tk) > 0 && lno == 1)
+				token_add_optline(pv);
 		}
 
 		lhs = expr_doc(ex->ex_lhs, es, concat);
