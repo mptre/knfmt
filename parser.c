@@ -710,8 +710,12 @@ parser_exec_decl_braces1(struct parser *pr,
 		return parser_fail(pr);
 	doc_token(lbrace, braces);
 
-	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL))
+	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL)) {
+		/* Honor spaces in empty braces. */
+		if (token_has_spaces(lbrace))
+			doc_literal(" ", braces);
 		goto out;
+	}
 
 	if ((pb->flags & PARSER_EXEC_DECL_BRACES_FLAG_INDENT) ||
 	    token_has_line(lbrace, 1)) {
