@@ -377,6 +377,7 @@ TESTS+=	style-AlignAfterOpenBracket-004.c
 TESTS+=	style-AlignAfterOpenBracket-005.c
 TESTS+=	style-AlignAfterOpenBracket-006.c
 TESTS+=	style-AlignAfterOpenBracket-007.c
+TESTS+=	style-AlignAfterOpenBracket-008.c
 TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-BreakBeforeBinaryOperators-001.c

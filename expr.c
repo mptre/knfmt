@@ -709,7 +709,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			unsigned int w;
 
 			w = expr_doc_width(es, es->es_ea->dc) -
-			    style(es->es_st, ContinuationIndentWidth);
+			    es->es_ea->indent;
 			concat = doc_alloc_indent(w, concat);
 		}
 		if (ex->ex_rhs != NULL) {
