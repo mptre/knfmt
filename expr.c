@@ -696,7 +696,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		es->es_noparens--;
 		if (lparen != NULL)
 			doc_token(lparen, concat);
-		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
+		if (style(es->es_st, AlignAfterOpenBracket) == Align &&
+		    (lparen == NULL || !token_has_line(lparen, 1))) {
 			unsigned int w;
 
 			w = expr_doc_width(es, es->es_ea->dc) -
