@@ -1752,6 +1752,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	struct doc *stmt;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
+	unsigned int w = 0;
 	int error;
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
@@ -1770,8 +1771,10 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	 * expression since we want to fit everything until the following
 	 * statement on a single line.
 	 */
+	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+		w = parser_width(pr, dc);
 	error = parser_exec_expr(pr, stmt, &expr, rparen,
-	    0, EXPR_EXEC_FLAG_INDENT);
+	    w, EXPR_EXEC_FLAG_INDENT);
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
 	if (error & NONE)

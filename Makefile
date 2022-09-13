@@ -313,6 +313,7 @@ DISTFILES+=	tests/style-AlignAfterOpenBracket-001.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-002.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-003.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-004.c
+DISTFILES+=	tests/style-AlignAfterOpenBracket-005.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.ok
 DISTFILES+=	tests/style-ColumnLimit-001.c
