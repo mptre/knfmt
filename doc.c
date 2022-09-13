@@ -501,6 +501,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		char *str;
 		unsigned int diff, oldcol;
 		int unmute = 0;
+		int isblock, isnewline;
 
 		if (doc_is_mute(st)) {
 			if (DOC_DIFF(st) &&
@@ -512,8 +513,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 		diff = doc_diff_verbatim(dc, st);
 
-		int isblock = dc->dc_len > 1 &&
-		    dc->dc_str[dc->dc_len - 1] == '\n';
+		isblock = dc->dc_len > 1 && dc->dc_str[dc->dc_len - 1] == '\n';
+		isnewline = dc->dc_len == 1 && dc->dc_str[0] == '\n';
 
 		/* Verbatims must never be indented. */
 		doc_trim_spaces(dc, st);
@@ -539,8 +540,11 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		if (unmute)
 			st->st_diff.verbatim = NULL;
 
-		/* Restore the indentation after emitting a verbatim block. */
-		if (isblock) {
+		/*
+		 * Restore the indentation after emitting a verbatim block or
+		 * new line.
+		 */
+		if (isblock || isnewline) {
 			struct doc_state_indent *it = &st->st_indent;
 			unsigned int indent;
 
