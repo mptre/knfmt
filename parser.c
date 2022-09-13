@@ -110,7 +110,7 @@ static int	parser_exec_decl_cppx(struct parser *, struct doc *,
 static int	parser_exec_decl_cppdefs(struct parser *, struct doc *);
 
 static int	parser_exec_expr(struct parser *, struct doc *, struct doc **,
-    const struct token *, unsigned int flags);
+    const struct token *, unsigned int);
 
 static int	parser_exec_func_decl(struct parser *, struct doc *,
     struct ruler *, const struct token *);
