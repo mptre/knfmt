@@ -973,6 +973,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *tk;
 	unsigned int col = 0;
+	unsigned int indent = 0;
 	unsigned int w;
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
@@ -994,6 +995,9 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	 */
 	w = parser_width(pr, concat);
 
+	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+		indent = w;
+
 	for (;;) {
 		struct doc *expr = NULL;
 		struct doc *arg;
@@ -1007,7 +1011,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		lexer_peek_until_loose(lx, TOKEN_COMMA, rparen, &stop);
 		error = parser_exec_expr(pr, arg, &expr, stop,
-		    0, EXPR_EXEC_FLAG_INDENT | EXPR_EXEC_FLAG_ARG);
+		    indent, EXPR_EXEC_FLAG_INDENT | EXPR_EXEC_FLAG_ARG);
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
