@@ -9,6 +9,11 @@ enum {
 	AlwaysBreak,
 	BlockIndent,
 
+	AlignEscapedNewlines,
+/*	DontAlign,	*/
+	Left,
+	Right,
+
 	AlwaysBreakAfterReturnType,
 	None,
 	All,

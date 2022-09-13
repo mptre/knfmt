@@ -32,7 +32,8 @@ cpp_exec(const struct token *tk, const struct style *st,
 
 	str = tk->tk_str;
 	len = tk->tk_len;
-	if (nextline(str, len, &nx) == NULL)
+	if (style(st, AlignEscapedNewlines) != Right ||
+	    nextline(str, len, &nx) == NULL)
 		return NULL;
 
 	bf = buffer_alloc(len);

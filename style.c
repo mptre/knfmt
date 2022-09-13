@@ -72,6 +72,9 @@ style_init(void)
 		K(DontAlign,				"DontAlign"),
 		K(AlwaysBreak,				"AlwaysBreak"),
 		K(BlockIndent,				"BlockIndent"),
+		K(AlignEscapedNewlines,			"AlignEscapedNewlines"),
+		K(Left,					"Left"),
+		K(Right,				"Right"),
 		K(AlwaysBreakAfterReturnType,		"AlwaysBreakAfterReturnType"),
 		K(None,					"None"),
 		K(All,					"All"),
@@ -160,6 +163,7 @@ static void
 style_defaults(struct style *st)
 {
 	st->st_options[AlignAfterOpenBracket] = DontAlign;
+	st->st_options[AlignEscapedNewlines] = Right;
 	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
 	st->st_options[ColumnLimit] = 80;
 	st->st_options[ContinuationIndentWidth] = 4;
@@ -212,7 +216,13 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
 
-		if (lexer_if(lx, AlignAfterOpenBracket, &key) &&
+		if (lexer_if(lx, AlignEscapedNewlines, &key) &&
+		    (lexer_if(lx, Align, &val) ||
+		     lexer_if(lx, DontAlign, &val) ||
+		     lexer_if(lx, Left, &val) ||
+		     lexer_if(lx, Right, &val))) {
+			st->st_options[key->tk_type] = val->tk_type;
+		} else if (lexer_if(lx, AlignAfterOpenBracket, &key) &&
 		    (lexer_if(lx, Align, &val) ||
 		     lexer_if(lx, DontAlign, &val) ||
 		     lexer_if(lx, AlwaysBreak, &val) ||
