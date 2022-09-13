@@ -2201,10 +2201,14 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			struct doc *indent;
 			struct token *lparen = tk;
 			struct token *rparen;
+			unsigned int w;
 
 			doc_token(lparen, dc);
-			indent = doc_alloc_indent(
-			    style(pr->pr_st, ContinuationIndentWidth), dc);
+			if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+				w = parser_width(pr, dc);
+			else
+				w = style(pr->pr_st, ContinuationIndentWidth);
+			indent = doc_alloc_indent(w, dc);
 			while (parser_exec_func_arg(pr, indent, NULL, end) &
 			    GOOD)
 				continue;
