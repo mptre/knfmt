@@ -1,5 +1,5 @@
 /*
- * Long expression, probably a missing group causing unwanted line breaks.
+ * Long expression.
  */
 
 int
