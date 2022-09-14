@@ -1,7 +1,14 @@
-#define NTRACES	5
+static const char traces[] = {
+	'a',	/* all */
+	'd',	/* doc */
+	'D',	/* diff */
+	'l',	/* lexer */
+	's',	/* style */
+	'S',	/* simple */
+};
 
 struct options {
-	unsigned int	op_trace[NTRACES];
+	unsigned int	op_trace[sizeof(traces)];
 
 	unsigned int	op_flags;
 #define OPTIONS_FLAG_DIFF		0x00000001u

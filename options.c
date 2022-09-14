@@ -21,20 +21,18 @@ options_trace_parse(struct options *op, const char *flags)
 	for (; *flags != '\0'; flags++) {
 		int trace;
 
-		if (*flags == 'a') {
-			int i;
-
-			for (i = 0; i < NTRACES; i++)
-				op->op_trace[i] = UINT_MAX;
-			continue;
-		}
-
 		trace = ctotrace(*flags);
 		if (trace == -1) {
 			errx(1, "%c: unknown trace flag", *flags);
 			return 1;
+		} else if (trace == 0) {
+			size_t i;
+
+			for (i = 0; i < sizeof(traces); i++)
+				op->op_trace[i] = UINT_MAX;
+		} else {
+			op->op_trace[trace]++;
 		}
-		op->op_trace[trace]++;
 	}
 	return 0;
 }
@@ -48,13 +46,12 @@ trace(const struct options *op, unsigned char c)
 static int
 ctotrace(unsigned char c)
 {
-	switch (c) {
-	case 'd': return 0;	/* doc */
-	case 'D': return 1;	/* diff */
-	case 'l': return 2;	/* lexer */
-	case 's': return 3;	/* style */
-	case 'S': return 4;	/* simple */
-	default:
-		return -1;
+	size_t len = sizeof(traces);
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (traces[i] == c)
+			return i;
 	}
+	return -1;
 }
