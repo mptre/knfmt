@@ -432,10 +432,10 @@ TESTS+=	../vector.h
 .SUFFIXES: .c .h .cfake .hfake
 
 .c.cfake:
-	sh ${.CURDIR}/knfmt.sh $<
+	sh ${.CURDIR}/knfmt.sh $< ${V}
 
 .h.hfake:
-	sh ${.CURDIR}/knfmt.sh $<
+	sh ${.CURDIR}/knfmt.sh $< ${V}
 
 
 all: ${TESTS:.c=.cfake}

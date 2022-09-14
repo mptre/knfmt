@@ -133,34 +133,36 @@ simple-010.c)
 	;;
 esac
 
-_rel="$1"
+_path="$1"; shift
+
+_rel="$_path"
 _abs="$(readlink -f "$_rel" 2>/dev/null || echo "${PWD}/${_rel}")"
 case "$_rel" in
 bug-*)
-	testcase -b "$_abs" -- -svl
+	testcase -b "$_abs" -- -s -vl "$@"
 	;;
 diff-simple-*)
-	testcase "$_rel" -- -Dsvl
+	testcase "$_rel" -- -Ds -vl "$@"
 	;;
 diff-*)
-	testcase "$_rel" -- -Dvl
+	testcase "$_rel" -- -D -vl "$@"
 	;;
 error-*)
-	testcase -e -q "$_abs" -- -s
+	testcase -e -q "$_abs" -- -s "$@"
 	;;
 simple-*|../*)
-	testcase "$_abs" -- -svl
+	testcase "$_abs" -- -s -vl "$@"
 	;;
 style-error-*)
-	testcase -c -e "$_abs" -- -vlss
+	testcase -c -e "$_abs" -- -vlss "$@"
 	;;
 style-*)
-	testcase -c "$_abs" -- -vl
+	testcase -c "$_abs" -- -vl "$@"
 	;;
 trace-*)
-	testcase -q "$_abs" -- -va
+	testcase -q "$_abs" -- -va "$@"
 	;;
 *)
-	testcase "$_abs" -- -vl
+	testcase "$_abs" -- -vl "$@"
 	;;
 esac
