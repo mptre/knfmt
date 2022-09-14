@@ -125,16 +125,6 @@ diff-*|../*)
 	;;
 esac
 
-# Specific exceptions.
-case "$1" in
-simple-010.c)
-	# Sort order discrepancy.
-	[ "${MUSL:-0}" -eq 1 ] && exit 0
-	;;
-*)
-	;;
-esac
-
 _path="$1"; shift
 
 _rel="$_path"
