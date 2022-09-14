@@ -4,6 +4,7 @@
 
 #include <ctype.h>
 #include <err.h>
+#include <limits.h>
 #include <string.h>
 
 static int	ctotrace(unsigned char c);
@@ -19,6 +20,14 @@ options_trace_parse(struct options *op, const char *flags)
 {
 	for (; *flags != '\0'; flags++) {
 		int trace;
+
+		if (*flags == 'a') {
+			int i;
+
+			for (i = 0; i < NTRACES; i++)
+				op->op_trace[i] = UINT_MAX;
+			continue;
+		}
 
 		trace = ctotrace(*flags);
 		if (trace == -1) {
@@ -39,7 +48,6 @@ trace(const struct options *op, unsigned char c)
 static int
 ctotrace(unsigned char c)
 {
-	/* Keep in sync with NTRACES and tests/trace-001.c. */
 	switch (c) {
 	case 'd': return 0;	/* doc */
 	case 'D': return 1;	/* diff */
