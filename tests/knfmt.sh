@@ -118,7 +118,9 @@ case "$1" in
 valid-183.c)
 	# Ignore windows line endings test case.
 	;;
-bug-*|error-*|simple-*|valid-*)
+diff-*|../*)
+	;;
+*)
 	hascomm "$1" || exit 1
 	;;
 esac
