@@ -1677,10 +1677,13 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 	doc_token(tk, concat);
 	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
 		int error;
+		unsigned int indent = 0;
 
 		doc_literal(" ", concat);
+		if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+			indent = parser_width(pr, dc);
 		error = parser_exec_expr(pr, concat, NULL, NULL,
-		    0, EXPR_EXEC_FLAG_INDENT | EXPR_EXEC_FLAG_NOPARENS);
+		    indent, EXPR_EXEC_FLAG_INDENT | EXPR_EXEC_FLAG_NOPARENS);
 		if (error & HALT)
 			return parser_fail(pr);
 	}
