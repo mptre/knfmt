@@ -1223,14 +1223,12 @@ parser_exec_func_proto(struct parser *pr, struct parser_exec_func_proto_arg *pf)
 		doc_token(lparen, concat);
 	}
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
-		unsigned int w;
-
-		w = parser_width(pr, concat);
 		if (style(pr->pr_st, AlwaysBreakAfterReturnType) == None) {
-			indent = doc_alloc(DOC_CONCAT,
-			    ruler_indent(pf->rl, concat, NULL, w));
+			indent = ruler_indent(pf->rl, concat, NULL,
+			    parser_width(pr, concat));
+			indent = doc_alloc(DOC_CONCAT, indent);
 		} else {
-			indent = doc_alloc_indent(w, concat);
+			indent = doc_alloc_indent(parser_width(pr, dc), concat);
 		}
 	} else {
 		indent = doc_alloc_indent(
