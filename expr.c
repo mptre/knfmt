@@ -615,7 +615,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		} else {
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			doc_alloc(dospace ? DOC_LINE : DOC_SOFTLINE, concat);
+			if (dospace)
+				doc_alloc(DOC_LINE, concat);
 		}
 		if (ex->ex_rhs != NULL)
 			concat = expr_doc_soft(ex->ex_rhs, es, concat, 2);
