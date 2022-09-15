@@ -705,13 +705,18 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		es->es_noparens--;
 		if (lparen != NULL)
 			doc_token(lparen, concat);
-		if (style(es->es_st, AlignAfterOpenBracket) == Align &&
-		    (lparen == NULL || !token_has_line(lparen, 1))) {
-			unsigned int w;
+		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
+			int w;
 
-			w = expr_doc_width(es, es->es_ea->dc) -
-			    es->es_ea->indent;
-			concat = doc_alloc_indent(w, concat);
+			if (lparen == NULL || !token_has_line(lparen, 1)) {
+				w = expr_doc_width(es, es->es_ea->dc) -
+				    es->es_ea->indent;
+				concat = doc_alloc_indent(w, concat);
+			} else {
+				w = -es->es_ea->indent +
+				    style(es->es_st, ContinuationIndentWidth);
+				concat = doc_alloc_indent(w, concat);
+			}
 		}
 		if (ex->ex_rhs != NULL) {
 			if (rparen != NULL) {
