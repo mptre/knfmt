@@ -54,15 +54,6 @@ struct parser {
 	} pr_simple;
 };
 
-struct parser_exec_func_proto_arg {
-	struct doc		*dc;
-	struct ruler		*rl;
-	const struct token	*type;
-	struct doc		*out;
-	unsigned int		 flags;
-#define PARSER_EXEC_FUNC_PROTO_FLAG_IMPL	0x00000001u
-};
-
 struct parser_exec_decl_braces_arg {
 	struct doc	*dc;
 	struct ruler	*rl;
@@ -70,6 +61,15 @@ struct parser_exec_decl_braces_arg {
 	unsigned int	 flags;
 #define PARSER_EXEC_DECL_BRACES_FLAG_ENUM	0x00000001u
 #define PARSER_EXEC_DECL_BRACES_FLAG_INDENT	0x00000002u
+};
+
+struct parser_exec_func_proto_arg {
+	struct doc		*dc;
+	struct ruler		*rl;
+	const struct token	*type;
+	struct doc		*out;
+	unsigned int		 flags;
+#define PARSER_EXEC_FUNC_PROTO_FLAG_IMPL	0x00000001u
 };
 
 struct parser_exec_stmt_block_arg {
