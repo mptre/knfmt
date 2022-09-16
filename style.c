@@ -262,7 +262,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		} else if (lexer_if(lx, BraceWrapping, &key) ||
 		    lexer_if(lx, IncludeCategories, &key)) {
 			style_parse_yaml_nested(st, lx);
-			if (trace(op, 's') >= 2) {
+			if (trace(op, 's')) {
 				char *strkey;
 
 				strkey = yaml_serialize(key);
@@ -274,7 +274,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			/* nothing */
 		} else if (key != NULL) {
 			lexer_pop(lx, &val);
-			if (trace(op, 's') >= 2) {
+			if (trace(op, 's')) {
 				char *strkey, *strval;
 
 				strkey = yaml_serialize(key);
@@ -296,7 +296,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			} else {
 				lexer_pop(lx, &val);
 			}
-			if (trace(op, 's') >= 2) {
+			if (trace(op, 's')) {
 				char *strkey;
 
 				strkey = key != NULL
@@ -308,7 +308,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		}
 	}
 
-	return trace(op, 's') >= 2 ? lexer_get_error(lx) : 0;
+	return trace(op, 's') ? lexer_get_error(lx) : 0;
 }
 
 static int
