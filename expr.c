@@ -586,6 +586,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	case EXPR_BINARY: {
 		struct doc *lhs;
 		unsigned int lno;
+		int dolspace = 1;
 		int dospace, s;
 
 		s = style(es->es_st, BreakBeforeBinaryOperators);
@@ -594,23 +595,32 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 			pv = token_prev(ex->ex_tk);
 			lno = ex->ex_tk->tk_lno - pv->tk_lno;
-			if (token_trim(pv) > 0 && lno == 1)
+			if (token_trim(pv) > 0 && lno == 1) {
+				/* Move operator to previous line. */
 				token_add_optline(ex->ex_tk);
+			}
 		} else if (s == NonAssignment) {
 			struct token *nx, *pv;
 
 			pv = token_prev(ex->ex_tk);
 			nx = token_next(ex->ex_tk);
 			lno = nx->tk_lno - ex->ex_tk->tk_lno;
-			if (token_trim(ex->ex_tk) > 0 && lno == 1)
+			if (token_trim(ex->ex_tk) > 0 && lno == 1) {
+				/* Move operator to next line. */
+				dolspace = 0;
 				token_add_optline(pv);
+			}
 		}
 
 		lhs = expr_doc(ex->ex_lhs, es, concat);
 		dospace = expr_doc_has_spaces(ex);
-		if (dospace)
-			doc_literal(" ", lhs);
-		doc_token(ex->ex_tk, lhs);
+		if (dolspace) {
+			if (dospace)
+				doc_literal(" ", lhs);
+			doc_token(ex->ex_tk, lhs);
+		} else {
+			doc_token(ex->ex_tk, concat);
+		}
 
 		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
 			doc_literal(" ", concat);
