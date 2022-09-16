@@ -321,6 +321,7 @@ DISTFILES+=	tests/style-AlignAfterOpenBracket-010.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-011.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-012.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-012.ok
+DISTFILES+=	tests/style-AlignAfterOpenBracket-013.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-001.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.ok

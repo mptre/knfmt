@@ -100,6 +100,7 @@ struct expr_state {
 	struct buffer		*es_bf;
 	unsigned int		 es_depth;
 	unsigned int		 es_noparens;	/* parens indent disabled */
+	unsigned int		 es_indent;	/* effective indent */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -218,8 +219,8 @@ expr_exec(const struct expr_exec_arg *ea)
 	optional = doc_alloc(DOC_OPTIONAL, dc);
 	if (ea->indent > 0) {
 		indent = doc_alloc_indent(ea->indent, optional);
-		if (ea->flags & EXPR_EXEC_FLAG_INDENT_ONCE)
-			es.es_ea.indent = 0;
+		if ((ea->flags & EXPR_EXEC_FLAG_INDENT_ONCE) == 0)
+			es.es_indent = es.es_ea.indent;
 	} else {
 		indent = doc_alloc(DOC_CONCAT, optional);
 	}
@@ -722,7 +723,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 
 			if (lparen == NULL || !token_has_line(lparen, 1)) {
 				w = expr_doc_width(es, es->es_ea.dc) -
-				    es->es_ea.indent;
+				    es->es_indent;
 				concat = doc_alloc_indent(w, concat);
 			} else {
 				w = -es->es_ea.indent +
