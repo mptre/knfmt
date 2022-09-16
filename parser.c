@@ -606,7 +606,7 @@ parser_exec_decl_init(struct parser *pr,
 					return parser_fail(pr);
 			} else {
 				struct token *stop;
-				unsigned int eflags = 0;
+				unsigned int flags = 0;
 				unsigned int w;
 
 				/*
@@ -615,20 +615,20 @@ parser_exec_decl_init(struct parser *pr,
 				 * get indentation right.
 				 */
 				if (token_has_line(assign, 1))
-					eflags |= EXPR_EXEC_FLAG_HARDLINE;
+					flags |= EXPR_EXEC_FLAG_HARDLINE;
 
 				lexer_peek_until_loose(lx, TOKEN_COMMA,
 				    arg->semi, &stop);
 				if (style(pr->pr_st, AlignAfterOpenBracket) ==
 				    Align) {
-					eflags |= EXPR_EXEC_FLAG_INDENT_ONCE;
+					flags |= EXPR_EXEC_FLAG_INDENT_ONCE;
 					w = parser_width(pr, arg->width);
 				} else {
 					w = style(pr->pr_st,
 					    ContinuationIndentWidth);
 				}
 				error = parser_exec_expr(pr, dedent, NULL,
-				    stop, w, eflags);
+				    stop, w, flags);
 				if (error & HALT)
 					return parser_fail(pr);
 			}
