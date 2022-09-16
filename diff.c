@@ -22,7 +22,8 @@ static int	matchpath(char *, char *, size_t);
 static int	matchchunk(char *, int *, int *);
 static int	matchline(const char *, int, struct file *);
 
-static char	*skipline(char *);
+static char		*skipline(char *);
+static const char	*trimprefix(const char *, size_t *);
 
 static int	xregexec(const regex_t *, char *, regmatch_t *, size_t);
 
@@ -178,8 +179,7 @@ matchpath(char *str, char *path, size_t pathsiz)
 	len = rm[1].rm_eo - rm[1].rm_so;
 	if (strncmp(buf, "b/", 2) == 0) {
 		/* Trim git prefix. */
-		buf += 2;
-		len -= 2;
+		buf = trimprefix(buf, &len);
 	}
 	n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
 	if (n < 0 || (size_t)n >= pathsiz)
@@ -248,6 +248,18 @@ skipline(char *str)
 	if (p == NULL)
 		return NULL;
 	return p + 1;
+}
+
+static const char *
+trimprefix(const char *str, size_t *len)
+{
+	const char *p;
+
+	p = memchr(str, '/', *len);
+	if (p == NULL)
+		return str;
+	*len -= (p - str) + 1;
+	return &p[1];
 }
 
 static int
