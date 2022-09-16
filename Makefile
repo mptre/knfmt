@@ -271,6 +271,7 @@ DISTFILES+=	tests/error-038.c
 DISTFILES+=	tests/error-039.c
 DISTFILES+=	tests/error-040.c
 DISTFILES+=	tests/error-040.ok
+DISTFILES+=	tests/git.sh
 DISTFILES+=	tests/knfmt.sh
 DISTFILES+=	tests/simple-001.c
 DISTFILES+=	tests/simple-001.ok

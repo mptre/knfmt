@@ -448,3 +448,4 @@ TESTS+=	../vector.h
 
 all: ${TESTS:.c=.cfake}
 all: ${TESTS:.h=.hfake}
+	sh ${.CURDIR}/git.sh

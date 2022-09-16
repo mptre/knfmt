@@ -2,6 +2,8 @@
 
 #include "config.h"
 
+#include <sys/stat.h>
+
 #include <err.h>
 #include <errno.h>
 #include <regex.h>
@@ -9,12 +11,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "buffer.h"
 #include "error.h"
 #include "file.h"
 #include "options.h"
 #include "vector.h"
+#include "util.h"
 
 static void	diff_end(struct diffchunk *, unsigned int);
 
@@ -32,6 +36,13 @@ static void	diff_trace(const char *, ...)
 
 static regex_t	rechunk, repath;
 
+/*
+ * Number of directories above the current working directory where a Git
+ * repository resides. Used to adjust diff paths when invoking knfmt from a
+ * directory other than the repository root.
+ */
+static int	git_ndirs;
+
 void
 diff_init(void)
 {
@@ -44,6 +55,7 @@ diff_init(void)
 	};
 	size_t n = sizeof(patterns) / sizeof(patterns[0]);
 	size_t i;
+	int fd;
 
 	for (i = 0; i < n; i++) {
 		char errbuf[128];
@@ -57,6 +69,10 @@ diff_init(void)
 		if (regerror(error, patterns[i].r, errbuf, sizeof(errbuf)) > 0)
 			errx(1, "regcomp: %s", errbuf);
 	}
+
+	fd = searchpath(".git", &git_ndirs);
+	if (fd != -1)
+		close(fd);
 }
 
 void
@@ -170,7 +186,7 @@ matchpath(char *str, char *path, size_t pathsiz)
 	regmatch_t rm[2];
 	const char *buf;
 	size_t len;
-	int n;
+	int i, n;
 
 	if (xregexec(&repath, str, rm, 2))
 		return 0;
@@ -181,9 +197,25 @@ matchpath(char *str, char *path, size_t pathsiz)
 		/* Trim git prefix. */
 		buf = trimprefix(buf, &len);
 	}
-	n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
-	if (n < 0 || (size_t)n >= pathsiz)
-		errx(1, "%.*s: path too long", (int)len, buf);
+
+	for (i = 0; i < 2; i++) {
+		struct stat sb;
+
+		n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
+		if (n < 0 || (size_t)n >= pathsiz)
+			errx(1, "%.*s: path too long", (int)len, buf);
+
+		/* Try to adjust Git repository relative path(s). */
+		if (git_ndirs > 0 && path[0] != '/' &&
+		    stat(path, &sb) == -1 && errno == ENOENT) {
+			int ntrim = git_ndirs;
+
+			for (ntrim = git_ndirs; ntrim > 0; ntrim--)
+				buf = trimprefix(buf, &len);
+		} else {
+			break;
+		}
+	}
 	return 1;
 }
 
