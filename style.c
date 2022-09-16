@@ -129,7 +129,7 @@ style_parse(const struct options *op)
 		err(1, NULL);
 	style_defaults(st);
 
-	fd = searchpath(filename);
+	fd = searchpath(filename, NULL);
 	if (fd != -1) {
 		struct buffer *bf;
 

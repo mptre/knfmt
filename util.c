@@ -69,9 +69,11 @@ strwidth(const char *str, size_t len, size_t pos)
 /*
  * Search for the given filename starting at the current working directory and
  * traverse upwards. Returns a file descriptor to the file if found, -1 otherwise.
+ * The optional nlevels argument reflects the number of directories traversed
+ * upwards.
  */
 int
-searchpath(const char *filename)
+searchpath(const char *filename, int *nlevels)
 {
 	struct stat sb;
 	dev_t dev = 0;
@@ -104,6 +106,8 @@ searchpath(const char *filename)
 			break;
 		dev = sb.st_dev;
 		ino = sb.st_ino;
+		if (nlevels != NULL)
+			(*nlevels)++;
 	}
 
 out:
