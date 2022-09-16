@@ -1599,7 +1599,10 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, loop);
 
-	w = style(pr->pr_st, ContinuationIndentWidth);
+	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+		w = parser_width(pr, dc);
+	else
+		w = style(pr->pr_st, ContinuationIndentWidth);
 
 	/* Declarations are allowed in the first expression. */
 	if (parser_exec_decl(pr, loop, 0) & NONE) {
