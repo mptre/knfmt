@@ -88,18 +88,18 @@ struct expr_rule {
 };
 
 struct expr_state {
-	const struct expr_exec_arg	*es_ea;
-#define es_st		es_ea->st
-#define es_op		es_ea->op
-#define es_lx		es_ea->lx
-#define es_stop		es_ea->stop
+	struct expr_exec_arg	 es_ea;
+#define es_st		es_ea.st
+#define es_op		es_ea.op
+#define es_lx		es_ea.lx
+#define es_stop		es_ea.stop
+#define es_flags	es_ea.flags
 
-	const struct expr_rule		*es_er;
-	struct token			*es_tk;
-	struct buffer			*es_bf;
-	unsigned int			 es_depth;
-	unsigned int			 es_noparens;	/* parens indent disabled */
-	unsigned int			 es_flags;	/* expr_exec_arg flags */
+	const struct expr_rule	*es_er;
+	struct token		*es_tk;
+	struct buffer		*es_bf;
+	unsigned int		 es_depth;
+	unsigned int		 es_noparens;	/* parens indent disabled */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -204,8 +204,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	struct expr *ex;
 
 	memset(&es, 0, sizeof(es));
-	es.es_ea = ea;
-	es.es_flags = ea->flags;
+	es.es_ea = *ea;
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
@@ -240,7 +239,7 @@ expr_peek(const struct expr_exec_arg *ea)
 	int error;
 
 	memset(&es, 0, sizeof(es));
-	es.es_ea = ea;
+	es.es_ea = *ea;
 
 	ex = expr_exec1(&es, PC0);
 	error = lexer_get_error(es.es_lx);
@@ -319,10 +318,10 @@ expr_exec_recover(struct expr_state *es, unsigned int flags)
 	struct doc *dc;
 	struct expr *ex;
 
-	if (es->es_ea->recover == NULL)
+	if (es->es_ea.recover == NULL)
 		return NULL;
 
-	dc = es->es_ea->recover(flags | es->es_flags, es->es_ea->arg);
+	dc = es->es_ea.recover(flags | es->es_flags, es->es_ea.arg);
 	if (dc == NULL)
 		return NULL;
 
@@ -709,11 +708,11 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			int w;
 
 			if (lparen == NULL || !token_has_line(lparen, 1)) {
-				w = expr_doc_width(es, es->es_ea->dc) -
-				    es->es_ea->indent;
+				w = expr_doc_width(es, es->es_ea.dc) -
+				    es->es_ea.indent;
 				concat = doc_alloc_indent(w, concat);
 			} else {
-				w = -es->es_ea->indent +
+				w = -es->es_ea.indent +
 				    style(es->es_st, ContinuationIndentWidth);
 				concat = doc_alloc_indent(w, concat);
 			}
@@ -923,7 +922,7 @@ iscast(struct expr_state *es)
 	lexer_peek_enter(es->es_lx, &s);
 	if (lexer_if_type(es->es_lx, NULL, LEXER_TYPE_FLAG_CAST) &&
 	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
-	    expr_peek(es->es_ea))
+	    expr_peek(&es->es_ea))
 		cast = 1;
 	lexer_peek_leave(es->es_lx, &s);
 
