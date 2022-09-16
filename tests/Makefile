@@ -430,6 +430,7 @@ TESTS+=	../style.c
 TESTS+=	../style.h
 TESTS+=	../t.c
 TESTS+=	../token-defs.h
+TESTS+=	../token.c
 TESTS+=	../token.h
 TESTS+=	../util.c
 TESTS+=	../util.h

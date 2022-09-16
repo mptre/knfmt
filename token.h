@@ -1,3 +1,5 @@
+#include <stddef.h>	/* size_t */
+
 #include "config.h"
 
 #ifdef HAVE_QUEUE
@@ -84,20 +86,24 @@ struct token {
 	TAILQ_ENTRY(token)	 tk_stamp;
 };
 
-void	 token_ref(struct token *);
-void	 token_rele(struct token *);
-void	 token_add_optline(struct token *);
-int	 token_cmp(const struct token *, const struct token *);
-int	 token_has_indent(const struct token *);
-int	 token_has_line(const struct token *, int);
-int	 token_has_prefix(const struct token *, int);
-int	 token_has_tabs(const struct token *);
-int	 token_has_spaces(const struct token *);
-int	 token_is_branch(const struct token *);
-int	 token_is_decl(const struct token *, int);
-int	 token_is_moveable(const struct token *);
-int	 token_trim(struct token *);
-char	*token_sprintf(const struct token *);
+struct token	*token_alloc(const struct token *);
+void		 token_ref(struct token *);
+void		 token_rele(struct token *);
+void		 token_add_optline(struct token *);
+int		 token_trim(struct token *);
+char		*token_sprintf(const struct token *);
+
+int	token_cmp(const struct token *, const struct token *);
+int	token_has_indent(const struct token *);
+int	token_has_line(const struct token *, int);
+int	token_has_prefix(const struct token *, int);
+int	token_has_tabs(const struct token *);
+int	token_has_spaces(const struct token *);
+int	token_is_branch(const struct token *);
+int	token_is_decl(const struct token *, int);
+int	token_is_moveable(const struct token *);
+
+struct token	*token_get_branch(struct token *);
 
 #define token_next(tk) __token_next((struct token *)(tk))
 struct token	*__token_next(struct token *);
@@ -105,7 +111,11 @@ struct token	*__token_next(struct token *);
 #define token_prev(tk) __token_prev((struct token *)(tk))
 struct token	*__token_prev(struct token *);
 
-void	token_list_copy(struct token_list *, struct token_list *);
-void	token_list_move(struct token_list *, struct token_list *);
+void		 token_remove(struct token_list *, struct token *);
+void		 token_list_copy(struct token_list *, struct token_list *);
+void		 token_list_move(struct token_list *, struct token_list *);
+struct token	*token_list_find(struct token_list *, int);
 
 void	token_move_suffixes(struct token *, struct token *, int);
+
+int	token_branch_unlink(struct token *tk);
