@@ -65,6 +65,7 @@ struct parser_exec_decl_braces_arg {
 
 struct parser_exec_decl_init_arg {
 	struct doc		*dc;
+	struct doc		*width;
 	struct ruler		*rl;
 	const struct token	*semi;
 	unsigned int		 flags;
@@ -541,6 +542,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_fail(pr);
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
 		.dc	= concat,
+		.width	= dc,
 		.rl	= rl,
 		.semi	= semi,
 		.flags	= PARSER_EXEC_DECL_INIT_FLAG_ASSIGN
@@ -617,7 +619,14 @@ parser_exec_decl_init(struct parser *pr,
 
 				lexer_peek_until_loose(lx, TOKEN_COMMA,
 				    arg->semi, &stop);
-				w = style(pr->pr_st, ContinuationIndentWidth);
+				if (style(pr->pr_st, AlignAfterOpenBracket) ==
+				    Align) {
+					eflags |= EXPR_EXEC_FLAG_INDENT_ONCE;
+					w = parser_width(pr, arg->width);
+				} else {
+					w = style(pr->pr_st,
+					    ContinuationIndentWidth);
+				}
 				error = parser_exec_expr(pr, dedent, NULL,
 				    stop, w, eflags);
 				if (error & HALT)
@@ -906,6 +915,7 @@ parser_exec_decl_braces_field(struct parser *pr, struct doc *dc,
 
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
 		.dc	= dc,
+		.width	= dc,
 		.rl	= rl,
 		.semi	= stop,
 		.flags	= 0
@@ -979,6 +989,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_fail(pr);
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
 		.dc	= dc,
+		.width	= dc,
 		.rl	= rl,
 		.semi	= semi,
 		.flags	= PARSER_EXEC_DECL_INIT_FLAG_ASSIGN

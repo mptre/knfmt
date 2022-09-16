@@ -216,10 +216,13 @@ expr_exec(const struct expr_exec_arg *ea)
 
 	dc = doc_alloc(DOC_GROUP, ea->dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
-	if (ea->indent > 0)
+	if (ea->indent > 0) {
 		indent = doc_alloc_indent(ea->indent, optional);
-	else
+		if (ea->flags & EXPR_EXEC_FLAG_INDENT_ONCE)
+			es.es_ea.indent = 0;
+	} else {
 		indent = doc_alloc(DOC_CONCAT, optional);
+	}
 	if (ea->flags & EXPR_EXEC_FLAG_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
 	if (ea->flags & EXPR_EXEC_FLAG_HARDLINE)
