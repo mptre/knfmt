@@ -605,6 +605,7 @@ parser_exec_decl_init(struct parser *pr,
 			} else {
 				struct token *stop;
 				unsigned int eflags = EXPR_EXEC_FLAG_INDENT;
+				unsigned int w;
 
 				/*
 				 * Honor hard line after assignment which must
@@ -616,8 +617,9 @@ parser_exec_decl_init(struct parser *pr,
 
 				lexer_peek_until_loose(lx, TOKEN_COMMA,
 				    arg->semi, &stop);
+				w = style(pr->pr_st, ContinuationIndentWidth);
 				error = parser_exec_expr(pr, dedent, NULL,
-				    stop, 0, eflags);
+				    stop, w, eflags);
 				if (error & HALT)
 					return parser_fail(pr);
 			}
@@ -1089,8 +1091,7 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 		.stop		= stop,
 		.recover	= parser_exec_expr_recover,
 		.arg		= pr,
-		.indent		= indent > 0 ?
-		    indent : style(pr->pr_st, ContinuationIndentWidth),
+		.indent		= indent,
 		.flags		= flags,
 	};
 	struct doc *ex;
@@ -1560,7 +1561,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	struct doc *expr = NULL;
 	struct doc *loop, *space;
 	struct token *tk;
-	unsigned int flags;
+	unsigned int flags, w;
 	int error;
 
 	if (!lexer_if(lx, TOKEN_FOR, &tk))
@@ -1573,10 +1574,12 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, loop);
 
+	w = style(pr->pr_st, ContinuationIndentWidth);
+
 	/* Declarations are allowed in the first expression. */
 	if (parser_exec_decl(pr, loop, 0) & NONE) {
 		error = parser_exec_expr(pr, loop, &expr, NULL,
-		    0, EXPR_EXEC_FLAG_INDENT);
+		    w, EXPR_EXEC_FLAG_INDENT);
 		if (error & (FAIL | BRCH))
 			return parser_fail(pr);
 		/* Let the semicolon hang of the expression unless empty. */
@@ -1596,7 +1599,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
 	/* Let the semicolon hang of the expression unless empty. */
 	error = parser_exec_expr(pr, loop, &expr, NULL,
-	    0, EXPR_EXEC_FLAG_INDENT | flags);
+	    w, EXPR_EXEC_FLAG_INDENT | flags);
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
 	if (error & NONE) {
@@ -1615,7 +1618,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	flags = expr != loop ? EXPR_EXEC_FLAG_SOFTLINE : 0;
 	/* Let the semicolon hang of the expression unless empty. */
 	error = parser_exec_expr(pr, loop, &expr, NULL,
-	    0, EXPR_EXEC_FLAG_INDENT | flags);
+	    w, EXPR_EXEC_FLAG_INDENT | flags);
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
 	if (error & NONE) {
@@ -1695,13 +1698,15 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 	doc_token(tk, concat);
 	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
 		int error;
-		unsigned int indent = 0;
+		unsigned int w;
 
 		doc_literal(" ", concat);
 		if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
-			indent = parser_width(pr, dc);
+			w = parser_width(pr, dc);
+		else
+			w = style(pr->pr_st, ContinuationIndentWidth);
 		error = parser_exec_expr(pr, concat, NULL, NULL,
-		    indent, EXPR_EXEC_FLAG_INDENT | EXPR_EXEC_FLAG_NOPARENS);
+		    w, EXPR_EXEC_FLAG_INDENT | EXPR_EXEC_FLAG_NOPARENS);
 		if (error & HALT)
 			return parser_fail(pr);
 	}
@@ -1761,7 +1766,8 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 
-	error = parser_exec_expr(pr, dc, &expr, NULL, 0, EXPR_EXEC_FLAG_INDENT);
+	error = parser_exec_expr(pr, dc, &expr, NULL,
+	    style(pr->pr_st, ContinuationIndentWidth), EXPR_EXEC_FLAG_INDENT);
 	if (error & HALT)
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
@@ -1802,6 +1808,8 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	 */
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
 		w = parser_width(pr, dc);
+	else
+		w = style(pr->pr_st, ContinuationIndentWidth);
 	error = parser_exec_expr(pr, stmt, &expr, rparen,
 	    w, EXPR_EXEC_FLAG_INDENT);
 	if (error & (FAIL | BRCH))
