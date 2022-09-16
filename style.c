@@ -316,9 +316,12 @@ style_parse_yaml_nested(struct style *UNUSED(st), struct lexer *lx)
 {
 	struct token *key, *val;
 
-	while (lexer_peek(lx, &key) && token_has_indent(key) &&
-	    lexer_pop(lx, &key) && lexer_pop(lx, &val))
-		continue;
+	while (lexer_peek(lx, &key) && token_has_indent(key)) {
+		if (!lexer_pop(lx, &key) ||
+		    !lexer_pop(lx, &val) ||
+		    lexer_if(lx, LEXER_EOF, NULL))
+			break;
+	}
 	return 0;
 }
 

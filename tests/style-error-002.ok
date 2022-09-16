@@ -1,0 +1,2 @@
+.clang-format: skip nested option Keyword<1:1>("IncludeCategories")
+.clang-format: unknown value EOF<2:8>("'perf_hpp_InEmptyParentheses: false\n") for option Keyword<2:1>("UseTab")
