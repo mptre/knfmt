@@ -169,6 +169,14 @@ token_sprintf(const struct token *tk)
 	int i;
 
 	type = strtoken(tk->tk_type);
+
+	if (tk->tk_str == NULL) {
+		buf = strdup(type);
+		if (buf == NULL)
+			err(1, NULL);
+		return buf;
+	}
+
 	val = strnice(tk->tk_str, tk->tk_len);
 	for (i = 0; i < 2; i++) {
 		int n;
@@ -1735,12 +1743,16 @@ lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
 {
 	struct buffer *bf;
 	struct token *t;
-	char *str;
+	char *exp, *got;
 
 	/* Be quiet while about to branch. */
 	if (lexer_back(lx, &t) && token_is_branch(t)) {
-		lexer_trace(lx, "%s:%d: suppressed, expected %s", fun, lno,
-		    strtoken(type));
+		if (trace(lx->lx_op, 'l') >= 2) {
+			exp = lx->lx_serialize(&(struct token){.tk_type = type});
+			lexer_trace(lx, "%s:%d: suppressed, expected %s", fun,
+			    lno, exp);
+			free(exp);
+		}
 		return;
 	}
 
@@ -1756,10 +1768,11 @@ lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
 	buffer_printf(bf, "%s: ", lx->lx_path);
 	if (trace(lx->lx_op, 'l'))
 		buffer_printf(bf, "%s:%d: ", fun, lno);
-	str = tk ? lx->lx_serialize(tk) : NULL;
-	buffer_printf(bf, "expected type %s got %s\n", strtoken(type),
-	    str ? str : "(null)");
-	free(str);
+	exp = lx->lx_serialize(&(struct token){.tk_type = type});
+	got = tk != NULL ? lx->lx_serialize(tk) : NULL;
+	buffer_printf(bf, "expected type %s got %s\n", exp,
+	    got != NULL ? got : "(null)");
+	free(got);
 	error_end(lx->lx_er);
 }
 
