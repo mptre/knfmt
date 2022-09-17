@@ -226,8 +226,11 @@ expr_exec(const struct expr_exec_arg *ea)
 	}
 	if (ea->flags & EXPR_EXEC_FLAG_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
-	if (ea->flags & EXPR_EXEC_FLAG_HARDLINE)
+	if (ea->flags & EXPR_EXEC_FLAG_HARDLINE) {
 		doc_alloc(DOC_HARDLINE, indent);
+		/* Needed since the hard line will disable optional line(s). */
+		indent = doc_alloc(DOC_OPTIONAL, indent);
+	}
 	expr = expr_doc(ex, &es, indent);
 	expr_free(ex);
 	expr_state_reset(&es);

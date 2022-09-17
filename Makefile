@@ -333,6 +333,7 @@ DISTFILES+=	tests/style-BreakBeforeBinaryOperators-001.c
 DISTFILES+=	tests/style-BreakBeforeBinaryOperators-001.ok
 DISTFILES+=	tests/style-BreakBeforeBinaryOperators-002.c
 DISTFILES+=	tests/style-BreakBeforeBinaryOperators-003.c
+DISTFILES+=	tests/style-BreakBeforeBinaryOperators-004.c
 DISTFILES+=	tests/style-ColumnLimit-001.c
 DISTFILES+=	tests/style-ContinuationIndentWidth-001.c
 DISTFILES+=	tests/style-ContinuationIndentWidth-001.ok
