@@ -389,6 +389,7 @@ TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-BreakBeforeBinaryOperators-001.c
 TESTS+=	style-BreakBeforeBinaryOperators-002.c
+TESTS+=	style-BreakBeforeBinaryOperators-003.c
 TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ContinuationIndentWidth-001.c
 TESTS+=	style-IndentWidth-001.c

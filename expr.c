@@ -609,9 +609,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			lno = nx->tk_lno - ex->ex_tk->tk_lno;
 			if (token_trim(ex->ex_tk) > 0 && lno == 1) {
 				/* Move operator to next line. */
-				dolspace = 0;
 				token_add_optline(pv);
 			}
+			if (token_has_line(pv, 1))
+				dolspace = 0;
 		}
 
 		lhs = expr_doc(ex->ex_lhs, es, concat);
