@@ -600,7 +600,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 				/* Move operator to previous line. */
 				token_add_optline(ex->ex_tk);
 			}
-		} else if (s == NonAssignment) {
+		} else if (s == NonAssignment &&
+		    (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) == 0) {
 			struct token *nx, *pv;
 
 			pv = token_prev(ex->ex_tk);
