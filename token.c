@@ -1,8 +1,16 @@
 #include "token.h"
 
-#include <err.h>
 #include <assert.h>
+#include <err.h>
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "lexer.h"
+#include "util.h"
+
+static const char	*strtoken(int);
 
 static const struct token tkline = {
 	.tk_type	= TOKEN_SPACE,
@@ -90,6 +98,43 @@ token_trim(struct token *tk)
 	}
 
 	return ntrim;
+}
+
+char *
+token_sprintf(const struct token *tk)
+{
+	char *buf = NULL;
+	char *val;
+	const char *type;
+	ssize_t bufsiz = 0;
+	int i;
+
+	type = strtoken(tk->tk_type);
+
+	if (tk->tk_str == NULL) {
+		buf = strdup(type);
+		if (buf == NULL)
+			err(1, NULL);
+		return buf;
+	}
+
+	val = strnice(tk->tk_str, tk->tk_len);
+	for (i = 0; i < 2; i++) {
+		int n;
+
+		n = snprintf(buf, bufsiz, "%s<%u:%u>(\"%s\")",
+		    type, tk->tk_lno, tk->tk_cno, val);
+		if (n < 0 || (buf != NULL && n >= bufsiz))
+			errc(1, ENAMETOOLONG, "snprintf");
+		if (buf == NULL) {
+			bufsiz = n + 1;
+			buf = malloc(bufsiz);
+			if (buf == NULL)
+				err(1, NULL);
+		}
+	}
+	free(val);
+	return buf;
 }
 
 int
@@ -359,4 +404,17 @@ token_branch_unlink(struct token *tk)
 		return 0;
 	}
 	return -1;
+}
+
+static const char *
+strtoken(int type)
+{
+	switch (type) {
+#define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
+#define S(t, s, f) T(t, s, f)
+#include "token-defs.h"
+	}
+	if (type == LEXER_EOF)
+		return "EOF";
+	return NULL;
 }

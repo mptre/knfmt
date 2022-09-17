@@ -5,10 +5,8 @@
 #include <assert.h>
 #include <ctype.h>
 #include <err.h>
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "buffer.h"
 #include "cdefs.h"
@@ -113,11 +111,10 @@ static void	__lexer_trace(const struct lexer *, const char *, const char *,
     ...)
 	__attribute__((__format__(printf, 3, 4)));
 
-static void		 token_branch_link(struct token *, struct token *);
-static void		 token_move_prefix(struct token *, struct token *,
+static void	token_branch_link(struct token *, struct token *);
+static void	token_move_prefix(struct token *, struct token *,
     struct token *);
-static void		 token_prolong(struct token *, struct token *);
-static const char	*strtoken(int);
+static void	token_prolong(struct token *, struct token *);
 
 static int	 isnum(unsigned char, int);
 static char	*strtrim(const char *, size_t *);
@@ -158,43 +155,6 @@ static const struct token tkspace = {
 static const struct token tkstr = {
 	.tk_type	= TOKEN_STRING,
 };
-
-char *
-token_sprintf(const struct token *tk)
-{
-	char *buf = NULL;
-	char *val;
-	const char *type;
-	ssize_t bufsiz = 0;
-	int i;
-
-	type = strtoken(tk->tk_type);
-
-	if (tk->tk_str == NULL) {
-		buf = strdup(type);
-		if (buf == NULL)
-			err(1, NULL);
-		return buf;
-	}
-
-	val = strnice(tk->tk_str, tk->tk_len);
-	for (i = 0; i < 2; i++) {
-		int n;
-
-		n = snprintf(buf, bufsiz, "%s<%u:%u>(\"%s\")",
-		    type, tk->tk_lno, tk->tk_cno, val);
-		if (n < 0 || (buf != NULL && n >= bufsiz))
-			errc(1, ENAMETOOLONG, "snprintf");
-		if (buf == NULL) {
-			bufsiz = n + 1;
-			buf = malloc(bufsiz);
-			if (buf == NULL)
-				err(1, NULL);
-		}
-	}
-	free(val);
-	return buf;
-}
 
 /*
  * Populate the token hash map.
@@ -2200,19 +2160,6 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	default:
 		break;
 	}
-}
-
-static const char *
-strtoken(int type)
-{
-	switch (type) {
-#define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
-#define S(t, s, f) T(t, s, f)
-#include "token-defs.h"
-	}
-	if (type == LEXER_EOF)
-		return "EOF";
-	return NULL;
 }
 
 static int
