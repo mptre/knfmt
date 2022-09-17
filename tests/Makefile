@@ -385,6 +385,7 @@ TESTS+=	style-AlignAfterOpenBracket-011.c
 TESTS+=	style-AlignAfterOpenBracket-012.c
 TESTS+=	style-AlignAfterOpenBracket-013.c
 TESTS+=	style-AlignAfterOpenBracket-014.c
+TESTS+=	style-AlignAfterOpenBracket-015.c
 TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-BreakBeforeBinaryOperators-001.c

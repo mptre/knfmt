@@ -92,6 +92,7 @@ struct expr_state {
 #define es_st		es_ea.st
 #define es_op		es_ea.op
 #define es_lx		es_ea.lx
+#define es_dc		es_ea.dc
 #define es_stop		es_ea.stop
 #define es_flags	es_ea.flags
 
@@ -686,11 +687,16 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		    (es->es_flags & EXPR_EXEC_FLAG_NOPARENS);
 		if (!noparens && ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* ( */
-		if (ex->ex_lhs != NULL) {
+		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
+			int w;
+
+			w = expr_doc_width(es, es->es_dc) - es->es_indent;
+			concat = doc_alloc_indent(w, concat);
+		} else {
 			concat = expr_doc_indent_parens(es, concat);
-			if (ex->ex_lhs != NULL)
-				concat = expr_doc(ex->ex_lhs, es, concat);
 		}
+		if (ex->ex_lhs != NULL)
+			concat = expr_doc(ex->ex_lhs, es, concat);
 		if (!noparens && ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], concat);	/* ) */
 		break;
@@ -727,7 +733,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			int w;
 
 			if (lparen == NULL || !token_has_line(lparen, 1)) {
-				w = expr_doc_width(es, es->es_ea.dc) -
+				w = expr_doc_width(es, es->es_dc) -
 				    es->es_indent;
 				concat = doc_alloc_indent(w, concat);
 			} else {
