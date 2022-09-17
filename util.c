@@ -80,6 +80,7 @@ searchpath(const char *filename, int *nlevels)
 	ino_t ino = 0;
 	int fd = -1;
 	int flags = O_RDONLY | O_CLOEXEC;
+	int i = 0;
 	int dirfd;
 
 	dirfd = open(".", flags | O_DIRECTORY);
@@ -106,11 +107,12 @@ searchpath(const char *filename, int *nlevels)
 			break;
 		dev = sb.st_dev;
 		ino = sb.st_ino;
-		if (nlevels != NULL)
-			(*nlevels)++;
+		i++;
 	}
 
 out:
 	close(dirfd);
+	if (fd != -1 && nlevels != NULL)
+		*nlevels = i;
 	return fd;
 }
