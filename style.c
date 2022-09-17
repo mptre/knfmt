@@ -117,32 +117,36 @@ style_teardown(void)
 }
 
 struct style *
-style_parse(const struct options *op)
+style_parse(const char *path, const struct options *op)
 {
-	static const char *filename = ".clang-format";
+	struct buffer *bf = NULL;
 	struct style *st;
 	int error = 0;
-	int fd;
 
 	st = calloc(1, sizeof(*st));
 	if (st == NULL)
 		err(1, NULL);
 	style_defaults(st);
 
-	fd = searchpath(filename, NULL);
-	if (fd != -1) {
-		struct buffer *bf;
+	if (path != NULL) {
+		bf = buffer_read(path);
+	} else {
+		int fd;
 
-		bf = buffer_read_fd(fd);
-		close(fd);
-		error = style_parse_yaml(st, filename, bf, op);
-		buffer_free(bf);
+		path = ".clang-format";
+		fd = searchpath(path, NULL);
+		if (fd != -1) {
+			bf = buffer_read_fd(fd);
+			close(fd);
+		}
 	}
+	if (bf != NULL)
+		error = style_parse_yaml(st, path, bf, op);
+	buffer_free(bf);
 	if (error) {
 		style_free(st);
 		st = NULL;
 	}
-
 	return st;
 }
 

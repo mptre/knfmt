@@ -40,6 +40,7 @@ main(int argc, char *argv[])
 	struct files files;
 	struct options op;
 	struct style *st = NULL;
+	const char *clang_format = NULL;
 	size_t i;
 	int error = 0;
 	int ch;
@@ -49,8 +50,11 @@ main(int argc, char *argv[])
 
 	options_init(&op);
 
-	while ((ch = getopt(argc, argv, "Ddisv:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:Ddisv:")) != -1) {
 		switch (ch) {
+		case 'c':
+			clang_format = optarg;
+			break;
 		case 'D':
 			op.op_flags |= OPTIONS_FLAG_DIFFPARSE;
 			break;
@@ -94,7 +98,7 @@ main(int argc, char *argv[])
 		error = 1;
 		goto out;
 	}
-	st = style_parse(&op);
+	st = style_parse(clang_format, &op);
 	if (st == NULL) {
 		error = 1;
 		goto out;

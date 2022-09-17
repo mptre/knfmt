@@ -52,7 +52,7 @@ enum {
 void	style_init(void);
 void	style_teardown(void);
 
-struct style	*style_parse(const struct options *);
+struct style	*style_parse(const char *, const struct options *);
 void		 style_free(struct style *);
 
 unsigned int	style(const struct style *, int);
