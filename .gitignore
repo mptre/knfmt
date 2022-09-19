@@ -2,3 +2,4 @@ config.h
 config.log
 config.mk
 knfmt
+t
