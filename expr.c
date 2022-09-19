@@ -638,14 +638,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		    (es->es_flags & EXPR_EXEC_FLAG_NOPARENS);
 		if (!noparens && ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* ( */
-		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
-			int w;
-
-			w = expr_doc_width(es, es->es_dc) - es->es_indent;
-			concat = doc_alloc_indent(w, concat);
-		} else {
+		if (style(es->es_st, AlignAfterOpenBracket) == Align)
+			concat = doc_alloc_indent(1, concat);
+		else
 			concat = expr_doc_indent_parens(es, concat);
-		}
 		if (ex->ex_lhs != NULL)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		if (!noparens && ex->ex_tokens[1] != NULL)
@@ -804,7 +800,6 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct doc *lhs;
 	unsigned int lno;
-	int dolspace = 1;
 	int dospace, s;
 
 	if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
@@ -816,6 +811,8 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
 		return dc;
 	}
+
+	dospace = expr_doc_has_spaces(ex);
 
 	s = style(es->es_st, BreakBeforeBinaryOperators);
 	if (s == None) {
@@ -837,20 +834,26 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			/* Move operator to next line. */
 			token_add_optline(pv);
 		}
-		if (token_has_line(pv, 1))
-			dolspace = 0;
+
+		expr_doc(ex->ex_lhs, es, dc);
+		if (dospace)
+			doc_alloc(DOC_LINE, dc);
+		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+		doc_alloc(DOC_SOFTLINE, dc);
+		doc_token(ex->ex_tk, dc);
+		if (dospace)
+			doc_literal(" ", dc);
+		if (lno <= 1)
+			dc = doc_alloc_indent(expr_doc_width(es, dc), dc);
+		if (ex->ex_rhs != NULL)
+			dc = expr_doc(ex->ex_rhs, es, dc);
+		return dc;
 	}
 
 	lhs = expr_doc(ex->ex_lhs, es, dc);
-	dospace = expr_doc_has_spaces(ex);
-	if (dolspace) {
-		if (dospace)
-			doc_literal(" ", lhs);
-		doc_token(ex->ex_tk, lhs);
-	} else {
-		doc_token(ex->ex_tk, dc);
-	}
-
+	if (dospace)
+		doc_literal(" ", lhs);
+	doc_token(ex->ex_tk, lhs);
 	dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	if (dospace)
 		doc_alloc(DOC_LINE, dc);
