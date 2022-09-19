@@ -798,34 +798,21 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 static struct doc *
 expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	struct doc *lhs;
-	unsigned int lno;
-	int dospace, s;
+	const struct style *st = es->es_st;
 
 	if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
+		struct doc *lhs;
+
 		lhs = expr_doc(ex->ex_lhs, es, dc);
 		doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
 		if (ex->ex_rhs != NULL)
 			dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
-		return dc;
-	}
-
-	dospace = expr_doc_has_spaces(ex);
-
-	s = style(es->es_st, BreakBeforeBinaryOperators);
-	if (s == None) {
-		struct token *pv;
-
-		pv = token_prev(ex->ex_tk);
-		lno = ex->ex_tk->tk_lno - pv->tk_lno;
-		if (token_trim(pv) > 0 && lno == 1) {
-			/* Move operator to previous line. */
-			token_add_optline(ex->ex_tk);
-		}
-	} else if (s == NonAssignment) {
+	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
 		struct token *nx, *pv;
+		unsigned int lno;
+		int dospace;
 
 		pv = token_prev(ex->ex_tk);
 		nx = token_next(ex->ex_tk);
@@ -836,6 +823,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 
 		expr_doc(ex->ex_lhs, es, dc);
+		dospace = expr_doc_has_spaces(ex);
 		if (dospace)
 			doc_alloc(DOC_LINE, dc);
 		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
@@ -847,18 +835,30 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			dc = doc_alloc_indent(expr_doc_width(es, dc), dc);
 		if (ex->ex_rhs != NULL)
 			dc = expr_doc(ex->ex_rhs, es, dc);
-		return dc;
-	}
+	} else {
+		struct doc *lhs;
+		struct token *pv;
+		unsigned int lno;
+		int dospace;
 
-	lhs = expr_doc(ex->ex_lhs, es, dc);
-	if (dospace)
-		doc_literal(" ", lhs);
-	doc_token(ex->ex_tk, lhs);
-	dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	if (dospace)
-		doc_alloc(DOC_LINE, dc);
-	if (ex->ex_rhs != NULL)
-		dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+		pv = token_prev(ex->ex_tk);
+		lno = ex->ex_tk->tk_lno - pv->tk_lno;
+		if (token_trim(pv) > 0 && lno == 1) {
+			/* Move operator to previous line. */
+			token_add_optline(ex->ex_tk);
+		}
+
+		lhs = expr_doc(ex->ex_lhs, es, dc);
+		dospace = expr_doc_has_spaces(ex);
+		if (dospace)
+			doc_literal(" ", lhs);
+		doc_token(ex->ex_tk, lhs);
+		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+		if (dospace)
+			doc_alloc(DOC_LINE, dc);
+		if (ex->ex_rhs != NULL)
+			dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+	}
 
 	return dc;
 }
