@@ -123,6 +123,8 @@ static void		 expr_free(struct expr *);
 
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
@@ -588,60 +590,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		break;
 
-	case EXPR_BINARY: {
-		struct doc *lhs;
-		unsigned int lno;
-		int dolspace = 1;
-		int dospace, s;
-
-		s = style(es->es_st, BreakBeforeBinaryOperators);
-		if (s == None) {
-			struct token *pv;
-
-			pv = token_prev(ex->ex_tk);
-			lno = ex->ex_tk->tk_lno - pv->tk_lno;
-			if (token_trim(pv) > 0 && lno == 1) {
-				/* Move operator to previous line. */
-				token_add_optline(ex->ex_tk);
-			}
-		} else if (s == NonAssignment &&
-		    (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) == 0) {
-			struct token *nx, *pv;
-
-			pv = token_prev(ex->ex_tk);
-			nx = token_next(ex->ex_tk);
-			lno = nx->tk_lno - ex->ex_tk->tk_lno;
-			if (token_trim(ex->ex_tk) > 0 && lno == 1) {
-				/* Move operator to next line. */
-				token_add_optline(pv);
-			}
-			if (token_has_line(pv, 1))
-				dolspace = 0;
-		}
-
-		lhs = expr_doc(ex->ex_lhs, es, concat);
-		dospace = expr_doc_has_spaces(ex);
-		if (dolspace) {
-			if (dospace)
-				doc_literal(" ", lhs);
-			doc_token(ex->ex_tk, lhs);
-		} else {
-			doc_token(ex->ex_tk, concat);
-		}
-
-		if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
-			doc_literal(" ", concat);
-		} else {
-			concat = doc_alloc(DOC_CONCAT,
-			    doc_alloc(DOC_GROUP, concat));
-			if (dospace)
-				doc_alloc(DOC_LINE, concat);
-		}
-		if (ex->ex_rhs != NULL)
-			concat = expr_doc_soft(ex->ex_rhs, es, concat, 2);
-
+	case EXPR_BINARY:
+		concat = expr_doc_binary(ex, es, concat);
 		break;
-	}
 
 	case EXPR_TERNARY: {
 		struct doc *ternary;
@@ -846,6 +797,62 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	es->es_depth--;
 
 	return concat;
+}
+
+static struct doc *
+expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	struct doc *lhs;
+	unsigned int lno;
+	int dolspace = 1;
+	int dospace, s;
+
+	s = style(es->es_st, BreakBeforeBinaryOperators);
+	if (s == None) {
+		struct token *pv;
+
+		pv = token_prev(ex->ex_tk);
+		lno = ex->ex_tk->tk_lno - pv->tk_lno;
+		if (token_trim(pv) > 0 && lno == 1) {
+			/* Move operator to previous line. */
+			token_add_optline(ex->ex_tk);
+		}
+	} else if (s == NonAssignment &&
+	    (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) == 0) {
+		struct token *nx, *pv;
+
+		pv = token_prev(ex->ex_tk);
+		nx = token_next(ex->ex_tk);
+		lno = nx->tk_lno - ex->ex_tk->tk_lno;
+		if (token_trim(ex->ex_tk) > 0 && lno == 1) {
+			/* Move operator to next line. */
+			token_add_optline(pv);
+		}
+		if (token_has_line(pv, 1))
+			dolspace = 0;
+	}
+
+	lhs = expr_doc(ex->ex_lhs, es, dc);
+	dospace = expr_doc_has_spaces(ex);
+	if (dolspace) {
+		if (dospace)
+			doc_literal(" ", lhs);
+		doc_token(ex->ex_tk, lhs);
+	} else {
+		doc_token(ex->ex_tk, dc);
+	}
+
+	if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
+		doc_literal(" ", dc);
+	} else {
+		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+		if (dospace)
+			doc_alloc(DOC_LINE, dc);
+	}
+	if (ex->ex_rhs != NULL)
+		dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+
+	return dc;
 }
 
 static struct doc *
