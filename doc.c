@@ -577,9 +577,6 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
 			break;
 		case MUNGE:
-			/* Redundant if we're about to emit a hard line. */
-			if (st->st_newline)
-				break;
 			doc_print(dc, st, " ", 1, DOC_PRINT_FLAG_INDENT);
 			doc_trace(dc, st, "%s: refit %u -> %d", __func__,
 			    st->st_refit, 1);
@@ -811,13 +808,17 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 
 	/* Emit pending new line. */
 	if (st->st_newline) {
-		int space = len == 1 && str[0] == ' ';
+		int isspace = len == 1 && str[0] == ' ';
+
+		/* Redundant if a new line is about to be emitted. */
+		if (isspace)
+			return;
 
 		/* DOC_OPTLINE has the same semantics as DOC_LINE. */
 		st->st_refit = 1;
 		st->st_newline = 0;
 		doc_print(dc, st, "\n", 1, flags | DOC_PRINT_FLAG_NEWLINE);
-		if (isnewline || space)
+		if (isnewline)
 			return;
 	}
 
