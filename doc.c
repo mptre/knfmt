@@ -1185,16 +1185,7 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 		dd->dd_covers = -1;
 		return 0;
 
-	case DOC_CONCAT:
-	case DOC_GROUP:
-	case DOC_INDENT:
-	case DOC_DEDENT:
-	case DOC_OPTIONAL:
-	case DOC_ALIGN:
-	case DOC_LINE:
-	case DOC_SOFTLINE:
-	case DOC_OPTLINE:
-	case DOC_MUTE:
+	default:
 		break;
 	}
 
