@@ -1446,8 +1446,8 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	struct doc *concat, *dc, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *nx, *rbrace, *tk;
-	int doswitch = ps->flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
-	int doindent = !doswitch && pr->pr_simple.nstmt == 0;
+	int isswitch = ps->flags & PARSER_EXEC_STMT_BLOCK_FLAG_SWITCH;
+	int doindent = !isswitch && pr->pr_simple.nstmt == 0;
 	int nstmt = 0;
 	int error;
 
@@ -1485,7 +1485,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		token_trim(lbrace);
 	doc_token(lbrace, ps->head);
 
-	if (doswitch)
+	if (isswitch)
 		indent = dc;
 	else
 		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
