@@ -2038,9 +2038,9 @@ parser_exec_stmt_switch(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	if (lexer_peek_if(lx, TOKEN_SWITCH, &tk))
-		return parser_exec_stmt_kw_expr(pr, dc, tk, 0);
-	return parser_none(pr);
+	if (!lexer_peek_if(lx, TOKEN_SWITCH, &tk))
+		return parser_none(pr);
+	return parser_exec_stmt_kw_expr(pr, dc, tk, 0);
 }
 
 static int
@@ -2049,9 +2049,9 @@ parser_exec_stmt_while(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
-		return parser_exec_stmt_kw_expr(pr, dc, tk, 0);
-	return parser_none(pr);
+	if (!lexer_peek_if(lx, TOKEN_WHILE, &tk))
+		return parser_none(pr);
+	return parser_exec_stmt_kw_expr(pr, dc, tk, 0);
 }
 
 static int
@@ -2060,13 +2060,14 @@ parser_exec_stmt_break(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	if (lexer_if(lx, TOKEN_BREAK, &tk)) {
+	if (!lexer_peek_if(lx, TOKEN_BREAK, NULL))
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_BREAK, &tk))
 		doc_token(tk, dc);
-		if (lexer_expect(lx, TOKEN_SEMI, &tk))
-			doc_token(tk, dc);
-		return parser_good(pr);
-	}
-	return parser_none(pr);
+	if (lexer_expect(lx, TOKEN_SEMI, &tk))
+		doc_token(tk, dc);
+	return parser_good(pr);
 }
 
 static int
@@ -2075,13 +2076,14 @@ parser_exec_stmt_continue(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 
-	if (lexer_if(lx, TOKEN_CONTINUE, &tk)) {
+	if (!lexer_peek_if(lx, TOKEN_CONTINUE, &tk))
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_CONTINUE, &tk))
 		doc_token(tk, dc);
-		if (lexer_expect(lx, TOKEN_SEMI, &tk))
-			doc_token(tk, dc);
-		return parser_good(pr);
-	}
-	return parser_none(pr);
+	if (lexer_expect(lx, TOKEN_SEMI, &tk))
+		doc_token(tk, dc);
+	return parser_good(pr);
 }
 
 /*
@@ -2093,9 +2095,9 @@ parser_exec_stmt_cpp(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct token *ident;
 
-	if (lexer_peek_if(lx, TOKEN_IDENT, &ident))
-		return parser_exec_stmt_kw_expr(pr, dc, ident, 0);
-	return parser_none(pr);
+	if (!lexer_peek_if(lx, TOKEN_IDENT, &ident))
+		return parser_none(pr);
+	return parser_exec_stmt_kw_expr(pr, dc, ident, 0);
 }
 
 static int
@@ -2104,11 +2106,12 @@ parser_exec_stmt_semi(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct token *semi;
 
-	if (lexer_if(lx, TOKEN_SEMI, &semi)) {
+	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_SEMI, &semi))
 		doc_token(semi, dc);
-		return parser_good(pr);
-	}
-	return parser_none(pr);
+	return parser_good(pr);
 }
 
 static int
