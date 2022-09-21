@@ -1722,7 +1722,7 @@ static int
 parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct doc *concat;
+	struct doc *concat, *expr;
 	struct token *tk;
 
 	if (!lexer_if(lx, TOKEN_RETURN, &tk))
@@ -1740,13 +1740,15 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 			w = parser_width(pr, dc);
 		else
 			w = style(pr->pr_st, ContinuationIndentWidth);
-		error = parser_exec_expr(pr, concat, NULL, NULL,
+		error = parser_exec_expr(pr, concat, &expr, NULL,
 		    w, EXPR_EXEC_NOPARENS);
 		if (error & HALT)
 			return parser_fail(pr);
+	} else {
+		expr = concat;
 	}
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, concat);
+		doc_token(tk, expr);
 	return parser_good(pr);
 }
 
