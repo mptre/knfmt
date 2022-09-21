@@ -131,7 +131,7 @@ static int	doc_max1(const struct doc *, struct doc_state *, void *);
 static void	doc_state_init(struct doc_state *, int, unsigned int);
 static void	doc_state_reset(struct doc_state *);
 
-#define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_FLAG_DIFF))
+#define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_DIFF))
 
 static int		doc_diff_group_enter(const struct doc *,
     struct doc_state *);
@@ -157,15 +157,15 @@ static int		doc_diff_is_mute(const struct doc_state *);
 static void	__doc_diff_leave(const struct doc *, struct doc_state *,
     unsigned int, const char *);
 
-#define DOC_PRINT_FLAG_INDENT	0x00000001u
-#define DOC_PRINT_FLAG_NEWLINE	0x00000002u
-#define DOC_PRINT_FLAG_FORCE	0x00000004u
+#define DOC_PRINT_INDENT	0x00000001u
+#define DOC_PRINT_NEWLINE	0x00000002u
+#define DOC_PRINT_FORCE	0x00000004u
 
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
 
 #define doc_trace(dc, st, fmt, ...) do {				\
-	if ((st)->st_flags & DOC_EXEC_FLAG_TRACE)			\
+	if ((st)->st_flags & DOC_EXEC_TRACE)				\
 		__doc_trace((dc), (st), (fmt), __VA_ARGS__);		\
 } while (0)
 static void	__doc_trace(const struct doc *, const struct doc_state *,
@@ -173,13 +173,13 @@ static void	__doc_trace(const struct doc *, const struct doc_state *,
 	__attribute__((__format__(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
-	if ((st)->st_flags & DOC_EXEC_FLAG_TRACE)			\
+	if ((st)->st_flags & DOC_EXEC_TRACE)				\
 		__doc_trace_enter((dc), (st));				\
 } while (0)
 static void	__doc_trace_enter(const struct doc *, struct doc_state *);
 
 #define doc_trace_leave(dc, st) do {					\
-	if ((st)->st_flags & DOC_EXEC_FLAG_TRACE)			\
+	if ((st)->st_flags & DOC_EXEC_TRACE)				\
 		__doc_trace_leave((dc), (st));				\
 } while (0)
 static void	__doc_trace_leave(const struct doc *, struct doc_state *);
@@ -204,7 +204,7 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 	st.st_bf = bf;
 	st.st_lx = lx;
 	doc_exec1(dc, &st);
-	if ((flags & DOC_EXEC_FLAG_TRIM) && (flags & DOC_EXEC_FLAG_DIFF) == 0)
+	if ((flags & DOC_EXEC_TRIM) && (flags & DOC_EXEC_DIFF) == 0)
 		doc_trim_lines(dc, &st);
 	doc_state_reset(&st);
 	doc_diff_exit(dc, &st);
@@ -493,8 +493,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 
 	case DOC_LITERAL:
 		doc_diff_literal(dc, st);
-		doc_print(dc, st, dc->dc_str, dc->dc_len,
-		    DOC_PRINT_FLAG_INDENT);
+		doc_print(dc, st, dc->dc_str, dc->dc_len, DOC_PRINT_INDENT);
 		break;
 
 	case DOC_VERBATIM: {
@@ -574,10 +573,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_LINE:
 		switch (st->st_mode) {
 		case BREAK:
-			doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
+			doc_print(dc, st, "\n", 1, DOC_PRINT_INDENT);
 			break;
 		case MUNGE:
-			doc_print(dc, st, " ", 1, DOC_PRINT_FLAG_INDENT);
+			doc_print(dc, st, " ", 1, DOC_PRINT_INDENT);
 			doc_trace(dc, st, "%s: refit %u -> %d", __func__,
 			    st->st_refit, 1);
 			st->st_refit = 1;
@@ -588,7 +587,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_SOFTLINE:
 		switch (st->st_mode) {
 		case BREAK:
-			doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
+			doc_print(dc, st, "\n", 1, DOC_PRINT_INDENT);
 			break;
 		case MUNGE:
 			break;
@@ -596,7 +595,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_HARDLINE:
-		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_INDENT);
+		doc_print(dc, st, "\n", 1, DOC_PRINT_INDENT);
 		break;
 
 	case DOC_OPTLINE:
@@ -703,10 +702,10 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	 * When calculating the document width using doc_width(), everything is
 	 * expected to fit on a single line.
 	 */
-	if (st->st_flags & DOC_EXEC_FLAG_WIDTH)
+	if (st->st_flags & DOC_EXEC_WIDTH)
 		return 1;
 
-	if (st->st_flags & DOC_EXEC_FLAG_TRACE)
+	if (st->st_flags & DOC_EXEC_TRACE)
 		st->st_stats.s_nfits++;
 
 	if (st->st_newline) {
@@ -800,7 +799,7 @@ static void
 doc_print(const struct doc *dc, struct doc_state *st, const char *str,
     size_t len, unsigned int flags)
 {
-	int ismute = doc_is_mute(st) && (flags & DOC_PRINT_FLAG_FORCE) == 0;
+	int ismute = doc_is_mute(st) && (flags & DOC_PRINT_FORCE) == 0;
 	int isnewline = len == 1 && str[0] == '\n';
 
 	if (isnewline && ismute)
@@ -817,7 +816,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		/* DOC_OPTLINE has the same semantics as DOC_LINE. */
 		st->st_refit = 1;
 		st->st_newline = 0;
-		doc_print(dc, st, "\n", 1, flags | DOC_PRINT_FLAG_NEWLINE);
+		doc_print(dc, st, "\n", 1, flags | DOC_PRINT_NEWLINE);
 		if (isnewline)
 			return;
 	}
@@ -832,7 +831,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		 * Suppress optional line(s) while emitting a line. Mixing the
 		 * two results in odd formatting.
 		 */
-		if ((flags & DOC_PRINT_FLAG_NEWLINE) == 0 && st->st_optline) {
+		if ((flags & DOC_PRINT_NEWLINE) == 0 && st->st_optline) {
 			doc_trace(dc, st, "%s: optline %d -> 0",
 			    __func__, st->st_optline);
 			st->st_optline = 0;
@@ -847,7 +846,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		buffer_puts(st->st_bf, str, len);
 	doc_column(st, str, len);
 
-	if (isnewline && (flags & DOC_PRINT_FLAG_INDENT))
+	if (isnewline && (flags & DOC_PRINT_INDENT))
 		doc_indent(dc, st, st->st_indent.i_cur);
 }
 
@@ -1042,7 +1041,7 @@ doc_diff_mute_leave(const struct doc *dc, struct doc_state *st)
 	if (st->st_diff.muteline && st->st_muteline) {
 		doc_trace(dc, st, "%s: muteline %u", __func__,
 		    st->st_diff.muteline);
-		doc_print(dc, st, "\n", 1, DOC_PRINT_FLAG_FORCE);
+		doc_print(dc, st, "\n", 1, DOC_PRINT_FORCE);
 	}
 	st->st_diff.muteline = 0;
 }
@@ -1128,7 +1127,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	if (!lexer_get_lines(st->st_lx, beg, end, &str, &len))
 		return;
 
-	if (st->st_flags & DOC_EXEC_FLAG_TRACE) {
+	if (st->st_flags & DOC_EXEC_TRACE) {
 		char *s;
 
 		s = strnice(str, len);
@@ -1140,7 +1139,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	st->st_newline = 0;
 	st->st_muteline = 0;
 	doc_trim_spaces(dc, st);
-	doc_print(dc, st, str, len, DOC_PRINT_FLAG_FORCE);
+	doc_print(dc, st, str, len, DOC_PRINT_FORCE);
 	doc_indent(dc, st, st->st_indent.i_cur);
 }
 

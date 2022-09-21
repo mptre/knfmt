@@ -24,10 +24,10 @@ enum doc_type {
 	DOC_OPTIONAL,
 };
 
-#define DOC_EXEC_FLAG_DIFF	0x00000001u
-#define DOC_EXEC_FLAG_TRACE	0x00000002u
-#define DOC_EXEC_FLAG_WIDTH	0x00000004u
-#define DOC_EXEC_FLAG_TRIM	0x00000008u
+#define DOC_EXEC_DIFF	    0x00000001u
+#define DOC_EXEC_TRACE	    0x00000002u
+#define DOC_EXEC_WIDTH	    0x00000004u
+#define DOC_EXEC_TRIM	    0x00000008u
 
 void		doc_exec(const struct doc *, struct lexer *, struct buffer *,
     const struct style *, const struct options *, unsigned int);

@@ -95,9 +95,9 @@ static void	lexer_branch_leave(struct lexer *, struct token *,
 static void	lexer_branch_link(struct lexer *, struct token *,
     struct token *);
 
-#define LEXER_BRANCH_FLAG_BACKWARD	0x00000001u
-#define LEXER_BRANCH_FLAG_FORWARD	0x00000002u
-#define LEXER_BRANCH_FLAG_INTACT	0x00000004u
+#define LEXER_BRANCH_BACKWARD		0x00000001u
+#define LEXER_BRANCH_FORWARD		0x00000002u
+#define LEXER_BRANCH_INTACT		0x00000004u
 
 static struct token	*lexer_recover_branch(struct token *);
 static struct token	*lexer_recover_branch1(struct token *, unsigned int);
@@ -832,8 +832,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 			 */
 			ident = 0;
 			lexer_peek_enter(lx, &ss);
-			if ((flags &
-			    (LEXER_TYPE_FLAG_CAST | LEXER_TYPE_FLAG_ARG)) &&
+			if ((flags & (LEXER_TYPE_CAST | LEXER_TYPE_ARG)) &&
 			    ntokens == 0 && lexer_if(lx, TOKEN_IDENT, NULL) &&
 			    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
 			     lexer_if(lx, TOKEN_COMMA, NULL)))
@@ -846,7 +845,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 			}
 
 			/* Ensure this is not the identifier after the type. */
-			if ((flags & LEXER_TYPE_FLAG_CAST) == 0 &&
+			if ((flags & LEXER_TYPE_CAST) == 0 &&
 			    lexer_peek_if_type_ident(lx))
 				break;
 
@@ -876,7 +875,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 	lexer_peek_leave(lx, &s);
 
 	if (ntokens == 1 &&
-	    (flags & LEXER_TYPE_FLAG_ARG) == 0 &&
+	    (flags & LEXER_TYPE_ARG) == 0 &&
 	    (beg->tk_flags & (TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE))) {
 		/* A single qualifier or storage token cannot denote a type. */
 		peek = 0;
@@ -2059,10 +2058,10 @@ static struct token *
 lexer_recover_branch(struct token *tk)
 {
 	unsigned int flags[] = {
-		LEXER_BRANCH_FLAG_BACKWARD | LEXER_BRANCH_FLAG_INTACT,
-		LEXER_BRANCH_FLAG_FORWARD | LEXER_BRANCH_FLAG_INTACT,
-		LEXER_BRANCH_FLAG_BACKWARD,
-		LEXER_BRANCH_FLAG_FORWARD,
+		LEXER_BRANCH_BACKWARD | LEXER_BRANCH_INTACT,
+		LEXER_BRANCH_FORWARD | LEXER_BRANCH_INTACT,
+		LEXER_BRANCH_BACKWARD,
+		LEXER_BRANCH_FORWARD,
 	};
 	size_t nflags = sizeof(flags) / sizeof(flags[0]);
 	size_t i;
@@ -2089,7 +2088,7 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 			if (prefix->tk_type == TOKEN_CPP_ENDIF) {
 				struct token *pv = prefix->tk_branch.br_pv;
 
-				if ((flags & LEXER_BRANCH_FLAG_INTACT) &&
+				if ((flags & LEXER_BRANCH_INTACT) &&
 				    pv->tk_type == TOKEN_CPP_ELSE &&
 				    pv->tk_branch.br_pv == NULL)
 					return NULL;
@@ -2097,9 +2096,9 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 			}
 		}
 
-		if (flags & LEXER_BRANCH_FLAG_FORWARD)
+		if (flags & LEXER_BRANCH_FORWARD)
 			tk = token_next(tk);
-		else if (flags & LEXER_BRANCH_FLAG_BACKWARD)
+		else if (flags & LEXER_BRANCH_BACKWARD)
 			tk = token_prev(tk);
 		else
 			tk = NULL;

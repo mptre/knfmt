@@ -56,16 +56,16 @@ main(int argc, char *argv[])
 			clang_format = optarg;
 			break;
 		case 'D':
-			op.op_flags |= OPTIONS_FLAG_DIFFPARSE;
+			op.op_flags |= OPTIONS_DIFFPARSE;
 			break;
 		case 'd':
-			op.op_flags |= OPTIONS_FLAG_DIFF;
+			op.op_flags |= OPTIONS_DIFF;
 			break;
 		case 'i':
-			op.op_flags |= OPTIONS_FLAG_INPLACE;
+			op.op_flags |= OPTIONS_INPLACE;
 			break;
 		case 's':
-			op.op_flags |= OPTIONS_FLAG_SIMPLE;
+			op.op_flags |= OPTIONS_SIMPLE;
 			break;
 		case 'v':
 			if (options_trace_parse(&op, optarg))
@@ -77,13 +77,13 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
-	if ((op.op_flags & OPTIONS_FLAG_DIFFPARSE) && argc > 0)
+	if ((op.op_flags & OPTIONS_DIFFPARSE) && argc > 0)
 		usage();
 
-	if (op.op_flags & OPTIONS_FLAG_DIFF) {
+	if (op.op_flags & OPTIONS_DIFF) {
 		if (pledge("stdio rpath wpath cpath proc exec", NULL) == -1)
 			err(1, "pledge");
-	} else if (op.op_flags & OPTIONS_FLAG_INPLACE) {
+	} else if (op.op_flags & OPTIONS_INPLACE) {
 		if (pledge("stdio rpath wpath cpath fattr chown", NULL) == -1)
 			err(1, "pledge");
 	} else {
@@ -138,7 +138,7 @@ static int
 filelist(int argc, char **argv, struct files *files,
     const struct options *op)
 {
-	if (op->op_flags & OPTIONS_FLAG_DIFFPARSE)
+	if (op->op_flags & OPTIONS_DIFFPARSE)
 		return diff_parse(files, op);
 
 	if (argc == 0) {
@@ -189,9 +189,9 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 		goto out;
 	}
 
-	if (op->op_flags & OPTIONS_FLAG_DIFF)
+	if (op->op_flags & OPTIONS_DIFF)
 		error = filediff(src, dst, fe->fe_path);
-	else if (op->op_flags & OPTIONS_FLAG_INPLACE)
+	else if (op->op_flags & OPTIONS_INPLACE)
 		error = filewrite(src, dst, fe->fe_path);
 	else
 		printf("%.*s", (int)dst->bf_len, dst->bf_ptr);

@@ -20,8 +20,8 @@ struct stmt {
 	struct token	*st_lbrace;
 	struct token	*st_rbrace;
 	unsigned int	 st_flags;
-#define STMT_FLAG_BRACES		0x00000001u
-#define STMT_FLAG_IGNORE		0x00000002u
+#define STMT_BRACES			0x00000001u
+#define STMT_IGNORE			0x00000002u
 };
 
 struct simple_stmt {
@@ -69,8 +69,8 @@ simple_stmt_leave(struct simple_stmt *ss)
 	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 		struct stmt *st = &ss->ss_stmts[i];
 
-		if ((st->st_flags & STMT_FLAG_IGNORE) ||
-		    (st->st_flags & STMT_FLAG_BRACES) == 0)
+		if ((st->st_flags & STMT_IGNORE) ||
+		    (st->st_flags & STMT_BRACES) == 0)
 			continue;
 
 		doc_exec(st->st_root, lx, bf, ss->ss_st, ss->ss_op, 0);
@@ -89,8 +89,8 @@ simple_stmt_leave(struct simple_stmt *ss)
 		for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 			struct stmt *st = &ss->ss_stmts[i];
 
-			if ((st->st_flags & STMT_FLAG_IGNORE) ||
-			    (st->st_flags & STMT_FLAG_BRACES) == 0)
+			if ((st->st_flags & STMT_IGNORE) ||
+			    (st->st_flags & STMT_BRACES) == 0)
 				continue;
 
 			lexer_remove(lx, st->st_lbrace, 1);
@@ -101,8 +101,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 			struct stmt *st = &ss->ss_stmts[i];
 			struct token *pv, *tk;
 
-			if (st->st_flags &
-			    (STMT_FLAG_IGNORE | STMT_FLAG_BRACES))
+			if (st->st_flags & (STMT_IGNORE | STMT_BRACES))
 				continue;
 
 			pv = token_prev(st->st_lbrace);
@@ -149,13 +148,13 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
     struct token *rbrace, int indent)
 {
 	struct stmt *st;
-	unsigned int flags = STMT_FLAG_BRACES;
+	unsigned int flags = STMT_BRACES;
 
 	/* Make sure both braces are covered by a diff chunk. */
-	if ((ss->ss_op->op_flags & OPTIONS_FLAG_DIFFPARSE) &&
+	if ((ss->ss_op->op_flags & OPTIONS_DIFFPARSE) &&
 	    ((lbrace->tk_flags & TOKEN_FLAG_DIFF) == 0 ||
 	     (rbrace->tk_flags & TOKEN_FLAG_DIFF) == 0))
-		flags |= STMT_FLAG_IGNORE;
+		flags |= STMT_IGNORE;
 	st = simple_stmt_alloc(ss, indent, flags);
 	token_ref(lbrace);
 	st->st_lbrace = lbrace;

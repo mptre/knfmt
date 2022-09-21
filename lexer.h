@@ -98,8 +98,8 @@ void	lexer_peek_leave(struct lexer *, struct lexer_state *);
 
 int	lexer_peek(struct lexer *, struct token **);
 
-#define LEXER_TYPE_FLAG_CAST	0x00000001u
-#define LEXER_TYPE_FLAG_ARG	0x00000002u
+#define LEXER_TYPE_CAST		0x00000001u
+#define LEXER_TYPE_ARG		0x00000002u
 
 int	lexer_peek_if_type(struct lexer *, struct token **, unsigned int);
 int	lexer_if_type(struct lexer *, struct token **, unsigned int);

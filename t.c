@@ -225,11 +225,11 @@ main(int argc, char *argv[])
 	error |= test_lexer_peek_if_type("const STACK_OF(X509_EXTENSION)*",
 	    "const STACK_OF ( X509_EXTENSION ) *");
 
-	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_CAST,
+	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");
-	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_ARG,
+	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_ARG,
 	    "const foo_t)", "const");
-	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_FLAG_ARG,
+	error |= test_lexer_peek_if_type_flags(LEXER_TYPE_ARG,
 	    "size_t)", "size_t");
 
 	error |= test_lexer_read("<", "LESS");
@@ -412,7 +412,7 @@ context_alloc(void)
 		err(1, NULL);
 
 	options_init(&cx->cx_op);
-	cx->cx_op.op_flags |= OPTIONS_FLAG_TEST;
+	cx->cx_op.op_flags |= OPTIONS_TEST;
 	cx->cx_bf = buffer_alloc(128);
 	return cx;
 }

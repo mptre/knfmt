@@ -222,14 +222,14 @@ expr_exec(const struct expr_exec_arg *ea)
 	optional = doc_alloc(DOC_OPTIONAL, dc);
 	if (ea->indent > 0) {
 		indent = doc_alloc_indent(ea->indent, optional);
-		if ((ea->flags & EXPR_EXEC_FLAG_INDENT_ONCE) == 0)
+		if ((ea->flags & EXPR_EXEC_INDENT_ONCE) == 0)
 			es.es_indent = es.es_ea.indent;
 	} else {
 		indent = doc_alloc(DOC_CONCAT, optional);
 	}
-	if (ea->flags & EXPR_EXEC_FLAG_SOFTLINE)
+	if (ea->flags & EXPR_EXEC_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
-	if (ea->flags & EXPR_EXEC_FLAG_HARDLINE) {
+	if (ea->flags & EXPR_EXEC_HARDLINE) {
 		doc_alloc(DOC_HARDLINE, indent);
 		/* Needed since the hard line will disable optional line(s). */
 		indent = doc_alloc(DOC_OPTIONAL, indent);
@@ -409,8 +409,7 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 			if (lexer_back(es->es_lx, &tk))
 				ex->ex_tokens[0] = tk;	/* ( */
 			/* Let the parser emit the type. */
-			ex->ex_lhs = expr_exec_recover(es,
-			    EXPR_EXEC_FLAG_CAST);
+			ex->ex_lhs = expr_exec_recover(es, EXPR_EXEC_CAST);
 			if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
 				ex->ex_tokens[1] = tk;	/* ) */
 			ex->ex_rhs = expr_exec1(es, PC(es->es_er->er_pc));
@@ -419,13 +418,13 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 
 		ex = expr_alloc(EXPR_PARENS, es);
 		ex->ex_lhs = expr_exec1(es, PC0);
-	} else if (es->es_flags & EXPR_EXEC_FLAG_ASM) {
+	} else if (es->es_flags & EXPR_EXEC_ASM) {
 		ex = expr_alloc(EXPR_ASM, es);
 		ex->ex_lhs = lhs;
 		/* Nested parenthesis must be handled as usual. */
-		es->es_flags &= ~EXPR_EXEC_FLAG_ASM;
+		es->es_flags &= ~EXPR_EXEC_ASM;
 		ex->ex_rhs = expr_exec1(es, PC0);
-		es->es_flags |= EXPR_EXEC_FLAG_ASM;
+		es->es_flags |= EXPR_EXEC_ASM;
 	} else {
 		ex = expr_alloc(EXPR_CALL, es);
 		ex->ex_lhs = lhs;
@@ -579,7 +578,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	 * Testing backdoor wrapping each expression in parenthesis used for
 	 * validation of operator precedence.
 	 */
-	if ((es->es_op->op_flags & OPTIONS_FLAG_TEST) &&
+	if ((es->es_op->op_flags & OPTIONS_TEST) &&
 	    ex->ex_type != EXPR_PARENS)
 		doc_literal("(", concat);
 
@@ -637,8 +636,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		int noparens;
 
 		noparens = es->es_depth == 1 &&
-		    (es->es_op->op_flags & OPTIONS_FLAG_SIMPLE) &&
-		    (es->es_flags & EXPR_EXEC_FLAG_NOPARENS);
+		    (es->es_op->op_flags & OPTIONS_SIMPLE) &&
+		    (es->es_flags & EXPR_EXEC_NOPARENS);
 		if (!noparens && ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* ( */
 		if (style(es->es_st, AlignAfterOpenBracket) == Align)
@@ -788,7 +787,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	}
 
 	/* Testing backdoor, see above. */
-	if ((es->es_op->op_flags & OPTIONS_FLAG_TEST) &&
+	if ((es->es_op->op_flags & OPTIONS_TEST) &&
 	    ex->ex_type != EXPR_PARENS)
 		doc_literal(")", concat);
 
@@ -974,7 +973,7 @@ iscast(struct expr_state *es)
 	int cast = 0;
 
 	lexer_peek_enter(es->es_lx, &s);
-	if (lexer_if_type(es->es_lx, NULL, LEXER_TYPE_FLAG_CAST) &&
+	if (lexer_if_type(es->es_lx, NULL, LEXER_TYPE_CAST) &&
 	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
 	    expr_peek(&es->es_ea))
 		cast = 1;
