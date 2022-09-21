@@ -1,5 +1,6 @@
 /*
  * AlignAfterOpenBracket: Align
+ * AlignOperands: Align
  * BreakBeforeBinaryOperators: NonAssignment
  * ContinuationIndentWidth: 8
  * UseTab: Never

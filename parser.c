@@ -681,7 +681,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 			flags |= EXPR_EXEC_HARDLINE;
 
 		lexer_peek_until_loose(lx, TOKEN_COMMA, arg->semi, &stop);
-		if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
+		if (style(pr->pr_st, AlignOperands) == Align) {
 			flags |= EXPR_EXEC_INDENT_ONCE;
 			w = parser_width(pr, arg->width);
 		} else {
@@ -1600,7 +1600,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, loop);
 
-	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+	if (style(pr->pr_st, AlignOperands) == Align)
 		w = parser_width(pr, dc);
 	else
 		w = style(pr->pr_st, ContinuationIndentWidth);
@@ -1736,7 +1736,7 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 		unsigned int w;
 
 		doc_literal(" ", concat);
-		if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+		if (style(pr->pr_st, AlignOperands) == Align)
 			w = parser_width(pr, dc);
 		else
 			w = style(pr->pr_st, ContinuationIndentWidth);
@@ -1803,7 +1803,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 
-	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+	if (style(pr->pr_st, AlignOperands) == Align)
 		w = 0;
 	else
 		w = style(pr->pr_st, ContinuationIndentWidth);
@@ -1846,7 +1846,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	 * expression since we want to fit everything until the following
 	 * statement on a single line.
 	 */
-	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+	if (style(pr->pr_st, AlignOperands) == Align)
 		w = parser_width(pr, dc);
 	else
 		w = style(pr->pr_st, ContinuationIndentWidth);
@@ -2282,7 +2282,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			unsigned int w;
 
 			doc_token(lparen, dc);
-			if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+			if (style(pr->pr_st, AlignOperands) == Align)
 				w = parser_width(pr, dc);
 			else
 				w = style(pr->pr_st, ContinuationIndentWidth);

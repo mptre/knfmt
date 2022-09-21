@@ -1,5 +1,6 @@
 /*
  * AlignAfterOpenBracket: Align
+ * AlignOperands: Align
  * ContinuationIndentWidth: 8
  * UseTab: Never
  */

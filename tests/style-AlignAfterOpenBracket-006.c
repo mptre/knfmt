@@ -1,5 +1,6 @@
 /*
  * AlignAfterOpenBracket: Align
+ * AlignOperands: Align
  */
 
 void (*func)(int,

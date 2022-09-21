@@ -14,6 +14,11 @@ enum {
 	Left,
 	Right,
 
+	AlignOperands,
+/*	Align,			*/
+/*	DontAlign,		*/
+	AlignAfterOperator,
+
 	AlwaysBreakAfterReturnType,
 	None,
 	All,

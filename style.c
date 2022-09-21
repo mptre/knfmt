@@ -70,6 +70,7 @@ style_init(void)
 		K(Align,				"Align"),
 		K(AlignAfterOpenBracket,		"AlignAfterOpenBracket"),
 		K(AlignEscapedNewlines,			"AlignEscapedNewlines"),
+		K(AlignOperands,			"AlignOperands"),
 		K(AlignWithSpaces,			"AlignWithSpaces"),
 		K(All,					"All"),
 		K(AllDefinitions,			"AllDefinitions"),
@@ -170,6 +171,7 @@ style_defaults(struct style *st)
 {
 	st->st_options[AlignAfterOpenBracket] = DontAlign;
 	st->st_options[AlignEscapedNewlines] = Right;
+	st->st_options[AlignOperands] = DontAlign;
 	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
 	st->st_options[BreakBeforeBinaryOperators] = None;
 	st->st_options[ColumnLimit] = 80;
@@ -235,6 +237,18 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		     lexer_if(lx, AlwaysBreak, &val) ||
 		     lexer_if(lx, BlockIndent, &val))) {
 			st->st_options[key->tk_type] = val->tk_type;
+		} else if (lexer_if(lx, AlignOperands, &key) &&
+		    (lexer_if(lx, Align, &val) ||
+		     lexer_if(lx, DontAlign, &val) ||
+		     lexer_if(lx, AlignAfterOperator, &val) ||
+		     lexer_if(lx, True, &val) ||
+		     lexer_if(lx, False, &val))) {
+			if (val->tk_type == True)
+				st->st_options[key->tk_type] = Align;
+			else if (val->tk_type == False)
+				st->st_options[key->tk_type] = DontAlign;
+			else
+				st->st_options[key->tk_type] = val->tk_type;
 		} else if (lexer_if(lx, AlwaysBreakAfterReturnType, &key) &&
 		    (lexer_if(lx, None, &val) ||
 		     lexer_if(lx, All, &val) ||
