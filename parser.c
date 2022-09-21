@@ -1768,7 +1768,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	struct doc *expr = NULL;
 	struct token *ident, *lparen, *nx, *rparen, *semi;
 	int peek = 0;
-	int error;
+	int error, w;
 
 	if (lexer_peek_if_type(lx, NULL, 0))
 		return parser_none(pr);
@@ -1801,8 +1801,11 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 
-	error = parser_exec_expr(pr, dc, &expr, NULL,
-	    style(pr->pr_st, ContinuationIndentWidth), 0);
+	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
+		w = 0;
+	else
+		w = style(pr->pr_st, ContinuationIndentWidth);
+	error = parser_exec_expr(pr, dc, &expr, NULL, w, 0);
 	if (error & HALT)
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))

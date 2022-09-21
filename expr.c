@@ -586,6 +586,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	switch (ex->ex_type) {
 	case EXPR_UNARY:
 		doc_token(ex->ex_tk, concat);
+		if (style(es->es_st, AlignAfterOpenBracket) == Align)
+			concat = doc_alloc_indent(expr_doc_width(es, concat),
+			    concat);
 		if (ex->ex_lhs != NULL)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		break;
@@ -680,8 +683,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 			int w;
 
 			if (lparen == NULL || !token_has_line(lparen, 1)) {
-				w = expr_doc_width(es, es->es_dc) -
-				    es->es_indent;
+				w = expr_doc_width(es, group);
 				concat = doc_alloc_indent(w, concat);
 			} else {
 				w = -es->es_ea.indent +
@@ -807,6 +809,18 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
+		if (style(st, AlignAfterOpenBracket) == Align) {
+			int w;
+
+			if (!token_has_line(ex->ex_tk, 1)) {
+				w = expr_doc_width(es, dc);
+				dc = doc_alloc_indent(w, dc);
+			} else {
+				w = -es->es_ea.indent +
+				    style(st, ContinuationIndentWidth);
+				dc = doc_alloc_indent(w, dc);
+			}
+		}
 		if (ex->ex_rhs != NULL)
 			dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
