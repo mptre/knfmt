@@ -10,7 +10,7 @@ enum {
 	BlockIndent,
 
 	AlignEscapedNewlines,
-/*	DontAlign,	*/
+/*	DontAlign,		*/
 	Left,
 	Right,
 
@@ -24,20 +24,20 @@ enum {
 	BraceWrapping,
 
 	BreakBeforeBinaryOperators,
-/*	None,	*/
+/*	None,			*/
 	NonAssignment,
-/*	All,	*/
+/*	All,			*/
 
 	ColumnLimit,
-/*	Integer,	*/
+/*	Integer,		*/
 
 	ContinuationIndentWidth,
-/*	Integer,	*/
+/*	Integer,		*/
 
 	IncludeCategories,
 
 	IndentWidth,
-/*	Integer,	*/
+/*	Integer,		*/
 
 	UseTab,
 	Never,
