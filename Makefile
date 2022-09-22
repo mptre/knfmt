@@ -336,6 +336,7 @@ DISTFILES+=	tests/style-AlignOperands-002.c
 DISTFILES+=	tests/style-AlignOperands-003.c
 DISTFILES+=	tests/style-AlignOperands-004.c
 DISTFILES+=	tests/style-AlignOperands-004.ok
+DISTFILES+=	tests/style-AlignOperands-005.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.ok
 DISTFILES+=	tests/style-BreakBeforeBinaryOperators-001.c

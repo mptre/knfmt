@@ -687,8 +687,10 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 		 * Honor hard line after assignment which must be emitted inside
 		 * the expression document to get indentation right.
 		 */
-		if (token_has_line(assign, 1))
+		if (token_has_line(assign, 1)) {
 			flags |= EXPR_EXEC_HARDLINE;
+			doalign = 0;
+		}
 
 		lexer_peek_until_loose(lx, TOKEN_COMMA, arg->semi, &stop);
 		if (doalign && style(pr->pr_st, AlignOperands) == Align) {
