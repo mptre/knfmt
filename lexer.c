@@ -1732,6 +1732,7 @@ lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
 	buffer_printf(bf, "expected type %s got %s\n", exp,
 	    got != NULL ? got : "(null)");
 	free(got);
+	free(exp);
 	error_end(lx->lx_er);
 }
 
