@@ -695,8 +695,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 			flags |= EXPR_EXEC_INDENT_ONCE;
 			w = parser_width(pr, arg->width);
 		} else {
-			w = style(pr->pr_st,
-			    ContinuationIndentWidth);
+			w = style(pr->pr_st, ContinuationIndentWidth);
 		}
 		error = parser_exec_expr(pr, dedent, NULL, stop, w, flags);
 		if (error & HALT)
