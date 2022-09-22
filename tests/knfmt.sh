@@ -143,7 +143,7 @@ error-*)
 	testcase -e -q "$_abs" -- -s "$@"
 	;;
 simple-*|../*)
-	testcase "$_abs" -- -s -vls "$@"
+	testcase "$_abs" -- -s -vl "$@"
 	;;
 style-error-*)
 	testcase -c -e "$_abs" -- -vls "$@"
