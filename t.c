@@ -21,38 +21,38 @@
 struct context;
 
 #define test_expr_exec(a, b)						\
-	__test_expr_exec(cx, (a), (b), "test_expr_exec", __LINE__);	\
+	test_expr_exec0(cx, (a), (b), "test_expr_exec", __LINE__);	\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
-static int	__test_expr_exec(struct context *, const char *, const char *,
+static int	test_expr_exec0(struct context *, const char *, const char *,
     const char *, int);
 
 #define test_lexer_peek_if_type(a, b)					\
-	__test_lexer_peek_if_type(cx, (a), (b), 0,			\
+	test_lexer_peek_if_type0(cx, (a), (b), 0,			\
 		"test_lexer_peek_if_type", __LINE__);			\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
 #define test_lexer_peek_if_type_flags(a, b, c)				\
-	__test_lexer_peek_if_type(cx, (b), (c), (a),			\
+	test_lexer_peek_if_type0(cx, (b), (c), (a),			\
 		"test_lexer_peek_if_type", __LINE__);			\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
-static int	__test_lexer_peek_if_type(struct context *, const char *,
+static int	test_lexer_peek_if_type0(struct context *, const char *,
     const char *, unsigned int, const char *, int);
 
 #define test_lexer_read(a, b)						\
-	__test_lexer_read(cx, (a), (b), "test_lexer_read",		\
+	test_lexer_read0(cx, (a), (b), "test_lexer_read",		\
 		__LINE__);						\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
-static int	__test_lexer_read(struct context *, const char *, const char *,
+static int	test_lexer_read0(struct context *, const char *, const char *,
     const char *, int);
 
 #define test_strwidth(a, b, c)						\
-	__test_strwidth((a), (b), (c), "test_strwidth", __LINE__);	\
+	test_strwidth0((a), (b), (c), "test_strwidth", __LINE__);	\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
-static int	__test_strwidth(const char *, size_t, size_t,
+static int	test_strwidth0(const char *, size_t, size_t,
     const char *, int);
 
 struct context {
@@ -257,7 +257,7 @@ out:
 }
 
 static int
-__test_expr_exec(struct context *cx, const char *src, const char *exp,
+test_expr_exec0(struct context *cx, const char *src, const char *exp,
     const char *fun, int lno)
 {
 	struct buffer *bf = NULL;
@@ -301,7 +301,7 @@ out:
 }
 
 static int
-__test_lexer_peek_if_type(struct context *cx, const char *src, const char *exp,
+test_lexer_peek_if_type0(struct context *cx, const char *src, const char *exp,
     unsigned int flags,
     const char *fun, int lno)
 {
@@ -346,7 +346,7 @@ out:
 }
 
 static int
-__test_lexer_read(struct context *cx, const char *src, const char *exp,
+test_lexer_read0(struct context *cx, const char *src, const char *exp,
     const char *fun, int lno)
 {
 	struct buffer *bf = NULL;
@@ -388,7 +388,7 @@ __test_lexer_read(struct context *cx, const char *src, const char *exp,
 }
 
 static int
-__test_strwidth(const char *str, size_t pos, size_t exp,
+test_strwidth0(const char *str, size_t pos, size_t exp,
     const char *fun, int lno)
 {
 	size_t act;

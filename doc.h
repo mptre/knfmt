@@ -41,8 +41,8 @@ void		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, int);
 
 #define doc_alloc(a, b) \
-	__doc_alloc((a), (b), 0, __func__, __LINE__)
-struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
+	doc_alloc0((a), (b), 0, __func__, __LINE__)
+struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
     int);
 
 /*
@@ -55,22 +55,22 @@ struct doc	*__doc_alloc(enum doc_type, struct doc *, int, const char *,
 #define DOC_INDENT_FORCE	222	/* force indentation */
 
 #define doc_alloc_indent(a, b) \
-	__doc_alloc_indent(DOC_INDENT, (a), (b), __func__, __LINE__)
+	doc_alloc_indent0(DOC_INDENT, (a), (b), __func__, __LINE__)
 #define doc_alloc_dedent(a) \
-	__doc_alloc_indent(DOC_DEDENT, 0, (a), __func__, __LINE__)
-struct doc	*__doc_alloc_indent(enum doc_type, int, struct doc *,
+	doc_alloc_indent0(DOC_DEDENT, 0, (a), __func__, __LINE__)
+struct doc	*doc_alloc_indent0(enum doc_type, int, struct doc *,
     const char *, int);
 
 #define doc_literal(a, b) \
-	__doc_literal((a), 0, (b), __func__, __LINE__)
+	doc_literal0((a), 0, (b), __func__, __LINE__)
 #define doc_literal_n(a, b, c) \
-	__doc_literal((a), (b), (c), __func__, __LINE__)
-struct doc	*__doc_literal(const char *, size_t, struct doc *,
+	doc_literal0((a), (b), (c), __func__, __LINE__)
+struct doc	*doc_literal0(const char *, size_t, struct doc *,
     const char *, int);
 
 #define doc_token(a, b) \
-	__doc_token((a), (b), DOC_LITERAL, __func__, __LINE__)
-struct doc	*__doc_token(const struct token *, struct doc *, enum doc_type,
+	doc_token0((a), (b), DOC_LITERAL, __func__, __LINE__)
+struct doc	*doc_token0(const struct token *, struct doc *, enum doc_type,
     const char *, int);
 
 int	doc_max(const struct doc *);

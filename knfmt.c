@@ -19,8 +19,6 @@
 #include "style.h"
 #include "vector.h"
 
-#define _PATH_DIFF	"/usr/bin/diff"
-
 static __dead void	usage(void);
 
 static int	filelist(int, char **, struct files *, const struct options *);
@@ -229,6 +227,7 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 	}
 	if (pid == 0) {
 		char label[PATH_MAX];
+		const char *diff = "/usr/bin/diff";
 		ssize_t siz = sizeof(label);
 		int n;
 
@@ -236,7 +235,7 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 		if (n < 0 || n >= siz)
 			errc(1, ENAMETOOLONG, "%s: label", __func__);
 
-		execl(_PATH_DIFF, _PATH_DIFF, "-u", "-L", label, "-L", path,
+		execl(diff, diff, "-u", "-L", label, "-L", path,
 		    srcpath, dstpath, NULL);
 		_exit(1);
 	}

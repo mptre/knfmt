@@ -153,8 +153,8 @@ static int		doc_diff_covers(const struct doc *, struct doc_state *,
 static int		doc_diff_is_mute(const struct doc_state *);
 
 #define doc_diff_leave(a, b, c) \
-	__doc_diff_leave((a), (b), (c), __func__)
-static void	__doc_diff_leave(const struct doc *, struct doc_state *,
+	doc_diff_leave0((a), (b), (c), __func__)
+static void	doc_diff_leave0(const struct doc *, struct doc_state *,
     unsigned int, const char *);
 
 #define DOC_PRINT_INDENT	0x00000001u
@@ -166,23 +166,23 @@ static void	doc_print(const struct doc *, struct doc_state *, const char *,
 
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
-		__doc_trace((dc), (st), (fmt), __VA_ARGS__);		\
+		doc_trace0((dc), (st), (fmt), __VA_ARGS__);		\
 } while (0)
-static void	__doc_trace(const struct doc *, const struct doc_state *,
+static void	doc_trace0(const struct doc *, const struct doc_state *,
     const char *, ...)
 	__attribute__((__format__(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
-		__doc_trace_enter((dc), (st));				\
+		doc_trace_enter0((dc), (st));				\
 } while (0)
-static void	__doc_trace_enter(const struct doc *, struct doc_state *);
+static void	doc_trace_enter0(const struct doc *, struct doc_state *);
 
 #define doc_trace_leave(dc, st) do {					\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
-		__doc_trace_leave((dc), (st));				\
+		doc_trace_leave0((dc), (st));				\
 } while (0)
-static void	__doc_trace_leave(const struct doc *, struct doc_state *);
+static void	doc_trace_leave0(const struct doc *, struct doc_state *);
 
 static char		*docstr(const struct doc *, char *, size_t);
 static const char	*intstr(const struct doc *);
@@ -314,7 +314,7 @@ doc_append_before(struct doc *dc, struct doc *before)
 }
 
 struct doc *
-__doc_alloc(enum doc_type type, struct doc *parent, int val, const char *fun,
+doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
     int lno)
 {
 	struct doc *dc;
@@ -335,41 +335,41 @@ __doc_alloc(enum doc_type type, struct doc *parent, int val, const char *fun,
 }
 
 struct doc *
-__doc_alloc_indent(enum doc_type type, int val, struct doc *dc,
+doc_alloc_indent0(enum doc_type type, int val, struct doc *dc,
     const char *fun, int lno)
 {
 	struct doc *indent;
 
-	indent = __doc_alloc(type, dc, val, fun, lno);
-	return __doc_alloc(DOC_CONCAT, indent, 0, fun, lno);
+	indent = doc_alloc0(type, dc, val, fun, lno);
+	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
 }
 
 struct doc *
-__doc_literal(const char *str, size_t len, struct doc *dc, const char *fun,
+doc_literal0(const char *str, size_t len, struct doc *dc, const char *fun,
     int lno)
 {
 	struct doc *literal;
 
-	literal = __doc_alloc(DOC_LITERAL, dc, 0, fun, lno);
+	literal = doc_alloc0(DOC_LITERAL, dc, 0, fun, lno);
 	literal->dc_str = str;
 	literal->dc_len = len > 0 ? len : strlen(str);
 	return literal;
 }
 
 struct doc *
-__doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
+doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
     const char *fun, int lno)
 {
 	struct doc *token;
 	struct token *tmp;
 
 	if (tk->tk_flags & TOKEN_FLAG_UNMUTE)
-		__doc_alloc(DOC_MUTE, dc, -1, fun, lno);
+		doc_alloc0(DOC_MUTE, dc, -1, fun, lno);
 
 	TAILQ_FOREACH(tmp, &tk->tk_prefixes, tk_entry)
-		__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
+		doc_token0(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 
-	token = __doc_alloc(type, dc, 0, fun, lno);
+	token = doc_alloc0(type, dc, 0, fun, lno);
 	/* Must be mutable for reference counting. */
 	token->dc_tk = (struct token *)tk;
 	token_ref(token->dc_tk);
@@ -380,13 +380,13 @@ __doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 		if (tmp->tk_flags & TOKEN_FLAG_OPTLINE)
 			doc_alloc(DOC_OPTLINE, dc);
 		else if ((tmp->tk_flags & TOKEN_FLAG_OPTSPACE) == 0)
-			__doc_token(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
+			doc_token0(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
 
 	/* Mute if we're about to branch. */
 	tmp = token_next(tk);
 	if (tmp != NULL && token_is_branch(tmp))
-		__doc_alloc(DOC_MUTE, dc, 1, fun, lno);
+		doc_alloc0(DOC_MUTE, dc, 1, fun, lno);
 
 	return token;
 }
@@ -1203,7 +1203,7 @@ doc_diff_is_mute(const struct doc_state *st)
 }
 
 static void
-__doc_diff_leave(const struct doc *dc, struct doc_state *st, unsigned int end,
+doc_diff_leave0(const struct doc *dc, struct doc_state *st, unsigned int end,
     const char *fun)
 {
 	if (end == 0)
@@ -1310,7 +1310,7 @@ doc_state_reset(struct doc_state *st)
 }
 
 static void
-__doc_trace(const struct doc *UNUSED(dc), const struct doc_state *st,
+doc_trace0(const struct doc *UNUSED(dc), const struct doc_state *st,
     const char *fmt, ...)
 {
 	char buf[128];
@@ -1330,7 +1330,7 @@ __doc_trace(const struct doc *UNUSED(dc), const struct doc_state *st,
 }
 
 static void
-__doc_trace_enter(const struct doc *dc, struct doc_state *st)
+doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 {
 	char buf[128];
 	unsigned int depth = st->st_depth;
@@ -1408,7 +1408,7 @@ __doc_trace_enter(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-__doc_trace_leave(const struct doc *dc, struct doc_state *st)
+doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 {
 	char buf[128];
 	unsigned int depth = st->st_depth;

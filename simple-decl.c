@@ -91,9 +91,9 @@ static unsigned int	nstars(const struct token_range *);
 
 #define simple_trace(sd, fmt, ...) do {					\
 	if (trace((sd)->sd_op, 'S'))					\
-		__simple_trace(__func__, (fmt), __VA_ARGS__);		\
+		simple_trace0(__func__, (fmt), __VA_ARGS__);		\
 } while (0)
-static void	__simple_trace(const char *, const char *, ...)
+static void	simple_trace0(const char *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
 
 struct simple_decl *
@@ -528,7 +528,7 @@ nstars(const struct token_range *tr)
 }
 
 static void
-__simple_trace(const char *fun, const char *fmt, ...)
+simple_trace0(const char *fun, const char *fmt, ...)
 {
 	va_list ap;
 

@@ -75,7 +75,7 @@ ruler_free(struct ruler *rl)
  * in order to insert the alignment in the document.
  */
 void
-__ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
+ruler_insert0(struct ruler *rl, const struct token *tk, struct doc *dc,
     unsigned int col, unsigned int len, unsigned int nspaces, const char *fun,
     int lno)
 {
@@ -95,7 +95,7 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
 	if (rd == NULL)
 		err(1, NULL);
 	rd->rd_indent = 1;
-	rd->rd_dc = __doc_alloc(DOC_ALIGN, dc, rd->rd_indent, fun, lno);
+	rd->rd_dc = doc_alloc0(DOC_ALIGN, dc, rd->rd_indent, fun, lno);
 	rd->rd_len = len;
 	rd->rd_nspaces = nspaces;
 
@@ -121,7 +121,7 @@ __ruler_insert(struct ruler *rl, const struct token *tk, struct doc *dc,
  * caller is expected to free it.
  */
 struct doc *
-__ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
+ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
     int indent, unsigned int extra, const char *fun, int lno)
 {
 	struct ruler_column *rc;
@@ -146,13 +146,13 @@ __ruler_indent(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
 	ri->ri_indent = indent;
 	ri->ri_extra = extra;
-	ri->ri_dc = __doc_alloc(DOC_INDENT, dc, 0, fun, lno);
+	ri->ri_dc = doc_alloc0(DOC_INDENT, dc, 0, fun, lno);
 	if (cookie != NULL)
 		*cookie = ri;
 	return ri->ri_dc;
 
 err:
-	return __doc_alloc(DOC_CONCAT, dc, 0, fun, lno);
+	return doc_alloc0(DOC_CONCAT, dc, 0, fun, lno);
 }
 
 void

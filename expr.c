@@ -133,8 +133,8 @@ static unsigned int	 expr_doc_width(struct expr_state *,
     const struct doc *);
 
 #define expr_doc_soft(a, b, c, d) \
-	__expr_doc_soft((a), (b), (c), (d), __func__, __LINE__)
-static struct doc	*__expr_doc_soft(struct expr *, struct expr_state *,
+	expr_doc_soft0((a), (b), (c), (d), __func__, __LINE__)
+static struct doc	*expr_doc_soft0(struct expr *, struct expr_state *,
     struct doc *, int, const char *, int);
 
 static void	expr_state_reset(struct expr_state *);
@@ -928,14 +928,14 @@ expr_doc_width(struct expr_state *es, const struct doc *dc)
  * nested under the same expression.
  */
 static struct doc *
-__expr_doc_soft(struct expr *ex, struct expr_state *es, struct doc *dc,
+expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
     int weight, const char *fun, int lno)
 {
 	struct doc *concat, *parent, *softline;
 
-	dc = __doc_alloc(DOC_CONCAT, __doc_alloc(DOC_GROUP, dc, 0, fun, lno),
+	dc = doc_alloc0(DOC_CONCAT, doc_alloc0(DOC_GROUP, dc, 0, fun, lno),
 	    0, fun, lno);
-	softline = __doc_alloc(DOC_SOFTLINE, dc, weight, fun, lno);
+	softline = doc_alloc0(DOC_SOFTLINE, dc, weight, fun, lno);
 	parent = doc_alloc(DOC_CONCAT, dc);
 	concat = expr_doc(ex, es, parent);
 	/*

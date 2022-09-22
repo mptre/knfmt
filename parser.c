@@ -186,8 +186,8 @@ static void		parser_token_trim(struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
 #define parser_fail(a) \
-	__parser_fail((a), __func__, __LINE__)
-static int	__parser_fail(struct parser *, const char *, int);
+	parser_fail0((a), __func__, __LINE__)
+static int	parser_fail0(struct parser *, const char *, int);
 
 static int	parser_get_error(const struct parser *);
 static int	parser_good(const struct parser *);
@@ -2715,7 +2715,7 @@ parser_peek_line(struct parser *pr, const struct token *stop)
 }
 
 static int
-__parser_fail(struct parser *pr, const char *fun, int lno)
+parser_fail0(struct parser *pr, const char *fun, int lno)
 {
 	struct buffer *bf;
 	struct token *tk;

@@ -89,8 +89,8 @@ struct token	*lexer_move_before(struct lexer *, struct token *,
 void		 lexer_remove(struct lexer *, struct token *, int);
 
 #define lexer_expect(a, b, c) \
-	__lexer_expect((a), (b), (c), __func__, __LINE__)
-int	__lexer_expect(struct lexer *, int, struct token **,
+	lexer_expect0((a), (b), (c), __func__, __LINE__)
+int	lexer_expect0(struct lexer *, int, struct token **,
     const char *, int);
 
 void	lexer_peek_enter(struct lexer *, struct lexer_state *);

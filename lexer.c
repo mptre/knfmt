@@ -104,10 +104,10 @@ static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (trace((lx)->lx_op, 'l') >= 2)				\
-		__lexer_trace((lx), __func__, (fmt),			\
+		lexer_trace0((lx), __func__, (fmt),			\
 		    __VA_ARGS__);					\
 } while (0)
-static void	__lexer_trace(const struct lexer *, const char *, const char *,
+static void	lexer_trace0(const struct lexer *, const char *, const char *,
     ...)
 	__attribute__((__format__(printf, 3, 4)));
 
@@ -722,7 +722,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 }
 
 int
-__lexer_expect(struct lexer *lx, int type, struct token **tk,
+lexer_expect0(struct lexer *lx, int type, struct token **tk,
     const char *fun, int lno)
 {
 	struct token *t = NULL;
@@ -2111,7 +2111,7 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 }
 
 static void
-__lexer_trace(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
+lexer_trace0(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
     ...)
 {
 	va_list ap;

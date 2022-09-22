@@ -290,13 +290,13 @@ token_get_branch(struct token *tk)
 }
 
 struct token *
-__token_next(struct token *tk)
+token_next0(struct token *tk)
 {
 	return TAILQ_NEXT(tk, tk_entry);
 }
 
 struct token *
-__token_prev(struct token *tk)
+token_prev0(struct token *tk)
 {
 	return TAILQ_PREV(tk, token_list, tk_entry);
 }
