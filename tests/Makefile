@@ -403,6 +403,7 @@ TESTS+=	style-BreakBeforeBinaryOperators-004.c
 TESTS+=	style-BreakBeforeBinaryOperators-005.c
 TESTS+=	style-BreakBeforeBinaryOperators-006.c
 TESTS+=	style-BreakBeforeBinaryOperators-007.c
+TESTS+=	style-BreakBeforeBinaryOperators-008.c
 TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ContinuationIndentWidth-001.c
 TESTS+=	style-IndentWidth-001.c

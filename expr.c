@@ -100,6 +100,7 @@ struct expr_state {
 	struct token		*es_tk;
 	struct buffer		*es_bf;
 	unsigned int		 es_depth;
+	unsigned int		 es_nassign;	/* # nested binary assignments */
 	unsigned int		 es_noparens;	/* parens indent disabled */
 	unsigned int		 es_indent;	/* effective indent */
 };
@@ -804,6 +805,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
 		struct doc *lhs;
 
+		es->es_nassign++;
 		lhs = expr_doc(ex->ex_lhs, es, dc);
 		doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
@@ -820,8 +822,17 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 				dc = doc_alloc_indent(w, dc);
 			}
 		}
-		if (ex->ex_rhs != NULL)
-			dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+		if (ex->ex_rhs != NULL) {
+			/*
+			 * Same semantics as variable declarations, do not break
+			 * after the assignment operator.
+			 */
+			if (es->es_nassign > 1)
+				dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+			else
+				dc = expr_doc(ex->ex_rhs, es, dc);
+		}
+		es->es_nassign--;
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
 		struct token *nx, *pv;
 		unsigned int lno;
