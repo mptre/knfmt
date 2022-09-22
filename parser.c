@@ -1834,6 +1834,8 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_fail(pr);
 
+	parser_token_trim(rparen);
+
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_token(tk, stmt);
 	if (type->tk_type != TOKEN_IDENT)
@@ -2735,8 +2737,8 @@ out:
 }
 
 /*
- * Trim hard line(s) from the given token, unless the preceeding token has
- * prefixes intended to be emitted.
+ * Ensure the given token is not preceded with any hard line(s), unless the
+ * token has prefixes intended to be emitted.
  */
 static void
 parser_token_trim(struct token *tk)
