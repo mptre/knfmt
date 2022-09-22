@@ -586,7 +586,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 	switch (ex->ex_type) {
 	case EXPR_UNARY:
 		doc_token(ex->ex_tk, concat);
-		if (style(es->es_st, AlignAfterOpenBracket) == Align)
+		if (style(es->es_st, AlignOperands) == Align)
 			concat = doc_alloc_indent(expr_doc_width(es, concat),
 			    concat);
 		if (ex->ex_lhs != NULL)
@@ -810,7 +810,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
-		if (style(st, AlignAfterOpenBracket) == Align) {
+		if (style(st, AlignOperands) == Align) {
 			int w;
 
 			if (!token_has_line(ex->ex_tk, 1)) {
