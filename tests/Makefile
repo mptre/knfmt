@@ -410,6 +410,7 @@ TESTS+=	style-IndentWidth-001.c
 TESTS+=	style-UseTab-001.c
 TESTS+=	style-error-001.c
 TESTS+=	style-error-002.c
+TESTS+=	style-simple-AlignOperands-001.c
 
 TESTS+=	../buffer.c
 TESTS+=	../buffer.h

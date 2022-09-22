@@ -675,8 +675,9 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 		int doalign = 1;
 
 		/* Never break before the assignment operator. */
-		pv = token_prev(assign);
-		if (token_has_line(pv, 1)) {
+		if (!parser_simple_decl_active(pr) &&
+		    (pv = token_prev(assign)) != NULL &&
+		    token_has_line(pv, 1)) {
 			token_trim(pv);
 			token_add_optline(assign);
 			doalign = 0;
