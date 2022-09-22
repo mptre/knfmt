@@ -669,9 +669,18 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 		if (error & (FAIL | NONE))
 			return parser_fail(pr);
 	} else {
-		struct token *stop;
+		struct token *pv, *stop;
 		unsigned int flags = 0;
 		unsigned int w;
+		int doalign = 1;
+
+		/* Never break before the assignment operator. */
+		pv = token_prev(assign);
+		if (token_has_line(pv, 1)) {
+			token_trim(pv);
+			token_add_optline(assign);
+			doalign = 0;
+		}
 
 		/*
 		 * Honor hard line after assignment which must be emitted inside
@@ -681,7 +690,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 			flags |= EXPR_EXEC_HARDLINE;
 
 		lexer_peek_until_loose(lx, TOKEN_COMMA, arg->semi, &stop);
-		if (style(pr->pr_st, AlignOperands) == Align) {
+		if (doalign && style(pr->pr_st, AlignOperands) == Align) {
 			flags |= EXPR_EXEC_INDENT_ONCE;
 			w = parser_width(pr, arg->width);
 		} else {

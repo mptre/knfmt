@@ -394,6 +394,7 @@ TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlignOperands-001.c
 TESTS+=	style-AlignOperands-002.c
 TESTS+=	style-AlignOperands-003.c
+TESTS+=	style-AlignOperands-004.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-BreakBeforeBinaryOperators-001.c
 TESTS+=	style-BreakBeforeBinaryOperators-002.c
