@@ -288,7 +288,7 @@ test_expr_exec0(struct context *cx, const char *src, const char *exp,
 	doc_exec(group, cx->cx_lx, bf, cx->cx_st, &cx->cx_op, 0);
 	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
-	if (strcmp(exp, act)) {
+	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
 		error = 1;
@@ -334,7 +334,7 @@ test_lexer_peek_if_type0(struct context *cx, const char *src, const char *exp,
 	}
 	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
-	if (strcmp(exp, act)) {
+	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
 		error = 1;
@@ -377,7 +377,7 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 	}
 	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
-	if (strcmp(exp, act)) {
+	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
 		error = 1;
