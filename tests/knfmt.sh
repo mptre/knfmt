@@ -149,10 +149,10 @@ style-error-*)
 	testcase -c -e "$_abs" -- -vls "$@"
 	;;
 style-simple-*)
-	testcase -c "$_abs" -- -s -vl "$@"
+	testcase -c "$_abs" -- -s -vls "$@"
 	;;
 style-*)
-	testcase -c "$_abs" -- -vl "$@"
+	testcase -c "$_abs" -- -vls "$@"
 	;;
 trace-*)
 	testcase -q "$_abs" -- -va "$@"
