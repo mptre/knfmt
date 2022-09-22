@@ -66,7 +66,7 @@ void
 style_init(void)
 {
 	static struct style_hash kw[] = {
-#define K(t, s)	{ .sh_key = s, .sh_type = t, }
+#define K(t, s)	{ .sh_key = (s), .sh_type = (t), }
 		K(Align,				"Align"),
 		K(AlignAfterOpenBracket,		"AlignAfterOpenBracket"),
 		K(AlignEscapedNewlines,			"AlignEscapedNewlines"),
