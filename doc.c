@@ -650,6 +650,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
 	if (st->st_walk == NULL) {
+		/* NOLINTNEXTLINE(bugprone-sizeof-expression) */
 		if (VECTOR_INIT(st->st_walk) == NULL)
 			err(1, NULL);
 	}
