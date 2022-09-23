@@ -85,3 +85,14 @@ jobs:
           env CPPFLAGS="${CPPFLAGS} -DNDEBUG" ./configure || :
           cat config.log
           ${MAKE} test "TESTFLAGS=${TESTFLAGS}" ${TESTS:+"TESTS=${TESTS}"}
+
+  clang-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: clang-tidy
+        run: |
+          ./configure
+          ls *.[ch] |
+          grep -v -e 'config\.h' -e 'compat-*' -e 'token-defs\.h' |
+          xargs clang-tidy --quiet
