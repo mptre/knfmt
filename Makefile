@@ -330,6 +330,7 @@ DISTFILES+=	tests/style-AlignAfterOpenBracket-015.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-016.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-017.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-018.c
+DISTFILES+=	tests/style-AlignAfterOpenBracket-019.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-001.c
 DISTFILES+=	tests/style-AlignOperands-001.c
 DISTFILES+=	tests/style-AlignOperands-001.ok

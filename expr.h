@@ -10,7 +10,7 @@ struct expr_exec_arg {
 	 * same callback returns a document implies that the expression parser
 	 * can continue.
 	 */
-	struct doc		*(*recover)(unsigned int, void *);
+	struct doc		*(*recover)(const struct expr_exec_arg *, void *);
 	void			*arg;
 
 	unsigned int		 indent;

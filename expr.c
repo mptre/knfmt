@@ -332,7 +332,9 @@ expr_exec_recover(struct expr_state *es, unsigned int flags)
 	if (es->es_ea.recover == NULL)
 		return NULL;
 
-	dc = es->es_ea.recover(flags | es->es_flags, es->es_ea.arg);
+	es->es_ea.flags |= flags;
+	dc = es->es_ea.recover(&es->es_ea, es->es_ea.arg);
+	es->es_ea.flags &= ~flags;
 	if (dc == NULL)
 		return NULL;
 

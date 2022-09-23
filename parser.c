@@ -294,7 +294,7 @@ out:
  * expression. Returns a document if it managed to recover.
  */
 struct doc *
-parser_exec_expr_recover(unsigned int flags, void *arg)
+parser_exec_expr_recover(const struct expr_exec_arg *ea, void *arg)
 {
 	struct doc *dc;
 	struct parser *pr = arg;
@@ -303,9 +303,9 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 	unsigned int lflags = 0;
 
 	/* Handle type arguments, i.e. sizeof. */
-	if (flags & EXPR_EXEC_ARG)
+	if (ea->flags & EXPR_EXEC_ARG)
 		lflags |= LEXER_TYPE_CAST;
-	if (flags & EXPR_EXEC_CAST)
+	if (ea->flags & EXPR_EXEC_CAST)
 		lflags |= LEXER_TYPE_CAST;
 	if (lexer_peek_if_type(lx, &tk, lflags)) {
 		struct token *nx, *pv;
@@ -348,15 +348,17 @@ parser_exec_expr_recover(unsigned int flags, void *arg)
 	/* Handle cast expression followed by brace initializers. */
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		struct doc *indent;
+		unsigned int w;
 
+		dc = doc_alloc(DOC_GROUP, NULL);
 		/*
 		 * Since the document will be appended inside an expression
-		 * document, compensate for indentation added by
-		 * parser_exec_expr().
+		 * document, compensate for indentation passed to expr_exec().
 		 */
-		dc = doc_alloc(DOC_GROUP, NULL);
-		indent = doc_alloc_indent(
-		    -style(pr->pr_st, ContinuationIndentWidth), dc);
+		w = style(pr->pr_st, ContinuationIndentWidth);
+		if (w > ea->indent)
+			w = 0;
+		indent = doc_alloc_indent((int)w * -1, dc);
 		if (parser_exec_decl_braces(pr, indent, 0) & GOOD)
 			return dc;
 		doc_free(dc);
