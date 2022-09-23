@@ -61,3 +61,4 @@ struct style	*style_parse(const char *, const struct options *);
 void		 style_free(struct style *);
 
 unsigned int	style(const struct style *, int);
+int		style_align(const struct style *);

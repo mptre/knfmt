@@ -166,6 +166,13 @@ style(const struct style *st, int option)
 	return st->st_options[option];
 }
 
+int
+style_align(const struct style *st)
+{
+	return style(st, AlignAfterOpenBracket) == Align ||
+	    style(st, AlignOperands) == Align;
+}
+
 static void
 style_defaults(struct style *st)
 {
