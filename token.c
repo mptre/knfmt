@@ -7,9 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buffer.h"
 #include "lexer.h"
 #include "util.h"
 
+static char		*strflags(unsigned int);
 static const char	*strtoken(int);
 
 static const struct token tkline = {
@@ -104,12 +106,13 @@ char *
 token_sprintf(const struct token *tk)
 {
 	char *buf = NULL;
-	char *val;
+	char *flags, *val;
 	const char *type;
 	ssize_t bufsiz = 0;
 	int i;
 
 	type = strtoken(tk->tk_type);
+	flags = strflags(tk->tk_flags);
 
 	if (tk->tk_str == NULL) {
 		buf = strdup(type);
@@ -122,8 +125,11 @@ token_sprintf(const struct token *tk)
 	for (i = 0; i < 2; i++) {
 		int n;
 
-		n = snprintf(buf, bufsiz, "%s<%u:%u>(\"%s\")",
-		    type, tk->tk_lno, tk->tk_cno, val);
+		n = snprintf(buf, bufsiz, "%s<%u:%u%s%s>(\"%s\")",
+		    type, tk->tk_lno, tk->tk_cno,
+		    flags != NULL ? "," : "",
+		    flags != NULL ? flags : "",
+		    val);
 		if (n < 0 || (buf != NULL && n >= bufsiz))
 			errc(1, ENAMETOOLONG, "snprintf");
 		if (buf == NULL) {
@@ -134,6 +140,7 @@ token_sprintf(const struct token *tk)
 		}
 	}
 	free(val);
+	free(flags);
 	return buf;
 }
 
@@ -404,6 +411,43 @@ token_branch_unlink(struct token *tk)
 		return 0;
 	}
 	return -1;
+}
+
+static char *
+strflags(unsigned int token_flags)
+{
+	static const struct {
+		const char	*str;
+		size_t		 len;
+		unsigned int	 flag;
+	} flags[] = {
+#define F(f, s) { (s), sizeof(s) - 1, (f) }
+		F(TOKEN_FLAG_OPTLINE,	"OPTLINE"),
+		F(TOKEN_FLAG_OPTSPACE,	"OPTSPACE"),
+#undef F
+	};
+	struct buffer *bf = NULL;
+	char *str;
+	size_t nflags = sizeof(flags) / sizeof(flags[0]);
+	size_t i;
+
+	for (i = 0; i < nflags; i++) {
+		if ((token_flags & flags[i].flag) == 0)
+			continue;
+
+		if (bf == NULL)
+			bf = buffer_alloc(128);
+		else
+			buffer_putc(bf, '|');
+		buffer_puts(bf, flags[i].str, flags[i].len);
+	}
+
+	if (bf == NULL)
+		return NULL;
+	buffer_putc(bf, '\0');
+	str = buffer_release(bf);
+	buffer_free(bf);
+	return str;
 }
 
 static const char *
