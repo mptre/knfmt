@@ -12,7 +12,7 @@
 #include "util.h"
 
 static char		*strflags(unsigned int);
-static const char	*strtoken(int);
+static const char	*strtype(int);
 
 static const struct token tkline = {
 	.tk_type	= TOKEN_SPACE,
@@ -111,7 +111,7 @@ token_sprintf(const struct token *tk)
 	ssize_t bufsiz = 0;
 	int i;
 
-	type = strtoken(tk->tk_type);
+	type = strtype(tk->tk_type);
 	flags = strflags(tk->tk_flags);
 
 	if (tk->tk_str == NULL) {
@@ -451,14 +451,14 @@ strflags(unsigned int token_flags)
 }
 
 static const char *
-strtoken(int type)
+strtype(int token_type)
 {
-	switch (type) {
+	switch (token_type) {
 #define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
 #define S(t, s, f) T(t, s, f)
 #include "token-defs.h"
 	}
-	if (type == LEXER_EOF)
+	if (token_type == LEXER_EOF)
 		return "EOF";
 	return NULL;
 }
