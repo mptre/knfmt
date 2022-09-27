@@ -182,7 +182,8 @@ static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static int		parser_peek_func_line(struct parser *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
-static void		parser_token_trim(struct token *);
+static void		parser_token_trim_before(const struct parser *,
+    struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
 #define parser_fail(a) \
@@ -495,7 +496,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
 		    &rbrace))
 			return parser_fail(pr);
-		parser_token_trim(rbrace);
+		parser_token_trim_before(pr, rbrace);
 		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
 			token_trim(lbrace);
 			doc_token(lbrace, concat);
@@ -530,10 +531,9 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		if (token_has_line(lbrace, 1))
 			bflags |= PARSER_EXEC_DECL_BRACES_INDENT;
 		/* Avoid side effects in simple mode. */
-		if (!parser_simple_active(pr)) {
+		if (!parser_simple_active(pr))
 			token_trim(lbrace);
-			parser_token_trim(rbrace);
-		}
+		parser_token_trim_before(pr, rbrace);
 
 		error = parser_exec_decl_braces(pr, concat, bflags);
 		if (error & HALT)
@@ -1297,7 +1297,7 @@ parser_exec_func_proto(struct parser *pr,
 	if (arg->out == NULL)
 		arg->out = concat;
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
-		parser_token_trim(rparen);
+		parser_token_trim_before(pr, rparen);
 		doc_token(rparen, arg->out);
 	}
 
@@ -1480,7 +1480,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 
 	dc = parser_simple_stmt_block(pr, ps->tail);
 
-	parser_token_trim(rbrace);
+	parser_token_trim_before(pr, rbrace);
 
 	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
 		return parser_fail(pr);
@@ -1845,7 +1845,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_fail(pr);
 
-	parser_token_trim(rparen);
+	parser_token_trim_before(pr, rparen);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_token(tk, stmt);
@@ -2752,9 +2752,13 @@ out:
  * token has prefixes intended to be emitted.
  */
 static void
-parser_token_trim(struct token *tk)
+parser_token_trim_before(const struct parser *pr, struct token *tk)
 {
 	struct token *pv;
+
+	/* Avoid side effects in simple mode. */
+	if (parser_simple_active(pr))
+		return;
 
 	pv = token_prev(tk);
 	if (pv != NULL &&
