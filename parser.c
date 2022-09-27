@@ -297,10 +297,10 @@ out:
  * expression. Returns a document if it managed to recover.
  */
 struct doc *
-parser_exec_expr_recover(const struct expr_exec_arg *ea, void *arg)
+parser_exec_expr_recover(const struct expr_exec_arg *ea)
 {
 	struct doc *dc;
-	struct parser *pr = arg;
+	struct parser *pr = ea->arg;
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
 	unsigned int lflags = 0;
