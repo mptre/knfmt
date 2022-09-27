@@ -184,6 +184,8 @@ static int		parser_peek_line(struct parser *, const struct token *);
 
 static void		parser_token_trim_before(const struct parser *,
     struct token *);
+static void		parser_token_trim_after(const struct parser *,
+    struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
 
 #define parser_fail(a) \
@@ -498,7 +500,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			return parser_fail(pr);
 		parser_token_trim_before(pr, rbrace);
 		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
-			token_trim(lbrace);
+			parser_token_trim_after(pr, lbrace);
 			doc_token(lbrace, concat);
 		}
 
@@ -530,9 +532,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			return parser_fail(pr);
 		if (token_has_line(lbrace, 1))
 			bflags |= PARSER_EXEC_DECL_BRACES_INDENT;
-		/* Avoid side effects in simple mode. */
-		if (!parser_simple_active(pr))
-			token_trim(lbrace);
+		parser_token_trim_after(pr, lbrace);
 		parser_token_trim_before(pr, rbrace);
 
 		error = parser_exec_decl_braces(pr, concat, bflags);
@@ -680,7 +680,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 		if (!parser_simple_decl_active(pr) &&
 		    (pv = token_prev(assign)) != NULL &&
 		    token_has_line(pv, 1)) {
-			token_trim(pv);
+			parser_token_trim_after(pr, pv);
 			token_add_optline(assign);
 			doalign = 0;
 		}
@@ -1266,7 +1266,7 @@ parser_exec_func_proto(struct parser *pr,
 		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
 			doc_token(rparen, concat);
 	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
-		token_trim(tk);
+		parser_token_trim_after(pr, tk);
 		doc_token(tk, concat);
 	} else {
 		doc_remove(group, dc);
@@ -1276,7 +1276,7 @@ parser_exec_func_proto(struct parser *pr,
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
-		token_trim(lparen);
+		parser_token_trim_after(pr, lparen);
 		doc_token(lparen, concat);
 	}
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
@@ -1493,7 +1493,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	 */
 	if ((ps->flags & PARSER_EXEC_STMT_BLOCK_TRIM) ||
 	    (token_has_line(lbrace, 2) && parser_peek_decl(pr)))
-		token_trim(lbrace);
+		parser_token_trim_after(pr, lbrace);
 	doc_token(lbrace, ps->head);
 
 	if (isswitch)
@@ -1520,7 +1520,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, ps->tail));
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk)) {
 		if (lexer_peek_if(lx, TOKEN_ELSE, NULL))
-			token_trim(tk);
+			parser_token_trim_after(pr, tk);
 		doc_token(tk, concat);
 	}
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
@@ -1740,7 +1740,7 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	token_trim(tk);
+	parser_token_trim_after(pr, tk);
 	doc_token(tk, concat);
 	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
 		int error;
@@ -1872,7 +1872,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 		struct token *lbrace;
 
 		/* Never break after the right parenthesis. */
-		token_trim(rparen);
+		parser_token_trim_after(pr, rparen);
 		/* Move suffixes if the left brace is about to move. */
 		if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) &&
 		    token_cmp(rparen, lbrace) < 0) {
@@ -1987,7 +1987,7 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc)
 	}
 	if (!lexer_expect(lx, TOKEN_COLON, &tk))
 		return parser_fail(pr);
-	token_trim(tk);
+	parser_token_trim_after(pr, tk);
 	doc_token(tk, lhs);
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
@@ -2286,7 +2286,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 
 		if (!lexer_pop(lx, &tk))
 			return parser_fail(pr);
-		token_trim(tk);
+		parser_token_trim_after(pr, tk);
 
 		if (tk->tk_flags & TOKEN_FLAG_TYPE_ARGS) {
 			struct doc *indent;
@@ -2764,7 +2764,16 @@ parser_token_trim_before(const struct parser *pr, struct token *tk)
 	if (pv != NULL &&
 	    !token_has_prefix(tk, TOKEN_COMMENT) &&
 	    !token_has_prefix(tk, TOKEN_CPP))
-		token_trim(pv);
+		parser_token_trim_after(pr, pv);
+}
+
+static void
+parser_token_trim_after(const struct parser *pr, struct token *tk)
+{
+	/* Avoid side effects in simple mode. */
+	if (parser_simple_active(pr))
+		return;
+	token_trim(tk);
 }
 
 /*
