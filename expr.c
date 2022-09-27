@@ -224,7 +224,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	if (ea->indent > 0) {
 		indent = doc_alloc_indent(ea->indent, optional);
 		if ((ea->flags & EXPR_EXEC_INDENT_ONCE) == 0)
-			es.es_indent = es.es_ea.indent;
+			es.es_indent = ea->indent;
 	} else {
 		indent = doc_alloc(DOC_CONCAT, optional);
 	}
@@ -326,16 +326,18 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 static struct expr *
 expr_exec_recover(struct expr_state *es, unsigned int flags)
 {
-	struct doc *dc;
+	struct doc *concat, *dc;
 	struct expr *ex;
 	int error;
 
 	if (es->es_ea.recover == NULL)
 		return NULL;
 
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_alloc0(DOC_INDENT, NULL, -es->es_ea.indent, __func__,
+	    __LINE__);
+	concat = doc_alloc(DOC_CONCAT, dc);
 	es->es_ea.flags |= flags;
-	error = es->es_ea.recover(&es->es_ea, dc);
+	error = es->es_ea.recover(&es->es_ea, concat);
 	es->es_ea.flags &= ~flags;
 	if (error) {
 		doc_free(dc);
