@@ -328,15 +328,19 @@ expr_exec_recover(struct expr_state *es, unsigned int flags)
 {
 	struct doc *dc;
 	struct expr *ex;
+	int error;
 
 	if (es->es_ea.recover == NULL)
 		return NULL;
 
+	dc = doc_alloc(DOC_CONCAT, NULL);
 	es->es_ea.flags |= flags;
-	dc = es->es_ea.recover(&es->es_ea);
+	error = es->es_ea.recover(&es->es_ea, dc);
 	es->es_ea.flags &= ~flags;
-	if (dc == NULL)
+	if (error) {
+		doc_free(dc);
 		return NULL;
+	}
 
 	ex = expr_alloc(EXPR_RECOVER, es);
 	ex->ex_dc = dc;

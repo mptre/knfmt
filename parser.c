@@ -294,12 +294,11 @@ out:
 
 /*
  * Callback routine invoked by expression parser while encountering an invalid
- * expression. Returns a document if it managed to recover.
+ * expression. Returns zero if it managed to recover.
  */
-struct doc *
-parser_exec_expr_recover(const struct expr_exec_arg *ea)
+int
+parser_exec_expr_recover(const struct expr_exec_arg *ea, struct doc *dc)
 {
-	struct doc *dc;
 	struct parser *pr = ea->arg;
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
@@ -314,7 +313,7 @@ parser_exec_expr_recover(const struct expr_exec_arg *ea)
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))
-			return NULL;
+			return 1;
 		nx = token_next(tk);
 		if (pv != NULL && nx != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
@@ -323,13 +322,11 @@ parser_exec_expr_recover(const struct expr_exec_arg *ea)
 		    (nx->tk_type == TOKEN_RPAREN ||
 		     nx->tk_type == TOKEN_COMMA ||
 		     nx->tk_type == LEXER_EOF)) {
-			dc = doc_alloc(DOC_CONCAT, NULL);
 			if (parser_exec_type(pr, dc, tk, NULL) & GOOD)
-				return dc;
-			doc_free(dc);
+				return 0;
 		}
 
-		return NULL;
+		return 1;
 	}
 
 	/* Handle binary operator used as an argument, i.e. timercmp(3). */
@@ -340,12 +337,11 @@ parser_exec_expr_recover(const struct expr_exec_arg *ea)
 		if (pv != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
-			dc = doc_alloc(DOC_CONCAT, NULL);
 			doc_token(tk, dc);
-			return dc;
+			return 0;
 		}
 
-		return NULL;
+		return 1;
 	}
 
 	/* Handle cast expression followed by brace initializers. */
@@ -353,7 +349,6 @@ parser_exec_expr_recover(const struct expr_exec_arg *ea)
 		struct doc *indent;
 		unsigned int w;
 
-		dc = doc_alloc(DOC_GROUP, NULL);
 		/*
 		 * Since the document will be appended inside an expression
 		 * document, compensate for indentation passed to expr_exec().
@@ -363,13 +358,12 @@ parser_exec_expr_recover(const struct expr_exec_arg *ea)
 			w = 0;
 		indent = doc_alloc_indent((int)w * -1, dc);
 		if (parser_exec_decl_braces(pr, indent, 0) & GOOD)
-			return dc;
-		doc_free(dc);
+			return 0;
 
-		return NULL;
+		return 1;
 	}
 
-	return NULL;
+	return 1;
 }
 
 static int
