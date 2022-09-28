@@ -231,6 +231,7 @@ ruler_exec_indent(struct ruler *rl)
 
 		if (rc->rc_ntabs == 0) {
 			indent = rd->rd_len + rd->rd_indent;
+			indent += rd->rd_nspaces;
 		} else {
 			indent = rc->rc_len;
 			if (!minimize(rc))
