@@ -6,6 +6,9 @@ KNFMT \
 	!(compat-*).c !(compat-*|config).h \
 	compat-pledge.c \
 	-- \
+CPPCHECK \
+	!(compat-*|vector).c \
+	-- \
 DISTFILES \
 	*.c !(config).h *.md \
 	GNUmakefile LICENSE Makefile configure knfmt.1 \

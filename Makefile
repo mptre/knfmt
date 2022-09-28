@@ -79,6 +79,26 @@ KNFMT+=	util.h
 KNFMT+=	vector.c
 KNFMT+=	vector.h
 
+CPPCHECK+=	buffer.c
+CPPCHECK+=	comment.c
+CPPCHECK+=	cpp.c
+CPPCHECK+=	diff.c
+CPPCHECK+=	doc.c
+CPPCHECK+=	error.c
+CPPCHECK+=	expr.c
+CPPCHECK+=	file.c
+CPPCHECK+=	knfmt.c
+CPPCHECK+=	lexer.c
+CPPCHECK+=	options.c
+CPPCHECK+=	parser.c
+CPPCHECK+=	ruler.c
+CPPCHECK+=	simple-decl.c
+CPPCHECK+=	simple-stmt.c
+CPPCHECK+=	style.c
+CPPCHECK+=	t.c
+CPPCHECK+=	token.c
+CPPCHECK+=	util.c
+
 DISTFILES+=	CHANGELOG.md
 DISTFILES+=	GNUmakefile
 DISTFILES+=	LICENSE
@@ -741,6 +761,11 @@ lint: ${PROG_knfmt}
 	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -ds ${KNFMT}
 	cd ${.CURDIR} && mandoc -Tlint -Wstyle knfmt.1
 .PHONY: lint
+
+lint-cppcheck:
+	cppcheck --quiet --enable=all --error-exitcode=1 --max-configs=2 \
+		--suppress-xml=${.CURDIR}/cppcheck-suppressions.xml ${CPPCHECK}
+.PHONY: lint-cppcheck
 
 test: ${PROG_knfmt} test-${PROG_test}
 	${MAKE} -C ${.CURDIR}/tests "KNFMT=${.OBJDIR}/${PROG_knfmt}"

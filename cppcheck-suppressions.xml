@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<suppressions>
+  <!-- nofile -->
+  <suppress>
+    <id>missingIncludeSystem</id>
+  </suppress>
+  <!-- nofile -->
+  <suppress>
+    <id>toomanyconfigs</id>
+  </suppress>
+
+  <!-- expr.c -->
+  <suppress>
+    <fileName>expr.c</fileName>
+    <id>constParameter</id>
+    <symbolName>lhs</symbolName>
+  </suppress>
+  <suppress>
+    <fileName>expr.c</fileName>
+    <id>unusedStructMember</id>
+    <symbolName>Anonymous6::tqh_first</symbolName>
+  </suppress>
+  <suppress>
+    <fileName>expr.c</fileName>
+    <id>unusedStructMember</id>
+    <symbolName>Anonymous6::tqh_last</symbolName>
+  </suppress>
+
+  <!-- lexer.c -->
+  <suppress>
+    <fileName>lexer.c</fileName>
+    <id>unreachableCode</id>
+  </suppress>
+
+  <!-- simple-decl.c -->
+  <suppress>
+    <fileName>simple-decl.c</fileName>
+    <id>internalAstError</id>
+  </suppress>
+  <suppress>
+    <fileName>simple-decl.c</fileName>
+    <id>uninitvar</id>
+    <symbolName>tmp</symbolName>
+  </suppress>
+  <suppress>
+    <fileName>simple-decl.c</fileName>
+    <id>unreachableCode</id>
+  </suppress>
+
+  <!-- style.c -->
+  <suppress>
+    <fileName>style.c</fileName>
+    <id>unreachableCode</id>
+  </suppress>
+</suppressions>
