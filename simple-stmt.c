@@ -193,8 +193,6 @@ simple_stmt_alloc(struct simple_stmt *ss, int indent, unsigned int flags)
 	st = VECTOR_CALLOC(ss->ss_stmts);
 	if (st == NULL)
 		err(1, NULL);
-	if (st == NULL)
-		err(1, NULL);
 	st->st_root = doc_alloc(DOC_CONCAT, NULL);
 	st->st_indent = doc_alloc_indent(indent, st->st_root);
 	st->st_flags = flags;

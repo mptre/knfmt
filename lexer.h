@@ -94,7 +94,7 @@ int	lexer_expect0(struct lexer *, int, struct token **,
     const char *, int);
 
 void	lexer_peek_enter(struct lexer *, struct lexer_state *);
-void	lexer_peek_leave(struct lexer *, struct lexer_state *);
+void	lexer_peek_leave(struct lexer *, const struct lexer_state *);
 
 int	lexer_peek(struct lexer *, struct token **);
 

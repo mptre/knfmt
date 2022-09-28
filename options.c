@@ -19,19 +19,19 @@ int
 options_trace_parse(struct options *op, const char *flags)
 {
 	for (; *flags != '\0'; flags++) {
-		int trace;
+		int idx;
 
-		trace = ctotrace(*flags);
-		if (trace == -1) {
+		idx = ctotrace(*flags);
+		if (idx == -1) {
 			errx(1, "%c: unknown trace flag", *flags);
 			return 1;
-		} else if (trace == 0) {
+		} else if (idx == 0) {
 			size_t i;
 
 			for (i = 0; i < sizeof(traces); i++)
 				op->op_trace[i] = UINT_MAX;
 		} else {
-			op->op_trace[trace]++;
+			op->op_trace[idx]++;
 		}
 	}
 	return 0;

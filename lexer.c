@@ -750,7 +750,7 @@ lexer_peek_enter(struct lexer *lx, struct lexer_state *st)
 }
 
 void
-lexer_peek_leave(struct lexer *lx, struct lexer_state *st)
+lexer_peek_leave(struct lexer *lx, const struct lexer_state *st)
 {
 	lx->lx_st = *st;
 	assert(lx->lx_peek > 0);

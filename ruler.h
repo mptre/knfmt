@@ -22,4 +22,4 @@ void	ruler_insert0(struct ruler *, const struct token *, struct doc *,
 	ruler_indent0((a), (b), (c), -1, 0, __func__, __LINE__)
 struct doc	*ruler_indent0(struct ruler *, struct doc *,
     struct ruler_indent **, int, unsigned int, const char *, int);
-void		 ruler_remove(struct ruler *, struct ruler_indent *);
+void		 ruler_remove(struct ruler *, const struct ruler_indent *);

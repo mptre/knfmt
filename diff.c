@@ -186,7 +186,7 @@ matchpath(char *str, char *path, size_t pathsiz)
 	regmatch_t rm[2];
 	const char *buf;
 	size_t len;
-	int i, n;
+	int i;
 
 	if (xregexec(&repath, str, rm, 2))
 		return 0;
@@ -200,6 +200,7 @@ matchpath(char *str, char *path, size_t pathsiz)
 
 	for (i = 0; i < 2; i++) {
 		struct stat sb;
+		int n;
 
 		n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
 		if (n < 0 || (size_t)n >= pathsiz)
@@ -208,7 +209,7 @@ matchpath(char *str, char *path, size_t pathsiz)
 		/* Try to adjust Git repository relative path(s). */
 		if (git_ndirs > 0 && path[0] != '/' &&
 		    stat(path, &sb) == -1 && errno == ENOENT) {
-			int ntrim = git_ndirs;
+			int ntrim;
 
 			for (ntrim = git_ndirs; ntrim > 0; ntrim--)
 				buf = trimprefix(buf, &len);
@@ -259,8 +260,6 @@ matchline(const char *str, int lno, struct file *fe)
 	if (str[0] == '+') {
 		if (du == NULL || (du->du_beg > 0 && du->du_end > 0)) {
 			du = VECTOR_CALLOC(fe->fe_diff);
-			if (du == NULL)
-				err(1, NULL);
 			if (du == NULL)
 				err(1, NULL);
 			du->du_beg = lno;

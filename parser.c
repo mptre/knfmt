@@ -1969,7 +1969,6 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc)
 	struct doc *indent, *lhs;
 	struct lexer *lx = pr->pr_lx;
 	struct token *kw, *tk;
-	int error;
 
 	if (!lexer_if(lx, TOKEN_CASE, &kw) && !lexer_if(lx, TOKEN_DEFAULT, &kw))
 		return parser_none(pr);
@@ -1979,6 +1978,8 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc)
 	if (!lexer_peek_until(lx, TOKEN_COLON, NULL))
 		return parser_fail(pr);
 	if (kw->tk_type == TOKEN_CASE) {
+		int error;
+
 		doc_alloc(DOC_LINE, lhs);
 		error = parser_exec_expr(pr, lhs, NULL, NULL, 0, 0);
 		if (error & HALT)

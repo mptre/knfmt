@@ -156,7 +156,7 @@ err:
 }
 
 void
-ruler_remove(struct ruler *rl, struct ruler_indent *ri)
+ruler_remove(struct ruler *rl, const struct ruler_indent *ri)
 {
 	if (ri == NULL)
 		return;
