@@ -96,3 +96,14 @@ jobs:
           ls *.[ch] |
           grep -v -e 'config\.h' -e 'compat-*' -e 'token-defs\.h' |
           xargs clang-tidy --quiet
+
+  cppcheck:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: dependenices
+        run: sudo apt-get update && sudo apt-get install cppcheck
+      - name: cppcheck
+        run: |
+          ./configure
+          make lint-cppcheck
