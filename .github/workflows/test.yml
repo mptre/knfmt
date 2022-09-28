@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-22.04, macos-latest]
         compiler: [gcc, clang]
         mode: [asan, ubsan, musl, valgrind]
         exclude:
@@ -20,18 +20,18 @@ jobs:
             os: macos-latest
 
           - mode: musl
-            os: ubuntu-latest
+            os: ubuntu-22.04
             compiler: clang
 
           - mode: valgrind
             os: macos-latest
 
           - mode: valgrind
-            os: ubuntu-latest
+            os: ubuntu-22.04
             compiler: clang
 
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             deps_os: uthash-dev
             nproc: nproc
 
