@@ -87,15 +87,13 @@ jobs:
           ${MAKE} test "TESTFLAGS=${TESTFLAGS}" ${TESTS:+"TESTS=${TESTS}"}
 
   clang-tidy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: clang-tidy
         run: |
           ./configure
-          ls *.[ch] |
-          grep -v -e 'config\.h' -e 'compat-*' -e 'token-defs\.h' |
-          xargs clang-tidy --quiet
+          make lint-clang-tidy
 
   cppcheck:
     runs-on: ubuntu-22.04

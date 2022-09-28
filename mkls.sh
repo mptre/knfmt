@@ -9,6 +9,9 @@ KNFMT \
 CPPCHECK \
 	!(compat-*|vector).c \
 	-- \
+CLANGTIDY \
+	!(config|compat-*|token-defs|vector).[ch] \
+	-- \
 DISTFILES \
 	*.c !(config).h *.md \
 	GNUmakefile LICENSE Makefile configure knfmt.1 \

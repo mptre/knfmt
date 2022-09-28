@@ -99,6 +99,44 @@ CPPCHECK+=	t.c
 CPPCHECK+=	token.c
 CPPCHECK+=	util.c
 
+CLANGTIDY+=	buffer.c
+CLANGTIDY+=	buffer.h
+CLANGTIDY+=	cdefs.h
+CLANGTIDY+=	comment.c
+CLANGTIDY+=	comment.h
+CLANGTIDY+=	cpp.c
+CLANGTIDY+=	cpp.h
+CLANGTIDY+=	diff.c
+CLANGTIDY+=	diff.h
+CLANGTIDY+=	doc.c
+CLANGTIDY+=	doc.h
+CLANGTIDY+=	error.c
+CLANGTIDY+=	error.h
+CLANGTIDY+=	expr.c
+CLANGTIDY+=	expr.h
+CLANGTIDY+=	file.c
+CLANGTIDY+=	file.h
+CLANGTIDY+=	knfmt.c
+CLANGTIDY+=	lexer.c
+CLANGTIDY+=	lexer.h
+CLANGTIDY+=	options.c
+CLANGTIDY+=	options.h
+CLANGTIDY+=	parser.c
+CLANGTIDY+=	parser.h
+CLANGTIDY+=	ruler.c
+CLANGTIDY+=	ruler.h
+CLANGTIDY+=	simple-decl.c
+CLANGTIDY+=	simple-decl.h
+CLANGTIDY+=	simple-stmt.c
+CLANGTIDY+=	simple-stmt.h
+CLANGTIDY+=	style.c
+CLANGTIDY+=	style.h
+CLANGTIDY+=	t.c
+CLANGTIDY+=	token.c
+CLANGTIDY+=	token.h
+CLANGTIDY+=	util.c
+CLANGTIDY+=	util.h
+
 DISTFILES+=	CHANGELOG.md
 DISTFILES+=	GNUmakefile
 DISTFILES+=	LICENSE
@@ -761,6 +799,10 @@ lint: ${PROG_knfmt}
 	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -ds ${KNFMT}
 	cd ${.CURDIR} && mandoc -Tlint -Wstyle knfmt.1
 .PHONY: lint
+
+lint-clang-tidy:
+	clang-tidy --quiet ${CLANGTIDY}
+.PHONY: lint-clang-tidy
 
 lint-cppcheck:
 	cppcheck --quiet --enable=all --error-exitcode=1 --max-configs=2 \
