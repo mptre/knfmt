@@ -532,12 +532,12 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_fail(pr);
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
-		.dc	= concat,
-		.width	= dc,
-		.rl	= rl,
-		.semi	= semi,
-		.indent	= style(pr->pr_st, IndentWidth),
-		.flags	= PARSER_EXEC_DECL_INIT_ASSIGN
+	    .dc		= concat,
+	    .width	= dc,
+	    .rl		= rl,
+	    .semi	= semi,
+	    .indent	= style(pr->pr_st, IndentWidth),
+	    .flags	= PARSER_EXEC_DECL_INIT_ASSIGN
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
@@ -706,12 +706,13 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 	ruler_init(&rl, 0);
 	concat = doc_alloc(DOC_CONCAT, dc);
 	pr->pr_nbraces++;
-	error = parser_exec_decl_braces1(pr, &(struct parser_exec_decl_braces_arg){
-		.dc	= concat,
-		.rl	= &rl,
-		.indent	= indent,
-		.col	= 0,
-		.flags	= flags,
+	error = parser_exec_decl_braces1(pr,
+	    &(struct parser_exec_decl_braces_arg){
+	    .dc		= concat,
+	    .rl		= &rl,
+	    .indent	= indent,
+	    .col	= 0,
+	    .flags	= flags,
 	});
 	pr->pr_nbraces--;
 	ruler_exec(&rl);
@@ -935,12 +936,12 @@ parser_exec_decl_braces_field(struct parser *pr,
 	ruler_insert(arg->rl, tk, dc, 1, w + parser_width(pr, dc), 0);
 
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
-		.dc	= dc,
-		.width	= dc,
-		.rl	= arg->rl,
-		.semi	= stop,
-		.indent	= arg->indent,
-		.flags	= 0
+	    .dc		= dc,
+	    .width	= dc,
+	    .rl		= arg->rl,
+	    .semi	= stop,
+	    .indent	= arg->indent,
+	    .flags	= 0
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
@@ -1010,12 +1011,12 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_fail(pr);
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
-		.dc	= dc,
-		.width	= dc,
-		.rl	= rl,
-		.semi	= semi,
-		.indent = style(pr->pr_st, IndentWidth),
-		.flags	= PARSER_EXEC_DECL_INIT_ASSIGN
+	    .dc		= dc,
+	    .width	= dc,
+	    .rl		= rl,
+	    .semi	= semi,
+	    .indent	= style(pr->pr_st, IndentWidth),
+	    .flags	= PARSER_EXEC_DECL_INIT_ASSIGN
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
@@ -1198,10 +1199,10 @@ parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	doc_alloc(DOC_HARDLINE, dc);
 	error = parser_exec_stmt_block(pr, &(struct parser_exec_stmt_block_arg){
-		.head	= dc,
-		.tail	= dc,
-		.rbrace	= NULL,
-		.flags	= 0,
+	    .head	= dc,
+	    .tail	= dc,
+	    .rbrace	= NULL,
+	    .flags	= 0,
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);

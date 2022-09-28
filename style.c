@@ -197,16 +197,16 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 
 	er = error_alloc(1);
 	lx = lexer_alloc(&(const struct lexer_arg){
-		.path		= path,
-		.bf		= bf,
-		.er		= er,
-		.diff		= NULL,
-		.op		= op,
-		.callbacks	= {
-			.read		= yaml_read,
-			.serialize	= yaml_serialize,
-			.arg		= st
-		},
+	    .path	= path,
+	    .bf		= bf,
+	    .er		= er,
+	    .diff	= NULL,
+	    .op		= op,
+	    .callbacks	= {
+		.read		= yaml_read,
+		.serialize	= yaml_serialize,
+		.arg		= st
+	    },
 	});
 	if (lx == NULL) {
 		error = 1;

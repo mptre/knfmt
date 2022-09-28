@@ -269,14 +269,14 @@ test_expr_exec0(struct context *cx, const char *src, const char *exp,
 
 	group = doc_alloc(DOC_GROUP, NULL);
 	expr = expr_exec(&(const struct expr_exec_arg){
-		.st		= cx->cx_st,
-		.op		= &cx->cx_op,
-		.lx		= cx->cx_lx,
-		.dc		= doc_alloc(DOC_CONCAT, group),
-		.stop		= NULL,
-		.recover	= parser_exec_expr_recover,
-		.arg		= cx->cx_pr,
-		.flags		= 0,
+	    .st		= cx->cx_st,
+	    .op		= &cx->cx_op,
+	    .lx		= cx->cx_lx,
+	    .dc		= doc_alloc(DOC_CONCAT, group),
+	    .stop	= NULL,
+	    .recover	= parser_exec_expr_recover,
+	    .arg	= cx->cx_pr,
+	    .flags	= 0,
 	});
 	if (expr == NULL) {
 		fprintf(stderr, "%s:%d: expr_exec() failure\n", fun, lno);
@@ -437,12 +437,12 @@ context_init(struct context *cx, const char *src)
 	cx->cx_er = error_alloc(0);
 	cx->cx_st = style_parse(NULL, &cx->cx_op);
 	cx->cx_lx = lexer_alloc(&(const struct lexer_arg){
-		.path		= path,
-		.bf		= cx->cx_bf,
-		.er		= cx->cx_er,
-		.diff		= NULL,
-		.op		= &cx->cx_op,
-		.callbacks	= {.read = NULL, .serialize = NULL, .arg = NULL},
+	    .path	= path,
+	    .bf		= cx->cx_bf,
+	    .er		= cx->cx_er,
+	    .diff	= NULL,
+	    .op		= &cx->cx_op,
+	    .callbacks	= {.read = NULL, .serialize = NULL, .arg = NULL},
 	});
 	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, cx->cx_st,
 	    &cx->cx_op);
