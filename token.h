@@ -111,10 +111,9 @@ struct token	*token_next0(struct token *);
 #define token_prev(tk) token_prev0((struct token *)(tk))
 struct token	*token_prev0(struct token *);
 
-void		 token_remove(struct token_list *, struct token *);
-void		 token_list_copy(struct token_list *, struct token_list *);
-void		 token_list_move(struct token_list *, struct token_list *);
-struct token	*token_list_find(struct token_list *, int);
+void	token_remove(struct token_list *, struct token *);
+void	token_list_copy(struct token_list *, struct token_list *);
+void	token_list_move(struct token_list *, struct token_list *);
 
 void	token_move_suffixes(struct token *, struct token *, int);
 

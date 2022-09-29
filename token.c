@@ -11,6 +11,8 @@
 #include "lexer.h"
 #include "util.h"
 
+static struct token	*token_list_find(struct token_list *, int);
+
 static char		*strflags(unsigned int);
 static const char	*strtype(int);
 
@@ -340,18 +342,6 @@ token_list_move(struct token_list *src, struct token_list *dst)
 	}
 }
 
-struct token *
-token_list_find(struct token_list *list, int type)
-{
-	struct token *tk;
-
-	TAILQ_FOREACH(tk, list, tk_entry) {
-		if (tk->tk_type == type)
-			return tk;
-	}
-	return NULL;
-}
-
 void
 token_move_suffixes(struct token *src, struct token *dst, int type)
 {
@@ -411,6 +401,18 @@ token_branch_unlink(struct token *tk)
 		return 0;
 	}
 	return -1;
+}
+
+static struct token *
+token_list_find(struct token_list *list, int type)
+{
+	struct token *tk;
+
+	TAILQ_FOREACH(tk, list, tk_entry) {
+		if (tk->tk_type == type)
+			return tk;
+	}
+	return NULL;
 }
 
 static char *
