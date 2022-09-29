@@ -442,7 +442,6 @@ context_init(struct context *cx, const char *src)
 	    .er		= cx->cx_er,
 	    .diff	= NULL,
 	    .op		= &cx->cx_op,
-	    .callbacks	= {.read = NULL, .serialize = NULL, .arg = NULL},
 	});
 	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, cx->cx_st,
 	    &cx->cx_op);

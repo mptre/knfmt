@@ -170,7 +170,6 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 	    .er		= fe->fe_error,
 	    .diff	= fe->fe_diff,
 	    .op		= op,
-	    .callbacks	= {.read = NULL, .serialize = NULL, .arg = NULL},
 	});
 	if (lx == NULL) {
 		error = 1;
