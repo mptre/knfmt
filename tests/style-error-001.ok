@@ -11,4 +11,3 @@
 .clang-format: unknown option Unknown<10:1>("ForEachMacros")
 .clang-format: unknown value False<13:9>("false") for option Keyword<13:1>("UseTab")
 .clang-format: unknown value Integer<16:24>("0") for option Keyword<16:1>("AlignAfterOpenBracket")
-.clang-format: skip nested option Keyword<17:1>("BraceWrapping")

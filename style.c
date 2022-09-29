@@ -24,6 +24,15 @@
 #  include "compat-uthash.h"
 #endif
 
+/*
+ * Return values for yaml parser routines. Only one of the following may be
+ * returned but disjoint values are favored allowing the caller to catch
+ * multiple return values.
+ */
+#define NONE	0x00000000u
+#define GOOD	0x00000001u
+#define NVAL	0x00000002u
+
 /* Continuation of token types used to represent YAML primitives. */
 enum yaml_type {
 	DocumentBegin = Last + 1,
@@ -57,6 +66,22 @@ static struct token	*yaml_read(struct lexer *, void *);
 static char		*yaml_serialize(const struct token *);
 static struct token	*yaml_keyword(struct lexer *,
     const struct lexer_state *);
+
+static int	parse_AlignAfterOpenBracket(struct style *, struct lexer *);
+static int	parse_AlignEscapedNewlines(struct style *, struct lexer *);
+static int	parse_AlignOperands(struct style *, struct lexer *);
+static int	parse_AlwaysBreakAfterReturnType(struct style *,
+    struct lexer *);
+static int	parse_BraceWrapping(struct style *, struct lexer *);
+static int	parse_BreakBeforeBinaryOperators(struct style *,
+    struct lexer *);
+static int	parse_ColumnLimit(struct style *, struct lexer *);
+static int	parse_ContinuationIndentWidth(struct style *, struct lexer *);
+static int	parse_IncludeCategories(struct style *, struct lexer *);
+static int	parse_IndentWidth(struct style *, struct lexer *);
+static int	parse_UseTab(struct style *, struct lexer *);
+
+static int	parse_DocumentEnd(struct style *, struct lexer *);
 
 static const char	*stryaml(enum yaml_type);
 
@@ -226,92 +251,50 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 	lexer_if(lx, DocumentBegin, NULL);
 
 	for (;;) {
-		struct token *key = NULL;
-		struct token *val = NULL;
+		int error;
 
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
 
-		if (lexer_if(lx, AlignAfterOpenBracket, &key) &&
-		    (lexer_if(lx, Align, &val) ||
-		     lexer_if(lx, DontAlign, &val) ||
-		     lexer_if(lx, AlwaysBreak, &val) ||
-		     lexer_if(lx, BlockIndent, &val))) {
-			st->st_options[key->tk_type] = val->tk_type;
-		} else if (lexer_if(lx, AlignEscapedNewlines, &key) &&
-		    (lexer_if(lx, Align, &val) ||
-		     lexer_if(lx, DontAlign, &val) ||
-		     lexer_if(lx, Left, &val) ||
-		     lexer_if(lx, Right, &val))) {
-			st->st_options[key->tk_type] = val->tk_type;
-		} else if (lexer_if(lx, AlignOperands, &key) &&
-		    (lexer_if(lx, Align, &val) ||
-		     lexer_if(lx, DontAlign, &val) ||
-		     lexer_if(lx, AlignAfterOperator, &val) ||
-		     lexer_if(lx, True, &val) ||
-		     lexer_if(lx, False, &val))) {
-			if (val->tk_type == True)
-				st->st_options[key->tk_type] = Align;
-			else if (val->tk_type == False)
-				st->st_options[key->tk_type] = DontAlign;
-			else
-				st->st_options[key->tk_type] = val->tk_type;
-		} else if (lexer_if(lx, AlwaysBreakAfterReturnType, &key) &&
-		    (lexer_if(lx, None, &val) ||
-		     lexer_if(lx, All, &val) ||
-		     lexer_if(lx, TopLevel, &val) ||
-		     lexer_if(lx, AllDefinitions, &val) ||
-		     lexer_if(lx, TopLevelDefinitions, &val))) {
-			st->st_options[key->tk_type] = val->tk_type;
-		} else if (lexer_if(lx, BreakBeforeBinaryOperators, &key) &&
-		    (lexer_if(lx, None, &val) ||
-		     lexer_if(lx, NonAssignment, &val) ||
-		     lexer_if(lx, All, &val))) {
-			st->st_options[key->tk_type] = val->tk_type;
-		} else if (lexer_if(lx, ColumnLimit, &key) &&
-		    lexer_if(lx, Integer, &val)) {
-			st->st_options[key->tk_type] = val->tk_int;
-		} else if (lexer_if(lx, ContinuationIndentWidth, &key) &&
-		    lexer_if(lx, Integer, &val)) {
-			st->st_options[key->tk_type] = val->tk_int;
-		} else if (lexer_if(lx, IndentWidth, &key) &&
-		    lexer_if(lx, Integer, &val)) {
-			st->st_options[key->tk_type] = val->tk_int;
-		} else if (lexer_if(lx, UseTab, &key) &&
-		    (lexer_if(lx, Never, &val) ||
-		     lexer_if(lx, ForIndentation, &val) ||
-		     lexer_if(lx, ForContinuationAndIndentation, &val) ||
-		     lexer_if(lx, AlignWithSpaces, &val) ||
-		     lexer_if(lx, Always, &val))) {
-			st->st_options[key->tk_type] = val->tk_type;
-		} else if (lexer_if(lx, BraceWrapping, &key) ||
-		    lexer_if(lx, IncludeCategories, &key)) {
-			style_parse_yaml_nested(st, lx);
-			if (trace(op, 's')) {
-				char *strkey;
+		if ((error = parse_AlignAfterOpenBracket(st, lx)) ||
+		    (error = parse_AlignEscapedNewlines(st, lx)) ||
+		    (error = parse_AlignOperands(st, lx)) ||
+		    (error = parse_AlwaysBreakAfterReturnType(st, lx)) ||
+		    (error = parse_BraceWrapping(st, lx)) ||
+		    (error = parse_BreakBeforeBinaryOperators(st, lx)) ||
+		    (error = parse_ColumnLimit(st, lx)) ||
+		    (error = parse_ContinuationIndentWidth(st, lx)) ||
+		    (error = parse_IncludeCategories(st, lx)) ||
+		    (error = parse_IndentWidth(st, lx)) ||
+		    (error = parse_UseTab(st, lx)) ||
+		    (error = parse_DocumentEnd(st, lx))) {
+			if (error & GOOD)
+				continue;
+		}
 
-				strkey = yaml_serialize(key);
-				lexer_error(lx, "skip nested option %s",
-				    strkey);
-				free(strkey);
-			}
-		} else if (lexer_if(lx, DocumentEnd, NULL)) {
-			/* nothing */
-		} else if (key != NULL) {
+		if (error & NVAL) {
+			struct token *key = NULL;
+			struct token *val = NULL;
+
+			lexer_back(lx, &key);
 			lexer_pop(lx, &val);
 			if (trace(op, 's')) {
 				char *strkey, *strval;
 
-				strkey = yaml_serialize(key);
+				strkey = key != NULL ?
+				    yaml_serialize(key) : NULL;
 				strval = val != NULL ?
 				    yaml_serialize(val) : NULL;
 				lexer_error(lx,
 				    "unknown value %s for option %s",
-				    strval != NULL ? strval : "(null)", strkey);
+				    strval != NULL ? strval : "(null)",
+				    strkey != NULL ? strkey : "(null)");
 				free(strkey);
 				free(strval);
 			}
 		} else {
+			struct token *key, *val;
+
 			/* Best effort, try to continue parsing. */
 			lexer_pop(lx, &key);
 			if (lexer_peek_if(lx, Sequence, NULL)) {
@@ -501,6 +484,186 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 	}
 	tk->tk_type = sh->sh_type;
 	return tk;
+}
+
+static int
+parse_AlignAfterOpenBracket(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, AlignAfterOpenBracket, &key))
+		return NONE;
+	if (!lexer_if(lx, Align, &val) &&
+	    !lexer_if(lx, DontAlign, &val) &&
+	    !lexer_if(lx, AlwaysBreak, &val) &&
+	    !lexer_if(lx, BlockIndent, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
+}
+
+static int
+parse_AlignEscapedNewlines(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, AlignEscapedNewlines, &key))
+		return NONE;
+	if (!lexer_if(lx, Align, &val) &&
+	    !lexer_if(lx, DontAlign, &val) &&
+	    !lexer_if(lx, Left, &val) &&
+	    !lexer_if(lx, Right, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
+}
+
+static int
+parse_AlignOperands(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, AlignOperands, &key))
+		return NONE;
+	if (!lexer_if(lx, Align, &val) &&
+	    !lexer_if(lx, DontAlign, &val) &&
+	    !lexer_if(lx, AlignAfterOperator, &val) &&
+	    !lexer_if(lx, True, &val) &&
+	    !lexer_if(lx, False, &val))
+		return NVAL;
+
+	if (val->tk_type == True)
+		st->st_options[key->tk_type] = Align;
+	else if (val->tk_type == False)
+		st->st_options[key->tk_type] = DontAlign;
+	else
+		st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
+}
+
+static int
+parse_AlwaysBreakAfterReturnType(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, AlwaysBreakAfterReturnType, &key))
+		return NONE;
+	if (!lexer_if(lx, None, &val) &&
+	    !lexer_if(lx, All, &val) &&
+	    !lexer_if(lx, TopLevel, &val) &&
+	    !lexer_if(lx, AllDefinitions, &val) &&
+	    !lexer_if(lx, TopLevelDefinitions, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
+}
+
+static int
+parse_BraceWrapping(struct style *st, struct lexer *lx)
+{
+	if (!lexer_if(lx, BraceWrapping, NULL))
+		return NONE;
+
+	style_parse_yaml_nested(st, lx);
+	return GOOD;
+}
+
+static int
+parse_BreakBeforeBinaryOperators(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, BreakBeforeBinaryOperators, &key))
+		return NONE;
+	if (!lexer_if(lx, None, &val) &&
+	    !lexer_if(lx, NonAssignment, &val) &&
+	    !lexer_if(lx, All, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
+}
+
+static int
+parse_ColumnLimit(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, ColumnLimit, &key))
+		return NONE;
+	if (!lexer_if(lx, Integer, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_int;
+	return GOOD;
+}
+
+static int
+parse_ContinuationIndentWidth(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, ContinuationIndentWidth, &key))
+		return NONE;
+	if (!lexer_if(lx, Integer, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_int;
+	return GOOD;
+}
+
+static int
+parse_IncludeCategories(struct style *st, struct lexer *lx)
+{
+	if (!lexer_if(lx, IncludeCategories, NULL))
+		return NONE;
+
+	style_parse_yaml_nested(st, lx);
+	return GOOD;
+}
+
+static int
+parse_IndentWidth(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, IndentWidth, &key))
+		return NONE;
+	if (!lexer_if(lx, Integer, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_int;
+	return GOOD;
+}
+
+static int
+parse_UseTab(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, UseTab, &key))
+		return NONE;
+	if (!lexer_if(lx, Never, &val) &&
+	    !lexer_if(lx, ForIndentation, &val) &&
+	    !lexer_if(lx, ForContinuationAndIndentation, &val) &&
+	    !lexer_if(lx, AlignWithSpaces, &val) &&
+	    !lexer_if(lx, Always, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
+}
+
+static int
+parse_DocumentEnd(struct style *UNUSED(st), struct lexer *lx)
+{
+	if (!lexer_if(lx, DocumentEnd, NULL))
+		return NONE;
+
+	return GOOD;
 }
 
 static const char *
