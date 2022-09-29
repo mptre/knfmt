@@ -232,17 +232,17 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
 
-		if (lexer_if(lx, AlignEscapedNewlines, &key) &&
-		    (lexer_if(lx, Align, &val) ||
-		     lexer_if(lx, DontAlign, &val) ||
-		     lexer_if(lx, Left, &val) ||
-		     lexer_if(lx, Right, &val))) {
-			st->st_options[key->tk_type] = val->tk_type;
-		} else if (lexer_if(lx, AlignAfterOpenBracket, &key) &&
+		if (lexer_if(lx, AlignAfterOpenBracket, &key) &&
 		    (lexer_if(lx, Align, &val) ||
 		     lexer_if(lx, DontAlign, &val) ||
 		     lexer_if(lx, AlwaysBreak, &val) ||
 		     lexer_if(lx, BlockIndent, &val))) {
+			st->st_options[key->tk_type] = val->tk_type;
+		} else if (lexer_if(lx, AlignEscapedNewlines, &key) &&
+		    (lexer_if(lx, Align, &val) ||
+		     lexer_if(lx, DontAlign, &val) ||
+		     lexer_if(lx, Left, &val) ||
+		     lexer_if(lx, Right, &val))) {
 			st->st_options[key->tk_type] = val->tk_type;
 		} else if (lexer_if(lx, AlignOperands, &key) &&
 		    (lexer_if(lx, Align, &val) ||
