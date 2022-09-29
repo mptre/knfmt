@@ -187,6 +187,7 @@ DISTFILES+=	tests/GNUmakefile
 DISTFILES+=	tests/Makefile
 DISTFILES+=	tests/bug-001.c
 DISTFILES+=	tests/bug-002.c
+DISTFILES+=	tests/bug-003.c
 DISTFILES+=	tests/bug-005.c
 DISTFILES+=	tests/cp.sh
 DISTFILES+=	tests/diff-001.c
