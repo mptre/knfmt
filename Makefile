@@ -808,12 +808,13 @@ lint: ${PROG_knfmt}
 .PHONY: lint
 
 lint-clang-tidy:
-	clang-tidy --quiet ${CLANGTIDY}
+	cd ${.CURDIR} && clang-tidy --quiet ${CLANGTIDY}
 .PHONY: lint-clang-tidy
 
 lint-cppcheck:
-	cppcheck --quiet --enable=all --error-exitcode=1 --max-configs=2 \
-		--suppress-xml=${.CURDIR}/cppcheck-suppressions.xml ${CPPCHECK}
+	cd ${.CURDIR} && cppcheck --quiet --enable=all --error-exitcode=1 \
+		--max-configs=2 --suppress-xml=cppcheck-suppressions.xml \
+		${CPPCHECK}
 .PHONY: lint-cppcheck
 
 test: ${PROG_knfmt} test-${PROG_test}
