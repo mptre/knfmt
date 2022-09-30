@@ -101,6 +101,10 @@ struct parser_exec_stmt_block_arg {
 /* Parsing of declarations on root level. */
 #define PARSER_EXEC_DECL_ROOT			0x00000004u
 
+static int	parser_exec1(struct parser *, struct doc *);
+
+static int	parser_exec_extern(struct parser *, struct doc *);
+
 static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl1(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl2(struct parser *, struct doc *,
@@ -253,12 +257,7 @@ parser_exec(struct parser *pr, size_t sizhint)
 			break;
 		}
 
-		error = parser_exec_decl(pr, concat,
-		    PARSER_EXEC_DECL_BREAK | PARSER_EXEC_DECL_LINE |
-		    PARSER_EXEC_DECL_ROOT);
-		if (error == NONE)
-			error = parser_exec_func_impl(pr, concat);
-
+		error = parser_exec1(pr, concat);
 		if (error & GOOD) {
 			lexer_stamp(lx);
 		} else if (error & BRCH) {
@@ -357,6 +356,63 @@ parser_exec_expr_recover(const struct expr_exec_arg *ea, struct doc *dc)
 	}
 
 	return 1;
+}
+
+static int
+parser_exec1(struct parser *pr, struct doc *dc)
+{
+	int error;
+
+	error = parser_exec_decl(pr, dc,
+	    PARSER_EXEC_DECL_BREAK | PARSER_EXEC_DECL_LINE |
+	    PARSER_EXEC_DECL_ROOT);
+	if (error == NONE)
+		error = parser_exec_func_impl(pr, dc);
+	if (error == NONE)
+		error = parser_exec_extern(pr, dc);
+	return error;
+}
+
+static int
+parser_exec_extern(struct parser *pr, struct doc *dc)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_EXTERN, NULL) &&
+	    lexer_if(lx, TOKEN_STRING, NULL) &&
+	    lexer_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_EXTERN, &tk))
+		doc_token(tk, dc);
+	doc_literal(" ", dc);
+	if (lexer_expect(lx, TOKEN_STRING, &tk))
+		doc_token(tk, dc);
+	doc_literal(" ", dc);
+	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
+		doc_token(tk, dc);
+	doc_alloc(DOC_HARDLINE, dc);
+	for (;;) {
+		int error;
+
+		error = parser_exec1(pr, dc);
+		if (error & HALT) {
+			if (error & NONE)
+				break;
+			return error;
+		}
+	}
+	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
+		doc_token(tk, dc);
+	doc_alloc(DOC_HARDLINE, dc);
+	return parser_good(pr);
 }
 
 static int
