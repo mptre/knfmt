@@ -7,8 +7,7 @@ struct ruler {
 	unsigned int		 rl_align;
 	unsigned int		 rl_flags;
 /*
- * Minimum alignment, use smallest possible alignment necessary to align all
- * columns.
+ * Minimum alignment, use smallest possible alignment to align all columns.
  */
 #define RULER_ALIGN_MIN		0x00000001u
 /*
@@ -21,6 +20,11 @@ struct ruler {
  * ruler_init().
  */
 #define RULER_ALIGN_FIXED	0x00000004u
+/*
+ * Minimum alignment, use smallest possible alignment ceiled to a multiple of 8
+ * to align all columns.
+ */
+#define RULER_ALIGN_TABS	0x00000008u
 };
 
 void	ruler_init(struct ruler *, unsigned int, unsigned int);

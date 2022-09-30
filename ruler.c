@@ -164,19 +164,21 @@ ruler_exec(struct ruler *rl)
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_columns); i++) {
 		struct ruler_column *rc = &rl->rl_columns[i];
 
-		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_ALIGN_MIN))
+		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_ALIGN_TABS))
 			continue;
 
 		if (rl->rl_flags & RULER_ALIGN_MIN) {
+			maxlen = rc->rc_len + 1;
+		} else if (rl->rl_flags & RULER_ALIGN_MAX) {
+			maxlen = rl->rl_align;
+		} else if (rl->rl_flags & RULER_ALIGN_FIXED) {
+			maxlen = rl->rl_align;
+		} else if (rl->rl_flags & RULER_ALIGN_TABS) {
 			maxlen = rc->rc_len;
 			if (!minimize(rc)) {
 				/* Ceil the longest datum to multiple of 8. */
 				maxlen = tabalign(maxlen);
 			}
-		} else if (rl->rl_flags & RULER_ALIGN_MAX) {
-			maxlen = rl->rl_align;
-		} else if (rl->rl_flags & RULER_ALIGN_FIXED) {
-			maxlen = rl->rl_align;
 		}
 
 		for (j = 0; j < VECTOR_LENGTH(rc->rc_datums); j++) {
@@ -194,7 +196,8 @@ ruler_exec(struct ruler *rl)
 			}
 
 			indent = maxlen - rd->rd_len;
-			if (indent % 8 > 0)
+			if ((rl->rl_flags & RULER_ALIGN_MIN) == 0 &&
+			    indent % 8 > 0)
 				indent = tabalign(indent);
 			indent += rc->rc_nspaces - rd->rd_nspaces;
 			rd->rd_indent = indent;
