@@ -32,14 +32,23 @@ cpp_exec(const struct token *tk, const struct style *st,
 
 	str = tk->tk_str;
 	len = tk->tk_len;
-	if (style(st, AlignEscapedNewlines) != Right ||
-	    nextline(str, len, &nx) == NULL)
+	if (nextline(str, len, &nx) == NULL)
 		return NULL;
 
 	bf = buffer_alloc(len);
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth),
-	    RULER_ALIGN_MAX);
+	switch (style(st, AlignEscapedNewlines)) {
+	case DontAlign:
+		ruler_init(&rl, 1, RULER_ALIGN_FIXED);
+		break;
+	case Left:
+		ruler_init(&rl, 0, RULER_ALIGN_MIN);
+		break;
+	case Right:
+		ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth),
+		    RULER_ALIGN_MAX);
+		break;
+	}
 
 	for (;;) {
 		struct doc *concat;
