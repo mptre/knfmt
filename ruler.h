@@ -4,10 +4,26 @@ struct token;
 struct ruler {
 	struct ruler_column	*rl_columns;	/* VECTOR(struct ruler_column) */
 	struct ruler_indent	*rl_indent;	/* VECTOR(struct ruler_indent) */
-	int			 rl_len;
+	unsigned int		 rl_align;
+	unsigned int		 rl_flags;
+/*
+ * Minimum alignment, use smallest possible alignment necessary to align all
+ * columns.
+ */
+#define RULER_ALIGN_MIN		0x00000001u
+/*
+ * Maximum alignment, the aligment for all columns will be less or equal to the
+ * alignment given to ruler_init().
+ */
+#define RULER_ALIGN_MAX		0x00000002u
+/*
+ * Fixed alignment, unconditionally align all columns to the alignment given to
+ * ruler_init().
+ */
+#define RULER_ALIGN_FIXED	0x00000004u
 };
 
-void	ruler_init(struct ruler *, int);
+void	ruler_init(struct ruler *, unsigned int, unsigned int);
 void	ruler_free(struct ruler *);
 void	ruler_exec(struct ruler *);
 

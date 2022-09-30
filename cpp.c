@@ -38,7 +38,8 @@ cpp_exec(const struct token *tk, const struct style *st,
 
 	bf = buffer_alloc(len);
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth));
+	ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth),
+	    RULER_ALIGN_MAX);
 
 	for (;;) {
 		struct doc *concat;

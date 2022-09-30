@@ -437,7 +437,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 	int error;
 
 	decl = doc_alloc(DOC_CONCAT, dc);
-	ruler_init(&rl, 0);
+	ruler_init(&rl, 0, RULER_ALIGN_MIN);
 
 	for (;;) {
 		struct token *tk;
@@ -759,7 +759,7 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 	struct doc *concat;
 	int error;
 
-	ruler_init(&rl, 0);
+	ruler_init(&rl, 0, RULER_ALIGN_MIN);
 	concat = doc_alloc(DOC_CONCAT, dc);
 	pr->pr_nbraces++;
 	error = parser_exec_decl_braces1(pr,
@@ -1227,7 +1227,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
 		return parser_none(pr);
 
-	ruler_init(&rl, -1);
+	ruler_init(&rl, 1, RULER_ALIGN_FIXED);
 	error = parser_exec_func_impl1(pr, dc, &rl, type);
 	if (error & GOOD)
 		ruler_exec(&rl);

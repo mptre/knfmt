@@ -37,22 +37,14 @@ static void	ruler_reset(struct ruler *);
 static int		minimize(const struct ruler_column *);
 static unsigned int	tabalign(unsigned int);
 
-/*
- * Initialize ruler, the given length is interpreted as follows:
- *
- *     >0    Maximum alignment, the aligment for all columns will be less or
- *           equal to this length.
- *      0    Use the alignment necessary to align all columns.
- *     <0    Fixed alignment, unconditionally align all columns to this length
- *           with its sign inverted.
- */
 void
-ruler_init(struct ruler *rl, int len)
+ruler_init(struct ruler *rl, unsigned int align, unsigned int flags)
 {
 	memset(rl, 0, sizeof(*rl));
 	if (VECTOR_INIT(rl->rl_columns) == NULL)
 		err(1, NULL);
-	rl->rl_len = len;
+	rl->rl_align = align;
+	rl->rl_flags = flags;
 }
 
 void
@@ -167,35 +159,36 @@ void
 ruler_exec(struct ruler *rl)
 {
 	size_t i, j;
-	int fixedlen = rl->rl_len;
-	unsigned int maxlen;
+	unsigned int maxlen = 0;
 
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_columns); i++) {
 		struct ruler_column *rc = &rl->rl_columns[i];
 
-		if (rc->rc_ntabs == 0 && fixedlen == 0)
+		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_ALIGN_MIN))
 			continue;
 
-		if (fixedlen != 0) {
-			maxlen = fixedlen;
-		} else {
+		if (rl->rl_flags & RULER_ALIGN_MIN) {
 			maxlen = rc->rc_len;
 			if (!minimize(rc)) {
 				/* Ceil the longest datum to multiple of 8. */
 				maxlen = tabalign(maxlen);
 			}
+		} else if (rl->rl_flags & RULER_ALIGN_MAX) {
+			maxlen = rl->rl_align;
+		} else if (rl->rl_flags & RULER_ALIGN_FIXED) {
+			maxlen = rl->rl_align;
 		}
 
 		for (j = 0; j < VECTOR_LENGTH(rc->rc_datums); j++) {
 			struct ruler_datum *rd = &rc->rc_datums[j];
 			unsigned int indent;
 
-			if (fixedlen < 0) {
-				doc_set_indent(rd->rd_dc, -fixedlen);
+			if (rl->rl_flags & RULER_ALIGN_FIXED) {
+				doc_set_indent(rd->rd_dc, maxlen);
 				continue;
 			}
 			if (rd->rd_len > maxlen) {
-				assert(fixedlen > 0);
+				assert(rl->rl_flags & RULER_ALIGN_MAX);
 				doc_set_indent(rd->rd_dc, 0);
 				continue;
 			}
