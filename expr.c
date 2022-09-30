@@ -789,7 +789,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
 		expr_doc(ex->ex_lhs, es, concat);
 		doc_alloc(DOC_LINE, concat);
 		doc_token(lparen, concat);
-		expr_doc(ex->ex_rhs, es, concat);
+		if (ex->ex_rhs != NULL)
+			expr_doc(ex->ex_rhs, es, concat);
 		doc_token(rparen, concat);
 		break;
 	}
