@@ -108,15 +108,13 @@ simple_stmt_leave(struct simple_stmt *ss)
 			tk = lexer_insert_before(lx, st->st_lbrace,
 			    TOKEN_LBRACE, "{");
 			if (pv != NULL)
-				token_list_move(&pv->tk_suffixes,
-				    &tk->tk_suffixes);
+				token_move_suffixes(pv, tk);
 
 			pv = token_prev(st->st_rbrace);
 			tk = lexer_insert_before(lx, st->st_rbrace,
 			    TOKEN_RBRACE, "}");
 			if (pv != NULL)
-				token_list_move(&pv->tk_suffixes,
-				    &tk->tk_suffixes);
+				token_move_suffixes(pv, tk);
 		}
 	}
 

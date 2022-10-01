@@ -1930,10 +1930,8 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 		parser_token_trim_after(pr, rparen);
 		/* Move suffixes if the left brace is about to move. */
 		if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) &&
-		    token_cmp(rparen, lbrace) < 0) {
-			token_list_move(&rparen->tk_suffixes,
-			    &lbrace->tk_suffixes);
-		}
+		    token_cmp(rparen, lbrace) < 0)
+			token_move_suffixes(rparen, lbrace);
 		doc_token(rparen, expr);
 	}
 

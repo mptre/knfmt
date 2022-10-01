@@ -852,8 +852,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		lno = nx->tk_lno - ex->ex_tk->tk_lno;
 		if (token_trim(ex->ex_tk) > 0 && lno == 1) {
 			/* Move operator to next line. */
-			token_list_move(&ex->ex_tk->tk_suffixes,
-			    &pv->tk_suffixes);
+			token_move_suffixes(ex->ex_tk, pv);
 			token_add_optline(pv);
 		}
 
@@ -880,8 +879,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		lno = ex->ex_tk->tk_lno - pv->tk_lno;
 		if (token_trim(pv) > 0 && lno == 1) {
 			/* Move operator to previous line. */
-			token_list_move(&pv->tk_suffixes,
-			    &ex->ex_tk->tk_suffixes);
+			token_move_suffixes(pv, ex->ex_tk);
 			token_add_optline(ex->ex_tk);
 		}
 
