@@ -27,6 +27,11 @@ It can subjectively try to simplify the source code:
 
 	$ knfmt -s knfmt.c
 
+It can interoperate with clang-format if a `.clang-format` file is found in any
+directory along the current working path, see
+[knfmt(1)][knfmt]
+for further details.
+
 The implementation is further described in [DESIGN][design].
 
 [design]: DESIGN

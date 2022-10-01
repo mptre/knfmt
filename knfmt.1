@@ -34,6 +34,184 @@ Simplify the source code.
 One or many files to format.
 If omitted, defaults to reading from standard input.
 .El
+.Pp
+In addition,
+.Nm
+is also interoperable with clang-format.
+A subset of the available style options found in a
+.Pa .clang-format
+file located in any directory along the current working path is honored.
+The supported style options and corresponding values are as follows:
+.Bl -tag -width Ds
+.It Cm AlignAfterOpenBracket
+Horizontally align arguments enclosed in parenthesis.
+.Bl -tag -width Ds
+.It Cm Align
+Align arguments enclosed in parenthesis.
+.Bd -literal
+some_long_function(argument1,
+		   argument2);
+.Ed
+.It Cm DontAlign
+Do not align, instead indent arguments using
+.Cm ContinuationIndentWidth .
+.Pq default
+.Bd -literal
+some_long_function(argument1,
+    argument2);
+.Ed
+.It Cm AlwaysBreak
+Not supported, interpreted as
+.Cm DontAlign .
+.It Cm BlockIndent
+Not supported, interpreted as
+.Cm DontAlign .
+.El
+.It Cm AlignEscapedNewlines
+Align backslashes in preprocessor macro definitions spanning multiple lines.
+.Bl -tag -width Ds
+.It Cm DontAlign
+Do not align backslashes.
+.Bd -literal
+#define A \e
+	int x; \e
+	int y
+.Ed
+.It Cm Left
+Not supported, interpreted as
+.Cm DontAlign .
+.It Cm Right
+Align backslashes to the right-most column with respect to
+.Cm ColumnLimit .
+.Pq default
+.Bd -literal
+#define A		\e
+	int x;		\e
+	int y
+.Ed
+.El
+.It Cm AlignOperands
+Horizontally align operands of binary and ternary expressions.
+.Bl -tag -width Ds
+.It Cm DontAlign
+Do not align, instead indent arguments using
+.Cm ContinuationIndentWidth .
+.Pq default
+.Bd -literal
+int x = 11111111 +
+    22222222;
+.Ed
+.It Cm Align
+Align operands of binary and ternary expressions.
+.Bd -literal
+int x = 11111111 +
+        22222222;
+.Ed
+.Pp
+When
+.Cm BreakBeforeBinaryOperators
+equals
+.Cm NonAssignment ,
+the operator is aligned with the operand on the previous line.
+.Bd -literal
+int x = 11111111
+        + 22222222;
+.Ed
+.It Cm AlignAfterOperator
+Not supported, interpreted as
+.Cm DontAlign .
+.El
+.It Cm AlwaysBreakAfterReturnType
+Break after the return type for function prototypes and definitions.
+.Bl -tag -width Ds
+.It Cm None
+Never break after the function return type.
+.Bd -literal
+void prototype(void);
+
+void definition(void)
+{
+}
+.Ed
+.It Cm All
+Always break after the function return type.
+.Bd -literal
+void
+prototype(void);
+
+void definition(void)
+{
+}
+.Ed
+.It Cm TopLevel
+Not supported, interpreted as
+.Cm All .
+.It Cm AllDefinitions
+Always break after the return type for function definitions.
+.Pq default
+.Bd -literal
+void prototype(void);
+
+int
+definition(void)
+{
+}
+.Ed
+.It Cm TopLevelDefinitions
+Not supported, interpreted as
+.Cm AllDefinitions .
+.El
+.It Cm BreakBeforeBinaryOperators
+Break before or after binary operators.
+.Bl -tag -width Ds
+.It Cm None
+Break after binary operators.
+.Pq default
+.Bd -literal
+int x = 11111111 +
+    22222222;
+.Ed
+.It Cm NonAssignment
+Break before non assignment operators.
+.Bd -literal
+int x = 11111111
+    + 22222222;
+.Ed
+.It Cm All
+Break before all binary operators.
+.Bd -literal
+int x = 11111111
+    + 22222222;
+.Ed
+.El
+.It Cm ColumnLimit
+Maximum number of allowed columns per line.
+.Pq default 80
+.It Cm ContinuationIndentWidth
+Indentation width for line continuations.
+.Pq default 4
+.It Cm IndentWidth
+Indentation width.
+.Pq default 8
+.It Cm UseTab
+Use tabs for indentation.
+.Bl -tag -width Ds
+.It Cm Never
+Do not use tabs for indentation.
+.It Cm ForIndentation
+Not supported, interpreted as
+.Cm Always .
+.It Cm ForContinuationAndIndentation
+Not supported, interpreted as
+.Cm Always .
+.It Cm AlignWithSpaces
+Not supported, interpreted as
+.Cm Always .
+.It Cm Always
+Use tabs for indentation.
+.Pq default
+.El
+.El
 .Sh DIAGNOSTICS
 .Ex -std
 .Sh SEE ALSO
