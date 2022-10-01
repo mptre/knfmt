@@ -1,6 +1,6 @@
 static inline void f2(void);
 
-static inline /* comment */ void f1(void);
+inline static /* comment */ void f1(void);
 
 /* comment */
 static inline void f3(void);
