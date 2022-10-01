@@ -698,11 +698,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		pv = token_prev(tk);
 		if (pv == NULL)
 			pv = nx;
-		while (!TAILQ_EMPTY(&tk->tk_suffixes)) {
-			fix = TAILQ_FIRST(&tk->tk_suffixes);
-			TAILQ_REMOVE(&tk->tk_suffixes, fix, tk_entry);
-			TAILQ_INSERT_TAIL(&pv->tk_suffixes, fix, tk_entry);
-		}
+		token_move_suffixes(tk, pv);
 	} else {
 		TAILQ_FOREACH(fix, &tk->tk_prefixes, tk_entry)
 			token_branch_unlink(fix);

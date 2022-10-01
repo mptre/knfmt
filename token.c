@@ -386,6 +386,18 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 }
 
 void
+token_move_suffixes(struct token *src, struct token *dst)
+{
+	while (!TAILQ_EMPTY(&src->tk_suffixes)) {
+		struct token *suffix;
+
+		suffix = TAILQ_FIRST(&src->tk_suffixes);
+		TAILQ_REMOVE(&src->tk_suffixes, suffix, tk_entry);
+		TAILQ_INSERT_TAIL(&dst->tk_suffixes, suffix, tk_entry);
+	}
+}
+
+void
 token_move_suffixes_if(struct token *src, struct token *dst, int type)
 {
 	struct token *suffix, *tmp;

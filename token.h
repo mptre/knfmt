@@ -113,6 +113,7 @@ void	token_list_move(struct token_list *, struct token_list *);
 
 void	token_move_prefixes(struct token *, struct token *);
 void	token_move_prefix(struct token *, struct token *, struct token *);
+void	token_move_suffixes(struct token *, struct token *);
 void	token_move_suffixes_if(struct token *, struct token *, int);
 
 int	token_branch_unlink(struct token *tk);
