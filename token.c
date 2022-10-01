@@ -343,6 +343,49 @@ token_list_move(struct token_list *src, struct token_list *dst)
 }
 
 void
+token_move_prefixes(struct token *src, struct token *dst)
+{
+	while (!TAILQ_EMPTY(&src->tk_prefixes)) {
+		struct token *prefix;
+
+		prefix = TAILQ_LAST(&src->tk_prefixes, token_list);
+		token_move_prefix(prefix, src, dst);
+	}
+}
+
+/*
+ * Associated the given prefix token with another token.
+ */
+void
+token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
+{
+	TAILQ_REMOVE(&src->tk_prefixes, prefix, tk_entry);
+	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+
+	switch (prefix->tk_type) {
+	case TOKEN_CPP_IF:
+	case TOKEN_CPP_ELSE:
+	case TOKEN_CPP_ENDIF: {
+		struct token *nx = prefix->tk_branch.br_nx;
+
+		assert(prefix->tk_token == src);
+
+		if (nx != NULL && nx->tk_token == dst) {
+			/* Discard empty branch. */
+			while (token_branch_unlink(prefix) == 0)
+				continue;
+		} else {
+			prefix->tk_token = dst;
+		}
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+void
 token_move_suffixes(struct token *src, struct token *dst, int type)
 {
 	struct token *suffix, *tmp;

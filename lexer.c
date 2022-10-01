@@ -112,8 +112,6 @@ static void	lexer_trace0(const struct lexer *, const char *, const char *,
 	__attribute__((__format__(printf, 3, 4)));
 
 static void	token_branch_link(struct token *, struct token *);
-static void	token_move_prefix(struct token *, struct token *,
-    struct token *);
 static void	token_prolong(struct token *, struct token *);
 
 static int	 isnum(unsigned char, int);
@@ -695,10 +693,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		 */
 		nx = token_next(tk);
 		assert(nx != NULL);
-		while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
-			fix = TAILQ_LAST(&tk->tk_prefixes, token_list);
-			token_move_prefix(fix, tk, nx);
-		}
+		token_move_prefixes(tk, nx);
 
 		pv = token_prev(tk);
 		if (pv == NULL)
@@ -2132,38 +2127,6 @@ token_branch_link(struct token *src, struct token *dst)
 {
 	src->tk_branch.br_nx = dst;
 	dst->tk_branch.br_pv = src;
-}
-
-/*
- * Associated the given prefix token with another token.
- */
-static void
-token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
-{
-	TAILQ_REMOVE(&src->tk_prefixes, prefix, tk_entry);
-	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
-
-	switch (prefix->tk_type) {
-	case TOKEN_CPP_IF:
-	case TOKEN_CPP_ELSE:
-	case TOKEN_CPP_ENDIF: {
-		struct token *nx = prefix->tk_branch.br_nx;
-
-		assert(prefix->tk_token == src);
-
-		if (nx != NULL && nx->tk_token == dst) {
-			/* Discard empty branch. */
-			while (token_branch_unlink(prefix) == 0)
-				continue;
-		} else {
-			prefix->tk_token = dst;
-		}
-		break;
-	}
-
-	default:
-		break;
-	}
 }
 
 static int

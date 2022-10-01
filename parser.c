@@ -2322,8 +2322,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			nx = token_next(tk);
 			if (ntokens > 0 &&
 			    tk->tk_type == TOKEN_STATIC) {
-				token_list_move(&beg->tk_prefixes,
-				    &tk->tk_prefixes);
+				token_move_prefixes(beg, tk);
 				token_list_move(&tk->tk_suffixes,
 				    &beg->tk_suffixes);
 				lexer_move_before(lx, beg, tk);
