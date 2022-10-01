@@ -787,6 +787,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 	struct lexer_state s;
 	struct token *beg, *t;
 	int peek = 0;
+	int nkeywords = 0;
 	int ntokens = 0;
 	int unknown = 0;
 
@@ -799,8 +800,10 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 			break;
 
 		if (lexer_if_flags(lx,
-		    TOKEN_FLAG_TYPE | TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
-		    &t)) {
+		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &t)) {
+			nkeywords++;
+			peek = 1;
+		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &t)) {
 			if (t->tk_flags & TOKEN_FLAG_IDENT)
 				lexer_if(lx, TOKEN_IDENT, &t);
 			/* Recognize constructs like `struct s[]'. */
@@ -874,10 +877,9 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 	}
 	lexer_peek_leave(lx, &s);
 
-	if (ntokens == 1 &&
-	    (flags & LEXER_TYPE_ARG) == 0 &&
-	    (beg->tk_flags & (TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE))) {
-		/* A single qualifier or storage token cannot denote a type. */
+	if (ntokens > 0 && ntokens == nkeywords &&
+	    (flags & LEXER_TYPE_ARG) == 0) {
+		/* Only qualifier or storage token(s) cannot denote a type. */
 		peek = 0;
 	} else if (!peek && !unknown && ntokens > 0) {
 		/*

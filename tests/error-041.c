@@ -1,0 +1,7 @@
+/*
+ * AFL
+ */
+
+static
+#foo
+static
