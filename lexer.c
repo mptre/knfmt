@@ -804,7 +804,9 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 			nkeywords++;
 			peek = 1;
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &t)) {
-			if (t->tk_flags & TOKEN_FLAG_IDENT)
+			if (t->tk_type == TOKEN_ENUM ||
+			    t->tk_type == TOKEN_STRUCT ||
+			    t->tk_type == TOKEN_UNION)
 				lexer_if(lx, TOKEN_IDENT, &t);
 			/* Recognize constructs like `struct s[]'. */
 			(void)lexer_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE,

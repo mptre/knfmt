@@ -28,11 +28,7 @@ struct token {
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
 /* Token denotes a storage keyword, see token-defs.h. */
 #define TOKEN_FLAG_STORAGE	0x00000004u
-/*
- * Token optionally be followed by an identifier. Only applicable to struct,
- * enum and union.
- */
-#define TOKEN_FLAG_IDENT	0x00000008u
+/* was TOKEN_FLAG_IDENT		0x00000008u */
 /* Token is either a prefix or suffix. */
 #define TOKEN_FLAG_DANGLING	0x00000010u
 /* Token denotes an assignment operator, see token-defs.h. */
