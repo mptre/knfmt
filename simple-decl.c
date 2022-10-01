@@ -181,7 +181,8 @@ simple_decl_leave(struct simple_decl *sd)
 
 			/* Move line break(s) to the new semicolon. */
 			if (semi != NULL)
-				token_move_suffixes(semi, after, TOKEN_SPACE);
+				token_move_suffixes_if(semi, after,
+				    TOKEN_SPACE);
 		}
 	}
 

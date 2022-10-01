@@ -953,7 +953,7 @@ parser_exec_decl_braces_field(struct parser *pr,
 			/* Correct alignment, must occur after the ident. */
 			if (lexer_peek_if(lx, TOKEN_EQUAL, &equal) &&
 			    token_has_tabs(equal))
-				token_move_suffixes(equal, tk, TOKEN_SPACE);
+				token_move_suffixes_if(equal, tk, TOKEN_SPACE);
 		} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_token(tk, dc);
 

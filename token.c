@@ -386,7 +386,7 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 }
 
 void
-token_move_suffixes(struct token *src, struct token *dst, int type)
+token_move_suffixes_if(struct token *src, struct token *dst, int type)
 {
 	struct token *suffix, *tmp;
 
