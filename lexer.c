@@ -415,17 +415,18 @@ lexer_stamp(struct lexer *lx)
 	struct token *tk;
 
 	tk = lx->lx_st.st_tk;
-	if (tk != NULL && !TAILQ_INSERTED(tk, tk_stamp)) {
-		if (trace(lx->lx_op, 'l') >= 2) {
-			char *str;
+	if (tk == NULL || TAILQ_INSERTED(tk, tk_stamp))
+		return;
 
-			str = lx->lx_serialize(tk);
-			lexer_trace(lx, "stamp %s", str);
-			free(str);
-		}
-		token_ref(tk);
-		TAILQ_INSERT_TAIL(&lx->lx_stamps, tk, tk_stamp);
+	if (trace(lx->lx_op, 'l') >= 2) {
+		char *str;
+
+		str = lx->lx_serialize(tk);
+		lexer_trace(lx, "stamp %s", str);
+		free(str);
 	}
+	token_ref(tk);
+	TAILQ_INSERT_TAIL(&lx->lx_stamps, tk, tk_stamp);
 }
 
 /*
