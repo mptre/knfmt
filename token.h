@@ -28,7 +28,7 @@ struct token {
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
 /* Token denotes a storage keyword, see token-defs.h. */
 #define TOKEN_FLAG_STORAGE	0x00000004u
-/* was TOKEN_FLAG_IDENT		0x00000008u */
+#define TOKEN_FLAG_STAMP	0x00000008u
 /* Token is either a prefix or suffix. */
 #define TOKEN_FLAG_DANGLING	0x00000010u
 /* Token denotes an assignment operator, see token-defs.h. */
@@ -79,7 +79,6 @@ struct token {
 	struct token_list	 tk_suffixes;
 
 	TAILQ_ENTRY(token)	 tk_entry;
-	TAILQ_ENTRY(token)	 tk_stamp;
 };
 
 struct token	*token_alloc(const struct token *);

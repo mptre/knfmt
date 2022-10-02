@@ -23,9 +23,6 @@
 #  include "compat-uthash.h"
 #endif
 
-#define TAILQ_INSERTED(elm, field) \
-	((elm)->field.tqe_next != NULL || (elm)->field.tqe_prev != NULL)
-
 struct branch {
 	struct token	*br_cpp;
 };
@@ -50,7 +47,7 @@ struct lexer {
 	struct token		*lx_unmute;
 
 	struct token_list	 lx_tokens;
-	struct token_list	 lx_stamps;
+	VECTOR(struct token *)	 lx_stamps;
 	VECTOR(struct branch)	 lx_branches;
 };
 
@@ -213,7 +210,8 @@ lexer_alloc(const struct lexer_arg *arg)
 	if (VECTOR_INIT(lx->lx_lines) == NULL)
 		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
-	TAILQ_INIT(&lx->lx_stamps);
+	if (VECTOR_INIT(lx->lx_stamps) == NULL)
+		err(1, NULL);
 	if (VECTOR_INIT(lx->lx_branches) == NULL)
 		err(1, NULL);
 	lexer_line_alloc(lx, 1);
@@ -273,19 +271,19 @@ lexer_free(struct lexer *lx)
 	if (lx == NULL)
 		return;
 
+	VECTOR_FREE(lx->lx_lines);
 	if (lx->lx_unmute != NULL)
 		token_rele(lx->lx_unmute);
-
-	while ((tk = TAILQ_FIRST(&lx->lx_stamps)) != NULL) {
-		TAILQ_REMOVE(&lx->lx_stamps, tk, tk_stamp);
+	while (!VECTOR_EMPTY(lx->lx_stamps)) {
+		tk = *VECTOR_POP(lx->lx_stamps);
 		token_rele(tk);
 	}
+	VECTOR_FREE(lx->lx_stamps);
 	while ((tk = TAILQ_FIRST(&lx->lx_tokens)) != NULL) {
 		TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
-	VECTOR_FREE(lx->lx_lines);
 	free(lx);
 }
 
@@ -415,7 +413,7 @@ lexer_stamp(struct lexer *lx)
 	struct token *tk;
 
 	tk = lx->lx_st.st_tk;
-	if (TAILQ_INSERTED(tk, tk_stamp))
+	if (tk->tk_flags & TOKEN_FLAG_STAMP)
 		return;
 
 	if (trace(lx->lx_op, 'l') >= 2) {
@@ -425,8 +423,9 @@ lexer_stamp(struct lexer *lx)
 		lexer_trace(lx, "stamp %s", str);
 		free(str);
 	}
+	tk->tk_flags |= TOKEN_FLAG_STAMP;
 	token_ref(tk);
-	TAILQ_INSERT_TAIL(&lx->lx_stamps, tk, tk_stamp);
+	*VECTOR_ALLOC(lx->lx_stamps) = tk;
 }
 
 /*
@@ -438,7 +437,9 @@ lexer_stamp(struct lexer *lx)
 int
 lexer_recover(struct lexer *lx)
 {
-	struct token *back, *br, *dst, *seek, *src, *tmp;
+	struct token *seek = NULL;
+	struct token *back, *br, *dst, *src;
+	size_t i;
 	int ndocs = 1;
 
 	back = lx->lx_st.st_tk != NULL ?
@@ -459,8 +460,10 @@ lexer_recover(struct lexer *lx)
 	 * Must be done before getting rid of the branch as stamped tokens might
 	 * be removed.
 	 */
-	TAILQ_FOREACH_REVERSE(tmp, &lx->lx_stamps, token_list, tk_stamp) {
-		if (token_cmp(tmp, br) < 0)
+	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
+		struct token *stamp = lx->lx_stamps[i - 1];
+
+		if (token_cmp(stamp, br) < 0)
 			break;
 		ndocs++;
 	}
@@ -473,9 +476,13 @@ lexer_recover(struct lexer *lx)
 	lexer_branch_fold(lx, br);
 
 	/* Find first stamped token before the branch. */
-	TAILQ_FOREACH_REVERSE(seek, &lx->lx_stamps, token_list, tk_stamp) {
-		if (token_cmp(seek, br) < 0)
+	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
+		struct token *stamp = lx->lx_stamps[i - 1];
+
+		if (token_cmp(stamp, br) < 0) {
+			seek = stamp;
 			break;
+		}
 	}
 	token_rele(br);
 
@@ -537,7 +544,7 @@ lexer_branch(struct lexer *lx)
 	token_ref(lx->lx_unmute);
 
 	/* Rewind to last stamped token. */
-	seek = TAILQ_LAST(&lx->lx_stamps, token_list);
+	seek = VECTOR_EMPTY(lx->lx_stamps) ? NULL : *VECTOR_LAST(lx->lx_stamps);
 	lexer_trace(lx, "seek to %s",
 	    lx->lx_serialize(seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
 	lx->lx_st.st_tk = seek;
@@ -705,9 +712,18 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 			token_branch_unlink(fix);
 	}
 
-	if (TAILQ_INSERTED(tk, tk_stamp)) {
-		TAILQ_REMOVE(&lx->lx_stamps, tk, tk_stamp);
+	if (tk->tk_flags & TOKEN_FLAG_STAMP) {
+		size_t i;
+
+		tk->tk_flags &= ~TOKEN_FLAG_STAMP;
 		token_rele(tk);
+		for (i = 0; i < VECTOR_LENGTH(lx->lx_stamps); i++) {
+			if (lx->lx_stamps[i] == tk)
+				break;
+		}
+		for (i++; i < VECTOR_LENGTH(lx->lx_stamps); i++)
+			lx->lx_stamps[i - 1] = lx->lx_stamps[i];
+		VECTOR_POP(lx->lx_stamps);
 	}
 
 	token_remove(&lx->lx_tokens, tk);
