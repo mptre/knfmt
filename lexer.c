@@ -415,7 +415,7 @@ lexer_stamp(struct lexer *lx)
 	struct token *tk;
 
 	tk = lx->lx_st.st_tk;
-	if (tk == NULL || TAILQ_INSERTED(tk, tk_stamp))
+	if (TAILQ_INSERTED(tk, tk_stamp))
 		return;
 
 	if (trace(lx->lx_op, 'l') >= 2) {
