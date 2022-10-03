@@ -2813,10 +2813,10 @@ parser_token_trim_before(const struct parser *pr, struct token *tk)
 	if (parser_simple_active(pr))
 		return;
 
+	if (!token_is_moveable(tk))
+		return;
 	pv = token_prev(tk);
-	if (pv != NULL &&
-	    !token_has_prefix(tk, TOKEN_COMMENT) &&
-	    !token_has_prefix(tk, TOKEN_CPP))
+	if (pv != NULL)
 		token_trim(pv);
 }
 
