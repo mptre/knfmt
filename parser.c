@@ -166,7 +166,7 @@ static int	parser_exec_type(struct parser *, struct doc *,
     const struct token *, struct ruler *);
 
 static int	parser_exec_attributes(struct parser *, struct doc *,
-    struct doc **, unsigned int, enum doc_type);
+    struct doc **, enum doc_type);
 
 static int	parser_simple_active(const struct parser *);
 
@@ -676,7 +676,7 @@ parser_exec_decl_init(struct parser *pr,
 			doc_literal(" ", concat);
 		} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
 			doc_token(tk, concat);
-		} else if (parser_exec_attributes(pr, concat, NULL, 0,
+		} else if (parser_exec_attributes(pr, concat, NULL,
 		    DOC_LINE) & GOOD) {
 			if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 				doc_literal(" ", concat);
@@ -1280,11 +1280,12 @@ parser_exec_func_proto(struct parser *pr,
     struct parser_exec_func_proto_arg *arg)
 {
 	struct doc *dc = arg->dc;
-	struct doc *concat, *group, *indent, *kr;
+	struct doc *attributes, *concat, *group, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
 	unsigned int s;
 	int nkr = 0;
+	int error;
 
 	if (parser_exec_type(pr, dc, arg->type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
@@ -1366,8 +1367,11 @@ parser_exec_func_proto(struct parser *pr,
 	if (nkr == 0)
 		doc_remove(kr, dc);
 
-	parser_exec_attributes(pr, dc, &arg->out,
-	    style(pr->pr_st, IndentWidth), DOC_HARDLINE);
+	attributes = doc_alloc(DOC_GROUP, dc);
+	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attributes);
+	error = parser_exec_attributes(pr, indent, &arg->out, DOC_HARDLINE);
+	if (error & HALT)
+		doc_remove(attributes, dc);
 
 	return parser_good(pr);
 }
@@ -1417,8 +1421,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			return parser_fail(pr);
 
-		if (parser_exec_attributes(pr, concat, NULL, 0,
-		    DOC_LINE) & GOOD)
+		if (parser_exec_attributes(pr, concat, NULL, DOC_LINE) & GOOD)
 			break;
 
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
@@ -2406,7 +2409,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 
 static int
 parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
-    unsigned int indent, enum doc_type linetype)
+    enum doc_type linetype)
 {
 	struct doc *concat = NULL;
 	struct lexer *lx = pr->pr_lx;
@@ -2414,8 +2417,6 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 	if (!lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
 		return NONE;
 
-	if (indent > 0)
-		dc = doc_alloc_indent(indent, dc);
 	for (;;) {
 		struct token *tk;
 		int error;
