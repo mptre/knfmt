@@ -155,7 +155,7 @@ style-*)
 	testcase -c "$_abs" -- -vls "$@"
 	;;
 trace-*)
-	testcase -q "$_abs" -- -va "$@"
+	testcase -q "$_abs" -- -s -va "$@"
 	;;
 *)
 	testcase "$_abs" -- -vl "$@"
