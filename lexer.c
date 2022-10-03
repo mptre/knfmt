@@ -1871,8 +1871,9 @@ lexer_peek_if_type_cpp(struct lexer *lx)
 			size_t len = nx->tk_len;
 
 			/* Ugly, do not confuse cppx. */
-			if (ident->tk_len != len ||
-			    strncmp(ident->tk_str, nx->tk_str, len) != 0)
+			if (!lexer_peek_if(lx, TOKEN_LPAREN, NULL) &&
+			    (ident->tk_len != len ||
+			     strncmp(ident->tk_str, nx->tk_str, len) != 0))
 				peek = 1;
 		} else if (lexer_if(lx, TOKEN_STAR, NULL)) {
 			peek = 1;
