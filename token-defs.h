@@ -49,6 +49,7 @@ A(TOKEN_ASSEMBLY,	"__asm",	0)
 A(TOKEN_ASSEMBLY,	"__asm__",	0)
 A(TOKEN_ATTRIBUTE,	"__attribute",	0)
 A(TOKEN_VOLATILE,	"__volatile",	F(QUALIFIER))
+A(TOKEN_VOLATILE,	"__volatile__",	F(QUALIFIER))
 
 /* punctuators */
 T(TOKEN_LSQUARE,		"[",	0)

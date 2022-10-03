@@ -242,6 +242,9 @@ main(int argc, char *argv[])
 	error |= test_lexer_read("...", "ELLIPSIS");
 	error |= test_lexer_read(".x", "PERIOD IDENT");
 
+	error |= test_lexer_read("__volatile", "VOLATILE");
+	error |= test_lexer_read("__volatile__", "VOLATILE");
+
 	error |= test_strwidth("int", 0, 3);
 	error |= test_strwidth("int\tx", 0, 9);
 	error |= test_strwidth("int\tx", 3, 9);
