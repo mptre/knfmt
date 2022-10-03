@@ -687,8 +687,6 @@ lexer_move_before(struct lexer *lx, struct token *before, struct token *tk)
 void
 lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 {
-	struct token *fix;
-
 	assert(tk->tk_type != LEXER_EOF);
 
 	if (keepfixes) {
@@ -708,6 +706,8 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 			pv = nx;
 		token_move_suffixes(tk, pv);
 	} else {
+		struct token *fix;
+
 		TAILQ_FOREACH(fix, &tk->tk_prefixes, tk_entry)
 			token_branch_unlink(fix);
 	}
