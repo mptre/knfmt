@@ -18,12 +18,12 @@
   <suppress>
     <fileName>expr.c</fileName>
     <id>unusedStructMember</id>
-    <symbolName>Anonymous6::tqh_first</symbolName>
+    <symbolName>Anonymous5::tqh_first</symbolName>
   </suppress>
   <suppress>
     <fileName>expr.c</fileName>
     <id>unusedStructMember</id>
-    <symbolName>Anonymous6::tqh_last</symbolName>
+    <symbolName>Anonymous5::tqh_last</symbolName>
   </suppress>
 
   <!-- lexer.c -->
