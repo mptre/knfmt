@@ -124,4 +124,4 @@ int	lexer_until(struct lexer *, int, struct token **);
 const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
     unsigned int);
 
-void	lexer_dump(const struct lexer *);
+void	lexer_dump(struct lexer *);
