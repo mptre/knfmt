@@ -2787,15 +2787,10 @@ parser_fail0(struct parser *pr, const char *fun, int lno)
 	if (trace(pr->pr_op, 'l'))
 		buffer_printf(bf, "%s:%d: ", fun, lno);
 	buffer_printf(bf, "error at ");
-	if (lexer_back(pr->pr_lx, &tk)) {
-		char *str;
-
-		str = token_sprintf(tk);
-		buffer_printf(bf, "%s\n", str);
-		free(str);
-	} else {
+	if (lexer_back(pr->pr_lx, &tk))
+		buffer_printf(bf, "%s\n", lexer_serialize(pr->pr_lx, tk));
+	else
 		buffer_printf(bf, "(null)\n");
-	}
 	error_end(pr->pr_er);
 
 out:

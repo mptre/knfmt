@@ -361,8 +361,7 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 	bf = buffer_alloc(128);
 	for (;;) {
 		struct token *tk;
-		const char *end;
-		char *str;
+		const char *end, *str;
 
 		if (!lexer_pop(cx->cx_lx, &tk))
 			errx(1, "%s:%d: out of tokens", fun, lno);
@@ -371,11 +370,10 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 
 		if (ntokens++ > 0)
 			buffer_putc(bf, ' ');
-		str = token_sprintf(tk);
+		str = lexer_serialize(cx->cx_lx, tk);
 		/* Strip of the token position and verbatim representation. */
 		end = strchr(str, '<');
 		buffer_puts(bf, str, end - str);
-		free(str);
 	}
 	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;

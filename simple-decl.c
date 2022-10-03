@@ -478,7 +478,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	*dst = *dv;
 
 	simple_trace(sd, "type \"%s\", slot %u, ident %s",
-	    sd->sd_dt->dt_str, slot, token_sprintf(dv->dv_sort));
+	    sd->sd_dt->dt_str, slot, lexer_serialize(sd->sd_lx, dv->dv_sort));
 
 	return dst;
 }

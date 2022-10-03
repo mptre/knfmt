@@ -62,6 +62,7 @@ void		 lexer_ungetc(struct lexer *);
 struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
     const struct token *);
 void		 lexer_error(struct lexer *, const char *, ...);
+const char	*lexer_serialize(struct lexer *, const struct token *);
 
 int	lexer_get_error(const struct lexer *);
 int	lexer_get_lines(const struct lexer *, unsigned int,
