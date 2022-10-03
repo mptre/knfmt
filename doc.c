@@ -913,9 +913,9 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * start emitting documents nested under the same group.
 	 *
 	 * A group is something intended to fit on a single line. However,
-	 * there are expections in the sense of groups spanning multiple lines;
-	 * one example is brace initializers. Such groups are ignored allowing
-	 * the first group covering a single line to be found.
+	 * there are exceptions in the sense of groups spanning multiple lines;
+	 * for instance brace initializers. Such groups are ignored allowing the
+	 * first nested group covering a single line to be found.
 	 */
 	memset(&dd, 0, sizeof(dd));
 	dd.dd_threshold = st->st_diff.beg;
