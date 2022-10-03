@@ -598,9 +598,6 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
 
-	parser_exec_attributes(pr, concat, NULL,
-	    style(pr->pr_st, IndentWidth), DOC_LINE);
-
 out:
 	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
 		doc_token(semi, concat);
@@ -679,6 +676,10 @@ parser_exec_decl_init(struct parser *pr,
 			doc_literal(" ", concat);
 		} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
 			doc_token(tk, concat);
+		} else if (parser_exec_attributes(pr, concat, NULL, 0,
+		    DOC_LINE) & GOOD) {
+			if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
+				doc_literal(" ", concat);
 		} else {
 			break;
 		}
