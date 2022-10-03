@@ -32,9 +32,12 @@ struct lexer_arg {
 		struct token	*(*read)(struct lexer *, void *);
 
 		/*
-		 * Serialize callback used to turn the given token into something
-		 * human readable. Passing NULL will default to a callback
-		 * capable of serializing C tokens.
+		 * Serialize routine used to turn the given token into something
+		 * human readable. The returned string must be heap allocated
+		 * and is managed by the lexer.
+		 *
+		 * Passing NULL will default to a routine capable of
+		 * serializing C tokens.
 		 */
 		char		*(*serialize)(const struct token *);
 
