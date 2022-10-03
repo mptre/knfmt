@@ -590,9 +590,6 @@ lexer_pop(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state *st = &lx->lx_st;
 
-	if (TAILQ_EMPTY(&lx->lx_tokens))
-		return 0;
-
 	if (st->st_tk == NULL) {
 		st->st_tk = TAILQ_FIRST(&lx->lx_tokens);
 	} else if (st->st_tk->tk_type != LEXER_EOF) {
@@ -604,7 +601,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 
 		st->st_tk = token_next(st->st_tk);
 		if (st->st_tk == NULL)
-			goto out;
+			return 1;
 		br = token_get_branch(st->st_tk);
 		if (br == NULL)
 			goto out;
@@ -623,8 +620,6 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	}
 
 out:
-	if (st->st_tk == NULL)
-		return 0;
 	*tk = st->st_tk;
 	return 1;
 }
