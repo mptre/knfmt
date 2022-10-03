@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <string.h>
 
 #include "buffer.h"
@@ -13,6 +14,7 @@
 
 static const char	*nextline(const char *, size_t);
 static const char	*skipws(const char *, size_t);
+static size_t		 rskipws(const char *, size_t);
 
 char *
 comment_exec(const struct token *tk, const struct style *st,
@@ -22,10 +24,12 @@ comment_exec(const struct token *tk, const struct style *st,
 	const char *sp = tk->tk_str;
 	char *p;
 	size_t len = tk->tk_len;
+	int iscrlf;
 
 	if (len == 0 || sp[len - 1] != '\n')
 		return NULL;
 
+	iscrlf = len >= 2 && sp[len - 2] == '\r' && sp[len - 1] == '\n';
 	bf = buffer_alloc(len);
 	for (;;) {
 		const char *ep;
@@ -40,7 +44,10 @@ comment_exec(const struct token *tk, const struct style *st,
 		ep = nextline(sp, len);
 		if (ep == NULL)
 			break;
-		buffer_puts(bf, sp, ep - sp);
+		buffer_puts(bf, sp, rskipws(sp, ep - sp));
+		if (iscrlf)
+			buffer_putc(bf, '\r');
+		buffer_putc(bf, '\n');
 
 		len -= ep - sp;
 		sp += ep - sp;
@@ -73,4 +80,15 @@ skipws(const char *str, size_t len)
 	if (i == 0)
 		return NULL;
 	return &str[i];
+}
+
+/*
+ * Returns the length of the given string disregarding trailing whitespace.
+ */
+static size_t
+rskipws(const char *str, size_t len)
+{
+	while (len > 0 && isspace((unsigned char)str[len - 1]))
+		len--;
+	return len;
 }

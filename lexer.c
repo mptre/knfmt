@@ -112,8 +112,7 @@ static void	lexer_trace0(const struct lexer *, const char *, const char *,
 static void	token_branch_link(struct token *, struct token *);
 static void	token_prolong(struct token *, struct token *);
 
-static int	 isnum(unsigned char, int);
-static char	*strtrim(const char *, size_t *);
+static int	isnum(unsigned char, int);
 
 static struct token_hash	*tokens = NULL;
 
@@ -1518,7 +1517,6 @@ lexer_comment(struct lexer *lx, int block)
 {
 	struct lexer_state oldst, st;
 	struct token *tk;
-	char *str;
 	int cstyle;
 	unsigned char ch;
 
@@ -1566,11 +1564,6 @@ lexer_comment(struct lexer *lx, int block)
 	}
 
 	tk = lexer_emit(lx, &st, &tkcomment);
-	if ((str = strtrim(tk->tk_str, &tk->tk_len)) != NULL) {
-		tk->tk_str = str;
-		tk->tk_flags |= TOKEN_FLAG_DIRTY;
-	}
-
 	/* Discard any remaining hard line(s). */
 	if (block)
 		lexer_eat_lines(lx, NULL, 0);
@@ -2167,57 +2160,4 @@ isnum(unsigned char ch, int prefix)
 	ch = tolower(ch);
 	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
 	    ch == 'u' || ch == '.';
-}
-
-/*
- * Trim trailing whitespace from each line in src. Returns NULL if no such
- * whitespace is found, an optimization for the common case.
- */
-static char *
-strtrim(const char *src, size_t *srclen)
-{
-	struct buffer *bf = NULL;
-	char *dst;
-	size_t len = *srclen;
-	size_t co = 0;	/* copy offset in src */
-	size_t so = 0;	/* current start offset in src */
-
-	while (len > 0) {
-		const char *nl;
-		size_t eo;
-		int nspaces = 0;
-
-		nl = memchr(&src[so], '\n', len);
-		if (nl == NULL)
-			break;
-		eo = nl - src;
-		for (; eo > 0; eo--) {
-			if (src[eo - 1] == ' ' || src[eo - 1] == '\t')
-				nspaces++;
-			else
-				break;
-		}
-		if (nspaces == 0)
-			goto next;
-
-		if (bf == NULL)
-			bf = buffer_alloc(*srclen);
-		buffer_puts(bf, &src[co], eo - co);
-		buffer_putc(bf, '\n');
-		co = (nl - src) + 1;
-
-next:
-		len -= (nl - &src[so]) + 1;
-		so += (nl - &src[so]) + 1;
-	}
-
-	if (bf == NULL)
-		return NULL;
-
-	if (so - co > 1)
-		buffer_puts(bf, &src[co], so - co);
-	*srclen = bf->bf_len;
-	dst = buffer_release(bf);
-	buffer_free(bf);
-	return dst;
 }
