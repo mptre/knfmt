@@ -2252,7 +2252,7 @@ parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
 		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 			doc_alloc(DOC_LINE, concat);
 		error = parser_exec_expr(pr, concat, NULL, rparen, 0, 0);
-		if (error & HALT)
+		if (error & FAIL)
 			return parser_fail(pr);
 	}
 
