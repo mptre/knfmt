@@ -2817,7 +2817,7 @@ parser_token_trim_before(const struct parser *pr, struct token *tk)
 	if (pv != NULL &&
 	    !token_has_prefix(tk, TOKEN_COMMENT) &&
 	    !token_has_prefix(tk, TOKEN_CPP))
-		parser_token_trim_after(pr, pv);
+		token_trim(pv);
 }
 
 static void
