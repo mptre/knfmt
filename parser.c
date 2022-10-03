@@ -2205,6 +2205,8 @@ parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 
+	parser_token_trim_before(pr, rparen);
+
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	if (lexer_expect(lx, TOKEN_ASSEMBLY, &assembly))
 		doc_token(assembly, concat);
