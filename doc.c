@@ -649,11 +649,9 @@ static void
 doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
-	if (st->st_walk == NULL) {
-		/* NOLINTNEXTLINE(bugprone-sizeof-expression) */
+	if (st->st_walk == NULL)
 		if (VECTOR_INIT(st->st_walk) == NULL)
 			err(1, NULL);
-	}
 
 	/* Recursion flatten into a loop for increased performance. */
 	*VECTOR_ALLOC(st->st_walk) = dc;
