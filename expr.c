@@ -785,18 +785,8 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
-		if (style(st, AlignOperands) == Align) {
-			int w;
-
-			if (!token_has_line(ex->ex_tk, 1)) {
-				w = expr_doc_width(es, dc);
-				dc = doc_alloc_indent(w, dc);
-			} else {
-				w = -es->es_ea.indent +
-				    style(st, ContinuationIndentWidth);
-				dc = doc_alloc_indent(w, dc);
-			}
-		}
+		if (style(st, AlignOperands) == Align)
+			dc = expr_doc_align(ex, es, dc);
 		if (ex->ex_rhs != NULL) {
 			/*
 			 * Same semantics as variable declarations, do not break
