@@ -84,7 +84,7 @@ struct doc_state {
 	struct doc_state_indent		 st_indent;
 
 	struct {
-		unsigned int	nfits;
+		unsigned int	nfits;		/* # doc_fits() invocations */
 	} st_stats;
 
 	VECTOR(const struct doc *)	 st_walk;	/* stack used by doc_walk() */
