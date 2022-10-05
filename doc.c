@@ -84,7 +84,7 @@ struct doc_state {
 	struct doc_state_indent		 st_indent;
 
 	struct {
-		unsigned int	s_nfits;
+		unsigned int	nfits;
 	} st_stats;
 
 	VECTOR(const struct doc *)	 st_walk;	/* stack used by doc_walk() */
@@ -208,7 +208,7 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 		doc_trim_lines(dc, &st);
 	doc_state_reset(&st);
 	doc_diff_exit(dc, &st);
-	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.s_nfits);
+	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.nfits);
 }
 
 unsigned int
@@ -705,7 +705,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		return 1;
 
 	if (st->st_flags & DOC_EXEC_TRACE)
-		st->st_stats.s_nfits++;
+		st->st_stats.nfits++;
 
 	if (st->st_newline) {
 		/* Pending hard line(s), assume that everything fits. */
