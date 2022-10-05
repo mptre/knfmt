@@ -1424,6 +1424,7 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 	case DOC_GROUP:
 	case DOC_INDENT:
 	case DOC_DEDENT:
+	case DOC_OPTIONAL:
 		parens = 1;
 		break;
 	case DOC_ALIGN:
@@ -1434,7 +1435,6 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 	case DOC_HARDLINE:
 	case DOC_OPTLINE:
 	case DOC_MUTE:
-	case DOC_OPTIONAL:
 		break;
 	}
 
