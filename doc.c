@@ -114,6 +114,7 @@ struct doc_diff {
 };
 
 static void	doc_exec1(const struct doc *, struct doc_state *);
+static void	doc_exec_indent(const struct doc *, struct doc_state *);
 static void	doc_walk(const struct doc *, struct doc_state *,
     int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int	doc_fits(const struct doc *, struct doc_state *);
@@ -452,28 +453,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 	}
 
-	case DOC_INDENT: {
-		int oldparens = 0;
-
-		if (dc->dc_int == DOC_INDENT_PARENS) {
-			oldparens = st->st_parens;
-			if (doc_parens_align(st))
-				st->st_parens++;
-		} else if (dc->dc_int == DOC_INDENT_FORCE) {
-			doc_indent(dc, st, st->st_indent.i_cur);
-		} else {
-			st->st_indent.i_cur += dc->dc_int;
-		}
-		doc_exec1(dc->dc_doc, st);
-		if (dc->dc_int == DOC_INDENT_PARENS) {
-			st->st_parens = oldparens;
-		} else if (dc->dc_int == DOC_INDENT_FORCE) {
-			/* nothing */
-		} else {
-			st->st_indent.i_cur -= dc->dc_int;
-		}
+	case DOC_INDENT:
+		doc_exec_indent(dc, st);
 		break;
-	}
 
 	case DOC_DEDENT: {
 		int oldindent;
@@ -643,6 +625,30 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	doc_trace_leave(dc, st);
+}
+
+static void
+doc_exec_indent(const struct doc *dc, struct doc_state *st)
+{
+	int oldparens = 0;
+
+	if (dc->dc_int == DOC_INDENT_PARENS) {
+		oldparens = st->st_parens;
+		if (doc_parens_align(st))
+			st->st_parens++;
+	} else if (dc->dc_int == DOC_INDENT_FORCE) {
+		doc_indent(dc, st, st->st_indent.i_cur);
+	} else {
+		st->st_indent.i_cur += dc->dc_int;
+	}
+	doc_exec1(dc->dc_doc, st);
+	if (dc->dc_int == DOC_INDENT_PARENS) {
+		st->st_parens = oldparens;
+	} else if (dc->dc_int == DOC_INDENT_FORCE) {
+		/* nothing */
+	} else {
+		st->st_indent.i_cur -= dc->dc_int;
+	}
 }
 
 static void
