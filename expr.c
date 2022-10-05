@@ -569,13 +569,13 @@ expr_free(struct expr *ex)
 }
 
 static struct doc *
-expr_doc(struct expr *ex, struct expr_state *es, struct doc *parent)
+expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct doc *concat, *group;
 
 	es->es_depth++;
 
-	group = doc_alloc(DOC_GROUP, parent);
+	group = doc_alloc(DOC_GROUP, dc);
 	doc_annotate(group, strexpr(ex->ex_type));
 	concat = doc_alloc(DOC_CONCAT, group);
 
