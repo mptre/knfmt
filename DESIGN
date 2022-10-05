@@ -103,7 +103,7 @@ The following type of documents are available:
 
 * DOC_INDENT
   Indent increases the indentation, the same indentation is not emitted until
-  after emitting a new line.
+  emitting a new line.
 
 * DOC_DEDENT
   Dedent immediately removes the current indentation by trimming the current
