@@ -127,6 +127,8 @@ static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_align(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
@@ -605,29 +607,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		concat = expr_doc_binary(ex, es, concat);
 		break;
 
-	case EXPR_TERNARY: {
-		struct doc *ternary;
-
-		ternary = expr_doc(ex->ex_lhs, es, concat);
-		doc_alloc(DOC_LINE, ternary);
-		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], ternary);	/* ? */
-		if (ex->ex_rhs != NULL)
-			doc_alloc(DOC_LINE, ternary);
-
-		/* The true expression can be empty, GNU extension. */
-		ternary = concat;
-		if (ex->ex_rhs != NULL) {
-			ternary = expr_doc_soft(ex->ex_rhs, es, ternary, 2);
-			doc_alloc(DOC_LINE, ternary);
-		}
-
-		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], ternary);	/* : */
-		doc_alloc(DOC_LINE, ternary);
-		concat = expr_doc_soft(ex->ex_ternary, es, ternary, 2);
+	case EXPR_TERNARY:
+		concat = expr_doc_ternary(ex, es, concat);
 		break;
-	}
 
 	case EXPR_PREFIX:
 		doc_token(ex->ex_tk, concat);
@@ -883,6 +865,31 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (rparen != NULL)
 		doc_token(rparen, dc);
 	return dc;
+}
+
+static struct doc *
+expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	struct doc *ternary;
+
+	ternary = expr_doc(ex->ex_lhs, es, dc);
+	doc_alloc(DOC_LINE, ternary);
+	if (ex->ex_tokens[0] != NULL)
+		doc_token(ex->ex_tokens[0], ternary);	/* ? */
+	if (ex->ex_rhs != NULL)
+		doc_alloc(DOC_LINE, ternary);
+
+	/* The true expression can be empty, GNU extension. */
+	ternary = dc;
+	if (ex->ex_rhs != NULL) {
+		ternary = expr_doc_soft(ex->ex_rhs, es, ternary, 2);
+		doc_alloc(DOC_LINE, ternary);
+	}
+
+	if (ex->ex_tokens[1] != NULL)
+		doc_token(ex->ex_tokens[1], ternary);	/* : */
+	doc_alloc(DOC_LINE, ternary);
+	return expr_doc_soft(ex->ex_ternary, es, ternary, 2);
 }
 
 /*
