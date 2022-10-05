@@ -123,9 +123,11 @@ static void		 expr_free(struct expr *);
 
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
-static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
+static struct doc	*expr_doc_align(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
@@ -874,23 +876,8 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	es->es_noparens--;
 	if (lparen != NULL)
 		doc_token(lparen, dc);
-	if (style(es->es_st, AlignAfterOpenBracket) == Align) {
-		/*
-		 * Favor alignment with the left parenthesis but fallback to
-		 * regular continuation indentation.
-		 */
-		const struct doc_minimize minimizers[] = {
-			{
-				.indent = expr_doc_width(es, parent),
-			},
-			{
-				.indent = -es->es_ea.indent +
-				    style(es->es_st, ContinuationIndentWidth),
-			},
-		};
-
-		dc = doc_minimize(dc, minimizers);
-	}
+	if (style(es->es_st, AlignAfterOpenBracket) == Align)
+		dc = expr_doc_align(ex, es, parent);
 	if (ex->ex_rhs != NULL) {
 		if (rparen != NULL) {
 			struct token *pv;
@@ -906,6 +893,27 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (rparen != NULL)
 		doc_token(rparen, dc);
 	return dc;
+}
+
+/*
+ * Favor alignment with what we got so far on the current line, assuming it does
+ * not cause exceesive new line(s). Fallback to regular continuation
+ * indentation.
+ */
+static struct doc *
+expr_doc_align(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc)
+{
+	const struct doc_minimize minimizers[] = {
+		{
+			.indent = expr_doc_width(es, dc),
+		},
+		{
+			.indent = -es->es_ea.indent +
+			    style(es->es_st, ContinuationIndentWidth),
+		},
+	};
+
+	return doc_minimize(dc, minimizers);
 }
 
 static struct doc *
