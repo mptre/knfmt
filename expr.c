@@ -123,6 +123,8 @@ static void		 expr_free(struct expr *);
 
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
@@ -674,43 +676,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 			concat = expr_doc(ex->ex_rhs, es, concat);
 		break;
 
-	case EXPR_CALL: {
-		struct token *lparen = ex->ex_tokens[0];
-		struct token *rparen = ex->ex_tokens[1];
-
-		es->es_noparens++;
-		concat = expr_doc(ex->ex_lhs, es, concat);
-		es->es_noparens--;
-		if (lparen != NULL)
-			doc_token(lparen, concat);
-		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
-			int w;
-
-			if (lparen == NULL || !token_has_line(lparen, 1)) {
-				w = expr_doc_width(es, group);
-				concat = doc_alloc_indent(w, concat);
-			} else {
-				w = -es->es_ea.indent +
-				    style(es->es_st, ContinuationIndentWidth);
-				concat = doc_alloc_indent(w, concat);
-			}
-		}
-		if (ex->ex_rhs != NULL) {
-			if (rparen != NULL) {
-				struct token *pv;
-
-				/* Never break before the closing parens. */
-				pv = token_prev(rparen);
-				if (pv != NULL)
-					token_trim(pv);
-			}
-
-			concat = expr_doc_soft(ex->ex_rhs, es, concat, 2);
-		}
-		if (rparen != NULL)
-			doc_token(rparen, concat);
+	case EXPR_CALL:
+		concat = expr_doc_call(ex, es, concat);
 		break;
-	}
 
 	case EXPR_ARG: {
 		struct doc *lhs = concat;
@@ -891,6 +859,47 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
 	}
 
+	return dc;
+}
+
+static struct doc *
+expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	struct doc *parent = dc;
+	struct token *lparen = ex->ex_tokens[0];
+	struct token *rparen = ex->ex_tokens[1];
+
+	es->es_noparens++;
+	dc = expr_doc(ex->ex_lhs, es, dc);
+	es->es_noparens--;
+	if (lparen != NULL)
+		doc_token(lparen, dc);
+	if (style(es->es_st, AlignAfterOpenBracket) == Align) {
+		int w;
+
+		if (lparen == NULL || !token_has_line(lparen, 1)) {
+			w = expr_doc_width(es, parent);
+			dc = doc_alloc_indent(w, dc);
+		} else {
+			w = -es->es_ea.indent +
+			    style(es->es_st, ContinuationIndentWidth);
+			dc = doc_alloc_indent(w, dc);
+		}
+	}
+	if (ex->ex_rhs != NULL) {
+		if (rparen != NULL) {
+			struct token *pv;
+
+			/* Never break before the closing parens. */
+			pv = token_prev(rparen);
+			if (pv != NULL)
+				token_trim(pv);
+		}
+
+		dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+	}
+	if (rparen != NULL)
+		doc_token(rparen, dc);
 	return dc;
 }
 
