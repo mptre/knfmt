@@ -102,7 +102,6 @@ struct expr_state {
 	unsigned int		 es_depth;
 	unsigned int		 es_nassign;	/* # nested binary assignments */
 	unsigned int		 es_noparens;	/* parens indent disabled */
-	unsigned int		 es_indent;	/* effective indent */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -221,13 +220,10 @@ expr_exec(const struct expr_exec_arg *ea)
 
 	dc = doc_alloc(DOC_GROUP, ea->dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
-	if (ea->indent > 0) {
+	if (ea->indent > 0)
 		indent = doc_alloc_indent(ea->indent, optional);
-		if ((ea->flags & EXPR_EXEC_INDENT_ONCE) == 0)
-			es.es_indent = ea->indent;
-	} else {
+	else
 		indent = doc_alloc(DOC_CONCAT, optional);
-	}
 	if (ea->flags & EXPR_EXEC_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
 	if (ea->flags & EXPR_EXEC_HARDLINE) {

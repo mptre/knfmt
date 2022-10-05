@@ -24,7 +24,7 @@ struct expr_exec_arg {
  * Only account for the indent field once. Necessary when the dc field does not
  * cover the complete line.
  */
-#define EXPR_EXEC_INDENT_ONCE		0x00000004u
+/* was EXPR_EXEC_INDENT_ONCE		0x00000004u */
 /* Trim redundant parenthesis around top level expression. */
 #define EXPR_EXEC_NOPARENS		0x00000008u
 /* Detect inline assembly operands. */
