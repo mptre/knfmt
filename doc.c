@@ -41,11 +41,12 @@ struct doc {
 
 	/* value */
 	union {
+		VECTOR(struct doc_minimize)	dc_minimizers;
 		struct {
 			const char	*dc_str;
 			size_t		 dc_len;
 		};
-		int	dc_int;
+		int				dc_int;
 	};
 
 	TAILQ_ENTRY(doc) dc_entry;
@@ -85,6 +86,8 @@ struct doc_state {
 
 	struct {
 		unsigned int	nfits;		/* # doc_fits() invocations */
+		unsigned int	nlines;		/* # emitted lines */
+		unsigned int	nexceeds;	/* # lines exceeding column limit */
 	} st_stats;
 
 	VECTOR(const struct doc *)	 st_walk;	/* stack used by doc_walk() */
@@ -101,6 +104,13 @@ struct doc_state {
 	unsigned int			 st_flags;	/* doc_exec() flags */
 };
 
+struct doc_state_snapshot {
+	struct doc_state sn_st;
+	struct {
+		size_t	len;
+	} sn_bf;
+};
+
 /*
  * Tokens and line numbers extracted from a group document that covers a diff
  * chunk.
@@ -115,6 +125,7 @@ struct doc_diff {
 
 static void	doc_exec1(const struct doc *, struct doc_state *);
 static void	doc_exec_indent(const struct doc *, struct doc_state *);
+static void	doc_exec_minimize(const struct doc *, struct doc_state *);
 static void	doc_walk(const struct doc *, struct doc_state *,
     int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int	doc_fits(const struct doc *, struct doc_state *);
@@ -131,6 +142,10 @@ static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
 static void	doc_state_init(struct doc_state *, int, unsigned int);
 static void	doc_state_reset(struct doc_state *);
+static void	doc_state_snapshot(const struct doc_state *,
+    struct doc_state_snapshot *);
+static void	doc_state_restore(struct doc_state *,
+    const struct doc_state_snapshot *);
 
 #define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_DIFF))
 
@@ -258,6 +273,11 @@ doc_free(struct doc *dc)
 			token_rele(dc->dc_tk);
 		break;
 
+	case DOC_MINIMIZE:
+		VECTOR_FREE(dc->dc_minimizers);
+		doc_free(dc->dc_doc);
+		break;
+
 	case DOC_ALIGN:
 	case DOC_LINE:
 	case DOC_SOFTLINE:
@@ -343,6 +363,23 @@ doc_alloc_indent0(enum doc_type type, int val, struct doc *dc,
 
 	indent = doc_alloc0(type, dc, val, fun, lno);
 	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
+}
+
+struct doc *
+doc_minimize0(struct doc *parent, const struct doc_minimize *minimizers,
+    size_t nminimizers, const char *fun, int lno)
+{
+	struct doc *dc;
+	size_t i;
+
+	dc = doc_alloc0(DOC_MINIMIZE, parent, 0, fun, lno);
+	if (VECTOR_INIT(dc->dc_minimizers) == NULL)
+		err(1, NULL);
+	if (VECTOR_RESERVE(dc->dc_minimizers, nminimizers) == NULL)
+		err(1, NULL);
+	for (i = 0; i < nminimizers; i++)
+		*VECTOR_ALLOC(dc->dc_minimizers) = minimizers[i];
+	return doc_alloc0(DOC_CONCAT, dc, 0, fun, lno);
 }
 
 struct doc *
@@ -622,6 +659,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			st->st_optline = oldoptline;
 		break;
 	}
+
+	case DOC_MINIMIZE:
+		doc_exec_minimize(dc, st);
+		break;
 	}
 
 	doc_trace_leave(dc, st);
@@ -649,6 +690,63 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 	} else {
 		st->st_indent.i_cur -= dc->dc_int;
 	}
+}
+
+static void
+doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
+{
+	VECTOR(struct doc_minimize) minimizers;
+	struct doc_state_snapshot sn;
+	struct doc_state oldst = *st;
+	/* Ugly, must be mutable for value mutation. */
+	struct doc *dc = (struct doc *)cdc;
+	ssize_t best = -1;
+	size_t i;
+	unsigned int nlines = 0;
+	unsigned int nexceeds = 0;
+	double minscore = 0;
+
+	minimizers = dc->dc_minimizers;
+
+	doc_state_snapshot(st, &sn);
+
+	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
+		memset(&st->st_stats, 0, sizeof(st->st_stats));
+		st->st_flags &= ~DOC_EXEC_TRACE;
+
+		dc->dc_int = minimizers[i].indent;
+		doc_exec_indent(dc, st);
+		if (st->st_stats.nlines > nlines)
+			nlines = st->st_stats.nlines;
+		minimizers[i].score.nlines = st->st_stats.nlines;
+		if (st->st_stats.nexceeds > nexceeds)
+			nexceeds = st->st_stats.nexceeds;
+		minimizers[i].score.nexceeds = st->st_stats.nexceeds;
+		doc_state_restore(st, &sn);
+	}
+
+	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
+		double s = 0;
+
+		if (nlines > 0)
+			s += minimizers[i].score.nlines / (double)nlines;
+		if (nexceeds > 0)
+			s += minimizers[i].score.nexceeds / (double)nexceeds;
+		s /= 2;
+		doc_trace(dc, &oldst,
+		    "%s: score %.2f, indent %d, nlines %u, nexceeds %u",
+		    __func__, s, minimizers[i].indent,
+		    minimizers[i].score.nlines, minimizers[i].score.nexceeds);
+		if (best == -1 || s < minscore) {
+			minscore = s;
+			best = i;
+		}
+	}
+	assert(best >= 0);
+
+	dc->dc_int = minimizers[best].indent;
+	doc_exec_indent(dc, st);
+	dc->dc_minimizers = minimizers;
 }
 
 static void
@@ -680,6 +778,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		case DOC_INDENT:
 		case DOC_DEDENT:
 		case DOC_OPTIONAL:
+		case DOC_MINIMIZE:
 			*VECTOR_ALLOC(st->st_walk) = dc->dc_doc;
 			break;
 
@@ -770,6 +869,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
 	case DOC_MUTE:
+	case DOC_MINIMIZE:
 		break;
 	}
 
@@ -831,6 +931,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		if (st->st_nlines >= 2)
 			return;
 		st->st_nlines++;
+		st->st_stats.nlines++;
 
 		/*
 		 * Suppress optional line(s) while emitting a line. Mixing the
@@ -1281,6 +1382,8 @@ static void
 doc_column(struct doc_state *st, const char *str, size_t len)
 {
 	st->st_col = strwidth(str, len, st->st_col);
+	if (st->st_col > style(st->st_st, ColumnLimit))
+		st->st_stats.nexceeds++;
 }
 
 static int
@@ -1312,6 +1415,20 @@ static void
 doc_state_reset(struct doc_state *st)
 {
 	VECTOR_FREE(st->st_walk);
+}
+
+static void
+doc_state_snapshot(const struct doc_state *st, struct doc_state_snapshot *sn)
+{
+	sn->sn_st = *st;
+	sn->sn_bf.len = st->st_bf->bf_len;
+}
+
+static void
+doc_state_restore(struct doc_state *st, const struct doc_state_snapshot *sn)
+{
+	*st = sn->sn_st;
+	st->st_bf->bf_len = sn->sn_bf.len;
 }
 
 static void
@@ -1408,6 +1525,10 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	case DOC_MUTE:
 		fprintf(stderr, "(%d)", dc->dc_int);
 		break;
+
+	case DOC_MINIMIZE:
+		fprintf(stderr, "(%zu", VECTOR_LENGTH(dc->dc_minimizers));
+		break;
 	}
 	fprintf(stderr, "\n");
 }
@@ -1431,6 +1552,7 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 	case DOC_INDENT:
 	case DOC_DEDENT:
 	case DOC_OPTIONAL:
+	case DOC_MINIMIZE:
 		parens = 1;
 		break;
 	case DOC_ALIGN:
@@ -1479,6 +1601,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_OPTLINE);
 	CASE(DOC_MUTE);
 	CASE(DOC_OPTIONAL);
+	CASE(DOC_MINIMIZE);
 #undef CASE
 	}
 

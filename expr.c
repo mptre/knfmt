@@ -875,16 +875,21 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (lparen != NULL)
 		doc_token(lparen, dc);
 	if (style(es->es_st, AlignAfterOpenBracket) == Align) {
-		int w;
+		/*
+		 * Favor alignment with the left parenthesis but fallback to
+		 * regular continuation indentation.
+		 */
+		const struct doc_minimize minimizers[] = {
+			{
+				.indent = expr_doc_width(es, parent),
+			},
+			{
+				.indent = -es->es_ea.indent +
+				    style(es->es_st, ContinuationIndentWidth),
+			},
+		};
 
-		if (lparen == NULL || !token_has_line(lparen, 1)) {
-			w = expr_doc_width(es, parent);
-			dc = doc_alloc_indent(w, dc);
-		} else {
-			w = -es->es_ea.indent +
-			    style(es->es_st, ContinuationIndentWidth);
-			dc = doc_alloc_indent(w, dc);
-		}
+		dc = doc_minimize(dc, minimizers);
 	}
 	if (ex->ex_rhs != NULL) {
 		if (rparen != NULL) {

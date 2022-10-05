@@ -22,6 +22,16 @@ enum doc_type {
 	DOC_OPTLINE,
 	DOC_MUTE,
 	DOC_OPTIONAL,
+	DOC_MINIMIZE,
+};
+
+struct doc_minimize {
+	int indent;
+
+	struct {
+		unsigned int nlines;
+		unsigned int nexceeds;
+	} score;
 };
 
 #define DOC_EXEC_DIFF	    0x00000001u
@@ -60,6 +70,11 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
 	doc_alloc_indent0(DOC_DEDENT, 0, (a), __func__, __LINE__)
 struct doc	*doc_alloc_indent0(enum doc_type, int, struct doc *,
     const char *, int);
+
+#define doc_minimize(a, b) \
+    doc_minimize0(a, b, sizeof(b)/sizeof((b)[0]), __func__, __LINE__)
+struct doc	*doc_minimize0(struct doc *, const struct doc_minimize *,
+    size_t, const char *, int);
 
 #define doc_literal(a, b) \
 	doc_literal0((a), 0, (b), __func__, __LINE__)
