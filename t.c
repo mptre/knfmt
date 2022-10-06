@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include "buffer.h"
-#include "diff.h"
 #include "doc.h"
 #include "error.h"
 #include "expr.h"
@@ -90,7 +89,6 @@ main(int argc, char *argv[])
 	}
 
 	lexer_init();
-	diff_init();
 	cx = context_alloc();
 
 	error |= test_expr_exec("1", "(1)");
@@ -253,7 +251,6 @@ main(int argc, char *argv[])
 
 out:
 	context_free(cx);
-	diff_shutdown();
 	lexer_shutdown();
 	return error;
 }
