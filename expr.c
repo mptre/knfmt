@@ -767,9 +767,10 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_literal(" ", lhs);
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
-		if (style(st, AlignOperands) == Align)
-			dc = expr_doc_align(ex, es, dc);
 		if (ex->ex_rhs != NULL) {
+			if (style(st, AlignOperands) == Align)
+				dc = expr_doc_align(ex, es, dc);
+
 			/*
 			 * Same semantics as variable declarations, do not break
 			 * after the assignment operator.
@@ -848,9 +849,9 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	es->es_noparens--;
 	if (lparen != NULL)
 		doc_token(lparen, dc);
-	if (style(es->es_st, AlignAfterOpenBracket) == Align)
-		dc = expr_doc_align(ex, es, parent);
 	if (ex->ex_rhs != NULL) {
+		if (style(es->es_st, AlignAfterOpenBracket) == Align)
+			dc = expr_doc_align(ex, es, parent);
 		if (rparen != NULL) {
 			struct token *pv;
 
