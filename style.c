@@ -310,8 +310,8 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			if (trace(op, 's')) {
 				char *strkey;
 
-				strkey = key != NULL
-				    ? yaml_serialize(key) : NULL;
+				strkey = key != NULL ?
+				    yaml_serialize(key) : NULL;
 				lexer_error(lx, "unknown option %s",
 				    strkey != NULL ? strkey : "(null)");
 				free(strkey);
