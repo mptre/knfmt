@@ -116,8 +116,8 @@ main(int argc, char *argv[])
 	}
 
 out:
-	style_free(st);
 	files_free(&files);
+	style_free(st);
 	style_teardown();
 	lexer_shutdown();
 	diff_shutdown();
