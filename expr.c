@@ -146,6 +146,9 @@ static void	expr_state_reset(struct expr_state *);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
+static void	token_move_next_line(struct token *);
+static void	token_move_prev_line(struct token *);
+
 static int	iscast(struct expr_state *);
 static int	isliteral(const struct token *);
 
@@ -782,19 +785,9 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 		es->es_nassign--;
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
-		struct token *nx, *pv;
-		unsigned int lno;
 		int dospace;
 
-		pv = token_prev(ex->ex_tk);
-		nx = token_next(ex->ex_tk);
-		lno = nx->tk_lno - ex->ex_tk->tk_lno;
-		if (token_trim(ex->ex_tk) > 0 && lno == 1) {
-			/* Move operator to next line. */
-			token_move_suffixes(ex->ex_tk, pv);
-			token_add_optline(pv);
-		}
-
+		token_move_next_line(ex->ex_tk);
 		expr_doc(ex->ex_lhs, es, dc);
 		dospace = expr_doc_has_spaces(ex);
 		if (dospace)
@@ -804,24 +797,15 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tk, dc);
 		if (dospace)
 			doc_literal(" ", dc);
-		if (lno <= 1)
+		if (token_next(ex->ex_tk)->tk_lno - ex->ex_tk->tk_lno <= 1)
 			dc = doc_alloc_indent(expr_doc_width(es, dc), dc);
 		if (ex->ex_rhs != NULL)
 			dc = expr_doc(ex->ex_rhs, es, dc);
 	} else {
 		struct doc *lhs;
-		struct token *pv;
-		unsigned int lno;
 		int dospace;
 
-		pv = token_prev(ex->ex_tk);
-		lno = ex->ex_tk->tk_lno - pv->tk_lno;
-		if (token_trim(pv) > 0 && lno == 1) {
-			/* Move operator to previous line. */
-			token_move_suffixes(pv, ex->ex_tk);
-			token_add_optline(ex->ex_tk);
-		}
-
+		token_move_prev_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
 		dospace = expr_doc_has_spaces(ex);
 		if (dospace)
@@ -998,6 +982,41 @@ expr_rule_find(const struct token *tk, int unary)
 			return &rules[i];
 	}
 	return NULL;
+}
+
+/*
+ * Move the token to the next line if not already correctly placed.
+ */
+static void
+token_move_next_line(struct token *tk)
+{
+	struct token *nx, *pv;
+	unsigned int lno;
+
+	pv = token_prev(tk);
+	nx = token_next(tk);
+	lno = nx->tk_lno - tk->tk_lno;
+	if (token_trim(tk) > 0 && lno == 1) {
+		token_move_suffixes(tk, pv);
+		token_add_optline(pv);
+	}
+}
+
+/*
+ * Move the token to the previous line if not already correctly placed.
+ */
+static void
+token_move_prev_line(struct token *tk)
+{
+	struct token *pv;
+	unsigned int lno;
+
+	pv = token_prev(tk);
+	lno = tk->tk_lno - pv->tk_lno;
+	if (token_trim(pv) > 0 && lno == 1) {
+		token_move_suffixes(pv, tk);
+		token_add_optline(tk);
+	}
 }
 
 /*
