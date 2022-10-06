@@ -89,7 +89,8 @@ main(int argc, char *argv[])
 			err(1, "pledge");
 	}
 
-	diff_init();
+	if (op.op_flags & OPTIONS_DIFFPARSE)
+		diff_init();
 	lexer_init();
 	style_init();
 	if (VECTOR_INIT(files.fs_vc) == NULL) {
@@ -120,7 +121,8 @@ out:
 	style_free(st);
 	style_teardown();
 	lexer_shutdown();
-	diff_shutdown();
+	if (op.op_flags & OPTIONS_DIFFPARSE)
+		diff_shutdown();
 
 	return error;
 }
