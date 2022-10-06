@@ -107,7 +107,8 @@ struct doc_state {
 struct doc_state_snapshot {
 	struct doc_state sn_st;
 	struct {
-		size_t	len;
+		char	*ptr;
+		size_t	 len;
 	} sn_bf;
 };
 
@@ -142,10 +143,11 @@ static int	doc_max1(const struct doc *, struct doc_state *, void *);
 
 static void	doc_state_init(struct doc_state *, int, unsigned int);
 static void	doc_state_reset(struct doc_state *);
-static void	doc_state_snapshot(const struct doc_state *,
-    struct doc_state_snapshot *);
-static void	doc_state_restore(struct doc_state *,
-    const struct doc_state_snapshot *);
+static void	doc_state_snapshot(struct doc_state_snapshot *,
+    const struct doc_state *);
+static void	doc_state_snapshot_restore(const struct doc_state_snapshot *,
+    struct doc_state *);
+static void	doc_state_snapshot_reset(struct doc_state_snapshot *);
 
 #define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_DIFF))
 
@@ -708,8 +710,7 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 
 	minimizers = dc->dc_minimizers;
 
-	doc_state_snapshot(st, &sn);
-
+	doc_state_snapshot(&sn, st);
 	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
 		memset(&st->st_stats, 0, sizeof(st->st_stats));
 		st->st_flags &= ~DOC_EXEC_TRACE;
@@ -722,8 +723,9 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		if (st->st_stats.nexceeds > nexceeds)
 			nexceeds = st->st_stats.nexceeds;
 		minimizers[i].score.nexceeds = st->st_stats.nexceeds;
-		doc_state_restore(st, &sn);
+		doc_state_snapshot_restore(&sn, st);
 	}
+	doc_state_snapshot_reset(&sn);
 
 	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
 		double s = 0;
@@ -1418,17 +1420,32 @@ doc_state_reset(struct doc_state *st)
 }
 
 static void
-doc_state_snapshot(const struct doc_state *st, struct doc_state_snapshot *sn)
+doc_state_snapshot(struct doc_state_snapshot *sn, const struct doc_state *st)
 {
+	struct buffer *bf = st->st_bf;
+
 	sn->sn_st = *st;
+	sn->sn_bf.ptr = strndup(bf->bf_ptr, bf->bf_len);
+	if (sn->sn_bf.ptr == NULL)
+		err(1, NULL);
 	sn->sn_bf.len = st->st_bf->bf_len;
 }
 
 static void
-doc_state_restore(struct doc_state *st, const struct doc_state_snapshot *sn)
+doc_state_snapshot_restore(const struct doc_state_snapshot *sn,
+    struct doc_state *st)
 {
+	struct buffer *bf = st->st_bf;
+
 	*st = sn->sn_st;
-	st->st_bf->bf_len = sn->sn_bf.len;
+	memcpy(bf->bf_ptr, sn->sn_bf.ptr, sn->sn_bf.len);
+	bf->bf_len = sn->sn_bf.len;
+}
+
+static void
+doc_state_snapshot_reset(struct doc_state_snapshot *sn)
+{
+	free(sn->sn_bf.ptr);
 }
 
 static void
