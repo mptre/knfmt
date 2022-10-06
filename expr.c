@@ -857,6 +857,18 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct doc *ternary;
 
+	if (style(es->es_st, BreakBeforeTernaryOperators) == True) {
+		if (ex->ex_tokens[0] != NULL)
+			token_move_next_line(ex->ex_tokens[0]);
+		if (ex->ex_tokens[1] != NULL)
+			token_move_next_line(ex->ex_tokens[1]);
+	} else {
+		if (ex->ex_tokens[0] != NULL)
+			token_move_prev_line(ex->ex_tokens[0]);
+		if (ex->ex_tokens[1] != NULL)
+			token_move_prev_line(ex->ex_tokens[1]);
+	}
+
 	ternary = expr_doc(ex->ex_lhs, es, dc);
 	doc_alloc(DOC_LINE, ternary);
 	if (ex->ex_tokens[0] != NULL)

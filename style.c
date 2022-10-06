@@ -39,8 +39,6 @@ enum yaml_type {
 	DocumentEnd,
 	Sequence,
 	String,
-	False,
-	True,
 	Integer,
 	Unknown,
 };
@@ -75,6 +73,8 @@ static int	parse_AlwaysBreakAfterReturnType(struct style *,
 static int	parse_BraceWrapping(struct style *, struct lexer *);
 static int	parse_BreakBeforeBinaryOperators(struct style *,
     struct lexer *);
+static int	parse_BreakBeforeTernaryOperators(struct style *,
+    struct lexer *);
 static int	parse_ColumnLimit(struct style *, struct lexer *);
 static int	parse_ContinuationIndentWidth(struct style *, struct lexer *);
 static int	parse_IncludeCategories(struct style *, struct lexer *);
@@ -105,9 +105,11 @@ style_init(void)
 		K(BlockIndent,				"BlockIndent"),
 		K(BraceWrapping,			"BraceWrapping"),
 		K(BreakBeforeBinaryOperators,		"BreakBeforeBinaryOperators"),
+		K(BreakBeforeTernaryOperators,		"BreakBeforeTernaryOperators"),
 		K(ColumnLimit,				"ColumnLimit"),
 		K(ContinuationIndentWidth,		"ContinuationIndentWidth"),
 		K(DontAlign,				"DontAlign"),
+		K(False,				"false"),
 		K(ForContinuationAndIndentation,	"ForContinuationAndIndentation"),
 		K(ForIndentation,			"ForIndentation"),
 		K(IncludeCategories,			"IncludeCategories"),
@@ -119,13 +121,12 @@ style_init(void)
 		K(Right,				"Right"),
 		K(TopLevel,				"TopLevel"),
 		K(TopLevelDefinitions,			"TopLevelDefinitions"),
+		K(True,					"true"),
 		K(UseTab,				"UseTab"),
 		/* YAML primitives. */
 		K(DocumentBegin,			"---"),
 		K(DocumentEnd,				"..."),
 		K(Sequence,				"-"),
-		K(False,				"false"),
-		K(True,					"true"),
 		K(Integer,				"Integer"),
 #undef K
 	};
@@ -206,6 +207,7 @@ style_defaults(struct style *st)
 	st->st_options[AlignOperands] = DontAlign;
 	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
 	st->st_options[BreakBeforeBinaryOperators] = None;
+	st->st_options[BreakBeforeTernaryOperators] = False;
 	st->st_options[ColumnLimit] = 80;
 	st->st_options[ContinuationIndentWidth] = 4;
 	st->st_options[IndentWidth] = 8;
@@ -262,6 +264,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		    (error = parse_AlwaysBreakAfterReturnType(st, lx)) ||
 		    (error = parse_BraceWrapping(st, lx)) ||
 		    (error = parse_BreakBeforeBinaryOperators(st, lx)) ||
+		    (error = parse_BreakBeforeTernaryOperators(st, lx)) ||
 		    (error = parse_ColumnLimit(st, lx)) ||
 		    (error = parse_ContinuationIndentWidth(st, lx)) ||
 		    (error = parse_IncludeCategories(st, lx)) ||
@@ -588,6 +591,21 @@ parse_BreakBeforeBinaryOperators(struct style *st, struct lexer *lx)
 }
 
 static int
+parse_BreakBeforeTernaryOperators(struct style *st, struct lexer *lx)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, BreakBeforeTernaryOperators, &key))
+		return NONE;
+	if (!lexer_if(lx, True, &val) &&
+	    !lexer_if(lx, False, &val))
+		return NVAL;
+
+	st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
+}
+
+static int
 parse_ColumnLimit(struct style *st, struct lexer *lx)
 {
 	struct token *key, *val;
@@ -675,8 +693,6 @@ stryaml(enum yaml_type type)
 	CASE(DocumentEnd);
 	CASE(Sequence);
 	CASE(String);
-	CASE(False);
-	CASE(True);
 	CASE(Integer);
 	CASE(Unknown);
 #undef CASE

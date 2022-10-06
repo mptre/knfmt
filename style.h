@@ -33,6 +33,10 @@ enum {
 	NonAssignment,
 /*	All,			*/
 
+	BreakBeforeTernaryOperators,
+	True,
+	False,
+
 	ColumnLimit,
 /*	Integer,		*/
 

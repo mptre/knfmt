@@ -184,6 +184,25 @@ int x = 11111111
     + 22222222;
 .Ed
 .El
+.It Cm BreakBeforeTernaryOperators
+Break before or after ternary operators.
+.Bl -tag -width Ds
+.It Cm true
+Break before ternary operators.
+.Bd -literal
+condition
+    ? true
+    : false;
+.Ed
+.It Cm false
+Break after ternary operators.
+.Pq default
+.Bd -literal
+condition ?
+    true :
+    false;
+.Ed
+.El
 .It Cm ColumnLimit
 Maximum number of allowed columns per line.
 .Pq default 80
