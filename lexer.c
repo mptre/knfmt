@@ -447,10 +447,10 @@ lexer_stamp(struct lexer *lx)
 }
 
 /*
- * Try to recover after encountering invalid code. Returns the index of the
- * stamped token seeked to, starting from the end. This index should correspond
- * to the number of documents that must be removed since we're about to parse
- * them again.
+ * Try to recover after encountering invalid source code. Returns the index of
+ * the stamped token seeked to, starting from the end. This index should
+ * correspond to the number of documents that must be removed since we're about
+ * to parse them again.
  */
 int
 lexer_recover(struct lexer *lx)
@@ -460,8 +460,8 @@ lexer_recover(struct lexer *lx)
 	size_t i;
 	int ndocs = 1;
 
-	back = lx->lx_st.st_tk != NULL ?
-	    lx->lx_st.st_tk : TAILQ_FIRST(&lx->lx_tokens);
+	if (!lexer_back(lx, &back))
+		back = TAILQ_FIRST(&lx->lx_tokens);
 	lexer_trace(lx, "back %s", lexer_serialize(lx, back));
 	br = lexer_recover_branch(back);
 	if (br == NULL)
