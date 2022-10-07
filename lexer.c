@@ -86,6 +86,7 @@ static int	lexer_peek_if_type_ident(struct lexer *lx);
 static int	lexer_peek_if_type_cpp(struct lexer *lx);
 
 static void	lexer_branch_fold(struct lexer *, struct token *);
+static void	lexer_branch_unmute(struct lexer *, struct token *);
 static void	lexer_branch_enter(struct lexer *, struct token *,
     struct token *);
 static void	lexer_branch_leave(struct lexer *, struct token *,
@@ -559,10 +560,9 @@ lexer_branch(struct lexer *lx)
 	if (lx->lx_unmute != NULL) {
 		lx->lx_unmute->tk_flags &= ~TOKEN_FLAG_UNMUTE;
 		token_rele(lx->lx_unmute);
+		lx->lx_unmute = NULL;
 	}
-	dst->tk_flags |= TOKEN_FLAG_UNMUTE;
-	lx->lx_unmute = dst;
-	token_ref(lx->lx_unmute);
+	lexer_branch_unmute(lx, dst);
 
 	/* Rewind to last stamped token. */
 	seek = VECTOR_EMPTY(lx->lx_stamps) ? NULL : *VECTOR_LAST(lx->lx_stamps);
@@ -741,6 +741,13 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		for (i++; i < VECTOR_LENGTH(lx->lx_stamps); i++)
 			lx->lx_stamps[i - 1] = lx->lx_stamps[i];
 		VECTOR_POP(lx->lx_stamps);
+	}
+
+	if (tk->tk_flags & TOKEN_FLAG_UNMUTE) {
+		assert(tk == lx->lx_unmute);
+		tk->tk_flags &= ~TOKEN_FLAG_UNMUTE;
+		token_rele(tk);
+		lx->lx_unmute = NULL;
 	}
 
 	token_remove(&lx->lx_tokens, tk);
@@ -1887,7 +1894,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 {
 	struct token *dst, *prefix, *pv, *rm;
 	size_t len, off;
-	unsigned int flags = 0;
+	int unmute = 0;
 
 	/* Grab a reference since the branch is about to be removed. */
 	dst = src->tk_branch.br_nx;
@@ -1956,15 +1963,30 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 
 		nx = token_next(rm);
 		lexer_trace(lx, "removing %s", lexer_serialize(lx, rm));
-		flags |= rm->tk_flags & TOKEN_FLAG_UNMUTE;
+		if (rm->tk_flags & TOKEN_FLAG_UNMUTE)
+			unmute = 1;
 		lexer_remove(lx, rm, 0);
 		rm = nx;
 	}
 
-	/* Propagate preserved flags. */
-	dst->tk_token->tk_flags |= flags;
+	/*
+	 * If the unmute token ended up being deleted, tell doc_token() that
+	 * crossing the end of this branch must cause tokens to be emitted
+	 * again.
+	 */
+	if (unmute)
+		lexer_branch_unmute(lx, dst->tk_token);
 
 	token_rele(dst);
+}
+
+static void
+lexer_branch_unmute(struct lexer *lx, struct token *tk)
+{
+	assert(lx->lx_unmute == NULL);
+	tk->tk_flags |= TOKEN_FLAG_UNMUTE;
+	token_ref(tk);
+	lx->lx_unmute = tk;
 }
 
 static void
