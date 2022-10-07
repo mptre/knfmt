@@ -269,13 +269,11 @@ parser_exec(struct parser *pr, size_t sizhint)
 			int r;
 
 			r = lexer_recover(lx);
-			if (r > 0) {
-				while (r-- > 0)
-					doc_remove_tail(dc);
-				parser_reset(pr);
-			} else {
+			if (r == 0)
 				break;
-			}
+			while (r-- > 0)
+				doc_remove_tail(dc);
+			parser_reset(pr);
 		}
 	}
 	if (error) {
