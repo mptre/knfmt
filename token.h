@@ -30,7 +30,7 @@ struct token {
 #define TOKEN_FLAG_STORAGE	0x00000004u
 #define TOKEN_FLAG_STAMP	0x00000008u
 /* Token is either a prefix or suffix. */
-#define TOKEN_FLAG_DANGLING	0x00000010u
+/* was TOKEN_FLAG_DANGLING	0x00000010u */
 /* Token denotes an assignment operator, see token-defs.h. */
 #define TOKEN_FLAG_ASSIGN	0x00000020u
 #define TOKEN_FLAG_AMBIGUOUS	0x00000040u

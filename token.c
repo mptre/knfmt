@@ -16,13 +16,6 @@ static struct token	*token_list_find(struct token_list *, int);
 static char		*strflags(unsigned int);
 static const char	*strtype(int);
 
-static const struct token tkline = {
-	.tk_type	= TOKEN_SPACE,
-	.tk_str		= "\n",
-	.tk_len		= 1,
-	.tk_flags	= TOKEN_FLAG_DANGLING,
-};
-
 struct token *
 token_alloc(const struct token *def)
 {
@@ -48,20 +41,18 @@ token_ref(struct token *tk)
 void
 token_rele(struct token *tk)
 {
+	struct token *fix;
+
 	assert(tk->tk_refs > 0);
 	if (--tk->tk_refs > 0)
 		return;
 
-	if ((tk->tk_flags & TOKEN_FLAG_DANGLING) == 0) {
-		struct token *fix;
-
-		while ((fix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL) {
-			token_branch_unlink(fix);
-			token_remove(&tk->tk_prefixes, fix);
-		}
-		while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
-			token_remove(&tk->tk_suffixes, fix);
+	while ((fix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL) {
+		token_branch_unlink(fix);
+		token_remove(&tk->tk_prefixes, fix);
 	}
+	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
+		token_remove(&tk->tk_suffixes, fix);
 	free(tk);
 }
 
@@ -70,7 +61,11 @@ token_add_optline(struct token *tk)
 {
 	struct token *suffix;
 
-	suffix = token_alloc(&tkline);
+	suffix = token_alloc(&(struct token){
+	    .tk_type	= TOKEN_SPACE,
+	    .tk_str	= "\n",
+	    .tk_len	= 1,
+	});
 	suffix->tk_flags |= TOKEN_FLAG_OPTLINE;
 	TAILQ_INSERT_TAIL(&tk->tk_suffixes, suffix, tk_entry);
 }
