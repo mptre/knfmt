@@ -63,12 +63,12 @@ struct context {
 	struct parser	*cx_pr;
 };
 
+static __dead void	usage(void);
+
 static struct context	*context_alloc(void);
 static void		 context_free(struct context *);
 static void		 context_init(struct context *, const char *);
 static void		 context_reset(struct context *);
-
-static __dead void	usage(void);
 
 int
 main(int argc, char *argv[])
@@ -253,6 +253,13 @@ out:
 	context_free(cx);
 	lexer_shutdown();
 	return error;
+}
+
+static __dead void
+usage(void)
+{
+	fprintf(stderr, "usage: t [-x]\n");
+	exit(1);
 }
 
 static int
@@ -466,11 +473,4 @@ context_reset(struct context *cx)
 
 	parser_free(cx->cx_pr);
 	cx->cx_pr = NULL;
-}
-
-static __dead void
-usage(void)
-{
-	fprintf(stderr, "usage: t [-x]\n");
-	exit(1);
 }
