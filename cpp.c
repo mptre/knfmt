@@ -42,7 +42,10 @@ cpp_exec(const struct token *tk, const struct style *st,
 		ruler_init(&rl, 1, RULER_ALIGN_FIXED);
 		break;
 	case Left:
-		ruler_init(&rl, 0, RULER_ALIGN_MIN);
+		if (style(st, UseTab) == Never)
+			ruler_init(&rl, 0, RULER_ALIGN_MIN);
+		else
+			ruler_init(&rl, 0, RULER_ALIGN_TABS);
 		break;
 	case Right:
 		ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth),

@@ -1,5 +1,6 @@
 /*
  * AlignEscapedNewlines: Left
+ * UseTab: Never
  */
 
 #define FOO								\

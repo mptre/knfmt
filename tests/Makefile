@@ -407,6 +407,7 @@ TESTS+=	style-AlignAfterOpenBracket-021.c
 TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlignEscapedNewlines-002.c
 TESTS+=	style-AlignEscapedNewlines-003.c
+TESTS+=	style-AlignEscapedNewlines-004.c
 TESTS+=	style-AlignOperands-001.c
 TESTS+=	style-AlignOperands-002.c
 TESTS+=	style-AlignOperands-003.c
