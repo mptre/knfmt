@@ -164,7 +164,7 @@ ruler_exec(struct ruler *rl)
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_columns); i++) {
 		struct ruler_column *rc = &rl->rl_columns[i];
 
-		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_ALIGN_TABS))
+		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_REQUIRE_TABS))
 			continue;
 
 		if (rl->rl_flags & RULER_ALIGN_MIN) {

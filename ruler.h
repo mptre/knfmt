@@ -25,6 +25,12 @@ struct ruler {
  * to align all columns.
  */
 #define RULER_ALIGN_TABS	0x00000008u
+/*
+ * While used in conjuction with RULER_ALIGN_TABS, require that at least one
+ * datum per column to already have tab(s) present in order to perform
+ * alignment.
+ */
+#define RULER_REQUIRE_TABS	0x00000010u
 };
 
 void	ruler_init(struct ruler *, unsigned int, unsigned int);
