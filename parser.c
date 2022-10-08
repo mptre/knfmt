@@ -2422,10 +2422,12 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 {
 	struct doc *concat = NULL;
 	struct lexer *lx = pr->pr_lx;
+	int nattributes = 0;
 
 	if (!lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
 		return NONE;
 
+	doc_alloc(linetype, dc);
 	for (;;) {
 		struct token *tk;
 		int error;
@@ -2433,8 +2435,10 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk))
 			break;
 
+		if (nattributes > 0)
+			doc_alloc(linetype, concat);
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		doc_alloc(linetype, concat);
+		doc_alloc(DOC_SOFTLINE, concat);
 		doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			doc_token(tk, concat);
@@ -2443,6 +2447,7 @@ parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 			doc_token(tk, concat);
+		nattributes++;
 	}
 	if (out != NULL)
 		*out = concat;
