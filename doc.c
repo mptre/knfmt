@@ -862,11 +862,14 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 		}
 		break;
 
+	case DOC_OPTIONAL:
+		st->st_optline++;
+		break;
+
 	case DOC_CONCAT:
 	case DOC_GROUP:
 	case DOC_INDENT:
 	case DOC_DEDENT:
-	case DOC_OPTIONAL:
 	case DOC_ALIGN:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
