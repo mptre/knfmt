@@ -130,6 +130,8 @@ static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_align_enter(struct expr *,
     struct expr_state *, struct doc *);
 static void		 expr_doc_align_leave(struct expr_state *);
@@ -727,12 +729,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		break;
 
 	case EXPR_RECOVER:
-		doc_append(ex->ex_dc, concat);
-		/*
-		 * The concat document is now responsible for freeing the
-		 * recover document.
-		 */
-		ex->ex_dc = NULL;
+		concat = expr_doc_recover(ex, es, concat);
 		break;
 
 	case EXPR_ASM: {
@@ -898,6 +895,18 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tokens[1], ternary);	/* : */
 	doc_alloc(DOC_LINE, ternary);
 	return expr_doc_soft(ex->ex_ternary, es, ternary, 2);
+}
+
+static struct doc *
+expr_doc_recover(struct expr *ex, struct expr_state *UNUSED(es), struct doc *dc)
+{
+	doc_append(ex->ex_dc, dc);
+	/*
+	 * The concat document is now responsible for freeing the recover
+	 * document.
+	 */
+	ex->ex_dc = NULL;
+	return dc;
 }
 
 /*
