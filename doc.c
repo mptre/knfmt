@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
+#include <float.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,6 +103,7 @@ struct doc_state {
 	int				 st_optline;
 	int				 st_mute;
 	unsigned int			 st_flags;	/* doc_exec() flags */
+	int				 st_minimize;	/* best minimize option */
 };
 
 struct doc_state_snapshot {
@@ -127,6 +129,7 @@ struct doc_diff {
 static void	doc_exec1(const struct doc *, struct doc_state *);
 static void	doc_exec_indent(const struct doc *, struct doc_state *);
 static void	doc_exec_minimize(const struct doc *, struct doc_state *);
+static void	doc_exec_minimize1(struct doc *, struct doc_state *, int);
 static void	doc_walk(const struct doc *, struct doc_state *,
     int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int	doc_fits(const struct doc *, struct doc_state *);
@@ -706,17 +709,23 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 	size_t i;
 	unsigned int nlines = 0;
 	unsigned int nexceeds = 0;
-	double minscore = 0;
+	double minscore = DBL_MAX;
+
+	if (st->st_minimize != -1) {
+		doc_exec_minimize1(dc, st, st->st_minimize);
+		return;
+	}
 
 	minimizers = dc->dc_minimizers;
-
 	doc_state_snapshot(&sn, st);
 	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
 		memset(&st->st_stats, 0, sizeof(st->st_stats));
 		st->st_flags &= ~DOC_EXEC_TRACE;
 
 		dc->dc_int = minimizers[i].indent;
+		st->st_minimize = i;
 		doc_exec_indent(dc, st);
+		st->st_minimize = -1;
 		if (st->st_stats.nlines > nlines)
 			nlines = st->st_stats.nlines;
 		minimizers[i].score.nlines = st->st_stats.nlines;
@@ -726,6 +735,7 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		doc_state_snapshot_restore(&sn, st);
 	}
 	doc_state_snapshot_reset(&sn);
+	dc->dc_minimizers = minimizers;
 
 	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
 		double s = 0;
@@ -739,14 +749,28 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		    "%s: score %.2f, indent %d, nlines %u, nexceeds %u",
 		    __func__, s, minimizers[i].indent,
 		    minimizers[i].score.nlines, minimizers[i].score.nexceeds);
-		if (best == -1 || s < minscore) {
+		if (s < minscore) {
 			minscore = s;
 			best = i;
 		}
 	}
-	assert(best >= 0);
 
-	dc->dc_int = minimizers[best].indent;
+	if (best == -1) {
+		doc_exec1(dc->dc_doc, st);
+	} else {
+		assert(st->st_minimize == -1);
+		st->st_minimize = best;
+		doc_exec_minimize1(dc, st, best);
+		st->st_minimize = -1;
+	}
+}
+
+static void
+doc_exec_minimize1(struct doc *dc, struct doc_state *st, int idx)
+{
+	VECTOR(struct doc_minimize) minimizers = dc->dc_minimizers;
+
+	dc->dc_int = minimizers[idx].indent;
 	doc_exec_indent(dc, st);
 	dc->dc_minimizers = minimizers;
 }
@@ -1414,6 +1438,7 @@ doc_state_init(struct doc_state *st, int mode, unsigned int flags)
 	st->st_mode = mode;
 	st->st_diff.beg = 1;
 	st->st_flags = flags;
+	st->st_minimize = -1;
 }
 
 static void
@@ -1547,7 +1572,8 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MINIMIZE:
-		fprintf(stderr, "(%zu", VECTOR_LENGTH(dc->dc_minimizers));
+		fprintf(stderr, "(%d", st->st_minimize == -1 ? -1 :
+		    dc->dc_minimizers[st->st_minimize].indent);
 		break;
 	}
 	fprintf(stderr, "\n");

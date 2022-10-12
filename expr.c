@@ -102,6 +102,7 @@ struct expr_state {
 	unsigned int		 es_depth;
 	unsigned int		 es_nassign;	/* # nested binary assignments */
 	unsigned int		 es_noparens;	/* parens indent disabled */
+	unsigned int		 es_nalign;	/* # nested alignment */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -129,8 +130,9 @@ static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
     struct doc *);
-static struct doc	*expr_doc_align(struct expr *, struct expr_state *,
-    struct doc *);
+static struct doc	*expr_doc_align_enter(struct expr *,
+    struct expr_state *, struct doc *);
+static void		 expr_doc_align_leave(struct expr_state *);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
@@ -771,8 +773,10 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
 		if (ex->ex_rhs != NULL) {
-			if (style(st, AlignOperands) == Align)
-				dc = expr_doc_align(ex, es, dc);
+			int doalign = style(st, AlignOperands) == Align;
+
+			if (doalign)
+				dc = expr_doc_align_enter(ex, es, dc);
 
 			/*
 			 * Same semantics as variable declarations, do not break
@@ -782,6 +786,9 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 				dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
 			else
 				dc = expr_doc(ex->ex_rhs, es, dc);
+
+			if (doalign)
+				expr_doc_align_leave(es);
 		}
 		es->es_nassign--;
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
@@ -834,8 +841,8 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (lparen != NULL)
 		doc_token(lparen, dc);
 	if (ex->ex_rhs != NULL) {
-		if (style(es->es_st, AlignAfterOpenBracket) == Align)
-			dc = expr_doc_align(ex, es, parent);
+		int doalign = style(es->es_st, AlignAfterOpenBracket) == Align;
+
 		if (rparen != NULL) {
 			struct token *pv;
 
@@ -845,7 +852,11 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 				token_trim(pv);
 		}
 
+		if (doalign)
+			dc = expr_doc_align_enter(ex, es, parent);
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+		if (doalign)
+			expr_doc_align_leave(es);
 	}
 	if (rparen != NULL)
 		doc_token(rparen, dc);
@@ -891,23 +902,32 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 /*
  * Favor alignment with what we got so far on the current line, assuming it does
- * not cause exceesive new line(s). Fallback to regular continuation
+ * not cause exceesive new line(s). In that case, fallback to regular continuation
  * indentation.
  */
 static struct doc *
-expr_doc_align(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc)
+expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
+    struct doc *dc)
 {
 	const struct doc_minimize minimizers[] = {
 		{
 			.indent = expr_doc_width(es, dc),
 		},
 		{
-			.indent = -es->es_ea.indent +
+			.indent = es->es_nalign > 0 ? 0 : -es->es_ea.indent +
 			    style(es->es_st, ContinuationIndentWidth),
 		},
 	};
 
+	es->es_nalign++;
 	return doc_minimize(dc, minimizers);
+}
+
+static void
+expr_doc_align_leave(struct expr_state *es)
+{
+	assert(es->es_nalign > 0);
+	es->es_nalign--;
 }
 
 static struct doc *
