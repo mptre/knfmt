@@ -102,7 +102,7 @@ struct expr_state {
 	unsigned int		 es_depth;
 	unsigned int		 es_nassign;	/* # nested binary assignments */
 	unsigned int		 es_noparens;	/* parens indent disabled */
-	unsigned int		 es_nalign;	/* # nested alignment */
+	unsigned int		 es_nalign;	/* indentation for alignment */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -133,8 +133,9 @@ static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_align_enter(struct expr *,
-    struct expr_state *, struct doc *);
-static void		 expr_doc_align_leave(struct expr_state *);
+    struct expr_state *, struct doc *, unsigned int *);
+static void		 expr_doc_align_leave(struct expr_state *,
+    unsigned int);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
@@ -335,18 +336,16 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 static struct expr *
 expr_exec_recover(struct expr_state *es, unsigned int flags)
 {
-	struct doc *concat, *dc;
+	struct doc *dc;
 	struct expr *ex;
 	int error;
 
 	if (es->es_ea.recover == NULL)
 		return NULL;
 
-	dc = doc_alloc0(DOC_INDENT, NULL, -es->es_ea.indent, __func__,
-	    __LINE__);
-	concat = doc_alloc(DOC_CONCAT, dc);
+	dc = doc_alloc(DOC_CONCAT, NULL);
 	es->es_ea.flags |= flags;
-	error = es->es_ea.recover(&es->es_ea, concat);
+	error = es->es_ea.recover(&es->es_ea, dc);
 	es->es_ea.flags &= ~flags;
 	if (error) {
 		doc_free(dc);
@@ -770,10 +769,11 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
 		if (ex->ex_rhs != NULL) {
-			int doalign = style(st, AlignOperands) == Align;
+			unsigned int cookie;
+			int doalign = style_align(st);
 
 			if (doalign)
-				dc = expr_doc_align_enter(ex, es, dc);
+				dc = expr_doc_align_enter(ex, es, dc, &cookie);
 
 			/*
 			 * Same semantics as variable declarations, do not break
@@ -785,7 +785,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 				dc = expr_doc(ex->ex_rhs, es, dc);
 
 			if (doalign)
-				expr_doc_align_leave(es);
+				expr_doc_align_leave(es, cookie);
 		}
 		es->es_nassign--;
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
@@ -838,6 +838,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (lparen != NULL)
 		doc_token(lparen, dc);
 	if (ex->ex_rhs != NULL) {
+		unsigned int cookie;
 		int doalign = style(es->es_st, AlignAfterOpenBracket) == Align;
 
 		if (rparen != NULL) {
@@ -850,10 +851,10 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 
 		if (doalign)
-			dc = expr_doc_align_enter(ex, es, parent);
+			dc = expr_doc_align_enter(ex, es, parent, &cookie);
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
 		if (doalign)
-			expr_doc_align_leave(es);
+			expr_doc_align_leave(es, cookie);
 	}
 	if (rparen != NULL)
 		doc_token(rparen, dc);
@@ -898,8 +899,16 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 }
 
 static struct doc *
-expr_doc_recover(struct expr *ex, struct expr_state *UNUSED(es), struct doc *dc)
+expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
+	struct doc_minimize minimizers[2];
+
+	/* Reset indentation. */
+	minimizers[0].indent = -(es->es_ea.indent + es->es_nalign);
+	minimizers[1].indent = -(-es->es_ea.indent +
+	    style(es->es_st, ContinuationIndentWidth));
+	dc = doc_minimize(dc, minimizers);
+
 	doc_append(ex->ex_dc, dc);
 	/*
 	 * The concat document is now responsible for freeing the recover
@@ -916,27 +925,25 @@ expr_doc_recover(struct expr *ex, struct expr_state *UNUSED(es), struct doc *dc)
  */
 static struct doc *
 expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
-    struct doc *dc)
+    struct doc *dc, unsigned int *cookie)
 {
-	const struct doc_minimize minimizers[] = {
-		{
-			.indent = expr_doc_width(es, dc),
-		},
-		{
-			.indent = es->es_nalign > 0 ? 0 : -es->es_ea.indent +
-			    style(es->es_st, ContinuationIndentWidth),
-		},
-	};
+	struct doc_minimize minimizers[2];
+	unsigned int w;
 
-	es->es_nalign++;
+	w = expr_doc_width(es, dc);
+	minimizers[0].indent = w;
+	minimizers[1].indent = es->es_nalign > 0 ? 0 :
+	    -es->es_ea.indent + style(es->es_st, ContinuationIndentWidth);
+	es->es_nalign += w;
+	*cookie = w;
 	return doc_minimize(dc, minimizers);
 }
 
 static void
-expr_doc_align_leave(struct expr_state *es)
+expr_doc_align_leave(struct expr_state *es, unsigned int w)
 {
-	assert(es->es_nalign > 0);
-	es->es_nalign--;
+	assert(es->es_nalign >= w);
+	es->es_nalign -= w;
 }
 
 static struct doc *
