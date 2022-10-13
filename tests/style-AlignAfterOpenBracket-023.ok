@@ -1,0 +1,14 @@
+int
+main(void)
+{
+	switch (report->rap.sub_id) {
+	case HIDPP_REG_BATTERY_STATUS:
+		level = hidpp10_battery_status_map_level(report->rawbytes[1]);
+		status = hidpp10_battery_status_map_status(report->rawbytes[2]);
+		break;
+	case HIDPP_REG_BATTERY_MILEAGE:
+		status = hidpp10_battery_mileage_map_status(
+		    report->rawbytes[3]);
+		break;
+	}
+}
