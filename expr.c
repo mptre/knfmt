@@ -932,8 +932,14 @@ expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
 
 	w = expr_doc_width(es, dc);
 	minimizers[0].indent = w;
-	minimizers[1].indent = es->es_nalign > 0 ? 0 :
-	    -es->es_ea.indent + style(es->es_st, ContinuationIndentWidth);
+	if (es->es_nalign > 0) {
+		minimizers[1].indent = 0;
+	} else {
+		minimizers[1].indent = style(es->es_st,
+		    ContinuationIndentWidth);
+		if ((es->es_flags & EXPR_EXEC_HARDLINE) == 0)
+			minimizers[1].indent -= es->es_ea.indent;
+	}
 	es->es_nalign += w;
 	*cookie = w;
 	return doc_minimize(dc, minimizers);
