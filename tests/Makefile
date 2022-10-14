@@ -378,6 +378,8 @@ TESTS+=	simple-018.c
 TESTS+=	simple-019.c
 TESTS+=	simple-020.c
 
+TESTS+=	inplace-001.c
+
 TESTS+=	trace-001.c
 
 TESTS+=	bug-001.c

@@ -25,6 +25,7 @@ TESTS diff-simple-[0-9]*.c -- \
 TESTS error*.c -- \
 TESTS valid*.c -- \
 TESTS simple*.c -- \
+TESTS inplace*.c -- \
 TESTS trace*.c -- \
 TESTS bug*.c -- \
 TESTS style*.c -- \

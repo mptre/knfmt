@@ -118,7 +118,7 @@ case "$1" in
 valid-183.c)
 	# Ignore windows line endings test case.
 	;;
-diff-*|../*)
+diff-*|inplace-*|../*)
 	;;
 *)
 	hascomm "$1" || exit 1
@@ -141,6 +141,10 @@ diff-*)
 	;;
 error-*)
 	testcase -e -q "$_abs" -- -s "$@"
+	;;
+inplace-*)
+	cp "$_abs" "${_wrkdir}/test.c"
+	testcase "${_wrkdir}/test.c" -- -i "$@"
 	;;
 simple-*|../*)
 	testcase "$_abs" -- -s -vl "$@"
