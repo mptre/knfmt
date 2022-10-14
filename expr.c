@@ -215,6 +215,27 @@ static const struct expr_rule	rules[] = {
 	{ PC15,			0,	TOKEN_PERIOD,			expr_exec_field },
 };
 
+/*
+ * Weights for emitted softline(s) through expr_doc_soft(). Several softline(s)
+ * can be emitted per expression in which the one with highest weight is
+ * favored, removing the others.
+ */
+static const struct {
+	int arg;
+	int binary;
+	int call;
+	int call_args;
+	int ternary;
+	int squares;
+} soft_weights = {
+	.arg		= 3,	/* after comma, before argument */
+	.binary		= 2,	/* after binary operator */
+	.call		= 2,	/* before call */
+	.call_args	= 2,	/* after lparen, before call arguments */
+	.ternary	= 2,	/* before ternary true/false expr */
+	.squares	= 1,	/* after lsquare */
+};
+
 struct doc *
 expr_exec(const struct expr_exec_arg *ea)
 {
@@ -655,7 +676,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* [ */
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc_soft(ex->ex_rhs, es, concat, 1);
+			concat = expr_doc_soft(ex->ex_rhs, es, concat,
+			    soft_weights.squares);
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], concat);	/* ] */
 		break;
@@ -679,7 +701,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tk, lhs);
 		doc_alloc(DOC_LINE, lhs);
 		if (ex->ex_rhs != NULL)
-			concat = expr_doc_soft(ex->ex_rhs, es, concat, 3);
+			concat = expr_doc_soft(ex->ex_rhs, es, concat,
+			    soft_weights.arg);
 		break;
 	}
 
@@ -781,7 +804,8 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			 * after the assignment operator.
 			 */
 			if (es->es_nassign > 1)
-				dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+				dc = expr_doc_soft(ex->ex_rhs, es, dc,
+				    soft_weights.binary);
 			else
 				dc = expr_doc(ex->ex_rhs, es, dc);
 
@@ -820,7 +844,8 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (dospace)
 			doc_alloc(DOC_LINE, dc);
 		if (ex->ex_rhs != NULL)
-			dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+			dc = expr_doc_soft(ex->ex_rhs, es, dc,
+			    soft_weights.binary);
 	}
 
 	return dc;
@@ -837,7 +862,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	es->es_noparens++;
 	if (es->es_ncalls > 1)
-		dc = expr_doc_soft(ex->ex_lhs, es, dc, 2);
+		dc = expr_doc_soft(ex->ex_lhs, es, dc, soft_weights.call);
 	else
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	es->es_noparens--;
@@ -859,7 +884,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 		if (doalign)
 			dc = expr_doc_align_enter(ex, es, parent, &cookie);
-		dc = expr_doc_soft(ex->ex_rhs, es, dc, 2);
+		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
 		if (doalign)
 			expr_doc_align_leave(es, cookie);
 	}
@@ -898,14 +923,15 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 	/* The true expression can be empty, GNU extension. */
 	ternary = dc;
 	if (ex->ex_rhs != NULL) {
-		ternary = expr_doc_soft(ex->ex_rhs, es, ternary, 2);
+		ternary = expr_doc_soft(ex->ex_rhs, es, ternary,
+		    soft_weights.ternary);
 		doc_alloc(DOC_LINE, ternary);
 	}
 
 	if (ex->ex_tokens[1] != NULL)
 		doc_token(ex->ex_tokens[1], ternary);	/* : */
 	doc_alloc(DOC_LINE, ternary);
-	return expr_doc_soft(ex->ex_ternary, es, ternary, 2);
+	return expr_doc_soft(ex->ex_ternary, es, ternary, soft_weights.ternary);
 }
 
 static struct doc *
