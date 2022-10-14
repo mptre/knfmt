@@ -101,6 +101,7 @@ struct expr_state {
 	struct buffer		*es_bf;
 	unsigned int		 es_depth;
 	unsigned int		 es_nassign;	/* # nested binary assignments */
+	unsigned int		 es_ncalls;	/* # nested calls */
 	unsigned int		 es_noparens;	/* parens indent disabled */
 	unsigned int		 es_nalign;	/* indentation for alignment */
 };
@@ -832,9 +833,15 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	struct token *lparen = ex->ex_tokens[0];
 	struct token *rparen = ex->ex_tokens[1];
 
+	es->es_ncalls++;
+
 	es->es_noparens++;
-	dc = expr_doc(ex->ex_lhs, es, dc);
+	if (es->es_ncalls > 1)
+		dc = expr_doc_soft(ex->ex_lhs, es, dc, 2);
+	else
+		dc = expr_doc(ex->ex_lhs, es, dc);
 	es->es_noparens--;
+
 	if (lparen != NULL)
 		doc_token(lparen, dc);
 	if (ex->ex_rhs != NULL) {
@@ -858,6 +865,9 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	}
 	if (rparen != NULL)
 		doc_token(rparen, dc);
+
+	es->es_ncalls--;
+
 	return dc;
 }
 
