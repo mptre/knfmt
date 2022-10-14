@@ -1343,6 +1343,7 @@ parser_exec_func_proto(struct parser *pr,
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
 		parser_token_trim_after(pr, lparen);
+		parser_token_trim_before(pr, rparen);
 		doc_token(lparen, concat);
 	}
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
@@ -1362,10 +1363,8 @@ parser_exec_func_proto(struct parser *pr,
 	/* Can be empty if arguments are absent. */
 	if (arg->out == NULL)
 		arg->out = concat;
-	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
-		parser_token_trim_before(pr, rparen);
+	if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
 		doc_token(rparen, arg->out);
-	}
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);
