@@ -27,6 +27,9 @@ enum doc_type {
 
 struct doc_minimize {
 	int indent;
+	unsigned int flags;
+/* Unconditionally favor this entry. */
+#define DOC_MINIMIZE_FORCE	0x00000001u
 
 	struct {
 		unsigned int nlines;

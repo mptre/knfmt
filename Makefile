@@ -399,6 +399,7 @@ DISTFILES+=	tests/style-AlignAfterOpenBracket-022.ok
 DISTFILES+=	tests/style-AlignAfterOpenBracket-023.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-023.ok
 DISTFILES+=	tests/style-AlignAfterOpenBracket-024.c
+DISTFILES+=	tests/style-AlignAfterOpenBracket-025.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-001.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-002.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-002.ok

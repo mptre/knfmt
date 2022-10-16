@@ -749,6 +749,10 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		    "%s: score %.2f, indent %d, nlines %u, nexceeds %u",
 		    __func__, s, minimizers[i].indent,
 		    minimizers[i].score.nlines, minimizers[i].score.nexceeds);
+		if (minimizers[i].flags & DOC_MINIMIZE_FORCE) {
+			best = i;
+			break;
+		}
 		if (s < minscore) {
 			minscore = s;
 			best = i;

@@ -134,7 +134,7 @@ static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_align_enter(struct expr *,
-    struct expr_state *, struct doc *, unsigned int *);
+    struct expr_state *, struct doc *, unsigned int, unsigned int *);
 static void		 expr_doc_align_leave(struct expr_state *,
     unsigned int);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
@@ -796,8 +796,10 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			unsigned int cookie;
 			int doalign = style_align(st);
 
-			if (doalign)
-				dc = expr_doc_align_enter(ex, es, dc, &cookie);
+			if (doalign) {
+				dc = expr_doc_align_enter(ex, es, dc, 0,
+				    &cookie);
+			}
 
 			/*
 			 * Same semantics as variable declarations, do not break
@@ -882,8 +884,11 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 				token_trim(pv);
 		}
 
-		if (doalign)
-			dc = expr_doc_align_enter(ex, es, parent, &cookie);
+		if (doalign) {
+			dc = expr_doc_align_enter(ex, es, parent,
+			    token_has_line(lparen, 1) ? DOC_MINIMIZE_FORCE : 0,
+			    &cookie);
+		}
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
 		if (doalign)
 			expr_doc_align_leave(es, cookie);
@@ -940,6 +945,7 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 	struct doc_minimize minimizers[2];
 
 	/* Reset indentation. */
+	memset(minimizers, 0, sizeof(minimizers));
 	minimizers[0].indent = -(es->es_ea.indent + es->es_nalign);
 	minimizers[1].indent = -(-es->es_ea.indent +
 	    style(es->es_st, ContinuationIndentWidth));
@@ -961,13 +967,14 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
  */
 static struct doc *
 expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
-    struct doc *dc, unsigned int *cookie)
+    struct doc *dc, unsigned int flags, unsigned int *cookie)
 {
 	struct doc_minimize minimizers[2];
 	unsigned int w;
 
 	w = expr_doc_width(es, dc);
 	minimizers[0].indent = w;
+	minimizers[0].flags = 0;
 	if (es->es_nalign > 0) {
 		minimizers[1].indent = 0;
 	} else {
@@ -975,6 +982,7 @@ expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
 		    ContinuationIndentWidth);
 		if ((es->es_flags & EXPR_EXEC_HARDLINE) == 0)
 			minimizers[1].indent -= es->es_ea.indent;
+		minimizers[1].flags = flags;
 	}
 	es->es_nalign += w;
 	*cookie = w;
