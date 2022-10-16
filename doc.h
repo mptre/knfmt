@@ -34,7 +34,7 @@ struct doc_minimize {
 	struct {
 		unsigned int nlines;
 		unsigned int nexceeds;
-	} score;
+	} penality;
 };
 
 #define DOC_EXEC_DIFF	    0x00000001u

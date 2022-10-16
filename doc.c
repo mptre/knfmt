@@ -709,7 +709,7 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 	size_t i;
 	unsigned int nlines = 0;
 	unsigned int nexceeds = 0;
-	double minscore = DBL_MAX;
+	double minpenality = DBL_MAX;
 
 	if (st->st_minimize != -1) {
 		doc_exec_minimize1(dc, st, st->st_minimize);
@@ -728,33 +728,34 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		st->st_minimize = -1;
 		if (st->st_stats.nlines > nlines)
 			nlines = st->st_stats.nlines;
-		minimizers[i].score.nlines = st->st_stats.nlines;
+		minimizers[i].penality.nlines = st->st_stats.nlines;
 		if (st->st_stats.nexceeds > nexceeds)
 			nexceeds = st->st_stats.nexceeds;
-		minimizers[i].score.nexceeds = st->st_stats.nexceeds;
+		minimizers[i].penality.nexceeds = st->st_stats.nexceeds;
 		doc_state_snapshot_restore(&sn, st);
 	}
 	doc_state_snapshot_reset(&sn);
 	dc->dc_minimizers = minimizers;
 
 	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
-		double s = 0;
+		double p = 0;
 
 		if (nlines > 0)
-			s += minimizers[i].score.nlines / (double)nlines;
+			p += minimizers[i].penality.nlines / (double)nlines;
 		if (nexceeds > 0)
-			s += minimizers[i].score.nexceeds / (double)nexceeds;
-		s /= 2;
+			p += minimizers[i].penality.nexceeds / (double)nexceeds;
+		p /= 2;
 		doc_trace(dc, &oldst,
-		    "%s: score %.2f, indent %d, nlines %u, nexceeds %u",
-		    __func__, s, minimizers[i].indent,
-		    minimizers[i].score.nlines, minimizers[i].score.nexceeds);
+		    "%s: penality %.2f, indent %d, nlines %u, nexceeds %u",
+		    __func__, p, minimizers[i].indent,
+		    minimizers[i].penality.nlines,
+		    minimizers[i].penality.nexceeds);
 		if (minimizers[i].flags & DOC_MINIMIZE_FORCE) {
 			best = i;
 			break;
 		}
-		if (s < minscore) {
-			minscore = s;
+		if (p < minpenality) {
+			minpenality = p;
 			best = i;
 		}
 	}
