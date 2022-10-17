@@ -942,15 +942,24 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	struct doc_minimize minimizers[2];
-
 	/* Reset indentation. */
-	memset(minimizers, 0, sizeof(minimizers));
-	minimizers[0].indent = -es->es_ea.indent;
-	minimizers[1].indent = -es->es_ea.indent;
-	if (es->es_ncalls == 0)
-		minimizers[0].indent -= es->es_nalign;
-	dc = doc_minimize(dc, minimizers);
+	if (style(es->es_st, AlignAfterOpenBracket) == Align) {
+		struct doc_minimize minimizers[2];
+		int w = es->es_ea.indent;
+
+		memset(minimizers, 0, sizeof(minimizers));
+		if (es->es_ncalls > 0) {
+			minimizers[0].indent = -w;
+			minimizers[1].indent = -w;
+		} else {
+			minimizers[0].indent = -(w + es->es_nalign);
+			minimizers[1].indent = -(w +
+			    style(es->es_st, ContinuationIndentWidth));
+		}
+		dc = doc_minimize(dc, minimizers);
+	} else {
+		dc = doc_alloc_indent(-es->es_ea.indent, dc);
+	}
 
 	doc_append(ex->ex_dc, dc);
 	/*

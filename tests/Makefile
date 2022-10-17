@@ -414,6 +414,7 @@ TESTS+=	style-AlignAfterOpenBracket-024.c
 TESTS+=	style-AlignAfterOpenBracket-025.c
 TESTS+=	style-AlignAfterOpenBracket-026.c
 TESTS+=	style-AlignAfterOpenBracket-027.c
+TESTS+=	style-AlignAfterOpenBracket-028.c
 TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlignEscapedNewlines-002.c
 TESTS+=	style-AlignEscapedNewlines-003.c

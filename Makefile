@@ -403,6 +403,7 @@ DISTFILES+=	tests/style-AlignAfterOpenBracket-025.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-026.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-026.ok
 DISTFILES+=	tests/style-AlignAfterOpenBracket-027.c
+DISTFILES+=	tests/style-AlignAfterOpenBracket-028.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-001.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-002.c
 DISTFILES+=	tests/style-AlignEscapedNewlines-002.ok
