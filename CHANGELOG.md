@@ -1,3 +1,44 @@
+# 4.0.0 - YYYY-MM-DD
+
+## Changes
+
+## News
+
+- In simple mode, declarations like the following can now be split into one
+  declaration per distinct type.
+  (c48eca2)
+  (Anton Lindqvist)
+
+   ```
+   # before
+   struct foo *a, b;
+   # after
+   struct foo b;
+   struct foo *a;
+   ```
+
+- In simple mode, ensure the static keyword comes first.
+  (76b549a)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Fix detection of pointers wrapped in parenthesis.
+  (49c66b7)
+  (Anton Lindqvist)
+
+- Allow empty expression in foreach macros.
+  (4c7c898)
+  (Anton Lindqvist)
+
+- Fix inline assembler parens handling bug.
+  (112ecdd)
+  (Anton Lindqvist)
+
+- Correct alignment of brace initializers.
+  (0dc1c19)
+  (Anton Lindqvist)
+
 # 3.0.1 - 2022-08-14
 
 ## Bug fixes
