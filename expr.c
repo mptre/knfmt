@@ -946,9 +946,10 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	/* Reset indentation. */
 	memset(minimizers, 0, sizeof(minimizers));
-	minimizers[0].indent = -(es->es_ea.indent + es->es_nalign);
-	minimizers[1].indent = -(-es->es_ea.indent +
-	    style(es->es_st, ContinuationIndentWidth));
+	minimizers[0].indent = -es->es_ea.indent;
+	minimizers[1].indent = -es->es_ea.indent;
+	if (es->es_ncalls == 0)
+		minimizers[0].indent -= es->es_nalign;
 	dc = doc_minimize(dc, minimizers);
 
 	doc_append(ex->ex_dc, dc);
