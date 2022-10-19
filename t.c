@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "buffer.h"
+#include "clang.h"
 #include "doc.h"
 #include "error.h"
 #include "expr.h"
@@ -59,6 +60,7 @@ struct context {
 	struct buffer	*cx_bf;
 	struct error	*cx_er;
 	struct style	*cx_st;
+	struct clang	*cx_cl;
 	struct lexer	*cx_lx;
 	struct parser	*cx_pr;
 };
@@ -440,6 +442,7 @@ context_init(struct context *cx, const char *src)
 	buffer_puts(cx->cx_bf, src, strlen(src));
 	cx->cx_er = error_alloc(0);
 	cx->cx_st = style_parse(NULL, &cx->cx_op);
+	cx->cx_cl = clang_alloc(&cx->cx_op);
 	cx->cx_lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= cx->cx_bf,
@@ -447,8 +450,9 @@ context_init(struct context *cx, const char *src)
 	    .diff	= NULL,
 	    .op		= &cx->cx_op,
 	    .callbacks	= {
-		.read		= lexer_read,
+		.read		= clang_read,
 		.serialize	= token_sprintf,
+		.arg		= cx->cx_cl,
 	    },
 	});
 	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, cx->cx_st,
@@ -474,6 +478,9 @@ context_reset(struct context *cx)
 
 	lexer_free(cx->cx_lx);
 	cx->cx_lx = NULL;
+
+	clang_free(cx->cx_cl);
+	cx->cx_cl = NULL;
 
 	parser_free(cx->cx_pr);
 	cx->cx_pr = NULL;

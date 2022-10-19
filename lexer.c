@@ -23,10 +23,6 @@
 #  include "compat-uthash.h"
 #endif
 
-struct branch {
-	struct token	*br_cpp;
-};
-
 struct lexer {
 	struct lexer_state	 lx_st;
 	struct error		*lx_er;
@@ -48,7 +44,6 @@ struct lexer {
 
 	struct token_list	 lx_tokens;
 	VECTOR(struct token *)	 lx_stamps;
-	VECTOR(struct branch)	 lx_branches;
 	VECTOR(char *)		 lx_serialized;
 };
 
@@ -86,12 +81,6 @@ static int	lexer_peek_if_type_cpp(struct lexer *lx);
 
 static void	lexer_branch_fold(struct lexer *, struct token *);
 static void	lexer_branch_unmute(struct lexer *, struct token *);
-static void	lexer_branch_enter(struct lexer *, struct token *,
-    struct token *);
-static void	lexer_branch_leave(struct lexer *, struct token *,
-    struct token *);
-static void	lexer_branch_link(struct lexer *, struct token *,
-    struct token *);
 
 #define LEXER_BRANCH_BACKWARD		0x00000001u
 #define LEXER_BRANCH_FORWARD		0x00000002u
@@ -109,7 +98,6 @@ static void	lexer_trace0(const struct lexer *, const char *, const char *,
     ...)
 	__attribute__((__format__(printf, 3, 4)));
 
-static void	token_branch_link(struct token *, struct token *);
 static void	token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char, int);
@@ -208,8 +196,6 @@ lexer_alloc(const struct lexer_arg *arg)
 	TAILQ_INIT(&lx->lx_tokens);
 	if (VECTOR_INIT(lx->lx_stamps) == NULL)
 		err(1, NULL);
-	if (VECTOR_INIT(lx->lx_branches) == NULL)
-		err(1, NULL);
 	if (VECTOR_INIT(lx->lx_serialized) == NULL)
 		err(1, NULL);
 	lexer_line_alloc(lx, 1);
@@ -226,26 +212,6 @@ lexer_alloc(const struct lexer_arg *arg)
 		if (tk->tk_type == LEXER_EOF)
 			break;
 	}
-
-	/* Remove any pending broken branches. */
-	while (!VECTOR_EMPTY(lx->lx_branches)) {
-		struct branch *br;
-		struct token *pv, *tk;
-
-		br = VECTOR_POP(lx->lx_branches);
-		tk = br->br_cpp;
-		do {
-			pv = tk->tk_branch.br_pv;
-			lexer_trace(lx, "broken branch: %s%s%s",
-			    lexer_serialize(lx, tk),
-			    pv ? " -> " : "",
-			    pv ? lexer_serialize(lx, pv) : "");
-			while (token_branch_unlink(tk) == 0)
-				continue;
-			tk = pv;
-		} while (tk != NULL);
-	}
-	VECTOR_FREE(lx->lx_branches);
 
 	if (error) {
 		lexer_free(lx);
@@ -1343,25 +1309,6 @@ out:
 		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
 	}
 
-	/*
-	 * Establish links between cpp branches.
-	 */
-	TAILQ_FOREACH(tmp, &tk->tk_prefixes, tk_entry) {
-		switch (tmp->tk_type) {
-		case TOKEN_CPP_IF:
-			lexer_branch_enter(lx, tmp, tk);
-			break;
-		case TOKEN_CPP_ELSE:
-			lexer_branch_link(lx, tmp, tk);
-			break;
-		case TOKEN_CPP_ENDIF:
-			lexer_branch_leave(lx, tmp, tk);
-			break;
-		default:
-			break;
-		}
-	}
-
 	return tk;
 }
 
@@ -1980,103 +1927,6 @@ lexer_branch_unmute(struct lexer *lx, struct token *tk)
 	lx->lx_unmute = tk;
 }
 
-static void
-lexer_branch_enter(struct lexer *lx, struct token *cpp, struct token *tk)
-{
-	struct branch *br;
-
-	lexer_trace(lx, "%s", lexer_serialize(lx, cpp));
-
-	cpp->tk_token = tk;
-
-	br = VECTOR_ALLOC(lx->lx_branches);
-	if (br == NULL)
-		err(1, NULL);
-	br->br_cpp = cpp;
-}
-
-static void
-lexer_branch_leave(struct lexer *lx, struct token *cpp, struct token *tk)
-{
-	struct branch *br;
-
-	br = VECTOR_LAST(lx->lx_branches);
-	/* Silently ignore broken branch. */
-	if (br == NULL) {
-		token_branch_unlink(cpp);
-		return;
-	}
-
-	/*
-	 * Discard branches hanging of the same token, such branch cannot cause
-	 * removal of any tokens.
-	 */
-	if (br->br_cpp->tk_token == tk) {
-		struct token *pv;
-
-		lexer_trace(lx, "%s -> %s. discard empty branch",
-		    lexer_serialize(lx, br->br_cpp),
-		    lexer_serialize(lx, cpp));
-
-		/*
-		 * Prevent the previous branch from being exhausted if we're
-		 * about to link it again below.
-		 */
-		pv = br->br_cpp->tk_branch.br_pv;
-		if (pv != NULL)
-			br->br_cpp->tk_branch.br_pv = NULL;
-		token_branch_unlink(br->br_cpp);
-
-		/*
-		 * If this is an empty else branch, try to link with the
-		 * previous one instead.
-		 */
-		br->br_cpp = pv;
-	}
-
-	if (br->br_cpp != NULL) {
-		cpp->tk_token = tk;
-		token_branch_link(br->br_cpp, cpp);
-		lexer_trace(lx, "%s -> %s",
-		    lexer_serialize(lx, br->br_cpp),
-		    lexer_serialize(lx, cpp));
-	} else {
-		token_branch_unlink(cpp);
-	}
-
-	VECTOR_POP(lx->lx_branches);
-}
-
-static void
-lexer_branch_link(struct lexer *lx, struct token *cpp, struct token *tk)
-{
-	struct branch *br;
-
-	br = VECTOR_LAST(lx->lx_branches);
-	/* Silently ignore broken branch. */
-	if (br == NULL) {
-		token_branch_unlink(cpp);
-		return;
-	}
-
-	/*
-	 * Discard branches hanging of the same token, such branch cannot cause
-	 * removal of any tokens.
-	 */
-	if (br->br_cpp->tk_token == tk) {
-		token_branch_unlink(cpp);
-		return;
-	}
-
-	lexer_trace(lx, "%s -> %s",
-	    lexer_serialize(lx, br->br_cpp),
-	    lexer_serialize(lx, cpp));
-
-	cpp->tk_token = tk;
-	token_branch_link(br->br_cpp, cpp);
-	br->br_cpp = cpp;
-}
-
 /*
  * Find the best suited branch to fold relative to the given token while trying
  * to recover after encountering invalid source code. We do not want to fold a
@@ -2151,13 +2001,6 @@ lexer_trace0(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fprintf(stderr, "\n");
-}
-
-static void
-token_branch_link(struct token *src, struct token *dst)
-{
-	src->tk_branch.br_nx = dst;
-	dst->tk_branch.br_pv = src;
 }
 
 static int

@@ -39,6 +39,12 @@ In general terms, the lexer API is divided into two categories:
 A token can have more tokens associated with it, called dangling tokens. See the
 cpp section below for such use case.
 
+clang.c
+=======
+
+Not to be confused with LLVM Clang. C language specific routines used by the
+lexer, see the cpp conditionals section below.
+
 parser.c
 ========
 
@@ -233,8 +239,8 @@ described in the cpp section above. Preprocessor branches can literally be
 present anywhere in the source code. Letting the parser cope with this fact
 would make the implementation tedious.
 
-Instead, the lexer keeps track of all branches, see lexer_cpp() and
-lexer_read(). Upon entering a branch continuation denoted by #else or #elif,
+Instead, clang and lexer keeps track of all branches, see clang_read() and
+lexer_cpp(). Upon entering a branch continuation denoted by #else or #elif,
 lexer_pop() will halt while consuming tokens but move passed the branch
 continuation while peeking. This gives the parser the impression of traversing
 valid grammar and language constructs can still be detected. At some point, the

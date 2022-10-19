@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "buffer.h"
+#include "clang.h"
 #include "diff.h"
 #include "error.h"
 #include "file.h"
@@ -158,6 +159,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 {
 	struct buffer *dst = NULL;
 	struct buffer *src;
+	struct clang *cl = NULL;
 	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
 	int error = 0;
@@ -167,6 +169,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 		error = 1;
 		goto out;
 	}
+	cl = clang_alloc(op);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= fe->fe_path,
 	    .bf		= src,
@@ -174,8 +177,9 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 	    .diff	= fe->fe_diff,
 	    .op		= op,
 	    .callbacks	= {
-		.read		= lexer_read,
+		.read		= clang_read,
 		.serialize	= token_sprintf,
+		.arg		= cl,
 	    },
 	});
 	if (lx == NULL) {
@@ -204,6 +208,7 @@ out:
 	buffer_free(dst);
 	parser_free(pr);
 	lexer_free(lx);
+	clang_free(cl);
 	buffer_free(src);
 	return error;
 }
