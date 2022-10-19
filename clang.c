@@ -12,13 +12,9 @@
 #include "token.h"
 #include "vector.h"
 
-struct branch {
-	struct token	*br_cpp;
-};
-
 struct clang {
 	const struct options	*cl_op;
-	VECTOR(struct branch)	 cl_branches;
+	VECTOR(struct token *)	 cl_branches;
 };
 
 static void	clang_branch_enter(struct clang *, struct lexer *,
@@ -104,94 +100,90 @@ static void
 clang_branch_enter(struct clang *cl, struct lexer *lx, struct token *cpp,
     struct token *tk)
 {
-	struct branch *br;
+	struct token **br;
 
 	clang_trace(cl, "%s", lexer_serialize(lx, cpp));
-
 	cpp->tk_token = tk;
-
 	br = VECTOR_ALLOC(cl->cl_branches);
 	if (br == NULL)
 		err(1, NULL);
-	br->br_cpp = cpp;
+	*br = cpp;
 }
 
 static void
 clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
     struct token *tk)
 {
-	struct branch *br;
+	struct token *br;
 
-	br = VECTOR_LAST(cl->cl_branches);
 	/* Silently ignore broken branch. */
-	if (br == NULL) {
+	if (VECTOR_EMPTY(cl->cl_branches)) {
 		token_branch_unlink(cpp);
 		return;
 	}
+	br = *VECTOR_LAST(cl->cl_branches);
 
 	/*
 	 * Discard branches hanging of the same token, such branch cannot cause
 	 * removal of any tokens.
 	 */
-	if (br->br_cpp->tk_token == tk) {
+	if (br->tk_token == tk) {
 		token_branch_unlink(cpp);
 		return;
 	}
 
 	clang_trace(cl, "%s -> %s",
-	    lexer_serialize(lx, br->br_cpp),
-	    lexer_serialize(lx, cpp));
+	    lexer_serialize(lx, br), lexer_serialize(lx, cpp));
 
 	cpp->tk_token = tk;
-	token_branch_link(br->br_cpp, cpp);
-	br->br_cpp = cpp;
+	token_branch_link(br, cpp);
+	*VECTOR_LAST(cl->cl_branches) = cpp;
 }
 
 static void
 clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
     struct token *tk)
 {
-	struct branch *br;
+	struct token *br;
 
-	br = VECTOR_LAST(cl->cl_branches);
 	/* Silently ignore broken branch. */
-	if (br == NULL) {
+	if (VECTOR_EMPTY(cl->cl_branches)) {
 		token_branch_unlink(cpp);
 		return;
 	}
+	br = *VECTOR_LAST(cl->cl_branches);
 
 	/*
 	 * Discard branches hanging of the same token, such branch cannot cause
 	 * removal of any tokens.
 	 */
-	if (br->br_cpp->tk_token == tk) {
+	if (br->tk_token == tk) {
 		struct token *pv;
 
-		clang_trace(cl, "%s -> %s. discard empty branch",
-		    lexer_serialize(lx, br->br_cpp),
-		    lexer_serialize(lx, cpp));
+		clang_trace(cl, "%s -> %s, discard empty branch",
+		    lexer_serialize(lx, br), lexer_serialize(lx, cpp));
 
 		/*
 		 * Prevent the previous branch from being exhausted if we're
 		 * about to link it again below.
 		 */
-		pv = br->br_cpp->tk_branch.br_pv;
+		pv = br->tk_branch.br_pv;
 		if (pv != NULL)
-			br->br_cpp->tk_branch.br_pv = NULL;
-		token_branch_unlink(br->br_cpp);
+			br->tk_branch.br_pv = NULL;
+		token_branch_unlink(br);
 
 		/*
 		 * If this is an empty else branch, try to link with the
 		 * previous one instead.
 		 */
-		br->br_cpp = pv;
+		br = pv;
 	}
 
-	if (br->br_cpp != NULL) {
+	if (br != NULL) {
 		cpp->tk_token = tk;
-		token_branch_link(br->br_cpp, cpp);
+		token_branch_link(br, cpp);
 		clang_trace(cl, "%s -> %s",
-		    lexer_serialize(lx, br->br_cpp),
+		    lexer_serialize(lx, br),
 		    lexer_serialize(lx, cpp));
 	} else {
 		token_branch_unlink(cpp);
@@ -207,11 +199,9 @@ static void
 clang_branch_purge(struct clang *cl, struct lexer *lx)
 {
 	while (!VECTOR_EMPTY(cl->cl_branches)) {
-		struct branch *br;
 		struct token *pv, *tk;
 
-		br = VECTOR_POP(cl->cl_branches);
-		tk = br->br_cpp;
+		tk = *VECTOR_POP(cl->cl_branches);
 		do {
 			pv = tk->tk_branch.br_pv;
 			clang_trace(cl, "broken branch: %s%s%s",
