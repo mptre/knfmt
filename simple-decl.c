@@ -4,7 +4,6 @@
 
 #include <assert.h>
 #include <err.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -14,6 +13,7 @@
 #include "options.h"
 #include "token.h"
 #include "vector.h"
+#include "util.h"
 
 #ifdef HAVE_UTHASH
 #  include <uthash.h>
@@ -91,10 +91,8 @@ static unsigned int	nstars(const struct token_range *);
 
 #define simple_trace(sd, fmt, ...) do {					\
 	if (trace((sd)->sd_op, 'S'))					\
-		simple_trace0(__func__, (fmt), __VA_ARGS__);		\
+		tracef('S', __func__, (fmt), __VA_ARGS__);		\
 } while (0)
-static void	simple_trace0(const char *, const char *, ...)
-	__attribute__((__format__(printf, 2, 3)));
 
 struct simple_decl *
 simple_decl_enter(struct lexer *lx, const struct options *op)
@@ -526,16 +524,4 @@ nstars(const struct token_range *tr)
 			n++;
 	}
 	return n;
-}
-
-static void
-simple_trace0(const char *fun, const char *fmt, ...)
-{
-	va_list ap;
-
-	fprintf(stderr, "[S] %s: ", fun);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
 }

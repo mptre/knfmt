@@ -7,9 +7,22 @@
 #include <ctype.h>
 #include <err.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+void
+tracef(unsigned char ident, const char *fun, const char *fmt, ...)
+{
+	va_list ap;
+
+	fprintf(stderr, "[%c] %s: ", ident, fun);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
+}
 
 char *
 strnice(const char *str, size_t len)

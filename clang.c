@@ -2,7 +2,6 @@
 
 #include <assert.h>
 #include <err.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,6 +10,7 @@
 #include "options.h"
 #include "token.h"
 #include "vector.h"
+#include "util.h"
 
 struct clang {
 	const struct options	*cl_op;
@@ -32,12 +32,8 @@ static void	token_branch_link(struct token *, struct token *);
 
 #define clang_trace(cl, fmt, ...) do {					\
 	if (trace((cl)->cl_op, 'c'))					\
-		clang_trace0((cl), __func__, (fmt),			\
-		    __VA_ARGS__);					\
+		tracef('C', __func__, (fmt), __VA_ARGS__);		\
 } while (0)
-static void	clang_trace0(const struct clang *, const char *, const char *,
-    ...)
-	__attribute__((__format__(printf, 3, 4)));
 
 struct clang *
 clang_alloc(const struct options *op)
@@ -220,17 +216,4 @@ token_branch_link(struct token *src, struct token *dst)
 {
 	src->tk_branch.br_nx = dst;
 	dst->tk_branch.br_pv = src;
-}
-
-static void
-clang_trace0(const struct clang *UNUSED(cl), const char *fun,
-    const char *fmt, ...)
-{
-	va_list ap;
-
-	fprintf(stderr, "[C] %s: ", fun);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
 }

@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <err.h>
-#include <stdarg.h>
 #include <stdio.h>
 
 #include "buffer.h"
@@ -91,12 +90,8 @@ static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (trace((lx)->lx_op, 'l') >= 2)				\
-		lexer_trace0((lx), __func__, (fmt),			\
-		    __VA_ARGS__);					\
+		tracef('L', __func__, (fmt), __VA_ARGS__);		\
 } while (0)
-static void	lexer_trace0(const struct lexer *, const char *, const char *,
-    ...)
-	__attribute__((__format__(printf, 3, 4)));
 
 static void	token_prolong(struct token *, struct token *);
 
@@ -1988,19 +1983,6 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 	}
 
 	return NULL;
-}
-
-static void
-lexer_trace0(const struct lexer *UNUSED(lx), const char *fun, const char *fmt,
-    ...)
-{
-	va_list ap;
-
-	fprintf(stderr, "[L] %s: ", fun);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
 }
 
 static int
