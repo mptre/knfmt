@@ -25,9 +25,6 @@ struct lexer_arg {
 		 *        returning a token with type LEXER_EOF.
 		 *     3. If none of the above occurs, the next consumed token
 		 *        is assumed to be returned.
-		 *
-		 * Passing NULL will default to a callback capable of detecting
-		 * C tokens.
 		 */
 		struct token	*(*read)(struct lexer *, void *);
 
@@ -35,9 +32,6 @@ struct lexer_arg {
 		 * Serialize routine used to turn the given token into something
 		 * human readable. The returned string must be heap allocated
 		 * and is managed by the lexer.
-		 *
-		 * Passing NULL will default to a routine capable of
-		 * serializing C tokens.
 		 */
 		char		*(*serialize)(const struct token *);
 
@@ -58,6 +52,8 @@ void		 lexer_init(void);
 void		 lexer_shutdown(void);
 struct lexer	*lexer_alloc(const struct lexer_arg *);
 void		 lexer_free(struct lexer *);
+
+struct token	*lexer_read(struct lexer *, void *);
 
 void		 lexer_get_state(const struct lexer *, struct lexer_state *);
 int		 lexer_getc(struct lexer *, unsigned char *);

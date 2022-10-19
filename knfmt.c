@@ -17,6 +17,7 @@
 #include "options.h"
 #include "parser.h"
 #include "style.h"
+#include "token.h"
 #include "vector.h"
 
 static __dead void	usage(void);
@@ -172,6 +173,10 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 	    .er		= fe->fe_error,
 	    .diff	= fe->fe_diff,
 	    .op		= op,
+	    .callbacks	= {
+		.read		= lexer_read,
+		.serialize	= token_sprintf,
+	    },
 	});
 	if (lx == NULL) {
 		error = 1;

@@ -57,7 +57,6 @@ struct token_hash {
 	UT_hash_handle	th_hh;
 };
 
-static struct token	*lexer_read(struct lexer *, void *);
 static void		 lexer_eat_buffet(struct lexer *, struct lexer_state *,
     struct lexer_state *);
 static int		 lexer_eat_lines(struct lexer *, struct token **, int);
@@ -189,7 +188,6 @@ lexer_shutdown(void)
 struct lexer *
 lexer_alloc(const struct lexer_arg *arg)
 {
-	struct token *(*rd)(struct lexer *, void *);
 	struct lexer *lx;
 	int error = 0;
 
@@ -216,14 +214,10 @@ lexer_alloc(const struct lexer_arg *arg)
 		err(1, NULL);
 	lexer_line_alloc(lx, 1);
 
-	rd = arg->callbacks.read;
-	if (rd == NULL)
-		rd = lexer_read;
-
 	for (;;) {
 		struct token *tk;
 
-		tk = rd(lx, arg->callbacks.arg);
+		tk = arg->callbacks.read(lx, arg->callbacks.arg);
 		if (tk == NULL) {
 			error = 1;
 			break;
@@ -1210,7 +1204,7 @@ lexer_dump(struct lexer *lx)
 	}
 }
 
-static struct token *
+struct token *
 lexer_read(struct lexer *lx, void *UNUSED(arg))
 {
 	struct lexer_state st;
