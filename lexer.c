@@ -1515,7 +1515,6 @@ static struct token *
 lexer_cpp(struct lexer *lx)
 {
 	struct lexer_state cmpst, oldst, st;
-	struct token cpp;
 	struct token *tk;
 	int type = TOKEN_CPP;
 	int comment;
@@ -1568,9 +1567,10 @@ lexer_cpp(struct lexer *lx)
 	 */
 	lexer_eat_lines(lx, NULL, 2);
 
-	cpp = tkcpp;
-	cpp.tk_type = type;
-	tk = lexer_emit(lx, &st, &cpp);
+	tk = lexer_emit(lx, &st, &(struct token){
+	    .tk_type	= type,
+	    .tk_flags	= TOKEN_FLAG_CPP,
+	});
 	/* Discard any remaining hard line(s). */
 	lexer_eat_lines(lx, NULL, 0);
 	return tk;
