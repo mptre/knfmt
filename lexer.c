@@ -51,9 +51,10 @@ struct token_hash {
 	UT_hash_handle	th_hh;
 };
 
-static void		 lexer_eat_buffet(struct lexer *, struct lexer_state *);
 static int		 lexer_eat_lines(struct lexer *, struct token **, int);
 static int		 lexer_eat_spaces(struct lexer *, struct token **);
+static void		 lexer_eat_lines_and_spaces(struct lexer *,
+    struct lexer_state *);
 static struct token	*lexer_keyword(struct lexer *);
 static struct token	*lexer_keyword1(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
@@ -1311,7 +1312,7 @@ out:
  * something else is found.
  */
 static void
-lexer_eat_buffet(struct lexer *lx, struct lexer_state *st)
+lexer_eat_lines_and_spaces(struct lexer *lx, struct lexer_state *st)
 {
 	int gotspaces = 0;
 
@@ -1460,7 +1461,7 @@ lexer_comment(struct lexer *lx, int block)
 
 	oldst = st = lx->lx_st;
 	if (block)
-		lexer_eat_buffet(lx, &st);
+		lexer_eat_lines_and_spaces(lx, &st);
 	else
 		lexer_eat_spaces(lx, NULL);
 	if (lexer_getc(lx, &ch) || ch != '/') {
@@ -1518,7 +1519,7 @@ lexer_cpp(struct lexer *lx)
 	unsigned char ch;
 
 	oldst = lx->lx_st;
-	lexer_eat_buffet(lx, &st);
+	lexer_eat_lines_and_spaces(lx, &st);
 	if (lexer_getc(lx, &ch) || ch != '#') {
 		lx->lx_st = oldst;
 		return NULL;
