@@ -53,8 +53,6 @@ struct token_hash {
 
 static int		 lexer_eat_lines(struct lexer *, int, struct token **);
 static int		 lexer_eat_spaces(struct lexer *, struct token **);
-static void		 lexer_eat_lines_and_spaces(struct lexer *,
-    struct lexer_state *);
 static struct token	*lexer_keyword(struct lexer *);
 static struct token	*lexer_keyword1(struct lexer *);
 static struct token	*lexer_comment(struct lexer *, int);
@@ -1309,7 +1307,7 @@ out:
  * first none whitespace character and the given state at the beginning of the
  * same line line, thus including the whitespace if present.
  */
-static void
+void
 lexer_eat_lines_and_spaces(struct lexer *lx, struct lexer_state *st)
 {
 	int gotspaces = 0;

@@ -344,14 +344,8 @@ yaml_read(struct lexer *lx, void *UNUSED(arg))
 	unsigned char ch;
 
 again:
-	do {
-		if (lexer_getc(lx, &ch))
-			goto eof;
-	} while (isspace(ch));
-	lexer_ungetc(lx);
-
+	lexer_eat_lines_and_spaces(lx, NULL);
 	s = lexer_get_state(lx);
-
 	if (lexer_getc(lx, &ch))
 		goto eof;
 
