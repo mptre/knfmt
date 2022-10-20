@@ -6,11 +6,11 @@ KNFMT \
 	!(compat-*).c !(compat-*|config).h \
 	compat-pledge.c \
 	-- \
-CPPCHECK \
-	!(compat-*|vector).c \
-	-- \
 CLANGTIDY \
 	!(config|compat-*|token-defs|vector).[ch] \
+	-- \
+CPPCHECK \
+	!(compat-*|vector).c \
 	-- \
 DISTFILES \
 	*.c !(config).h *.md \
