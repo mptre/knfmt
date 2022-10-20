@@ -66,8 +66,11 @@ struct decl_var_list {
 };
 
 struct simple_decl {
-	/* Type declarations to potentially remove. */
-	VECTOR(struct decl)	 sd_decls;
+	/*
+	 * Duplicate type declarations ending up empty due to variables of the
+	 * same type being grouped into one declaration.
+	 */
+	VECTOR(struct decl)	 sd_empty_decls;
 
 	struct decl_type	*sd_types;
 	struct decl_type	*sd_dt;
@@ -102,7 +105,7 @@ simple_decl_enter(struct lexer *lx, const struct options *op)
 	sd = calloc(1, sizeof(*sd));
 	if (sd == NULL)
 		err(1, NULL);
-	if (VECTOR_INIT(sd->sd_decls) == NULL)
+	if (VECTOR_INIT(sd->sd_empty_decls) == NULL)
 		err(1, NULL);
 	sd->sd_lx = lx;
 	sd->sd_op = op;
@@ -185,8 +188,8 @@ simple_decl_leave(struct simple_decl *sd)
 	}
 
 	/* Remove by now empty declarations. */
-	for (i = 0; i < VECTOR_LENGTH(sd->sd_decls); i++) {
-		struct decl *dc = &sd->sd_decls[i];
+	for (i = 0; i < VECTOR_LENGTH(sd->sd_empty_decls); i++) {
+		struct decl *dc = &sd->sd_empty_decls[i];
 
 		TOKEN_RANGE_FOREACH(tk, &dc->dc_tr, tmp)
 			lexer_remove(sd->sd_lx, tk, 1);
@@ -201,7 +204,7 @@ simple_decl_free(struct simple_decl *sd)
 	if (sd == NULL)
 		return;
 
-	VECTOR_FREE(sd->sd_decls);
+	VECTOR_FREE(sd->sd_empty_decls);
 
 	HASH_ITER(hh, sd->sd_types, dt, tmp) {
 		while (!VECTOR_EMPTY(dt->dt_slots)) {
@@ -245,7 +248,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 		end = token_prev(end);
 	dv->dv_ident.tr_beg = token_next(end);
 
-	dc = VECTOR_CALLOC(sd->sd_decls);
+	dc = VECTOR_CALLOC(sd->sd_empty_decls);
 	if (dc == NULL)
 		err(1, NULL);
 	dc->dc_tr = tr;
@@ -254,7 +257,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 void
 simple_decl_semi(struct simple_decl *sd, struct token *semi)
 {
-	struct decl *dc = VECTOR_LAST(sd->sd_decls);
+	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
 
 	if (decl_var_empty(&sd->sd_dv))
 		return;
@@ -268,7 +271,7 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 	if (dc->dc_nrejects == 0)
 		dc->dc_tr.tr_end = semi;
 	else
-		VECTOR_POP(sd->sd_decls);
+		VECTOR_POP(sd->sd_empty_decls);
 
 	simple_decl_var_init(sd);
 	sd->sd_dt = NULL;
@@ -432,7 +435,7 @@ simple_decl_var_init(struct simple_decl *sd)
 static struct decl_var *
 simple_decl_var_end(struct simple_decl *sd, struct token *end)
 {
-	struct decl *dc = VECTOR_LAST(sd->sd_decls);
+	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
 	struct decl_var *dv = &sd->sd_dv;
 	struct decl_var *dst;
 	struct decl_var_list *dl;
@@ -487,7 +490,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 static int
 simple_decl_var_reject(struct simple_decl *sd)
 {
-	struct decl *dc = VECTOR_LAST(sd->sd_decls);
+	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
 
 	dc->dc_nrejects++;
 	return 1;
