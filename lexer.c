@@ -1175,7 +1175,6 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 	unsigned char ch;
 
 	TAILQ_INIT(&prefixes);
-	st = lx->lx_st;
 
 	/*
 	 * Consume all comments and preprocessor directives, will be hanging of
