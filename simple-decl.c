@@ -130,8 +130,7 @@ simple_decl_leave(struct simple_decl *sd)
 		 */
 		after = decl_type_after(dt);
 
-		size_t slen = VECTOR_LENGTH(dt->dt_slots);
-		for (slot = 0; slot < slen; slot++) {
+		for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
 			struct decl_var_list *dl = &dt->dt_slots[slot];
 			struct token *semi;
 
