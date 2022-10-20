@@ -58,7 +58,7 @@ struct token	*lexer_read(struct lexer *, void *);
 void		 lexer_get_state(const struct lexer *, struct lexer_state *);
 int		 lexer_getc(struct lexer *, unsigned char *);
 void		 lexer_ungetc(struct lexer *);
-struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
+struct token	*lexer_emit(const struct lexer *, const struct lexer_state *,
     const struct token *);
 void		 lexer_error(struct lexer *, const char *, ...);
 const char	*lexer_serialize(struct lexer *, const struct token *);
