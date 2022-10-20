@@ -343,6 +343,9 @@ lexer_serialize(struct lexer *lx, const struct token *tk)
 {
 	char *str;
 
+	if (tk == NULL)
+		return "(null)";
+
 	str = lx->lx_serialize(tk);
 	*VECTOR_ALLOC(lx->lx_serialized) = str;
 	return str;
@@ -1650,7 +1653,6 @@ lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
 {
 	struct buffer *bf;
 	struct token *t;
-	const char *exp, *got;
 
 	/* Be quiet while about to branch. */
 	if (lexer_back(lx, &t) && token_is_branch(t)) {
@@ -1671,10 +1673,9 @@ lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
 	buffer_printf(bf, "%s: ", lx->lx_path);
 	if (trace(lx->lx_op, 'l'))
 		buffer_printf(bf, "%s:%d: ", fun, lno);
-	exp = lexer_serialize(lx, &(struct token){.tk_type = type});
-	got = tk != NULL ? lexer_serialize(lx, tk) : NULL;
-	buffer_printf(bf, "expected type %s got %s\n", exp,
-	    got != NULL ? got : "(null)");
+	buffer_printf(bf, "expected type %s got %s\n",
+	    lexer_serialize(lx, &(struct token){.tk_type = type}),
+	    lexer_serialize(lx, tk));
 	error_end(lx->lx_er);
 }
 
