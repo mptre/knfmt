@@ -121,9 +121,6 @@ static const struct token tkline = {
 static const struct token tklit = {
 	.tk_type	= TOKEN_LITERAL,
 };
-static const struct token tknone = {
-	.tk_type	= TOKEN_NONE,
-};
 static const struct token tkspace = {
 	.tk_type	= TOKEN_SPACE,
 };
@@ -1173,7 +1170,6 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 	struct buffer *bf;
 	struct token *tk = NULL;
 	struct token *t, *tmp;
-	char *str;
 	int ncomments = 0;
 	int nlines;
 	unsigned char ch;
@@ -1261,13 +1257,14 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 		goto out;
 	}
 
-	tk = lexer_emit(lx, &st, &tknone);
+	tk = lexer_emit(lx, &st, &(struct token){
+	    .tk_type	= TOKEN_NONE,
+	});
 	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
-	str = token_sprintf(tk);
 	bf = error_begin(lx->lx_er);
-	buffer_printf(bf, "%s: unknown token %s\n", lx->lx_path, str);
+	buffer_printf(bf, "%s: unknown token %s\n",
+	    lx->lx_path, lexer_serialize(lx, tk));
 	error_end(lx->lx_er);
-	free(str);
 	token_rele(tk);
 	return NULL;
 
