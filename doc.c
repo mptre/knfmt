@@ -746,8 +746,8 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 			p += minimizers[i].penality.nexceeds / (double)nexceeds;
 		p /= 2;
 		doc_trace(dc, &oldst,
-		    "%s: penality %.2f, indent %d, nlines %u, nexceeds %u",
-		    __func__, p, minimizers[i].indent,
+		    "%s: penality %.2f, indent %d, flags %x, nlines %u, nexceeds %u",
+		    __func__, p, minimizers[i].indent, minimizers[i].flags,
 		    minimizers[i].penality.nlines,
 		    minimizers[i].penality.nexceeds);
 		if (minimizers[i].flags & DOC_MINIMIZE_FORCE) {
