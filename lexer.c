@@ -247,10 +247,10 @@ lexer_free(struct lexer *lx)
 	free(lx);
 }
 
-void
-lexer_get_state(const struct lexer *lx, struct lexer_state *st)
+struct lexer_state
+lexer_get_state(const struct lexer *lx)
 {
-	*st = lx->lx_st;
+	return lx->lx_st;
 }
 
 int

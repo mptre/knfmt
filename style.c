@@ -350,7 +350,7 @@ again:
 	} while (isspace(ch));
 	lexer_ungetc(lx);
 
-	lexer_get_state(lx, &s);
+	s = lexer_get_state(lx);
 
 	if (lexer_getc(lx, &ch))
 		goto eof;
