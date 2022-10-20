@@ -32,6 +32,8 @@ struct token_range {
 	    (var) = (var) == (tr)->tr_end ? NULL : (tvar),		\
 	    (tvar) = (var) ? token_next((var)) : NULL)
 
+static char	*token_range_str(const struct token_range *);
+
 struct decl {
 	struct token_range	dc_tr;
 	int			dc_nrejects;
@@ -53,8 +55,6 @@ struct decl_type {
 	UT_hash_handle			 hh;
 };
 
-static void			 decl_type_init(struct decl_type *,
-    struct token_range *);
 static void			 decl_type_free(struct decl_type *);
 static struct decl_var_list	*decl_type_slot(struct decl_type *,
     unsigned int);
@@ -78,8 +78,8 @@ struct simple_decl {
 	const struct options	*sd_op;
 };
 
-static int	simple_decl_type_create(struct simple_decl *,
-    struct decl_type *);
+static struct decl_type	*simple_decl_type_create(struct simple_decl *,
+    const char *, const struct token_range *);
 
 static struct decl_var	*simple_decl_var_init(struct simple_decl *);
 static struct decl_var	*simple_decl_var_end(struct simple_decl *,
@@ -225,19 +225,19 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 		.tr_beg	= beg,
 		.tr_end	= end,
 	};
-	struct decl_type dt;
 	struct decl *dc;
 	struct decl_var *dv;
 	struct token *tk, *tmp;
+	char *type;
 
 	TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
 		if (!token_is_moveable(tk))
 			return;
 	}
 
-	decl_type_init(&dt, &tr);
-	if (!simple_decl_type_create(sd, &dt))
-		decl_type_free(&dt);
+	type = token_range_str(&tr);
+	sd->sd_dt = simple_decl_type_create(sd, type, &tr);
+	free(type);
 
 	dv = simple_decl_var_init(sd);
 	/* Pointer(s) are part of the variable. */
@@ -299,6 +299,29 @@ simple_decl_comma(struct simple_decl *sd, struct token *comma)
 	dv->dv_delim = delim;
 }
 
+static char *
+token_range_str(const struct token_range *tr)
+{
+	struct buffer *bf;
+	struct token *tk, *tmp;
+	char *str;
+	int ntokens = 0;
+
+	bf = buffer_alloc(64);
+	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
+		if (tk->tk_type == TOKEN_STAR)
+			continue;
+
+		if (ntokens++ > 0)
+			buffer_putc(bf, ' ');
+		buffer_puts(bf, tk->tk_str, tk->tk_len);
+	}
+	buffer_putc(bf, '\0');
+	str = buffer_release(bf);
+	buffer_free(bf);
+	return str;
+}
+
 static int
 decl_var_cmp(const void *p1, const void *p2)
 {
@@ -323,33 +346,6 @@ static int
 decl_var_empty(const struct decl_var *dv)
 {
 	return dv->dv_ident.tr_beg == NULL;
-}
-
-static void
-decl_type_init(struct decl_type *dt, struct token_range *tr)
-{
-	struct buffer *bf;
-	struct token *tk, *tmp;
-	int ntokens = 0;
-
-	memset(dt, 0, sizeof(*dt));
-	dt->dt_tr = *tr;
-
-	bf = buffer_alloc(64);
-	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
-		if (tk->tk_type == TOKEN_STAR)
-			continue;
-
-		if (ntokens++ > 0)
-			buffer_putc(bf, ' ');
-		buffer_puts(bf, tk->tk_str, tk->tk_len);
-
-		/* Pointer(s) are not part of the type. */
-		dt->dt_tr.tr_end = tk;
-	}
-	buffer_putc(bf, '\0');
-	dt->dt_str = buffer_release(bf);
-	buffer_free(bf);
 }
 
 static void
@@ -391,32 +387,39 @@ decl_type_after(struct decl_type *dt)
 }
 
 /*
- * Create or find the corresponding type given key. Returns non-zero if a new
- * type was created and the newly created type takes ownership of the given key.
- * Otherwise, zero is returned and the caller is required to free the key
- * whenever appropriate.
+ * Create or find the given type.
  */
-static int
-simple_decl_type_create(struct simple_decl *sd, struct decl_type *key)
+static struct decl_type *
+simple_decl_type_create(struct simple_decl *sd, const char *type,
+    const struct token_range *tr)
 {
 	struct decl_type *dt;
-	int created = 1;
+	struct token *end, *tk, *tmp;
 
-	HASH_FIND_STR(sd->sd_types, key->dt_str, dt);
-	if (dt == NULL) {
-		dt = malloc(sizeof(*dt));
-		if (dt == NULL)
-			err(1, NULL);
-		*dt = *key;
-		if (VECTOR_INIT(dt->dt_slots) == NULL)
-			err(1, NULL);
-		HASH_ADD_STR(sd->sd_types, dt_str, dt);
-		simple_trace(sd, "new type \"%s\"", key->dt_str);
-	} else {
-		created = 0;
+	HASH_FIND_STR(sd->sd_types, type, dt);
+	if (dt != NULL)
+		return dt;
+
+	dt = calloc(1, sizeof(*dt));
+	if (dt == NULL)
+		err(1, NULL);
+
+	dt->dt_tr = *tr;
+	/* Pointer(s) are not part of the type. */
+	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
+		if (tk->tk_type != TOKEN_STAR)
+			end = tk;
 	}
-	sd->sd_dt = dt;
-	return created;
+	dt->dt_tr.tr_end = end;
+
+	if (VECTOR_INIT(dt->dt_slots) == NULL)
+		err(1, NULL);
+	dt->dt_str = strdup(type);
+	if (dt->dt_str == NULL)
+		err(1, NULL);
+	HASH_ADD_STR(sd->sd_types, dt_str, dt);
+	simple_trace(sd, "new type \"%s\"", dt->dt_str);
+	return dt;
 }
 
 static struct decl_var *
