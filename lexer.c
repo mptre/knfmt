@@ -1316,11 +1316,13 @@ lexer_eat_lines_and_spaces(struct lexer *lx, struct lexer_state *st)
 {
 	int gotspaces = 0;
 
-	*st = lx->lx_st;
+	if (st != NULL)
+		*st = lx->lx_st;
 
 	for (;;) {
 		if (lexer_eat_lines(lx, 0, NULL)) {
-			*st = lx->lx_st;
+			if (st != NULL)
+				*st = lx->lx_st;
 			gotspaces = 0;
 		} else if (gotspaces) {
 			break;
