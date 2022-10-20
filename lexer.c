@@ -1308,8 +1308,10 @@ out:
 }
 
 /*
- * Consume empty line(s) until a line with optional whitespace followed by
- * something else is found.
+ * Consume empty line(s) until a line beginning with optional whitespace
+ * followed by none whitespace is found. The lexer will be positioned before the
+ * first none whitespace character and the given state at the beginning of the
+ * same line line, thus including the whitespace if present.
  */
 static void
 lexer_eat_lines_and_spaces(struct lexer *lx, struct lexer_state *st)
