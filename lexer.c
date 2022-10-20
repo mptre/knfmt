@@ -1393,10 +1393,7 @@ lexer_keyword(struct lexer *lx)
 	for (;;) {
 		struct token *tk;
 
-		while (lexer_eat_lines(lx, 0, NULL) ||
-		    lexer_eat_spaces(lx, NULL))
-			continue;
-
+		lexer_eat_lines_and_spaces(lx, NULL);
 		tk = lexer_keyword1(lx);
 		if (tk == NULL)
 			break;
