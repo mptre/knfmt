@@ -988,12 +988,10 @@ expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
 	struct doc_minimize minimizers[2];
 	unsigned int w;
 
+	memset(minimizers, 0, sizeof(minimizers));
 	w = expr_doc_width(es, dc);
 	minimizers[0].indent = w;
-	minimizers[0].flags = 0;
-	if (es->es_nalign > 0) {
-		minimizers[1].indent = 0;
-	} else {
+	if (es->es_nalign == 0) {
 		minimizers[1].indent = style(es->es_st,
 		    ContinuationIndentWidth);
 		if ((es->es_flags & EXPR_EXEC_HARDLINE) == 0)
