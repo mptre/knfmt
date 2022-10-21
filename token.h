@@ -1,12 +1,7 @@
 #include <stddef.h>	/* size_t */
 
 #include "config.h"
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
+#include "queue-fwd.h"
 
 enum {
 #define T(t, s, f) t,

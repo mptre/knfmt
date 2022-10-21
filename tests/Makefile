@@ -473,6 +473,7 @@ TESTS+=	../options.c
 TESTS+=	../options.h
 TESTS+=	../parser.c
 TESTS+=	../parser.h
+TESTS+=	../queue-fwd.h
 TESTS+=	../ruler.c
 TESTS+=	../ruler.h
 TESTS+=	../simple-decl.c

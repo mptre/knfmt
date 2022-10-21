@@ -15,6 +15,12 @@
 #include "style.h"
 #include "token.h"
 
+#ifdef HAVE_QUEUE
+#  include <sys/queue.h>
+#else
+#  include "compat-queue.h"
+#endif
+
 /*
  * Precedence, from lowest to highest.
  */

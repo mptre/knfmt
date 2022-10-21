@@ -16,6 +16,12 @@
 #include "util.h"
 #include "vector.h"
 
+#ifdef HAVE_QUEUE
+#  include <sys/queue.h>
+#else
+#  include "compat-queue.h"
+#endif
+
 #ifdef HAVE_UTHASH
 #  include <uthash.h>
 #else

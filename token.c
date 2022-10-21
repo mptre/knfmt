@@ -16,6 +16,12 @@ static struct token	*token_list_find(struct token_list *, int);
 static char		*strflags(unsigned int);
 static const char	*strtype(int);
 
+#ifdef HAVE_QUEUE
+#  include <sys/queue.h>
+#else
+#  include "compat-queue.h"
+#endif
+
 struct token *
 token_alloc(const struct token *def)
 {

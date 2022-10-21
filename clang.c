@@ -12,6 +12,12 @@
 #include "vector.h"
 #include "util.h"
 
+#ifdef HAVE_QUEUE
+#  include <sys/queue.h>
+#else
+#  include "compat-queue.h"
+#endif
+
 struct clang {
 	const struct options	*cl_op;
 	VECTOR(struct token *)	 cl_branches;

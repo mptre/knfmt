@@ -23,6 +23,12 @@
 #include "util.h"
 #include "vector.h"
 
+#ifdef HAVE_QUEUE
+#  include <sys/queue.h>
+#else
+#  include "compat-queue.h"
+#endif
+
 TAILQ_HEAD(doc_list, doc);
 
 struct doc {
