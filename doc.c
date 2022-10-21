@@ -92,6 +92,10 @@ struct doc_state {
 	struct doc_state_indent		 st_indent;
 
 	struct {
+		int	idx;			/* best minimize option */
+	} st_minimize;
+
+	struct {
 		unsigned int	nfits;		/* # doc_fits() invocations */
 		unsigned int	nlines;		/* # emitted lines */
 		unsigned int	nexceeds;	/* # lines exceeding column limit */
@@ -109,7 +113,6 @@ struct doc_state {
 	int				 st_optline;
 	int				 st_mute;
 	unsigned int			 st_flags;	/* doc_exec() flags */
-	int				 st_minimize;	/* best minimize option */
 };
 
 struct doc_state_snapshot {
@@ -717,8 +720,8 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 	unsigned int nexceeds = 0;
 	double minpenality = DBL_MAX;
 
-	if (st->st_minimize != -1) {
-		doc_exec_minimize1(dc, st, st->st_minimize);
+	if (st->st_minimize.idx != -1) {
+		doc_exec_minimize1(dc, st, st->st_minimize.idx);
 		return;
 	}
 
@@ -729,9 +732,9 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		st->st_flags &= ~DOC_EXEC_TRACE;
 
 		dc->dc_int = minimizers[i].indent;
-		st->st_minimize = i;
+		st->st_minimize.idx = i;
 		doc_exec_indent(dc, st);
-		st->st_minimize = -1;
+		st->st_minimize.idx = -1;
 		if (st->st_stats.nlines > nlines)
 			nlines = st->st_stats.nlines;
 		minimizers[i].penality.nlines = st->st_stats.nlines;
@@ -769,10 +772,10 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 	if (best == -1) {
 		doc_exec1(dc->dc_doc, st);
 	} else {
-		assert(st->st_minimize == -1);
-		st->st_minimize = best;
+		assert(st->st_minimize.idx == -1);
+		st->st_minimize.idx = best;
 		doc_exec_minimize1(dc, st, best);
-		st->st_minimize = -1;
+		st->st_minimize.idx = -1;
 	}
 }
 
@@ -1449,7 +1452,7 @@ doc_state_init(struct doc_state *st, int mode, unsigned int flags)
 	st->st_mode = mode;
 	st->st_diff.beg = 1;
 	st->st_flags = flags;
-	st->st_minimize = -1;
+	st->st_minimize.idx = -1;
 }
 
 static void
@@ -1583,8 +1586,8 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MINIMIZE:
-		fprintf(stderr, "(%d", st->st_minimize == -1 ? -1 :
-		    dc->dc_minimizers[st->st_minimize].indent);
+		fprintf(stderr, "(%d", st->st_minimize.idx == -1 ? -1 :
+		    dc->dc_minimizers[st->st_minimize.idx].indent);
 		break;
 	}
 	fprintf(stderr, "\n");
