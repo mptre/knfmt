@@ -29,6 +29,7 @@ cpp_exec(const struct token *tk, const struct style *st,
 	char *p;
 	size_t len;
 	int nlines = 0;
+	int usetab = style(st, UseTab) != Never;
 
 	str = tk->tk_str;
 	len = tk->tk_len;
@@ -42,14 +43,11 @@ cpp_exec(const struct token *tk, const struct style *st,
 		ruler_init(&rl, 1, RULER_ALIGN_FIXED);
 		break;
 	case Left:
-		if (style(st, UseTab) == Never)
-			ruler_init(&rl, 0, RULER_ALIGN_MIN);
-		else
-			ruler_init(&rl, 0, RULER_ALIGN_TABS);
+		ruler_init(&rl, 0, usetab ? RULER_ALIGN_TABS : RULER_ALIGN_MIN);
 		break;
 	case Right:
 		ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth),
-		    RULER_ALIGN_MAX);
+		    RULER_ALIGN_MAX | (usetab ? RULER_ALIGN_TABS : 0));
 		break;
 	}
 

@@ -196,8 +196,7 @@ ruler_exec(struct ruler *rl)
 			}
 
 			indent = maxlen - rd->rd_len;
-			if ((rl->rl_flags & RULER_ALIGN_MIN) == 0 &&
-			    indent % 8 > 0)
+			if ((rl->rl_flags & RULER_ALIGN_TABS) && indent % 8 > 0)
 				indent = tabalign(indent);
 			indent += rc->rc_nspaces - rd->rd_nspaces;
 			rd->rd_indent = indent;

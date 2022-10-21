@@ -456,6 +456,7 @@ DISTFILES+=	tests/style-ContinuationIndentWidth-001.ok
 DISTFILES+=	tests/style-IndentWidth-001.c
 DISTFILES+=	tests/style-IndentWidth-001.ok
 DISTFILES+=	tests/style-UseTab-001.c
+DISTFILES+=	tests/style-UseTab-002.c
 DISTFILES+=	tests/style-error-001.c
 DISTFILES+=	tests/style-error-001.ok
 DISTFILES+=	tests/style-error-002.c
