@@ -65,7 +65,6 @@ simple_stmt_leave(struct simple_stmt *ss)
 		return;
 
 	bf = buffer_alloc(1024);
-
 	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 		struct stmt *st = &ss->ss_stmts[i];
 
@@ -84,6 +83,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 			break;
 		}
 	}
+	buffer_free(bf);
 
 	if (oneline) {
 		for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
@@ -117,8 +117,6 @@ simple_stmt_leave(struct simple_stmt *ss)
 				token_move_suffixes(pv, tk);
 		}
 	}
-
-	buffer_free(bf);
 }
 
 void
