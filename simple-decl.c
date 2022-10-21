@@ -386,7 +386,8 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
     const struct token_range *tr)
 {
 	struct decl_type *dt;
-	struct token *end, *tk, *tmp;
+	struct token *end = NULL;
+	struct token *tk, *tmp;
 
 	HASH_FIND_STR(sd->sd_types, type, dt);
 	if (dt != NULL)
@@ -402,6 +403,7 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 		if (tk->tk_type != TOKEN_STAR)
 			end = tk;
 	}
+	assert(end != NULL);
 	dt->dt_tr.tr_end = end;
 
 	if (VECTOR_INIT(dt->dt_slots) == NULL)
