@@ -52,13 +52,22 @@ struct decl_type {
 	struct token_range		 dt_tr;
 	VECTOR(struct decl_type_vars)	 dt_slots;
 	char				*dt_str;
+
+	/*
+	 * First stamped semi in dt_slots. Since new type slots lacks a stamped
+	 * semi we favor insertion of new types after the first kept one.
+	 */
+	struct {
+		struct token	*tk;
+		unsigned int	 slot;
+	} dt_after;
+
 	UT_hash_handle			 hh;
 };
 
 static void			 decl_type_free(struct decl_type *);
 static struct decl_type_vars	*decl_type_slot(struct decl_type *,
     unsigned int);
-struct token			*decl_type_after(struct decl_type *);
 
 /*
  * Variables associated with a declaration type.
@@ -123,15 +132,8 @@ simple_decl_leave(struct simple_decl *sd)
 	size_t i;
 
 	for (dt = sd->sd_types; dt != NULL; dt = dt->hh.next) {
-		struct token *after;
+		struct token *after = dt->dt_after.tk;
 		unsigned int slot;
-
-		/*
-		 * The first type slot could lack a stamped semi assuming it's
-		 * a new type declaration. Fallback to inserting tokens after
-		 * the first stamped semi.
-		 */
-		after = decl_type_after(dt);
 
 		for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
 			struct decl_type_vars *ds = &dt->dt_slots[slot];
@@ -376,21 +378,6 @@ decl_type_slot(struct decl_type *dt, unsigned int n)
 	return &dt->dt_slots[n];
 }
 
-struct token *
-decl_type_after(struct decl_type *dt)
-{
-	size_t slot;
-
-	for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
-		struct decl_type_vars *ds = &dt->dt_slots[slot];
-
-		if (ds->ds_semi != NULL)
-			return ds->ds_semi;
-	}
-	assert(0 && "IMPOSSIBLE");
-	return NULL;
-}
-
 /*
  * Create or find the given type.
  */
@@ -438,6 +425,7 @@ static struct decl_var *
 simple_decl_var_end(struct simple_decl *sd, struct token *end)
 {
 	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
+	struct decl_type *dt = sd->sd_dt;
 	struct decl_var *dv = &sd->sd_dv;
 	struct decl_var *dst;
 	struct decl_type_vars *ds;
@@ -465,8 +453,13 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	 * declaration.
 	 */
 	if (end->tk_type == TOKEN_SEMI &&
-	    (ds->ds_semi == NULL || dc->dc_nrejects > 0))
+	    (ds->ds_semi == NULL || dc->dc_nrejects > 0)) {
 		ds->ds_semi = end;
+		if (slot <= dt->dt_after.slot || dt->dt_after.tk == NULL) {
+			dt->dt_after.tk = end;
+			dt->dt_after.slot = slot;
+		}
+	}
 
 	if (rejected)
 		return NULL;
