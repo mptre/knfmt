@@ -996,8 +996,9 @@ expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
 		    ContinuationIndentWidth);
 		if ((es->es_flags & EXPR_EXEC_HARDLINE) == 0)
 			minimizers[1].indent -= es->es_ea.indent;
-		minimizers[1].flags = flags;
 	}
+	minimizers[1].flags = flags;
+
 	es->es_nalign += w;
 	*cookie = w;
 	return doc_minimize(dc, minimizers);
