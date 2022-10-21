@@ -46,7 +46,7 @@ struct decl_var {
 };
 
 static int	decl_var_cmp(const void *, const void *);
-static int	decl_var_empty(const struct decl_var *);
+static int	decl_var_is_empty(const struct decl_var *);
 
 struct decl_type {
 	struct token_range		 dt_tr;
@@ -263,7 +263,7 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 {
 	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
 
-	if (decl_var_empty(&sd->sd_dv))
+	if (decl_var_is_empty(&sd->sd_dv))
 		return;
 
 	simple_decl_var_end(sd, semi);
@@ -287,7 +287,7 @@ simple_decl_comma(struct simple_decl *sd, struct token *comma)
 	struct decl_var *dv;
 	struct token *delim = NULL;
 
-	if (decl_var_empty(&sd->sd_dv))
+	if (decl_var_is_empty(&sd->sd_dv))
 		return;
 
 	dv = simple_decl_var_end(sd, comma);
@@ -350,7 +350,7 @@ decl_var_cmp(const void *p1, const void *p2)
 }
 
 static int
-decl_var_empty(const struct decl_var *dv)
+decl_var_is_empty(const struct decl_var *dv)
 {
 	return dv->dv_ident.tr_beg == NULL;
 }
