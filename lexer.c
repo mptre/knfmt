@@ -1274,10 +1274,7 @@ eof:
 out:
 	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
 
-	/*
-	 * Consume trailing/interwined comments, will be hanging of the emitted
-	 * token.
-	 */
+	/* Consume trailing/interwined comments. */
 	for (;;) {
 		if ((tmp = lexer_comment(lx, 0)) == NULL)
 			break;
@@ -1294,7 +1291,7 @@ out:
 		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
 	}
 
-	/* Consume hard lines, will be hanging of the emitted token. */
+	/* Consume hard line(s). */
 	if ((nlines = lexer_eat_lines(lx, 0, &tmp)) > 0) {
 		if (nlines == 1)
 			tmp->tk_flags |= TOKEN_FLAG_OPTLINE;
