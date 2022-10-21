@@ -706,7 +706,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		lx->lx_unmute = NULL;
 	}
 
-	token_remove(&lx->lx_tokens, tk);
+	token_list_remove(&lx->lx_tokens, tk);
 }
 
 int

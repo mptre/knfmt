@@ -55,10 +55,10 @@ token_rele(struct token *tk)
 
 	while ((fix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL) {
 		token_branch_unlink(fix);
-		token_remove(&tk->tk_prefixes, fix);
+		token_list_remove(&tk->tk_prefixes, fix);
 	}
 	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
-		token_remove(&tk->tk_suffixes, fix);
+		token_list_remove(&tk->tk_suffixes, fix);
 	free(tk);
 }
 
@@ -95,7 +95,7 @@ token_trim(struct token *tk)
 			continue;
 
 		if (suffix->tk_type == TOKEN_SPACE) {
-			token_remove(&tk->tk_suffixes, suffix);
+			token_list_remove(&tk->tk_suffixes, suffix);
 			ntrim++;
 		}
 	}
@@ -310,7 +310,7 @@ token_prev0(struct token *tk)
 }
 
 void
-token_remove(struct token_list *tl, struct token *tk)
+token_list_remove(struct token_list *tl, struct token *tk)
 {
 	TAILQ_REMOVE(tl, tk, tk_entry);
 	token_rele(tk);
