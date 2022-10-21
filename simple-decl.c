@@ -50,19 +50,22 @@ static int	decl_var_empty(const struct decl_var *);
 
 struct decl_type {
 	struct token_range		 dt_tr;
-	VECTOR(struct decl_var_list)	 dt_slots;
+	VECTOR(struct decl_type_vars)	 dt_slots;
 	char				*dt_str;
 	UT_hash_handle			 hh;
 };
 
 static void			 decl_type_free(struct decl_type *);
-static struct decl_var_list	*decl_type_slot(struct decl_type *,
+static struct decl_type_vars	*decl_type_slot(struct decl_type *,
     unsigned int);
 struct token			*decl_type_after(struct decl_type *);
 
-struct decl_var_list {
-	VECTOR(struct decl_var)	 dl_vars;
-	struct token		*dl_semi;
+/*
+ * Variables associated with a declaration type.
+ */
+struct decl_type_vars {
+	VECTOR(struct decl_var)	 ds_vars;
+	struct token		*ds_semi;
 };
 
 struct simple_decl {
@@ -131,18 +134,18 @@ simple_decl_leave(struct simple_decl *sd)
 		after = decl_type_after(dt);
 
 		for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
-			struct decl_var_list *dl = &dt->dt_slots[slot];
+			struct decl_type_vars *ds = &dt->dt_slots[slot];
 			struct token *semi;
 
-			if (VECTOR_LENGTH(dl->dl_vars) == 0)
+			if (VECTOR_LENGTH(ds->ds_vars) == 0)
 				continue;
 
 			/*
 			 * Favor insertion after the stamped semi if present,
 			 * otherwise continue after the previous type slot.
 			 */
-			if (dl->dl_semi != NULL)
-				after = semi = dl->dl_semi;
+			if (ds->ds_semi != NULL)
+				after = semi = ds->ds_semi;
 			else
 				semi = after;
 			assert(after->tk_type == TOKEN_SEMI);
@@ -156,12 +159,12 @@ simple_decl_leave(struct simple_decl *sd)
 			}
 
 			/* Sort the variables in alphabetical order. */
-			qsort(dl->dl_vars, VECTOR_LENGTH(dl->dl_vars),
-			    sizeof(*dl->dl_vars), decl_var_cmp);
+			qsort(ds->ds_vars, VECTOR_LENGTH(ds->ds_vars),
+			    sizeof(*ds->ds_vars), decl_var_cmp);
 
 			/* Move variables to the new type declaration. */
-			for (i = 0; i < VECTOR_LENGTH(dl->dl_vars); i++) {
-				struct decl_var *dv = &dl->dl_vars[i];
+			for (i = 0; i < VECTOR_LENGTH(ds->ds_vars); i++) {
+				struct decl_var *dv = &ds->ds_vars[i];
 				struct token *ident;
 
 				if (dv->dv_delim != NULL)
@@ -207,9 +210,9 @@ simple_decl_free(struct simple_decl *sd)
 
 	HASH_ITER(hh, sd->sd_types, dt, tmp) {
 		while (!VECTOR_EMPTY(dt->dt_slots)) {
-			struct decl_var_list *dl = VECTOR_POP(dt->dt_slots);
+			struct decl_type_vars *ds = VECTOR_POP(dt->dt_slots);
 
-			VECTOR_FREE(dl->dl_vars);
+			VECTOR_FREE(ds->ds_vars);
 		}
 		VECTOR_FREE(dt->dt_slots);
 		HASH_DELETE(hh, sd->sd_types, dt);
@@ -358,16 +361,16 @@ decl_type_free(struct decl_type *dt)
 	free(dt->dt_str);
 }
 
-static struct decl_var_list *
+static struct decl_type_vars *
 decl_type_slot(struct decl_type *dt, unsigned int n)
 {
 	while (VECTOR_LENGTH(dt->dt_slots) <= n) {
-		struct decl_var_list *dl;
+		struct decl_type_vars *ds;
 
-		dl = VECTOR_CALLOC(dt->dt_slots);
-		if (dl == NULL)
+		ds = VECTOR_CALLOC(dt->dt_slots);
+		if (ds == NULL)
 			err(1, NULL);
-		if (VECTOR_INIT(dl->dl_vars) == NULL)
+		if (VECTOR_INIT(ds->ds_vars) == NULL)
 			err(1, NULL);
 	}
 	return &dt->dt_slots[n];
@@ -379,10 +382,10 @@ decl_type_after(struct decl_type *dt)
 	size_t slot;
 
 	for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
-		struct decl_var_list *dl = &dt->dt_slots[slot];
+		struct decl_type_vars *ds = &dt->dt_slots[slot];
 
-		if (dl->dl_semi != NULL)
-			return dl->dl_semi;
+		if (ds->ds_semi != NULL)
+			return ds->ds_semi;
 	}
 	assert(0 && "IMPOSSIBLE");
 	return NULL;
@@ -437,7 +440,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
 	struct decl_var *dv = &sd->sd_dv;
 	struct decl_var *dst;
-	struct decl_var_list *dl;
+	struct decl_type_vars *ds;
 	struct token *sort, *tmp;
 	unsigned int slot;
 	int rejected = 0;
@@ -452,7 +455,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	 * after this rejected declaration.
 	 */
 	slot = nstars(&dv->dv_ident);
-	dl = decl_type_slot(sd->sd_dt, slot);
+	ds = decl_type_slot(sd->sd_dt, slot);
 
 	if (!token_is_moveable(end) || !isident(&dv->dv_ident))
 		rejected = simple_decl_var_reject(sd);
@@ -462,8 +465,8 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	 * declaration.
 	 */
 	if (end->tk_type == TOKEN_SEMI &&
-	    (dl->dl_semi == NULL || dc->dc_nrejects > 0))
-		dl->dl_semi = end;
+	    (ds->ds_semi == NULL || dc->dc_nrejects > 0))
+		ds->ds_semi = end;
 
 	if (rejected)
 		return NULL;
@@ -475,7 +478,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	}
 	dv->dv_sort = sort;
 
-	dst = VECTOR_CALLOC(dl->dl_vars);
+	dst = VECTOR_CALLOC(ds->ds_vars);
 	if (dst == NULL)
 		err(1, NULL);
 	*dst = *dv;
