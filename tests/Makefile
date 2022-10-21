@@ -387,6 +387,7 @@ TESTS+=	bug-002.c
 TESTS+=	bug-003.c
 TESTS+=	bug-004.c
 TESTS+=	bug-005.c
+TESTS+=	bug-006.c
 
 TESTS+=	style-AlignAfterOpenBracket-001.c
 TESTS+=	style-AlignAfterOpenBracket-002.c
