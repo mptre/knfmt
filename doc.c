@@ -92,7 +92,8 @@ struct doc_state {
 	struct doc_state_indent		 st_indent;
 
 	struct {
-		int	idx;			/* best minimize option */
+		int	idx;	/* index of best minimizer */
+		int	force;	/* index of minimizer with force flag */
 	} st_minimize;
 
 	struct {
@@ -730,11 +731,14 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
 		memset(&st->st_stats, 0, sizeof(st->st_stats));
 		st->st_flags &= ~DOC_EXEC_TRACE;
+		st->st_minimize.force = -1;
 
 		dc->dc_int = minimizers[i].indent;
 		st->st_minimize.idx = i;
 		doc_exec_indent(dc, st);
 		st->st_minimize.idx = -1;
+		if (st->st_minimize.force != -1)
+			minimizers[i].flags |= DOC_MINIMIZE_FORCE;
 		if (st->st_stats.nlines > nlines)
 			nlines = st->st_stats.nlines;
 		minimizers[i].penality.nlines = st->st_stats.nlines;
@@ -784,6 +788,8 @@ doc_exec_minimize1(struct doc *dc, struct doc_state *st, int idx)
 {
 	VECTOR(struct doc_minimize) minimizers = dc->dc_minimizers;
 
+	if (minimizers[idx].flags & DOC_MINIMIZE_FORCE)
+		st->st_minimize.force = idx;
 	dc->dc_int = minimizers[idx].indent;
 	doc_exec_indent(dc, st);
 	dc->dc_minimizers = minimizers;
@@ -1453,6 +1459,7 @@ doc_state_init(struct doc_state *st, int mode, unsigned int flags)
 	st->st_diff.beg = 1;
 	st->st_flags = flags;
 	st->st_minimize.idx = -1;
+	st->st_minimize.force = -1;
 }
 
 static void
