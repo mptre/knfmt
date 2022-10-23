@@ -179,7 +179,8 @@ static int		 parser_simple_stmt_enter(struct parser *);
 static void		 parser_simple_stmt_leave(struct parser *, int);
 static struct doc	*parser_simple_stmt_block(struct parser *,
     struct doc *);
-static void		*parser_simple_stmt_ifelse_enter(struct parser *);
+static struct doc	*parser_simple_stmt_ifelse_enter(struct parser *,
+    struct doc *, void **);
 static void		 parser_simple_stmt_ifelse_leave(struct parser *,
     void *);
 
@@ -1636,13 +1637,14 @@ parser_exec_stmt_if(struct parser *pr, struct doc *dc)
 				if (error & FAIL)
 					return parser_fail(pr);
 			} else {
-				void *simple;
+				void *simple = NULL;
 
 				dc = doc_alloc_indent(
 				    style(pr->pr_st, IndentWidth), dc);
 				doc_alloc(DOC_HARDLINE, dc);
 
-				simple = parser_simple_stmt_ifelse_enter(pr);
+				dc = parser_simple_stmt_ifelse_enter(pr, dc,
+				    &simple);
 				error = parser_exec_stmt(pr, dc);
 				parser_simple_stmt_ifelse_leave(pr, simple);
 				if (error & (FAIL | NONE))
@@ -1972,7 +1974,8 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
 		doc_alloc(DOC_HARDLINE, indent);
 		if (type->tk_type == TOKEN_IF)
-			simple = parser_simple_stmt_ifelse_enter(pr);
+			indent = parser_simple_stmt_ifelse_enter(pr, indent,
+			    &simple);
 		error = parser_exec_stmt(pr, indent);
 		if (type->tk_type == TOKEN_IF)
 			parser_simple_stmt_ifelse_leave(pr, simple);
@@ -2520,16 +2523,17 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	    pr->pr_nindent * style(pr->pr_st, IndentWidth));
 }
 
-static void *
-parser_simple_stmt_ifelse_enter(struct parser *pr)
+static struct doc *
+parser_simple_stmt_ifelse_enter(struct parser *pr, struct doc *dc,
+    void **cookie)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
 
 	if (pr->pr_simple.nstmt != 1 || !lexer_peek(lx, &lbrace))
-		return NULL;
+		return dc;
 	return simple_stmt_ifelse_enter(pr->pr_simple.stmt, lbrace,
-	    pr->pr_nindent * style(pr->pr_st, IndentWidth));
+	    (pr->pr_nindent + 1) * style(pr->pr_st, IndentWidth), cookie);
 }
 
 static void

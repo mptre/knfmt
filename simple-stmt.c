@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <err.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +25,8 @@ struct stmt {
 #define STMT_IGNORE			0x00000002u
 };
 
+static int stmt_is_empty(const struct stmt *);
+
 struct simple_stmt {
 	VECTOR(struct stmt)	 ss_stmts;
 	struct lexer		*ss_lx;
@@ -34,7 +37,8 @@ struct simple_stmt {
 static struct stmt	*simple_stmt_alloc(struct simple_stmt *, int,
     unsigned int);
 
-static int	linecount(const char *, size_t, int);
+static int		 isoneline(const char *, size_t);
+static const char	*strtrim(const char *, size_t *);
 
 struct simple_stmt *
 simple_stmt_enter(struct lexer *lx, const struct style *st,
@@ -67,14 +71,18 @@ simple_stmt_leave(struct simple_stmt *ss)
 	bf = buffer_alloc(1024);
 	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 		struct stmt *st = &ss->ss_stmts[i];
+		const char *buf;
+		size_t buflen;
 
-		if ((st->st_flags & STMT_IGNORE) ||
-		    (st->st_flags & STMT_BRACES) == 0)
+		if (st->st_flags & STMT_IGNORE)
 			continue;
 
 		doc_exec(st->st_root, lx, bf, ss->ss_st, ss->ss_op, 0);
-		if (!linecount(bf->bf_ptr, bf->bf_len, 1) ||
-		    token_has_prefix(st->st_rbrace, TOKEN_COMMENT)) {
+		buflen = bf->bf_len;
+		buf = strtrim(bf->bf_ptr, &buflen);
+		if (stmt_is_empty(st) || !isoneline(buf, buflen) ||
+		    ((st->st_flags & STMT_BRACES) &&
+		     token_has_prefix(st->st_rbrace, TOKEN_COMMENT))) {
 			/*
 			 * No point in continuing as at least one statement
 			 * spans over multiple lines.
@@ -159,26 +167,33 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
 	return st->st_indent;
 }
 
-void *
+struct doc *
 simple_stmt_ifelse_enter(struct simple_stmt *ss, struct token *lbrace,
-    int indent)
+    int indent, void **cookie)
 {
 	struct stmt *st;
 
 	st = simple_stmt_alloc(ss, indent, 0);
 	token_ref(lbrace);
 	st->st_lbrace = lbrace;
-	return st;
+	*cookie = st;
+	return st->st_indent;
 }
 
 void
 simple_stmt_ifelse_leave(struct simple_stmt *UNUSED(ss), struct token *rbrace,
-    void *arg)
+    void *cookie)
 {
-	struct stmt *st = arg;
+	struct stmt *st = cookie;
 
 	token_ref(rbrace);
 	st->st_rbrace = rbrace;
+}
+
+static int
+stmt_is_empty(const struct stmt *st)
+{
+	return token_prev(st->st_rbrace) == st->st_lbrace;
 }
 
 static struct stmt *
@@ -191,17 +206,15 @@ simple_stmt_alloc(struct simple_stmt *ss, int indent, unsigned int flags)
 		err(1, NULL);
 	st->st_root = doc_alloc(DOC_CONCAT, NULL);
 	st->st_indent = doc_alloc_indent(indent, st->st_root);
+	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;
 	return st;
 }
 
-/*
- * Count the number of lines. Returns non-zero if it's equal count and zero
- * otherwise.
- */
 static int
-linecount(const char *str, size_t len, int count)
+isoneline(const char *str, size_t len)
 {
+	int max = 1;
 	int n = 0;
 
 	while (len > 0) {
@@ -210,10 +223,23 @@ linecount(const char *str, size_t len, int count)
 		p = memchr(str, '\n', len);
 		if (p == NULL)
 			break;
-		if (++n > count)
+		if (++n >= max)
 			break;
 		len -= (p - str) + 1;
 		str = &p[1];
 	}
-	return n == count;
+	return n < max;
+}
+
+static const char *
+strtrim(const char *buf, size_t *buflen)
+{
+	size_t len = *buflen;
+
+	for (; len > 0 && isspace((unsigned char)buf[0]); buf++, len--)
+		continue;
+	for (; len > 0 && isspace((unsigned char)buf[len - 1]); len--)
+		continue;
+	*buflen = len;
+	return buf;
 }

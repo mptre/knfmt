@@ -377,6 +377,8 @@ TESTS+=	simple-017.c
 TESTS+=	simple-018.c
 TESTS+=	simple-019.c
 TESTS+=	simple-020.c
+TESTS+=	simple-021.c
+TESTS+=	simple-022.c
 
 TESTS+=	inplace-001.c
 
