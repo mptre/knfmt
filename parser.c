@@ -1792,9 +1792,10 @@ parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc)
 	if (error & HALT)
 		return parser_fail(pr);
 
-	if (lexer_peek_if(lx, TOKEN_WHILE, &tk))
+	if (lexer_peek_if(lx, TOKEN_WHILE, &tk)) {
 		return parser_exec_stmt_kw_expr(pr, concat, tk,
 		    PARSER_EXEC_STMT_EXPR_DOWHILE);
+	}
 	return parser_fail(pr);
 }
 
@@ -1973,9 +1974,10 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 
 		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
 		doc_alloc(DOC_HARDLINE, indent);
-		if (type->tk_type == TOKEN_IF)
+		if (type->tk_type == TOKEN_IF) {
 			indent = parser_simple_stmt_ifelse_enter(pr, indent,
 			    &simple);
+		}
 		error = parser_exec_stmt(pr, indent);
 		if (type->tk_type == TOKEN_IF)
 			parser_simple_stmt_ifelse_leave(pr, simple);
@@ -2384,11 +2386,12 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 		if (tk == align) {
 			if (token_is_decl(tk, TOKEN_ENUM) ||
 			    token_is_decl(tk, TOKEN_STRUCT) ||
-			    token_is_decl(tk, TOKEN_UNION))
+			    token_is_decl(tk, TOKEN_UNION)) {
 				doc_alloc(DOC_LINE, concat);
-			else
+			} else {
 				ruler_insert(rl, tk, concat, 1,
 				    parser_width(pr, dc), nspaces);
+			}
 			didalign = 1;
 		}
 

@@ -630,9 +630,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	switch (ex->ex_type) {
 	case EXPR_UNARY:
 		doc_token(ex->ex_tk, concat);
-		if (style(es->es_st, AlignOperands) == Align)
+		if (style(es->es_st, AlignOperands) == Align) {
 			concat = doc_alloc_indent(expr_doc_width(es, concat),
 			    concat);
+		}
 		if (ex->ex_lhs != NULL)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		break;
@@ -681,9 +682,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* [ */
-		if (ex->ex_rhs != NULL)
+		if (ex->ex_rhs != NULL) {
 			concat = expr_doc_soft(ex->ex_rhs, es, concat,
 			    soft_weights.squares);
+		}
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], concat);	/* ] */
 		break;
@@ -706,9 +708,10 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 			lhs = expr_doc(ex->ex_lhs, es, concat);
 		doc_token(ex->ex_tk, lhs);
 		doc_alloc(DOC_LINE, lhs);
-		if (ex->ex_rhs != NULL)
+		if (ex->ex_rhs != NULL) {
 			concat = expr_doc_soft(ex->ex_rhs, es, concat,
 			    soft_weights.arg);
+		}
 		break;
 	}
 
@@ -811,11 +814,12 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			 * Same semantics as variable declarations, do not break
 			 * after the assignment operator.
 			 */
-			if (es->es_nassign > 1)
+			if (es->es_nassign > 1) {
 				dc = expr_doc_soft(ex->ex_rhs, es, dc,
 				    soft_weights.binary);
-			else
+			} else {
 				dc = expr_doc(ex->ex_rhs, es, dc);
+			}
 
 			if (doalign)
 				expr_doc_align_leave(es, cookie);
@@ -851,9 +855,10 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		if (dospace)
 			doc_alloc(DOC_LINE, dc);
-		if (ex->ex_rhs != NULL)
+		if (ex->ex_rhs != NULL) {
 			dc = expr_doc_soft(ex->ex_rhs, es, dc,
 			    soft_weights.binary);
+		}
 	}
 
 	return dc;

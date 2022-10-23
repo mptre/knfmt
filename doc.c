@@ -799,9 +799,10 @@ static void
 doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
-	if (st->st_walk == NULL)
+	if (st->st_walk == NULL) {
 		if (VECTOR_INIT(st->st_walk) == NULL)
 			err(1, NULL);
+	}
 
 	/* Recursion flatten into a loop for increased performance. */
 	*VECTOR_ALLOC(st->st_walk) = dc;
@@ -1020,9 +1021,10 @@ doc_trim_spaces(const struct doc *dc, struct doc_state *st)
 		bf->bf_len--;
 		st->st_col -= ch == '\t' ? 8 - (st->st_col % 8) : 1;
 	}
-	if (oldcol > st->st_col)
+	if (oldcol > st->st_col) {
 		doc_trace(dc, st, "%s: trimmed %u character(s)", __func__,
 		    oldcol - st->st_col);
+	}
 }
 
 /*
@@ -1042,9 +1044,10 @@ doc_trim_lines(const struct doc *dc, struct doc_state *st)
 		bf->bf_len--;
 		st->st_col--;
 	}
-	if (oldcol > st->st_col)
+	if (oldcol > st->st_col) {
 		doc_trace(dc, st, "%s: trimmed %u line(s)", __func__,
 		    oldcol - st->st_col);
+	}
 }
 
 static int

@@ -169,12 +169,14 @@ simple_decl_leave(struct simple_decl *sd)
 				struct decl_var *dv = &ds->ds_vars[i];
 				struct token *ident;
 
-				if (dv->dv_delim != NULL)
+				if (dv->dv_delim != NULL) {
 					lexer_remove(sd->sd_lx, dv->dv_delim,
 					    1);
-				if (i > 0)
+				}
+				if (i > 0) {
 					after = lexer_insert_after(sd->sd_lx,
 					    after, TOKEN_COMMA, ",");
+				}
 
 				TOKEN_RANGE_FOREACH(ident, &dv->dv_ident, tmp)
 					after = lexer_move_after(sd->sd_lx,
@@ -185,9 +187,10 @@ simple_decl_leave(struct simple_decl *sd)
 			    TOKEN_SEMI, ";");
 
 			/* Move line break(s) to the new semicolon. */
-			if (semi != NULL)
+			if (semi != NULL) {
 				token_move_suffixes_if(semi, after,
 				    TOKEN_SPACE);
+			}
 		}
 	}
 

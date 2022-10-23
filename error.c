@@ -65,8 +65,9 @@ error_flush(struct error *er, int force)
 	if (!force && !er->er_flush)
 		return;
 
-	if (er->er_bf->bf_len > 0)
+	if (er->er_bf->bf_len > 0) {
 		fprintf(stderr, "%.*s",
 		    (int)er->er_bf->bf_len, er->er_bf->bf_ptr);
+	}
 	error_reset(er);
 }
