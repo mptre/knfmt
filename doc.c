@@ -190,7 +190,7 @@ static void	doc_diff_leave0(const struct doc *, struct doc_state *,
 
 #define DOC_PRINT_INDENT	0x00000001u
 #define DOC_PRINT_NEWLINE	0x00000002u
-#define DOC_PRINT_FORCE	0x00000004u
+#define DOC_PRINT_FORCE		0x00000004u
 
 static void	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
