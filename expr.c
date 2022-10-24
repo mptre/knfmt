@@ -154,6 +154,8 @@ static unsigned int	 expr_doc_width(struct expr_state *,
 static struct doc	*expr_doc_soft0(struct expr *, struct expr_state *,
     struct doc *, int, const char *, int);
 
+static void	expr_state_init(struct expr_state *,
+    const struct expr_exec_arg *);
 static void	expr_state_reset(struct expr_state *);
 
 static const struct expr_rule	*expr_rule_find(const struct token *, int);
@@ -249,8 +251,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	struct doc *dc, *expr, *indent, *optional;
 	struct expr *ex;
 
-	memset(&es, 0, sizeof(es));
-	es.es_ea = *ea;
+	expr_state_init(&es, ea);
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
@@ -287,8 +288,7 @@ expr_peek(const struct expr_exec_arg *ea)
 	int peek = 0;
 	int error;
 
-	memset(&es, 0, sizeof(es));
-	es.es_ea = *ea;
+	expr_state_init(&es, ea);
 
 	ex = expr_exec1(&es, PC0);
 	error = lexer_get_error(es.es_lx);
@@ -1073,6 +1073,13 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 		doc_remove(softline, dc);
 
 	return concat;
+}
+
+static void
+expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea)
+{
+	memset(es, 0, sizeof(*es));
+	es->es_ea = *ea;
 }
 
 static void
