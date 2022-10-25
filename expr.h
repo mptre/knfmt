@@ -3,6 +3,12 @@ struct expr_exec_arg {
 	const struct options	*op;
 	struct lexer		*lx;
 	struct doc		*dc;
+
+	/*
+	 * Reaching this token causes the expression parser to stop. Passing
+	 * NULL instructs the parser to continue until reaching something
+	 * unknown.
+	 */
 	const struct token	*stop;
 
 	unsigned int		 indent;
