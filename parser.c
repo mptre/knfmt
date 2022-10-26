@@ -296,7 +296,7 @@ out:
 
 /*
  * Callback routine invoked by expression parser while encountering an invalid
- * expression. Returns zero if it managed to recover.
+ * expression.
  */
 int
 parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
@@ -315,7 +315,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))
-			return 1;
+			return 0;
 		nx = token_next(tk);
 		if (pv != NULL && nx != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
@@ -328,7 +328,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 
 			indent = doc_alloc_indent(ea->indent, dc);
 			if (parser_exec_type(pr, indent, tk, NULL) & GOOD)
-				return 0;
+				return 1;
 		}
 	}
 
@@ -341,7 +341,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
 			doc_token(tk, dc);
-			return 0;
+			return 1;
 		}
 	}
 
@@ -352,10 +352,10 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		error = parser_exec_decl_braces(pr, dc,
 		    style(pr->pr_st, ContinuationIndentWidth), 0);
 		if (error & GOOD)
-			return 0;
+			return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 static int

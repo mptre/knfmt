@@ -367,13 +367,13 @@ expr_exec_recover(struct expr_state *es, unsigned int flags)
 	struct expr_exec_arg *ea = &es->es_ea;
 	struct doc *dc;
 	struct expr *ex;
-	int error;
+	int recovered;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	ea->flags |= flags;
-	error = ea->callbacks.recover(ea, dc, ea->callbacks.arg);
+	recovered = ea->callbacks.recover(ea, dc, ea->callbacks.arg);
 	ea->flags &= ~flags;
-	if (error) {
+	if (!recovered) {
 		doc_free(dc);
 		return NULL;
 	}

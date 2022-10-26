@@ -28,7 +28,7 @@ struct expr_exec_arg {
 	struct {
 		/*
 		 * Invoked when an invalid expression is encountered. Returning
-		 * zero implies that the expression parser can continue.
+		 * non-zero implies that the expression parser can continue.
 		 */
 		int	 (*recover)(const struct expr_exec_arg *, struct doc *,
 		    void *);
