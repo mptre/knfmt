@@ -299,8 +299,7 @@ out:
  * expression. Returns zero if it managed to recover.
  */
 int
-parser_exec_expr_recover(const struct expr_exec_arg *ea, struct doc *dc,
-    void *arg)
+parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 {
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
@@ -1195,7 +1194,7 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 		.indent		= indent,
 		.flags		= flags,
 		.callbacks	= {
-			.recover	= parser_exec_expr_recover,
+			.recover	= parser_expr_recover,
 			.arg		= pr,
 		},
 	};
@@ -1847,7 +1846,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 		.stop		= NULL,
 		.flags		= 0,
 		.callbacks	= {
-			.recover	= parser_exec_expr_recover,
+			.recover	= parser_expr_recover,
 			.arg		= pr,
 		},
 	};
