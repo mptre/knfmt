@@ -364,17 +364,18 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 static struct expr *
 expr_exec_recover(struct expr_state *es, unsigned int flags)
 {
+	struct expr_exec_arg *ea = &es->es_ea;
 	struct doc *dc;
 	struct expr *ex;
 	int error;
 
-	if (es->es_ea.recover == NULL)
+	if (ea->callbacks.recover == NULL)
 		return NULL;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	es->es_ea.flags |= flags;
-	error = es->es_ea.recover(&es->es_ea, dc);
-	es->es_ea.flags &= ~flags;
+	ea->flags |= flags;
+	error = ea->callbacks.recover(ea, dc, ea->callbacks.arg);
+	ea->flags &= ~flags;
 	if (error) {
 		doc_free(dc);
 		return NULL;

@@ -282,9 +282,11 @@ test_expr_exec0(struct context *cx, const char *src, const char *exp,
 	    .lx		= cx->cx_lx,
 	    .dc		= doc_alloc(DOC_CONCAT, group),
 	    .stop	= NULL,
-	    .recover	= parser_exec_expr_recover,
-	    .arg	= cx->cx_pr,
 	    .flags	= 0,
+	    .callbacks	= {
+		.recover	= parser_exec_expr_recover,
+		.arg		= cx->cx_pr,
+	    },
 	});
 	if (expr == NULL) {
 		fprintf(stderr, "%s:%d: expr_exec() failure\n", fun, lno);

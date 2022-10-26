@@ -5,15 +5,6 @@ struct expr_exec_arg {
 	struct doc		*dc;
 	const struct token	*stop;
 
-	/*
-	 * Callback invoked when an invalid expression is encountered. If the
-	 * same callback returns a document implies that the expression parser
-	 * can continue.
-	 */
-	int			 (*recover)(const struct expr_exec_arg *,
-	    struct doc *);
-	void			*arg;
-
 	unsigned int		 indent;
 	unsigned int		 flags;
 /* Emit a soft line before the expression. */
@@ -33,6 +24,17 @@ struct expr_exec_arg {
 #define EXPR_EXEC_ARG			0x00000020u
 /* During recovery, signal than a cast could be present. */
 #define EXPR_EXEC_CAST			0x00000040u
+
+	struct {
+		/*
+		 * Invoked when an invalid expression is encountered. Returning
+		 * zero implies that the expression parser can continue.
+		 */
+		int	 (*recover)(const struct expr_exec_arg *, struct doc *,
+		    void *);
+
+		void	*arg;
+	} callbacks;
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);

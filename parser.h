@@ -12,4 +12,4 @@ struct parser	*parser_alloc(const char *, struct lexer *, struct error *,
 void		 parser_free(struct parser *);
 struct buffer	*parser_exec(struct parser *, size_t);
 int		 parser_exec_expr_recover(const struct expr_exec_arg *,
-    struct doc *);
+    struct doc *, void *);
