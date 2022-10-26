@@ -369,9 +369,6 @@ expr_exec_recover(struct expr_state *es, unsigned int flags)
 	struct expr *ex;
 	int error;
 
-	if (ea->callbacks.recover == NULL)
-		return NULL;
-
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	ea->flags |= flags;
 	error = ea->callbacks.recover(ea, dc, ea->callbacks.arg);
