@@ -33,6 +33,13 @@ struct expr_exec_arg {
 		int	 (*recover)(const struct expr_exec_arg *, struct doc *,
 		    void *);
 
+		/*
+		 * Expected to consume a type as part of a cast expression.
+		 * Returning non-zero implies that the expression parser can
+		 * continue.
+		 */
+		int	 (*recover_cast)(void *);
+
 		void	*arg;
 	} callbacks;
 };

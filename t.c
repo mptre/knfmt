@@ -285,6 +285,7 @@ test_expr_exec0(struct context *cx, const char *src, const char *exp,
 	    .flags	= 0,
 	    .callbacks	= {
 		.recover	= parser_expr_recover,
+		.recover_cast	= parser_expr_recover_cast,
 		.arg		= cx->cx_pr,
 	    },
 	});

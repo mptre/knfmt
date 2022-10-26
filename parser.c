@@ -358,6 +358,14 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	return 0;
 }
 
+int
+parser_expr_recover_cast(void *arg)
+{
+	struct parser *pr = arg;
+
+	return lexer_if_type(pr->pr_lx, NULL, LEXER_TYPE_CAST);
+}
+
 static int
 parser_exec1(struct parser *pr, struct doc *dc)
 {
@@ -1195,6 +1203,7 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 		.flags		= flags,
 		.callbacks	= {
 			.recover	= parser_expr_recover,
+			.recover_cast	= parser_expr_recover_cast,
 			.arg		= pr,
 		},
 	};
@@ -1847,6 +1856,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 		.flags		= 0,
 		.callbacks	= {
 			.recover	= parser_expr_recover,
+			.recover_cast	= parser_expr_recover_cast,
 			.arg		= pr,
 		},
 	};
