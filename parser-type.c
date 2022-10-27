@@ -4,6 +4,7 @@
 
 #include "cdefs.h"
 #include "lexer.h"
+#include "parser-extern.h"
 #include "token.h"
 
 static int	parser_type_peek_func_ptr(struct lexer *, struct token **);
@@ -12,9 +13,11 @@ static int	parser_type_peek_ident(struct lexer *);
 static int	parser_type_peek_cpp(struct lexer *);
 
 int
-parser_type_peek(struct lexer *lx, struct parser_type *pt, unsigned int flags)
+parser_type_peek(struct parser_context *pc, struct parser_type *pt,
+    unsigned int flags)
 {
 	struct lexer_state s;
+	struct lexer *lx = pc->pc_lx;
 	struct token *beg, *t;
 	int peek = 0;
 	int nkeywords = 0;
@@ -130,9 +133,12 @@ parser_type_peek(struct lexer *lx, struct parser_type *pt, unsigned int flags)
 }
 
 int
-parser_type_parse(struct lexer *lx, struct parser_type *pt, unsigned int flags)
+parser_type_parse(struct parser_context *pc, struct parser_type *pt,
+    unsigned int flags)
 {
-	if (!parser_type_peek(lx, pt, flags))
+	struct lexer *lx = pc->pc_lx;
+
+	if (!parser_type_peek(pc, pt, flags))
 		return 0;
 	lexer_seek(lx, pt->pt_end);
 	return 1;

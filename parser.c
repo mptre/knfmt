@@ -13,6 +13,7 @@
 #include "expr.h"
 #include "lexer.h"
 #include "options.h"
+#include "parser-extern.h"
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
@@ -37,6 +38,7 @@ enum parser_peek {
 };
 
 struct parser {
+	struct parser_context	 pr_pc;
 	const char		*pr_path;
 	struct error		*pr_er;
 	const struct options	*pr_op;
@@ -218,6 +220,7 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 	pr = calloc(1, sizeof(*pr));
 	if (pr == NULL)
 		err(1, NULL);
+	pr->pr_pc.pc_lx = lx;
 	pr->pr_path = path;
 	pr->pr_er = er;
 	pr->pr_st = st;
@@ -312,7 +315,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	if (ea->flags & (EXPR_EXEC_ARG | EXPR_EXEC_CAST))
 		flags |= PARSER_TYPE_CAST;
 
-	if (parser_type_peek(lx, &pt, flags)) {
+	if (parser_type_peek(&pr->pr_pc, &pt, flags)) {
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))
@@ -360,7 +363,7 @@ parser_expr_recover_cast(void *arg)
 	struct parser_type pt;
 	struct parser *pr = arg;
 
-	return parser_type_parse(pr->pr_lx, &pt, PARSER_TYPE_CAST);
+	return parser_type_parse(&pr->pr_pc, &pt, PARSER_TYPE_CAST);
 }
 
 static int
@@ -506,7 +509,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (parser_exec_decl_cppdefs(pr, dc) & GOOD)
 		return parser_good(pr);
 
-	if (!parser_type_peek(lx, &pt, 0)) {
+	if (!parser_type_peek(&pr->pr_pc, &pt, 0)) {
 		/* No type found, this declaration could make use of cpp. */
 		return parser_exec_decl_cpp(pr, dc, rl, flags);
 	}
@@ -1414,7 +1417,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	struct token *tk;
 	int error = 0;
 
-	if (!parser_type_peek(lx, &pt, PARSER_TYPE_ARG))
+	if (!parser_type_peek(&pr->pr_pc, &pt, PARSER_TYPE_ARG))
 		return parser_none(pr);
 
 	/*
@@ -1872,7 +1875,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	int peek = 0;
 	int error, w;
 
-	if (parser_type_peek(lx, &pt, 0))
+	if (parser_type_peek(&pr->pr_pc, &pt, 0))
 		return parser_none(pr);
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_none(pr);
@@ -2714,7 +2717,7 @@ parser_peek_func(struct parser *pr, struct parser_type *pt)
 	enum parser_peek peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (parser_type_parse(lx, pt, 0)) {
+	if (parser_type_parse(&pr->pr_pc, pt, 0)) {
 		struct parser_type kr;
 
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
@@ -2744,7 +2747,7 @@ parser_peek_func(struct parser *pr, struct parser_type *pt)
 			peek = PARSER_PEEK_FUNCDECL;
 		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;
-		else if (parser_type_parse(lx, &kr, 0))
+		else if (parser_type_parse(&pr->pr_pc, &kr, 0))
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 out:

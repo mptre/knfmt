@@ -14,6 +14,7 @@
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
+#include "parser-extern.h"
 #include "parser-type.h"
 #include "style.h"
 #include "token.h"
@@ -57,13 +58,14 @@ static int	test_strwidth0(const char *, size_t, size_t,
     const char *, int);
 
 struct context {
-	struct options	 cx_op;
-	struct buffer	*cx_bf;
-	struct error	*cx_er;
-	struct style	*cx_st;
-	struct clang	*cx_cl;
-	struct lexer	*cx_lx;
-	struct parser	*cx_pr;
+	struct options		 cx_op;
+	struct buffer		*cx_bf;
+	struct error		*cx_er;
+	struct style		*cx_st;
+	struct clang		*cx_cl;
+	struct lexer		*cx_lx;
+	struct parser		*cx_pr;
+	struct parser_context	 cx_pc;
 };
 
 static __dead void	usage(void);
@@ -326,7 +328,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 
 	context_init(cx, src);
 
-	if (!parser_type_peek(cx->cx_lx, &pt, flags)) {
+	if (!parser_type_peek(&cx->cx_pc, &pt, flags)) {
 		fprintf(stderr, "%s:%d: lexer_peek_if_type() failure\n",
 		    fun, lno);
 		error = 1;
@@ -462,6 +464,7 @@ context_init(struct context *cx, const char *src)
 	});
 	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, cx->cx_st,
 	    &cx->cx_op);
+	cx->cx_pc.pc_lx = cx->cx_lx;
 }
 
 static void
