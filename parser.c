@@ -1859,11 +1859,11 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
-	struct token *ident, *lparen, *nx, *rparen, *semi;
+	struct token *ident, *lparen, *nx, *rparen, *semi, *type;
 	int peek = 0;
 	int error, w;
 
-	if (parser_type_peek(lx, NULL, 0))
+	if (parser_type_peek(lx, &type, 0))
 		return parser_none(pr);
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_none(pr);
