@@ -61,11 +61,11 @@ struct token {
 	size_t			 tk_off;
 
 	union {
-		struct token	*tk_token;
-		int		 tk_int;
+		int	tk_int;
 	};
 
 	struct {
+		struct token	*br_parent;
 		struct token	*br_pv;
 		struct token	*br_nx;
 	} tk_branch;
