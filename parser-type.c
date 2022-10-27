@@ -12,7 +12,7 @@ static int	parser_type_peek_ident(struct lexer *);
 static int	parser_type_peek_cpp(struct lexer *);
 
 int
-parser_type_peek(struct lexer *lx, struct token **tk, unsigned int flags)
+parser_type_peek(struct lexer *lx, struct parser_type *pt, unsigned int flags)
 {
 	struct lexer_state s;
 	struct token *beg, *t;
@@ -121,17 +121,20 @@ parser_type_peek(struct lexer *lx, struct token **tk, unsigned int flags)
 		peek = 1;
 	}
 
-	if (peek)
-		*tk = t;
+	memset(pt, 0, sizeof(*pt));
+	if (peek) {
+		pt->pt_beg = beg;
+		pt->pt_end = t;
+	}
 	return peek;
 }
 
 int
-parser_type_exec(struct lexer *lx, struct token **tk, unsigned int flags)
+parser_type_exec(struct lexer *lx, struct parser_type *pt, unsigned int flags)
 {
-	if (!parser_type_peek(lx, tk, flags))
+	if (!parser_type_peek(lx, pt, flags))
 		return 0;
-	lexer_seek(lx, *tk);
+	lexer_seek(lx, pt->pt_end);
 	return 1;
 }
 

@@ -317,15 +317,16 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
     unsigned int flags,
     const char *fun, int lno)
 {
+	struct parser_type pt;
 	struct buffer *bf = NULL;
-	struct token *end, *tk;
+	struct token *tk;
 	const char *act;
 	int error = 0;
 	int ntokens = 0;
 
 	context_init(cx, src);
 
-	if (!parser_type_peek(cx->cx_lx, &end, flags)) {
+	if (!parser_type_peek(cx->cx_lx, &pt, flags)) {
 		fprintf(stderr, "%s:%d: lexer_peek_if_type() failure\n",
 		    fun, lno);
 		error = 1;
@@ -341,7 +342,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 			buffer_putc(bf, ' ');
 		buffer_puts(bf, tk->tk_str, tk->tk_len);
 
-		if (tk == end)
+		if (tk == pt.pt_end)
 			break;
 	}
 	buffer_putc(bf, '\0');

@@ -79,11 +79,11 @@ struct parser_exec_decl_init_arg {
 };
 
 struct parser_exec_func_proto_arg {
-	struct doc		*dc;
-	struct ruler		*rl;
-	const struct token	*type;
-	struct doc		*out;
-	unsigned int		 flags;
+	struct doc			*dc;
+	struct ruler			*rl;
+	const struct parser_type	*type;
+	struct doc			*out;
+	unsigned int			 flags;
 #define PARSER_EXEC_FUNC_PROTO_IMPL		0x00000001u
 };
 
@@ -131,10 +131,10 @@ static int	parser_exec_expr(struct parser *, struct doc *, struct doc **,
     const struct token *, unsigned int, unsigned int);
 
 static int	parser_exec_func_decl(struct parser *, struct doc *,
-    struct ruler *, const struct token *);
+    struct ruler *, const struct parser_type *);
 static int	parser_exec_func_impl(struct parser *, struct doc *);
 static int	parser_exec_func_impl1(struct parser *, struct doc *,
-    struct ruler *, const struct token *);
+    struct ruler *, const struct parser_type *);
 static int	parser_exec_func_proto(struct parser *,
     struct parser_exec_func_proto_arg *);
 static int	parser_exec_func_arg(struct parser *, struct doc *,
@@ -165,7 +165,7 @@ static int	parser_exec_stmt_semi(struct parser *, struct doc *);
 static int	parser_exec_stmt_asm(struct parser *, struct doc *);
 
 static int	parser_exec_type(struct parser *, struct doc *,
-    const struct token *, struct ruler *);
+    const struct parser_type *, struct ruler *);
 
 static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, enum doc_type);
@@ -188,7 +188,7 @@ static void		 parser_simple_stmt_ifelse_leave(struct parser *,
 static int		parser_peek_cppx(struct parser *);
 static int		parser_peek_cpp_init(struct parser *);
 static int		parser_peek_decl(struct parser *);
-static enum parser_peek	parser_peek_func(struct parser *, struct token **);
+static enum parser_peek	parser_peek_func(struct parser *, struct parser_type *);
 static int		parser_peek_func_line(struct parser *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
@@ -302,21 +302,22 @@ out:
 int
 parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 {
+	struct parser_type pt;
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *binary;
 	unsigned int flags = 0;
 	int recovered = 0;
 
 	if (ea->flags & (EXPR_EXEC_ARG | EXPR_EXEC_CAST))
 		flags |= PARSER_TYPE_CAST;
 
-	if (parser_type_peek(lx, &tk, flags)) {
+	if (parser_type_peek(lx, &pt, flags)) {
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))
 			goto out;
-		nx = token_next(tk);
+		nx = token_next(pt.pt_end);
 		if (pv != NULL && nx != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA ||
@@ -327,17 +328,17 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 			struct doc *indent;
 
 			indent = doc_alloc_indent(ea->indent, dc);
-			if (parser_exec_type(pr, indent, tk, NULL) & GOOD)
+			if (parser_exec_type(pr, indent, &pt, NULL) & GOOD)
 				recovered = 1;
 		}
-	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
+	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &binary)) {
 		struct token *pv;
 
-		pv = token_prev(tk);
+		pv = token_prev(binary);
 		if (pv != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
-			doc_token(tk, dc);
+			doc_token(binary, dc);
 			recovered = 1;
 		}
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
@@ -356,10 +357,10 @@ out:
 int
 parser_expr_recover_cast(void *arg)
 {
+	struct parser_type pt;
 	struct parser *pr = arg;
-	struct token *tk;
 
-	return parser_type_exec(pr->pr_lx, &tk, PARSER_TYPE_CAST);
+	return parser_type_exec(pr->pr_lx, &pt, PARSER_TYPE_CAST);
 }
 
 static int
@@ -495,16 +496,17 @@ static int
 parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
     unsigned int flags)
 {
+	struct parser_type pt;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat;
-	struct token *beg, *end, *fun, *semi, *tk;
+	struct token *semi, *tk;
 	enum parser_peek peek;
 	int error;
 
 	if (parser_exec_decl_cppdefs(pr, dc) & GOOD)
 		return parser_good(pr);
 
-	if (!parser_type_peek(lx, &end, 0)) {
+	if (!parser_type_peek(lx, &pt, 0)) {
 		/* No type found, this declaration could make use of cpp. */
 		return parser_exec_decl_cpp(pr, dc, rl, flags);
 	}
@@ -513,27 +515,25 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	 * Presence of a type does not necessarily imply that this a declaration
 	 * since it could be a function declaration or implementation.
 	 */
-	if ((peek = parser_peek_func(pr, &fun))) {
+	if ((peek = parser_peek_func(pr, &pt))) {
 		if (peek == PARSER_PEEK_FUNCDECL)
-			return parser_exec_func_decl(pr, dc, rl, fun);
+			return parser_exec_func_decl(pr, dc, rl, &pt);
 		return parser_none(pr);
 	}
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
-	if (!lexer_peek(lx, &beg))
-		return parser_fail(pr);
 	if (parser_simple_decl_active(pr))
-		simple_decl_type(pr->pr_simple.decl, beg, end);
-	if (parser_exec_type(pr, concat, end, rl) & (FAIL | NONE))
+		simple_decl_type(pr->pr_simple.decl, pt.pt_beg, pt.pt_end);
+	if (parser_exec_type(pr, concat, &pt, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	/* Presence of semicolon implies that this declaration is done. */
 	if (lexer_peek_if(lx, TOKEN_SEMI, NULL))
 		goto out;
 
-	if (token_is_decl(end, TOKEN_STRUCT) ||
-	    token_is_decl(end, TOKEN_UNION)) {
+	if (token_is_decl(pt.pt_end, TOKEN_STRUCT) ||
+	    token_is_decl(pt.pt_end, TOKEN_UNION)) {
 		struct doc *indent;
 		struct token *lbrace, *rbrace;
 
@@ -564,7 +564,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
 		    !lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
 			doc_literal(" ", concat);
-	} else if (token_is_decl(end, TOKEN_ENUM)) {
+	} else if (token_is_decl(pt.pt_end, TOKEN_ENUM)) {
 		struct token *lbrace, *rbrace;
 		unsigned int w;
 
@@ -1031,10 +1031,13 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *macro, *semi, *tk;
+	struct token *beg, *end, *macro, *semi, *tk;
 	struct doc *expr = dc;
 	int peek = 0;
 	int error;
+
+	if (!lexer_peek(lx, &beg))
+		return parser_fail(pr);
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
@@ -1076,7 +1079,11 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_none(pr);
 	}
 
-	if (parser_exec_type(pr, dc, end, rl) & (FAIL | NONE))
+	error = parser_exec_type(pr, dc, &(struct parser_type){
+	    .pt_beg	= beg,
+	    .pt_end	= end,
+	}, rl);
+	if (error & (FAIL | NONE))
 		return parser_fail(pr);
 
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
@@ -1215,11 +1222,11 @@ parser_exec_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 
 static int
 parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *type)
+    const struct parser_type *pt)
 {
 	struct parser_exec_func_proto_arg arg = {
 		.rl	= rl,
-		.type	= type,
+		.type	= pt,
 		.flags	= 0,
 	};
 	struct lexer *lx = pr->pr_lx;
@@ -1238,15 +1245,15 @@ parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 static int
 parser_exec_func_impl(struct parser *pr, struct doc *dc)
 {
+	struct parser_type pt;
 	struct ruler rl;
-	struct token *type;
 	int error;
 
-	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
+	if (parser_peek_func(pr, &pt) != PARSER_PEEK_FUNCIMPL)
 		return parser_none(pr);
 
 	ruler_init(&rl, 1, RULER_ALIGN_FIXED);
-	error = parser_exec_func_impl1(pr, dc, &rl, type);
+	error = parser_exec_func_impl1(pr, dc, &rl, &pt);
 	if (error & GOOD)
 		ruler_exec(&rl);
 	ruler_free(&rl);
@@ -1255,12 +1262,12 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 
 static int
 parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *type)
+    const struct parser_type *pt)
 {
 	struct parser_exec_func_proto_arg arg = {
 		.dc	= dc,
 		.rl	= rl,
-		.type	= type,
+		.type	= pt,
 		.flags	= PARSER_EXEC_FUNC_PROTO_IMPL,
 	};
 	struct lexer *lx = pr->pr_lx;
@@ -1320,7 +1327,7 @@ parser_exec_func_proto(struct parser *pr,
 	group = doc_alloc(DOC_GROUP, dc);
 	concat = doc_alloc(DOC_CONCAT, group);
 
-	if (arg->type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
+	if (arg->type->pt_end->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning function pointer. */
 		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
 			doc_token(lparen, concat);
@@ -1400,13 +1407,14 @@ static int
 parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
     const struct token *rparen)
 {
-	struct doc *concat;
+	struct parser_type pt;
 	struct lexer *lx = pr->pr_lx;
+	struct doc *concat;
 	struct token *pv = NULL;
-	struct token *tk, *type;
+	struct token *tk;
 	int error = 0;
 
-	if (!parser_type_peek(lx, &type, PARSER_TYPE_ARG))
+	if (!parser_type_peek(lx, &pt, PARSER_TYPE_ARG))
 		return parser_none(pr);
 
 	/*
@@ -1418,7 +1426,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	doc_alloc(DOC_SOFTLINE, concat);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, concat));
 
-	if (parser_exec_type(pr, concat, type, NULL) & (FAIL | NONE))
+	if (parser_exec_type(pr, concat, &pt, NULL) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	/* Put the argument identifier in its own group to trigger a refit. */
@@ -1427,7 +1435,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		*out = concat;
 
 	/* Put a line between the type and identifier when wanted. */
-	if (type->tk_type != TOKEN_STAR &&
+	if (pt.pt_end->tk_type != TOKEN_STAR &&
 	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
@@ -1857,13 +1865,14 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 		},
 	};
 	struct lexer_state s;
+	struct parser_type pt;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
-	struct token *ident, *lparen, *nx, *rparen, *semi, *type;
+	struct token *ident, *lparen, *nx, *rparen, *semi;
 	int peek = 0;
 	int error, w;
 
-	if (parser_type_peek(lx, &type, 0))
+	if (parser_type_peek(lx, &pt, 0))
 		return parser_none(pr);
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_none(pr);
@@ -2297,29 +2306,26 @@ parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
  * Parse token(s) denoting a type.
  */
 static int
-parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
-    struct ruler *rl)
+parser_exec_type(struct parser *pr, struct doc *dc,
+    const struct parser_type *pt, struct ruler *rl)
 {
 	struct lexer *lx = pr->pr_lx;
 	const struct token *align = NULL;
-	struct token *beg;
 	unsigned int nspaces = 0;
-
-	if (!lexer_peek(lx, &beg))
-		return parser_fail(pr);
 
 	if (rl != NULL) {
 		/*
 		 * Find the first non pointer token starting from the end, this
 		 * is where the ruler alignment must be performed.
 		 */
-		align = end->tk_token != NULL ? end->tk_token : end;
+		align = pt->pt_end->tk_token != NULL ?
+		    pt->pt_end->tk_token : pt->pt_end;
 		for (;;) {
 			if (align->tk_type != TOKEN_STAR)
 				break;
 
 			nspaces++;
-			if (align == beg)
+			if (align == pt->pt_beg)
 				break;
 			align = token_prev(align);
 			if (align == NULL)
@@ -2340,7 +2346,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 	}
 
 	if (pr->pr_op->op_flags & OPTIONS_SIMPLE) {
-		struct token *tk = beg;
+		struct token *tk = pt->pt_beg;
 		int ntokens = 0;
 
 		for (;;) {
@@ -2350,11 +2356,11 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			if (ntokens > 0 &&
 			    tk->tk_type == TOKEN_STATIC &&
 			    token_is_moveable(tk)) {
-				token_move_prefixes(beg, tk);
-				token_move_suffixes(tk, beg);
-				lexer_move_before(lx, beg, tk);
+				token_move_prefixes(pt->pt_beg, tk);
+				token_move_suffixes(tk, pt->pt_beg);
+				lexer_move_before(lx, pt->pt_beg, tk);
 			}
-			if (tk == end)
+			if (tk == pt->pt_end)
 				break;
 			tk = nx;
 			ntokens++;
@@ -2382,9 +2388,14 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			else
 				w = style(pr->pr_st, ContinuationIndentWidth);
 			indent = doc_alloc_indent(w, dc);
-			while (parser_exec_func_arg(pr, indent, NULL, end) &
-			    GOOD)
-				continue;
+			for (;;) {
+				int error;
+
+				error = parser_exec_func_arg(pr, indent, NULL,
+				    pt->pt_end);
+				if ((error & GOOD) == 0)
+					break;
+			}
 			if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
 				doc_token(rparen, dc);
 			break;
@@ -2405,7 +2416,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			didalign = 1;
 		}
 
-		if (tk == end)
+		if (tk == pt->pt_end)
 			break;
 
 		if (!didalign) {
@@ -2696,15 +2707,15 @@ parser_peek_decl(struct parser *pr)
  * points to the last token of the return type.
  */
 static enum parser_peek
-parser_peek_func(struct parser *pr, struct token **type)
+parser_peek_func(struct parser *pr, struct parser_type *pt)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	enum parser_peek peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (parser_type_exec(lx, type, 0)) {
-		struct token *tk;
+	if (parser_type_exec(lx, pt, 0)) {
+		struct parser_type kr;
 
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
 			/* nothing */
@@ -2717,7 +2728,7 @@ parser_peek_func(struct parser *pr, struct token **type)
 			 * Function returning a function pointer, used by
 			 * parser_exec_func_proto().
 			 */
-			(*type)->tk_flags |= TOKEN_FLAG_TYPE_FUNC;
+			pt->pt_end->tk_flags |= TOKEN_FLAG_TYPE_FUNC;
 		} else {
 			goto out;
 		}
@@ -2733,7 +2744,7 @@ parser_peek_func(struct parser *pr, struct token **type)
 			peek = PARSER_PEEK_FUNCDECL;
 		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;
-		else if (parser_type_exec(lx, &tk, 0))
+		else if (parser_type_exec(lx, &kr, 0))
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 out:
