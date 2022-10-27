@@ -129,13 +129,9 @@ parser_type_peek(struct lexer *lx, struct token **tk, unsigned int flags)
 int
 parser_type_exec(struct lexer *lx, struct token **tk, unsigned int flags)
 {
-	struct token *t;
-
-	if (!parser_type_peek(lx, &t, flags))
+	if (!parser_type_peek(lx, tk, flags))
 		return 0;
-	lexer_seek(lx, t);
-	if (tk != NULL)
-		*tk = t;
+	lexer_seek(lx, *tk);
 	return 1;
 }
 

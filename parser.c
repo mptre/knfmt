@@ -357,8 +357,9 @@ int
 parser_expr_recover_cast(void *arg)
 {
 	struct parser *pr = arg;
+	struct token *tk;
 
-	return parser_type_exec(pr->pr_lx, NULL, PARSER_TYPE_CAST);
+	return parser_type_exec(pr->pr_lx, &tk, PARSER_TYPE_CAST);
 }
 
 static int
@@ -2703,6 +2704,8 @@ parser_peek_func(struct parser *pr, struct token **type)
 
 	lexer_peek_enter(lx, &s);
 	if (parser_type_exec(lx, type, 0)) {
+		struct token *tk;
+
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
 			/* nothing */
 		} else if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
@@ -2730,7 +2733,7 @@ parser_peek_func(struct parser *pr, struct token **type)
 			peek = PARSER_PEEK_FUNCDECL;
 		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;
-		else if (parser_type_exec(lx, NULL, 0))
+		else if (parser_type_exec(lx, &tk, 0))
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 out:
