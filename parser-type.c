@@ -130,7 +130,7 @@ parser_type_peek(struct lexer *lx, struct parser_type *pt, unsigned int flags)
 }
 
 int
-parser_type_exec(struct lexer *lx, struct parser_type *pt, unsigned int flags)
+parser_type_parse(struct lexer *lx, struct parser_type *pt, unsigned int flags)
 {
 	if (!parser_type_peek(lx, pt, flags))
 		return 0;

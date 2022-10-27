@@ -360,7 +360,7 @@ parser_expr_recover_cast(void *arg)
 	struct parser_type pt;
 	struct parser *pr = arg;
 
-	return parser_type_exec(pr->pr_lx, &pt, PARSER_TYPE_CAST);
+	return parser_type_parse(pr->pr_lx, &pt, PARSER_TYPE_CAST);
 }
 
 static int
@@ -2714,7 +2714,7 @@ parser_peek_func(struct parser *pr, struct parser_type *pt)
 	enum parser_peek peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (parser_type_exec(lx, pt, 0)) {
+	if (parser_type_parse(lx, pt, 0)) {
 		struct parser_type kr;
 
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
@@ -2744,7 +2744,7 @@ parser_peek_func(struct parser *pr, struct parser_type *pt)
 			peek = PARSER_PEEK_FUNCDECL;
 		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;
-		else if (parser_type_exec(lx, &kr, 0))
+		else if (parser_type_parse(lx, &kr, 0))
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 out:

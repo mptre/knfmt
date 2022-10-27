@@ -10,4 +10,4 @@ struct parser_type {
 #define PARSER_TYPE_ARG		0x00000002u
 
 int	parser_type_peek(struct lexer *, struct parser_type *, unsigned int);
-int	parser_type_exec(struct lexer *, struct parser_type *, unsigned int);
+int	parser_type_parse(struct lexer *, struct parser_type *, unsigned int);
