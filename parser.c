@@ -13,6 +13,7 @@
 #include "expr.h"
 #include "lexer.h"
 #include "options.h"
+#include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
 #include "simple-stmt.h"
@@ -308,10 +309,10 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 
 	/* Handle type arguments, i.e. sizeof. */
 	if (ea->flags & EXPR_EXEC_ARG)
-		lflags |= LEXER_TYPE_CAST;
+		lflags |= PARSER_TYPE_CAST;
 	if (ea->flags & EXPR_EXEC_CAST)
-		lflags |= LEXER_TYPE_CAST;
-	if (lexer_peek_if_type(lx, &tk, lflags)) {
+		lflags |= PARSER_TYPE_CAST;
+	if (parser_type_peek(lx, &tk, lflags)) {
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))
@@ -363,7 +364,7 @@ parser_expr_recover_cast(void *arg)
 {
 	struct parser *pr = arg;
 
-	return lexer_if_type(pr->pr_lx, NULL, LEXER_TYPE_CAST);
+	return parser_type_exec(pr->pr_lx, NULL, PARSER_TYPE_CAST);
 }
 
 static int
@@ -508,7 +509,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (parser_exec_decl_cppdefs(pr, dc) & GOOD)
 		return parser_good(pr);
 
-	if (!lexer_peek_if_type(lx, &end, 0)) {
+	if (!parser_type_peek(lx, &end, 0)) {
 		/* No type found, this declaration could make use of cpp. */
 		return parser_exec_decl_cpp(pr, dc, rl, flags);
 	}
@@ -1410,7 +1411,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	struct token *tk, *type;
 	int error = 0;
 
-	if (!lexer_peek_if_type(lx, &type, LEXER_TYPE_ARG))
+	if (!parser_type_peek(lx, &type, PARSER_TYPE_ARG))
 		return parser_none(pr);
 
 	/*
@@ -1867,7 +1868,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	int peek = 0;
 	int error, w;
 
-	if (lexer_peek_if_type(lx, NULL, 0))
+	if (parser_type_peek(lx, NULL, 0))
 		return parser_none(pr);
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_none(pr);
@@ -2707,7 +2708,7 @@ parser_peek_func(struct parser *pr, struct token **type)
 	enum parser_peek peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if_type(lx, type, 0)) {
+	if (parser_type_exec(lx, type, 0)) {
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
 			/* nothing */
 		} else if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
@@ -2735,7 +2736,7 @@ parser_peek_func(struct parser *pr, struct token **type)
 			peek = PARSER_PEEK_FUNCDECL;
 		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;
-		else if (lexer_if_type(lx, NULL, 0))
+		else if (parser_type_exec(lx, NULL, 0))
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 out:
