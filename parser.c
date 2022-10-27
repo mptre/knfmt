@@ -39,13 +39,10 @@ enum parser_peek {
 
 struct parser {
 	struct parser_context	 pr_pc;
-	const char		*pr_path;
-	struct error		*pr_er;
 	const struct options	*pr_op;
 	const struct style	*pr_st;
 	struct lexer		*pr_lx;
 	struct buffer		*pr_bf;		/* scratch buffer */
-	unsigned int		 pr_error;
 	unsigned int		 pr_nblocks;	/* # stmt blocks */
 	unsigned int		 pr_nbraces;	/* # brace initializers */
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
@@ -220,9 +217,10 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 	pr = calloc(1, sizeof(*pr));
 	if (pr == NULL)
 		err(1, NULL);
+	pr->pr_pc.pc_path = path;
+	pr->pr_pc.pc_op = op;
 	pr->pr_pc.pc_lx = lx;
-	pr->pr_path = path;
-	pr->pr_er = er;
+	pr->pr_pc.pc_er = er;
 	pr->pr_st = st;
 	pr->pr_op = op;
 	pr->pr_lx = lx;
@@ -2821,23 +2819,24 @@ parser_peek_line(struct parser *pr, const struct token *stop)
 static int
 parser_fail0(struct parser *pr, const char *fun, int lno)
 {
+	struct error *er = pr->pr_pc.pc_er;
 	struct buffer *bf;
 	struct token *tk;
 
 	if (parser_get_error(pr))
 		goto out;
-	pr->pr_error = 1;
+	pr->pr_pc.pc_error = 1;
 
-	bf = error_begin(pr->pr_er);
-	buffer_printf(bf, "%s: ", pr->pr_path);
-	if (trace(pr->pr_op, 'l'))
+	bf = error_begin(er);
+	buffer_printf(bf, "%s: ", pr->pr_pc.pc_path);
+	if (trace(pr->pr_pc.pc_op, 'l'))
 		buffer_printf(bf, "%s:%d: ", fun, lno);
 	buffer_printf(bf, "error at ");
 	if (lexer_back(pr->pr_lx, &tk))
 		buffer_printf(bf, "%s\n", lexer_serialize(pr->pr_lx, tk));
 	else
 		buffer_printf(bf, "(null)\n");
-	error_end(pr->pr_er);
+	error_end(er);
 
 out:
 	if (lexer_is_branch(pr->pr_lx))
@@ -2888,7 +2887,7 @@ parser_width(struct parser *pr, const struct doc *dc)
 static int
 parser_get_error(const struct parser *pr)
 {
-	return pr->pr_error || lexer_get_error(pr->pr_lx);
+	return pr->pr_pc.pc_error || lexer_get_error(pr->pr_lx);
 }
 
 static int
@@ -2910,8 +2909,8 @@ parser_none(const struct parser *pr)
 static void
 parser_reset(struct parser *pr)
 {
-	error_reset(pr->pr_er);
-	pr->pr_error = 0;
+	error_reset(pr->pr_pc.pc_er);
+	pr->pr_pc.pc_error = 0;
 }
 
 static int
