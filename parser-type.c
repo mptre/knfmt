@@ -27,6 +27,8 @@ parser_type_peek(struct parser_context *pc, struct parser_type *pt,
 	if (!lexer_peek(lx, &beg))
 		return 0;
 
+	memset(pt, 0, sizeof(*pt));
+
 	lexer_peek_enter(lx, &s);
 	for (;;) {
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
@@ -97,7 +99,7 @@ parser_type_peek(struct parser_context *pc, struct parser_type *pt,
 			 * alignment.
 			 */
 			if (lexer_back(lx, &align))
-				t->tk_token = align;
+				pt->pt_align = align;
 			peek = 1;
 			break;
 		} else if (ntokens > 0 && parser_type_peek_ptr(lx, &t)) {
@@ -124,7 +126,6 @@ parser_type_peek(struct parser_context *pc, struct parser_type *pt,
 		peek = 1;
 	}
 
-	memset(pt, 0, sizeof(*pt));
 	if (peek) {
 		pt->pt_beg = beg;
 		pt->pt_end = t;

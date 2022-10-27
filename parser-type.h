@@ -5,6 +5,7 @@ struct token;
 struct parser_type {
 	struct token	*pt_beg;
 	struct token	*pt_end;
+	struct token	*pt_align;
 };
 
 #define PARSER_TYPE_CAST	0x00000001u
