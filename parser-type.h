@@ -5,7 +5,10 @@ struct token;
 struct parser_type {
 	struct token	*pt_beg;
 	struct token	*pt_end;
-	struct token	*pt_align;
+	struct {
+		struct token	*tk;
+		unsigned int	 nspaces;
+	} pt_align;
 };
 
 #define PARSER_TYPE_CAST	0x00000001u
@@ -15,3 +18,6 @@ int	parser_type_peek(struct parser_context *, struct parser_type *,
     unsigned int);
 int	parser_type_parse(struct parser_context *, struct parser_type *,
     unsigned int);
+
+void	parser_type_init(struct parser_type *, struct token *, struct token *,
+    struct token *);

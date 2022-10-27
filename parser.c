@@ -1010,6 +1010,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
     unsigned int flags)
 {
 	struct lexer_state s;
+	struct parser_type pt;
 	struct lexer *lx = pr->pr_lx;
 	struct token *beg, *end, *macro, *semi, *tk;
 	struct doc *expr = dc;
@@ -1059,10 +1060,8 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_none(&pr->pr_pc);
 	}
 
-	error = parser_exec_type(pr, &(struct parser_type){
-	    .pt_beg	= beg,
-	    .pt_end	= end,
-	}, dc, rl);
+	parser_type_init(&pt, beg, end, NULL);
+	error = parser_exec_type(pr, &pt, dc, rl);
 	if (error & (FAIL | NONE))
 		return parser_fail(&pr->pr_pc);
 
@@ -2290,39 +2289,6 @@ parser_exec_type(struct parser *pr, const struct parser_type *pt,
     struct doc *dc, struct ruler *rl)
 {
 	struct lexer *lx = pr->pr_lx;
-	const struct token *align = NULL;
-	unsigned int nspaces = 0;
-
-	if (rl != NULL) {
-		/*
-		 * Find the first non pointer token starting from the end, this
-		 * is where the ruler alignment must be performed.
-		 */
-		align = pt->pt_align != NULL ? pt->pt_align : pt->pt_end;
-		for (;;) {
-			if (align->tk_type != TOKEN_STAR)
-				break;
-
-			nspaces++;
-			if (align == pt->pt_beg)
-				break;
-			align = token_prev(align);
-			if (align == NULL)
-				break;
-		}
-
-		/*
-		 * No alignment wanted if the first non-pointer token is
-		 * followed by a semi.
-		 */
-		if (align != NULL) {
-			const struct token *nx;
-
-			nx = token_next(align);
-			if (nx != NULL && nx->tk_type == TOKEN_SEMI)
-				align = NULL;
-		}
-	}
 
 	if (pr->pr_op->op_flags & OPTIONS_SIMPLE) {
 		struct token *tk = pt->pt_beg;
@@ -2383,14 +2349,14 @@ parser_exec_type(struct parser *pr, const struct parser_type *pt,
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_token(tk, concat);
 
-		if (tk == align) {
+		if (rl != NULL && tk == pt->pt_align.tk) {
 			if (token_is_decl(tk, TOKEN_ENUM) ||
 			    token_is_decl(tk, TOKEN_STRUCT) ||
 			    token_is_decl(tk, TOKEN_UNION)) {
 				doc_alloc(DOC_LINE, concat);
 			} else {
 				ruler_insert(rl, tk, concat, 1,
-				    parser_width(pr, dc), nspaces);
+				    parser_width(pr, dc), pt->pt_align.nspaces);
 			}
 			didalign = 1;
 		}

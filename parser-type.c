@@ -12,12 +12,15 @@ static int	parser_type_peek_ptr(struct lexer *, struct token **);
 static int	parser_type_peek_ident(struct lexer *);
 static int	parser_type_peek_cpp(struct lexer *);
 
+static void	parser_type_align(struct parser_type *);
+
 int
 parser_type_peek(struct parser_context *pc, struct parser_type *pt,
     unsigned int flags)
 {
 	struct lexer_state s;
 	struct lexer *lx = pc->pc_lx;
+	struct token *align = NULL;
 	struct token *beg, *t;
 	int peek = 0;
 	int nkeywords = 0;
@@ -26,8 +29,6 @@ parser_type_peek(struct parser_context *pc, struct parser_type *pt,
 
 	if (!lexer_peek(lx, &beg))
 		return 0;
-
-	memset(pt, 0, sizeof(*pt));
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
@@ -92,14 +93,8 @@ parser_type_peek(struct parser_context *pc, struct parser_type *pt,
 			/* Identifier is part of the type, consume it. */
 			lexer_if(lx, TOKEN_IDENT, &t);
 		} else if (ntokens > 0 && parser_type_peek_func_ptr(lx, &t)) {
-			struct token *align;
-
-			/*
-			 * Instruct parser_exec_type() where to perform ruler
-			 * alignment.
-			 */
-			if (lexer_back(lx, &align))
-				pt->pt_align = align;
+			/* Potential alignment for function pointers. */
+			(void)lexer_back(lx, &align);
 			peek = 1;
 			break;
 		} else if (ntokens > 0 && parser_type_peek_ptr(lx, &t)) {
@@ -126,10 +121,8 @@ parser_type_peek(struct parser_context *pc, struct parser_type *pt,
 		peek = 1;
 	}
 
-	if (peek) {
-		pt->pt_beg = beg;
-		pt->pt_end = t;
-	}
+	if (peek)
+		parser_type_init(pt, beg, t, align);
 	return peek;
 }
 
@@ -143,6 +136,17 @@ parser_type_parse(struct parser_context *pc, struct parser_type *pt,
 		return 0;
 	lexer_seek(lx, pt->pt_end);
 	return 1;
+}
+
+void
+parser_type_init(struct parser_type *pt, struct token *beg, struct token *end,
+    struct token *align)
+{
+	memset(pt, 0, sizeof(*pt));
+	pt->pt_beg = beg;
+	pt->pt_end = end;
+	pt->pt_align.tk = align;
+	parser_type_align(pt);
 }
 
 static int
@@ -265,4 +269,43 @@ parser_type_peek_cpp(struct lexer *lx)
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
+}
+
+static void
+parser_type_align(struct parser_type *pt)
+{
+	struct token *align;
+	unsigned int nspaces = 0;
+
+	/*
+	 * Find the first non pointer token starting from the end, this is where
+	 * the ruler alignment must be performed.
+	 */
+	align = pt->pt_align.tk ? pt->pt_align.tk : pt->pt_end;
+	for (;;) {
+		if (align->tk_type != TOKEN_STAR)
+			break;
+
+		nspaces++;
+		if (align == pt->pt_beg)
+			break;
+		align = token_prev(align);
+		if (align == NULL)
+			break;
+	}
+
+	/*
+	 * No alignment wanted if the first non-pointer token is followed by a
+	 * semi.
+	 */
+	if (align != NULL) {
+		const struct token *nx;
+
+		nx = token_next(align);
+		if (nx != NULL && nx->tk_type == TOKEN_SEMI)
+			align = NULL;
+	}
+
+	pt->pt_align.tk = align;
+	pt->pt_align.nspaces = nspaces;
 }
