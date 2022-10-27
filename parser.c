@@ -305,18 +305,17 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
-	unsigned int lflags = 0;
+	unsigned int flags = 0;
+	int recovered = 0;
 
-	/* Handle type arguments, i.e. sizeof. */
-	if (ea->flags & EXPR_EXEC_ARG)
-		lflags |= PARSER_TYPE_CAST;
-	if (ea->flags & EXPR_EXEC_CAST)
-		lflags |= PARSER_TYPE_CAST;
-	if (parser_type_peek(lx, &tk, lflags)) {
+	if (ea->flags & (EXPR_EXEC_ARG | EXPR_EXEC_CAST))
+		flags |= PARSER_TYPE_CAST;
+
+	if (parser_type_peek(lx, &tk, flags)) {
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))
-			return 0;
+			goto out;
 		nx = token_next(tk);
 		if (pv != NULL && nx != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
@@ -329,12 +328,9 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 
 			indent = doc_alloc_indent(ea->indent, dc);
 			if (parser_exec_type(pr, indent, tk, NULL) & GOOD)
-				return 1;
+				recovered = 1;
 		}
-	}
-
-	/* Handle binary operator used as an argument, i.e. timercmp(3). */
-	if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
+	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
 		struct token *pv;
 
 		pv = token_prev(tk);
@@ -342,21 +338,19 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
 			doc_token(tk, dc);
-			return 1;
+			recovered = 1;
 		}
-	}
-
-	/* Handle cast expression followed by brace initializers. */
-	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		int error;
 
 		error = parser_exec_decl_braces(pr, dc,
 		    style(pr->pr_st, ContinuationIndentWidth), 0);
 		if (error & GOOD)
-			return 1;
+			recovered = 1;
 	}
 
-	return 0;
+out:
+	return recovered;
 }
 
 int
