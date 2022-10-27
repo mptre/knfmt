@@ -151,8 +151,8 @@ static int	parser_exec_stmt_cpp(struct parser *, struct doc *);
 static int	parser_exec_stmt_semi(struct parser *, struct doc *);
 static int	parser_exec_stmt_asm(struct parser *, struct doc *);
 
-static int	parser_exec_type(struct parser *, struct doc *,
-    const struct parser_type *, struct ruler *);
+static int	parser_exec_type(struct parser *, const struct parser_type *,
+    struct doc *, struct ruler *);
 
 static int	parser_exec_attributes(struct parser *, struct doc *,
     struct doc **, enum doc_type);
@@ -308,7 +308,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 			struct doc *indent;
 
 			indent = doc_alloc_indent(ea->indent, dc);
-			if (parser_exec_type(pr, indent, &pt, NULL) & GOOD)
+			if (parser_exec_type(pr, &pt, indent, NULL) & GOOD)
 				recovered = 1;
 		}
 	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &binary)) {
@@ -505,7 +505,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	if (parser_simple_decl_active(pr))
 		simple_decl_type(pr->pr_simple.decl, pt.pt_beg, pt.pt_end);
-	if (parser_exec_type(pr, concat, &pt, rl) & (FAIL | NONE))
+	if (parser_exec_type(pr, &pt, concat, rl) & (FAIL | NONE))
 		return parser_fail(&pr->pr_pc);
 
 	/* Presence of semicolon implies that this declaration is done. */
@@ -1059,10 +1059,10 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_none(&pr->pr_pc);
 	}
 
-	error = parser_exec_type(pr, dc, &(struct parser_type){
+	error = parser_exec_type(pr, &(struct parser_type){
 	    .pt_beg	= beg,
 	    .pt_end	= end,
-	}, rl);
+	}, dc, rl);
 	if (error & (FAIL | NONE))
 		return parser_fail(&pr->pr_pc);
 
@@ -1291,7 +1291,7 @@ parser_exec_func_proto(struct parser *pr,
 	int nkr = 0;
 	int error;
 
-	if (parser_exec_type(pr, dc, arg->type, arg->rl) & (FAIL | NONE))
+	if (parser_exec_type(pr, arg->type, dc, arg->rl) & (FAIL | NONE))
 		return parser_fail(&pr->pr_pc);
 
 	s = style(pr->pr_st, AlwaysBreakAfterReturnType);
@@ -1406,7 +1406,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	doc_alloc(DOC_SOFTLINE, concat);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, concat));
 
-	if (parser_exec_type(pr, concat, &pt, NULL) & (FAIL | NONE))
+	if (parser_exec_type(pr, &pt, concat, NULL) & (FAIL | NONE))
 		return parser_fail(&pr->pr_pc);
 
 	/* Put the argument identifier in its own group to trigger a refit. */
@@ -2286,8 +2286,8 @@ parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
  * Parse token(s) denoting a type.
  */
 static int
-parser_exec_type(struct parser *pr, struct doc *dc,
-    const struct parser_type *pt, struct ruler *rl)
+parser_exec_type(struct parser *pr, const struct parser_type *pt,
+    struct doc *dc, struct ruler *rl)
 {
 	struct lexer *lx = pr->pr_lx;
 	const struct token *align = NULL;
