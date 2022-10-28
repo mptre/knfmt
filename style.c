@@ -248,20 +248,17 @@ out:
 static int
 style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 {
-#define E(key, ...) do {						\
-	if ((error = parse_style_enum(st, lx, (key), __VA_ARGS__)))	\
-		goto done;						\
-} while (0)
+#define E(key, ...)							\
+	parse_style_enum(st, lx, (key), __VA_ARGS__);			\
+	if (error) goto done
 
-#define F(key) do {							\
-	if ((error = parse_ ## key(st, lx)))				\
-		goto done;						\
-} while (0)
+#define F(key)								\
+	parse_ ## key(st, lx);						\
+	if (error) goto done
 
-#define I(key) do {							\
-	if ((error = parse_style_integer(st, lx, (key))))		\
-		goto done;						\
-} while (0)
+#define I(key)								\
+	parse_style_integer(st, lx, (key));				\
+	if (error) goto done
 
 	lexer_if(lx, DocumentBegin, NULL);
 
@@ -271,26 +268,26 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
 
-		E(AlignAfterOpenBracket,
+		error |= E(AlignAfterOpenBracket,
 		    Align, DontAlign, AlwaysBreak, BlockIndent);
-		E(AlignEscapedNewlines,
+		error |= E(AlignEscapedNewlines,
 		    Align, DontAlign, Left, Right);
-		F(AlignOperands);
-		E(AlwaysBreakAfterReturnType,
+		error |= F(AlignOperands);
+		error |= E(AlwaysBreakAfterReturnType,
 		    None, All, TopLevel, AllDefinitions, TopLevelDefinitions);
-		F(BraceWrapping);
-		E(BreakBeforeBinaryOperators,
+		error |= F(BraceWrapping);
+		error |= E(BreakBeforeBinaryOperators,
 		    None, NonAssignment, All);
-		E(BreakBeforeTernaryOperators,
+		error |= E(BreakBeforeTernaryOperators,
 		    True, False);
-		I(ColumnLimit);
-		I(ContinuationIndentWidth);
-		F(IncludeCategories);
-		I(IndentWidth);
-		E(UseTab,
+		error |= I(ColumnLimit);
+		error |= I(ContinuationIndentWidth);
+		error |= F(IncludeCategories);
+		error |= I(IndentWidth);
+		error |= E(UseTab,
 		    Never, ForIndentation, ForContinuationAndIndentation,
 		    AlignWithSpaces, Always);
-		F(DocumentEnd);
+		error |= F(DocumentEnd);
 
 done:
 		if (error & (GOOD | NVAL)) {
