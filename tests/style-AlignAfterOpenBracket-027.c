@@ -10,5 +10,5 @@ main(void)
 		.incremental_id = incremental_id,
 		.feed_title = xml->title,
 		.feed_identifier = feed_info->name,
-	    });
+	});
 }

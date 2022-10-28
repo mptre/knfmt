@@ -63,6 +63,8 @@ struct parser_exec_decl_braces_arg {
 	unsigned int	 flags;
 #define PARSER_EXEC_DECL_BRACES_ENUM		0x00000001u
 #define PARSER_EXEC_DECL_BRACES_TRIM		0x00000002u
+/* Remove the given indent before emitting the right brace. */
+#define PARSER_EXEC_DECL_BRACES_DEDENT		0x00000004u
 };
 
 struct parser_exec_decl_init_arg {
@@ -322,10 +324,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		    (nx->tk_type == TOKEN_RPAREN ||
 		     nx->tk_type == TOKEN_COMMA ||
 		     nx->tk_type == LEXER_EOF)) {
-			struct doc *indent;
-
-			indent = doc_alloc_indent(ea->indent, dc);
-			if (parser_exec_type(pr, indent, tk, NULL) & GOOD)
+			if (parser_exec_type(pr, dc, tk, NULL) & GOOD)
 				recovered = 1;
 		}
 	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
@@ -339,10 +338,12 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 			recovered = 1;
 		}
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+		int doalign = style_align(pr->pr_st);
 		int error;
 
 		error = parser_exec_decl_braces(pr, dc,
-		    style(pr->pr_st, ContinuationIndentWidth), 0);
+		    style(pr->pr_st, ContinuationIndentWidth),
+		    doalign ? PARSER_EXEC_DECL_BRACES_DEDENT : 0);
 		if (error & GOOD)
 			recovered = 1;
 	}
@@ -912,8 +913,14 @@ parser_exec_decl_braces1(struct parser *pr,
 			 * Put the last hard line outside to get indentation
 			 * right.
 			 */
-			if (token_cmp(pv, rbrace) < 0)
+			if (token_cmp(pv, rbrace) < 0) {
+				if (arg->flags &
+				    PARSER_EXEC_DECL_BRACES_DEDENT) {
+					braces = doc_alloc_indent(-arg->indent,
+					    braces);
+				}
 				doc_alloc(DOC_HARDLINE, braces);
+			}
 		} else {
 			doc_alloc(DOC_HARDLINE, indent);
 		}
