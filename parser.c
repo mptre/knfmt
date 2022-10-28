@@ -932,8 +932,10 @@ next:
 	}
 
 out:
-	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
-		doc_token(tk, braces);
+	if (lexer_expect(lx, TOKEN_RBRACE, &rbrace)) {
+		parser_token_trim_after(pr, rbrace);
+		doc_token(rbrace, braces);
+	}
 
 	return parser_good(pr);
 }
