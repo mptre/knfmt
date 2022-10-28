@@ -32,7 +32,7 @@
  */
 #define NONE	0x00000000u
 #define GOOD	0x00000001u
-#define NVAL	0x00000002u
+#define SKIP	0x00000002u
 #define FAIL	0x00000004u
 
 /* Continuation of token types used to represent YAML primitives. */
@@ -294,7 +294,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		error |= F(DocumentEnd);
 
 done:
-		if (error & (GOOD | NVAL)) {
+		if (error & (GOOD | SKIP)) {
 			continue;
 		} else if (error & FAIL) {
 			break;
@@ -557,7 +557,7 @@ parse_style_enum0(struct style *st, struct lexer *lx, int k, ...)
 	(void)lexer_pop(lx, &val);
 	lexer_error(lx, "unknown value %s for option %s",
 	    lexer_serialize(lx, val), lexer_serialize(lx, key));
-	return NVAL;
+	return SKIP;
 }
 
 static int
@@ -573,7 +573,7 @@ parse_style_bool(struct style *st, struct lexer *lx, int k)
 		(void)lexer_pop(lx, &val);
 		lexer_error(lx, "unknown value %s for option %s",
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
-		return NVAL;
+		return SKIP;
 	}
 	st->st_options[key->tk_type] = val->tk_type;
 	return GOOD;
@@ -592,7 +592,7 @@ parse_style_integer(struct style *st, struct lexer *lx, int k)
 		(void)lexer_pop(lx, &val);
 		lexer_error(lx, "unknown value %s for option %s",
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
-		return NVAL;
+		return SKIP;
 	}
 	st->st_options[key->tk_type] = val->tk_int;
 	return GOOD;
