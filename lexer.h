@@ -63,7 +63,6 @@ void		 lexer_eat_lines_and_spaces(struct lexer *,
     struct lexer_state *);
 struct token	*lexer_emit(const struct lexer *, const struct lexer_state *,
     const struct token *);
-void		 lexer_seek(struct lexer *, struct token *);
 void		 lexer_error(struct lexer *, const char *, ...);
 const char	*lexer_serialize(struct lexer *, const struct token *);
 
@@ -101,6 +100,12 @@ void	lexer_peek_enter(struct lexer *, struct lexer_state *);
 void	lexer_peek_leave(struct lexer *, const struct lexer_state *);
 
 int	lexer_peek(struct lexer *, struct token **);
+
+#define LEXER_TYPE_CAST		0x00000001u
+#define LEXER_TYPE_ARG		0x00000002u
+
+int	lexer_peek_if_type(struct lexer *, struct token **, unsigned int);
+int	lexer_if_type(struct lexer *, struct token **, unsigned int);
 
 int	lexer_peek_if(struct lexer *, int, struct token **);
 int	lexer_if(struct lexer *, int, struct token **);

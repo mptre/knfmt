@@ -355,14 +355,14 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	case TOKEN_CPP_ENDIF: {
 		struct token *nx = prefix->tk_branch.br_nx;
 
-		assert(prefix->tk_branch.br_parent == src);
+		assert(prefix->tk_token == src);
 
-		if (nx != NULL && nx->tk_branch.br_parent == dst) {
+		if (nx != NULL && nx->tk_token == dst) {
 			/* Discard empty branch. */
 			while (token_branch_unlink(prefix) == 0)
 				continue;
 		} else {
-			prefix->tk_branch.br_parent = dst;
+			prefix->tk_token = dst;
 		}
 		break;
 	}
