@@ -78,6 +78,7 @@ static int	parse_DocumentEnd(struct style *, struct lexer *);
 	parse_style_enum0((a), (b), (c), __VA_ARGS__, -1)
 static int	parse_style_enum0(struct style *, struct lexer *, int, ...);
 
+static int	parse_style_bool(struct style *, struct lexer *, int);
 static int	parse_style_integer(struct style *, struct lexer *, int);
 
 static const char	*stryaml(enum yaml_type);
@@ -248,6 +249,10 @@ out:
 static int
 style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 {
+#define B(key)								\
+	parse_style_bool(st, lx, (key));				\
+	if (error) goto done
+
 #define E(key, ...)							\
 	parse_style_enum(st, lx, (key), __VA_ARGS__);			\
 	if (error) goto done
@@ -278,8 +283,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		error |= F(BraceWrapping);
 		error |= E(BreakBeforeBinaryOperators,
 		    None, NonAssignment, All);
-		error |= E(BreakBeforeTernaryOperators,
-		    True, False);
+		error |= B(BreakBeforeTernaryOperators);
 		error |= I(ColumnLimit);
 		error |= I(ContinuationIndentWidth);
 		error |= F(IncludeCategories);
@@ -319,6 +323,7 @@ done:
 #undef E
 #undef F
 #undef I
+#undef B
 }
 
 static int
@@ -553,6 +558,25 @@ parse_style_enum0(struct style *st, struct lexer *lx, int k, ...)
 	lexer_error(lx, "unknown value %s for option %s",
 	    lexer_serialize(lx, val), lexer_serialize(lx, key));
 	return NVAL;
+}
+
+static int
+parse_style_bool(struct style *st, struct lexer *lx, int k)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, k, &key))
+		return NONE;
+	if (!lexer_expect(lx, Colon, NULL))
+		return FAIL;
+	if (!lexer_if(lx, True, &val) && !lexer_if(lx, False, &val)) {
+		(void)lexer_pop(lx, &val);
+		lexer_error(lx, "unknown value %s for option %s",
+		    lexer_serialize(lx, val), lexer_serialize(lx, key));
+		return NVAL;
+	}
+	st->st_options[key->tk_type] = val->tk_type;
+	return GOOD;
 }
 
 static int
