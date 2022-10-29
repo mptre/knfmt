@@ -6,7 +6,6 @@
 #include <ctype.h>
 #include <err.h>
 #include <limits.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -50,10 +49,13 @@ struct style {
 	unsigned int	st_options[Last];
 };
 
-struct style_hash {
-	const char	*sh_key;
-	int		 sh_type;
+struct style_option {
 	UT_hash_handle	 hh;
+	const char	*so_key;
+	int		 so_type;
+	int		 (*so_parse)(struct style *, struct lexer *,
+	    const struct style_option *);
+	int		 so_val[8];
 };
 
 static void	style_defaults(struct style *);
@@ -68,72 +70,101 @@ static char		*yaml_serialize(const struct token *);
 static struct token	*yaml_keyword(struct lexer *,
     const struct lexer_state *);
 
-static int	parse_AlignOperands(struct style *, struct lexer *);
-static int	parse_BraceWrapping(struct style *, struct lexer *);
-static int	parse_IncludeCategories(struct style *, struct lexer *);
-
-static int	parse_DocumentEnd(struct style *, struct lexer *);
-
-#define parse_style_enum(a, b, c, ...) \
-	parse_style_enum0((a), (b), (c), __VA_ARGS__, -1)
-static int	parse_style_enum0(struct style *, struct lexer *, int, ...);
-
-static int	parse_style_bool(struct style *, struct lexer *, int);
-static int	parse_style_integer(struct style *, struct lexer *, int);
+static int	parse_bool(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_enum(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_integer(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_AlignOperands(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_BraceWrapping(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_IncludeCategories(struct style *, struct lexer *,
+    const struct style_option *);
 
 static const char	*stryaml(enum yaml_type);
 
-static struct style_hash *keywords = NULL;
+static struct style_option *keywords = NULL;
 
 void
 style_init(void)
 {
-	static struct style_hash kw[] = {
-#define K(t, s)	{ .sh_key = (s), .sh_type = (t), }
-		K(Align,				"Align"),
-		K(AlignAfterOpenBracket,		"AlignAfterOpenBracket"),
-		K(AlignEscapedNewlines,			"AlignEscapedNewlines"),
-		K(AlignOperands,			"AlignOperands"),
-		K(AlignWithSpaces,			"AlignWithSpaces"),
-		K(All,					"All"),
-		K(AllDefinitions,			"AllDefinitions"),
-		K(Always,				"Always"),
-		K(AlwaysBreak,				"AlwaysBreak"),
-		K(AlwaysBreakAfterReturnType,		"AlwaysBreakAfterReturnType"),
-		K(BlockIndent,				"BlockIndent"),
-		K(BraceWrapping,			"BraceWrapping"),
-		K(BreakBeforeBinaryOperators,		"BreakBeforeBinaryOperators"),
-		K(BreakBeforeTernaryOperators,		"BreakBeforeTernaryOperators"),
-		K(ColumnLimit,				"ColumnLimit"),
-		K(ContinuationIndentWidth,		"ContinuationIndentWidth"),
-		K(DontAlign,				"DontAlign"),
-		K(False,				"false"),
-		K(ForContinuationAndIndentation,	"ForContinuationAndIndentation"),
-		K(ForIndentation,			"ForIndentation"),
-		K(IncludeCategories,			"IncludeCategories"),
-		K(IndentWidth,				"IndentWidth"),
-		K(Left,					"Left"),
-		K(Never,				"Never"),
-		K(NonAssignment,			"NonAssignment"),
-		K(None,					"None"),
-		K(Right,				"Right"),
-		K(TopLevel,				"TopLevel"),
-		K(TopLevelDefinitions,			"TopLevelDefinitions"),
-		K(True,					"true"),
-		K(UseTab,				"UseTab"),
-		/* YAML primitives. */
-		K(Colon,				":"),
-		K(DocumentBegin,			"---"),
-		K(DocumentEnd,				"..."),
-		K(Sequence,				"-"),
-		K(Integer,				"Integer"),
-#undef K
+	static struct style_option kw[] = {
+#define E(t)	{0},	#t,	(t),	NULL,	{0}
+#define P(t, s)	{0},	(s),	(t),	NULL,	{0}
+#define S(t)	{0},	#t,	(t)
+
+		{ S(AlignAfterOpenBracket), parse_enum,
+		  { Align, DontAlign, AlwaysBreak, BlockIndent } },
+
+		{ S(AlignEscapedNewlines), parse_enum,
+		  { DontAlign, Left, Right } },
+
+		{ S(AlignOperands), parse_AlignOperands,
+		  { Align, DontAlign, AlignAfterOperator, True, False } },
+
+		{ S(AlwaysBreakAfterReturnType), parse_enum,
+		  { None, All, TopLevel, AllDefinitions, TopLevelDefinitions } },
+
+		{ S(BraceWrapping), parse_BraceWrapping, {0} },
+
+		{ S(BreakBeforeBinaryOperators), parse_enum,
+		  { None, NonAssignment, All } },
+
+		{ S(BreakBeforeTernaryOperators), parse_bool, {0} },
+
+		{ S(ColumnLimit), parse_integer, {0} },
+
+		{ S(ContinuationIndentWidth), parse_integer, {0} },
+
+		{ S(IncludeCategories), parse_IncludeCategories, {0} },
+
+		{ S(IndentWidth), parse_integer, {0} },
+
+		{ S(UseTab), parse_enum,
+		  { Never, ForIndentation, ForContinuationAndIndentation,
+		    AlignWithSpaces, Always } },
+
+		/* bool */
+		{ P(False, "false") },
+		{ P(True, "true") },
+
+		/* enum */
+		{ E(Align) },
+		{ E(AlignAfterOperator) },
+		{ E(AlignWithSpaces) },
+		{ E(All) },
+		{ E(AllDefinitions) },
+		{ E(Always) },
+		{ E(AlwaysBreak) },
+		{ E(BlockIndent) },
+		{ E(DontAlign) },
+		{ E(ForContinuationAndIndentation) },
+		{ E(ForIndentation) },
+		{ E(Left) },
+		{ E(Never) },
+		{ E(NonAssignment) },
+		{ E(None) },
+		{ E(Right) },
+		{ E(TopLevel) },
+		{ E(TopLevelDefinitions) },
+
+		/* primitives */
+		{ P(Colon, ":") },
+		{ P(DocumentBegin, "---"), },
+		{ P(DocumentEnd, "..."), },
+		{ P(Sequence, "-") },
+		{ P(Integer, "Integer") },
+
+#undef Y
+#undef S
 	};
 	size_t nkeywords = sizeof(kw) / sizeof(kw[0]);
 	size_t i;
 
 	for (i = 0; i < nkeywords; i++)
-		HASH_ADD_STR(keywords, sh_key, &kw[i]);
+		HASH_ADD_STR(keywords, so_key, &kw[i]);
 }
 
 void
@@ -249,57 +280,29 @@ out:
 static int
 style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 {
-#define B(key)								\
-	parse_style_bool(st, lx, (key));				\
-	if (error) goto done
-
-#define E(key, ...)							\
-	parse_style_enum(st, lx, (key), __VA_ARGS__);			\
-	if (error) goto done
-
-#define F(key)								\
-	parse_ ## key(st, lx);						\
-	if (error) goto done
-
-#define I(key)								\
-	parse_style_integer(st, lx, (key));				\
-	if (error) goto done
-
-	lexer_if(lx, DocumentBegin, NULL);
-
 	for (;;) {
+		const struct style_option *so;
+		struct token *key;
 		int error = 0;
 
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
+		if (lexer_if(lx, DocumentBegin, NULL))
+			continue;
+		if (lexer_if(lx, DocumentEnd, NULL))
+			continue;
 
-		error |= E(AlignAfterOpenBracket,
-		    Align, DontAlign, AlwaysBreak, BlockIndent);
-		error |= E(AlignEscapedNewlines,
-		    Align, DontAlign, Left, Right);
-		error |= F(AlignOperands);
-		error |= E(AlwaysBreakAfterReturnType,
-		    None, All, TopLevel, AllDefinitions, TopLevelDefinitions);
-		error |= F(BraceWrapping);
-		error |= E(BreakBeforeBinaryOperators,
-		    None, NonAssignment, All);
-		error |= B(BreakBeforeTernaryOperators);
-		error |= I(ColumnLimit);
-		error |= I(ContinuationIndentWidth);
-		error |= F(IncludeCategories);
-		error |= I(IndentWidth);
-		error |= E(UseTab,
-		    Never, ForIndentation, ForContinuationAndIndentation,
-		    AlignWithSpaces, Always);
-		error |= F(DocumentEnd);
-
-done:
+		if (!lexer_peek(lx, &key))
+			break;
+		so = (struct style_option *)key->tk_token;
+		if (so != NULL)
+			error = so->so_parse(st, lx, so);
 		if (error & (GOOD | SKIP)) {
 			continue;
 		} else if (error & FAIL) {
 			break;
 		} else {
-			struct token *key, *val;
+			struct token *val;
 
 			/* Best effort, try to continue parsing. */
 			lexer_pop(lx, &key);
@@ -319,11 +322,6 @@ done:
 	}
 
 	return trace(op, 's') ? lexer_get_error(lx) : 0;
-
-#undef E
-#undef F
-#undef I
-#undef B
 }
 
 static int
@@ -468,104 +466,27 @@ yaml_serialize(const struct token *tk)
 static struct token *
 yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 {
-	const struct style_hash *sh;
+	const struct style_option *so;
 	struct token *tk;
 
 	tk = lexer_emit(lx, st, NULL);
-	HASH_FIND(hh, keywords, tk->tk_str, tk->tk_len, sh);
-	if (sh == NULL) {
+	HASH_FIND(hh, keywords, tk->tk_str, tk->tk_len, so);
+	if (so == NULL) {
 		tk->tk_type = Unknown;
 		return tk;
 	}
-	tk->tk_type = sh->sh_type;
+	tk->tk_type = so->so_type;
+	if (so->so_parse != NULL)
+		tk->tk_token = (void *)so;
 	return tk;
 }
 
 static int
-parse_AlignOperands(struct style *st, struct lexer *lx)
-{
-	int error;
-
-	error = parse_style_enum(st, lx, AlignOperands,
-	    Align, DontAlign, AlignAfterOperator, True, False);
-	if (error & GOOD) {
-		if (st->st_options[AlignOperands] == True)
-			st->st_options[AlignOperands] = Align;
-		else if (st->st_options[AlignOperands] == False)
-			st->st_options[AlignOperands] = DontAlign;
-	}
-	return error;
-}
-
-static int
-parse_BraceWrapping(struct style *st, struct lexer *lx)
-{
-	if (!lexer_if(lx, BraceWrapping, NULL))
-		return NONE;
-	if (!lexer_expect(lx, Colon, NULL))
-		return FAIL;
-	style_parse_yaml_nested(st, lx);
-	return GOOD;
-}
-
-static int
-parse_IncludeCategories(struct style *st, struct lexer *lx)
-{
-	if (!lexer_if(lx, IncludeCategories, NULL))
-		return NONE;
-	if (!lexer_expect(lx, Colon, NULL))
-		return FAIL;
-
-	style_parse_yaml_nested(st, lx);
-	return GOOD;
-}
-
-static int
-parse_DocumentEnd(struct style *UNUSED(st), struct lexer *lx)
-{
-	if (!lexer_if(lx, DocumentEnd, NULL))
-		return NONE;
-
-	return GOOD;
-}
-
-static int
-parse_style_enum0(struct style *st, struct lexer *lx, int k, ...)
-{
-	va_list ap;
-	struct token *key, *val;
-
-	if (!lexer_if(lx, k, &key))
-		return NONE;
-	if (!lexer_expect(lx, Colon, NULL))
-		return FAIL;
-
-	va_start(ap, k);
-	for (;;) {
-		int v;
-
-		v = va_arg(ap, int);
-		if (v == -1)
-			break;
-		if (lexer_if(lx, v, &val)) {
-			st->st_options[key->tk_type] = val->tk_type;
-			return GOOD;
-		}
-	}
-	va_end(ap);
-
-	(void)lexer_pop(lx, &val);
-	lexer_error(lx, "unknown value %s for option %s",
-	    lexer_serialize(lx, val), lexer_serialize(lx, key));
-	return SKIP;
-}
-
-static int
-parse_style_bool(struct style *st, struct lexer *lx, int k)
+parse_bool(struct style *st, struct lexer *lx, const struct style_option *so)
 {
 	struct token *key, *val;
 
-	if (!lexer_if(lx, k, &key))
+	if (!lexer_if(lx, so->so_type, &key))
 		return NONE;
 	if (!lexer_expect(lx, Colon, NULL))
 		return FAIL;
@@ -580,11 +501,35 @@ parse_style_bool(struct style *st, struct lexer *lx, int k)
 }
 
 static int
-parse_style_integer(struct style *st, struct lexer *lx, int k)
+parse_enum(struct style *st, struct lexer *lx, const struct style_option *so)
+{
+	struct token *key, *val;
+	const int *v;
+
+	if (!lexer_if(lx, so->so_type, &key))
+		return NONE;
+	if (!lexer_expect(lx, Colon, NULL))
+		return FAIL;
+
+	for (v = so->so_val; *v != 0; v++) {
+		if (lexer_if(lx, *v, &val)) {
+			st->st_options[key->tk_type] = val->tk_type;
+			return GOOD;
+		}
+	}
+
+	(void)lexer_pop(lx, &val);
+	lexer_error(lx, "unknown value %s for option %s",
+	    lexer_serialize(lx, val), lexer_serialize(lx, key));
+	return SKIP;
+}
+
+static int
+parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 {
 	struct token *key, *val;
 
-	if (!lexer_if(lx, k, &key))
+	if (!lexer_if(lx, so->so_type, &key))
 		return NONE;
 	if (!lexer_expect(lx, Colon, NULL))
 		return FAIL;
@@ -595,6 +540,47 @@ parse_style_integer(struct style *st, struct lexer *lx, int k)
 		return SKIP;
 	}
 	st->st_options[key->tk_type] = val->tk_int;
+	return GOOD;
+}
+
+static int
+parse_AlignOperands(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	int error;
+
+	error = parse_enum(st, lx, so);
+	if (error & GOOD) {
+		if (st->st_options[AlignOperands] == True)
+			st->st_options[AlignOperands] = Align;
+		else if (st->st_options[AlignOperands] == False)
+			st->st_options[AlignOperands] = DontAlign;
+	}
+	return error;
+}
+
+static int
+parse_BraceWrapping(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	if (!lexer_if(lx, so->so_type, NULL))
+		return NONE;
+	if (!lexer_expect(lx, Colon, NULL))
+		return FAIL;
+	style_parse_yaml_nested(st, lx);
+	return GOOD;
+}
+
+static int
+parse_IncludeCategories(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	if (!lexer_if(lx, so->so_type, NULL))
+		return NONE;
+	if (!lexer_expect(lx, Colon, NULL))
+		return FAIL;
+
+	style_parse_yaml_nested(st, lx);
 	return GOOD;
 }
 

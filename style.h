@@ -3,57 +3,38 @@ struct style;
 
 /* Supported clang format options and values. */
 enum {
+	Align = 1,
 	AlignAfterOpenBracket,
-	Align,
-	DontAlign,
-	AlwaysBreak,
-	BlockIndent,
-
-	AlignEscapedNewlines,
-/*	DontAlign,		*/
-	Left,
-	Right,
-
-	AlignOperands,
-/*	Align,			*/
-/*	DontAlign,		*/
 	AlignAfterOperator,
-
-	AlwaysBreakAfterReturnType,
-	None,
-	All,
-	TopLevel,
-	AllDefinitions,
-	TopLevelDefinitions,
-
-	BraceWrapping,
-
-	BreakBeforeBinaryOperators,
-/*	None,			*/
-	NonAssignment,
-/*	All,			*/
-
-	BreakBeforeTernaryOperators,
-	True,
-	False,
-
-	ColumnLimit,
-/*	Integer,		*/
-
-	ContinuationIndentWidth,
-/*	Integer,		*/
-
-	IncludeCategories,
-
-	IndentWidth,
-/*	Integer,		*/
-
-	UseTab,
-	Never,
-	ForIndentation,
-	ForContinuationAndIndentation,
+	AlignEscapedNewlines,
+	AlignOperands,
 	AlignWithSpaces,
+	All,
+	AllDefinitions,
 	Always,
+	AlwaysBreak,
+	AlwaysBreakAfterReturnType,
+	BlockIndent,
+	BraceWrapping,
+	BreakBeforeBinaryOperators,
+	BreakBeforeTernaryOperators,
+	ColumnLimit,
+	ContinuationIndentWidth,
+	DontAlign,
+	False,
+	ForContinuationAndIndentation,
+	ForIndentation,
+	IncludeCategories,
+	IndentWidth,
+	Left,
+	Never,
+	NonAssignment,
+	None,
+	Right,
+	TopLevel,
+	TopLevelDefinitions,
+	True,
+	UseTab,
 
 	Last,
 };
