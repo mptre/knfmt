@@ -161,6 +161,81 @@ definition(void)
 Not supported, interpreted as
 .Cm AllDefinitions .
 .El
+.It Cm BraceWrapping
+Break before or after braces in certain contexts.
+The supported nested options are as follows:
+.Bl -tag -width Ds
+.It Cm AfterEnum
+Break before braces in enum definitions.
+.Bl -tag -width Ds
+.It Cm true
+.Bd -literal -compact
+enum e
+{
+}
+.Ed
+.It Cm false
+.Bd -literal -compact
+enum e {
+}
+.Ed
+.El
+.It Cm AfterFunction
+Break before braces in function definitions.
+.Bl -tag -width Ds
+.It Cm true
+.Bd -literal -compact
+int
+main(void)
+{
+}
+.Ed
+.It Cm false
+.Bd -literal -compact
+int
+main(void) {
+}
+.Ed
+.El
+.It Cm AfterStruct
+Break before braces in struct definitions.
+.Bl -tag -width Ds
+.It Cm true
+.Bd -literal -compact
+struct s
+{
+}
+.Ed
+.It Cm false
+.Bd -literal -compact
+struct s {
+}
+.Ed
+.El
+.It Cm AfterUnion
+Break before braces in union definitions.
+.Bl -tag -width Ds
+.It Cm true
+.Bd -literal -compact
+union u
+{
+}
+.Ed
+.It Cm false
+.Bd -literal -compact
+int
+union u {
+}
+.Ed
+.El
+.It Xo
+.Cm AfterCaseLabel AfterClass AfterControlStatement AfterEnum
+.Cm AfterExternBlock AfterFunction AfterNamespace AfterObjCDeclaration
+.Cm AfterStruct AfterUnion BeforeCatch BeforeElse BeforeLambdaBody BeforeWhile
+.Cm IndentBraces SplitEmptyFunction SplitEmptyNamespace SplitEmptyRecord
+.Xc
+Not supported.
+.El
 .It Cm BreakBeforeBinaryOperators
 Break before or after binary operators.
 .Bl -tag -width Ds
@@ -183,6 +258,22 @@ Break before all binary operators.
 int x = 11111111
     + 22222222;
 .Ed
+.El
+.It Cm BreakBeforeBraces
+Brace break style.
+.Bl -tag -width Ds
+.It Cm Linux
+Enables
+.Cm AfterFunction ,
+see
+.Cm BraceWrapping .
+.Pq default
+.It Cm Custom
+Breaks dictated by
+.Cm BraceWrapping .
+.It Cm Allman Attach GNU Mozilla Stroustrup WebKit Whitesmiths
+Not supported, interpreted as
+.Cm Custom .
 .El
 .It Cm BreakBeforeTernaryOperators
 Break before or after ternary operators.

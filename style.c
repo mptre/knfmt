@@ -46,23 +46,25 @@ enum yaml_type {
 };
 
 struct style {
-	unsigned int	st_options[Last];
+	const struct options	*st_op;
+	int			 st_scope;
+	unsigned int		 st_options[Last];
 };
 
 struct style_option {
 	UT_hash_handle	 hh;
+	int		 so_scope;
 	const char	*so_key;
 	int		 so_type;
 	int		 (*so_parse)(struct style *, struct lexer *,
 	    const struct style_option *);
-	int		 so_val[8];
+	int		 so_val[32];
 };
 
 static void	style_defaults(struct style *);
 static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *, const struct options *);
-static int	style_parse_yaml1(struct style *, struct lexer *,
-    const struct options *);
+static int	style_parse_yaml1(struct style *, struct lexer *);
 static int	style_parse_yaml_nested(struct style *, struct lexer *);
 
 static struct token	*yaml_read(struct lexer *, void *);
@@ -76,9 +78,9 @@ static int	parse_enum(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_integer(struct style *, struct lexer *,
     const struct style_option *);
-static int	parse_AlignOperands(struct style *, struct lexer *,
+static int	parse_nested(struct style *, struct lexer *,
     const struct style_option *);
-static int	parse_BraceWrapping(struct style *, struct lexer *,
+static int	parse_AlignOperands(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_IncludeCategories(struct style *, struct lexer *,
     const struct style_option *);
@@ -91,9 +93,10 @@ void
 style_init(void)
 {
 	static struct style_option kw[] = {
-#define E(t)	{0},	#t,	(t),	NULL,	{0}
-#define P(t, s)	{0},	(s),	(t),	NULL,	{0}
-#define S(t)	{0},	#t,	(t)
+#define S(t)	{0},	0,	#t,	(t)
+#define N(s, t)	{0},	(s),	#t,	(t)
+#define E(t)	{0},	0,	#t,	(t),	NULL,	{0}
+#define P(t, s)	{0},	0,	(s),	(t),	NULL,	{0}
 
 		{ S(AlignAfterOpenBracket), parse_enum,
 		  { Align, DontAlign, AlwaysBreak, BlockIndent } },
@@ -107,10 +110,33 @@ style_init(void)
 		{ S(AlwaysBreakAfterReturnType), parse_enum,
 		  { None, All, TopLevel, AllDefinitions, TopLevelDefinitions } },
 
-		{ S(BraceWrapping), parse_BraceWrapping, {0} },
+		{ S(BraceWrapping), parse_nested, {0} },
+		{ N(BraceWrapping, AfterCaseLabel), parse_bool, {0} },
+		{ N(BraceWrapping, AfterClass), parse_bool, {0} },
+		{ N(BraceWrapping, AfterControlStatement), parse_enum,
+		  { Never, MultiLine, Always } },
+		{ N(BraceWrapping, AfterEnum), parse_bool, {0} },
+		{ N(BraceWrapping, AfterFunction), parse_bool, {0} },
+		{ N(BraceWrapping, AfterNamespace), parse_bool, {0} },
+		{ N(BraceWrapping, AfterObjCDeclaration), parse_bool, {0} },
+		{ N(BraceWrapping, AfterStruct), parse_bool, {0} },
+		{ N(BraceWrapping, AfterUnion), parse_bool, {0} },
+		{ N(BraceWrapping, AfterExternBlock), parse_bool, {0} },
+		{ N(BraceWrapping, BeforeCatch), parse_bool, {0} },
+		{ N(BraceWrapping, BeforeElse), parse_bool, {0} },
+		{ N(BraceWrapping, BeforeLambdaBody), parse_bool, {0} },
+		{ N(BraceWrapping, BeforeWhile), parse_bool, {0} },
+		{ N(BraceWrapping, IndentBraces), parse_bool, {0} },
+		{ N(BraceWrapping, SplitEmptyFunction), parse_bool, {0} },
+		{ N(BraceWrapping, SplitEmptyRecord), parse_bool, {0} },
+		{ N(BraceWrapping, SplitEmptyNamespace), parse_bool, {0} },
 
 		{ S(BreakBeforeBinaryOperators), parse_enum,
 		  { None, NonAssignment, All } },
+
+		{ S(BreakBeforeBraces), parse_enum,
+		  { Attach, Linux, Mozilla, Stroustrup, Allman, Whitesmiths,
+		    GNU, WebKit, Custom } },
 
 		{ S(BreakBeforeTernaryOperators), parse_bool, {0} },
 
@@ -126,36 +152,44 @@ style_init(void)
 		  { Never, ForIndentation, ForContinuationAndIndentation,
 		    AlignWithSpaces, Always } },
 
-		/* bool */
-		{ P(False, "false") },
-		{ P(True, "true") },
-
 		/* enum */
 		{ E(Align) },
 		{ E(AlignAfterOperator) },
 		{ E(AlignWithSpaces) },
 		{ E(All) },
 		{ E(AllDefinitions) },
+		{ E(Allman) },
 		{ E(Always) },
 		{ E(AlwaysBreak) },
+		{ E(Attach) },
 		{ E(BlockIndent) },
+		{ E(Custom) },
 		{ E(DontAlign) },
 		{ E(ForContinuationAndIndentation) },
 		{ E(ForIndentation) },
+		{ E(GNU) },
 		{ E(Left) },
+		{ E(Linux) },
+		{ E(Mozilla) },
 		{ E(Never) },
 		{ E(NonAssignment) },
 		{ E(None) },
 		{ E(Right) },
+		{ E(Stroustrup) },
 		{ E(TopLevel) },
 		{ E(TopLevelDefinitions) },
+		{ E(WebKit) },
+		{ E(Whitesmiths) },
+		{ E(MultiLine) },
 
 		/* primitives */
 		{ P(Colon, ":") },
 		{ P(DocumentBegin, "---"), },
 		{ P(DocumentEnd, "..."), },
-		{ P(Sequence, "-") },
+		{ P(False, "false") },
 		{ P(Integer, "Integer") },
+		{ P(Sequence, "-") },
+		{ P(True, "true") },
 
 #undef Y
 #undef S
@@ -183,6 +217,7 @@ style_parse(const char *path, const struct options *op)
 	st = calloc(1, sizeof(*st));
 	if (st == NULL)
 		err(1, NULL);
+	st->st_op = op;
 	style_defaults(st);
 
 	if (path != NULL) {
@@ -229,6 +264,20 @@ style_align(const struct style *st)
 	    style(st, AlignOperands) == Align;
 }
 
+int
+style_brace_wrapping(const struct style *st, int option)
+{
+	switch (st->st_options[BreakBeforeBraces]) {
+	case Linux:
+		switch (option) {
+		case AfterFunction:
+			return 1;
+		}
+		break;
+	}
+	return st->st_options[option] == True;
+}
+
 static void
 style_defaults(struct style *st)
 {
@@ -237,6 +286,7 @@ style_defaults(struct style *st)
 	st->st_options[AlignOperands] = DontAlign;
 	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
 	st->st_options[BreakBeforeBinaryOperators] = None;
+	st->st_options[BreakBeforeBraces] = Linux;
 	st->st_options[BreakBeforeTernaryOperators] = False;
 	st->st_options[ColumnLimit] = 80;
 	st->st_options[ContinuationIndentWidth] = 4;
@@ -269,7 +319,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 		error = 1;
 		goto out;
 	}
-	error = style_parse_yaml1(st, lx, op);
+	error = style_parse_yaml1(st, lx);
 
 out:
 	lexer_free(lx);
@@ -278,7 +328,7 @@ out:
 }
 
 static int
-style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
+style_parse_yaml1(struct style *st, struct lexer *lx)
 {
 	for (;;) {
 		const struct style_option *so;
@@ -295,6 +345,8 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 		if (!lexer_peek(lx, &key))
 			break;
 		so = (struct style_option *)key->tk_token;
+		if (so != NULL && so->so_scope != st->st_scope)
+			break;
 		if (so != NULL)
 			error = so->so_parse(st, lx, so);
 		if (error & (GOOD | SKIP)) {
@@ -314,14 +366,14 @@ style_parse_yaml1(struct style *st, struct lexer *lx, const struct options *op)
 			} else {
 				lexer_pop(lx, &val);
 			}
-			if (trace(op, 's')) {
+			if (trace(st->st_op, 's')) {
 				lexer_error(lx, "unknown option %s",
 				    lexer_serialize(lx, key));
 			}
 		}
 	}
 
-	return trace(op, 's') ? lexer_get_error(lx) : 0;
+	return trace(st->st_op, 's') ? lexer_get_error(lx) : 0;
 }
 
 static int
@@ -544,6 +596,22 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 }
 
 static int
+parse_nested(struct style *st, struct lexer *lx, const struct style_option *so)
+{
+	int scope;
+
+	if (!lexer_if(lx, so->so_type, NULL))
+		return NONE;
+	if (!lexer_expect(lx, Colon, NULL))
+		return FAIL;
+	scope = st->st_scope;
+	st->st_scope = so->so_type;
+	style_parse_yaml1(st, lx);
+	st->st_scope = scope;
+	return GOOD;
+}
+
+static int
 parse_AlignOperands(struct style *st, struct lexer *lx,
     const struct style_option *so)
 {
@@ -557,18 +625,6 @@ parse_AlignOperands(struct style *st, struct lexer *lx,
 			st->st_options[AlignOperands] = DontAlign;
 	}
 	return error;
-}
-
-static int
-parse_BraceWrapping(struct style *st, struct lexer *lx,
-    const struct style_option *so)
-{
-	if (!lexer_if(lx, so->so_type, NULL))
-		return NONE;
-	if (!lexer_expect(lx, Colon, NULL))
-		return FAIL;
-	style_parse_yaml_nested(st, lx);
-	return GOOD;
 }
 
 static int

@@ -546,6 +546,11 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		parser_token_trim_before(pr, rbrace);
 		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
 			parser_token_trim_after(pr, lbrace);
+			if ((style_brace_wrapping(pr->pr_st, AfterStruct) &&
+			    token_is_decl(end, TOKEN_STRUCT)) ||
+			    (style_brace_wrapping(pr->pr_st, AfterUnion) &&
+			     token_is_decl(end, TOKEN_UNION)))
+				doc_alloc(DOC_HARDLINE, concat);
 			doc_token(lbrace, concat);
 		}
 
@@ -576,6 +581,8 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		    &rbrace))
 			return parser_fail(pr);
 		parser_token_trim_before(pr, rbrace);
+		if (style_brace_wrapping(pr->pr_st, AfterEnum))
+			doc_alloc(DOC_HARDLINE, concat);
 
 		w = style(pr->pr_st, IndentWidth);
 		error = parser_exec_decl_braces(pr, concat, w,
@@ -1277,7 +1284,10 @@ parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL))
 		return parser_fail(pr);
 
-	doc_alloc(DOC_HARDLINE, dc);
+	if (style_brace_wrapping(pr->pr_st, AfterFunction))
+		doc_alloc(DOC_HARDLINE, dc);
+	else
+		doc_literal(" ", dc);
 	error = parser_exec_stmt_block(pr, &(struct parser_exec_stmt_block_arg){
 	    .head	= dc,
 	    .tail	= dc,
@@ -1358,6 +1368,7 @@ parser_exec_func_proto(struct parser *pr,
 	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
 		parser_token_trim_after(pr, lparen);
 		parser_token_trim_before(pr, rparen);
+		parser_token_trim_after(pr, rparen);
 		doc_token(lparen, concat);
 	}
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {

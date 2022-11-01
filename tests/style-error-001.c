@@ -17,7 +17,7 @@
  * AlignAfterOpenBracket: 0
  * BraceWrapping: # skip nested option
  *   AfterClass: false
- *   AfterControlStatement: false
+ *   AfterControlStatement: MultiLine
  * UseTab: Never # should be fine if the above is skipped
  * ...
  */
