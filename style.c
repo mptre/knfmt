@@ -65,7 +65,6 @@ static void	style_defaults(struct style *);
 static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *, const struct options *);
 static int	style_parse_yaml1(struct style *, struct lexer *);
-static int	style_parse_yaml_nested(struct style *, struct lexer *);
 
 static struct token	*yaml_read(struct lexer *, void *);
 static char		*yaml_serialize(const struct token *);
@@ -77,6 +76,8 @@ static int	parse_bool(struct style *, struct lexer *,
 static int	parse_enum(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_integer(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_string(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_nested(struct style *, struct lexer *,
     const struct style_option *);
@@ -145,6 +146,10 @@ style_init(void)
 		{ S(ContinuationIndentWidth), parse_integer, {0} },
 
 		{ S(IncludeCategories), parse_IncludeCategories, {0} },
+		{ N(IncludeCategories, CaseSensitive), parse_bool, {0} },
+		{ N(IncludeCategories, Priority), parse_integer, {0} },
+		{ N(IncludeCategories, Regex), parse_string, {0} },
+		{ N(IncludeCategories, SortPriority), parse_integer, {0} },
 
 		{ S(IndentWidth), parse_integer, {0} },
 
@@ -337,6 +342,9 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
+		if (lexer_peek_if(lx, Sequence, NULL))
+			break;
+
 		if (lexer_if(lx, DocumentBegin, NULL))
 			continue;
 		if (lexer_if(lx, DocumentEnd, NULL))
@@ -374,21 +382,6 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 	}
 
 	return trace(st->st_op, 's') ? lexer_get_error(lx) : 0;
-}
-
-static int
-style_parse_yaml_nested(struct style *UNUSED(st), struct lexer *lx)
-{
-	struct token *key, *val;
-
-	while (lexer_peek(lx, &key) && token_has_indent(key)) {
-		if (!lexer_pop(lx, &key) ||
-		    !lexer_if(lx, Colon, NULL) ||
-		    !lexer_pop(lx, &val) ||
-		    lexer_if(lx, LEXER_EOF, NULL))
-			break;
-	}
-	return 0;
 }
 
 static struct token *
@@ -596,6 +589,25 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 }
 
 static int
+parse_string(struct style *UNUSED(st), struct lexer *lx,
+    const struct style_option *so)
+{
+	struct token *key, *val;
+
+	if (!lexer_if(lx, so->so_type, &key))
+		return NONE;
+	if (!lexer_expect(lx, Colon, NULL))
+		return FAIL;
+	if (!lexer_expect(lx, String, &val)) {
+		(void)lexer_pop(lx, &val);
+		lexer_error(lx, "unknown value %s for option %s",
+		    lexer_serialize(lx, val), lexer_serialize(lx, key));
+		return SKIP;
+	}
+	return GOOD;
+}
+
+static int
 parse_nested(struct style *st, struct lexer *lx, const struct style_option *so)
 {
 	int scope;
@@ -631,12 +643,18 @@ static int
 parse_IncludeCategories(struct style *st, struct lexer *lx,
     const struct style_option *so)
 {
+	int scope;
+
 	if (!lexer_if(lx, so->so_type, NULL))
 		return NONE;
 	if (!lexer_expect(lx, Colon, NULL))
 		return FAIL;
 
-	style_parse_yaml_nested(st, lx);
+	scope = st->st_scope;
+	st->st_scope = so->so_type;
+	while (lexer_if(lx, Sequence, NULL))
+		style_parse_yaml1(st, lx);
+	st->st_scope = scope;
 	return GOOD;
 }
 

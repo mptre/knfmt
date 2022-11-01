@@ -447,6 +447,7 @@ TESTS+=	style-BreakBeforeTernaryOperators-001.c
 TESTS+=	style-BreakBeforeTernaryOperators-002.c
 TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ContinuationIndentWidth-001.c
+TESTS+=	style-IncludeCategories-001.c
 TESTS+=	style-IndentWidth-001.c
 TESTS+=	style-UseTab-001.c
 TESTS+=	style-UseTab-002.c
