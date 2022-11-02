@@ -1,3 +1,5 @@
+export LC_ALL=C
+
 mkls "$@" \
 SRCS \
 	!(knfmt|t).c \
