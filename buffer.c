@@ -136,7 +136,7 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	if (n < 0)
 		err(1, "vsnprintf");
 
-	while ((bf->bf_siz << shift) - bf->bf_len < (size_t)n)
+	while ((bf->bf_siz << shift) - bf->bf_len <= (size_t)n)
 		shift++;
 	if (shift > 0)
 		buffer_grow(bf, shift);
