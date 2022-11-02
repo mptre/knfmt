@@ -307,7 +307,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 	struct lexer *lx;
 	int error = 0;
 
-	er = error_alloc(1);
+	er = error_alloc(0);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= bf,
@@ -328,6 +328,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 
 out:
 	lexer_free(lx);
+	error_flush(er, trace(op, 's'));
 	error_free(er);
 	return error;
 }
@@ -374,14 +375,12 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 			} else {
 				lexer_pop(lx, &val);
 			}
-			if (trace(st->st_op, 's')) {
-				lexer_error(lx, "unknown option %s",
-				    lexer_serialize(lx, key));
-			}
+			lexer_error(lx, "unknown option %s",
+			    lexer_serialize(lx, key));
 		}
 	}
 
-	return trace(st->st_op, 's') ? lexer_get_error(lx) : 0;
+	return 0;
 }
 
 static struct token *
