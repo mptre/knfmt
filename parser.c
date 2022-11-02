@@ -1941,8 +1941,8 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		return parser_fail(pr);
-
 	parser_token_trim_before(pr, rparen);
+	parser_token_trim_after(pr, rparen);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	doc_token(tk, stmt);
@@ -1968,8 +1968,6 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen)) {
 		struct token *lbrace;
 
-		/* Never break after the right parenthesis. */
-		parser_token_trim_after(pr, rparen);
 		/* Move suffixes if the left brace is about to move. */
 		if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) &&
 		    token_cmp(rparen, lbrace) < 0)
