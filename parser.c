@@ -1949,17 +1949,32 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
 
-	if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
-		doc_token(lparen, stmt);
+	if (style_align(pr->pr_st)) {
+		/*
+		 * Take note of the width before emitting the left parenthesis
+		 * as it could be followed by comments, which must not affect
+		 * alignment.
+		 */
+		w = parser_width(pr, dc) + 1;
+	} else {
+		w = style(pr->pr_st, ContinuationIndentWidth);
+	}
+
+	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
+		struct doc *optional = stmt;
+
+		if (token_has_suffix(lparen, TOKEN_COMMENT)) {
+			optional = doc_alloc(DOC_CONCAT,
+			    doc_alloc(DOC_OPTIONAL, stmt));
+		}
+		doc_token(lparen, optional);
+	}
+
 	/*
 	 * The tokens after the expression must be nested underneath the same
 	 * expression since we want to fit everything until the following
 	 * statement on a single line.
 	 */
-	if (style_align(pr->pr_st))
-		w = parser_width(pr, dc);
-	else
-		w = style(pr->pr_st, ContinuationIndentWidth);
 	error = parser_exec_expr(pr, stmt, &expr, rparen, w, 0);
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);

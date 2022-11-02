@@ -176,6 +176,14 @@ token_has_prefix(const struct token *tk, int type)
 	return token_list_find(list, type) != NULL;
 }
 
+int
+token_has_suffix(const struct token *tk, int type)
+{
+	struct token_list *list = (struct token_list *)&tk->tk_suffixes;
+
+	return token_list_find(list, type) != NULL;
+}
+
 /*
  * Returns non-zero if the given token has at least nlines number of trailing
  * hard line(s).

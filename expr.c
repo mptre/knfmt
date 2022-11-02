@@ -1113,15 +1113,16 @@ static void
 token_move_next_line(struct token *tk)
 {
 	struct token *nx, *pv;
-	unsigned int lno;
+
+	if (token_trim(tk) == 0)
+		return;
 
 	pv = token_prev(tk);
+	token_move_suffixes(tk, pv);
+	token_add_optline(pv);
+
 	nx = token_next(tk);
-	lno = nx->tk_lno - tk->tk_lno;
-	if (token_trim(tk) > 0 && lno == 1) {
-		token_move_suffixes(tk, pv);
-		token_add_optline(pv);
-	}
+	token_move_prefixes(nx, tk);
 }
 
 /*
