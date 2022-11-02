@@ -443,6 +443,7 @@ DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.ok
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-002.c
 DISTFILES+=	tests/style-BraceWrapping-001.c
 DISTFILES+=	tests/style-BraceWrapping-001.ok
+DISTFILES+=	tests/style-BraceWrapping-002.c
 DISTFILES+=	tests/style-BreakBeforeBinaryOperators-001.c
 DISTFILES+=	tests/style-BreakBeforeBinaryOperators-001.ok
 DISTFILES+=	tests/style-BreakBeforeBinaryOperators-002.c

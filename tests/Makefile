@@ -436,6 +436,7 @@ TESTS+=	style-AlignOperands-005.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-AlwaysBreakAfterReturnType-002.c
 TESTS+=	style-BraceWrapping-001.c
+TESTS+=	style-BraceWrapping-002.c
 TESTS+=	style-BreakBeforeBinaryOperators-001.c
 TESTS+=	style-BreakBeforeBinaryOperators-002.c
 TESTS+=	style-BreakBeforeBinaryOperators-003.c

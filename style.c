@@ -115,7 +115,7 @@ style_init(void)
 		{ N(BraceWrapping, AfterCaseLabel), parse_bool, {0} },
 		{ N(BraceWrapping, AfterClass), parse_bool, {0} },
 		{ N(BraceWrapping, AfterControlStatement), parse_enum,
-		  { Never, MultiLine, Always } },
+		  { Never, MultiLine, Always, True, False } },
 		{ N(BraceWrapping, AfterEnum), parse_bool, {0} },
 		{ N(BraceWrapping, AfterFunction), parse_bool, {0} },
 		{ N(BraceWrapping, AfterNamespace), parse_bool, {0} },
