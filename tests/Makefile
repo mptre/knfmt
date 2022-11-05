@@ -446,6 +446,7 @@ TESTS+=	style-BreakBeforeBinaryOperators-006.c
 TESTS+=	style-BreakBeforeBinaryOperators-007.c
 TESTS+=	style-BreakBeforeBinaryOperators-008.c
 TESTS+=	style-BreakBeforeBinaryOperators-009.c
+TESTS+=	style-BreakBeforeBinaryOperators-010.c
 TESTS+=	style-BreakBeforeTernaryOperators-001.c
 TESTS+=	style-BreakBeforeTernaryOperators-002.c
 TESTS+=	style-ColumnLimit-001.c

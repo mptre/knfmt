@@ -824,13 +824,14 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 		es->es_nassign--;
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
+		struct doc *lhs;
 		int dospace;
 
 		token_move_next_line(ex->ex_tk);
-		expr_doc(ex->ex_lhs, es, dc);
+		lhs = expr_doc(ex->ex_lhs, es, dc);
 		dospace = expr_doc_has_spaces(ex);
 		if (dospace)
-			doc_alloc(DOC_LINE, dc);
+			doc_alloc(DOC_LINE, lhs);
 		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_alloc(DOC_SOFTLINE, dc);
 		doc_token(ex->ex_tk, dc);
