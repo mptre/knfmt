@@ -932,21 +932,21 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 	doc_alloc(DOC_LINE, ternary);
 	if (ex->ex_tokens[0] != NULL)
 		doc_token(ex->ex_tokens[0], ternary);	/* ? */
-	if (ex->ex_rhs != NULL)
-		doc_alloc(DOC_LINE, ternary);
 
 	/* The true expression can be empty, GNU extension. */
-	ternary = dc;
 	if (ex->ex_rhs != NULL) {
-		ternary = expr_doc_soft(ex->ex_rhs, es, ternary,
+		doc_alloc(DOC_LINE, ternary);
+		ternary = expr_doc_soft(ex->ex_rhs, es, dc,
 		    soft_weights.ternary);
 		doc_alloc(DOC_LINE, ternary);
+	} else {
+		ternary = dc;
 	}
 
 	if (ex->ex_tokens[1] != NULL)
 		doc_token(ex->ex_tokens[1], ternary);	/* : */
 	doc_alloc(DOC_LINE, ternary);
-	return expr_doc_soft(ex->ex_ternary, es, ternary, soft_weights.ternary);
+	return expr_doc_soft(ex->ex_ternary, es, dc, soft_weights.ternary);
 }
 
 static struct doc *
