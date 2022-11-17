@@ -2593,7 +2593,7 @@ parser_simple_stmt_ifelse_leave(struct parser *pr, void *cookie)
 static int
 parser_simple_active(const struct parser *pr)
 {
-	return pr->pr_simple.nstmt > 0 || pr->pr_simple.ndecl > 0;
+	return pr->pr_simple.stmt != NULL || pr->pr_simple.decl != NULL;
 }
 
 static int
