@@ -486,24 +486,19 @@ eof:
 static char *
 yaml_serialize(const struct token *tk)
 {
-	char *val = NULL;
+	struct buffer *bf;
 	char *buf;
-	ssize_t bufsiz = 256;
-	int n;
 
-	buf = malloc(bufsiz);
-	if (tk->tk_type < Last) {
-		val = strnice(tk->tk_str, tk->tk_len);
-		n = snprintf(buf, bufsiz, "Keyword<%u:%u>(\"%s\")",
-		    tk->tk_lno, tk->tk_cno, val);
-	} else {
-		val = strnice(tk->tk_str, tk->tk_len);
-		n = snprintf(buf, bufsiz, "%s<%u:%u>(\"%s\")",
-		    stryaml(tk->tk_type), tk->tk_lno, tk->tk_cno, val);
-	}
-	if (n < 0)
-		err(1, "asprintf");
-	free(val);
+	bf = buffer_alloc(256);
+	if (tk->tk_type < Last)
+		buffer_printf(bf, "Keyword");
+	else
+		buffer_printf(bf, "%s", stryaml(tk->tk_type));
+	buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
+	strnice_buffer(bf, tk->tk_str, tk->tk_len);
+	buffer_printf(bf, "\")");
+	buffer_putc(bf, '\0');
+	buf = buffer_release(bf);
 	return buf;
 }
 
