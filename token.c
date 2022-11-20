@@ -13,7 +13,7 @@
 
 static struct token	*token_list_find(struct token_list *, int);
 
-static char		*strflags(unsigned int);
+static void		 strflags(struct buffer *, unsigned int);
 static const char	*strtype(int);
 
 #ifdef HAVE_QUEUE
@@ -106,42 +106,21 @@ token_trim(struct token *tk)
 char *
 token_sprintf(const struct token *tk)
 {
-	char *buf = NULL;
-	char *flags, *val;
-	const char *type;
-	ssize_t bufsiz = 0;
-	int i;
+	struct buffer *bf;
+	char *buf;
 
-	type = strtype(tk->tk_type);
-	flags = strflags(tk->tk_flags);
-
-	if (tk->tk_str == NULL) {
-		buf = strdup(type);
-		if (buf == NULL)
-			err(1, NULL);
-		return buf;
+	bf = buffer_alloc(128);
+	buffer_printf(bf, "%s", strtype(tk->tk_type));
+	if (tk->tk_str != NULL) {
+		buffer_printf(bf, "<%u:%u", tk->tk_lno, tk->tk_cno);
+		strflags(bf, tk->tk_flags);
+		buffer_printf(bf, ">(\"");
+		strnice_buffer(bf, tk->tk_str, tk->tk_len);
+		buffer_printf(bf, "\")");
 	}
-
-	val = strnice(tk->tk_str, tk->tk_len);
-	for (i = 0; i < 2; i++) {
-		int n;
-
-		n = snprintf(buf, bufsiz, "%s<%u:%u%s%s>(\"%s\")",
-		    type, tk->tk_lno, tk->tk_cno,
-		    flags != NULL ? "," : "",
-		    flags != NULL ? flags : "",
-		    val);
-		if (n < 0 || (buf != NULL && n >= bufsiz))
-			errc(1, ENAMETOOLONG, "snprintf");
-		if (buf == NULL) {
-			bufsiz = n + 1;
-			buf = malloc(bufsiz);
-			if (buf == NULL)
-				err(1, NULL);
-		}
-	}
-	free(val);
-	free(flags);
+	buffer_putc(bf, '\0');
+	buf = buffer_release(bf);
+	buffer_free(bf);
 	return buf;
 }
 
@@ -465,8 +444,8 @@ token_list_find(struct token_list *list, int type)
 	return NULL;
 }
 
-static char *
-strflags(unsigned int token_flags)
+static void
+strflags(struct buffer *bf, unsigned int token_flags)
 {
 	static const struct {
 		const char	*str;
@@ -478,28 +457,18 @@ strflags(unsigned int token_flags)
 		F(TOKEN_FLAG_OPTSPACE,	"OPTSPACE"),
 #undef F
 	};
-	struct buffer *bf = NULL;
-	char *str;
 	size_t nflags = sizeof(flags) / sizeof(flags[0]);
 	size_t i;
+	int npresent = 0;
 
 	for (i = 0; i < nflags; i++) {
 		if ((token_flags & flags[i].flag) == 0)
 			continue;
 
-		if (bf == NULL)
-			bf = buffer_alloc(128);
-		else
+		if (npresent++ > 0)
 			buffer_putc(bf, '|');
 		buffer_puts(bf, flags[i].str, flags[i].len);
 	}
-
-	if (bf == NULL)
-		return NULL;
-	buffer_putc(bf, '\0');
-	str = buffer_release(bf);
-	buffer_free(bf);
-	return str;
 }
 
 static const char *
