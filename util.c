@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "buffer.h"
+
 void
 tracef(unsigned char ident, const char *fun, const char *fmt, ...)
 {
@@ -27,37 +29,29 @@ tracef(unsigned char ident, const char *fun, const char *fmt, ...)
 char *
 strnice(const char *str, size_t len)
 {
-	char *buf, *p;
+	struct buffer *bf;
+	char *buf;
 	size_t i;
 
-	buf = p = malloc(4 * len + 1);
-	if (buf == NULL)
-		err(1, NULL);
+	bf = buffer_alloc(2 * len + 1);
 	for (i = 0; i < len; i++) {
 		unsigned char c = str[i];
 
-		if (c == '\n') {
-			*buf++ = '\\';
-			*buf++ = 'n';
-		} else if (c == '\t') {
-			*buf++ = '\\';
-			*buf++ = 't';
-		} else if (c == '"') {
-			*buf++ = '\\';
-			*buf++ = '"';
-		} else if (isprint(c)) {
-			*buf++ = c;
-		} else {
-			int n;
-
-			n = sprintf(buf, "\\x%02x", c);
-			if (n < 0)
-				err(1, "%s: sprintf", __func__);
-			buf += n;
-		}
+		if (c == '\n')
+			buffer_printf(bf, "\\n");
+		else if (c == '\t')
+			buffer_printf(bf, "\\t");
+		else if (c == '"')
+			buffer_printf(bf, "\\\"");
+		else if (isprint(c))
+			buffer_putc(bf, c);
+		else
+			buffer_printf(bf, "\\x%02x", c);
 	}
-	*buf = '\0';
-	return p;
+	buffer_putc(bf, '\0');
+	buf = buffer_release(bf);
+	buffer_free(bf);
+	return buf;
 }
 
 /*
