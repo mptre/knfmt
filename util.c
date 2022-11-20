@@ -31,9 +31,20 @@ strnice(const char *str, size_t len)
 {
 	struct buffer *bf;
 	char *buf;
-	size_t i;
 
 	bf = buffer_alloc(2 * len + 1);
+	strnice_buffer(bf, str, len);
+	buffer_putc(bf, '\0');
+	buf = buffer_release(bf);
+	buffer_free(bf);
+	return buf;
+}
+
+void
+strnice_buffer(struct buffer *bf, const char *str, size_t len)
+{
+	size_t i;
+
 	for (i = 0; i < len; i++) {
 		unsigned char c = str[i];
 
@@ -48,10 +59,6 @@ strnice(const char *str, size_t len)
 		else
 			buffer_printf(bf, "\\x%02x", c);
 	}
-	buffer_putc(bf, '\0');
-	buf = buffer_release(bf);
-	buffer_free(bf);
-	return buf;
 }
 
 /*
