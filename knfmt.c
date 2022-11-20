@@ -178,7 +178,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 	    .op		= op,
 	    .callbacks	= {
 		.read		= clang_read,
-		.serialize	= token_sprintf,
+		.serialize	= token_serialize,
 		.arg		= cl,
 	    },
 	});

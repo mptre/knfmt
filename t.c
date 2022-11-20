@@ -454,7 +454,7 @@ context_init(struct context *cx, const char *src)
 	    .op		= &cx->cx_op,
 	    .callbacks	= {
 		.read		= clang_read,
-		.serialize	= token_sprintf,
+		.serialize	= token_serialize,
 		.arg		= cx->cx_cl,
 	    },
 	});

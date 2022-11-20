@@ -104,7 +104,7 @@ token_trim(struct token *tk)
 }
 
 char *
-token_sprintf(const struct token *tk)
+token_serialize(const struct token *tk)
 {
 	struct buffer *bf;
 	char *buf;

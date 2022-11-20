@@ -81,7 +81,7 @@ void		 token_ref(struct token *);
 void		 token_rele(struct token *);
 void		 token_add_optline(struct token *);
 int		 token_trim(struct token *);
-char		*token_sprintf(const struct token *);
+char		*token_serialize(const struct token *);
 
 int	token_cmp(const struct token *, const struct token *);
 int	token_has_indent(const struct token *);
