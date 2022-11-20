@@ -183,8 +183,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_bf = arg->bf;
 	lx->lx_diff = arg->diff;
 	lx->lx_path = arg->path;
-	lx->lx_serialize = arg->callbacks.serialize ?
-	    arg->callbacks.serialize : token_sprintf;
+	lx->lx_serialize = arg->callbacks.serialize;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	if (VECTOR_INIT(lx->lx_lines) == NULL)
