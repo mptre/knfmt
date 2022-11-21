@@ -432,6 +432,12 @@ token_branch_unlink(struct token *tk)
 	return -1;
 }
 
+unsigned int
+token_flags_inherit(const struct token *tk)
+{
+	return tk->tk_flags & TOKEN_FLAG_DIFF;
+}
+
 static struct token *
 token_list_find(struct token_list *list, int type)
 {
