@@ -499,6 +499,7 @@ yaml_serialize(const struct token *tk)
 	buffer_printf(bf, "\")");
 	buffer_putc(bf, '\0');
 	buf = buffer_release(bf);
+	buffer_free(bf);
 	return buf;
 }
 
