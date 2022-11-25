@@ -1047,7 +1047,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct token *end, *macro, *semi, *tk;
 	struct doc *expr = dc;
 	int peek = 0;
-	int error;
+	int error, hasident;
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
@@ -1094,13 +1094,14 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
 		return parser_fail(pr);
+	hasident = !lexer_peek_if(lx, TOKEN_EQUAL, NULL);
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
 	    .dc		= dc,
 	    .width	= dc,
 	    .rl		= rl,
 	    .semi	= semi,
 	    .indent	= style(pr->pr_st, IndentWidth),
-	    .flags	= PARSER_EXEC_DECL_INIT_ASSIGN
+	    .flags	= hasident ? PARSER_EXEC_DECL_INIT_ASSIGN : 0,
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
