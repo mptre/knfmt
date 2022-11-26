@@ -590,8 +590,6 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		    PARSER_EXEC_DECL_BRACES_TRIM);
 		if (error & HALT)
 			return parser_fail(pr);
-		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
-			doc_literal(" ", concat);
 	}
 
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
@@ -943,6 +941,11 @@ out:
 		parser_token_trim_after(pr, rbrace);
 		doc_token(rbrace, braces);
 	}
+	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
+	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
+	    !lexer_peek_if(lx, TOKEN_RBRACE, NULL) &&
+	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL))
+		doc_literal(" ", braces);
 
 	return parser_good(pr);
 }
