@@ -410,7 +410,7 @@ again:
 		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;
-		} while (isalpha(ch) || isdigit(ch));
+		} while (isalpha(ch) || isdigit(ch) || ch == '_');
 		lexer_ungetc(lx);
 		return yaml_keyword(lx, &s);
 	}
