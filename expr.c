@@ -454,7 +454,7 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 			if (lexer_back(es->es_lx, &tk))
 				ex->ex_tokens[0] = tk;	/* ( */
 			/* Let the parser emit the type. */
-			ex->ex_lhs = expr_exec_recover(es, EXPR_EXEC_CAST);
+			ex->ex_lhs = expr_exec_recover(es, EXPR_EXEC_TYPE);
 			if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
 				ex->ex_tokens[1] = tk;	/* ) */
 			ex->ex_rhs = expr_exec1(es, PC(es->es_er->er_pc));
