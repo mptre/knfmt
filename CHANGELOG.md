@@ -2,6 +2,16 @@
 
 ## Changes
 
+- Start honoring clang format configuration, currently limited to a subset of
+  all the knobs.
+  See the manual for further reference.
+  (8fb32ce)
+  (Anton Lindqvist)
+
+- Improve diff mode when called from non repository root.
+  (64d39eb)
+  (Anton Lindqvist)
+
 ## News
 
 - In simple mode, declarations like the following can now be split into one
@@ -21,6 +31,18 @@
   (76b549a)
   (Anton Lindqvist)
 
+- Detect fairly common volatile token alias.
+  (197ccd1)
+  (Anton Lindqvist)
+
+- Trim trailing whitespace from comments.
+  (c3db386)
+  (Anton Lindqvist)
+
+- In simple mode, put braces around a single statement spanning multiple lines.
+  (97e3554)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Fix detection of pointers wrapped in parenthesis.
@@ -37,6 +59,46 @@
 
 - Correct alignment of brace initializers.
   (0dc1c19)
+  (Anton Lindqvist)
+
+- Trim trailing new lines when if the file ends with usage of cpp.
+  (7526024)
+  (Anton Lindqvist)
+
+- Fix break of long expressions.
+  (5add695)
+  (Anton Lindqvist)
+
+- Break long return expressions.
+  (0b51384)
+  (Anton Lindqvist)
+
+- Trim right parens as part of expressions.
+  (deb21a1)
+  (Anton Lindqvist)
+
+- Fix indentation for brace initializers in expressions.
+  (aa0ef35)
+  (Anton Lindqvist)
+
+- Trim right parens as part of inline assembler.
+  (03f7c4d)
+  (Anton Lindqvist)
+
+- Break long ternary expressions.
+  (7ac100a)
+  (Anton Lindqvist)
+
+- Trim trailing new line(s) after brace initializers.
+  (b47466b)
+  (Anton Lindqvist)
+
+- Remove excessive space after declarations using cpp.
+  (d8eebef)
+  (Anton Lindqvist)
+
+- Add missing space after brace initializers followed by attributes.
+  (b0502c3)
   (Anton Lindqvist)
 
 # 3.0.1 - 2022-08-14
