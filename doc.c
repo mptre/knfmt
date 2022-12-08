@@ -221,7 +221,7 @@ static void	doc_trace_enter0(const struct doc *, struct doc_state *);
 static void	doc_trace_leave0(const struct doc *, struct doc_state *);
 
 static char		*docstr(const struct doc *, char *, size_t);
-static const char	*intstr(const struct doc *);
+static const char	*indentstr(const struct doc *);
 static const char	*statestr(const struct doc_state *, unsigned int,
     char *, size_t);
 
@@ -1555,7 +1555,7 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		const char *str;
 
 		fprintf(stderr, "(");
-		if ((str = intstr(dc)) != NULL)
+		if ((str = indentstr(dc)) != NULL)
 			fprintf(stderr, "%s", str);
 		else
 			fprintf(stderr, "%d", dc->dc_int);
@@ -1692,7 +1692,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 }
 
 static const char *
-intstr(const struct doc *dc)
+indentstr(const struct doc *dc)
 {
 	if (IS_DOC_INDENT_PARENS(dc))
 		return "PARENS";
