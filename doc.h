@@ -60,12 +60,10 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
 
 /*
  * Sentinels honored by document allocation routines. The numbers are something
- * arbitrary large enough to never conflict with any actual value. Since the
- * numbers are compared with signed integers, favor integer literals over
- * hexadecimal ones.
+ * arbitrary large enough to never conflict with any actual value.
  */
-#define DOC_INDENT_PARENS	111	/* entering parenthesis */
-#define DOC_INDENT_FORCE	222	/* force indentation */
+#define DOC_INDENT_PARENS	0x10000	/* entering parenthesis */
+#define DOC_INDENT_FORCE	0x20000	/* force indentation */
 
 #define doc_alloc_indent(a, b) \
 	doc_alloc_indent0(DOC_INDENT, (a), (b), __func__, __LINE__)
