@@ -145,6 +145,7 @@ static void	doc_exec1(const struct doc *, struct doc_state *);
 static void	doc_exec_indent(const struct doc *, struct doc_state *);
 static void	doc_exec_minimize(const struct doc *, struct doc_state *);
 static void	doc_exec_minimize1(struct doc *, struct doc_state *, int);
+static void	doc_exec_scope(const struct doc *, struct doc_state *);
 static void	doc_walk(const struct doc *, struct doc_state *,
     int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int	doc_fits(const struct doc *, struct doc_state *);
@@ -284,6 +285,7 @@ doc_free(struct doc *dc)
 	case DOC_INDENT:
 	case DOC_DEDENT:
 	case DOC_OPTIONAL:
+	case DOC_SCOPE:
 		doc_free(dc->dc_doc);
 		break;
 
@@ -683,6 +685,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_MINIMIZE:
 		doc_exec_minimize(dc, st);
 		break;
+
+	case DOC_SCOPE:
+		doc_exec_scope(dc, st);
+		break;
 	}
 
 	doc_trace_leave(dc, st);
@@ -801,6 +807,13 @@ doc_exec_minimize1(struct doc *dc, struct doc_state *st, int idx)
 }
 
 static void
+doc_exec_scope(const struct doc *dc, struct doc_state *st)
+{
+	st->st_stats.nlines = 0;
+	doc_exec1(dc->dc_doc, st);
+}
+
+static void
 doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
@@ -831,6 +844,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		case DOC_DEDENT:
 		case DOC_OPTIONAL:
 		case DOC_MINIMIZE:
+		case DOC_SCOPE:
 			*VECTOR_ALLOC(st->st_walk) = dc->dc_doc;
 			break;
 
@@ -925,6 +939,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	case DOC_HARDLINE:
 	case DOC_MUTE:
 	case DOC_MINIMIZE:
+	case DOC_SCOPE:
 		break;
 	}
 
@@ -1604,6 +1619,10 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		fprintf(stderr, "(%d", st->st_minimize.idx == -1 ? -1 :
 		    dc->dc_minimizers[st->st_minimize.idx].indent);
 		break;
+
+	case DOC_SCOPE:
+		fprintf(stderr, "(");
+		break;
 	}
 	fprintf(stderr, "\n");
 }
@@ -1628,6 +1647,7 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 	case DOC_DEDENT:
 	case DOC_OPTIONAL:
 	case DOC_MINIMIZE:
+	case DOC_SCOPE:
 		parens = 1;
 		break;
 	case DOC_ALIGN:
@@ -1677,6 +1697,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_MUTE);
 	CASE(DOC_OPTIONAL);
 	CASE(DOC_MINIMIZE);
+	CASE(DOC_SCOPE);
 #undef CASE
 	}
 

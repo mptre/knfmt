@@ -23,6 +23,7 @@ enum doc_type {
 	DOC_MUTE,
 	DOC_OPTIONAL,
 	DOC_MINIMIZE,
+	DOC_SCOPE,
 };
 
 struct doc_minimize {

@@ -263,7 +263,8 @@ expr_exec(const struct expr_exec_arg *ea)
 		return NULL;
 	}
 
-	dc = doc_alloc(DOC_GROUP, ea->dc);
+	dc = doc_alloc(DOC_SCOPE, ea->dc);
+	dc = doc_alloc(DOC_GROUP, dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
 	if (ea->indent > 0)
 		indent = doc_alloc_indent(ea->indent, optional);

@@ -153,6 +153,10 @@ The following type of documents are available:
   Given a list of potentials indentations, select the one that minimizes the
   number of new line(s) and line(s) exceeding the column limit.
 
+* DOC_SCOPE
+  Used to enter a new "scope" in some arbitrary sense. Has the side effect of
+  resetting document related state, used by DOC_INDENT_NEWLINE for instance.
+
 cpp.c
 =====
 
