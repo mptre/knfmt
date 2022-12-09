@@ -229,6 +229,7 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 	pr->pr_st = st;
 	pr->pr_op = op;
 	pr->pr_lx = lx;
+	pr->pr_bf = buffer_alloc(1024);
 	return pr;
 }
 
@@ -2930,8 +2931,6 @@ parser_token_trim_after(const struct parser *pr, struct token *tk)
 static unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
-	if (pr->pr_bf == NULL)
-		pr->pr_bf = buffer_alloc(1024);
 	return doc_width(dc, pr->pr_bf, pr->pr_st, pr->pr_op);
 }
 
