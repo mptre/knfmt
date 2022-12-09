@@ -1057,15 +1057,15 @@ lexer_peek_until(struct lexer *lx, int type, struct token **tk)
 }
 
 /*
- * Peek until the given token type is encountered and it is not nested under any
- * pairs of parenthesis nor braces but halt while trying to move beyond the
+ * Peek until a comma is encountered and it is not nested under any pairs of
+ * parenthesis nor braces but halt while trying to move beyond the
  * given stop token. Returns non-zero if such token was found.
  *
  * Assuming tk is not NULL and the stop is reached, tk will point to the stop
  * token.
  */
 int
-lexer_peek_until_loose(struct lexer *lx, int type, const struct token *stop,
+lexer_peek_until_comma(struct lexer *lx, const struct token *stop,
     struct token **tk)
 {
 	struct lexer_state s;
@@ -1077,7 +1077,7 @@ lexer_peek_until_loose(struct lexer *lx, int type, const struct token *stop,
 	for (;;) {
 		if (!lexer_pop(lx, &t) || t == stop || t->tk_type == LEXER_EOF)
 			break;
-		if (t->tk_type == type && !nest) {
+		if (t->tk_type == TOKEN_COMMA && !nest) {
 			peek = 1;
 			break;
 		}

@@ -754,7 +754,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 			doalign = 0;
 		}
 
-		lexer_peek_until_loose(lx, TOKEN_COMMA, arg->semi, &stop);
+		lexer_peek_until_comma(lx, arg->semi, &stop);
 		if (doalign && style_align(pr->pr_st))
 			w = parser_width(pr, arg->width);
 		else
@@ -886,7 +886,7 @@ parser_exec_decl_braces1(struct parser *pr,
 		} else {
 			struct token *stop;
 
-			lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop);
+			lexer_peek_until_comma(lx, rbrace, &stop);
 			error = parser_exec_expr(pr, concat, &expr, stop, 0, 0);
 			if (error & HALT)
 				return parser_fail(pr);
@@ -959,7 +959,7 @@ parser_exec_decl_braces_field(struct parser *pr,
 	unsigned int w;
 	int error;
 
-	lexer_peek_until_loose(lx, TOKEN_COMMA, rbrace, &stop);
+	lexer_peek_until_comma(lx, rbrace, &stop);
 
 	for (;;) {
 		struct doc *expr = NULL;
@@ -1155,7 +1155,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		arg = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
-		lexer_peek_until_loose(lx, TOKEN_COMMA, rparen, &stop);
+		lexer_peek_until_comma(lx, rparen, &stop);
 		error = parser_exec_expr(pr, arg, &expr, stop,
 		    indent, EXPR_EXEC_TYPE);
 		if (error & HALT)
