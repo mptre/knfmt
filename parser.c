@@ -193,6 +193,9 @@ static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static int		parser_peek_func_line(struct parser *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
+static struct token	*parser_peek_braces_expr_stop(struct parser *,
+    const struct token *);
+
 static void		parser_token_trim_before(const struct parser *,
     struct token *);
 static void		parser_token_trim_after(const struct parser *,
@@ -886,7 +889,7 @@ parser_exec_decl_braces1(struct parser *pr,
 		} else {
 			struct token *stop;
 
-			lexer_peek_until_comma(lx, rbrace, &stop);
+			stop = parser_peek_braces_expr_stop(pr, rbrace);
 			error = parser_exec_expr(pr, concat, &expr, stop, 0, 0);
 			if (error & HALT)
 				return parser_fail(pr);
@@ -2832,6 +2835,25 @@ parser_peek_line(struct parser *pr, const struct token *stop)
 	lexer_peek_leave(lx, &s);
 
 	return peek;
+}
+
+static struct token *
+parser_peek_braces_expr_stop(struct parser *pr, const struct token *rbrace)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *stop = NULL;
+	struct token *comma;
+
+	lexer_peek_until(lx, TOKEN_LBRACE, &stop);
+	if (lexer_peek_until_comma(lx, rbrace, &comma)) {
+		if (stop == NULL)
+			stop = comma;
+		else if (token_cmp(comma, stop) < 0 ||
+		    (token_cmp(comma, stop) == 0 &&
+		     comma->tk_cno < stop->tk_cno))
+			stop = comma;
+	}
+	return stop;
 }
 
 static int
