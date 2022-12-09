@@ -953,13 +953,9 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	if (style(es->es_st, AlignAfterOpenBracket) == Align) {
-		if (ex->ex_tk->tk_type == TOKEN_LBRACE)
-			dc = expr_doc_align_disable(ex, es, dc);
-	} else {
-		/* Reset indentation. */
-		dc = doc_alloc_indent(-es->es_ea.indent, dc);
-	}
+	if (style(es->es_st, AlignAfterOpenBracket) == Align &&
+	    ex->ex_tk->tk_type == TOKEN_LBRACE)
+		dc = expr_doc_align_disable(ex, es, dc);
 
 	doc_append(ex->ex_dc, dc);
 	/*

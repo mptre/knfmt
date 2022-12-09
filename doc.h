@@ -63,8 +63,15 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
  * Sentinels honored by document allocation routines. The numbers are something
  * arbitrary large enough to never conflict with any actual value.
  */
-#define DOC_INDENT_PARENS	0x10000	/* entering parenthesis */
-#define DOC_INDENT_FORCE	0x20000	/* force indentation */
+/* Entering parenthesis. */
+#define DOC_INDENT_PARENS	0x10000
+/* Force indentation. */
+#define DOC_INDENT_FORCE	0x20000
+/*
+ * Only emit indentation if at least one hard line has been emitted within the
+ * current scope.
+ */
+#define DOC_INDENT_NEWLINE	0x40000
 
 #define doc_alloc_indent(a, b) \
 	doc_alloc_indent0(DOC_INDENT, (a), (b), __func__, __LINE__)

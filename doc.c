@@ -33,6 +33,8 @@
 	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_PARENS))
 #define IS_DOC_INDENT_FORCE(dc) \
 	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_FORCE))
+#define IS_DOC_INDENT_NEWLINE(dc) \
+	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_NEWLINE))
 
 TAILQ_HEAD(doc_list, doc);
 
@@ -698,6 +700,7 @@ static void
 doc_exec_indent(const struct doc *dc, struct doc_state *st)
 {
 	int oldparens = 0;
+	int indent = 0;
 
 	if (IS_DOC_INDENT_PARENS(dc)) {
 		oldparens = st->st_parens;
@@ -705,8 +708,14 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 			st->st_parens++;
 	} else if (IS_DOC_INDENT_FORCE(dc)) {
 		doc_indent(dc, st, st->st_indent.i_cur);
+	} else if (IS_DOC_INDENT_NEWLINE(dc)) {
+		if (st->st_stats.nlines > 0) {
+			indent = dc->dc_int & ~DOC_INDENT_NEWLINE;
+			st->st_indent.i_cur += indent;
+		}
 	} else {
-		st->st_indent.i_cur += dc->dc_int;
+		indent = dc->dc_int;
+		st->st_indent.i_cur += indent;
 	}
 	doc_exec1(dc->dc_doc, st);
 	if (IS_DOC_INDENT_PARENS(dc)) {
@@ -714,7 +723,7 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 	} else if (IS_DOC_INDENT_FORCE(dc)) {
 		/* nothing */
 	} else {
-		st->st_indent.i_cur -= dc->dc_int;
+		st->st_indent.i_cur -= indent;
 	}
 }
 
@@ -1570,10 +1579,15 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		const char *str;
 
 		fprintf(stderr, "(");
-		if ((str = indentstr(dc)) != NULL)
+		if (IS_DOC_INDENT_NEWLINE(dc)) {
+			fprintf(stderr, "FORCE, %d, %d",
+			    dc->dc_int & ~DOC_INDENT_NEWLINE,
+			    st->st_stats.nlines);
+		} else if ((str = indentstr(dc)) != NULL) {
 			fprintf(stderr, "%s", str);
-		else
+		} else {
 			fprintf(stderr, "%d", dc->dc_int);
+		}
 		break;
 	}
 

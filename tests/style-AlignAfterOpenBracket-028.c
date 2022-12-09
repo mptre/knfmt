@@ -6,7 +6,7 @@ int
 main(void)
 {
 	*aaaa = (aaaaaaaaaa){
-		.aaaaaaaaaaaaaaaaaaa = aaaaaaaaaaaaaaaaaaaa(
-		    aaaaaaaaaaaaaaaaaaaa(aaaaaaa(aaa)), aaa->aaaaaa),
+	    .aaaaaaaaaaaaaaaaaaa = aaaaaaaaaaaaaaaaaaaa(
+		aaaaaaaaaaaaaaaaaaaa(aaaaaaa(aaa)), aaa->aaaaaa),
 	};
 }

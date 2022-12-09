@@ -65,6 +65,8 @@ struct parser_exec_decl_braces_arg {
 #define PARSER_EXEC_DECL_BRACES_TRIM		0x00000002u
 /* Remove the given indent before emitting the right brace. */
 #define PARSER_EXEC_DECL_BRACES_DEDENT		0x00000004u
+/* Perform conditional indentation. */
+#define PARSER_EXEC_DECL_BRACES_INDENT_MAYBE	0x00000008u
 };
 
 struct parser_exec_decl_init_arg {
@@ -339,12 +341,12 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 			recovered = 1;
 		}
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		int doalign = style_align(pr->pr_st);
 		int error;
 
 		error = parser_exec_decl_braces(pr, dc,
 		    style(pr->pr_st, ContinuationIndentWidth),
-		    doalign ? PARSER_EXEC_DECL_BRACES_DEDENT : 0);
+		    PARSER_EXEC_DECL_BRACES_DEDENT |
+		    PARSER_EXEC_DECL_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
 			recovered = 1;
 	}
@@ -833,7 +835,11 @@ parser_exec_decl_braces1(struct parser *pr,
 	}
 
 	if (hasline) {
-		indent = doc_alloc_indent(arg->indent, braces);
+		int val = arg->indent;
+
+		if (arg->flags & PARSER_EXEC_DECL_BRACES_INDENT_MAYBE)
+			val |= DOC_INDENT_NEWLINE;
+		indent = doc_alloc_indent(val, braces);
 		doc_alloc(DOC_HARDLINE, indent);
 	} else {
 		if (token_has_spaces(lbrace))
@@ -927,6 +933,12 @@ parser_exec_decl_braces1(struct parser *pr,
 				}
 				doc_alloc(DOC_HARDLINE, braces);
 			}
+		} else if (pv->tk_type == TOKEN_RPAREN &&
+		    !token_has_line(pv, 1)) {
+			/*
+			 * Probably a cast followed by braces initializers, no
+			 * hard line wanted.
+			 */
 		} else {
 			doc_alloc(DOC_HARDLINE, indent);
 		}
