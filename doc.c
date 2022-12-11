@@ -67,8 +67,8 @@ struct doc {
 };
 
 struct doc_state_indent {
-	int	i_cur;	/* current indent */
-	int	i_pre;	/* last emitted indent */
+	int	cur;	/* current indent */
+	int	pre;	/* last emitted indent */
 };
 
 struct doc_state {
@@ -522,11 +522,11 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		int oldindent;
 
 		doc_trim_spaces(dc, st);
-		oldindent = st->st_indent.i_cur;
-		st->st_indent.i_cur = 0;
-		st->st_indent.i_pre = 0;
+		oldindent = st->st_indent.cur;
+		st->st_indent.cur = 0;
+		st->st_indent.pre = 0;
 		doc_exec1(dc->dc_doc, st);
-		st->st_indent.i_cur = oldindent;
+		st->st_indent.cur = oldindent;
 		break;
 	}
 
@@ -596,14 +596,14 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 				 * this a continuation in which the current
 				 * indentation level must be used.
 				 */
-				indent = it->i_cur;
+				indent = it->cur;
 			} else {
 				/*
 				 * The line is empty after trimming. Assume this
 				 * is not a continuation in which the previously
 				 * emitted indentation must be used.
 				 */
-				indent = it->i_pre;
+				indent = it->pre;
 			}
 			doc_indent(dc, st, indent);
 		}
@@ -707,15 +707,15 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 		if (doc_parens_align(st))
 			st->st_parens++;
 	} else if (IS_DOC_INDENT_FORCE(dc)) {
-		doc_indent(dc, st, st->st_indent.i_cur);
+		doc_indent(dc, st, st->st_indent.cur);
 	} else if (IS_DOC_INDENT_NEWLINE(dc)) {
 		if (st->st_stats.nlines > 0) {
 			indent = dc->dc_int & ~DOC_INDENT_NEWLINE;
-			st->st_indent.i_cur += indent;
+			st->st_indent.cur += indent;
 		}
 	} else {
 		indent = dc->dc_int;
-		st->st_indent.i_cur += indent;
+		st->st_indent.cur += indent;
 	}
 	doc_exec1(dc->dc_doc, st);
 	if (IS_DOC_INDENT_PARENS(dc)) {
@@ -723,7 +723,7 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 	} else if (IS_DOC_INDENT_FORCE(dc)) {
 		/* nothing */
 	} else {
-		st->st_indent.i_cur -= indent;
+		st->st_indent.cur -= indent;
 	}
 }
 
@@ -964,9 +964,9 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 {
 	if (st->st_parens > 0) {
 		/* Align with the left parenthesis on the previous line. */
-		indent = st->st_indent.i_pre + st->st_parens;
+		indent = st->st_indent.pre + st->st_parens;
 	} else {
-		st->st_indent.i_pre = indent;
+		st->st_indent.pre = indent;
 	}
 
 	doc_indent1(dc, st, indent);
@@ -1032,7 +1032,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	doc_column(st, str, len);
 
 	if (isnewline && (flags & DOC_PRINT_INDENT))
-		doc_indent(dc, st, st->st_indent.i_cur);
+		doc_indent(dc, st, st->st_indent.cur);
 }
 
 static void
@@ -1327,7 +1327,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 	st->st_muteline = 0;
 	doc_trim_spaces(dc, st);
 	doc_print(dc, st, str, len, DOC_PRINT_FORCE);
-	doc_indent(dc, st, st->st_indent.i_cur);
+	doc_indent(dc, st, st->st_indent.cur);
 }
 
 /*
