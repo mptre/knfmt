@@ -14,4 +14,4 @@ cd src
 printf 'int x;\n' >test.c.orig
 printf 'int x;\nint y;\n' >test.c
 diff -u -L a/src/test.c -L b/src/test.c test.c.orig test.c |
-"$KNFMT" -D >/dev/null
+${EXEC:-} "$KNFMT" -D >/dev/null
