@@ -1,4 +1,4 @@
-/*	$OpenBSD: init_main.c,v 1.317 2022/08/14 01:58:27 jsg Exp $	*/
+/*	$OpenBSD: init_main.c,v 1.319 2022/11/10 07:05:41 jmatthew Exp $	*/
 /*	$NetBSD: init_main.c,v 1.84.4.1 1996/06/02 09:08:06 mrg Exp $	*/
 
 /*
@@ -71,6 +71,7 @@
 #include <sys/pipe.h>
 #include <sys/witness.h>
 #include <sys/smr.h>
+#include <sys/evcount.h>
 
 #include <sys/syscallargs.h>
 
@@ -102,29 +103,29 @@ extern void stoeplitz_init(void);
 #include "softraid.h"
 
 const char	copyright[] =
-    "Copyright (c) 1982, 1986, 1989, 1991, 1993\n"
-    "\tThe Regents of the University of California.  All rights reserved.\n"
-    "Copyright (c) 1995-2022 OpenBSD. All rights reserved.  https://www.OpenBSD.org\n";
+"Copyright (c) 1982, 1986, 1989, 1991, 1993\n"
+"\tThe Regents of the University of California.  All rights reserved.\n"
+"Copyright (c) 1995-2022 OpenBSD. All rights reserved.  https://www.OpenBSD.org\n";
 
 /* Components of the first process -- never freed. */
-struct session session0;
-struct pgrp pgrp0;
-struct proc proc0;
-struct process process0;
-struct plimit limit0;
-struct vmspace vmspace0;
-struct sigacts sigacts0;
-struct process *initprocess;
-struct proc *reaperproc;
+struct	session session0;
+struct	pgrp pgrp0;
+struct	proc proc0;
+struct	process process0;
+struct	plimit limit0;
+struct	vmspace vmspace0;
+struct	sigacts sigacts0;
+struct	process *initprocess;
+struct	proc *reaperproc;
 
-extern struct user *proc0paddr;
+extern	struct user *proc0paddr;
 
-struct vnode	*rootvp, *swapdev_vp;
-int		 boothowto;
-int		 db_active = 0;
-int		 ncpus = 1;
-int		 ncpusfound = 1;		/* number of cpus we find */
-volatile int	 start_init_exec;		/* semaphore for start_init() */
+struct	vnode *rootvp, *swapdev_vp;
+int	boothowto;
+int	db_active = 0;
+int	ncpus =  1;
+int	ncpusfound = 1;			/* number of cpus we find */
+volatile int start_init_exec;		/* semaphore for start_init() */
 
 #if !defined(NO_PROPOLICE)
 long	__guard_local __attribute__((section(".openbsd.randomdata")));
@@ -397,6 +398,7 @@ main(void *framep)
 	mbcpuinit();
 	kqueue_init_percpu();
 	uvm_init_percpu();
+	evcount_init_percpu();
 
 	/* init exec */
 	init_exec();
@@ -506,7 +508,7 @@ main(void *framep)
 	if (kthread_create(syncer_thread, NULL, &syncerproc, "update"))
 		panic("fork update");
 
-	/* Create the aiodone daemon kernel thread. */
+	/* Create the aiodone daemon kernel thread. */ 
 	if (kthread_create(uvm_aiodone_daemon, NULL, NULL, "aiodoned"))
 		panic("fork aiodoned");
 
@@ -541,11 +543,11 @@ main(void *framep)
 
 	start_periodic_resettodr();
 
-	/*
-	 * proc0: nothing to do, back to sleep
-	 */
-	while (1)
-		tsleep_nsec(&proc0, PVM, "scheduler", INFSLP);
+        /*
+         * proc0: nothing to do, back to sleep
+         */
+        while (1)
+                tsleep_nsec(&proc0, PVM, "scheduler", INFSLP);
 	/* NOTREACHED */
 }
 
@@ -621,7 +623,7 @@ start_init(void *arg)
 #endif
 	p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
 	p->p_vmspace->vm_minsaddr = (caddr_t)(addr + PAGE_SIZE);
-	if (uvm_map(&p->p_vmspace->vm_map, &addr, PAGE_SIZE,
+	if (uvm_map(&p->p_vmspace->vm_map, &addr, PAGE_SIZE, 
 	    NULL, UVM_UNKNOWN_OFFSET, 0,
 	    UVM_MAPFLAG(PROT_READ | PROT_WRITE, PROT_MASK, MAP_INHERIT_COPY,
 	    MADV_NORMAL,
@@ -710,7 +712,7 @@ start_init(void *arg)
 		 * Now try to exec the program.  If can't for any reason
 		 * other than it doesn't exist, complain.
 		 */
-		if ((error = sys_execve(p, &args, retval)) == 0) {
+		if ((error = sys_execve(p, &args, retval)) == EJUSTRETURN) {
 			KERNEL_UNLOCK();
 			return;
 		}

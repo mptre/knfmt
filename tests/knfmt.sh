@@ -23,7 +23,7 @@ hascomm() {
 	fi
 }
 
-# testcase [-b] [-c] [-e] [-q] file [-- knfmt-options]
+# testcase [-b] [-c] [-e] [-i] [-q] file [-- knfmt-options]
 #
 # Run test case.
 testcase() {
@@ -41,6 +41,7 @@ testcase() {
 		-b)	_bug=1; _quiet=1;;
 		-c)	_clang=1;;
 		-e)	_exp=1; _flags="";;
+		-i)	_flags=""; _quiet=1;;
 		-q)	_quiet=1;;
 		*)	break;;
 		esac
@@ -144,7 +145,7 @@ error-*)
 	;;
 inplace-*)
 	cp "$_abs" "${_wrkdir}/test.c"
-	testcase "${_wrkdir}/test.c" -- -i "$@"
+	testcase -i "${_wrkdir}/test.c" -- -i "$@"
 	;;
 simple-*|../*)
 	testcase "$_abs" -- -s -vl "$@"
