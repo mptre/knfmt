@@ -537,11 +537,6 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		struct doc *indent;
 		struct token *lbrace, *rbrace;
 
-		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-			doc_literal(" ", concat);
-			doc_token(tk, concat);
-		}
-
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
 		    &rbrace))
 			return parser_fail(pr);
@@ -572,11 +567,6 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	} else if (token_is_decl(end, TOKEN_ENUM)) {
 		struct token *lbrace, *rbrace;
 		unsigned int w;
-
-		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-			doc_literal(" ", concat);
-			doc_token(tk, concat);
-		}
 
 		if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
 		    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
