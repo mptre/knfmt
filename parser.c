@@ -784,11 +784,11 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 	concat = doc_alloc(DOC_CONCAT, dc);
 	error = parser_exec_decl_braces1(pr,
 	    &(struct parser_exec_decl_braces_arg){
-	    .dc		= concat,
-	    .rl		= &rl,
-	    .indent	= indent,
-	    .col	= 0,
-	    .flags	= flags,
+		.dc	= concat,
+		.rl	= &rl,
+		.indent	= indent,
+		.col	= 0,
+		.flags	= flags,
 	});
 	ruler_exec(&rl);
 	ruler_free(&rl);
