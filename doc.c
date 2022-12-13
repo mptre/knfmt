@@ -899,13 +899,6 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	unsigned int col = 0;
 	int optline = 0;
 
-	/*
-	 * When calculating the document width using doc_width(), everything is
-	 * expected to fit on a single line.
-	 */
-	if (st->st_flags & DOC_EXEC_WIDTH)
-		return 1;
-
 	if (st->st_flags & DOC_EXEC_TRACE)
 		st->st_stats.nfits++;
 
