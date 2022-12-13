@@ -995,6 +995,8 @@ parser_exec_decl_braces_field(struct parser *pr,
 				doc_token(tk, dc);
 				error = parser_exec_expr(pr, dc, &expr,
 				    NULL, 0, 0);
+				if (error & FAIL)
+					return parser_fail(pr);
 				if (error & HALT)
 					expr = dc;
 				if (lexer_expect(lx, TOKEN_RPAREN, &tk))
