@@ -79,6 +79,9 @@ TESTS+=	error-042.c
 TESTS+=	error-043.c
 TESTS+=	error-044.c
 TESTS+=	error-045.c
+TESTS+=	error-046.c
+TESTS+=	error-047.c
+TESTS+=	error-048.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c
