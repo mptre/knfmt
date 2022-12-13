@@ -408,11 +408,10 @@ parser_exec_extern(struct parser *pr, struct doc *dc)
 		int error;
 
 		error = parser_exec1(pr, dc);
-		if (error & HALT) {
-			if (error & NONE)
-				break;
+		if (error & NONE)
+			break;
+		if (error & HALT)
 			return error;
-		}
 	}
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
