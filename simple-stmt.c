@@ -213,21 +213,7 @@ simple_stmt_alloc(struct simple_stmt *ss, int indent, unsigned int flags)
 static int
 isoneline(const char *str, size_t len)
 {
-	int max = 1;
-	int n = 0;
-
-	while (len > 0) {
-		const char *p;
-
-		p = memchr(str, '\n', len);
-		if (p == NULL)
-			break;
-		if (++n >= max)
-			break;
-		len -= (p - str) + 1;
-		str = &p[1];
-	}
-	return n < max;
+	return memchr(str, '\n', len) == NULL;
 }
 
 static const char *
