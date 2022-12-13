@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "lexer.h"
@@ -114,9 +115,7 @@ simple_decl_enter(struct lexer *lx, const struct options *op)
 {
 	struct simple_decl *sd;
 
-	sd = calloc(1, sizeof(*sd));
-	if (sd == NULL)
-		err(1, NULL);
+	sd = ecalloc(1, sizeof(*sd));
 	if (VECTOR_INIT(sd->sd_empty_decls) == NULL)
 		err(1, NULL);
 	sd->sd_lx = lx;
@@ -396,10 +395,7 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 	if (dt != NULL)
 		return dt;
 
-	dt = calloc(1, sizeof(*dt));
-	if (dt == NULL)
-		err(1, NULL);
-
+	dt = ecalloc(1, sizeof(*dt));
 	dt->dt_tr = *tr;
 	/* Pointer(s) are not part of the type. */
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
@@ -411,9 +407,7 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 
 	if (VECTOR_INIT(dt->dt_slots) == NULL)
 		err(1, NULL);
-	dt->dt_str = strdup(type);
-	if (dt->dt_str == NULL)
-		err(1, NULL);
+	dt->dt_str = estrdup(type);
 	HASH_ADD_STR(sd->sd_types, dt_str, dt);
 	simple_trace(sd, "new type \"%s\"", dt->dt_str);
 	return dt;

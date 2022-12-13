@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "comment.h"
@@ -372,9 +373,7 @@ doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
 {
 	struct doc *dc;
 
-	dc = calloc(1, sizeof(*dc));
-	if (dc == NULL)
-		err(1, NULL);
+	dc = ecalloc(1, sizeof(*dc));
 	dc->dc_type = type;
 	dc->dc_fun = fun;
 	dc->dc_lno = lno;
@@ -1523,9 +1522,7 @@ doc_state_snapshot(struct doc_state_snapshot *sn, const struct doc_state *st)
 	struct buffer *bf = st->st_bf;
 
 	sn->sn_st = *st;
-	sn->sn_bf.ptr = strndup(bf->bf_ptr, bf->bf_len);
-	if (sn->sn_bf.ptr == NULL)
-		err(1, NULL);
+	sn->sn_bf.ptr = estrndup(bf->bf_ptr, bf->bf_len);
 	sn->sn_bf.len = st->st_bf->bf_len;
 }
 

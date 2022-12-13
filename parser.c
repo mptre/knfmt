@@ -3,10 +3,10 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "doc.h"
 #include "error.h"
@@ -220,9 +220,7 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 {
 	struct parser *pr;
 
-	pr = calloc(1, sizeof(*pr));
-	if (pr == NULL)
-		err(1, NULL);
+	pr = ecalloc(1, sizeof(*pr));
 	pr->pr_path = path;
 	pr->pr_er = er;
 	pr->pr_st = st;

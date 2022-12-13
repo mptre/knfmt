@@ -4,12 +4,12 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <err.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "error.h"
@@ -219,9 +219,7 @@ style_parse(const char *path, const struct options *op)
 	struct style *st;
 	int error = 0;
 
-	st = calloc(1, sizeof(*st));
-	if (st == NULL)
-		err(1, NULL);
+	st = ecalloc(1, sizeof(*st));
 	st->st_op = op;
 	style_defaults(st);
 

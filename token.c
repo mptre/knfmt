@@ -1,12 +1,12 @@
 #include "token.h"
 
 #include <assert.h>
-#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "lexer.h"
 #include "util.h"
@@ -27,9 +27,7 @@ token_alloc(const struct token *def)
 {
 	struct token *tk;
 
-	tk = calloc(1, sizeof(*tk));
-	if (tk == NULL)
-		err(1, NULL);
+	tk = ecalloc(1, sizeof(*tk));
 	if (def != NULL)
 		*tk = *def;
 	tk->tk_refs = 1;

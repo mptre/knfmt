@@ -473,6 +473,8 @@ TESTS+=	style-error-004.c
 TESTS+=	style-error-005.c
 TESTS+=	style-simple-AlignOperands-001.c
 
+TESTS+=	../alloc.c
+TESTS+=	../alloc.h
 TESTS+=	../buffer.c
 TESTS+=	../buffer.h
 TESTS+=	../cdefs.h

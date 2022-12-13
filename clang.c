@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "alloc.h"
 #include "cdefs.h"
 #include "lexer.h"
 #include "options.h"
@@ -46,9 +47,7 @@ clang_alloc(const struct options *op)
 {
 	struct clang *cl;
 
-	cl = calloc(1, sizeof(*cl));
-	if (cl == NULL)
-		err(1, NULL);
+	cl = ecalloc(1, sizeof(*cl));
 	cl->cl_op = op;
 	if (VECTOR_INIT(cl->cl_branches) == NULL)
 		err(1, NULL);

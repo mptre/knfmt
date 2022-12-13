@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "doc.h"
@@ -46,9 +47,7 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 {
 	struct simple_stmt *ss;
 
-	ss = calloc(1, sizeof(*ss));
-	if (ss == NULL)
-		err(1, NULL);
+	ss = ecalloc(1, sizeof(*ss));
 	if (VECTOR_INIT(ss->ss_stmts) == NULL)
 		err(1, NULL);
 	ss->ss_lx = lx;

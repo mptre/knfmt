@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "clang.h"
 #include "doc.h"
@@ -416,10 +417,7 @@ context_alloc(void)
 {
 	struct context *cx;
 
-	cx = calloc(1, sizeof(*cx));
-	if (cx == NULL)
-		err(1, NULL);
-
+	cx = ecalloc(1, sizeof(*cx));
 	options_init(&cx->cx_op);
 	cx->cx_op.op_flags |= OPTIONS_TEST;
 	cx->cx_bf = buffer_alloc(128);

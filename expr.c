@@ -3,10 +3,10 @@
 #include "config.h"
 
 #include <assert.h>
-#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "doc.h"
@@ -577,9 +577,7 @@ expr_alloc(enum expr_type type, const struct expr_state *es)
 {
 	struct expr *ex;
 
-	ex = calloc(1, sizeof(*ex));
-	if (ex == NULL)
-		err(1, NULL);
+	ex = ecalloc(1, sizeof(*ex));
 	ex->ex_type = type;
 	ex->ex_tk = es->es_tk;
 	return ex;

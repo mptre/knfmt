@@ -2,6 +2,7 @@ include ${.CURDIR}/config.mk
 
 VERSION=	3.0.1
 
+SRCS+=	alloc.c
 SRCS+=	buffer.c
 SRCS+=	clang.c
 SRCS+=	comment.c
@@ -37,6 +38,8 @@ OBJS_test=	${SRCS_test:.c=.o}
 DEPS_test=	${SRCS_test:.c=.d}
 PROG_test=	t
 
+KNFMT+=	alloc.c
+KNFMT+=	alloc.h
 KNFMT+=	buffer.c
 KNFMT+=	buffer.h
 KNFMT+=	cdefs.h
@@ -82,6 +85,8 @@ KNFMT+=	util.h
 KNFMT+=	vector.c
 KNFMT+=	vector.h
 
+CLANGTIDY+=	alloc.c
+CLANGTIDY+=	alloc.h
 CLANGTIDY+=	buffer.c
 CLANGTIDY+=	buffer.h
 CLANGTIDY+=	cdefs.h
@@ -123,6 +128,7 @@ CLANGTIDY+=	token.h
 CLANGTIDY+=	util.c
 CLANGTIDY+=	util.h
 
+CPPCHECK+=	alloc.c
 CPPCHECK+=	buffer.c
 CPPCHECK+=	clang.c
 CPPCHECK+=	comment.c
@@ -149,6 +155,8 @@ DISTFILES+=	GNUmakefile
 DISTFILES+=	LICENSE
 DISTFILES+=	Makefile
 DISTFILES+=	README.md
+DISTFILES+=	alloc.c
+DISTFILES+=	alloc.h
 DISTFILES+=	buffer.c
 DISTFILES+=	buffer.h
 DISTFILES+=	cdefs.h

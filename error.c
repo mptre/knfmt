@@ -2,10 +2,10 @@
 
 #include "config.h"
 
-#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "alloc.h"
 #include "buffer.h"
 
 struct error {
@@ -18,9 +18,7 @@ error_alloc(int flush)
 {
 	struct error *er;
 
-	er = malloc(sizeof(*er));
-	if (er == NULL)
-		err(1, NULL);
+	er = ecalloc(1, sizeof(*er));
 	er->er_bf = NULL;
 	er->er_flush = flush;
 	return er;

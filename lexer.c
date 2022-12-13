@@ -7,6 +7,7 @@
 #include <err.h>
 #include <stdio.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "diff.h"
@@ -175,9 +176,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	struct lexer *lx;
 	int error = 0;
 
-	lx = calloc(1, sizeof(*lx));
-	if (lx == NULL)
-		err(1, NULL);
+	lx = ecalloc(1, sizeof(*lx));
 	lx->lx_er = arg->er;
 	lx->lx_op = arg->op;
 	lx->lx_bf = arg->bf;

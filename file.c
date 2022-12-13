@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "diff.h"
 #include "error.h"
 #include "options.h"
@@ -19,9 +20,7 @@ files_alloc(struct files *files, const char *path, const struct options *op)
 	fe = VECTOR_CALLOC(files->fs_vc);
 	if (fe == NULL)
 		err(1, NULL);
-	fe->fe_path = strdup(path);
-	if (fe->fe_path == NULL)
-		err(1, NULL);
+	fe->fe_path = estrdup(path);
 	if (VECTOR_INIT(fe->fe_diff) == NULL)
 		err(1, NULL);
 	fe->fe_error = error_alloc(trace(op, 'l') >= 2);
