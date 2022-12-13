@@ -26,7 +26,6 @@ struct ruler_indent {
 
 struct ruler_datum {
 	struct doc	*rd_dc;
-	unsigned int	 rd_indent;
 	unsigned int	 rd_len;
 	unsigned int	 rd_nspaces;
 };
@@ -86,8 +85,7 @@ ruler_insert0(struct ruler *rl, const struct token *tk, struct doc *dc,
 	rd = VECTOR_CALLOC(rc->rc_datums);
 	if (rd == NULL)
 		err(1, NULL);
-	rd->rd_indent = 1;
-	rd->rd_dc = doc_alloc0(DOC_ALIGN, dc, rd->rd_indent, fun, lno);
+	rd->rd_dc = doc_alloc0(DOC_ALIGN, dc, 1, fun, lno);
 	rd->rd_len = len;
 	rd->rd_nspaces = nspaces;
 
@@ -220,14 +218,13 @@ ruler_exec_indent(struct ruler *rl)
 		const struct ruler_datum *rd = &rc->rc_datums[ri->ri_rd];
 		unsigned int indent;
 
-		if (rc->rc_ntabs == 0) {
-			indent = rd->rd_len + rd->rd_indent;
-			indent += rd->rd_nspaces;
-		} else {
+		if (rc->rc_ntabs > 0) {
 			indent = rc->rc_len;
 			if (!minimize(rc))
 				indent = tabalign(indent);
 			indent += rc->rc_nspaces;
+		} else {
+			indent = rd->rd_len + rd->rd_nspaces + 1;
 		}
 		doc_set_indent(ri->ri_dc,
 		    ri->ri_indent * indent + ri->ri_extra);
