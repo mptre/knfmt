@@ -117,9 +117,6 @@ ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	struct ruler_column *rc;
 	struct ruler_indent *ri;
 
-	if (rl == NULL)
-		goto err;
-
 	if (VECTOR_LENGTH(rl->rl_columns) == 0)
 		goto err;
 	rc = &rl->rl_columns[0];
