@@ -350,6 +350,7 @@ DISTFILES+=	tests/error-041.c
 DISTFILES+=	tests/error-042.c
 DISTFILES+=	tests/error-043.c
 DISTFILES+=	tests/error-044.c
+DISTFILES+=	tests/error-045.c
 DISTFILES+=	tests/git.sh
 DISTFILES+=	tests/inplace-001.c
 DISTFILES+=	tests/knfmt.sh
