@@ -93,16 +93,6 @@ check_queue() {
 	EOF
 }
 
-check_reallocarray() {
-	compile <<-EOF
-	#include <stdlib.h>
-
-	int main(void) {
-		return !(reallocarray(NULL, 1, 1) != NULL);
-	}
-	EOF
-}
-
 check_uthash() {
 	compile <<-EOF
 	#include <uthash.h>
@@ -140,7 +130,6 @@ HAVE_DEAD=0
 HAVE_ERRC=0
 HAVE_PLEDGE=0
 HAVE_QUEUE=0
-HAVE_REALLOCARRAY=0
 HAVE_UTHASH=0
 HAVE_WARNC=0
 
@@ -163,7 +152,6 @@ check_dead && HAVE_DEAD=1
 check_errc && HAVE_ERRC=1
 check_pledge && HAVE_PLEDGE=1
 check_queue && HAVE_QUEUE=1
-check_reallocarray && HAVE_REALLOCARRAY=1
 check_uthash && HAVE_UTHASH=1
 check_warnc && HAVE_WARNC=1
 
@@ -173,13 +161,11 @@ exec 1>config.h
 # Headers needed for function prototypes.
 {
 [ $HAVE_PLEDGE -eq 0 ] && echo stdlib.h
-[ $HAVE_REALLOCARRAY -eq 0 ] && echo stdlib.h
 } | sort | uniq | headers
 
 [ $HAVE_ERRC -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
 [ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
-[ $HAVE_REALLOCARRAY -eq 1 ] && printf '#define HAVE_REALLOCARRAY\t1\n'
 [ $HAVE_UTHASH -eq 1 ] && printf '#define HAVE_UTHASH\t1\n'
 
 [ $HAVE_DEAD -eq 0 ] &&
@@ -189,8 +175,6 @@ exec 1>config.h
 	printf '\t__attribute__((__noreturn__, __format__ (printf, 3, 4)));\n'; }
 [ $HAVE_PLEDGE -eq 0 ] &&
 	printf 'int pledge(const char *, const char *);\n'
-[ $HAVE_REALLOCARRAY -eq 0 ] &&
-	printf 'void *reallocarray(void *, size_t, size_t);\n'
 [ $HAVE_WARNC -eq 0 ] &&
 	printf 'void warnc(int, const char *, ...);\n';
 
