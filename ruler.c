@@ -175,15 +175,12 @@ ruler_exec(struct ruler *rl)
 			maxlen = rl->rl_align;
 		} else if (rl->rl_flags & RULER_ALIGN_TABS) {
 			maxlen = rc->rc_len;
-			if (!minimize(rc)) {
-				/* Ceil the longest datum to multiple of 8. */
-				maxlen = tabalign(maxlen);
-			}
+			if (!minimize(rc))
+				maxlen++;
 		}
 
 		for (j = 0; j < VECTOR_LENGTH(rc->rc_datums); j++) {
 			struct ruler_datum *rd = &rc->rc_datums[j];
-			unsigned int indent;
 
 			if (rl->rl_flags & RULER_ALIGN_FIXED) {
 				doc_set_indent(rd->rd_dc, maxlen);
@@ -195,12 +192,11 @@ ruler_exec(struct ruler *rl)
 				continue;
 			}
 
-			indent = maxlen - rd->rd_len;
-			if ((rl->rl_flags & RULER_ALIGN_TABS) && indent % 8 > 0)
-				indent = tabalign(indent);
-			indent += rc->rc_nspaces - rd->rd_nspaces;
-			rd->rd_indent = indent;
-			doc_set_indent(rd->rd_dc, indent);
+			doc_set_align(rd->rd_dc, &(struct doc_align){
+			    .indent	= maxlen - rd->rd_len,
+			    .spaces	= rc->rc_nspaces - rd->rd_nspaces,
+			    .tabalign	= rl->rl_flags & RULER_ALIGN_TABS,
+			});
 		}
 	}
 

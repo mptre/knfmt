@@ -60,6 +60,7 @@ struct doc {
 			const char	*dc_str;
 			size_t		 dc_len;
 		};
+		struct doc_align		dc_align;
 		int				dc_int;
 	};
 
@@ -145,6 +146,7 @@ struct doc_diff {
 
 static void	doc_exec1(const struct doc *, struct doc_state *);
 static void	doc_exec_indent(const struct doc *, struct doc_state *);
+static void	doc_exec_align(const struct doc *, struct doc_state *);
 static void	doc_exec_minimize(const struct doc *, struct doc_state *);
 static void	doc_exec_minimize1(struct doc *, struct doc_state *, int);
 static void	doc_exec_scope(const struct doc *, struct doc_state *);
@@ -152,8 +154,8 @@ static void	doc_walk(const struct doc *, struct doc_state *,
     int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int	doc_fits(const struct doc *, struct doc_state *);
 static int	doc_fits1(const struct doc *, struct doc_state *, void *);
-static void	doc_indent(const struct doc *, struct doc_state *, int);
-static void	doc_indent1(const struct doc *, struct doc_state *, int);
+static int	doc_indent(const struct doc *, struct doc_state *, int);
+static int	doc_indent1(const struct doc *, struct doc_state *, int);
 static void	doc_trim_spaces(const struct doc *, struct doc_state *);
 static void	doc_trim_lines(const struct doc *, struct doc_state *);
 static int	doc_is_mute(const struct doc_state *);
@@ -339,6 +341,12 @@ void
 doc_set_indent(struct doc *dc, int indent)
 {
 	dc->dc_int = indent;
+}
+
+void
+doc_set_align(struct doc *dc, const struct doc_align *align)
+{
+	dc->dc_align = *align;
 }
 
 void
@@ -531,7 +539,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_ALIGN:
-		doc_indent1(dc, st, dc->dc_int);
+		doc_exec_align(dc, st);
 		break;
 
 	case DOC_LITERAL:
@@ -724,6 +732,20 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 		/* nothing */
 	} else {
 		st->st_indent.cur -= indent;
+	}
+}
+
+static void
+doc_exec_align(const struct doc *dc, struct doc_state *st)
+{
+	if (dc->dc_align.tabalign) {
+		int indent = dc->dc_align.indent;
+
+		while (indent > 0)
+			indent -= doc_indent1(dc, st, 8);
+		doc_indent1(dc, st, dc->dc_align.spaces);
+	} else {
+		doc_indent1(dc, st, dc->dc_align.indent + dc->dc_align.spaces);
 	}
 }
 
@@ -959,7 +981,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	return 1;
 }
 
-static void
+static int
 doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 {
 	if (st->st_parens > 0) {
@@ -968,15 +990,17 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 	} else {
 		st->st_indent.pre = indent;
 	}
-
-	doc_indent1(dc, st, indent);
+	return doc_indent1(dc, st, indent);
 }
 
-static void
+static int
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
 {
+	unsigned int oldcol = st->st_col;
+
 	st->st_col = buffer_indent(st->st_bf, indent,
 	    style(st->st_st, UseTab) != Never, st->st_col);
+	return st->st_col - oldcol;
 }
 
 static void

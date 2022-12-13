@@ -44,7 +44,6 @@ struct parser {
 	struct buffer		*pr_bf;		/* scratch buffer */
 	unsigned int		 pr_error;
 	unsigned int		 pr_nblocks;	/* # stmt blocks */
-	unsigned int		 pr_nbraces;	/* # brace initializers */
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
 	struct {
@@ -783,7 +782,6 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 
 	ruler_init(&rl, 0, RULER_ALIGN_TABS | RULER_REQUIRE_TABS);
 	concat = doc_alloc(DOC_CONCAT, dc);
-	pr->pr_nbraces++;
 	error = parser_exec_decl_braces1(pr,
 	    &(struct parser_exec_decl_braces_arg){
 	    .dc		= concat,
@@ -792,7 +790,6 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 	    .col	= 0,
 	    .flags	= flags,
 	});
-	pr->pr_nbraces--;
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
@@ -972,7 +969,6 @@ parser_exec_decl_braces_field(struct parser *pr,
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk = NULL;
 	struct token *stop;
-	unsigned int w;
 	int error;
 
 	lexer_peek_until_comma(lx, rbrace, &stop);
@@ -1032,9 +1028,7 @@ parser_exec_decl_braces_field(struct parser *pr,
 	if (tk == NULL)
 		return parser_fail(pr);
 
-	/* Account for indentation not making use of tabs. */
-	w = (pr->pr_nbraces * arg->indent) % 8;
-	ruler_insert(arg->rl, tk, dc, 1, w + parser_width(pr, dc), 0);
+	ruler_insert(arg->rl, tk, dc, 1, parser_width(pr, dc), 0);
 
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
 	    .dc		= dc,

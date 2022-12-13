@@ -38,6 +38,12 @@ struct doc_minimize {
 	} penality;
 };
 
+struct doc_align {
+	int	indent;
+	int	spaces;
+	int	tabalign;
+};
+
 #define DOC_EXEC_DIFF	    0x00000001u
 #define DOC_EXEC_TRACE	    0x00000002u
 #define DOC_EXEC_WIDTH	    0x00000004u
@@ -53,6 +59,7 @@ void		doc_append_before(struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);
 void		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, int);
+void		doc_set_align(struct doc *, const struct doc_align *);
 
 #define doc_alloc(a, b) \
 	doc_alloc0((a), (b), 0, __func__, __LINE__)
