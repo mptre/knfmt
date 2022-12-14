@@ -15,7 +15,7 @@ struct lexer_arg {
 	struct diffchunk	*diff;
 	const struct options	*op;
 
-	struct {
+	struct lexer_callbacks {
 		/*
 		 * Read callback with the following semantics:
 		 *

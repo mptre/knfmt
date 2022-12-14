@@ -31,14 +31,12 @@
 
 struct lexer {
 	struct lexer_state	 lx_st;
+	struct lexer_callbacks	 lx_callbacks;
 	struct error		*lx_er;
 	const struct options	*lx_op;
 	const struct diffchunk	*lx_diff;
 	const struct buffer	*lx_bf;
 	const char		*lx_path;
-
-	/* Serialize callback passed to lexer_alloc(). */
-	char			*(*lx_serialize)(const struct token *);
 
 	/* Line number to buffer offset mapping. */
 	VECTOR(unsigned int)	 lx_lines;
@@ -177,12 +175,12 @@ lexer_alloc(const struct lexer_arg *arg)
 	int error = 0;
 
 	lx = ecalloc(1, sizeof(*lx));
+	lx->lx_callbacks = arg->callbacks;
 	lx->lx_er = arg->er;
 	lx->lx_op = arg->op;
 	lx->lx_bf = arg->bf;
 	lx->lx_diff = arg->diff;
 	lx->lx_path = arg->path;
-	lx->lx_serialize = arg->callbacks.serialize;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	if (VECTOR_INIT(lx->lx_lines) == NULL)
@@ -197,7 +195,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	for (;;) {
 		struct token *tk;
 
-		tk = arg->callbacks.read(lx, arg->callbacks.arg);
+		tk = lx->lx_callbacks.read(lx, lx->lx_callbacks.arg);
 		if (tk == NULL) {
 			error = 1;
 			break;
@@ -345,14 +343,16 @@ lexer_error(struct lexer *lx, const char *fmt, ...)
 const char *
 lexer_serialize(struct lexer *lx, const struct token *tk)
 {
-	char *str;
+	char **str;
 
 	if (tk == NULL)
 		return "(null)";
 
-	str = lx->lx_serialize(tk);
-	*VECTOR_ALLOC(lx->lx_serialized) = str;
-	return str;
+	str = VECTOR_ALLOC(lx->lx_serialized);
+	if (str == NULL)
+		err(1, NULL);
+	*str = lx->lx_callbacks.serialize(tk);
+	return *str;
 }
 
 int
