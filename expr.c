@@ -133,6 +133,8 @@ static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_parens(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
@@ -656,24 +658,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tk, concat);
 		break;
 
-	case EXPR_PARENS: {
-		int noparens;
-
-		noparens = es->es_depth == 1 &&
-		    (es->es_op->op_flags & OPTIONS_SIMPLE) &&
-		    (es->es_flags & EXPR_EXEC_NOPARENS);
-		if (!noparens && ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], concat);	/* ( */
-		if (style(es->es_st, AlignAfterOpenBracket) == Align)
-			concat = doc_alloc_indent(1, concat);
-		else
-			concat = expr_doc_indent_parens(es, concat);
-		if (ex->ex_lhs != NULL)
-			concat = expr_doc(ex->ex_lhs, es, concat);
-		if (!noparens && ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], concat);	/* ) */
+	case EXPR_PARENS:
+		concat = expr_doc_parens(ex, es, concat);
 		break;
-	}
 
 	case EXPR_SQUARES:
 		if (ex->ex_lhs != NULL)
@@ -858,6 +845,27 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 	}
 
+	return dc;
+}
+
+static struct doc *
+expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	int noparens;
+
+	noparens = es->es_depth == 1 &&
+	    (es->es_op->op_flags & OPTIONS_SIMPLE) &&
+	    (es->es_flags & EXPR_EXEC_NOPARENS);
+	if (!noparens && ex->ex_tokens[0] != NULL)
+		doc_token(ex->ex_tokens[0], dc);	/* ( */
+	if (style(es->es_st, AlignAfterOpenBracket) == Align)
+		dc = doc_alloc_indent(1, dc);
+	else
+		dc = expr_doc_indent_parens(es, dc);
+	if (ex->ex_lhs != NULL)
+		dc = expr_doc(ex->ex_lhs, es, dc);
+	if (!noparens && ex->ex_tokens[1] != NULL)
+		doc_token(ex->ex_tokens[1], dc);	/* ) */
 	return dc;
 }
 
