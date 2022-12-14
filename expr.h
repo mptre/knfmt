@@ -17,10 +17,6 @@ struct expr_exec_arg {
 #define EXPR_EXEC_SOFTLINE		0x00000001u
 /* Emit a hard line before the expression. */
 #define EXPR_EXEC_HARDLINE		0x00000002u
-/*
- * Only account for the indent field once. Necessary when the dc field does not
- * cover the complete line.
- */
 /* was EXPR_EXEC_INDENT_ONCE		0x00000004u */
 /* Trim redundant parenthesis around top level expression. */
 #define EXPR_EXEC_NOPARENS		0x00000008u
