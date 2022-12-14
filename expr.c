@@ -851,12 +851,12 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	int noparens;
+	int doparens;
 
-	noparens = es->es_depth == 1 &&
+	doparens = !(es->es_depth == 1 &&
 	    (es->es_op->op_flags & OPTIONS_SIMPLE) &&
-	    (es->es_flags & EXPR_EXEC_NOPARENS);
-	if (!noparens && ex->ex_tokens[0] != NULL)
+	    (es->es_flags & EXPR_EXEC_NOPARENS));
+	if (doparens && ex->ex_tokens[0] != NULL)
 		doc_token(ex->ex_tokens[0], dc);	/* ( */
 	if (style(es->es_st, AlignAfterOpenBracket) == Align)
 		dc = doc_alloc_indent(1, dc);
@@ -864,7 +864,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dc = expr_doc_indent_parens(es, dc);
 	if (ex->ex_lhs != NULL)
 		dc = expr_doc(ex->ex_lhs, es, dc);
-	if (!noparens && ex->ex_tokens[1] != NULL)
+	if (doparens && ex->ex_tokens[1] != NULL)
 		doc_token(ex->ex_tokens[1], dc);	/* ) */
 	return dc;
 }
