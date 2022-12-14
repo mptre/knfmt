@@ -459,6 +459,7 @@ strflags(struct buffer *bf, unsigned int token_flags)
 #define F(f, s) { (s), sizeof(s) - 1, (f) }
 		F(TOKEN_FLAG_OPTLINE,	"OPTLINE"),
 		F(TOKEN_FLAG_OPTSPACE,	"OPTSPACE"),
+		F(TOKEN_FLAG_DIFF,	"DIFF"),
 #undef F
 	};
 	size_t nflags = sizeof(flags) / sizeof(flags[0]);
