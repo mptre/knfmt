@@ -1974,8 +1974,6 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 			tk = token_next(tk);
 		else if (flags & LEXER_BRANCH_BACKWARD)
 			tk = token_prev(tk);
-		else
-			tk = NULL;
 		if (tk == NULL)
 			break;
 	}
