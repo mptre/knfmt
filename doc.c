@@ -1594,7 +1594,7 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 
 		fprintf(stderr, "(");
 		if (IS_DOC_INDENT_NEWLINE(dc)) {
-			fprintf(stderr, "FORCE, %d, %u",
+			fprintf(stderr, "NEWLINE, %d, %u",
 			    dc->dc_int & ~DOC_INDENT_NEWLINE,
 			    st->st_stats.nlines);
 		} else if ((str = indentstr(dc)) != NULL) {
