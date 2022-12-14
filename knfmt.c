@@ -69,7 +69,7 @@ main(int argc, char *argv[])
 			break;
 		case 'v':
 			if (options_trace_parse(&op, optarg))
-				exit(1);
+				return 1;
 			break;
 		default:
 			usage();

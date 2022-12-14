@@ -23,7 +23,7 @@ options_trace_parse(struct options *op, const char *flags)
 
 		idx = ctotrace(*flags);
 		if (idx == -1) {
-			errx(1, "%c: unknown trace flag", *flags);
+			warnx("%c: unknown trace flag", *flags);
 			return 1;
 		} else if (idx == 0) {
 			size_t i;
