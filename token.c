@@ -469,7 +469,9 @@ strflags(struct buffer *bf, unsigned int token_flags)
 		if ((token_flags & flags[i].flag) == 0)
 			continue;
 
-		if (npresent++ > 0)
+		if (npresent++ == 0)
+			buffer_putc(bf, ',');
+		else
 			buffer_putc(bf, '|');
 		buffer_puts(bf, flags[i].str, flags[i].len);
 	}
