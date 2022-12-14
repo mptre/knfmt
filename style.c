@@ -439,11 +439,8 @@ again:
 		tk->tk_type = Integer;
 		tk->tk_int = digit;
 		if (overflow) {
-			char *str;
-
-			str = yaml_serialize(tk);
-			lexer_error(lx, "integer %s too large", str);
-			free(str);
+			lexer_error(lx, "integer %s too large",
+			    lexer_serialize(lx, tk));
 		}
 		return tk;
 	}
