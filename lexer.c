@@ -642,7 +642,7 @@ lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
 {
 	TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
 	tk->tk_lno = after->tk_lno;
-	tk->tk_cno = after->tk_cno;
+	tk->tk_cno = after->tk_cno + after->tk_len;
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
 }
