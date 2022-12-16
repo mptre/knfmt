@@ -97,6 +97,8 @@ token_trim(struct token *tk)
 			ntrim++;
 		}
 	}
+	if (ntrim > 0)
+		tk->tk_flags |= TOKEN_FLAG_TRIMMED;
 
 	return ntrim;
 }
@@ -172,6 +174,9 @@ token_has_line(const struct token *tk, int nlines)
 	unsigned int flags = TOKEN_FLAG_OPTSPACE;
 
 	assert(nlines > 0 && nlines <= 2);
+
+	if (nlines == 1 && (tk->tk_flags & TOKEN_FLAG_TRIMMED))
+		return 1;
 
 	if (nlines > 1)
 		flags |= TOKEN_FLAG_OPTLINE;

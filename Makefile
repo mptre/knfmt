@@ -856,6 +856,7 @@ DISTFILES+=	tests/valid-285.c
 DISTFILES+=	tests/valid-286.c
 DISTFILES+=	tests/valid-287.c
 DISTFILES+=	tests/valid-287.ok
+DISTFILES+=	tests/valid-288.c
 DISTFILES+=	token-defs.h
 DISTFILES+=	token.c
 DISTFILES+=	token.h

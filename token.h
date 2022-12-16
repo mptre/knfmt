@@ -24,8 +24,8 @@ struct token {
 /* Token denotes a storage keyword, see token-defs.h. */
 #define TOKEN_FLAG_STORAGE	0x00000004u
 #define TOKEN_FLAG_STAMP	0x00000008u
-/* Token is either a prefix or suffix. */
-/* was TOKEN_FLAG_DANGLING	0x00000010u */
+/* Token modified by token_trim(). */
+#define TOKEN_FLAG_TRIMMED	0x00000010u
 /* Token denotes an assignment operator, see token-defs.h. */
 #define TOKEN_FLAG_ASSIGN	0x00000020u
 #define TOKEN_FLAG_AMBIGUOUS	0x00000040u
