@@ -100,8 +100,8 @@ ruler_insert0(struct ruler *rl, const struct token *tk, struct doc *dc,
 /*
  * Returns an indent document which will cause everything that does not fit on
  * the current line to be aligned with the column on the previous line.
- * Optionally adding an extra amount of indentation. Used to among other things
- * to align long declarations:
+ * Optionally adding an extra amount of indentation. Typically used to align
+ * long declarations:
  *
  * 	int x, y,
  * 	    z;

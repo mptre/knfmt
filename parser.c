@@ -2878,8 +2878,8 @@ out:
 }
 
 /*
- * Ensure the given token is not preceded with any hard line(s), unless the
- * token has prefixes intended to be emitted.
+ * Remove any preceding hard line(s) from the given token, unless the token has
+ * prefixes intended to be emitted.
  */
 static void
 parser_token_trim_before(const struct parser *pr, struct token *tk)
@@ -2897,6 +2897,9 @@ parser_token_trim_before(const struct parser *pr, struct token *tk)
 		token_trim(pv);
 }
 
+/*
+ * Remove any subsequent hard line(s) from the given token.
+ */
 static void
 parser_token_trim_after(const struct parser *pr, struct token *tk)
 {
