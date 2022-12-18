@@ -6,7 +6,7 @@ set -e
 #
 # Removed the leading block comment from file.
 commstrip() {
-	awk '!p && !length($0) {p=1; next} p {print}' "$1"
+	{ while read -r _l; do [ -n "$_l" ] || break; done; cat; } <"$1"
 }
 
 # hascomm file
