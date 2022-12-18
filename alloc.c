@@ -36,14 +36,3 @@ estrdup(const char *str)
 		err(1, NULL);
 	return p;
 }
-
-char *
-estrndup(const char *str, size_t size)
-{
-	void *p;
-
-	p = strndup(str, size);
-	if (p == NULL)
-		err(1, NULL);
-	return p;
-}
