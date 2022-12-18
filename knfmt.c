@@ -30,6 +30,7 @@ static int	filediff(const struct buffer *, const struct buffer *,
     const char *);
 static int	filewrite(const struct buffer *, const struct buffer *,
     const char *);
+static int	fileprint(const struct buffer *);
 static int	fileattr(const char *, const char *);
 
 static int	tmpfd(const char *, size_t, char *, size_t);
@@ -202,7 +203,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 	else if (op->op_flags & OPTIONS_INPLACE)
 		error = filewrite(src, dst, fe->fe_path);
 	else
-		printf("%.*s", (int)dst->bf_len, dst->bf_ptr);
+		error = fileprint(dst);
 
 out:
 	buffer_free(dst);
@@ -322,6 +323,26 @@ err:
 		close(fd);
 	(void)unlink(tmppath);
 	return 1;
+}
+
+static int
+fileprint(const struct buffer *dst)
+{
+	const char *str = dst->bf_ptr;
+	size_t len = dst->bf_len;
+
+	while (len > 0) {
+		ssize_t n;
+
+		n = write(1, str, len);
+		if (n == -1) {
+			warn("write: /dev/stdout");
+			return 1;
+		}
+		len -= n;
+		str += n;
+	}
+	return 0;
 }
 
 static int
