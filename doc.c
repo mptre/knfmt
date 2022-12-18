@@ -1524,8 +1524,9 @@ doc_state_snapshot(struct doc_state_snapshot *sn, const struct doc_state *st)
 	struct buffer *bf = st->st_bf;
 
 	sn->sn_st = *st;
-	sn->sn_bf.ptr = estrndup(bf->bf_ptr, bf->bf_len);
-	sn->sn_bf.len = st->st_bf->bf_len;
+	sn->sn_bf.ptr = emalloc(bf->bf_len);
+	sn->sn_bf.len = bf->bf_len;
+	memcpy(sn->sn_bf.ptr, bf->bf_ptr, bf->bf_len);
 }
 
 static void

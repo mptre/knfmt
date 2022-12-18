@@ -5,6 +5,17 @@
 #include <string.h>
 
 void *
+emalloc(size_t size)
+{
+	void *p;
+
+	p = malloc(size);
+	if (p == NULL)
+		err(1, NULL);
+	return p;
+}
+
+void *
 ecalloc(size_t nmemb, size_t size)
 {
 	void *p;
