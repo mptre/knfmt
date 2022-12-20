@@ -774,9 +774,8 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		st->st_flags &= ~DOC_EXEC_TRACE;
 		st->st_minimize.force = -1;
 
-		dc->dc_int = minimizers[i].indent;
 		st->st_minimize.idx = i;
-		doc_exec_indent(dc, st);
+		doc_exec_minimize1(dc, st, i);
 		st->st_minimize.idx = -1;
 		if (st->st_minimize.force != -1)
 			minimizers[i].flags |= DOC_MINIMIZE_FORCE;
