@@ -814,14 +814,11 @@ doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
 		}
 	}
 
-	if (best == -1) {
-		doc_exec1(dc->dc_doc, st);
-	} else {
-		assert(st->st_minimize.idx == -1);
-		st->st_minimize.idx = best;
-		doc_exec_minimize1(dc, st, best);
-		st->st_minimize.idx = -1;
-	}
+	assert(best != -1);
+	assert(st->st_minimize.idx == -1);
+	st->st_minimize.idx = best;
+	doc_exec_minimize1(dc, st, best);
+	st->st_minimize.idx = -1;
 }
 
 static void
