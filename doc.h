@@ -27,15 +27,23 @@ enum doc_type {
 };
 
 struct doc_minimize {
-	int indent;
+	enum {
+		DOC_MINIMIZE_INDENT,
+	} type;
+
+	union {
+		int indent;
+	};
+
+	struct {
+		unsigned int	nlines;
+		unsigned int	nexceeds;
+		double		sum;
+	} penality;
+
 	unsigned int flags;
 /* Unconditionally favor this entry. */
 #define DOC_MINIMIZE_FORCE	0x00000001u
-
-	struct {
-		unsigned int nlines;
-		unsigned int nexceeds;
-	} penality;
 };
 
 struct doc_align {

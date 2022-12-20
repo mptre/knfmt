@@ -148,7 +148,7 @@ static void		 expr_doc_align_leave(struct expr_state *,
 static struct doc	*expr_doc_align_disable(struct expr *,
     struct expr_state *, struct doc *);
 static void		 expr_doc_align_init(struct expr_state *,
-    struct doc_minimize *, unsigned int);
+    struct doc_minimize *, size_t);
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
@@ -1009,18 +1009,22 @@ expr_doc_align_disable(struct expr *UNUSED(ex), struct expr_state *es,
 	struct doc_minimize minimizers[2];
 
 	expr_doc_align_init(es, minimizers, 2);
-	minimizers[1].flags = DOC_MINIMIZE_FORCE;
+	minimizers[1].flags |= DOC_MINIMIZE_FORCE;
 	return doc_minimize(dc, minimizers);
 }
 
 static void
 expr_doc_align_init(struct expr_state *es, struct doc_minimize *minimizers,
-    unsigned int nminimizers)
+    size_t nminimizers)
 {
+	size_t i;
+
 	memset(minimizers, 0, sizeof(*minimizers) * nminimizers);
+	for (i = 0; i < nminimizers; i++)
+		minimizers[i].type = DOC_MINIMIZE_INDENT;
+
 	if (es->es_nalign > 0)
 		return;
-
 	minimizers[1].indent = style(es->es_st, ContinuationIndentWidth);
 	if ((es->es_flags & EXPR_EXEC_HARDLINE) == 0)
 		minimizers[1].indent -= es->es_ea.indent;
