@@ -1,4 +1,5 @@
 /*
+ * AlignAfterOpenBracket: Align
  * BreakBeforeBinaryOperators: NonAssignment
  * ContinuationIndentWidth: 8
  */

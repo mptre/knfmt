@@ -1,5 +1,5 @@
 /*
- * AlignAfterOpenBracket: Align
+ * AlignOperands: Align
  * BreakBeforeBinaryOperators: NonAssignment
  */
 

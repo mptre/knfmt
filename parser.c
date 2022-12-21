@@ -747,7 +747,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 		}
 
 		lexer_peek_until_comma(lx, arg->semi, &stop);
-		if (doalign && style_align(pr->pr_st))
+		if (doalign && style(pr->pr_st, AlignAfterOpenBracket) == Align)
 			w = parser_width(pr, arg->width);
 		else
 			w = style(pr->pr_st, ContinuationIndentWidth);
@@ -1703,7 +1703,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, loop);
 
-	if (style_align(pr->pr_st))
+	if (style(pr->pr_st, AlignOperands) == Align)
 		w = parser_width(pr, dc);
 	else
 		w = style(pr->pr_st, ContinuationIndentWidth);
@@ -1840,7 +1840,7 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 		unsigned int w;
 
 		doc_literal(" ", concat);
-		if (style_align(pr->pr_st))
+		if (style(pr->pr_st, AlignOperands) == Align)
 			w = parser_width(pr, dc);
 		else
 			w = style(pr->pr_st, ContinuationIndentWidth);
@@ -1877,7 +1877,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	struct doc *expr = NULL;
 	struct token *ident, *lparen, *nx, *rparen, *semi;
 	int peek = 0;
-	int error, w;
+	int error;
 
 	if (lexer_peek_if_type(lx, NULL, 0))
 		return parser_none(pr);
@@ -1910,11 +1910,8 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 
-	if (style_align(pr->pr_st))
-		w = 0;
-	else
-		w = style(pr->pr_st, ContinuationIndentWidth);
-	error = parser_exec_expr(pr, dc, &expr, NULL, w, 0);
+	error = parser_exec_expr(pr, dc, &expr, NULL,
+	    style(pr->pr_st, ContinuationIndentWidth), 0);
 	if (error & HALT)
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
@@ -1948,7 +1945,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
 
-	if (style_align(pr->pr_st)) {
+	if (style(pr->pr_st, AlignOperands) == Align) {
 		/*
 		 * Take note of the width before emitting the left parenthesis
 		 * as it could be followed by comments, which must not affect
@@ -2406,7 +2403,7 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 			unsigned int w;
 
 			doc_token(lparen, dc);
-			if (style_align(pr->pr_st))
+			if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
 				w = parser_width(pr, dc);
 			else
 				w = style(pr->pr_st, ContinuationIndentWidth);

@@ -75,8 +75,9 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
     int);
 
 /*
- * Sentinels honored by indent allocation routines. The numbers are something
- * arbitrary large enough to never conflict with any actual indent.
+ * Sentinels honored by indentation allocation routines. The numbers are
+ * something arbitrary large enough to never conflict with any actual
+ * indentation.
  */
 /* Entering parenthesis. */
 #define DOC_INDENT_PARENS	0x40000000
@@ -87,6 +88,10 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
  * current scope.
  */
 #define DOC_INDENT_NEWLINE	0x10000000
+/*
+ * Indent using the width of the current line, used to align subsequent line(s).
+ */
+#define DOC_INDENT_WIDTH	0x08000000
 
 #define doc_alloc_indent(a, b) \
 	doc_alloc_indent0(DOC_INDENT, (a), (b), __func__, __LINE__)

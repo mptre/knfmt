@@ -2,17 +2,17 @@ int
 main(void)
 {
 	return aaaaaaaaaaaaaaaaa(ccc, CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC,
-		rrrrrrrr)
+				 rrrrrrrr)
 		&& aaaaaaaaaaaaaaaaa(ccc, CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC,
-		   rrrrrrrr)
+				     rrrrrrrr)
 		&& aaaaaaaaaaaaaaaaa(ccc, CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC,
-		   rrrrrrrr)
+				     rrrrrrrr)
 		&& aaaaaaaaaaaaaaaaa(ccc, CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC,
-		   rrrrrrrr)
+				     rrrrrrrr)
 		&& aaaaaaaaaaaaaaaaa(ccc, CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC,
-		   rrrrrrrr)
+				     rrrrrrrr)
 		&& aaaaaaaaaaaaaaaaa(ccc, CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC,
-		   rrrrrrrr)
+				     rrrrrrrr)
 		&& aaaaaaaaaaaaaaaaa(ccc, CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC,
-		   rrrrrrrr);
+				     rrrrrrrr);
 }

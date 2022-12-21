@@ -36,6 +36,8 @@
 	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_FORCE))
 #define IS_DOC_INDENT_NEWLINE(dc) \
 	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_NEWLINE))
+#define IS_DOC_INDENT_WIDTH(dc) \
+	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_WIDTH))
 
 TAILQ_HEAD(doc_list, doc);
 
@@ -721,6 +723,9 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 			indent = dc->dc_int & ~DOC_INDENT_NEWLINE;
 			st->st_indent.cur += indent;
 		}
+	} else if (IS_DOC_INDENT_WIDTH(dc)) {
+		indent = st->st_col - st->st_indent.cur;
+		st->st_indent.cur += indent;
 	} else {
 		indent = dc->dc_int;
 		st->st_indent.cur += indent;

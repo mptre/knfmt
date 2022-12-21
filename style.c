@@ -261,13 +261,6 @@ style(const struct style *st, int option)
 }
 
 int
-style_align(const struct style *st)
-{
-	return style(st, AlignAfterOpenBracket) == Align ||
-	    style(st, AlignOperands) == Align;
-}
-
-int
 style_brace_wrapping(const struct style *st, int option)
 {
 	switch (st->st_options[BreakBeforeBraces]) {
