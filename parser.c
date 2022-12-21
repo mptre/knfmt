@@ -1371,13 +1371,7 @@ parser_exec_func_proto(struct parser *pr,
 		doc_token(lparen, concat);
 	}
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
-		if (style(pr->pr_st, AlwaysBreakAfterReturnType) == None) {
-			indent = ruler_indent(arg->rl, concat, NULL,
-			    parser_width(pr, concat));
-			indent = doc_alloc(DOC_CONCAT, indent);
-		} else {
-			indent = doc_alloc_indent(parser_width(pr, dc), concat);
-		}
+		indent = doc_alloc_indent(DOC_INDENT_WIDTH, concat);
 	} else {
 		indent = doc_alloc_indent(
 		    style(pr->pr_st, ContinuationIndentWidth), concat);
