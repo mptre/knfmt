@@ -622,7 +622,7 @@ parser_exec_decl_init(struct parser *pr,
 	int ninit = 0;
 	int error;
 
-	indent = ruler_indent(arg->rl, arg->dc, &cookie, 0);
+	indent = ruler_indent(arg->rl, arg->dc, &cookie);
 	dc = doc_alloc(DOC_CONCAT, indent);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
