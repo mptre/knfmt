@@ -587,12 +587,11 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	struct parser_exec_decl_init_arg arg = {
 		.dc	= concat,
-		.out	= NULL,
 		.width	= dc,
 		.rl	= rl,
 		.semi	= semi,
 		.indent	= style(pr->pr_st, IndentWidth),
-		.flags	= PARSER_EXEC_DECL_INIT_ASSIGN
+		.flags	= PARSER_EXEC_DECL_INIT_ASSIGN,
 	};
 	error = parser_exec_decl_init(pr, &arg);
 	if (error & (FAIL | NONE))
