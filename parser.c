@@ -705,15 +705,15 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 {
 	struct doc *dedent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *assign;
+	struct token *equal;
 	int error;
 
-	if (!lexer_if_flags(lx, TOKEN_FLAG_ASSIGN, &assign))
+	if (!lexer_if(lx, TOKEN_EQUAL, &equal))
 		return parser_none(pr);
 
 	if (arg->flags & PARSER_EXEC_DECL_INIT_ASSIGN)
 		doc_literal(" ", dc);
-	doc_token(assign, dc);
+	doc_token(equal, dc);
 	doc_literal(" ", dc);
 
 	dedent = doc_alloc(DOC_CONCAT, ruler_dedent(arg->rl, dc, NULL));
@@ -729,18 +729,19 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 
 		/* Never break before the assignment operator. */
 		if (!parser_simple_decl_active(pr) &&
-		    (pv = token_prev(assign)) != NULL &&
+		    (pv = token_prev(equal)) != NULL &&
 		    token_has_line(pv, 1)) {
 			parser_token_trim_after(pr, pv);
-			token_add_optline(assign);
+			token_add_optline(equal);
 			doalign = 0;
 		}
 
 		/*
-		 * Honor hard line after assignment which must be emitted inside
-		 * the expression document to get indentation right.
+		 * Honor hard line after assignment operator which must be
+		 * emitted inside the expression document to get indentation
+		 * right.
 		 */
-		if (token_has_line(assign, 1)) {
+		if (token_has_line(equal, 1)) {
 			flags |= EXPR_EXEC_HARDLINE;
 			doalign = 0;
 		}
