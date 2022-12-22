@@ -115,6 +115,8 @@ static int	parser_exec_decl2(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_init(struct parser *,
     struct parser_exec_decl_init_arg *);
+static int	parser_exec_decl_init1(struct parser *, struct doc *,
+    struct parser_exec_decl_init_arg *);
 static int	parser_exec_decl_init_assign(struct parser *,
     struct doc *, struct parser_exec_decl_init_arg *);
 static int	parser_exec_decl_braces(struct parser *, struct doc *,
@@ -626,41 +628,19 @@ parser_exec_decl_init(struct parser *pr,
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
 	for (;;) {
-		struct doc *expr = NULL;
 		struct token *comma, *tk;
 
 		if (lexer_peek(lx, &tk) && tk == arg->semi)
 			break;
 
-		if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-			doc_token(tk, concat);
-			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
-				doc_literal(" ", concat);
-		} else if (((error = parser_exec_decl_init_assign(
-		    pr, concat, arg)) & NONE) == 0) {
-			if (error & HALT)
-				return parser_fail(pr);
-		} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
-		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
-			int rhs = tk->tk_type == TOKEN_LSQUARE ?
-			    TOKEN_RSQUARE : TOKEN_RPAREN;
+		error = parser_exec_decl_init1(pr, concat, arg);
+		if (error & NONE)
+			break;
+		ninit++;
+		if (error & HALT)
+			break;
 
-			doc_token(tk, concat);
-			/* Let the remaning tokens hang of the expression. */
-			error = parser_exec_expr(pr, concat, &expr, NULL,
-			    0, 0);
-			if (error & HALT)
-				expr = concat;
-			if (lexer_expect(lx, rhs, &tk))
-				doc_token(tk, expr);
-			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
-				doc_literal(" ", concat);
-		} else if (lexer_if(lx, TOKEN_COLON, &tk)) {
-			/* Handle bitfields. */
-			doc_token(tk, concat);
-			if (lexer_expect(lx, TOKEN_LITERAL, &tk))
-				doc_token(tk, concat);
-		} else if (lexer_if(lx, TOKEN_COMMA, &comma)) {
+		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
 			doc_token(comma, concat);
 			doc_alloc(DOC_LINE, concat);
 			if (parser_simple_decl_active(pr))
@@ -676,27 +656,65 @@ parser_exec_decl_init(struct parser *pr,
 			 * declaration.
 			 */
 			arg->out = NULL;
-		} else if (lexer_if_flags(lx,
-		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
-			doc_token(tk, concat);
-			doc_literal(" ", concat);
-		} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
-			doc_token(tk, concat);
-		} else if (parser_exec_attributes(pr, concat, NULL,
-		    DOC_LINE) & GOOD) {
-			if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
-				doc_literal(" ", concat);
-		} else {
-			break;
 		}
-		ninit++;
 	}
 	if (ninit == 0) {
 		ruler_remove(arg->rl, cookie);
 		doc_remove(indent, arg->dc);
 	}
-
 	return parser_good(pr);
+}
+
+static int
+parser_exec_decl_init1(struct parser *pr, struct doc *dc,
+    struct parser_exec_decl_init_arg *arg)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+
+	if (lexer_if(lx, TOKEN_IDENT, &tk)) {
+		doc_token(tk, dc);
+		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
+			doc_literal(" ", dc);
+		return parser_good(pr);
+	} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
+	    lexer_if(lx, TOKEN_LPAREN, &tk)) {
+		struct doc *expr = NULL;
+		int rhs = tk->tk_type == TOKEN_LSQUARE ?
+		    TOKEN_RSQUARE : TOKEN_RPAREN;
+		int error;
+
+		doc_token(tk, dc);
+		/* Let the remaning tokens hang of the expression. */
+		error = parser_exec_expr(pr, dc, &expr, NULL, 0, 0);
+		if (error & HALT)
+			expr = dc;
+		if (lexer_expect(lx, rhs, &tk))
+			doc_token(tk, expr);
+		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
+			doc_literal(" ", dc);
+		return parser_good(pr);
+	} else if (lexer_if(lx, TOKEN_COLON, &tk)) {
+		/* Handle bitfields. */
+		doc_token(tk, dc);
+		if (lexer_expect(lx, TOKEN_LITERAL, &tk))
+			doc_token(tk, dc);
+		return parser_good(pr);
+	} else if (lexer_if_flags(lx,
+	    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
+		doc_token(tk, dc);
+		doc_literal(" ", dc);
+		return parser_good(pr);
+	} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
+		doc_token(tk, dc);
+		return parser_good(pr);
+	} else if (parser_exec_attributes(pr, dc, NULL, DOC_LINE) & GOOD) {
+		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
+			doc_literal(" ", dc);
+		return parser_good(pr);
+	}
+
+	return parser_exec_decl_init_assign(pr, dc, arg);
 }
 
 static int
