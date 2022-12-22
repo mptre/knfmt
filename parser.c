@@ -954,7 +954,7 @@ parser_exec_decl_braces_field(struct parser *pr,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk = NULL;
-	struct token *stop;
+	struct token *equal, *stop;
 	int error;
 
 	lexer_peek_until_comma(lx, rbrace, &stop);
@@ -971,8 +971,6 @@ parser_exec_decl_braces_field(struct parser *pr,
 			if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
 				doc_token(tk, expr);
 		} else if (lexer_if(lx, TOKEN_PERIOD, &tk)) {
-			struct token *equal;
-
 			doc_token(tk, dc);
 			if (lexer_expect(lx, TOKEN_IDENT, &tk))
 				doc_token(tk, dc);
@@ -1018,16 +1016,13 @@ parser_exec_decl_braces_field(struct parser *pr,
 
 	ruler_insert(arg->rl, tk, dc, 1, parser_width(pr, dc), 0);
 
-	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
-	    .dc		= dc,
-	    .width	= dc,
-	    .rl		= arg->rl,
-	    .semi	= stop,
-	    .indent	= arg->indent,
-	    .flags	= 0
-	});
-	if (error & (FAIL | NONE))
-		return parser_fail(pr);
+	if (lexer_if(lx, TOKEN_EQUAL, &equal)) {
+		doc_token(equal, dc);
+		doc_literal(" ", dc);
+		error = parser_exec_expr(pr, dc, NULL, stop, arg->indent, 0);
+		if (error & HALT)
+			return parser_fail(pr);
+	}
 
 out:
 	return parser_good(pr);
