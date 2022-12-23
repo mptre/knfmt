@@ -358,6 +358,13 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		    PARSER_EXEC_DECL_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
 			recovered = 1;
+	} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
+		/*
+		 * Some macros allow empty arguments such as the ones provided
+		 * by queue(3).
+		 */
+		doc_token(tk, dc);
+		recovered = 1;
 	}
 
 out:
