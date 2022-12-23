@@ -973,10 +973,8 @@ parser_exec_decl_braces_field(struct parser *pr,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk = NULL;
-	struct token *equal, *stop;
+	struct token *equal;
 	int error;
-
-	lexer_peek_until_comma(lx, rbrace, &stop);
 
 	for (;;) {
 		struct doc *expr = NULL;
@@ -1001,11 +999,9 @@ parser_exec_decl_braces_field(struct parser *pr,
 		} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 			doc_token(tk, dc);
 
-			/*
-			 * Only applicable to enum declarations making use of
-			 * preprocessor directives.
-			 */
-			if (lexer_if(lx, TOKEN_LPAREN, &tk)) {
+			/* Enum making use of preprocessor directives. */
+			if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) &&
+			    lexer_if(lx, TOKEN_LPAREN, &tk)) {
 				doc_token(tk, dc);
 				error = parser_exec_expr(pr, dc, &expr,
 				    NULL, 0, 0);
@@ -1016,16 +1012,6 @@ parser_exec_decl_braces_field(struct parser *pr,
 				if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 					doc_token(tk, expr);
 			}
-
-			/*
-			 * Only applicable to enum declarations which are
-			 * allowed to omit any initialization, alignment is not
-			 * desired in such scenario.
-			 */
-			if (lexer_peek_if(lx, TOKEN_COMMA, NULL) ||
-			    (lexer_peek_if(lx, TOKEN_RBRACE, &tk) &&
-			     tk == rbrace))
-				goto out;
 		} else {
 			break;
 		}
@@ -1033,17 +1019,21 @@ parser_exec_decl_braces_field(struct parser *pr,
 	if (tk == NULL)
 		return parser_fail(pr);
 
-	ruler_insert(arg->rl, tk, dc, 1, parser_width(pr, dc), 0);
-
 	if (lexer_if(lx, TOKEN_EQUAL, &equal)) {
+		struct token *stop;
+
+		ruler_insert(arg->rl, token_prev(equal), dc, 1,
+		    parser_width(pr, dc), 0);
+
 		doc_token(equal, dc);
 		doc_literal(" ", dc);
+
+		lexer_peek_until_comma(lx, rbrace, &stop);
 		error = parser_exec_expr(pr, dc, NULL, stop, arg->indent, 0);
 		if (error & HALT)
 			return parser_fail(pr);
 	}
 
-out:
 	return parser_good(pr);
 }
 
