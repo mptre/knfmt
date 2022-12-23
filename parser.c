@@ -125,6 +125,8 @@ static int	parser_exec_decl_braces1(struct parser *,
     struct parser_exec_decl_braces_arg *);
 static int	parser_exec_decl_braces_field(struct parser *,
     struct parser_exec_decl_braces_arg *, struct doc *, const struct token *);
+static int	parser_exec_decl_braces_field1(struct parser *,
+    struct parser_exec_decl_braces_arg *, struct doc *);
 static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
@@ -972,51 +974,19 @@ parser_exec_decl_braces_field(struct parser *pr,
     const struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk = NULL;
 	struct token *equal;
+	int nfields = 0;
 	int error;
 
 	for (;;) {
-		struct doc *expr = NULL;
-
-		if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
-			doc_token(tk, dc);
-			error = parser_exec_expr(pr, dc, &expr, NULL,
-			    0, 0);
-			if (error & HALT)
-				return parser_fail(pr);
-			if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
-				doc_token(tk, expr);
-		} else if (lexer_if(lx, TOKEN_PERIOD, &tk)) {
-			doc_token(tk, dc);
-			if (lexer_expect(lx, TOKEN_IDENT, &tk))
-				doc_token(tk, dc);
-
-			/* Correct alignment, must occur after the ident. */
-			if (lexer_peek_if(lx, TOKEN_EQUAL, &equal) &&
-			    token_has_tabs(equal))
-				token_move_suffixes_if(equal, tk, TOKEN_SPACE);
-		} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-			doc_token(tk, dc);
-
-			/* Enum making use of preprocessor directives. */
-			if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) &&
-			    lexer_if(lx, TOKEN_LPAREN, &tk)) {
-				doc_token(tk, dc);
-				error = parser_exec_expr(pr, dc, &expr,
-				    NULL, 0, 0);
-				if (error & FAIL)
-					return parser_fail(pr);
-				if (error & HALT)
-					expr = dc;
-				if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-					doc_token(tk, expr);
-			}
-		} else {
+		error = parser_exec_decl_braces_field1(pr, arg, dc);
+		if (error & NONE)
 			break;
-		}
+		if (error & HALT)
+			return parser_fail(pr);
+		nfields++;
 	}
-	if (tk == NULL)
+	if (nfields == 0)
 		return parser_fail(pr);
 
 	if (lexer_if(lx, TOKEN_EQUAL, &equal)) {
@@ -1035,6 +1005,58 @@ parser_exec_decl_braces_field(struct parser *pr,
 	}
 
 	return parser_good(pr);
+}
+
+static int
+parser_exec_decl_braces_field1(struct parser *pr,
+    struct parser_exec_decl_braces_arg *arg, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct doc *expr = NULL;
+	struct token *tk;
+	int error;
+
+	if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
+		doc_token(tk, dc);
+		error = parser_exec_expr(pr, dc, &expr, NULL, 0, 0);
+		if (error & HALT)
+			return parser_fail(pr);
+		if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
+			doc_token(tk, expr);
+		return parser_good(pr);
+	} else if (lexer_if(lx, TOKEN_PERIOD, &tk)) {
+		struct token *equal;
+
+		doc_token(tk, dc);
+		if (lexer_expect(lx, TOKEN_IDENT, &tk))
+			doc_token(tk, dc);
+
+		/* Correct alignment, must occur after the ident. */
+		if (lexer_peek_if(lx, TOKEN_EQUAL, &equal) &&
+		    token_has_tabs(equal))
+			token_move_suffixes_if(equal, tk, TOKEN_SPACE);
+
+		return parser_good(pr);
+	} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
+		doc_token(tk, dc);
+
+		/* Enum making use of preprocessor directives. */
+		if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) &&
+		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
+			doc_token(tk, dc);
+			error = parser_exec_expr(pr, dc, &expr, NULL, 0, 0);
+			if (error & FAIL)
+				return parser_fail(pr);
+			if (error & HALT)
+				expr = dc;
+			if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+				doc_token(tk, expr);
+		}
+
+		return parser_good(pr);
+	}
+
+	return parser_none(pr);
 }
 
 /*
