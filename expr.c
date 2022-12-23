@@ -113,7 +113,7 @@ struct expr_state {
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
-static struct expr	*expr_exec_recover(struct expr_state *, unsigned int);
+static struct expr	*expr_exec_recover(struct expr_state *);
 
 static struct expr	*expr_exec_binary(struct expr_state *, struct expr *);
 static struct expr	*expr_exec_concat(struct expr_state *, struct expr *);
@@ -322,7 +322,7 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 		 * before continuing. Otherwise, pointer types can be
 		 * erroneously treated as a multiplication expression.
 		 */
-		ex = expr_exec_recover(es, 0);
+		ex = expr_exec_recover(es);
 		if (ex == NULL && er == NULL)
 			return NULL;
 	}
@@ -367,17 +367,15 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 }
 
 static struct expr *
-expr_exec_recover(struct expr_state *es, unsigned int flags)
+expr_exec_recover(struct expr_state *es)
 {
-	struct expr_exec_arg *ea = &es->es_ea;
+	const struct expr_exec_arg *ea = &es->es_ea;
 	struct doc *dc;
 	struct expr *ex;
 	int recovered;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	ea->flags |= flags;
 	recovered = ea->callbacks.recover(ea, dc, ea->callbacks.arg);
-	ea->flags &= ~flags;
 	if (!recovered) {
 		doc_free(dc);
 		return NULL;
@@ -457,7 +455,7 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 			if (lexer_back(es->es_lx, &tk))
 				ex->ex_tokens[0] = tk;	/* ( */
 			/* Let the parser emit the type. */
-			ex->ex_lhs = expr_exec_recover(es, EXPR_EXEC_TYPE);
+			ex->ex_lhs = expr_exec_recover(es);
 			if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
 				ex->ex_tokens[1] = tk;	/* ) */
 			ex->ex_rhs = expr_exec1(es, PC(es->es_er->er_pc));

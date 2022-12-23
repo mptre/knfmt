@@ -22,8 +22,7 @@ struct expr_exec_arg {
 #define EXPR_EXEC_NOPARENS		0x00000008u
 /* Detect inline assembly operands. */
 #define EXPR_EXEC_ASM			0x00000010u
-/* During recovery, signal than a type could be present. */
-#define EXPR_EXEC_TYPE			0x00000020u
+/* was EXPR_EXEC_TYPE			0x00000020u */
 
 	struct {
 		/*

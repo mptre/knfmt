@@ -323,8 +323,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	struct token *tk;
 	int recovered = 0;
 
-	if (lexer_peek_if_type(lx, &tk,
-	    (ea->flags & EXPR_EXEC_TYPE) ? LEXER_TYPE_CAST : 0)) {
+	if (lexer_peek_if_type(lx, &tk, LEXER_TYPE_CAST)) {
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))
@@ -1194,7 +1193,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 		lexer_peek_until_comma(lx, rparen, &stop);
 		error = parser_exec_expr(pr, arg, &expr, stop,
-		    indent, EXPR_EXEC_TYPE);
+		    indent, 0);
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
