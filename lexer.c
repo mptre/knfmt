@@ -773,14 +773,16 @@ int
 lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 {
 	struct lexer_state s;
-	struct token *beg, *t;
+	struct token *beg, *pv, *t;
 	int peek = 0;
 	int nkeywords = 0;
 	int ntokens = 0;
 	int unknown = 0;
+	int issizeof;
 
 	if (!lexer_peek(lx, &beg))
 		return 0;
+	issizeof = lexer_back(lx, &pv) && pv->tk_type == TOKEN_SIZEOF;
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
@@ -864,6 +866,8 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 		}
 
 		ntokens++;
+		if (issizeof)
+			break;
 	}
 	lexer_peek_leave(lx, &s);
 
