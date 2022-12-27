@@ -1178,7 +1178,6 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 {
 	struct lexer_state st;
 	struct token_list prefixes;
-	struct buffer *bf;
 	struct token *tk = NULL;
 	struct token *t, *tmp;
 	int ncomments = 0;
@@ -1271,10 +1270,7 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 	    .tk_type	= TOKEN_NONE,
 	});
 	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
-	bf = error_begin(lx->lx_er);
-	buffer_printf(bf, "%s: unknown token %s\n",
-	    lx->lx_path, lexer_serialize(lx, tk));
-	error_end(lx->lx_er);
+	lexer_error(lx, "unknown token %s\n", lexer_serialize(lx, tk));
 	token_rele(tk);
 	return NULL;
 
