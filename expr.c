@@ -910,15 +910,18 @@ static struct doc *
 expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct expr *e;
-	struct doc *tmp = NULL;
+	int i = 0;
 
 	TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {
+		struct doc *tmp;
+
 		tmp = expr_doc(e, es, dc);
 		if (TAILQ_NEXT(e, ex_entry) != NULL)
-			doc_alloc(DOC_LINE, dc);
+			doc_alloc(DOC_LINE, tmp);
+		/* Nest subsequent expressions under the first one. */
+		if (i++ == 0)
+			dc = tmp;
 	}
-	if (tmp != NULL)
-		dc = tmp;
 	return dc;
 }
 

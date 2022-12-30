@@ -456,6 +456,7 @@ TESTS+=	style-AlignOperands-002.c
 TESTS+=	style-AlignOperands-003.c
 TESTS+=	style-AlignOperands-004.c
 TESTS+=	style-AlignOperands-005.c
+TESTS+=	style-AlignOperands-006.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-AlwaysBreakAfterReturnType-002.c
 TESTS+=	style-BraceWrapping-001.c
