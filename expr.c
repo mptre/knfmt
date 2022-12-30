@@ -137,6 +137,8 @@ static struct doc	*expr_doc_parens(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_concat(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
@@ -726,19 +728,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 		break;
 
-	case EXPR_CONCAT: {
-		struct expr *e;
-		struct doc *tmp = NULL;
-
-		TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {
-			tmp = expr_doc(e, es, concat);
-			if (TAILQ_NEXT(e, ex_entry) != NULL)
-				doc_alloc(DOC_LINE, concat);
-		}
-		if (tmp != NULL)
-			concat = tmp;
+	case EXPR_CONCAT:
+		concat = expr_doc_concat(ex, es, concat);
 		break;
-	}
 
 	case EXPR_LITERAL:
 		doc_token(ex->ex_tk, concat);
@@ -911,6 +903,22 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	es->es_ncalls--;
 
+	return dc;
+}
+
+static struct doc *
+expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	struct expr *e;
+	struct doc *tmp = NULL;
+
+	TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {
+		tmp = expr_doc(e, es, dc);
+		if (TAILQ_NEXT(e, ex_entry) != NULL)
+			doc_alloc(DOC_LINE, dc);
+	}
+	if (tmp != NULL)
+		dc = tmp;
 	return dc;
 }
 
