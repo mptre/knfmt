@@ -1251,10 +1251,10 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 	}
 
 	if (isalpha(ch) || ch == '_') {
-		while (isalnum(ch) || ch == '_') {
+		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;
-		}
+		} while (isalnum(ch) || ch == '_');
 		lexer_ungetc(lx);
 
 		t = lexer_find_token(lx, &st);
