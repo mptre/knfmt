@@ -1190,10 +1190,7 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 
 	TAILQ_INIT(&prefixes);
 
-	/*
-	 * Consume all comments and preprocessor directives, will be hanging of
-	 * the emitted token.
-	 */
+	/* Consume all comments and preprocessor directives. */
 	for (;;) {
 		struct token *last;
 
