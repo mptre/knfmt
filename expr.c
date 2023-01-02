@@ -1163,17 +1163,17 @@ token_move_prev_line(struct token *tk)
 static int
 iscast(struct expr_state *es)
 {
-	struct expr_exec_arg *ea = &es->es_ea;
 	struct lexer_state s;
+	struct expr_exec_arg *ea = &es->es_ea;
+	struct lexer *lx = es->es_lx;
 	int cast = 0;
 
-	lexer_peek_enter(es->es_lx, &s);
+	lexer_peek_enter(lx, &s);
 	if (ea->callbacks.recover_cast(ea->callbacks.arg) &&
-	    lexer_if(es->es_lx, TOKEN_RPAREN, NULL) &&
-	    expr_peek(&es->es_ea))
+	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
+	    !lexer_if(lx, LEXER_EOF, NULL))
 		cast = 1;
-	lexer_peek_leave(es->es_lx, &s);
-
+	lexer_peek_leave(lx, &s);
 	return cast;
 }
 
