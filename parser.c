@@ -52,6 +52,11 @@ struct parser {
 		int			 nstmt;
 		int			 ndecl;
 	} pr_simple;
+
+	struct {
+		int		 valid;
+		struct token	*lbrace;
+	} pr_braces;
 };
 
 struct parser_exec_decl_braces_arg {
@@ -207,7 +212,8 @@ static int		parser_peek_func_line(struct parser *);
 static int		parser_peek_line(struct parser *, const struct token *);
 
 static struct token	*parser_peek_braces_expr_stop(struct parser *,
-    const struct token *);
+    struct token *);
+static void		 parser_braces_invalidate(struct parser *);
 
 static void		parser_token_trim_before(const struct parser *,
     struct token *);
@@ -827,6 +833,8 @@ parser_exec_decl_braces1(struct parser *pr,
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_fail(pr);
 
+	parser_braces_invalidate(pr);
+
 	/*
 	 * If any column is followed by a hard line, do not align but
 	 * instead respect existing hard line(s).
@@ -981,6 +989,8 @@ out:
 	    !lexer_peek_if(lx, TOKEN_RBRACE, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 		doc_literal(" ", braces);
+
+	parser_braces_invalidate(pr);
 
 	return parser_good(pr);
 }
@@ -2866,22 +2876,38 @@ parser_peek_line(struct parser *pr, const struct token *stop)
 }
 
 static struct token *
-parser_peek_braces_expr_stop(struct parser *pr, const struct token *rbrace)
+parser_peek_braces_expr_stop(struct parser *pr, struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *stop = NULL;
-	struct token *comma;
+	struct token *comma, *stop;
 
-	lexer_peek_until(lx, TOKEN_LBRACE, &stop);
-	if (lexer_peek_until_comma(lx, rbrace, &comma)) {
-		if (stop == NULL)
-			stop = comma;
-		else if (token_cmp(comma, stop) < 0 ||
-		    (token_cmp(comma, stop) == 0 &&
-		     comma->tk_cno < stop->tk_cno))
-			stop = comma;
+	/*
+	 * Finding the next lbrace can be costly if the current pair of braces
+	 * has many entries. Therefore utilize a tiny cache.
+	 */
+	if (!pr->pr_braces.valid) {
+		struct token *lbrace = NULL;
+
+		parser_braces_invalidate(pr);
+		lexer_peek_until(lx, TOKEN_LBRACE, &lbrace);
+		if (lbrace != NULL)
+			token_ref(lbrace);
+		pr->pr_braces.lbrace = lbrace;
+		pr->pr_braces.valid = 1;
 	}
+	stop = pr->pr_braces.lbrace != NULL ? pr->pr_braces.lbrace : rbrace;
+	if (lexer_peek_until_comma(lx, stop, &comma))
+		return comma;
 	return stop;
+}
+
+static void
+parser_braces_invalidate(struct parser *pr)
+{
+	if (pr->pr_braces.lbrace != NULL)
+		token_rele(pr->pr_braces.lbrace);
+	pr->pr_braces.lbrace = NULL;
+	pr->pr_braces.valid = 0;
 }
 
 static int
