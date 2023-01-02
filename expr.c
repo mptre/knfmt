@@ -171,14 +171,16 @@ static void	token_move_next_line(struct token *);
 static void	token_move_prev_line(struct token *);
 
 static int	iscast(struct expr_state *);
-static int	isliteral(const struct token *);
 
 static const char	*strexpr(enum expr_type);
 
 static const struct expr_rule	rules[] = {
-	{ PC0 | PCUNARY,	0,	TOKEN_LITERAL,	expr_exec_literal },
-	{ PC1,			0,	TOKEN_LITERAL,	expr_exec_concat },
-
+	{ PC0 | PCUNARY,	0,	TOKEN_IDENT,			expr_exec_literal },
+	{ PC0 | PCUNARY,	0,	TOKEN_LITERAL,			expr_exec_literal },
+	{ PC0 | PCUNARY,	0,	TOKEN_STRING,			expr_exec_literal },
+	{ PC1,			0,	TOKEN_IDENT,			expr_exec_concat },
+	{ PC1,			0,	TOKEN_LITERAL,			expr_exec_concat },
+	{ PC1,			0,	TOKEN_STRING,			expr_exec_concat },
 	{ PC1,			0,	TOKEN_COMMA,			expr_exec_binary },
 	{ PC1,			0,	TOKEN_ELLIPSIS,			expr_exec_binary },
 	{ PC2,			1,	TOKEN_EQUAL,			expr_exec_binary },
@@ -1111,10 +1113,7 @@ expr_rule_find(const struct token *tk, int unary)
 	static unsigned int nrules = sizeof(rules) / sizeof(*rules);
 	unsigned int i;
 
-	if (isliteral(tk))
-		return unary ? &rules[0] : &rules[1];
-
-	for (i = 2; i < nrules; i++) {
+	for (i = 0; i < nrules; i++) {
 		const struct expr_rule *er = &rules[i];
 		int isunary = (er->er_pc & PCUNARY) ? 1 : 0;
 
@@ -1179,14 +1178,6 @@ iscast(struct expr_state *es)
 	lexer_peek_leave(es->es_lx, &s);
 
 	return cast;
-}
-
-static int
-isliteral(const struct token *tk)
-{
-	return tk->tk_type == TOKEN_IDENT ||
-	    tk->tk_type == TOKEN_LITERAL ||
-	    tk->tk_type == TOKEN_STRING;
 }
 
 static const char *
