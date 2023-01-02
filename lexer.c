@@ -1271,7 +1271,7 @@ lexer_read(struct lexer *lx, void *UNUSED(arg))
 	    .tk_type	= TOKEN_NONE,
 	});
 	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
-	lexer_error(lx, "unknown token %s\n", lexer_serialize(lx, tk));
+	lexer_error(lx, "unknown token %s", lexer_serialize(lx, tk));
 	token_rele(tk);
 	return NULL;
 
