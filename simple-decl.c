@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "alloc.h"
@@ -15,12 +16,6 @@
 #include "token.h"
 #include "vector.h"
 #include "util.h"
-
-#ifdef HAVE_UTHASH
-#  include <uthash.h>
-#else
-#  include "compat-uthash.h"
-#endif
 
 struct token_range {
 	struct token	*tr_beg;
@@ -62,8 +57,6 @@ struct decl_type {
 		struct token	*tk;
 		unsigned int	 slot;
 	} dt_after;
-
-	UT_hash_handle			 hh;
 };
 
 static void			 decl_type_free(struct decl_type *);
@@ -85,7 +78,10 @@ struct simple_decl {
 	 */
 	VECTOR(struct decl)	 sd_empty_decls;
 
-	struct decl_type	*sd_types;
+	/* All seen type declarations. */
+	VECTOR(struct decl_type) sd_types;
+
+	/* Current type declaration. */
 	struct decl_type	*sd_dt;
 
 	struct decl_var		 sd_dv;
@@ -96,6 +92,8 @@ struct simple_decl {
 
 static struct decl_type	*simple_decl_type_create(struct simple_decl *,
     const char *, const struct token_range *);
+static struct decl_type	*simple_decl_type_find(struct simple_decl *,
+    const char *);
 
 static struct decl_var	*simple_decl_var_init(struct simple_decl *);
 static struct decl_var	*simple_decl_var_end(struct simple_decl *,
@@ -118,6 +116,8 @@ simple_decl_enter(struct lexer *lx, const struct options *op)
 	sd = ecalloc(1, sizeof(*sd));
 	if (VECTOR_INIT(sd->sd_empty_decls) == NULL)
 		err(1, NULL);
+	if (VECTOR_INIT(sd->sd_types) == NULL)
+		err(1, NULL);
 	sd->sd_lx = lx;
 	sd->sd_op = op;
 	return sd;
@@ -126,17 +126,18 @@ simple_decl_enter(struct lexer *lx, const struct options *op)
 void
 simple_decl_leave(struct simple_decl *sd)
 {
-	struct decl_type *dt;
 	struct token *tk, *tmp;
 	size_t i;
 
-	for (dt = sd->sd_types; dt != NULL; dt = dt->hh.next) {
+	for (i = 0; i < VECTOR_LENGTH(sd->sd_types); i++) {
+		struct decl_type *dt = &sd->sd_types[i];
 		struct token *after = dt->dt_after.tk;
 		unsigned int slot;
 
 		for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
 			struct decl_type_vars *ds = &dt->dt_slots[slot];
 			struct token *semi;
+			size_t j;
 
 			if (VECTOR_LENGTH(ds->ds_vars) == 0)
 				continue;
@@ -164,15 +165,15 @@ simple_decl_leave(struct simple_decl *sd)
 			    sizeof(*ds->ds_vars), decl_var_cmp);
 
 			/* Move variables to the new type declaration. */
-			for (i = 0; i < VECTOR_LENGTH(ds->ds_vars); i++) {
-				struct decl_var *dv = &ds->ds_vars[i];
+			for (j = 0; j < VECTOR_LENGTH(ds->ds_vars); j++) {
+				struct decl_var *dv = &ds->ds_vars[j];
 				struct token *ident;
 
 				if (dv->dv_delim != NULL) {
 					lexer_remove(sd->sd_lx, dv->dv_delim,
 					    1);
 				}
-				if (i > 0) {
+				if (j > 0) {
 					after = lexer_insert_after(sd->sd_lx,
 					    after, TOKEN_COMMA, ",");
 				}
@@ -205,24 +206,24 @@ simple_decl_leave(struct simple_decl *sd)
 void
 simple_decl_free(struct simple_decl *sd)
 {
-	struct decl_type *dt, *tmp;
-
 	if (sd == NULL)
 		return;
 
 	VECTOR_FREE(sd->sd_empty_decls);
 
-	HASH_ITER(hh, sd->sd_types, dt, tmp) {
+	while (!VECTOR_EMPTY(sd->sd_types)) {
+		struct decl_type *dt;
+
+		dt = VECTOR_POP(sd->sd_types);
 		while (!VECTOR_EMPTY(dt->dt_slots)) {
 			struct decl_type_vars *ds = VECTOR_POP(dt->dt_slots);
 
 			VECTOR_FREE(ds->ds_vars);
 		}
 		VECTOR_FREE(dt->dt_slots);
-		HASH_DELETE(hh, sd->sd_types, dt);
 		decl_type_free(dt);
-		free(dt);
 	}
+	VECTOR_FREE(sd->sd_types);
 
 	free(sd);
 }
@@ -391,11 +392,13 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 	struct token *end = NULL;
 	struct token *tk, *tmp;
 
-	HASH_FIND_STR(sd->sd_types, type, dt);
+	dt = simple_decl_type_find(sd, type);
 	if (dt != NULL)
 		return dt;
 
-	dt = ecalloc(1, sizeof(*dt));
+	dt = VECTOR_CALLOC(sd->sd_types);
+	if (dt == NULL)
+		err(1, NULL);
 	dt->dt_tr = *tr;
 	/* Pointer(s) are not part of the type. */
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
@@ -408,9 +411,22 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 	if (VECTOR_INIT(dt->dt_slots) == NULL)
 		err(1, NULL);
 	dt->dt_str = estrdup(type);
-	HASH_ADD_STR(sd->sd_types, dt_str, dt);
 	simple_trace(sd, "new type \"%s\"", dt->dt_str);
 	return dt;
+}
+
+static struct decl_type *
+simple_decl_type_find(struct simple_decl *sd, const char *type)
+{
+	size_t i;
+
+	for (i = 0; i < VECTOR_LENGTH(sd->sd_types); i++) {
+		struct decl_type *dt = &sd->sd_types[i];
+
+		if (strcmp(dt->dt_str, type) == 0)
+			return dt;
+	}
+	return NULL;
 }
 
 static struct decl_var *
