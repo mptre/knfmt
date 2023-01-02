@@ -6,6 +6,8 @@
 #include <ctype.h>
 #include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "alloc.h"
 #include "buffer.h"
@@ -21,12 +23,6 @@
 #  include <sys/queue.h>
 #else
 #  include "compat-queue.h"
-#endif
-
-#ifdef HAVE_UTHASH
-#  include <uthash.h>
-#else
-#  include "compat-uthash.h"
 #endif
 
 struct lexer {
@@ -49,11 +45,6 @@ struct lexer {
 	struct token_list	 lx_tokens;
 	VECTOR(struct token *)	 lx_stamps;
 	VECTOR(char *)		 lx_serialized;
-};
-
-struct token_hash {
-	struct token	th_tk;
-	UT_hash_handle	th_hh;
 };
 
 static int		 lexer_eat_lines(struct lexer *, int, struct token **);
@@ -100,7 +91,7 @@ static void	token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char, int);
 
-static struct token_hash	*tokens = NULL;
+static struct token *tokens[256];
 
 static const struct token tkcomment = {
 	.tk_type	= TOKEN_COMMENT,
@@ -137,8 +128,8 @@ static const struct token tkstr = {
 void
 lexer_init(void)
 {
-	static struct token_hash keywords[] = {
-#define T(t, s, f) { .th_tk = {						\
+	static const struct token keywords[] = {
+#define T(t, s, f) {							\
 	.tk_type	= (t),						\
 	.tk_lno		= 0,						\
 	.tk_cno		= 0,						\
@@ -148,24 +139,37 @@ lexer_init(void)
 	.tk_prefixes	= { NULL, NULL },				\
 	.tk_suffixes	= { NULL, NULL },				\
 	.tk_entry	= { NULL, NULL }				\
-}},
+},
 #define A(t, s, f) T(t, s, f)
 #include "token-defs.h"
 	};
 	unsigned int i;
 
-	for (i = 0; keywords[i].th_tk.tk_type != TOKEN_NONE; i++) {
-		struct token_hash *th = &keywords[i];
-		const struct token *tk = &th->th_tk;
+	for (i = 0; keywords[i].tk_type != TOKEN_NONE; i++) {
+		const struct token *src = &keywords[i];
+		struct token *dst;
+		unsigned char slot;
 
-		HASH_ADD_KEYPTR(th_hh, tokens, tk->tk_str, tk->tk_len, th);
+		slot = src->tk_str[0];
+		if (tokens[slot] == NULL) {
+			if (VECTOR_INIT(tokens[slot]) == NULL)
+				err(1, NULL);
+		}
+		dst = VECTOR_ALLOC(tokens[slot]);
+		if (dst == NULL)
+			err(1, NULL);
+		*dst = *src;
 	}
 }
 
 void
 lexer_shutdown(void)
 {
-	HASH_CLEAR(th_hh, tokens);
+	size_t nslots = sizeof(tokens) / sizeof(tokens[0]);
+	size_t i;
+
+	for (i = 0; i < nslots; i++)
+		VECTOR_FREE(tokens[i]);
 }
 
 struct lexer *
@@ -1621,16 +1625,22 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 static struct token *
 lexer_find_token(const struct lexer *lx, const struct lexer_state *st)
 {
-	struct token_hash *th;
 	const char *key;
-	size_t len;
+	size_t i, len;
+	unsigned char slot;
 
 	len = lx->lx_st.st_off - st->st_off;
 	key = &lx->lx_bf->bf_ptr[st->st_off];
-	HASH_FIND(th_hh, tokens, key, len, th);
-	if (th == NULL)
+	slot = key[0];
+	if (tokens[slot] == NULL)
 		return NULL;
-	return &th->th_tk;
+	for (i = 0; i < VECTOR_LENGTH(tokens[slot]); i++) {
+		struct token *tk = &tokens[slot][i];
+
+		if (len == tk->tk_len && strncmp(tk->tk_str, key, len) == 0)
+			return tk;
+	}
+	return NULL;
 }
 
 static int
