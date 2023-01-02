@@ -376,15 +376,12 @@ expr_exec_recover(struct expr_state *es)
 	const struct expr_exec_arg *ea = &es->es_ea;
 	struct doc *dc;
 	struct expr *ex;
-	int recovered;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	recovered = ea->callbacks.recover(ea, dc, ea->callbacks.arg);
-	if (!recovered) {
+	if (!ea->callbacks.recover(ea, dc, ea->callbacks.arg)) {
 		doc_free(dc);
 		return NULL;
 	}
-
 	ex = expr_alloc(EXPR_RECOVER, es);
 	ex->ex_dc = dc;
 	return ex;
@@ -983,8 +980,8 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 /*
  * Favor alignment with what we got so far on the current line, assuming it does
- * not cause exceesive new line(s). In that case, fallback to regular continuation
- * indentation.
+ * not cause exceesive new line(s). In that case, fallback to regular
+ * continuation indentation.
  */
 static struct doc *
 expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
@@ -1201,6 +1198,7 @@ strexpr(enum expr_type type)
 	CASE(EXPR_LITERAL);
 	CASE(EXPR_RECOVER);
 	CASE(EXPR_ASM);
+#undef CASE
 	}
 	return NULL;
 }
