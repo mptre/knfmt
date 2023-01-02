@@ -3,10 +3,12 @@
 #include "config.h"
 
 #include <assert.h>
+#include <err.h>
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "alloc.h"
@@ -17,12 +19,7 @@
 #include "options.h"
 #include "token.h"
 #include "util.h"
-
-#ifdef HAVE_UTHASH
-#  include <uthash.h>
-#else
-#  include "compat-uthash.h"
-#endif
+#include "vector.h"
 
 /*
  * Return values for yaml parser routines. Only one of the following may be
@@ -52,9 +49,9 @@ struct style {
 };
 
 struct style_option {
-	UT_hash_handle	 hh;
 	int		 so_scope;
 	const char	*so_key;
+	size_t		 so_len;
 	int		 so_type;
 	int		 (*so_parse)(struct style *, struct lexer *,
 	    const struct style_option *);
@@ -66,10 +63,12 @@ static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *, const struct options *);
 static int	style_parse_yaml1(struct style *, struct lexer *);
 
-static struct token	*yaml_read(struct lexer *, void *);
-static char		*yaml_serialize(const struct token *);
-static struct token	*yaml_keyword(struct lexer *,
+static struct token			*yaml_read(struct lexer *, void *);
+static char				*yaml_serialize(const struct token *);
+static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
+static const struct style_option	*yaml_find_keyword(const char *,
+    size_t);
 
 static int	parse_bool(struct style *, struct lexer *,
     const struct style_option *);
@@ -88,16 +87,16 @@ static int	parse_IncludeCategories(struct style *, struct lexer *,
 
 static const char	*stryaml(enum yaml_type);
 
-static struct style_option *keywords = NULL;
+static struct style_option *keywords[256];
 
 void
 style_init(void)
 {
 	static struct style_option kw[] = {
-#define S(t)	{0},	0,	#t,	(t)
-#define N(s, t)	{0},	(s),	#t,	(t)
-#define E(t)	{0},	0,	#t,	(t),	NULL,	{0}
-#define P(t, s)	{0},	0,	(s),	(t),	NULL,	{0}
+#define S(t)	0,	#t,	sizeof(#t) - 1,	(t)
+#define N(s, t)	(s),	#t,	sizeof(#t) - 1,	(t)
+#define E(t)	0,	#t,	sizeof(#t) - 1,	(t),	NULL,	{0}
+#define P(t, s)	0,	(s),	sizeof(s) - 1,	(t),	NULL,	{0}
 
 		{ S(AlignAfterOpenBracket), parse_enum,
 		  { Align, DontAlign, AlwaysBreak, BlockIndent } },
@@ -202,14 +201,31 @@ style_init(void)
 	size_t nkeywords = sizeof(kw) / sizeof(kw[0]);
 	size_t i;
 
-	for (i = 0; i < nkeywords; i++)
-		HASH_ADD_STR(keywords, so_key, &kw[i]);
+	for (i = 0; i < nkeywords; i++) {
+		const struct style_option *src = &kw[i];
+		struct style_option *dst;
+		unsigned char slot;
+
+		slot = src->so_key[0];
+		if (keywords[slot] == NULL) {
+			if (VECTOR_INIT(keywords[slot]) == NULL)
+				err(1, NULL);
+		}
+		dst = VECTOR_ALLOC(keywords[slot]);
+		if (dst == NULL)
+			err(1, NULL);
+		*dst = *src;
+	}
 }
 
 void
 style_teardown(void)
 {
-	HASH_CLEAR(hh, keywords);
+	size_t nslots = sizeof(keywords) / sizeof(keywords[0]);
+	size_t i;
+
+	for (i = 0; i < nslots; i++)
+		VECTOR_FREE(keywords[i]);
 }
 
 struct style *
@@ -498,7 +514,7 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 	struct token *tk;
 
 	tk = lexer_emit(lx, st, NULL);
-	HASH_FIND(hh, keywords, tk->tk_str, tk->tk_len, so);
+	so = yaml_find_keyword(tk->tk_str, tk->tk_len);
 	if (so == NULL) {
 		tk->tk_type = Unknown;
 		return tk;
@@ -507,6 +523,24 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 	if (so->so_parse != NULL)
 		tk->tk_token = (void *)so;
 	return tk;
+}
+
+static const struct style_option *
+yaml_find_keyword(const char *str, size_t len)
+{
+	size_t i;
+	unsigned char slot;
+
+	slot = str[0];
+	if (keywords[slot] == NULL)
+		return NULL;
+	for (i = 0; i < VECTOR_LENGTH(keywords[slot]); i++) {
+		struct style_option *so = &keywords[slot][i];
+
+		if (len == so->so_len && strncmp(so->so_key, str, len) == 0)
+			return so;
+	}
+	return NULL;
 }
 
 static int
