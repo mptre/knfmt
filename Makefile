@@ -167,7 +167,6 @@ DISTFILES+=	comment.h
 DISTFILES+=	compat-errc.c
 DISTFILES+=	compat-pledge.c
 DISTFILES+=	compat-queue.h
-DISTFILES+=	compat-uthash.h
 DISTFILES+=	compat-warnc.c
 DISTFILES+=	configure
 DISTFILES+=	cpp.c

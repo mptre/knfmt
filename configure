@@ -93,16 +93,6 @@ check_queue() {
 	EOF
 }
 
-check_uthash() {
-	compile <<-EOF
-	#include <uthash.h>
-
-	int main(void) {
-		return 0;
-	}
-	EOF
-}
-
 check_warnc() {
 	compile <<-EOF
 	#include <err.h>
@@ -130,7 +120,6 @@ HAVE_DEAD=0
 HAVE_ERRC=0
 HAVE_PLEDGE=0
 HAVE_QUEUE=0
-HAVE_UTHASH=0
 HAVE_WARNC=0
 
 # Order is important, must come first if not defined.
@@ -152,7 +141,6 @@ check_dead && HAVE_DEAD=1
 check_errc && HAVE_ERRC=1
 check_pledge && HAVE_PLEDGE=1
 check_queue && HAVE_QUEUE=1
-check_uthash && HAVE_UTHASH=1
 check_warnc && HAVE_WARNC=1
 
 # Redirect stdout to config.h.
@@ -166,7 +154,6 @@ exec 1>config.h
 [ $HAVE_ERRC -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
 [ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
-[ $HAVE_UTHASH -eq 1 ] && printf '#define HAVE_UTHASH\t1\n'
 
 [ $HAVE_DEAD -eq 0 ] &&
 	printf '#define __dead\t__attribute__((__noreturn__))\n'
