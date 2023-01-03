@@ -814,6 +814,7 @@ parser_exec_decl_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 		.col	= 0,
 		.flags	= flags,
 	});
+	parser_braces_invalidate(pr);
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
