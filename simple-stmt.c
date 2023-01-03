@@ -106,22 +106,22 @@ simple_stmt_leave(struct simple_stmt *ss)
 	} else {
 		for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 			struct stmt *st = &ss->ss_stmts[i];
-			struct token *pv, *tk;
+			struct token *lbrace, *pv, *rbrace;
 
 			if (st->st_flags & (STMT_IGNORE | STMT_BRACES))
 				continue;
 
 			pv = token_prev(st->st_lbrace);
-			tk = lexer_insert_before(lx, st->st_lbrace,
+			lbrace = lexer_insert_before(lx, st->st_lbrace,
 			    TOKEN_LBRACE, "{");
 			if (pv != NULL)
-				token_move_suffixes(pv, tk);
+				token_move_suffixes(pv, lbrace);
 
 			pv = token_prev(st->st_rbrace);
-			tk = lexer_insert_before(lx, st->st_rbrace,
+			rbrace = lexer_insert_before(lx, st->st_rbrace,
 			    TOKEN_RBRACE, "}");
 			if (pv != NULL)
-				token_move_suffixes(pv, tk);
+				token_move_suffixes_if(pv, rbrace, TOKEN_SPACE);
 		}
 	}
 }
