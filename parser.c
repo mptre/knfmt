@@ -122,6 +122,7 @@ struct parser_exec_stmt_block_arg {
 static int	parser_exec1(struct parser *, struct doc *);
 
 static int	parser_exec_extern(struct parser *, struct doc *);
+static int	parser_exec_asm(struct parser *, struct doc *);
 
 static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl1(struct parser *, struct doc *, unsigned int);
@@ -405,6 +406,8 @@ parser_exec1(struct parser *pr, struct doc *dc)
 		error = parser_exec_func_impl(pr, dc);
 	if (error == NONE)
 		error = parser_exec_extern(pr, dc);
+	if (error == NONE)
+		error = parser_exec_asm(pr, dc);
 	return error;
 }
 
@@ -445,6 +448,18 @@ parser_exec_extern(struct parser *pr, struct doc *dc)
 	}
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
+	doc_alloc(DOC_HARDLINE, dc);
+	return parser_good(pr);
+}
+
+static int
+parser_exec_asm(struct parser *pr, struct doc *dc)
+{
+	int error;
+
+	error = parser_exec_stmt_asm(pr, dc);
+	if (error & HALT)
+		return error;
 	doc_alloc(DOC_HARDLINE, dc);
 	return parser_good(pr);
 }
@@ -2866,7 +2881,8 @@ parser_peek_func_line(struct parser *pr)
 		return cpp->tk_lno - rbrace->tk_lno > 1;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	if ((lexer_if(lx, TOKEN_IDENT, &ident) ||
+	    lexer_if(lx, TOKEN_ASSEMBLY, &ident)) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_SEMI, NULL) &&
 	    ident->tk_lno - rbrace->tk_lno == 1)
