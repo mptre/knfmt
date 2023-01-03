@@ -402,11 +402,11 @@ parser_exec1(struct parser *pr, struct doc *dc)
 	error = parser_exec_decl(pr, dc,
 	    PARSER_EXEC_DECL_BREAK | PARSER_EXEC_DECL_LINE |
 	    PARSER_EXEC_DECL_ROOT);
-	if (error == NONE)
+	if (error & NONE)
 		error = parser_exec_func_impl(pr, dc);
-	if (error == NONE)
+	if (error & NONE)
 		error = parser_exec_extern(pr, dc);
-	if (error == NONE)
+	if (error & NONE)
 		error = parser_exec_asm(pr, dc);
 	return error;
 }
