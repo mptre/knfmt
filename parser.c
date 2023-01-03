@@ -2098,7 +2098,8 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	struct lexer_state s;
 	struct doc *dedent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *colon, *ident, *nx;
+	struct token *colon = NULL;
+	struct token *ident, *nx;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -2354,8 +2355,10 @@ parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
 		doc_token(tk, opt);
 
 	/* instructions */
-	if (!lexer_peek_until(lx, TOKEN_COLON, &colon))
-		return parser_fail(pr);
+	if (!lexer_peek_until(lx, TOKEN_COLON, &colon)) {
+		/* Basic inline assembler, only instructions are required. */
+		concat = opt;
+	}
 	error = parser_exec_expr(pr, opt, NULL, colon, 0, 0);
 	if (error & HALT)
 		return parser_fail(pr);
