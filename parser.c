@@ -109,6 +109,7 @@ struct parser_exec_stmt_block_arg {
 	unsigned int	 flags;
 #define PARSER_EXEC_STMT_BLOCK_SWITCH		0x00000001u
 #define PARSER_EXEC_STMT_BLOCK_TRIM		0x00000002u
+#define PARSER_EXEC_STMT_BLOCK_EXPR_GNU		0x00000004u
 };
 
 /* Honor grouped declarations. */
@@ -170,6 +171,7 @@ static int	parser_exec_stmt_for(struct parser *, struct doc *);
 static int	parser_exec_stmt_dowhile(struct parser *, struct doc *);
 static int	parser_exec_stmt_return(struct parser *, struct doc *);
 static int	parser_exec_stmt_expr(struct parser *, struct doc *);
+static int	parser_exec_stmt_expr_gnu(struct parser *, struct doc *);
 static int	parser_exec_stmt_kw_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
 static int	parser_exec_stmt_label(struct parser *, struct doc *);
@@ -326,7 +328,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 {
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *lbrace, *tk;
 
 	if (lexer_peek_if_type(lx, &tk, LEXER_TYPE_CAST)) {
 		struct token *nx, *pv;
@@ -353,7 +355,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 			doc_token(tk, dc);
 			return 1;
 		}
-	} else if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
+	} else if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace)) {
 		int error;
 
 		error = parser_exec_decl_braces(pr, dc,
@@ -362,6 +364,15 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		    PARSER_EXEC_DECL_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
 			return 1;
+		if (error & FAIL) {
+			/* Try again, could be a GNU statement expression. */
+			while (doc_remove_tail(dc))
+				continue;
+			parser_reset(pr);
+			lexer_seek(lx, lbrace);
+			if (parser_exec_stmt_expr_gnu(pr, dc) & GOOD)
+				return 1;
+		}
 	} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 		/*
 		 * Some macros allow empty arguments such as the ones provided
@@ -1637,7 +1648,10 @@ parser_exec_stmt_block(struct parser *pr,
 		indent = dc;
 	else
 		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
-	line = doc_alloc(DOC_HARDLINE, indent);
+	if ((arg->flags & PARSER_EXEC_STMT_BLOCK_EXPR_GNU) == 0)
+		line = doc_alloc(DOC_HARDLINE, indent);
+	else
+		line = doc_literal(" ", indent);
 	while ((error = parser_exec_stmt(pr, indent)) & GOOD) {
 		nstmt++;
 		if (lexer_peek(lx, &tk) && tk == rbrace)
@@ -1648,7 +1662,10 @@ parser_exec_stmt_block(struct parser *pr,
 	if (nstmt == 0 && (error & BRCH) == 0)
 		doc_remove(line, indent);
 
-	doc_alloc(DOC_HARDLINE, arg->tail);
+	if ((arg->flags & PARSER_EXEC_STMT_BLOCK_EXPR_GNU) == 0)
+		doc_alloc(DOC_HARDLINE, arg->tail);
+	else
+		doc_literal(" ", arg->tail);
 
 	/*
 	 * The right brace and any following statement is expected to fit on a
@@ -1926,7 +1943,7 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 
 	if (lexer_peek_if_type(lx, NULL, 0))
 		return parser_none(pr);
-	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
+	if (!lexer_peek_until_freestanding(lx, TOKEN_SEMI, NULL, &semi))
 		return parser_none(pr);
 
 	lexer_peek_enter(lx, &s);
@@ -1962,6 +1979,16 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
 		doc_token(semi, expr);
 	return parser_good(pr);
+}
+
+static int
+parser_exec_stmt_expr_gnu(struct parser *pr, struct doc *dc)
+{
+	return parser_exec_stmt_block(pr, &(struct parser_exec_stmt_block_arg){
+	    .head	= dc,
+	    .tail	= dc,
+	    .flags	= PARSER_EXEC_STMT_BLOCK_EXPR_GNU,
+	});
 }
 
 /*
@@ -2258,10 +2285,18 @@ parser_exec_stmt_continue(struct parser *pr, struct doc *dc)
 static int
 parser_exec_stmt_cpp(struct parser *pr, struct doc *dc)
 {
+	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct token *ident;
+	int peek = 0;
 
-	if (!lexer_peek_if(lx, TOKEN_IDENT, &ident))
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+	    !lexer_if(lx, TOKEN_SEMI, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
 		return parser_none(pr);
 	return parser_exec_stmt_kw_expr(pr, dc, ident, 0);
 }

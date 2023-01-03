@@ -531,6 +531,13 @@ lexer_branch(struct lexer *lx)
 	return 1;
 }
 
+void
+lexer_seek(struct lexer *lx, struct token *tk)
+{
+	lexer_trace(lx, "seek to %s", lexer_serialize(lx, tk));
+	lx->lx_st.st_tk = token_prev(tk);
+}
+
 /*
  * Returns non-zero if the current token denotes a branch continuation.
  */
