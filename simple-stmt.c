@@ -38,6 +38,9 @@ struct simple_stmt {
 static struct stmt	*simple_stmt_alloc(struct simple_stmt *, int,
     unsigned int);
 
+static void	add_braces(struct simple_stmt *);
+static void	remove_braces(struct simple_stmt *);
+
 static int		 isoneline(const char *, size_t);
 static const char	*strtrim(const char *, size_t *);
 
@@ -92,38 +95,10 @@ simple_stmt_leave(struct simple_stmt *ss)
 	}
 	buffer_free(bf);
 
-	if (oneline) {
-		for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
-			struct stmt *st = &ss->ss_stmts[i];
-
-			if ((st->st_flags & STMT_IGNORE) ||
-			    (st->st_flags & STMT_BRACES) == 0)
-				continue;
-
-			lexer_remove(lx, st->st_lbrace, 1);
-			lexer_remove(lx, st->st_rbrace, 1);
-		}
-	} else {
-		for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
-			struct stmt *st = &ss->ss_stmts[i];
-			struct token *lbrace, *pv, *rbrace;
-
-			if (st->st_flags & (STMT_IGNORE | STMT_BRACES))
-				continue;
-
-			pv = token_prev(st->st_lbrace);
-			lbrace = lexer_insert_before(lx, st->st_lbrace,
-			    TOKEN_LBRACE, "{");
-			if (pv != NULL)
-				token_move_suffixes(pv, lbrace);
-
-			pv = token_prev(st->st_rbrace);
-			rbrace = lexer_insert_before(lx, st->st_rbrace,
-			    TOKEN_RBRACE, "}");
-			if (pv != NULL)
-				token_move_suffixes_if(pv, rbrace, TOKEN_SPACE);
-		}
-	}
+	if (oneline)
+		remove_braces(ss);
+	else
+		add_braces(ss);
 }
 
 void
@@ -208,6 +183,49 @@ simple_stmt_alloc(struct simple_stmt *ss, int indent, unsigned int flags)
 	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;
 	return st;
+}
+
+static void
+add_braces(struct simple_stmt *ss)
+{
+	struct lexer *lx = ss->ss_lx;
+	size_t i;
+
+	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
+		struct stmt *st = &ss->ss_stmts[i];
+		struct token *lbrace, *pv, *rbrace;
+
+		if (st->st_flags & (STMT_IGNORE | STMT_BRACES))
+			continue;
+
+		pv = token_prev(st->st_lbrace);
+		lbrace = lexer_insert_before(lx, st->st_lbrace,
+		    TOKEN_LBRACE, "{");
+		token_move_suffixes(pv, lbrace);
+
+		pv = token_prev(st->st_rbrace);
+		rbrace = lexer_insert_before(lx, st->st_rbrace,
+		    TOKEN_RBRACE, "}");
+		token_move_suffixes_if(pv, rbrace, TOKEN_SPACE);
+	}
+}
+
+static void
+remove_braces(struct simple_stmt *ss)
+{
+	struct lexer *lx = ss->ss_lx;
+	size_t i;
+
+	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
+		struct stmt *st = &ss->ss_stmts[i];
+
+		if ((st->st_flags & STMT_IGNORE) ||
+		    (st->st_flags & STMT_BRACES) == 0)
+			continue;
+
+		lexer_remove(lx, st->st_lbrace, 1);
+		lexer_remove(lx, st->st_rbrace, 1);
+	}
 }
 
 static int
