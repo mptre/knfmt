@@ -65,7 +65,7 @@ void		doc_free(struct doc *);
 void		doc_append(struct doc *, struct doc *);
 void		doc_append_before(struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);
-void		doc_remove_tail(struct doc *);
+int		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, int);
 void		doc_set_align(struct doc *, const struct doc_align *);
 

@@ -328,7 +328,7 @@ doc_remove(struct doc *dc, struct doc *parent)
 	doc_free(dc);
 }
 
-void
+int
 doc_remove_tail(struct doc *parent)
 {
 	struct doc *dc;
@@ -336,9 +336,10 @@ doc_remove_tail(struct doc *parent)
 	assert(doc_has_list(parent));
 	dc = TAILQ_LAST(&parent->dc_list, doc_list);
 	if (dc == NULL)
-		return;
+		return 0;
 	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
 	doc_free(dc);
+	return 1;
 }
 
 void
