@@ -1937,8 +1937,8 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	/*
-	 * Do not confuse a loop construct hidden behind cpp followed by a
-	 * statement which is a sole statement:
+	 * Do not confuse a loop construct hidden behind cpp followed by a sole
+	 * statement:
 	 *
 	 * 	foreach()
 	 * 		func();
