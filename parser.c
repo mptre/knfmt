@@ -1344,8 +1344,6 @@ parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 	error = parser_exec_stmt_block(pr, &(struct parser_exec_stmt_block_arg){
 	    .head	= dc,
 	    .tail	= dc,
-	    .rbrace	= NULL,
-	    .flags	= 0,
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
@@ -1551,7 +1549,6 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
 		.head	= dc,
 		.tail	= dc,
 		.flags	= PARSER_EXEC_STMT_BLOCK_TRIM,
-		.rbrace	= NULL,
 	};
 
 	/*
@@ -1831,7 +1828,6 @@ parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc)
 		.head	= dc,
 		.tail	= dc,
 		.flags	= PARSER_EXEC_STMT_BLOCK_TRIM,
-		.rbrace	= NULL,
 	};
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat = dc;
@@ -2045,7 +2041,6 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 			.head	= expr,
 			.tail	= dc,
 			.flags	= PARSER_EXEC_STMT_BLOCK_TRIM,
-			.rbrace	= NULL,
 		};
 
 		if (type->tk_type == TOKEN_SWITCH)
