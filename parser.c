@@ -1588,12 +1588,13 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
  * Parse a block statement wrapped in braces.
  */
 static int
-parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
+parser_exec_stmt_block(struct parser *pr,
+    struct parser_exec_stmt_block_arg *arg)
 {
 	struct doc *concat, *dc, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *nx, *rbrace, *tk;
-	int isswitch = ps->flags & PARSER_EXEC_STMT_BLOCK_SWITCH;
+	int isswitch = arg->flags & PARSER_EXEC_STMT_BLOCK_SWITCH;
 	int doindent = !isswitch && pr->pr_simple.nstmt == 0;
 	int nstmt = 0;
 	int error;
@@ -1614,7 +1615,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 		pr->pr_nindent++;
 	pr->pr_nblocks++;
 
-	dc = parser_simple_stmt_block(pr, ps->tail);
+	dc = parser_simple_stmt_block(pr, arg->tail);
 
 	parser_token_trim_before(pr, rbrace);
 
@@ -1627,10 +1628,10 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	 * local variables. But discard it if the following line is a
 	 * declaration.
 	 */
-	if ((ps->flags & PARSER_EXEC_STMT_BLOCK_TRIM) ||
+	if ((arg->flags & PARSER_EXEC_STMT_BLOCK_TRIM) ||
 	    (token_has_line(lbrace, 2) && parser_peek_decl(pr)))
 		parser_token_trim_after(pr, lbrace);
-	doc_token(lbrace, ps->head);
+	doc_token(lbrace, arg->head);
 
 	if (isswitch)
 		indent = dc;
@@ -1647,13 +1648,13 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	if (nstmt == 0 && (error & BRCH) == 0)
 		doc_remove(line, indent);
 
-	doc_alloc(DOC_HARDLINE, ps->tail);
+	doc_alloc(DOC_HARDLINE, arg->tail);
 
 	/*
 	 * The right brace and any following statement is expected to fit on a
 	 * single line.
 	 */
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, ps->tail));
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, arg->tail));
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk)) {
 		if (lexer_peek_if(lx, TOKEN_ELSE, NULL))
 			parser_token_trim_after(pr, tk);
@@ -1661,7 +1662,7 @@ parser_exec_stmt_block(struct parser *pr, struct parser_exec_stmt_block_arg *ps)
 	}
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
 		doc_token(tk, concat);
-	ps->rbrace = concat;
+	arg->rbrace = concat;
 
 	if (doindent)
 		pr->pr_nindent--;
