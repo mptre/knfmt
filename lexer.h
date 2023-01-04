@@ -104,6 +104,7 @@ int	lexer_peek(struct lexer *, struct token **);
 
 #define LEXER_TYPE_CAST		0x00000001u
 #define LEXER_TYPE_ARG		0x00000002u
+#define LEXER_TYPE_EXPR		0x00000004u
 
 int	lexer_peek_if_type(struct lexer *, struct token **, unsigned int);
 int	lexer_if_type(struct lexer *, struct token **, unsigned int);

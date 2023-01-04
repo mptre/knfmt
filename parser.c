@@ -332,7 +332,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *tk;
 
-	if (lexer_peek_if_type(lx, &tk, LEXER_TYPE_CAST)) {
+	if (lexer_peek_if_type(lx, &tk, LEXER_TYPE_EXPR)) {
 		struct token *nx, *pv;
 
 		if (!lexer_back(lx, &pv))

@@ -848,6 +848,7 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 
 			/* Ensure this is not the identifier after the type. */
 			if ((flags & LEXER_TYPE_CAST) == 0 &&
+			    (flags & LEXER_TYPE_EXPR) == 0 &&
 			    lexer_peek_if_type_ident(lx))
 				break;
 
