@@ -114,6 +114,7 @@ struct expr_state {
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
 static struct expr	*expr_exec_recover(struct expr_state *);
+static struct expr	*expr_exec_recover_cast(struct expr_state *);
 
 static struct expr	*expr_exec_binary(struct expr_state *, struct expr *);
 static struct expr	*expr_exec_concat(struct expr_state *, struct expr *);
@@ -169,8 +170,6 @@ static const struct expr_rule	*expr_rule_find(const struct token *, int);
 
 static void	token_move_next_line(struct token *);
 static void	token_move_prev_line(struct token *);
-
-static int	iscast(struct expr_state *);
 
 static const char	*strexpr(enum expr_type);
 
@@ -388,6 +387,23 @@ expr_exec_recover(struct expr_state *es)
 }
 
 static struct expr *
+expr_exec_recover_cast(struct expr_state *es)
+{
+	const struct expr_exec_arg *ea = &es->es_ea;
+	struct doc *dc;
+	struct expr *ex;
+
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	if (!ea->callbacks.recover_cast(ea, dc, ea->callbacks.arg)) {
+		doc_free(dc);
+		return NULL;
+	}
+	ex = expr_alloc(EXPR_RECOVER, es);
+	ex->ex_dc = dc;
+	return ex;
+}
+
+static struct expr *
 expr_exec_binary(struct expr_state *es, struct expr *lhs)
 {
 	struct expr *ex;
@@ -451,12 +467,13 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 	struct token *tk = es->es_tk;
 
 	if (lhs == NULL) {
-		if (iscast(es)) {
+		struct expr *cast;
+
+		cast = expr_exec_recover_cast(es);
+		if (cast != NULL) {
 			ex = expr_alloc(EXPR_CAST, es);
-			if (lexer_back(es->es_lx, &tk))
-				ex->ex_tokens[0] = tk;	/* ( */
-			/* Let the parser emit the type. */
-			ex->ex_lhs = expr_exec_recover(es);
+			ex->ex_tokens[0] = tk;	/* ( */
+			ex->ex_lhs = cast;
 			if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
 				ex->ex_tokens[1] = tk;	/* ) */
 			ex->ex_rhs = expr_exec1(es, PC(es->es_er->er_pc));
@@ -1154,27 +1171,6 @@ token_move_prev_line(struct token *tk)
 		token_move_suffixes(pv, tk);
 		token_add_optline(tk);
 	}
-}
-
-/*
- * Returns non-zero if a cast is present. The lexer must be positioned at the
- * beginning of an expression wrapped in parenthesis.
- */
-static int
-iscast(struct expr_state *es)
-{
-	struct lexer_state s;
-	struct expr_exec_arg *ea = &es->es_ea;
-	struct lexer *lx = es->es_lx;
-	int cast = 0;
-
-	lexer_peek_enter(lx, &s);
-	if (ea->callbacks.recover_cast(ea->callbacks.arg) &&
-	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
-	    !lexer_if(lx, LEXER_EOF, NULL))
-		cast = 1;
-	lexer_peek_leave(lx, &s);
-	return cast;
 }
 
 static const char *

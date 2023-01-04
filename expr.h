@@ -37,7 +37,8 @@ struct expr_exec_arg {
 		 * Returning non-zero implies that the expression parser can
 		 * continue.
 		 */
-		int	 (*recover_cast)(void *);
+		int	 (*recover_cast)(const struct expr_exec_arg *,
+		    struct doc *, void *);
 
 		void	*arg;
 	} callbacks;

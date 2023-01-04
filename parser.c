@@ -8,6 +8,7 @@
 
 #include "alloc.h"
 #include "buffer.h"
+#include "cdefs.h"
 #include "doc.h"
 #include "error.h"
 #include "expr.h"
@@ -387,11 +388,24 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 }
 
 int
-parser_expr_recover_cast(void *arg)
+parser_expr_recover_cast(const struct expr_exec_arg *UNUSED(ea),
+    struct doc *dc, void *arg)
 {
+	struct lexer_state s;
 	struct parser *pr = arg;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+	int peek = 0;
 
-	return lexer_if_type(pr->pr_lx, NULL, LEXER_TYPE_CAST);
+	lexer_peek_enter(lx, &s);
+	if (lexer_if_type(lx, &tk, LEXER_TYPE_CAST) &&
+	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
+	    !lexer_if(lx, LEXER_EOF, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return 0;
+	return parser_exec_type(pr, dc, tk, NULL) & GOOD;
 }
 
 static int

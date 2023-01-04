@@ -13,4 +13,5 @@ void		 parser_free(struct parser *);
 struct buffer	*parser_exec(struct parser *, size_t);
 
 int	parser_expr_recover(const struct expr_exec_arg *, struct doc *, void *);
-int	parser_expr_recover_cast(void *);
+int	parser_expr_recover_cast(const struct expr_exec_arg *, struct doc *,
+    void *);
