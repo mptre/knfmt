@@ -64,7 +64,7 @@ static struct token	*lexer_find_token(const struct lexer *,
 static int		 lexer_buffer_streq(const struct lexer *,
     const struct lexer_state *, const char *);
 
-static void	lexer_emit_error(struct lexer *, int, const struct token *,
+static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
 
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
@@ -727,13 +727,9 @@ lexer_expect0(struct lexer *lx, int type, struct token **tk,
 	struct token *t = NULL;
 
 	if (!lexer_if(lx, type, &t)) {
-		/*
-		 * Since lexer_if() will not give us a token back in case of
-		 * failure, try to peek at the next one to provide meaningful
-		 * errors.
-		 */
+		/* Peek at the next token to provide meaningful errors. */
 		lexer_peek(lx, &t);
-		lexer_emit_error(lx, type, t, fun, lno);
+		lexer_expect_error(lx, type, t, fun, lno);
 		return 0;
 	}
 	if (tk != NULL)
@@ -1672,7 +1668,7 @@ lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
 }
 
 static void
-lexer_emit_error(struct lexer *lx, int type, const struct token *tk,
+lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
     const char *fun, int lno)
 {
 	struct buffer *bf;
