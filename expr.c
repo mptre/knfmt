@@ -333,7 +333,7 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 		es->es_er = er;
 		if (!lexer_pop(es->es_lx, &es->es_tk))
 			return NULL;
-		ex = es->es_er->er_func(es, NULL);
+		ex = er->er_func(es, NULL);
 	}
 	if (ex == NULL)
 		return NULL;
@@ -356,7 +356,7 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 
 		if (!lexer_pop(es->es_lx, &es->es_tk))
 			break;
-		tmp = es->es_er->er_func(es, ex);
+		tmp = er->er_func(es, ex);
 		if (tmp == NULL)
 			return NULL;
 		if (lexer_get_error(es->es_lx)) {
