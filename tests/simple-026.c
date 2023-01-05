@@ -1,5 +1,5 @@
 /*
- * Group variable declarations, wrong alignment on continuation.
+ * Group variable declarations.
  */
 
 int

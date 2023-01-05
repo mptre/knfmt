@@ -406,12 +406,12 @@ TESTS+=	simple-022.c
 TESTS+=	simple-023.c
 TESTS+=	simple-024.c
 TESTS+=	simple-025.c
+TESTS+=	simple-026.c
 
 TESTS+=	inplace-001.c
 
 TESTS+=	trace-001.c
 
-TESTS+=	bug-001.c
 TESTS+=	bug-002.c
 TESTS+=	bug-003.c
 TESTS+=	bug-004.c

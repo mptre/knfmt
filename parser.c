@@ -714,7 +714,7 @@ parser_exec_decl_init(struct parser *pr,
 			 * Any preceeding expr cannot be the last one of this
 			 * declaration.
 			 */
-			arg->out = NULL;
+			arg->out = concat;
 		}
 	}
 	if (ninit == 0) {
