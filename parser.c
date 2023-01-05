@@ -1071,7 +1071,8 @@ parser_exec_decl_braces_field(struct parser *pr,
 		doc_literal(" ", dc);
 
 		lexer_peek_until_comma(lx, arg->rbrace, &stop);
-		error = parser_exec_expr(pr, dc, NULL, stop, arg->indent, 0);
+		error = parser_exec_expr(pr, dc, NULL, stop, arg->indent,
+		    token_has_line(equal, 1) ? EXPR_EXEC_HARDLINE : 0);
 		if (error & HALT)
 			return parser_fail(pr);
 	}

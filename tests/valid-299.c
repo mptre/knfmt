@@ -1,5 +1,5 @@
 /*
- * Hard line after equal not honored.
+ * Sqares followed by hard line in brace initializers.
  */
 
 static const struct em_counter em_counters[em_stat_count] = {
