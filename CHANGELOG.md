@@ -43,6 +43,22 @@
   (97e3554)
   (Anton Lindqvist)
 
+- Output NUL terminators in formatted source code.
+  (4727393)
+  (Anton Lindqvist)
+
+- Replace usage of uthash.h with simple lookup tables.
+  (2f6a5f7, 58a7f68, 22f99ea, 882cbac)
+  (Anton Lindqvist)
+
+- Add support for GNU statement expressions.
+  (6d42ac4)
+  (Anton Lindqvist)
+
+- Add support for basic inline assembler.
+  (bd1e3af)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Fix detection of pointers wrapped in parenthesis.
@@ -119,6 +135,31 @@
 
 - Stricter detection of cdefs.h macros.
   (00cfdb8)
+  (Anton Lindqvist)
+
+- Fix brace initializers indentation while being part of an expression.
+  (e860afa)
+  (Anton Lindqvist)
+
+- Fix alignment of brace initializers.
+  (d3cb1cf)
+  (Anton Lindqvist)
+
+- Break long expression with intertwined comments.
+  (aa7bbcf)
+  (Anton Lindqvist)
+
+- The sizeof operator without parenthesis can only be followed by a single
+  token.
+  (16aa6f9)
+  (Anton Lindqvist)
+
+- Do not trim right parenthesis if preceded with a C99 comment.
+  (4280427)
+  (Anton Lindqvist)
+
+- Break long declarations.
+  (8bdae2d)
   (Anton Lindqvist)
 
 # 3.0.0 - 2022-08-09
