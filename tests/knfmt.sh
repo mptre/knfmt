@@ -155,6 +155,9 @@ inplace-*)
 simple-*|../*)
 	testcase "$_abs" -- -s -vl "$@"
 	;;
+style-bug-*)
+	testcase -b -c "$_abs" -- -vs "$@"
+	;;
 style-error-*)
 	testcase -c "$_abs" -- -vs "$@"
 	;;

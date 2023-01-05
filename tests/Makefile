@@ -488,6 +488,7 @@ TESTS+=	style-IncludeCategories-001.c
 TESTS+=	style-IndentWidth-001.c
 TESTS+=	style-UseTab-001.c
 TESTS+=	style-UseTab-002.c
+TESTS+=	style-bug-BraceWrapping-001.c
 TESTS+=	style-error-001.c
 TESTS+=	style-error-002.c
 TESTS+=	style-error-003.c
