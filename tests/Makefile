@@ -412,10 +412,8 @@ TESTS+=	trace-001.c
 
 TESTS+=	bug-001.c
 TESTS+=	bug-002.c
-TESTS+=	bug-003.c
 TESTS+=	bug-004.c
 TESTS+=	bug-005.c
-TESTS+=	bug-006.c
 
 TESTS+=	style-AlignAfterOpenBracket-001.c
 TESTS+=	style-AlignAfterOpenBracket-002.c
@@ -453,6 +451,7 @@ TESTS+=	style-AlignAfterOpenBracket-033.c
 TESTS+=	style-AlignAfterOpenBracket-034.c
 TESTS+=	style-AlignAfterOpenBracket-035.c
 TESTS+=	style-AlignAfterOpenBracket-036.c
+TESTS+=	style-AlignAfterOpenBracket-037.c
 TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlignEscapedNewlines-002.c
 TESTS+=	style-AlignEscapedNewlines-003.c
@@ -477,6 +476,7 @@ TESTS+=	style-BreakBeforeBinaryOperators-007.c
 TESTS+=	style-BreakBeforeBinaryOperators-008.c
 TESTS+=	style-BreakBeforeBinaryOperators-009.c
 TESTS+=	style-BreakBeforeBinaryOperators-010.c
+TESTS+=	style-BreakBeforeBinaryOperators-011.c
 TESTS+=	style-BreakBeforeTernaryOperators-001.c
 TESTS+=	style-BreakBeforeTernaryOperators-002.c
 TESTS+=	style-ColumnLimit-001.c
