@@ -57,6 +57,11 @@ testcase() {
 
 	_ok="${_file%.c}.ok"
 	_patch="${_file%.c}.patch"
+	if [ "$_bug" -eq 1 ] && ! [ -e "$_ok" ]; then
+		echo "${_ok}: file not found" 1>&2
+		return 1
+	fi
+
 	if [ -e "$_patch" ]; then
 		if ! ${EXEC:-} "${KNFMT}" "$@" <"$_patch" 2>&1 |
 			diff -u -L "$_ok" -L "$_file" "$_ok" - >"$_out" 2>&1
@@ -132,7 +137,7 @@ _rel="$_path"
 _abs="$(readlink -f "$_rel" 2>/dev/null || echo "${PWD}/${_rel}")"
 case "$_rel" in
 bug-*)
-	testcase -b "$_abs" -- -s -vl "$@"
+	testcase -b "$_abs" -- -s "$@"
 	;;
 diff-simple-*)
 	testcase "$_rel" -- -Ds -vl "$@"
