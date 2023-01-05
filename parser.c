@@ -944,21 +944,25 @@ parser_exec_decl_braces1(struct parser *pr,
 			if (error & HALT)
 				return parser_fail(pr);
 		} else if (lexer_peek_if(lx, TOKEN_LBRACE, &nx)) {
-			struct doc *dc = arg->dc;
-			unsigned int col = arg->col;
+			unsigned int rmflags = PARSER_EXEC_DECL_BRACES_DEDENT;
+			struct parser_exec_decl_braces_arg newarg = {
+				.dc	= concat,
+				.rl	= arg->rl,
+				.indent	= arg->indent,
+				.col	= arg->col,
+				.flags	= arg->flags & ~rmflags,
+			};
 
-			arg->dc = concat;
-			if (parser_exec_decl_braces1(pr, arg) & HALT)
+			if (parser_exec_decl_braces1(pr, &newarg) & HALT)
 				return parser_fail(pr);
-			arg->dc = dc;
 			/*
 			 * If the nested braces are positioned on the same line
-			 * as the braces currently being parsed, do not restore
-			 * the column as we're still on the same row in terms of
+			 * as the braces currently being parsed, inherit the
+			 * column as we're still on the same row in terms of
 			 * alignment.
 			 */
-			if (token_cmp(lbrace, nx) < 0)
-				arg->col = col;
+			if (token_cmp(lbrace, nx) == 0)
+				arg->col = newarg.col;
 		} else if (parser_peek_cppx(pr) || parser_peek_cpp_init(pr)) {
 			error = parser_exec_decl_cppx(pr, concat, arg->rl);
 			if (error & HALT)
