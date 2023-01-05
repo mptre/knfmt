@@ -32,7 +32,7 @@ struct token {
 #define TOKEN_FLAG_BINARY	0x00000080u
 #define TOKEN_FLAG_DISCARD	0x00000100u
 #define TOKEN_FLAG_UNMUTE	0x00000200u
-/* was TOKEN_FLAG_DIRTY		0x00000400u */
+#define TOKEN_FLAG_COMMENT_C99	0x00000400u
 #define TOKEN_FLAG_CPP		0x00000800u
 /* was  TOKEN_FLAG_FREE		0x00001000u */
 /*
@@ -90,6 +90,7 @@ int	token_has_prefix(const struct token *, int);
 int	token_has_suffix(const struct token *, int);
 int	token_has_tabs(const struct token *);
 int	token_has_spaces(const struct token *);
+int	token_has_c99_comment(const struct token *);
 int	token_is_branch(const struct token *);
 int	token_is_decl(const struct token *, int);
 int	token_is_moveable(const struct token *);

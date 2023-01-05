@@ -1469,7 +1469,7 @@ lexer_comment(struct lexer *lx, int block)
 {
 	struct lexer_state oldst, st;
 	struct token *tk;
-	int cstyle;
+	int c99;
 	unsigned char ch;
 
 	oldst = st = lx->lx_st;
@@ -1486,22 +1486,22 @@ lexer_comment(struct lexer *lx, int block)
 		return NULL;
 	}
 
-	cstyle = ch == '*';
+	c99 = ch == '/';
 	ch = '\0';
 	for (;;) {
 		unsigned char peek;
 
 		if (lexer_getc(lx, &peek))
 			break;
-		if (cstyle) {
-			if (ch == '*' && peek == '/')
-				break;
-			ch = peek;
-		} else {
+		if (c99) {
 			if (peek == '\n') {
 				lexer_ungetc(lx);
 				break;
 			}
+		} else {
+			if (ch == '*' && peek == '/')
+				break;
+			ch = peek;
 		}
 	}
 
@@ -1515,6 +1515,8 @@ lexer_comment(struct lexer *lx, int block)
 	}
 
 	tk = lexer_emit(lx, &st, &tkcomment);
+	if (c99)
+		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
 	/* Discard any remaining hard line(s). */
 	if (block)
 		lexer_eat_lines(lx, 0, NULL);

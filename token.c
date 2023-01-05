@@ -222,6 +222,19 @@ token_has_spaces(const struct token *tk)
 	return 0;
 }
 
+int
+token_has_c99_comment(const struct token *tk)
+{
+	const struct token *suffix;
+
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		if (suffix->tk_type == TOKEN_COMMENT &&
+		    (suffix->tk_flags & TOKEN_FLAG_COMMENT_C99))
+			return 1;
+	}
+	return 0;
+}
+
 /*
  * Returns non-zero if given token has a branch continuation associated with it.
  */
@@ -258,8 +271,7 @@ token_is_decl(const struct token *tk, int type)
 int
 token_is_moveable(const struct token *tk)
 {
-	struct token_list *suffixes = (struct token_list *)&tk->tk_suffixes;
-	const struct token *prefix;
+	const struct token *prefix, *suffix;
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		if (prefix->tk_type == TOKEN_COMMENT ||
@@ -267,8 +279,10 @@ token_is_moveable(const struct token *tk)
 			return 0;
 	}
 
-	if (token_list_find(suffixes, TOKEN_COMMENT) != NULL)
-		return 0;
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		if (suffix->tk_type == TOKEN_COMMENT)
+			return 0;
+	}
 
 	return 1;
 }
@@ -462,9 +476,10 @@ strflags(struct buffer *bf, unsigned int token_flags)
 		unsigned int	 flag;
 	} flags[] = {
 #define F(f, s) { (s), sizeof(s) - 1, (f) }
-		F(TOKEN_FLAG_OPTLINE,	"OPTLINE"),
-		F(TOKEN_FLAG_OPTSPACE,	"OPTSPACE"),
-		F(TOKEN_FLAG_DIFF,	"DIFF"),
+		F(TOKEN_FLAG_COMMENT_C99,	"C99"),
+		F(TOKEN_FLAG_OPTLINE,		"OPTLINE"),
+		F(TOKEN_FLAG_OPTSPACE,		"OPTSPACE"),
+		F(TOKEN_FLAG_DIFF,		"DIFF"),
 #undef F
 	};
 	size_t nflags = sizeof(flags) / sizeof(flags[0]);

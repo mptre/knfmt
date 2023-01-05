@@ -379,6 +379,7 @@ TESTS+=	valid-293.c
 TESTS+=	valid-294.c
 TESTS+=	valid-295.c
 TESTS+=	valid-296.c
+TESTS+=	valid-297.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -412,6 +413,7 @@ TESTS+=	trace-001.c
 
 TESTS+=	bug-001.c
 TESTS+=	bug-002.c
+TESTS+=	bug-003.c
 TESTS+=	bug-004.c
 TESTS+=	bug-005.c
 

@@ -901,7 +901,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 			/* Never break before the closing parens. */
 			pv = token_prev(rparen);
-			if (pv != NULL)
+			if (pv != NULL && !token_has_c99_comment(pv))
 				token_trim(pv);
 		}
 
