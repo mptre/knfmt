@@ -379,9 +379,9 @@ parser_expr_recover_cast(const struct expr_exec_arg *UNUSED(ea),
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if_type(lx, &tk, LEXER_TYPE_CAST) &&
-	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
-	    !lexer_if(lx, LEXER_EOF, NULL))
+	if (lexer_peek_if_type(lx, &tk, LEXER_TYPE_CAST) &&
+	    lexer_seek(lx, token_next(tk)) &&
+	    lexer_if(lx, TOKEN_RPAREN, NULL) && !lexer_if(lx, LEXER_EOF, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 	if (!peek)
@@ -2546,7 +2546,8 @@ parser_peek_func(struct parser *pr, struct token **type)
 	enum parser_peek peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if_type(lx, type, 0)) {
+	if (lexer_peek_if_type(lx, type, 0) &&
+	    lexer_seek(lx, token_next(*type))) {
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
 			/* nothing */
 		} else if (lexer_if(lx, TOKEN_LPAREN, NULL) &&

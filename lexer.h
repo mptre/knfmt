@@ -73,7 +73,7 @@ int	lexer_get_lines(const struct lexer *, unsigned int,
 void	lexer_stamp(struct lexer *);
 int	lexer_recover(struct lexer *);
 int	lexer_branch(struct lexer *);
-void	lexer_seek(struct lexer *, struct token *);
+int	lexer_seek(struct lexer *, struct token *);
 
 int	lexer_is_branch(const struct lexer *);
 
@@ -107,7 +107,6 @@ int	lexer_peek(struct lexer *, struct token **);
 #define LEXER_TYPE_EXPR		0x00000004u
 
 int	lexer_peek_if_type(struct lexer *, struct token **, unsigned int);
-int	lexer_if_type(struct lexer *, struct token **, unsigned int);
 
 int	lexer_peek_if(struct lexer *, int, struct token **);
 int	lexer_if(struct lexer *, int, struct token **);

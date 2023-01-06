@@ -531,11 +531,12 @@ lexer_branch(struct lexer *lx)
 	return 1;
 }
 
-void
+int
 lexer_seek(struct lexer *lx, struct token *tk)
 {
 	lexer_trace(lx, "seek to %s", lexer_serialize(lx, tk));
 	lx->lx_st.st_tk = token_prev(tk);
+	return lx->lx_st.st_tk == NULL ? 0 : 1;
 }
 
 /*
@@ -894,19 +895,6 @@ lexer_peek_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
 	if (peek && tk != NULL)
 		*tk = t;
 	return peek;
-}
-
-int
-lexer_if_type(struct lexer *lx, struct token **tk, unsigned int flags)
-{
-	struct token *t;
-
-	if (!lexer_peek_if_type(lx, &t, flags))
-		return 0;
-	lx->lx_st.st_tk = t;
-	if (tk != NULL)
-		*tk = t;
-	return 1;
 }
 
 /*
