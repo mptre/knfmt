@@ -14,6 +14,7 @@
 #include "expr.h"
 #include "lexer.h"
 #include "options.h"
+#include "parser-attributes.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
 #include "ruler.h"
@@ -21,17 +22,6 @@
 #include "simple-stmt.h"
 #include "style.h"
 #include "token.h"
-
-/*
- * Return values for parser exec routines. Only one of the following may be
- * returned but disjoint values are favored allowing the caller to catch
- * multiple return values.
- */
-#define GOOD	0x00000001u
-#define FAIL	0x00000002u
-#define NONE	0x00000004u
-#define BRCH	0x00000008u
-#define HALT	(FAIL | NONE | BRCH)
 
 enum parser_peek {
 	PARSER_PEEK_FUNCDECL	= 1,
@@ -190,9 +180,6 @@ static int	parser_exec_stmt_asm(struct parser *, struct doc *);
 static int	parser_exec_type(struct parser *, struct doc *,
     const struct token *, struct ruler *);
 
-static int	parser_exec_attributes(struct parser *, struct doc *,
-    struct doc **, enum doc_type);
-
 static int	parser_simple_active(const struct parser *);
 
 static int	parser_simple_decl_active(const struct parser *);
@@ -224,10 +211,6 @@ static void		parser_token_trim_before(const struct parser *,
 static void		parser_token_trim_after(const struct parser *,
     struct token *);
 static unsigned int	parser_width(struct parser *, const struct doc *);
-
-#define parser_fail(a) \
-	parser_fail0((a), __func__, __LINE__)
-static int	parser_fail0(struct parser *, const char *, int);
 
 static int	parser_get_error(const struct parser *);
 static void	parser_reset(struct parser *);
@@ -771,7 +754,7 @@ parser_exec_decl_init1(struct parser *pr, struct doc *dc,
 	} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
 		doc_token(tk, dc);
 		return parser_good(pr);
-	} else if (parser_exec_attributes(pr, dc, NULL, DOC_LINE) & GOOD) {
+	} else if (parser_attributes(pr, dc, NULL, 0) & GOOD) {
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
 			doc_literal(" ", dc);
 		return parser_good(pr);
@@ -1467,7 +1450,8 @@ parser_exec_func_proto(struct parser *pr,
 
 	attributes = doc_alloc(DOC_GROUP, dc);
 	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attributes);
-	error = parser_exec_attributes(pr, indent, &arg->out, DOC_HARDLINE);
+	error = parser_attributes(pr, indent, &arg->out,
+	    PARSER_ATTRIBUTES_HARDLINE);
 	if (error & HALT)
 		doc_remove(attributes, dc);
 
@@ -1519,7 +1503,7 @@ parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			return parser_fail(pr);
 
-		if (parser_exec_attributes(pr, concat, NULL, DOC_LINE) & GOOD)
+		if (parser_attributes(pr, concat, NULL, 0) & GOOD)
 			break;
 
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
@@ -2544,45 +2528,6 @@ parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
 	return parser_good(pr);
 }
 
-static int
-parser_exec_attributes(struct parser *pr, struct doc *dc, struct doc **out,
-    enum doc_type linetype)
-{
-	struct doc *concat = NULL;
-	struct lexer *lx = pr->pr_lx;
-	int nattributes = 0;
-
-	if (!lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
-		return NONE;
-
-	doc_alloc(linetype, dc);
-	for (;;) {
-		struct token *tk;
-		int error;
-
-		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk))
-			break;
-
-		if (nattributes > 0)
-			doc_alloc(linetype, concat);
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		doc_alloc(DOC_SOFTLINE, concat);
-		doc_token(tk, concat);
-		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-			doc_token(tk, concat);
-		error = parser_expr_exec(pr, concat, NULL, NULL, 0, 0);
-		if (error & HALT)
-			return parser_fail(pr);
-		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-			doc_token(tk, concat);
-		nattributes++;
-	}
-	if (out != NULL)
-		*out = concat;
-
-	return parser_good(pr);
-}
-
 /*
  * Called while entering a section of the source code with one or many
  * statements potentially wrapped in curly braces ahead. The statements
@@ -2951,7 +2896,7 @@ parser_braces_invalidate(struct parser *pr)
 	pr->pr_braces.valid = 0;
 }
 
-static int
+int
 parser_fail0(struct parser *pr, const char *fun, int lno)
 {
 	struct buffer *bf;
