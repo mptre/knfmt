@@ -2574,7 +2574,7 @@ parser_peek_func(struct parser *pr, struct token **type)
 			peek = PARSER_PEEK_FUNCDECL;
 		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
 			peek = PARSER_PEEK_FUNCIMPL;
-		else if (lexer_if_type(lx, NULL, 0))
+		else if (lexer_peek_if_type(lx, NULL, 0))
 			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
 	}
 out:
