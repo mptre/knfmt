@@ -97,11 +97,8 @@ int	token_is_moveable(const struct token *);
 
 struct token	*token_get_branch(struct token *);
 
-#define token_next(tk) token_next0((struct token *)(tk))
-struct token	*token_next0(struct token *);
-
-#define token_prev(tk) token_prev0((struct token *)(tk))
-struct token	*token_prev0(struct token *);
+struct token	*token_next(const struct token *);
+struct token	*token_prev(const struct token *);
 
 void	token_list_remove(struct token_list *, struct token *);
 void	token_list_copy(struct token_list *, struct token_list *);
