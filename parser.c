@@ -16,7 +16,9 @@
 #include "options.h"
 #include "parser-attributes.h"
 #include "parser-expr.h"
+#include "parser-func.h"
 #include "parser-priv.h"
+#include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
 #include "simple-stmt.h"
@@ -149,8 +151,6 @@ static int	parser_exec_func_impl1(struct parser *, struct doc *,
     struct ruler *, const struct token *);
 static int	parser_exec_func_proto(struct parser *,
     struct parser_exec_func_proto_arg *);
-static int	parser_exec_func_arg(struct parser *, struct doc *,
-    struct doc **, const struct token *);
 
 #define PARSER_EXEC_STMT_EXPR_DOWHILE		0x00000001u
 
@@ -176,9 +176,6 @@ static int	parser_exec_stmt_continue(struct parser *, struct doc *);
 static int	parser_exec_stmt_cpp(struct parser *, struct doc *);
 static int	parser_exec_stmt_semi(struct parser *, struct doc *);
 static int	parser_exec_stmt_asm(struct parser *, struct doc *);
-
-static int	parser_exec_type(struct parser *, struct doc *,
-    const struct token *, struct ruler *);
 
 static int	parser_simple_active(const struct parser *);
 
@@ -206,11 +203,8 @@ static struct token	*parser_peek_braces_expr_stop(struct parser *,
     struct token *);
 static void		 parser_braces_invalidate(struct parser *);
 
-static void		parser_token_trim_before(const struct parser *,
+static void	parser_token_trim_before(const struct parser *,
     struct token *);
-static void		parser_token_trim_after(const struct parser *,
-    struct token *);
-static unsigned int	parser_width(struct parser *, const struct doc *);
 
 static int	parser_get_error(const struct parser *);
 static void	parser_reset(struct parser *);
@@ -331,7 +325,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 		      (nx->tk_type == TOKEN_RPAREN ||
 		       nx->tk_type == TOKEN_COMMA ||
 		       nx->tk_type == LEXER_EOF)))) {
-			if (parser_exec_type(pr, dc, tk, NULL) & GOOD)
+			if (parser_type(pr, dc, tk, NULL) & GOOD)
 				return 1;
 		}
 	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
@@ -392,7 +386,7 @@ parser_expr_recover_cast(const struct expr_exec_arg *UNUSED(ea),
 	lexer_peek_leave(lx, &s);
 	if (!peek)
 		return 0;
-	return parser_exec_type(pr, dc, tk, NULL) & GOOD;
+	return parser_type(pr, dc, tk, NULL) & GOOD;
 }
 
 static int
@@ -571,7 +565,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_fail(pr);
 	if (parser_simple_decl_active(pr))
 		simple_decl_type(pr->pr_simple.decl, beg, end);
-	if (parser_exec_type(pr, concat, end, rl) & (FAIL | NONE))
+	if (parser_type(pr, concat, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	/* Presence of semicolon implies that this declaration is done. */
@@ -1173,7 +1167,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_none(pr);
 	}
 
-	if (parser_exec_type(pr, dc, end, rl) & (FAIL | NONE))
+	if (parser_type(pr, dc, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
@@ -1374,7 +1368,7 @@ parser_exec_func_proto(struct parser *pr,
 	int nkr = 0;
 	int error;
 
-	if (parser_exec_type(pr, dc, arg->type, arg->rl) & (FAIL | NONE))
+	if (parser_type(pr, dc, arg->type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	s = style(pr->pr_st, AlwaysBreakAfterReturnType);
@@ -1403,7 +1397,7 @@ parser_exec_func_proto(struct parser *pr,
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
 			doc_token(lparen, concat);
-		while (parser_exec_func_arg(pr, concat, NULL, rparen) & GOOD)
+		while (parser_func_arg(pr, concat, NULL, rparen) & GOOD)
 			continue;
 		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
 			doc_token(rparen, concat);
@@ -1431,7 +1425,7 @@ parser_exec_func_proto(struct parser *pr,
 		indent = doc_alloc_indent(
 		    style(pr->pr_st, ContinuationIndentWidth), concat);
 	}
-	while (parser_exec_func_arg(pr, indent, &arg->out, rparen) & GOOD)
+	while (parser_func_arg(pr, indent, &arg->out, rparen) & GOOD)
 		continue;
 	/* Can be empty if arguments are absent. */
 	if (arg->out == NULL)
@@ -1456,77 +1450,6 @@ parser_exec_func_proto(struct parser *pr,
 		doc_remove(attributes, dc);
 
 	return parser_good(pr);
-}
-
-/*
- * Parse one function argument as part of either a declaration or
- * implementation.
- */
-static int
-parser_exec_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
-    const struct token *rparen)
-{
-	struct doc *concat;
-	struct lexer *lx = pr->pr_lx;
-	struct token *pv = NULL;
-	struct token *tk, *type;
-	int error = 0;
-
-	if (!lexer_peek_if_type(lx, &type, LEXER_TYPE_ARG))
-		return parser_none(pr);
-
-	/*
-	 * Let each argument begin with a soft line, causing a line to be
-	 * emitted immediately if the argument does not fit instead of breaking
-	 * the argument.
-	 */
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	doc_alloc(DOC_SOFTLINE, concat);
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, concat));
-
-	if (parser_exec_type(pr, concat, type, NULL) & (FAIL | NONE))
-		return parser_fail(pr);
-
-	/* Put the argument identifier in its own group to trigger a refit. */
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
-	if (out != NULL)
-		*out = concat;
-
-	/* Put a line between the type and identifier when wanted. */
-	if (type->tk_type != TOKEN_STAR &&
-	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
-	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL) &&
-	    !lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
-		doc_alloc(DOC_LINE, concat);
-
-	for (;;) {
-		if (lexer_peek_if(lx, LEXER_EOF, NULL))
-			return parser_fail(pr);
-
-		if (parser_attributes(pr, concat, NULL, 0) & GOOD)
-			break;
-
-		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-			doc_token(tk, concat);
-			doc_alloc(DOC_LINE, concat);
-			break;
-		}
-		if (lexer_peek(lx, &tk) && tk == rparen)
-			break;
-
-		if (!lexer_pop(lx, &tk)) {
-			error = parser_fail(pr);
-			break;
-		}
-		/* Identifiers must be separated. */
-		if (pv != NULL && pv->tk_type == TOKEN_IDENT &&
-		    tk->tk_type == TOKEN_IDENT)
-			doc_alloc(DOC_LINE, concat);
-		doc_token(tk, concat);
-		pv = tk;
-	}
-
-	return error ? error : parser_good(pr);
 }
 
 static int
@@ -2391,144 +2314,6 @@ parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
 }
 
 /*
- * Parse token(s) denoting a type.
- */
-static int
-parser_exec_type(struct parser *pr, struct doc *dc, const struct token *end,
-    struct ruler *rl)
-{
-	struct lexer *lx = pr->pr_lx;
-	const struct token *align = NULL;
-	struct token *beg;
-	unsigned int nspaces = 0;
-
-	if (!lexer_peek(lx, &beg))
-		return parser_fail(pr);
-
-	if (rl != NULL) {
-		/*
-		 * Find the first non pointer token starting from the end, this
-		 * is where the ruler alignment must be performed.
-		 */
-		align = end->tk_token != NULL ? end->tk_token : end;
-		for (;;) {
-			if (align->tk_type != TOKEN_STAR)
-				break;
-
-			nspaces++;
-			if (align == beg)
-				break;
-			align = token_prev(align);
-			if (align == NULL)
-				break;
-		}
-
-		/*
-		 * No alignment wanted if the first non-pointer token is
-		 * followed by a semi.
-		 */
-		if (align != NULL) {
-			const struct token *nx;
-
-			nx = token_next(align);
-			if (nx != NULL && nx->tk_type == TOKEN_SEMI)
-				align = NULL;
-		}
-	}
-
-	if (pr->pr_op->op_flags & OPTIONS_SIMPLE) {
-		struct token *tk = beg;
-		int ntokens = 0;
-
-		for (;;) {
-			struct token *nx;
-
-			nx = token_next(tk);
-			if (ntokens > 0 &&
-			    tk->tk_type == TOKEN_STATIC &&
-			    token_is_moveable(tk)) {
-				token_move_prefixes(beg, tk);
-				token_move_suffixes(tk, beg);
-				lexer_move_before(lx, beg, tk);
-			}
-			if (tk == end)
-				break;
-			tk = nx;
-			ntokens++;
-		}
-	}
-
-	for (;;) {
-		struct doc *concat;
-		struct token *tk;
-		int didalign = 0;
-
-		if (!lexer_pop(lx, &tk))
-			return parser_fail(pr);
-		parser_token_trim_after(pr, tk);
-
-		if (tk->tk_flags & TOKEN_FLAG_TYPE_ARGS) {
-			struct doc *indent;
-			struct token *lparen = tk;
-			struct token *rparen;
-			unsigned int w;
-
-			doc_token(lparen, dc);
-			if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
-				w = parser_width(pr, dc);
-			else
-				w = style(pr->pr_st, ContinuationIndentWidth);
-			indent = doc_alloc_indent(w, dc);
-			while (parser_exec_func_arg(pr, indent, NULL, end) &
-			    GOOD)
-				continue;
-			if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-				doc_token(rparen, dc);
-			break;
-		}
-
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		doc_token(tk, concat);
-
-		if (tk == align) {
-			if (token_is_decl(tk, TOKEN_ENUM) ||
-			    token_is_decl(tk, TOKEN_STRUCT) ||
-			    token_is_decl(tk, TOKEN_UNION)) {
-				doc_alloc(DOC_LINE, concat);
-			} else {
-				ruler_insert(rl, tk, concat, 1,
-				    parser_width(pr, dc), nspaces);
-			}
-			didalign = 1;
-		}
-
-		if (tk == end)
-			break;
-
-		if (!didalign) {
-			struct lexer_state s;
-			struct token *nx;
-
-			lexer_peek_enter(lx, &s);
-			if (tk->tk_type != TOKEN_STAR &&
-			    tk->tk_type != TOKEN_LPAREN &&
-			    tk->tk_type != TOKEN_LSQUARE &&
-			    lexer_pop(lx, &nx) &&
-			    (nx->tk_type != TOKEN_LPAREN ||
-			     lexer_if(lx, TOKEN_STAR, NULL)) &&
-			    nx->tk_type != TOKEN_LSQUARE &&
-			    nx->tk_type != TOKEN_RSQUARE &&
-			    nx->tk_type != TOKEN_RPAREN &&
-			    nx->tk_type != TOKEN_COMMA)
-				doc_alloc(DOC_LINE, concat);
-			lexer_peek_leave(lx, &s);
-		}
-	}
-
-	return parser_good(pr);
-}
-
-/*
  * Called while entering a section of the source code with one or many
  * statements potentially wrapped in curly braces ahead. The statements
  * will silently be formatted in order to determine if each statement fits on a
@@ -2946,7 +2731,7 @@ parser_token_trim_before(const struct parser *pr, struct token *tk)
 /*
  * Remove any subsequent hard line(s) from the given token.
  */
-static void
+void
 parser_token_trim_after(const struct parser *pr, struct token *tk)
 {
 	/* Avoid side effects in simple mode. */
@@ -2958,7 +2743,7 @@ parser_token_trim_after(const struct parser *pr, struct token *tk)
 /*
  * Returns the width of the given document.
  */
-static unsigned int
+unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
 	return doc_width(dc, pr->pr_bf, pr->pr_st, pr->pr_op);
