@@ -77,7 +77,7 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 			 */
 			ident = 0;
 			lexer_peek_enter(lx, &ss);
-			if ((flags & (LEXER_TYPE_CAST | LEXER_TYPE_ARG)) &&
+			if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
 			    ntokens == 0 && lexer_if(lx, TOKEN_IDENT, NULL) &&
 			    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
 			     lexer_if(lx, TOKEN_COMMA, NULL)))
@@ -90,8 +90,8 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 			}
 
 			/* Ensure this is not the identifier after the type. */
-			if ((flags & LEXER_TYPE_CAST) == 0 &&
-			    (flags & LEXER_TYPE_EXPR) == 0 &&
+			if ((flags & PARSER_TYPE_CAST) == 0 &&
+			    (flags & PARSER_TYPE_EXPR) == 0 &&
 			    lexer_peek_if_type_ident(lx))
 				break;
 
@@ -123,7 +123,7 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 	lexer_peek_leave(lx, &s);
 
 	if (ntokens > 0 && ntokens == nkeywords &&
-	    (flags & LEXER_TYPE_ARG) == 0) {
+	    (flags & PARSER_TYPE_ARG) == 0) {
 		/* Only qualifier or storage token(s) cannot denote a type. */
 		peek = 0;
 	} else if (!peek && !unknown && ntokens > 0) {

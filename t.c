@@ -226,13 +226,13 @@ main(int argc, char *argv[])
 	error |= test_parser_type_peek("const STACK_OF(X509_EXTENSION)*",
 	    "const STACK_OF ( X509_EXTENSION ) *");
 
-	error |= test_parser_type_peek_flags(LEXER_TYPE_CAST,
+	error |= test_parser_type_peek_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");
-	error |= test_parser_type_peek_flags(LEXER_TYPE_ARG,
+	error |= test_parser_type_peek_flags(PARSER_TYPE_ARG,
 	    "const foo_t)", "const");
-	error |= test_parser_type_peek_flags(LEXER_TYPE_ARG,
+	error |= test_parser_type_peek_flags(PARSER_TYPE_ARG,
 	    "size_t)", "size_t");
-	error |= test_parser_type_peek_flags(LEXER_TYPE_EXPR,
+	error |= test_parser_type_peek_flags(PARSER_TYPE_EXPR,
 	    "const foo_t)", "const foo_t");
 
 	error |= test_lexer_read("<", "LESS");

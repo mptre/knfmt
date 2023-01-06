@@ -18,7 +18,7 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	struct token *tk, *type;
 	int error = 0;
 
-	if (!parser_type_peek(pr, &type, LEXER_TYPE_ARG))
+	if (!parser_type_peek(pr, &type, PARSER_TYPE_ARG))
 		return parser_none(pr);
 
 	/*
