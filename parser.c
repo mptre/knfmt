@@ -1066,11 +1066,12 @@ parser_exec_decl_braces_field1(struct parser *pr,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc = arg->dc;
-	struct doc *expr = NULL;
 	struct token *tk;
 	int error;
 
 	if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
+		struct doc *expr = NULL;
+
 		doc_token(tk, dc);
 		error = parser_expr(pr, dc, &expr, NULL, 0, 0);
 		if (error & HALT)
@@ -1097,6 +1098,8 @@ parser_exec_decl_braces_field1(struct parser *pr,
 		/* Enum making use of preprocessor directives. */
 		if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) &&
 		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
+			struct doc *expr = NULL;
+
 			doc_token(tk, dc);
 			error = parser_expr(pr, dc, &expr, NULL, 0, 0);
 			if (error & FAIL)
