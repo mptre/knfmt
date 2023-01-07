@@ -943,10 +943,6 @@ parser_exec_decl_braces1(struct parser *pr,
 			 */
 			if (token_cmp(lbrace, nx) == 0)
 				arg->col = newarg.col;
-		} else if (parser_peek_cppx(pr)) {
-			error = parser_exec_decl_cppx(pr, concat, arg->rl);
-			if (error & HALT)
-				return parser_fail(pr);
 		} else {
 			struct token *stop;
 
@@ -2629,6 +2625,16 @@ parser_peek_braces_expr_stop(struct parser *pr, struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *comma, *stop;
+
+	if (parser_peek_cppx(pr)) {
+		struct token *nx, *rparen;
+
+		if (lexer_peek_until_freestanding(lx, TOKEN_RPAREN,
+		    rbrace, &rparen) &&
+		    (nx = token_next(rparen)) != NULL)
+			return nx;
+		return rbrace;
+	}
 
 	/*
 	 * Finding the next lbrace can be costly if the current pair of braces
