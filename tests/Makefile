@@ -76,7 +76,6 @@ TESTS+=	error-039.c
 TESTS+=	error-040.c
 TESTS+=	error-041.c
 TESTS+=	error-042.c
-TESTS+=	error-043.c
 TESTS+=	error-044.c
 TESTS+=	error-045.c
 TESTS+=	error-046.c

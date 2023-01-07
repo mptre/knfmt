@@ -12,6 +12,7 @@
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
+#include "ruler.h"
 #include "style.h"
 #include "token.h"
 
@@ -110,6 +111,7 @@ struct expr_state {
 	unsigned int		 es_ncalls;	/* # nested calls */
 	unsigned int		 es_noparens;	/* parens indent disabled */
 	unsigned int		 es_nalign;	/* # expr_doc_align_enter() */
+	unsigned int		 es_col;	/* ruler column */
 };
 
 static struct expr	*expr_exec1(struct expr_state *, enum expr_pc);
@@ -709,7 +711,16 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_lhs != NULL)
 			lhs = expr_doc(ex->ex_lhs, es, concat);
 		doc_token(ex->ex_tk, lhs);
-		doc_alloc(DOC_LINE, lhs);
+		if (es->es_flags & EXPR_EXEC_ALIGN) {
+			unsigned int w;
+
+			w = expr_doc_width(es,
+			    es->es_col == 0 ? es->es_dc : lhs);
+			ruler_insert(es->es_ea.rl, ex->ex_tk, lhs,
+			    ++es->es_col, w, 0);
+		} else {
+			doc_alloc(DOC_LINE, lhs);
+		}
 		if (ex->ex_rhs != NULL) {
 			concat = expr_doc_soft(ex->ex_rhs, es, concat,
 			    soft_weights.arg);

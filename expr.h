@@ -2,6 +2,7 @@ struct expr_exec_arg {
 	const struct style	*st;
 	const struct options	*op;
 	struct lexer		*lx;
+	struct ruler		*rl;
 	struct doc		*dc;
 
 	/*
@@ -17,7 +18,8 @@ struct expr_exec_arg {
 #define EXPR_EXEC_SOFTLINE		0x00000001u
 /* Emit a hard line before the expression. */
 #define EXPR_EXEC_HARDLINE		0x00000002u
-/* was EXPR_EXEC_INDENT_ONCE		0x00000004u */
+/* Align arguments using the supplied ruler. */
+#define EXPR_EXEC_ALIGN			0x00000004u
 /* Trim redundant parenthesis around top level expression. */
 #define EXPR_EXEC_NOPARENS		0x00000008u
 /* Detect inline assembly operands. */
