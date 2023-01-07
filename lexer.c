@@ -948,15 +948,15 @@ lexer_peek_until_freestanding(struct lexer *lx, int type,
 	for (;;) {
 		if (!lexer_pop(lx, &t) || t == stop || t->tk_type == LEXER_EOF)
 			break;
-		if (t->tk_type == type && !nest) {
-			peek = 1;
-			break;
-		}
 		if (t->tk_type == TOKEN_LPAREN || t->tk_type == TOKEN_LBRACE)
 			nest++;
 		else if (t->tk_type == TOKEN_RPAREN ||
 		    t->tk_type == TOKEN_RBRACE)
 			nest--;
+		if (t->tk_type == type && !nest) {
+			peek = 1;
+			break;
+		}
 	}
 	lexer_peek_leave(lx, &s);
 	if (tk != NULL)
