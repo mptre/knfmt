@@ -316,15 +316,14 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	if (parser_type_peek(pr, &tk, PARSER_TYPE_EXPR)) {
 		struct token *nx, *pv;
 
-		if (!lexer_back(lx, &pv))
-			return 0;
-		if (pv->tk_type == TOKEN_SIZEOF ||
-		    ((pv->tk_type == TOKEN_LPAREN ||
-		      pv->tk_type == TOKEN_COMMA) &&
-		     ((nx = token_next(tk)) != NULL &&
-		      (nx->tk_type == TOKEN_RPAREN ||
-		       nx->tk_type == TOKEN_COMMA ||
-		       nx->tk_type == LEXER_EOF)))) {
+		if (lexer_back(lx, &pv) &&
+		    (pv->tk_type == TOKEN_SIZEOF ||
+		     ((pv->tk_type == TOKEN_LPAREN ||
+		       pv->tk_type == TOKEN_COMMA) &&
+		      ((nx = token_next(tk)) != NULL &&
+		       (nx->tk_type == TOKEN_RPAREN ||
+			nx->tk_type == TOKEN_COMMA ||
+			nx->tk_type == LEXER_EOF))))) {
 			if (parser_type(pr, dc, tk, NULL) & GOOD)
 				return 1;
 		}
