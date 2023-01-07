@@ -1193,10 +1193,7 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rparen, *tk;
-	unsigned int col = 0;
-	unsigned int indent = 0;
-	unsigned int w;
+	struct token *rparen, *stop, *tk;
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
@@ -1204,49 +1201,10 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 		doc_token(tk, concat);
 		doc_alloc(DOC_LINE, concat);
 	}
-	if (lexer_expect(lx, TOKEN_IDENT, &tk))
-		doc_token(tk, concat);
-	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+	if (!lexer_peek_until_freestanding(lx, TOKEN_RPAREN, NULL, &rparen) ||
+	    (stop = token_next(rparen)) == NULL)
 		return parser_fail(pr);
-	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-		doc_token(tk, concat);
-
-	/*
-	 * Take note of the width of the document up to the first argument, must
-	 * be accounted for while performing alignment.
-	 */
-	w = parser_width(pr, concat);
-
-	if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
-		indent = w;
-
-	for (;;) {
-		struct doc *expr = NULL;
-		struct doc *arg;
-		struct token *stop;
-		int error;
-
-		if (lexer_peek_if(lx, TOKEN_RPAREN, NULL))
-			break;
-
-		arg = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-
-		lexer_peek_until_comma(lx, rparen, &stop);
-		error = parser_expr(pr, arg, &expr, stop, NULL, indent, 0);
-		if (error & HALT)
-			return parser_fail(pr);
-		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-			doc_token(tk, expr);
-			w += parser_width(pr, arg);
-			ruler_insert(rl, tk, expr, ++col, w, 0);
-			w = 0;
-		}
-	}
-
-	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-		doc_token(tk, dc);
-
-	return parser_good(pr);
+	return parser_expr(pr, dc, NULL, stop, rl, 0, EXPR_EXEC_ALIGN);
 }
 
 /*
