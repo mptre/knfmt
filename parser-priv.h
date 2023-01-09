@@ -25,5 +25,6 @@ int	parser_none(const struct parser *);
 int	parser_fail0(struct parser *, const char *, int);
 
 void	parser_token_trim_after(const struct parser *, struct token *);
+void	parser_token_trim_before(const struct parser *, struct token *);
 
 unsigned int	parser_width(struct parser *, const struct doc *);

@@ -18,6 +18,7 @@
 #include "parser-expr.h"
 #include "parser-func.h"
 #include "parser-priv.h"
+#include "parser-stmt-asm.h"
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
@@ -175,7 +176,6 @@ static int	parser_exec_stmt_break(struct parser *, struct doc *);
 static int	parser_exec_stmt_continue(struct parser *, struct doc *);
 static int	parser_exec_stmt_cpp(struct parser *, struct doc *);
 static int	parser_exec_stmt_semi(struct parser *, struct doc *);
-static int	parser_exec_stmt_asm(struct parser *, struct doc *);
 
 static int	parser_simple_active(const struct parser *);
 
@@ -201,9 +201,6 @@ static int		parser_peek_line(struct parser *, const struct token *);
 static struct token	*parser_peek_braces_expr_stop(struct parser *,
     struct token *);
 static void		 parser_braces_invalidate(struct parser *);
-
-static void	parser_token_trim_before(const struct parser *,
-    struct token *);
 
 static int	parser_get_error(const struct parser *);
 static void	parser_reset(struct parser *);
@@ -450,7 +447,7 @@ parser_exec_asm(struct parser *pr, struct doc *dc)
 {
 	int error;
 
-	error = parser_exec_stmt_asm(pr, dc);
+	error = parser_stmt_asm(pr, dc);
 	if (error & HALT)
 		return error;
 	doc_alloc(DOC_HARDLINE, dc);
@@ -1460,7 +1457,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
 	    (parser_exec_stmt_label(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_switch(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_continue(pr, dc) & GOOD) ||
-	    (parser_exec_stmt_asm(pr, dc) & GOOD) ||
+	    (parser_stmt_asm(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_dowhile(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_semi(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_cpp(pr, dc) & GOOD))
@@ -2186,91 +2183,6 @@ parser_exec_stmt_semi(struct parser *pr, struct doc *dc)
 	return parser_good(pr);
 }
 
-static int
-parser_exec_stmt_asm(struct parser *pr, struct doc *dc)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct doc *concat, *opt;
-	struct token *assembly, *colon, *rparen, *tk;
-	int peek = 0;
-	int nops = 0;
-	int error, i;
-
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_ASSEMBLY, &assembly)) {
-		lexer_if(lx, TOKEN_VOLATILE, NULL);
-		if (lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
-		    lexer_if(lx, TOKEN_SEMI, NULL))
-			peek = 1;
-	}
-	lexer_peek_leave(lx, &s);
-	if (!peek)
-		return parser_none(pr);
-
-	parser_token_trim_before(pr, rparen);
-
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	if (lexer_expect(lx, TOKEN_ASSEMBLY, &assembly))
-		doc_token(assembly, concat);
-	if (lexer_if(lx, TOKEN_VOLATILE, &tk)) {
-		doc_alloc(DOC_LINE, concat);
-		doc_token(tk, concat);
-		if (token_has_spaces(tk))
-			doc_alloc(DOC_LINE, concat);
-	}
-	opt = doc_alloc_indent(style(pr->pr_st, ContinuationIndentWidth),
-	    doc_alloc(DOC_OPTIONAL, dc));
-	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-		doc_token(tk, opt);
-
-	/* instructions */
-	if (!lexer_peek_until(lx, TOKEN_COLON, &colon)) {
-		/* Basic inline assembler, only instructions are required. */
-		concat = opt;
-	}
-	error = parser_expr(pr, opt, NULL, colon, NULL, 0, 0);
-	if (error & HALT)
-		return parser_fail(pr);
-
-	/* output and input operands */
-	for (i = 0; i < 2; i++) {
-		if (!lexer_if(lx, TOKEN_COLON, &colon))
-			break;
-
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
-		if (i == 0 || nops > 0)
-			doc_alloc(DOC_LINE, concat);
-		doc_token(colon, concat);
-		if (!lexer_peek_if(lx, TOKEN_COLON, NULL))
-			doc_alloc(DOC_LINE, concat);
-
-		error = parser_expr(pr, concat, NULL, NULL, NULL, 0,
-		    EXPR_EXEC_ASM);
-		if (error & FAIL)
-			return parser_fail(pr);
-		nops = error & GOOD;
-	}
-
-	/* clobbers */
-	if (lexer_if(lx, TOKEN_COLON, &tk)) {
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
-		doc_token(tk, concat);
-		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
-			doc_alloc(DOC_LINE, concat);
-		error = parser_expr(pr, concat, NULL, rparen, NULL, 0, 0);
-		if (error & FAIL)
-			return parser_fail(pr);
-	}
-
-	if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-		doc_token(rparen, concat);
-	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, concat);
-
-	return parser_good(pr);
-}
-
 /*
  * Called while entering a section of the source code with one or many
  * statements potentially wrapped in curly braces ahead. The statements
@@ -2654,7 +2566,7 @@ out:
  * Remove any preceding hard line(s) from the given token, unless the token has
  * prefixes intended to be emitted.
  */
-static void
+void
 parser_token_trim_before(const struct parser *pr, struct token *tk)
 {
 	struct token *pv;
