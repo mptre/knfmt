@@ -455,6 +455,7 @@ TESTS+=	style-AlignAfterOpenBracket-035.c
 TESTS+=	style-AlignAfterOpenBracket-036.c
 TESTS+=	style-AlignAfterOpenBracket-037.c
 TESTS+=	style-AlignAfterOpenBracket-038.c
+TESTS+=	style-AlignAfterOpenBracket-039.c
 TESTS+=	style-AlignEscapedNewlines-001.c
 TESTS+=	style-AlignEscapedNewlines-002.c
 TESTS+=	style-AlignEscapedNewlines-003.c

@@ -1019,6 +1019,9 @@ expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
 
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[0].indent = DOC_INDENT_WIDTH;
+	minimizers[1].indent = style(es->es_st, ContinuationIndentWidth);
+	if (es->es_nalign == 0 && (es->es_flags & EXPR_EXEC_HARDLINE) == 0)
+		minimizers[1].indent -= es->es_ea.indent;
 	es->es_nalign++;
 	return doc_minimize(dc, minimizers);
 }
@@ -1042,20 +1045,14 @@ expr_doc_align_disable(struct expr *UNUSED(ex), struct expr_state *es,
 }
 
 static void
-expr_doc_align_init(struct expr_state *es, struct doc_minimize *minimizers,
-    size_t nminimizers)
+expr_doc_align_init(struct expr_state *UNUSED(es),
+    struct doc_minimize *minimizers, size_t nminimizers)
 {
 	size_t i;
 
 	memset(minimizers, 0, sizeof(*minimizers) * nminimizers);
 	for (i = 0; i < nminimizers; i++)
 		minimizers[i].type = DOC_MINIMIZE_INDENT;
-
-	if (es->es_nalign > 0)
-		return;
-	minimizers[1].indent = style(es->es_st, ContinuationIndentWidth);
-	if ((es->es_flags & EXPR_EXEC_HARDLINE) == 0)
-		minimizers[1].indent -= es->es_ea.indent;
 }
 
 static struct doc *
