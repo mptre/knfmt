@@ -1075,8 +1075,12 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		st->st_nlines = 0;
 	}
 
-	if (isnewline)
+	if (isnewline) {
 		doc_trim_spaces(dc, st);
+		/* Invalidate choice of best minimizer. */
+		if (st->st_minimize.force != -1)
+			st->st_minimize.idx = -1;
+	}
 	if (!ismute)
 		buffer_puts(st->st_bf, str, len);
 	doc_column(st, str, len);
