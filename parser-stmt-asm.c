@@ -15,7 +15,8 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	struct lexer_state s;
 	struct lexer *lx = pp->lx;
 	struct doc *concat, *opt;
-	struct token *assembly, *colon, *rparen, *tk;
+	struct token *colon = NULL;
+	struct token *assembly, *rparen, *tk;
 	int peek = 0;
 	int nops = 0;
 	int error, i;
