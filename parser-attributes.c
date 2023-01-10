@@ -10,9 +10,8 @@ int
 parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
     unsigned int flags)
 {
-	struct parser_private *pp = parser_get_private(pr);
 	struct doc *concat = NULL;
-	struct lexer *lx = pp->lx;
+	struct lexer *lx = pr->pr_lx;
 	enum doc_type linetype = (flags & PARSER_ATTRIBUTES_HARDLINE) ?
 	    DOC_HARDLINE : DOC_LINE;
 	int nattributes = 0;

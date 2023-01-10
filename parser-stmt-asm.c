@@ -11,9 +11,8 @@
 int
 parser_stmt_asm(struct parser *pr, struct doc *dc)
 {
-	struct parser_private *pp = parser_get_private(pr);
 	struct lexer_state s;
-	struct lexer *lx = pp->lx;
+	struct lexer *lx = pr->pr_lx;
 	struct doc *concat, *opt;
 	struct token *colon = NULL;
 	struct token *assembly, *rparen, *tk;
@@ -43,7 +42,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		if (token_has_spaces(tk))
 			doc_alloc(DOC_LINE, concat);
 	}
-	opt = doc_alloc_indent(style(pp->st, ContinuationIndentWidth),
+	opt = doc_alloc_indent(style(pr->pr_st, ContinuationIndentWidth),
 	    doc_alloc(DOC_OPTIONAL, dc));
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, opt);

@@ -31,31 +31,6 @@ enum parser_peek {
 	PARSER_PEEK_FUNCIMPL	= 2,
 };
 
-struct parser {
-	struct parser_private	 pr_pp;
-	const char		*pr_path;
-	struct error		*pr_er;
-	const struct options	*pr_op;
-	const struct style	*pr_st;
-	struct lexer		*pr_lx;
-	struct buffer		*pr_bf;		/* scratch buffer */
-	unsigned int		 pr_error;
-	unsigned int		 pr_nblocks;	/* # stmt blocks */
-	unsigned int		 pr_nindent;	/* # indented stmt blocks */
-
-	struct {
-		struct simple_stmt	*stmt;
-		struct simple_decl	*decl;
-		int			 nstmt;
-		int			 ndecl;
-	} pr_simple;
-
-	struct {
-		int		 valid;
-		struct token	*lbrace;
-	} pr_braces;
-};
-
 struct parser_exec_decl_braces_arg {
 	struct doc	*dc;
 	struct ruler	*rl;
@@ -211,15 +186,9 @@ struct parser *
 parser_alloc(const char *path, struct lexer *lx, struct error *er,
     const struct style *st, const struct options *op)
 {
-	struct parser_private pp = {
-		.op	= op,
-		.st	= st,
-		.lx	= lx,
-	};
 	struct parser *pr;
 
 	pr = ecalloc(1, sizeof(*pr));
-	pr->pr_pp = pp;
 	pr->pr_path = path;
 	pr->pr_er = er;
 	pr->pr_st = st;
@@ -2607,12 +2576,6 @@ static int
 parser_get_error(const struct parser *pr)
 {
 	return pr->pr_error || lexer_get_error(pr->pr_lx);
-}
-
-struct parser_private *
-parser_get_private(struct parser *pr)
-{
-	return &pr->pr_pp;
 }
 
 int

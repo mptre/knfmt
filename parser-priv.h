@@ -9,13 +9,29 @@
 #define BRCH	0x00000008u
 #define HALT	(FAIL | NONE | BRCH)
 
-struct parser_private {
-	const struct options	*op;
-	const struct style	*st;
-	struct lexer		*lx;
-};
+struct parser {
+	const char		*pr_path;
+	struct error		*pr_er;
+	const struct options	*pr_op;
+	const struct style	*pr_st;
+	struct lexer		*pr_lx;
+	struct buffer		*pr_bf;		/* scratch buffer */
+	unsigned int		 pr_error;
+	unsigned int		 pr_nblocks;	/* # stmt blocks */
+	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
-struct parser_private	*parser_get_private(struct parser *);
+	struct {
+		struct simple_stmt	*stmt;
+		struct simple_decl	*decl;
+		int			 nstmt;
+		int			 ndecl;
+	} pr_simple;
+
+	struct {
+		int		 valid;
+		struct token	*lbrace;
+	} pr_braces;
+};
 
 int	parser_good(const struct parser *);
 int	parser_none(const struct parser *);

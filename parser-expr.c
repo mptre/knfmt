@@ -9,11 +9,10 @@ parser_expr(struct parser *pr, struct doc *dc, struct doc **expr,
     const struct token *stop, struct ruler *rl, unsigned int indent,
     unsigned int flags)
 {
-	struct parser_private *pp = parser_get_private(pr);
 	const struct expr_exec_arg ea = {
-		.st		= pp->st,
-		.op		= pp->op,
-		.lx		= pp->lx,
+		.st		= pr->pr_st,
+		.op		= pr->pr_op,
+		.lx		= pr->pr_lx,
 		.rl		= rl,
 		.dc		= dc,
 		.stop		= stop,

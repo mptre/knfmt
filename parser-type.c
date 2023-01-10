@@ -20,8 +20,7 @@ static int	lexer_peek_if_type_cpp(struct lexer *lx);
 int
 parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 {
-	struct parser_private *pp = parser_get_private(pr);
-	struct lexer *lx = pp->lx;
+	struct lexer *lx = pr->pr_lx;
 	struct lexer_state s;
 	struct token *beg, *pv, *t;
 	int peek = 0;
@@ -143,8 +142,7 @@ int
 parser_type(struct parser *pr, struct doc *dc, const struct token *end,
     struct ruler *rl)
 {
-	struct parser_private *pp = parser_get_private(pr);
-	struct lexer *lx = pp->lx;
+	struct lexer *lx = pr->pr_lx;
 	const struct token *align = NULL;
 	struct token *beg;
 	unsigned int nspaces = 0;
@@ -183,7 +181,7 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	if (pp->op->op_flags & OPTIONS_SIMPLE) {
+	if (pr->pr_op->op_flags & OPTIONS_SIMPLE) {
 		struct token *tk = beg;
 		int ntokens = 0;
 
@@ -221,10 +219,10 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 			unsigned int w;
 
 			doc_token(lparen, dc);
-			if (style(pp->st, AlignAfterOpenBracket) == Align)
+			if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
 				w = parser_width(pr, dc);
 			else
-				w = style(pp->st, ContinuationIndentWidth);
+				w = style(pr->pr_st, ContinuationIndentWidth);
 			indent = doc_alloc_indent(w, dc);
 			while (parser_func_arg(pr, indent, NULL, end) & GOOD)
 				continue;

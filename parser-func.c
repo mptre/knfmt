@@ -11,9 +11,8 @@ int
 parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
     const struct token *rparen)
 {
-	struct parser_private *pp = parser_get_private(pr);
 	struct doc *concat;
-	struct lexer *lx = pp->lx;
+	struct lexer *lx = pr->pr_lx;
 	struct token *pv = NULL;
 	struct token *tk, *type;
 	int error = 0;
