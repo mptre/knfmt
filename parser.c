@@ -656,7 +656,6 @@ parser_exec_decl_init(struct parser *pr,
 	struct lexer *lx = pr->pr_lx;
 	struct ruler_indent *cookie = NULL;
 	int ninit = 0;
-	int error;
 
 	indent = ruler_indent(arg->rl, arg->dc, &cookie);
 	dc = doc_alloc(DOC_CONCAT, indent);
@@ -664,6 +663,7 @@ parser_exec_decl_init(struct parser *pr,
 
 	for (;;) {
 		struct token *comma, *tk;
+		int error;
 
 		if (lexer_peek(lx, &tk) && tk == arg->semi)
 			break;
