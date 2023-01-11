@@ -230,7 +230,8 @@ static void	doc_trace_enter0(const struct doc *, struct doc_state *);
 static void	doc_trace_leave0(const struct doc *, struct doc_state *);
 
 static char		*docstr(const struct doc *, char *, size_t);
-static const char	*indentstr(const struct doc *);
+static void		 indentstr(const struct doc *,
+    const struct doc_state *, struct buffer *);
 static const char	*statestr(const struct doc_state *, unsigned int,
     char *, size_t);
 
@@ -1629,18 +1630,13 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	case DOC_INDENT:
 	case DOC_DEDENT:
 	case DOC_OPTIONAL: {
-		const char *str;
+		struct buffer *bf;
 
 		fprintf(stderr, "(");
-		if (IS_DOC_INDENT_NEWLINE(dc)) {
-			fprintf(stderr, "NEWLINE, %d, %u",
-			    dc->dc_int & ~DOC_INDENT_NEWLINE,
-			    st->st_stats.nlines);
-		} else if ((str = indentstr(dc)) != NULL) {
-			fprintf(stderr, "%s", str);
-		} else {
-			fprintf(stderr, "%d", dc->dc_int);
-		}
+		bf = buffer_alloc(32);
+		indentstr(dc, st, bf);
+		fprintf(stderr, "%.*s", (int)bf->bf_len, bf->bf_ptr);
+		buffer_free(bf);
 		break;
 	}
 
@@ -1779,14 +1775,22 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	return buf;
 }
 
-static const char *
-indentstr(const struct doc *dc)
+static void
+indentstr(const struct doc *dc, const struct doc_state *st, struct buffer *bf)
 {
-	if (IS_DOC_INDENT_PARENS(dc))
-		return "PARENS";
-	if (IS_DOC_INDENT_FORCE(dc))
-		return "FORCE";
-	return NULL;
+	if (IS_DOC_INDENT_NEWLINE(dc)) {
+		buffer_printf(bf, "NEWLINE, %d, %u",
+		    dc->dc_int & ~DOC_INDENT_NEWLINE,
+		    st->st_stats.nlines);
+	} else if (IS_DOC_INDENT_PARENS(dc)) {
+		buffer_printf(bf, "PARENS");
+	} else if (IS_DOC_INDENT_FORCE(dc)) {
+		buffer_printf(bf, "FORCE");
+	} else if (IS_DOC_INDENT_WIDTH(dc)) {
+		buffer_printf(bf, "WIDTH");
+	} else {
+		buffer_printf(bf, "%d", dc->dc_int);
+	}
 }
 
 static const char *
