@@ -1,3 +1,6 @@
+struct doc;
+struct token;
+
 /*
  * Return values for parser routines. Only one of the following may be returned
  * but disjoint values are favored allowing the caller to catch multiple return

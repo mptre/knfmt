@@ -15,6 +15,8 @@
 #include "lexer.h"
 #include "options.h"
 #include "parser-attributes.h"
+#include "parser-braces.h"
+#include "parser-cpp.h"
 #include "parser-expr.h"
 #include "parser-func.h"
 #include "parser-priv.h"
@@ -29,28 +31,6 @@
 enum parser_peek {
 	PARSER_PEEK_FUNCDECL	= 1,
 	PARSER_PEEK_FUNCIMPL	= 2,
-};
-
-struct parser_exec_decl_braces_arg {
-	struct doc	*dc;
-	struct ruler	*rl;
-	unsigned int	 indent;
-	unsigned int	 col;
-	unsigned int	 flags;
-#define PARSER_EXEC_DECL_BRACES_ENUM		0x00000001u
-#define PARSER_EXEC_DECL_BRACES_TRIM		0x00000002u
-/* Remove the given indent before emitting the right brace. */
-#define PARSER_EXEC_DECL_BRACES_DEDENT		0x00000004u
-/* Perform conditional indentation. */
-#define PARSER_EXEC_DECL_BRACES_INDENT_MAYBE	0x00000008u
-};
-
-struct parser_exec_decl_braces_field_arg {
-	struct doc		*dc;
-	struct ruler		*rl;
-	const struct token	*rbrace;
-	unsigned int		 indent;
-	unsigned int		 flags;
 };
 
 struct parser_exec_decl_init_arg {
@@ -106,14 +86,6 @@ static int	parser_exec_decl_init1(struct parser *, struct doc *,
     struct parser_exec_decl_init_arg *);
 static int	parser_exec_decl_init_assign(struct parser *,
     struct doc *, struct parser_exec_decl_init_arg *);
-static int	parser_exec_decl_braces(struct parser *, struct doc *,
-    unsigned int, unsigned int);
-static int	parser_exec_decl_braces1(struct parser *,
-    struct parser_exec_decl_braces_arg *);
-static int	parser_exec_decl_braces_field(struct parser *,
-    struct parser_exec_decl_braces_field_arg *);
-static int	parser_exec_decl_braces_field1(struct parser *,
-    struct parser_exec_decl_braces_field_arg *);
 static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
@@ -167,15 +139,9 @@ static struct doc	*parser_simple_stmt_ifelse_enter(struct parser *,
 static void		 parser_simple_stmt_ifelse_leave(struct parser *,
     void *);
 
-static int		parser_peek_cppx(struct parser *);
 static int		parser_peek_decl(struct parser *);
 static enum parser_peek	parser_peek_func(struct parser *, struct token **);
 static int		parser_peek_func_line(struct parser *);
-static int		parser_peek_line(struct parser *, const struct token *);
-
-static struct token	*parser_peek_braces_expr_stop(struct parser *,
-    struct token *);
-static void		 parser_braces_invalidate(struct parser *);
 
 static int	parser_get_error(const struct parser *);
 static void	parser_reset(struct parser *);
@@ -305,7 +271,7 @@ parser_expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace)) {
 		int error;
 
-		error = parser_exec_decl_braces(pr, dc,
+		error = parser_braces(pr, dc,
 		    ea->indent,
 		    PARSER_EXEC_DECL_BRACES_DEDENT |
 		    PARSER_EXEC_DECL_BRACES_INDENT_MAYBE);
@@ -581,7 +547,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_alloc(DOC_HARDLINE, concat);
 
 		w = style(pr->pr_st, IndentWidth);
-		error = parser_exec_decl_braces(pr, concat, w,
+		error = parser_braces(pr, concat, w,
 		    PARSER_EXEC_DECL_BRACES_ENUM |
 		    PARSER_EXEC_DECL_BRACES_TRIM);
 		if (error & HALT)
@@ -740,7 +706,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 
 	dedent = doc_alloc(DOC_CONCAT, ruler_dedent(arg->rl, dc, NULL));
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		error = parser_exec_decl_braces(pr, dedent, arg->indent, 0);
+		error = parser_braces(pr, dedent, arg->indent, 0);
 		if (error & (FAIL | NONE))
 			return parser_fail(pr);
 	} else {
@@ -780,303 +746,6 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 	}
 
 	return parser_good(pr);
-}
-
-static int
-parser_exec_decl_braces(struct parser *pr, struct doc *dc, unsigned int indent,
-    unsigned int flags)
-{
-	struct ruler rl;
-	struct doc *concat;
-	int error;
-
-	ruler_init(&rl, 0, RULER_ALIGN_TABS | RULER_REQUIRE_TABS);
-	concat = doc_alloc(DOC_CONCAT, dc);
-	error = parser_exec_decl_braces1(pr,
-	    &(struct parser_exec_decl_braces_arg){
-		.dc	= concat,
-		.rl	= &rl,
-		.indent	= indent,
-		.col	= 0,
-		.flags	= flags,
-	});
-	parser_braces_invalidate(pr);
-	ruler_exec(&rl);
-	ruler_free(&rl);
-	return error;
-}
-
-static int
-parser_exec_decl_braces1(struct parser *pr,
-    struct parser_exec_decl_braces_arg *arg)
-{
-	struct doc *braces, *indent;
-	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *rbrace, *tk;
-	unsigned int w = 0;
-	int align = 1;
-	int error, hasline;
-
-	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
-		return parser_fail(pr);
-
-	parser_braces_invalidate(pr);
-
-	/*
-	 * If any column is followed by a hard line, do not align but
-	 * instead respect existing hard line(s).
-	 */
-	if (parser_peek_line(pr, rbrace))
-		align = 0;
-
-	braces = doc_alloc(DOC_CONCAT, arg->dc);
-
-	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
-		return parser_fail(pr);
-	hasline = token_has_line(lbrace, 1);
-	if (arg->flags & PARSER_EXEC_DECL_BRACES_TRIM)
-		parser_token_trim_after(pr, lbrace);
-	doc_token(lbrace, braces);
-
-	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL)) {
-		/* Honor spaces in empty braces. */
-		if (token_has_spaces(lbrace))
-			doc_literal(" ", braces);
-		goto out;
-	}
-
-	if (hasline) {
-		int val = arg->indent;
-
-		if (arg->flags & PARSER_EXEC_DECL_BRACES_INDENT_MAYBE)
-			val |= DOC_INDENT_NEWLINE;
-		indent = doc_alloc_indent(val, braces);
-		doc_alloc(DOC_HARDLINE, indent);
-	} else {
-		if (token_has_spaces(lbrace))
-			doc_literal(" ", braces);
-
-		/*
-		 * Take note of the width of the document, must be accounted for
-		 * while performing alignment.
-		 */
-		w = parser_width(pr, braces);
-		indent = doc_alloc_indent(w, braces);
-	}
-
-	for (;;) {
-		struct doc *expr = NULL;
-		struct doc *concat;
-		struct token *comma, *nx, *pv;
-
-		if (!lexer_peek(lx, &tk) || tk->tk_type == LEXER_EOF)
-			return parser_fail(pr);
-		if (tk == rbrace)
-			break;
-
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
-
-		if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) ||
-		    lexer_peek_if(lx, TOKEN_PERIOD, NULL) ||
-		    lexer_peek_if(lx, TOKEN_LSQUARE, NULL)) {
-			error = parser_exec_decl_braces_field(pr,
-			    &(struct parser_exec_decl_braces_field_arg){
-				.dc	= concat,
-				.rl	= arg->rl,
-				.rbrace	= rbrace,
-				.indent	= arg->indent,
-				.flags	= arg->flags,
-			});
-			if (error & HALT)
-				return parser_fail(pr);
-		} else if (lexer_peek_if(lx, TOKEN_LBRACE, &nx)) {
-			unsigned int rmflags = PARSER_EXEC_DECL_BRACES_DEDENT;
-			struct parser_exec_decl_braces_arg newarg = {
-				.dc	= concat,
-				.rl	= arg->rl,
-				.indent	= arg->indent,
-				.col	= arg->col,
-				.flags	= arg->flags & ~rmflags,
-			};
-
-			if (parser_exec_decl_braces1(pr, &newarg) & HALT)
-				return parser_fail(pr);
-			/*
-			 * If the nested braces are positioned on the same line
-			 * as the braces currently being parsed, inherit the
-			 * column as we're still on the same row in terms of
-			 * alignment.
-			 */
-			if (token_cmp(lbrace, nx) == 0)
-				arg->col = newarg.col;
-		} else {
-			struct token *stop;
-
-			stop = parser_peek_braces_expr_stop(pr, rbrace);
-			error = parser_expr(pr, concat, &expr, stop, arg->rl, 0,
-			    EXPR_EXEC_ALIGN);
-			if (error & HALT)
-				return parser_fail(pr);
-		}
-		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
-			if (expr == NULL)
-				expr = concat;
-			doc_token(comma, expr);
-
-			if (align) {
-				arg->col++;
-				w += parser_width(pr, concat);
-				ruler_insert(arg->rl, comma, concat,
-				    arg->col, w, 0);
-				w = 0;
-				goto next;
-			}
-		}
-
-		if (!lexer_back(lx, &pv) || !lexer_peek(lx, &nx)) {
-			return parser_fail(pr);
-		} else if (token_has_spaces(pv) &&
-		    (nx != rbrace || token_cmp(pv, rbrace) == 0)) {
-			doc_literal(" ", concat);
-		} else if (nx == rbrace) {
-			/*
-			 * Put the last hard line outside to get indentation
-			 * right.
-			 */
-			if (token_cmp(pv, rbrace) < 0) {
-				if (arg->flags &
-				    PARSER_EXEC_DECL_BRACES_DEDENT) {
-					braces = doc_alloc_indent(-arg->indent,
-					    braces);
-				}
-				doc_alloc(DOC_HARDLINE, braces);
-			}
-		} else if (pv->tk_type == TOKEN_RPAREN &&
-		    !token_has_line(pv, 1)) {
-			/*
-			 * Probably a cast followed by braces initializers, no
-			 * hard line wanted.
-			 */
-		} else {
-			doc_alloc(DOC_HARDLINE, indent);
-		}
-
-next:
-		if (((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) == 0) &&
-		    lexer_back(lx, &nx) && token_has_line(nx, 2))
-			ruler_exec(arg->rl);
-	}
-
-out:
-	if (lexer_expect(lx, TOKEN_RBRACE, &rbrace)) {
-		parser_token_trim_after(pr, rbrace);
-		doc_token(rbrace, braces);
-	}
-	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
-	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
-	    !lexer_peek_if(lx, TOKEN_RBRACE, NULL) &&
-	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL))
-		doc_literal(" ", braces);
-
-	parser_braces_invalidate(pr);
-
-	return parser_good(pr);
-}
-
-static int
-parser_exec_decl_braces_field(struct parser *pr,
-    struct parser_exec_decl_braces_field_arg *arg)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct doc *dc = arg->dc;
-	struct token *equal;
-	int nfields = 0;
-	int error;
-
-	for (;;) {
-		error = parser_exec_decl_braces_field1(pr, arg);
-		if (error & NONE)
-			break;
-		if (error & HALT)
-			return parser_fail(pr);
-		nfields++;
-	}
-	if (nfields == 0)
-		return parser_fail(pr);
-
-	if (lexer_if(lx, TOKEN_EQUAL, &equal)) {
-		struct token *stop;
-
-		ruler_insert(arg->rl, token_prev(equal), dc, 1,
-		    parser_width(pr, dc), 0);
-
-		doc_token(equal, dc);
-		doc_literal(" ", dc);
-
-		lexer_peek_until_comma(lx, arg->rbrace, &stop);
-		error = parser_expr(pr, dc, NULL, stop, NULL, arg->indent,
-		    token_has_line(equal, 1) ? EXPR_EXEC_HARDLINE : 0);
-		if (error & HALT)
-			return parser_fail(pr);
-	}
-
-	return parser_good(pr);
-}
-
-static int
-parser_exec_decl_braces_field1(struct parser *pr,
-    struct parser_exec_decl_braces_field_arg *arg)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct doc *dc = arg->dc;
-	struct token *tk;
-	int error;
-
-	if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
-		struct doc *expr = NULL;
-
-		doc_token(tk, dc);
-		error = parser_expr(pr, dc, &expr, NULL, NULL, 0, 0);
-		if (error & HALT)
-			return parser_fail(pr);
-		if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
-			doc_token(tk, expr);
-		return parser_good(pr);
-	} else if (lexer_if(lx, TOKEN_PERIOD, &tk)) {
-		struct token *equal;
-
-		doc_token(tk, dc);
-		if (lexer_expect(lx, TOKEN_IDENT, &tk))
-			doc_token(tk, dc);
-
-		/* Correct alignment, must occur after the ident. */
-		if (lexer_peek_if(lx, TOKEN_EQUAL, &equal) &&
-		    token_has_tabs(equal))
-			token_move_suffixes_if(equal, tk, TOKEN_SPACE);
-
-		return parser_good(pr);
-	} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-		doc_token(tk, dc);
-
-		/* Enum making use of preprocessor directives. */
-		if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) &&
-		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
-			struct doc *expr = NULL;
-
-			doc_token(tk, dc);
-			error = parser_expr(pr, dc, &expr, NULL, NULL, 0, 0);
-			if (error & FAIL)
-				return parser_fail(pr);
-			if (error & HALT)
-				expr = dc;
-			if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-				doc_token(tk, expr);
-		}
-
-		return parser_good(pr);
-	}
-
-	return parser_none(pr);
 }
 
 /*
@@ -1127,7 +796,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		lexer_peek_leave(lx, &s);
 	}
 	if (!peek) {
-		if (parser_peek_cppx(pr))
+		if (parser_cpp_peek_x(pr, NULL))
 			return parser_exec_decl_cppx(pr, dc, rl);
 		return parser_none(pr);
 	}
@@ -2291,45 +1960,6 @@ parser_simple_decl_leave(struct parser *pr, int simple)
 		pr->pr_simple.ndecl--;
 }
 
-/*
- * Returns non-zero if the next tokens denotes a X macro. That is, something
- * that looks like a function call but is not followed by a semicolon nor comma
- * if being part of an initializer. One example are the macros provided by
- * RBT_PROTOTYPE(9).
- */
-static int
-parser_peek_cppx(struct parser *pr)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct token *pv = NULL;
-	struct token *ident, *rparen;
-	int peek = 0;
-
-	(void)lexer_back(lx, &pv);
-	lexer_peek_enter(lx, &s);
-	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, NULL))
-		continue;
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen)) {
-		const struct token *nx;
-
-		/*
-		 * The previous token must not reside on the same line as the
-		 * identifier. The next token must reside on the next line and
-		 * have the same or less indentation. This is of importance in
-		 * order to not confuse loop constructs hidden behind cpp.
-		 */
-		nx = token_next(rparen);
-		if ((pv == NULL || token_cmp(pv, ident) < 0) &&
-		    (nx == NULL || (token_cmp(nx, rparen) > 0 &&
-		     nx->tk_cno <= ident->tk_cno)))
-			peek = 1;
-	}
-	lexer_peek_leave(lx, &s);
-	return peek;
-}
-
 static int
 parser_peek_decl(struct parser *pr)
 {
@@ -2425,83 +2055,6 @@ parser_peek_func_line(struct parser *pr)
 		return 0;
 
 	return 1;
-}
-
-/*
- * Returns non-zero if any token up to the given stop token exclusively is
- * followed by a hard line.
- */
-static int
-parser_peek_line(struct parser *pr, const struct token *stop)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct token *pv = NULL;
-	int peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	for (;;) {
-		struct token *tk;
-
-		if (!lexer_pop(lx, &tk))
-			return parser_fail(pr);
-		if (tk == stop)
-			break;
-
-		if (pv != NULL && token_cmp(tk, pv) > 0) {
-			peek = 1;
-			break;
-		}
-		pv = tk;
-	}
-	lexer_peek_leave(lx, &s);
-
-	return peek;
-}
-
-static struct token *
-parser_peek_braces_expr_stop(struct parser *pr, struct token *rbrace)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct token *comma, *stop;
-
-	if (parser_peek_cppx(pr)) {
-		struct token *nx, *rparen;
-
-		if (lexer_peek_until_freestanding(lx, TOKEN_RPAREN,
-		    rbrace, &rparen) &&
-		    (nx = token_next(rparen)) != NULL)
-			return nx;
-		return rbrace;
-	}
-
-	/*
-	 * Finding the next lbrace can be costly if the current pair of braces
-	 * has many entries. Therefore utilize a tiny cache.
-	 */
-	if (!pr->pr_braces.valid) {
-		struct token *lbrace = NULL;
-
-		parser_braces_invalidate(pr);
-		lexer_peek_until(lx, TOKEN_LBRACE, &lbrace);
-		if (lbrace != NULL)
-			token_ref(lbrace);
-		pr->pr_braces.lbrace = lbrace;
-		pr->pr_braces.valid = 1;
-	}
-	stop = pr->pr_braces.lbrace != NULL ? pr->pr_braces.lbrace : rbrace;
-	if (lexer_peek_until_comma(lx, stop, &comma))
-		return comma;
-	return stop;
-}
-
-static void
-parser_braces_invalidate(struct parser *pr)
-{
-	if (pr->pr_braces.lbrace != NULL)
-		token_rele(pr->pr_braces.lbrace);
-	pr->pr_braces.lbrace = NULL;
-	pr->pr_braces.valid = 0;
 }
 
 int
