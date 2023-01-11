@@ -134,6 +134,8 @@ static void		 expr_free(struct expr *);
 
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_unary(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_parens(struct expr *, struct expr_state *,
@@ -650,13 +652,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	switch (ex->ex_type) {
 	case EXPR_UNARY:
-		doc_token(ex->ex_tk, concat);
-		if (style(es->es_st, AlignOperands) == Align) {
-			concat = doc_alloc_indent(expr_doc_width(es, concat),
-			    concat);
-		}
-		if (ex->ex_lhs != NULL)
-			concat = expr_doc(ex->ex_lhs, es, concat);
+		concat = expr_doc_unary(ex, es, concat);
 		break;
 
 	case EXPR_BINARY:
@@ -791,6 +787,17 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	es->es_depth--;
 
 	return concat;
+}
+
+static struct doc *
+expr_doc_unary(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	doc_token(ex->ex_tk, dc);
+	if (style(es->es_st, AlignOperands) == Align)
+		dc = doc_alloc_indent(expr_doc_width(es, dc), dc);
+	if (ex->ex_lhs != NULL)
+		dc = expr_doc(ex->ex_lhs, es, dc);
+	return dc;
 }
 
 static struct doc *
