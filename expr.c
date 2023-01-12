@@ -793,8 +793,6 @@ static struct doc *
 expr_doc_unary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	doc_token(ex->ex_tk, dc);
-	if (style(es->es_st, AlignOperands) == Align)
-		dc = doc_alloc_indent(expr_doc_width(es, dc), dc);
 	if (ex->ex_lhs != NULL)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	return dc;
