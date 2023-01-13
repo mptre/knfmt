@@ -857,13 +857,17 @@ doc_exec_minimize_indent(struct doc *dc, struct doc_state *st)
 	if (st->st_flags & DOC_EXEC_TRACE) {
 		for (i = 0; i < VECTOR_LENGTH(dc->dc_minimizers); i++) {
 			const struct doc_minimize *mi = &dc->dc_minimizers[i];
+			const char *suffix = "";
 
+			if (mi->flags & DOC_MINIMIZE_FORCE)
+				suffix = ", force";
+			else if ((ssize_t)i == best)
+				suffix = ", best";
 			doc_trace(dc, st, "%s: type indent, penality %.2f, "
-			    "indent %d, nlines %u, nexceeds %u%s%s",
+			    "indent %d, nlines %u, nexceeds %u%s",
 			    __func__, mi->penality.sum, mi->indent,
 			    mi->penality.nlines, mi->penality.nexceeds,
-			    (ssize_t)i == best ? ", best" : "",
-			    (mi->flags & DOC_MINIMIZE_FORCE) ? ", force" : "");
+			    suffix);
 		}
 	}
 
