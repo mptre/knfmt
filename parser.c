@@ -635,7 +635,9 @@ parser_exec_decl_init1(struct parser *pr, struct doc *dc,
 
 		doc_token(tk, dc);
 		/* Let the remaning tokens hang of the expression. */
-		error = parser_expr(pr, dc, &expr, NULL, NULL, 0, 0);
+		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+		    .dc	= dc,
+		});
 		if (error & HALT)
 			expr = dc;
 		if (lexer_expect(lx, rhs, &tk))
@@ -718,8 +720,12 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 			w = parser_width(pr, arg->width);
 		else
 			w = style(pr->pr_st, ContinuationIndentWidth);
-		error = parser_expr(pr, dedent, &arg->out, stop, NULL, w,
-		    flags);
+		error = parser_expr(pr, &arg->out, &(struct parser_expr_arg){
+		    .dc		= dedent,
+		    .stop	= stop,
+		    .indent	= w,
+		    .flags	= flags,
+		});
 		if (error & HALT)
 			return parser_fail(pr);
 	}
@@ -818,7 +824,12 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (!lexer_peek_until_freestanding(lx, TOKEN_RPAREN, NULL, &rparen) ||
 	    (stop = token_next(rparen)) == NULL)
 		return parser_fail(pr);
-	return parser_expr(pr, dc, NULL, stop, rl, 0, EXPR_EXEC_ALIGN);
+	return parser_expr(pr, NULL, &(struct parser_expr_arg){
+	    .dc		= dc,
+	    .stop	= stop,
+	    .rl		= rl,
+	    .flags	= EXPR_EXEC_ALIGN,
+	});
 }
 
 /*
@@ -1260,7 +1271,10 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 
 	/* Declarations are allowed in the first expression. */
 	if (parser_exec_decl(pr, loop, 0) & NONE) {
-		error = parser_expr(pr, loop, &expr, NULL, NULL, w, 0);
+		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+		    .dc		= loop,
+		    .indent	= w,
+		});
 		if (error & (FAIL | BRCH))
 			return parser_fail(pr);
 		/* Let the semicolon hang of the expression unless empty. */
@@ -1280,7 +1294,11 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	 */
 	flags = expr != loop ? EXPR_EXEC_SOFTLINE : 0;
 	/* Let the semicolon hang of the expression unless empty. */
-	error = parser_expr(pr, loop, &expr, NULL, NULL, w, flags);
+	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+	    .dc		= loop,
+	    .indent	= w,
+	    .flags	= flags,
+	});
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
 	if (error & NONE) {
@@ -1302,7 +1320,11 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 	 */
 	flags = expr != loop ? EXPR_EXEC_SOFTLINE : 0;
 	/* Let the semicolon hang of the expression unless empty. */
-	error = parser_expr(pr, loop, &expr, NULL, NULL, w, flags);
+	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+	    .dc		= loop,
+	    .indent	= w,
+	    .flags	= flags,
+	});
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
 	if (error & NONE) {
@@ -1390,8 +1412,11 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 			w = parser_width(pr, dc);
 		else
 			w = style(pr->pr_st, ContinuationIndentWidth);
-		error = parser_expr(pr, concat, &expr, NULL, NULL, w,
-		    EXPR_EXEC_NOPARENS);
+		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+		    .dc		= concat,
+		    .indent	= w,
+		    .flags	= EXPR_EXEC_NOPARENS,
+		});
 		if (error & HALT)
 			return parser_fail(pr);
 	} else {
@@ -1438,8 +1463,10 @@ parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 
-	error = parser_expr(pr, dc, &expr, NULL, NULL,
-	    style(pr->pr_st, ContinuationIndentWidth), 0);
+	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+	    .dc		= dc,
+	    .indent	= style(pr->pr_st, ContinuationIndentWidth),
+	});
 	if (error & HALT)
 		return parser_fail(pr);
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
@@ -1509,7 +1536,11 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	 * expression since we want to fit everything until the following
 	 * statement on a single line.
 	 */
-	error = parser_expr(pr, stmt, &expr, rparen, NULL, w, 0);
+	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+	    .dc		= stmt,
+	    .stop	= rparen,
+	    .indent	= w,
+	});
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
 	if (error & NONE)
@@ -1626,7 +1657,9 @@ parser_exec_stmt_case(struct parser *pr, struct doc *dc)
 		int error;
 
 		doc_alloc(DOC_LINE, lhs);
-		error = parser_expr(pr, lhs, NULL, NULL, NULL, 0, 0);
+		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+		    .dc	= lhs,
+		});
 		if (error & HALT)
 			return parser_fail(pr);
 	}

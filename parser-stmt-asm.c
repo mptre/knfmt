@@ -52,7 +52,10 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		/* Basic inline assembler, only instructions are required. */
 		concat = opt;
 	}
-	error = parser_expr(pr, opt, NULL, colon, NULL, 0, 0);
+	error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+	    .dc		= opt,
+	    .stop	= colon,
+	});
 	if (error & HALT)
 		return parser_fail(pr);
 
@@ -81,8 +84,10 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 			doc_alloc(DOC_LINE, concat);
 		}
 
-		error = parser_expr(pr, concat, NULL, NULL, NULL, 0,
-		    EXPR_EXEC_ASM);
+		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+		    .dc		= concat,
+		    .flags	= EXPR_EXEC_ASM,
+		});
 		if (error & FAIL)
 			return parser_fail(pr);
 		nops = error & GOOD;
@@ -94,7 +99,9 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		doc_token(tk, concat);
 		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 			doc_alloc(DOC_LINE, concat);
-		error = parser_expr(pr, concat, NULL, rparen, NULL, 0, 0);
+		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+		    .dc	= concat,
+		});
 		if (error & FAIL)
 			return parser_fail(pr);
 	}

@@ -164,8 +164,13 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			struct token *stop;
 
 			stop = peek_expr_stop(pr, rbrace);
-			error = parser_expr(pr, concat, &expr, stop, arg->rl, 0,
-			    EXPR_EXEC_ALIGN);
+			error = parser_expr(pr, &expr,
+			    &(struct parser_expr_arg){
+				.dc	= concat,
+				.rl	= arg->rl,
+				.stop	= stop,
+				.flags	= EXPR_EXEC_ALIGN,
+			});
 			if (error & HALT)
 				return parser_fail(pr);
 		}
@@ -264,8 +269,13 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 		doc_literal(" ", dc);
 
 		lexer_peek_until_comma(lx, arg->rbrace, &stop);
-		error = parser_expr(pr, dc, NULL, stop, NULL, arg->indent,
-		    token_has_line(equal, 1) ? EXPR_EXEC_HARDLINE : 0);
+		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+		    .dc		= dc,
+		    .stop	= stop,
+		    .indent	= arg->indent,
+		    .flags	= token_has_line(equal, 1) ?
+			EXPR_EXEC_HARDLINE : 0,
+		});
 		if (error & HALT)
 			return parser_fail(pr);
 	}
@@ -285,7 +295,9 @@ parser_braces_field1(struct parser *pr, struct braces_field_arg *arg)
 		struct doc *expr = NULL;
 
 		doc_token(tk, dc);
-		error = parser_expr(pr, dc, &expr, NULL, NULL, 0, 0);
+		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+		    .dc	= dc,
+		});
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
@@ -313,7 +325,10 @@ parser_braces_field1(struct parser *pr, struct braces_field_arg *arg)
 			struct doc *expr = NULL;
 
 			doc_token(tk, dc);
-			error = parser_expr(pr, dc, &expr, NULL, NULL, 0, 0);
+			error = parser_expr(pr, &expr,
+			    &(struct parser_expr_arg){
+				.dc	= dc,
+			});
 			if (error & FAIL)
 				return parser_fail(pr);
 			if (error & HALT)

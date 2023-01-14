@@ -38,19 +38,17 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 }
 
 int
-parser_expr(struct parser *pr, struct doc *dc, struct doc **expr,
-    const struct token *stop, struct ruler *rl, unsigned int indent,
-    unsigned int flags)
+parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 {
 	const struct expr_exec_arg ea = {
 		.st		= pr->pr_st,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
-		.rl		= rl,
-		.dc		= dc,
-		.stop		= stop,
-		.indent		= indent,
-		.flags		= flags,
+		.rl		= arg->rl,
+		.dc		= arg->dc,
+		.stop		= arg->stop,
+		.indent		= arg->indent,
+		.flags		= arg->flags,
 		.callbacks	= {
 			.recover	= parser_expr_recover,
 			.recover_cast	= expr_recover_cast,

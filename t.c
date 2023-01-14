@@ -281,7 +281,9 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp,
 	context_init(cx, src);
 
 	concat = doc_alloc(DOC_CONCAT, NULL);
-	error = parser_expr(cx->cx_pr, concat, &expr, NULL, NULL, 0, 0);
+	error = parser_expr(cx->cx_pr, &expr, &(struct parser_expr_arg){
+	    .dc	= concat,
+	});
 	if (error & HALT) {
 		fprintf(stderr, "%s:%d: parser_expr() failure\n", fun, lno);
 		error = 1;

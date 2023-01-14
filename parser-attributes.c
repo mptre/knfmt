@@ -34,7 +34,9 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			doc_token(tk, concat);
-		error = parser_expr(pr, concat, NULL, NULL, NULL, 0, 0);
+		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+		    .dc	= concat,
+		});
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
