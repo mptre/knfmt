@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
+#include "parser-stmt.h"
 #include "parser-type.h"
 #include "style.h"
 #include "token.h"
@@ -53,4 +54,14 @@ parser_stmt_expr(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
 		doc_token(semi, expr);
 	return parser_good(pr);
+}
+
+int
+parser_stmt_expr_gnu(struct parser *pr, struct doc *dc)
+{
+	return parser_stmt_block(pr, &(struct parser_stmt_block_arg){
+	    .head	= dc,
+	    .tail	= dc,
+	    .flags	= PARSER_STMT_BLOCK_EXPR_GNU,
+	});
 }

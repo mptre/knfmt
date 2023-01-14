@@ -544,6 +544,7 @@ TESTS+=	../parser-stmt-asm.c
 TESTS+=	../parser-stmt-asm.h
 TESTS+=	../parser-stmt-expr.c
 TESTS+=	../parser-stmt-expr.h
+TESTS+=	../parser-stmt.h
 TESTS+=	../parser-type.c
 TESTS+=	../parser-type.h
 TESTS+=	../parser.c
