@@ -1,9 +1,15 @@
 #include "parser-expr.h"
 
+#include "cdefs.h"
 #include "expr.h"
 #include "lexer.h"
 #include "parser-priv.h"
-#include "parser.h"
+#include "parser-type.h"
+#include "parser.h"	/* parser_expr_recover */
+#include "token.h"
+
+static int	expr_recover_cast(const struct expr_exec_arg *, struct doc *,
+    void *);
 
 int
 parser_expr_peek(struct parser *pr, struct token **tk)
@@ -14,7 +20,7 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 		.lx		= pr->pr_lx,
 		.callbacks	= {
 			.recover	= parser_expr_recover,
-			.recover_cast	= parser_expr_recover_cast,
+			.recover_cast	= expr_recover_cast,
 			.arg		= pr,
 		},
 	};
@@ -47,7 +53,7 @@ parser_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 		.flags		= flags,
 		.callbacks	= {
 			.recover	= parser_expr_recover,
-			.recover_cast	= parser_expr_recover_cast,
+			.recover_cast	= expr_recover_cast,
 			.arg		= pr,
 		},
 	};
@@ -59,4 +65,25 @@ parser_expr(struct parser *pr, struct doc *dc, struct doc **expr,
 	if (expr != NULL)
 		*expr = ex;
 	return parser_good(pr);
+}
+
+static int
+expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), struct doc *dc,
+    void *arg)
+{
+	struct lexer_state s;
+	struct parser *pr = arg;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (parser_type_peek(pr, &tk, PARSER_TYPE_CAST) &&
+	    lexer_seek(lx, token_next(tk)) &&
+	    lexer_if(lx, TOKEN_RPAREN, NULL) && !lexer_if(lx, LEXER_EOF, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return 0;
+	return parser_type(pr, dc, tk, NULL) & GOOD;
 }
