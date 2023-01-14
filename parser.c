@@ -1426,36 +1426,18 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 static int
 parser_exec_stmt_expr(struct parser *pr, struct doc *dc)
 {
-	const struct expr_exec_arg ea = {
-		.st		= pr->pr_st,
-		.op		= pr->pr_op,
-		.lx		= pr->pr_lx,
-		.dc		= NULL,
-		.stop		= NULL,
-		.flags		= 0,
-		.callbacks	= {
-			.recover	= parser_expr_recover,
-			.recover_cast	= parser_expr_recover_cast,
-			.arg		= pr,
-		},
-	};
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
 	struct token *ident, *lparen, *nx, *rparen, *semi;
-	int peek = 0;
+	int peek = 1;
 	int error;
 
 	if (parser_type_peek(pr, NULL, 0))
 		return parser_none(pr);
 	if (!lexer_peek_until_freestanding(lx, TOKEN_SEMI, NULL, &semi))
 		return parser_none(pr);
-
-	lexer_peek_enter(lx, &s);
-	if (expr_peek(&ea) && lexer_pop(lx, &nx) && nx == semi)
-		peek = 1;
-	lexer_peek_leave(lx, &s);
-	if (!peek)
+	if (!parser_expr_peek(pr, &nx) || token_next(nx) != semi)
 		return parser_none(pr);
 
 	/*
