@@ -43,6 +43,8 @@ int	parser_none(const struct parser *);
 	parser_fail0((a), __func__, __LINE__)
 int	parser_fail0(struct parser *, const char *, int);
 
+void	parser_reset(struct parser *);
+
 void	parser_token_trim_after(const struct parser *, struct token *);
 void	parser_token_trim_before(const struct parser *, struct token *);
 

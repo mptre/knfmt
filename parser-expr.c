@@ -1,13 +1,17 @@
 #include "parser-expr.h"
 
 #include "cdefs.h"
+#include "doc.h"
 #include "expr.h"
 #include "lexer.h"
+#include "parser-braces.h"
 #include "parser-priv.h"
+#include "parser-stmt-expr.h"
 #include "parser-type.h"
-#include "parser.h"	/* parser_expr_recover */
 #include "token.h"
 
+static int	expr_recover(const struct expr_exec_arg *, struct doc *,
+    void *);
 static int	expr_recover_cast(const struct expr_exec_arg *, struct doc *,
     void *);
 
@@ -19,7 +23,7 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
 		.callbacks	= {
-			.recover	= parser_expr_recover,
+			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,
 			.arg		= pr,
 		},
@@ -50,7 +54,7 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 		.indent		= arg->indent,
 		.flags		= arg->flags,
 		.callbacks	= {
-			.recover	= parser_expr_recover,
+			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,
 			.arg		= pr,
 		},
@@ -63,6 +67,67 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 	if (expr != NULL)
 		*expr = ex;
 	return parser_good(pr);
+}
+
+static int
+expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
+{
+	struct parser *pr = arg;
+	struct lexer *lx = pr->pr_lx;
+	struct token *lbrace, *tk;
+
+	if (parser_type_peek(pr, &tk, PARSER_TYPE_EXPR)) {
+		struct token *nx, *pv;
+
+		if (lexer_back(lx, &pv) &&
+		    (pv->tk_type == TOKEN_SIZEOF ||
+		     ((pv->tk_type == TOKEN_LPAREN ||
+		       pv->tk_type == TOKEN_COMMA) &&
+		      ((nx = token_next(tk)) != NULL &&
+		       (nx->tk_type == TOKEN_RPAREN ||
+			nx->tk_type == TOKEN_COMMA ||
+			nx->tk_type == LEXER_EOF))))) {
+			if (parser_type(pr, dc, tk, NULL) & GOOD)
+				return 1;
+		}
+	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
+		struct token *pv;
+
+		pv = token_prev(tk);
+		if (pv != NULL &&
+		    (pv->tk_type == TOKEN_LPAREN ||
+		     pv->tk_type == TOKEN_COMMA)) {
+			doc_token(tk, dc);
+			return 1;
+		}
+	} else if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace)) {
+		int error;
+
+		error = parser_braces(pr, dc,
+		    ea->indent,
+		    PARSER_EXEC_DECL_BRACES_DEDENT |
+		    PARSER_EXEC_DECL_BRACES_INDENT_MAYBE);
+		if (error & GOOD)
+			return 1;
+		if (error & FAIL) {
+			/* Try again, could be a GNU statement expression. */
+			while (doc_remove_tail(dc))
+				continue;
+			parser_reset(pr);
+			lexer_seek(lx, lbrace);
+			if (parser_stmt_expr_gnu(pr, dc) & GOOD)
+				return 1;
+		}
+	} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
+		/*
+		 * Some macros allow empty arguments such as the ones provided
+		 * by queue(3).
+		 */
+		doc_token(tk, dc);
+		return 1;
+	}
+
+	return 0;
 }
 
 static int

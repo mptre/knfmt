@@ -70,7 +70,7 @@ Some expressions which are valid C are not recognized the expr parser without
 assistance from the parser. One example is sizeof() which can be given a type.
 Whenever the expr parser encounters something it cannot recognize it gives the
 parser a chance to recover, allowing the expr parser to continue; see
-parser_expr_recover() and the cpp section below.
+expr_recover() and the cpp section below.
 
 [1] https://en.wikipedia.org/wiki/Operator-precedence_parser#Pratt_parsing
 [2] https://craftinginterpreters.com/compiling-expressions.html
@@ -216,8 +216,8 @@ argument. Macro invocations are handled by expr parser as they look like
 function calls without any further preprocessor knowledge. Encountering a binary
 operator in an unary context causes the expr parser to halt. However, in such
 scenarios it gives the parser a chance to recover from the situation; allowing
-the expr parser to continue, see parser_expr_recover(). An example of such
-macros are the ones provided by timercmp(3).
+the expr parser to continue, see expr_recover(). An example of such macros are
+the ones provided by timercmp(3).
 
 cpp conditionals
 ================
