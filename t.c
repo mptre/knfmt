@@ -11,9 +11,10 @@
 #include "clang.h"
 #include "doc.h"
 #include "error.h"
-#include "expr.h"
 #include "lexer.h"
 #include "options.h"
+#include "parser-expr.h"
+#include "parser-priv.h"
 #include "parser-type.h"
 #include "parser.h"
 #include "style.h"
@@ -22,11 +23,11 @@
 
 struct context;
 
-#define test_expr_exec(a, b)						\
-	test_expr_exec0(cx, (a), (b), "test_expr_exec", __LINE__);	\
+#define test_parser_expr(a, b)						\
+	test_parser_expr0(cx, (a), (b), "test_parser_expr", __LINE__);	\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
-static int	test_expr_exec0(struct context *, const char *, const char *,
+static int	test_parser_expr0(struct context *, const char *, const char *,
     const char *, int);
 
 #define test_parser_type_peek(a, b)					\
@@ -95,75 +96,75 @@ main(int argc, char *argv[])
 	lexer_init();
 	cx = context_alloc();
 
-	error |= test_expr_exec("1", "(1)");
-	error |= test_expr_exec("x", "(x)");
-	error |= test_expr_exec("\"x\"", "(\"x\")");
-	error |= test_expr_exec("\"x\" \"y\"", "((\"x\") (\"y\"))");
-	error |= test_expr_exec("x(1, 2)", "((x)(((1), (2))))");
-	error |= test_expr_exec("x = 1", "((x) = (1))");
-	error |= test_expr_exec("x += 1", "((x) += (1))");
-	error |= test_expr_exec("x -= 1", "((x) -= (1))");
-	error |= test_expr_exec("x *= 1", "((x) *= (1))");
-	error |= test_expr_exec("x /= 1", "((x) /= (1))");
-	error |= test_expr_exec("x %= 1", "((x) %= (1))");
-	error |= test_expr_exec("x <<= 1", "((x) <<= (1))");
-	error |= test_expr_exec("x >>= 1", "((x) >>= (1))");
-	error |= test_expr_exec("x &= 1", "((x) &= (1))");
-	error |= test_expr_exec("x ^= 1", "((x) ^= (1))");
-	error |= test_expr_exec("x |= 1", "((x) |= (1))");
-	error |= test_expr_exec("x ? 1 : 0", "((x) ? (1) : (0))");
-	error |= test_expr_exec("x ?: 0", "((x) ?: (0))");
-	error |= test_expr_exec("x || y", "((x) || (y))");
-	error |= test_expr_exec("x && y", "((x) && (y))");
-	error |= test_expr_exec("x | y", "((x) | (y))");
-	error |= test_expr_exec("x|y", "((x)|(y))");
-	error |= test_expr_exec("x ^ y", "((x) ^ (y))");
-	error |= test_expr_exec("x & y", "((x) & (y))");
-	error |= test_expr_exec("x == y", "((x) == (y))");
-	error |= test_expr_exec("x != y", "((x) != (y))");
-	error |= test_expr_exec("x < y", "((x) < (y))");
-	error |= test_expr_exec("x <= y", "((x) <= (y))");
-	error |= test_expr_exec("x > y", "((x) > (y))");
-	error |= test_expr_exec("x >= y", "((x) >= (y))");
-	error |= test_expr_exec("x << y", "((x) << (y))");
-	error |= test_expr_exec("x >> y", "((x) >> (y))");
-	error |= test_expr_exec("x + y", "((x) + (y))");
-	error |= test_expr_exec("x - y", "((x) - (y))");
-	error |= test_expr_exec("x * y", "((x) * (y))");
-	error |= test_expr_exec("x*y", "((x)*(y))");
-	error |= test_expr_exec("x / y", "((x) / (y))");
-	error |= test_expr_exec("x/y", "((x)/(y))");
-	error |= test_expr_exec("x % y", "((x) % (y))");
-	error |= test_expr_exec("!x", "(!(x))");
-	error |= test_expr_exec("~x", "(~(x))");
-	error |= test_expr_exec("++x", "(++(x))");
-	error |= test_expr_exec("x++", "((x)++)");
-	error |= test_expr_exec("--x", "(--(x))");
-	error |= test_expr_exec("x--", "((x)--)");
-	error |= test_expr_exec("-x", "(-(x))");
-	error |= test_expr_exec("+x", "(+(x))");
-	error |= test_expr_exec("(int)x", "(((int))(x))");
-	error |= test_expr_exec("(struct s)x", "(((struct s))(x))");
-	error |= test_expr_exec("(struct s*)x", "(((struct s *))(x))");
-	error |= test_expr_exec("(char const* char*)x",
+	error |= test_parser_expr("1", "(1)");
+	error |= test_parser_expr("x", "(x)");
+	error |= test_parser_expr("\"x\"", "(\"x\")");
+	error |= test_parser_expr("\"x\" \"y\"", "((\"x\") (\"y\"))");
+	error |= test_parser_expr("x(1, 2)", "((x)(((1), (2))))");
+	error |= test_parser_expr("x = 1", "((x) = (1))");
+	error |= test_parser_expr("x += 1", "((x) += (1))");
+	error |= test_parser_expr("x -= 1", "((x) -= (1))");
+	error |= test_parser_expr("x *= 1", "((x) *= (1))");
+	error |= test_parser_expr("x /= 1", "((x) /= (1))");
+	error |= test_parser_expr("x %= 1", "((x) %= (1))");
+	error |= test_parser_expr("x <<= 1", "((x) <<= (1))");
+	error |= test_parser_expr("x >>= 1", "((x) >>= (1))");
+	error |= test_parser_expr("x &= 1", "((x) &= (1))");
+	error |= test_parser_expr("x ^= 1", "((x) ^= (1))");
+	error |= test_parser_expr("x |= 1", "((x) |= (1))");
+	error |= test_parser_expr("x ? 1 : 0", "((x) ? (1) : (0))");
+	error |= test_parser_expr("x ?: 0", "((x) ?: (0))");
+	error |= test_parser_expr("x || y", "((x) || (y))");
+	error |= test_parser_expr("x && y", "((x) && (y))");
+	error |= test_parser_expr("x | y", "((x) | (y))");
+	error |= test_parser_expr("x|y", "((x)|(y))");
+	error |= test_parser_expr("x ^ y", "((x) ^ (y))");
+	error |= test_parser_expr("x & y", "((x) & (y))");
+	error |= test_parser_expr("x == y", "((x) == (y))");
+	error |= test_parser_expr("x != y", "((x) != (y))");
+	error |= test_parser_expr("x < y", "((x) < (y))");
+	error |= test_parser_expr("x <= y", "((x) <= (y))");
+	error |= test_parser_expr("x > y", "((x) > (y))");
+	error |= test_parser_expr("x >= y", "((x) >= (y))");
+	error |= test_parser_expr("x << y", "((x) << (y))");
+	error |= test_parser_expr("x >> y", "((x) >> (y))");
+	error |= test_parser_expr("x + y", "((x) + (y))");
+	error |= test_parser_expr("x - y", "((x) - (y))");
+	error |= test_parser_expr("x * y", "((x) * (y))");
+	error |= test_parser_expr("x*y", "((x)*(y))");
+	error |= test_parser_expr("x / y", "((x) / (y))");
+	error |= test_parser_expr("x/y", "((x)/(y))");
+	error |= test_parser_expr("x % y", "((x) % (y))");
+	error |= test_parser_expr("!x", "(!(x))");
+	error |= test_parser_expr("~x", "(~(x))");
+	error |= test_parser_expr("++x", "(++(x))");
+	error |= test_parser_expr("x++", "((x)++)");
+	error |= test_parser_expr("--x", "(--(x))");
+	error |= test_parser_expr("x--", "((x)--)");
+	error |= test_parser_expr("-x", "(-(x))");
+	error |= test_parser_expr("+x", "(+(x))");
+	error |= test_parser_expr("(int)x", "(((int))(x))");
+	error |= test_parser_expr("(struct s)x", "(((struct s))(x))");
+	error |= test_parser_expr("(struct s*)x", "(((struct s *))(x))");
+	error |= test_parser_expr("(char const* char*)x",
 	    "(((char const *char *))(x))");
-	error |= test_expr_exec("(foo_t)x", "(((foo_t))(x))");
-	error |= test_expr_exec("(foo_t *)x", "(((foo_t *))(x))");
-	error |= test_expr_exec("x * y", "((x) * (y))");
-	error |= test_expr_exec("x & y", "((x) & (y))");
-	error |= test_expr_exec("sizeof x", "(sizeof (x))");
-	error |= test_expr_exec("sizeof x * y", "((sizeof (x)) * (y))");
-	error |= test_expr_exec("sizeof char", "(sizeof (char))");
-	error |= test_expr_exec("sizeof char *c", "((sizeof (char)) * (c))");
-	error |= test_expr_exec("sizeof struct s", "(sizeof (struct s))");
-	error |= test_expr_exec("sizeof(x)", "(sizeof((x)))");
-	error |= test_expr_exec("sizeof(*x)", "(sizeof((*(x))))");
-	error |= test_expr_exec("(x)", "((x))");
-	error |= test_expr_exec("x()", "((x)())");
-	error |= test_expr_exec("x(\"x\" X)", "((x)(((\"x\") (X))))");
-	error |= test_expr_exec("x[1 + 2]", "((x)[((1) + (2))])");
-	error |= test_expr_exec("x->y", "((x)->(y))");
-	error |= test_expr_exec("x.y", "((x).(y))");
+	error |= test_parser_expr("(foo_t)x", "(((foo_t))(x))");
+	error |= test_parser_expr("(foo_t *)x", "(((foo_t *))(x))");
+	error |= test_parser_expr("x * y", "((x) * (y))");
+	error |= test_parser_expr("x & y", "((x) & (y))");
+	error |= test_parser_expr("sizeof x", "(sizeof (x))");
+	error |= test_parser_expr("sizeof x * y", "((sizeof (x)) * (y))");
+	error |= test_parser_expr("sizeof char", "(sizeof (char))");
+	error |= test_parser_expr("sizeof char *c", "((sizeof (char)) * (c))");
+	error |= test_parser_expr("sizeof struct s", "(sizeof (struct s))");
+	error |= test_parser_expr("sizeof(x)", "(sizeof((x)))");
+	error |= test_parser_expr("sizeof(*x)", "(sizeof((*(x))))");
+	error |= test_parser_expr("(x)", "((x))");
+	error |= test_parser_expr("x()", "((x)())");
+	error |= test_parser_expr("x(\"x\" X)", "((x)(((\"x\") (X))))");
+	error |= test_parser_expr("x[1 + 2]", "((x)[((1) + (2))])");
+	error |= test_parser_expr("x->y", "((x)->(y))");
+	error |= test_parser_expr("x.y", "((x).(y))");
 
 	error |= test_parser_type_peek("void", "void");
 	error |= test_parser_type_peek("void *", "void *");
@@ -269,38 +270,27 @@ usage(void)
 }
 
 static int
-test_expr_exec0(struct context *cx, const char *src, const char *exp,
+test_parser_expr0(struct context *cx, const char *src, const char *exp,
     const char *fun, int lno)
 {
 	struct buffer *bf = NULL;
-	struct doc *expr, *group;
+	struct doc *concat, *expr;
 	const char *act;
-	int error = 0;
+	int error;
 
 	context_init(cx, src);
 
-	group = doc_alloc(DOC_GROUP, NULL);
-	expr = expr_exec(&(const struct expr_exec_arg){
-	    .st		= cx->cx_st,
-	    .op		= &cx->cx_op,
-	    .lx		= cx->cx_lx,
-	    .dc		= doc_alloc(DOC_CONCAT, group),
-	    .stop	= NULL,
-	    .flags	= 0,
-	    .callbacks	= {
-		.recover	= parser_expr_recover,
-		.recover_cast	= parser_expr_recover_cast,
-		.arg		= cx->cx_pr,
-	    },
-	});
-	if (expr == NULL) {
-		fprintf(stderr, "%s:%d: expr_exec() failure\n", fun, lno);
+	concat = doc_alloc(DOC_CONCAT, NULL);
+	error = parser_expr(cx->cx_pr, concat, &expr, NULL, NULL, 0, 0);
+	if (error & HALT) {
+		fprintf(stderr, "%s:%d: parser_expr() failure\n", fun, lno);
 		error = 1;
 		goto out;
 	}
+	error = 0;
 
 	bf = buffer_alloc(128);
-	doc_exec(group, cx->cx_lx, bf, cx->cx_st, &cx->cx_op, 0);
+	doc_exec(concat, cx->cx_lx, bf, cx->cx_st, &cx->cx_op, 0);
 	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act) != 0) {
@@ -310,7 +300,7 @@ test_expr_exec0(struct context *cx, const char *src, const char *exp,
 	}
 
 out:
-	doc_free(group);
+	doc_free(concat);
 	buffer_free(bf);
 	return error;
 }
