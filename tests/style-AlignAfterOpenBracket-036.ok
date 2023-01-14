@@ -3,6 +3,6 @@ main(void)
 {
 	if (foo() || bar(cpu,
 			 constantconstanconstant)
-	    == somethingsomethingsomethingsomething)
+		     == somethingsomethingsomethingsomething)
 		return 1;
 }

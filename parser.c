@@ -693,8 +693,6 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 	} else {
 		struct token *pv, *stop;
 		unsigned int flags = 0;
-		unsigned int w;
-		int doalign = 1;
 
 		/* Never break before the assignment operator. */
 		if (!parser_simple_decl_active(pr) &&
@@ -702,7 +700,6 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 		    token_has_line(pv, 1)) {
 			parser_token_trim_after(pr, pv);
 			token_add_optline(equal);
-			doalign = 0;
 		}
 
 		/*
@@ -710,20 +707,14 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 		 * emitted inside the expression document to get indentation
 		 * right.
 		 */
-		if (token_has_line(equal, 1)) {
+		if (token_has_line(equal, 1))
 			flags |= EXPR_EXEC_HARDLINE;
-			doalign = 0;
-		}
 
 		lexer_peek_until_comma(lx, arg->semi, &stop);
-		if (doalign && style(pr->pr_st, AlignAfterOpenBracket) == Align)
-			w = parser_width(pr, arg->width);
-		else
-			w = style(pr->pr_st, ContinuationIndentWidth);
 		error = parser_expr(pr, &arg->out, &(struct parser_expr_arg){
 		    .dc		= dedent,
 		    .stop	= stop,
-		    .indent	= w,
+		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
 		    .flags	= flags,
 		});
 		if (error & HALT)
@@ -1405,16 +1396,11 @@ parser_exec_stmt_return(struct parser *pr, struct doc *dc)
 	doc_token(tk, concat);
 	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
 		int error;
-		unsigned int w;
 
 		doc_literal(" ", concat);
-		if (style(pr->pr_st, AlignOperands) == Align)
-			w = parser_width(pr, dc);
-		else
-			w = style(pr->pr_st, ContinuationIndentWidth);
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc		= concat,
-		    .indent	= w,
+		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
 		    .flags	= EXPR_EXEC_NOPARENS,
 		});
 		if (error & HALT)

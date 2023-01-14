@@ -151,8 +151,7 @@ static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
 
 static struct doc	*expr_doc_align_enter(struct expr *,
     struct expr_state *, struct doc *, unsigned int);
-static void		 expr_doc_align_leave(struct expr_state *,
-    unsigned int);
+static void		 expr_doc_align_leave(struct expr_state *);
 static struct doc	*expr_doc_align_disable(struct expr *,
     struct expr_state *, struct doc *);
 static void		 expr_doc_align_init(struct expr_state *,
@@ -802,6 +801,7 @@ static struct doc *
 expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	const struct style *st = es->es_st;
+	int doalign = style(st, AlignOperands) == Align;
 
 	if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
 		struct doc *lhs;
@@ -812,12 +812,10 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
 		if (ex->ex_rhs != NULL) {
-			int doalign = style(st, AlignOperands) == Align;
-
 			if (doalign) {
-				dc = expr_doc_align_enter(ex, es, dc, 0);
-				if (token_has_line(ex->ex_tk, 1))
-					dc = expr_doc_align_disable(ex, es, dc);
+				dc = token_has_line(ex->ex_tk, 1) ?
+				    expr_doc_align_disable(ex, es, dc) :
+				    expr_doc_align_enter(ex, es, dc, 0);
 			}
 
 			/*
@@ -832,12 +830,15 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			}
 
 			if (doalign)
-				expr_doc_align_leave(es, 0);
+				expr_doc_align_leave(es);
 		}
 		es->es_nassign--;
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
 		struct doc *lhs;
 		int dospace;
+
+		if (doalign)
+			dc = expr_doc_align_enter(ex, es, dc, 0);
 
 		token_move_next_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
@@ -851,6 +852,9 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			doc_literal(" ", dc);
 		if (ex->ex_rhs != NULL)
 			dc = expr_doc(ex->ex_rhs, es, dc);
+
+		if (doalign)
+			expr_doc_align_leave(es);
 	} else {
 		struct doc *lhs;
 		int dospace;
@@ -915,7 +919,6 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (lparen != NULL)
 		doc_token(lparen, dc);
 	if (ex->ex_rhs != NULL) {
-		unsigned int indent = style(es->es_st, ContinuationIndentWidth);
 		int doalign = style(es->es_st, AlignAfterOpenBracket) == Align;
 
 		if (rparen != NULL) {
@@ -928,13 +931,15 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 
 		if (doalign) {
-			dc = expr_doc_align_enter(ex, es, parent, indent);
-			if (token_has_line(lparen, 1))
-				dc = expr_doc_align_disable(ex, es, dc);
+			unsigned int indent = es->es_ea.indent;
+
+			dc = token_has_line(lparen, 1) ?
+			    expr_doc_align_disable(ex, es, dc) :
+			    expr_doc_align_enter(ex, es, parent, indent);
 		}
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
 		if (doalign)
-			expr_doc_align_leave(es, indent);
+			expr_doc_align_leave(es);
 	}
 	if (rparen != NULL)
 		doc_token(rparen, dc);
@@ -1004,9 +1009,10 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	if (style(es->es_st, AlignAfterOpenBracket) == Align &&
-	    ex->ex_tk->tk_type == TOKEN_LBRACE)
+	if (ex->ex_tk->tk_type == TOKEN_LBRACE) {
 		dc = expr_doc_align_disable(ex, es, dc);
+		expr_doc_align_leave(es);
+	}
 
 	doc_append(ex->ex_dc, dc);
 	/*
@@ -1019,33 +1025,27 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 /*
  * Favor alignment with what we got so far on the current line, assuming it does
- * not cause exceesive new line(s). In that case, fallback to regular
- * indentation.
+ * not cause exceesive new line(s). Otherwise, fallback to regular indentation.
  */
 static struct doc *
 expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
-    struct doc *dc, unsigned int fallback)
+    struct doc *dc, unsigned int indent)
 {
 	struct doc_minimize minimizers[2];
 
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[0].indent = DOC_INDENT_WIDTH;
-	minimizers[1].indent = fallback;
-	if (fallback > 0 && es->es_nalign == 0 &&
-	    (es->es_flags & EXPR_EXEC_HARDLINE) == 0)
-		minimizers[1].indent -= es->es_ea.indent;
-	es->es_nalign += fallback;
+	if (es->es_nalign > 0 || (es->es_flags & EXPR_EXEC_HARDLINE))
+		minimizers[1].indent = indent;
+	es->es_nalign++;
 	return doc_minimize(dc, minimizers);
 }
 
 static void
-expr_doc_align_leave(struct expr_state *es, unsigned int fallback)
+expr_doc_align_leave(struct expr_state *es)
 {
-	if (fallback == 0)
-		return;
-
-	assert(es->es_nalign >= fallback);
-	es->es_nalign -= fallback;
+	assert(es->es_nalign > 0);
+	es->es_nalign--;
 }
 
 static struct doc *
@@ -1056,6 +1056,7 @@ expr_doc_align_disable(struct expr *UNUSED(ex), struct expr_state *es,
 
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[1].flags |= DOC_MINIMIZE_FORCE;
+	es->es_nalign++;
 	return doc_minimize(dc, minimizers);
 }
 
