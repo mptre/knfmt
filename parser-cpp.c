@@ -1,8 +1,14 @@
 #include "parser-cpp.h"
 
+#include <ctype.h>
+#include <string.h>
+
+#include "doc.h"
 #include "lexer.h"
 #include "parser-priv.h"
 #include "token.h"
+
+static int	iscdefs(const char *, size_t);
 
 /*
  * Returns non-zero if the next tokens denotes a X macro. That is, something
@@ -43,4 +49,46 @@ parser_cpp_peek_x(struct parser *pr, struct token **tk)
 	if (peek && tk != NULL)
 		*tk = rparen;
 	return peek;
+}
+
+/*
+ * Parse usage of macros from cdefs.h, such as __BEGIN_HIDDEN_DECLS.
+ */
+int
+parser_cpp_cdefs(struct parser *pr, struct doc *dc)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *ident, *nx;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_pop(lx, &nx) &&
+	    nx->tk_lno - ident->tk_lno >= 1 &&
+	    iscdefs(ident->tk_str, ident->tk_len))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_IDENT, &ident))
+		doc_token(ident, dc);
+	return parser_good(pr);
+}
+
+static int
+iscdefs(const char *str, size_t len)
+{
+	size_t i;
+
+	if (len < 2 || strncmp(str, "__", 2) != 0)
+		return 0;
+	for (i = 2; i < len; i++) {
+		unsigned char c = str[i];
+
+		if (!isupper(c) && !isdigit(c) && c != '_')
+			return 0;
+	}
+	return 1;
 }

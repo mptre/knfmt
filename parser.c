@@ -2,9 +2,7 @@
 
 #include "config.h"
 
-#include <ctype.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "alloc.h"
 #include "buffer.h"
@@ -59,7 +57,6 @@ static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
     struct ruler *);
-static int	parser_exec_decl_cppdefs(struct parser *, struct doc *);
 
 #define PARSER_EXEC_STMT_EXPR_DOWHILE		0x00000001u
 
@@ -99,8 +96,6 @@ static void		 parser_simple_stmt_ifelse_leave(struct parser *,
 static int	parser_peek_decl(struct parser *);
 
 static int	parser_get_error(const struct parser *);
-
-static int	iscdefs(const char *, size_t);
 
 struct parser *
 parser_alloc(const char *path, struct lexer *lx, struct error *er,
@@ -326,7 +321,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct token *beg, *end, *fun, *semi, *tk;
 	int error;
 
-	if (parser_exec_decl_cppdefs(pr, dc) & GOOD)
+	if (parser_cpp_cdefs(pr, dc) & GOOD)
 		return parser_good(pr);
 
 	if (!parser_type_peek(pr, &end, 0)) {
@@ -697,32 +692,6 @@ parser_exec_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	    .rl		= rl,
 	    .flags	= EXPR_EXEC_ALIGN,
 	});
-}
-
-/*
- * Parse usage of macros from cdefs.h, such as __BEGIN_HIDDEN_DECLS.
- */
-static int
-parser_exec_decl_cppdefs(struct parser *pr, struct doc *dc)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct token *ident, *nx;
-	int peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_pop(lx, &nx) &&
-	    nx->tk_lno - ident->tk_lno >= 1 &&
-	    iscdefs(ident->tk_str, ident->tk_len))
-		peek = 1;
-	lexer_peek_leave(lx, &s);
-	if (!peek)
-		return parser_none(pr);
-
-	if (lexer_expect(lx, TOKEN_IDENT, &ident))
-		doc_token(ident, dc);
-	return parser_good(pr);
 }
 
 static int
@@ -1693,20 +1662,4 @@ parser_reset(struct parser *pr)
 {
 	error_reset(pr->pr_er);
 	pr->pr_error = 0;
-}
-
-static int
-iscdefs(const char *str, size_t len)
-{
-	size_t i;
-
-	if (len < 2 || strncmp(str, "__", 2) != 0)
-		return 0;
-	for (i = 2; i < len; i++) {
-		unsigned char c = str[i];
-
-		if (!isupper(c) && !isdigit(c) && c != '_')
-			return 0;
-	}
-	return 1;
 }
