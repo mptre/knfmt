@@ -38,7 +38,6 @@ enum parser_peek {
 struct parser_exec_decl_init_arg {
 	struct doc		*dc;
 	struct doc		*out;
-	struct doc		*width;
 	struct ruler		*rl;
 	const struct token	*semi;
 	unsigned int		 indent;
@@ -460,7 +459,6 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	struct parser_exec_decl_init_arg arg = {
 		.dc	= concat,
-		.width	= dc,
 		.rl	= rl,
 		.semi	= semi,
 		.indent	= style(pr->pr_st, IndentWidth),
@@ -707,7 +705,6 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 	hasident = !lexer_peek_if(lx, TOKEN_EQUAL, NULL);
 	error = parser_exec_decl_init(pr, &(struct parser_exec_decl_init_arg){
 	    .dc		= dc,
-	    .width	= dc,
 	    .rl		= rl,
 	    .semi	= semi,
 	    .indent	= style(pr->pr_st, IndentWidth),
