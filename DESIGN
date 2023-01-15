@@ -95,7 +95,7 @@ entering a group.
 The document representation and any decision to switch between the two modes can
 be examined by invoking knfmt as follows:
 
-	$ knfmt -vv
+	$ knfmt -vd
 
 The following type of documents are available:
 
