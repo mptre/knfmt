@@ -45,7 +45,6 @@ struct parser_exec_decl_init_arg {
 static int	parser_exec1(struct parser *, struct doc *);
 
 static int	parser_exec_extern(struct parser *, struct doc *);
-static int	parser_exec_asm(struct parser *, struct doc *);
 
 static int	parser_exec_decl1(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl2(struct parser *, struct doc *,
@@ -201,7 +200,7 @@ parser_exec1(struct parser *pr, struct doc *dc)
 	if (error & NONE)
 		error = parser_exec_extern(pr, dc);
 	if (error & NONE)
-		error = parser_exec_asm(pr, dc);
+		error = parser_asm(pr, dc);
 	return error;
 }
 
@@ -242,18 +241,6 @@ parser_exec_extern(struct parser *pr, struct doc *dc)
 	}
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
-	doc_alloc(DOC_HARDLINE, dc);
-	return parser_good(pr);
-}
-
-static int
-parser_exec_asm(struct parser *pr, struct doc *dc)
-{
-	int error;
-
-	error = parser_stmt_asm(pr, dc);
-	if (error & HALT)
-		return error;
 	doc_alloc(DOC_HARDLINE, dc);
 	return parser_good(pr);
 }

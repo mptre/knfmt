@@ -9,6 +9,18 @@
 #include "token.h"
 
 int
+parser_asm(struct parser *pr, struct doc *dc)
+{
+	int error;
+
+	error = parser_stmt_asm(pr, dc);
+	if (error & HALT)
+		return error;
+	doc_alloc(DOC_HARDLINE, dc);
+	return parser_good(pr);
+}
+
+int
 parser_stmt_asm(struct parser *pr, struct doc *dc)
 {
 	struct lexer_state s;
