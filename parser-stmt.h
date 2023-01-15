@@ -12,3 +12,4 @@ struct parser_stmt_block_arg {
 
 int	parser_stmt_block(struct parser *, struct parser_stmt_block_arg *);
 int	parser_stmt_return(struct parser *, struct doc *);
+int	parser_stmt_semi(struct parser *, struct doc *);

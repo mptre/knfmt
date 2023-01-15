@@ -39,3 +39,17 @@ parser_stmt_return(struct parser *pr, struct doc *dc)
 		doc_token(tk, expr);
 	return parser_good(pr);
 }
+
+int
+parser_stmt_semi(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *semi;
+
+	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_SEMI, &semi))
+		doc_token(semi, dc);
+	return parser_good(pr);
+}

@@ -75,7 +75,6 @@ static int	parser_exec_stmt_while(struct parser *, struct doc *);
 static int	parser_exec_stmt_break(struct parser *, struct doc *);
 static int	parser_exec_stmt_continue(struct parser *, struct doc *);
 static int	parser_exec_stmt_cpp(struct parser *, struct doc *);
-static int	parser_exec_stmt_semi(struct parser *, struct doc *);
 
 static int	parser_simple_active(const struct parser *);
 
@@ -746,7 +745,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
 	    (parser_exec_stmt_continue(pr, dc) & GOOD) ||
 	    (parser_stmt_asm(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_dowhile(pr, dc) & GOOD) ||
-	    (parser_exec_stmt_semi(pr, dc) & GOOD) ||
+	    (parser_stmt_semi(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_cpp(pr, dc) & GOOD))
 		return parser_good(pr);
 	return parser_none(pr);
@@ -1363,20 +1362,6 @@ parser_exec_stmt_cpp(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 	return parser_exec_stmt_kw_expr(pr, dc, ident, 0);
-}
-
-static int
-parser_exec_stmt_semi(struct parser *pr, struct doc *dc)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct token *semi;
-
-	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
-		return parser_none(pr);
-
-	if (lexer_expect(lx, TOKEN_SEMI, &semi))
-		doc_token(semi, dc);
-	return parser_good(pr);
 }
 
 /*
