@@ -17,12 +17,13 @@
 #include "parser-attributes.h"
 #include "parser-braces.h"
 #include "parser-cpp.h"
+#include "parser-decl.h"
 #include "parser-expr.h"
 #include "parser-func.h"
 #include "parser-priv.h"
-#include "parser-stmt.h"
 #include "parser-stmt-asm.h"
 #include "parser-stmt-expr.h"
+#include "parser-stmt.h"
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
@@ -41,27 +42,11 @@ struct parser_exec_decl_init_arg {
 #define PARSER_EXEC_DECL_INIT_ASSIGN		0x00000001u
 };
 
-struct parser_exec_func_proto_arg {
-	struct doc		*dc;
-	struct ruler		*rl;
-	const struct token	*type;
-	unsigned int		 flags;
-#define PARSER_EXEC_FUNC_PROTO_IMPL		0x00000001u
-};
-
-/* Honor grouped declarations. */
-#define PARSER_EXEC_DECL_BREAK			0x00000001u
-/* Emit hard line after declaration(s). */
-#define PARSER_EXEC_DECL_LINE			0x00000002u
-/* Parsing of declarations on root level. */
-#define PARSER_EXEC_DECL_ROOT			0x00000004u
-
 static int	parser_exec1(struct parser *, struct doc *);
 
 static int	parser_exec_extern(struct parser *, struct doc *);
 static int	parser_exec_asm(struct parser *, struct doc *);
 
-static int	parser_exec_decl(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl1(struct parser *, struct doc *, unsigned int);
 static int	parser_exec_decl2(struct parser *, struct doc *,
     struct ruler *, unsigned int);
@@ -76,14 +61,6 @@ static int	parser_exec_decl_cpp(struct parser *, struct doc *,
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
     struct ruler *);
 static int	parser_exec_decl_cppdefs(struct parser *, struct doc *);
-
-static int	parser_exec_func_decl(struct parser *, struct doc *,
-    struct ruler *, const struct token *);
-static int	parser_exec_func_impl(struct parser *, struct doc *);
-static int	parser_exec_func_impl1(struct parser *, struct doc *,
-    struct ruler *, const struct token *);
-static int	parser_exec_func_proto(struct parser *, struct doc **,
-    struct parser_exec_func_proto_arg *);
 
 #define PARSER_EXEC_STMT_EXPR_DOWHILE		0x00000001u
 
@@ -121,7 +98,6 @@ static void		 parser_simple_stmt_ifelse_leave(struct parser *,
     void *);
 
 static int	parser_peek_decl(struct parser *);
-static int	parser_peek_func_line(struct parser *);
 
 static int	parser_get_error(const struct parser *);
 
@@ -217,11 +193,11 @@ parser_exec1(struct parser *pr, struct doc *dc)
 {
 	int error;
 
-	error = parser_exec_decl(pr, dc,
-	    PARSER_EXEC_DECL_BREAK | PARSER_EXEC_DECL_LINE |
-	    PARSER_EXEC_DECL_ROOT);
+	error = parser_decl(pr, dc,
+	    PARSER_DECL_BREAK | PARSER_DECL_LINE |
+	    PARSER_DECL_ROOT);
 	if (error & NONE)
-		error = parser_exec_func_impl(pr, dc);
+		error = parser_func_impl(pr, dc);
 	if (error & NONE)
 		error = parser_exec_extern(pr, dc);
 	if (error & NONE)
@@ -282,8 +258,8 @@ parser_exec_asm(struct parser *pr, struct doc *dc)
 	return parser_good(pr);
 }
 
-static int
-parser_exec_decl(struct parser *pr, struct doc *dc, unsigned int flags)
+int
+parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	int error, simple;
 
@@ -321,7 +297,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 
 		line = doc_alloc(DOC_HARDLINE, decl);
 
-		if (flags & PARSER_EXEC_DECL_BREAK) {
+		if (flags & PARSER_DECL_BREAK) {
 			/*
 			 * Honor empty line(s) which denotes the end of this
 			 * block of declarations.
@@ -349,7 +325,7 @@ parser_exec_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 	if (ndecl == 0)
 		return parser_none(pr);
 
-	if (flags & PARSER_EXEC_DECL_LINE)
+	if (flags & PARSER_DECL_LINE)
 		doc_alloc(DOC_HARDLINE, decl);
 	return parser_good(pr);
 }
@@ -379,7 +355,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	case PARSER_FUNC_PEEK_NONE:
 		break;
 	case PARSER_FUNC_PEEK_DECL:
-		return parser_exec_func_decl(pr, dc, rl, fun);
+		return parser_func_decl(pr, dc, rl, fun);
 	case PARSER_FUNC_PEEK_IMPL:
 		return parser_none(pr);
 	}
@@ -419,7 +395,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth),
 		    concat);
 		doc_alloc(DOC_HARDLINE, indent);
-		if (parser_exec_decl(pr, indent, 0) & FAIL)
+		if (parser_decl(pr, indent, 0) & FAIL)
 			return parser_fail(pr);
 		doc_alloc(DOC_HARDLINE, concat);
 
@@ -478,8 +454,7 @@ out:
  * Parse any initialization as part of a declaration.
  */
 static int
-parser_exec_decl_init(struct parser *pr,
-    struct parser_exec_decl_init_arg *arg)
+parser_exec_decl_init(struct parser *pr, struct parser_exec_decl_init_arg *arg)
 {
 	struct doc *concat, *dc, *indent;
 	struct lexer *lx = pr->pr_lx;
@@ -670,7 +645,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 		if (lexer_if(lx, TOKEN_EQUAL, NULL))
 			peek = 1;
-		else if ((flags & PARSER_EXEC_DECL_ROOT) &&
+		else if ((flags & PARSER_DECL_ROOT) &&
 		    lexer_if(lx, TOKEN_SEMI, NULL))
 			peek = 1;
 		else if (lexer_if(lx, TOKEN_IDENT, &ident) &&
@@ -679,7 +654,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
-	if (!peek && (flags & PARSER_EXEC_DECL_ROOT)) {
+	if (!peek && (flags & PARSER_DECL_ROOT)) {
 		lexer_peek_enter(lx, &s);
 		if (lexer_if(lx, TOKEN_IDENT, &end) &&
 		    lexer_if(lx, TOKEN_SEMI, NULL))
@@ -764,184 +739,6 @@ parser_exec_decl_cppdefs(struct parser *pr, struct doc *dc)
 }
 
 static int
-parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *type)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct doc *out = NULL;
-	struct token *tk;
-	int error;
-
-	error = parser_exec_func_proto(pr, &out, &(struct parser_exec_func_proto_arg){
-	    .dc		= doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc)),
-	    .rl		= rl,
-	    .type	= type,
-	});
-	if (error & (FAIL | NONE))
-		return parser_fail(pr);
-
-	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, out);
-
-	return parser_good(pr);
-}
-
-static int
-parser_exec_func_impl(struct parser *pr, struct doc *dc)
-{
-	struct ruler rl;
-	struct token *type;
-	int error;
-
-	if (parser_func_peek(pr, &type) != PARSER_FUNC_PEEK_IMPL)
-		return parser_none(pr);
-
-	ruler_init(&rl, 1, RULER_ALIGN_FIXED);
-	error = parser_exec_func_impl1(pr, dc, &rl, type);
-	if (error & GOOD)
-		ruler_exec(&rl);
-	ruler_free(&rl);
-	return error;
-}
-
-static int
-parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *type)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct doc *out = NULL;
-	int error;
-
-	error = parser_exec_func_proto(pr, &out,
-	    &(struct parser_exec_func_proto_arg){
-		.dc	= dc,
-		.rl	= rl,
-		.type	= type,
-		.flags	= PARSER_EXEC_FUNC_PROTO_IMPL,
-	});
-	if (error & (FAIL | NONE))
-		return parser_fail(pr);
-	if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL))
-		return parser_fail(pr);
-
-	if (style_brace_wrapping(pr->pr_st, AfterFunction))
-		doc_alloc(DOC_HARDLINE, dc);
-	else
-		doc_literal(" ", dc);
-	error = parser_stmt_block(pr, &(struct parser_stmt_block_arg){
-	    .head	= dc,
-	    .tail	= dc,
-	});
-	if (error & (FAIL | NONE))
-		return parser_fail(pr);
-	doc_alloc(DOC_HARDLINE, dc);
-	if (parser_peek_func_line(pr))
-		doc_alloc(DOC_HARDLINE, dc);
-
-	return parser_good(pr);
-}
-
-/*
- * Parse a function prototype, i.e. return type, identifier, arguments and
- * optional attributes. The caller is expected to already have parsed the
- * return type.
- */
-static int
-parser_exec_func_proto(struct parser *pr, struct doc **out,
-    struct parser_exec_func_proto_arg *arg)
-{
-	struct doc *dc = arg->dc;
-	struct doc *attributes, *concat, *group, *indent, *kr;
-	struct lexer *lx = pr->pr_lx;
-	struct token *lparen, *rparen, *tk;
-	unsigned int s;
-	int nkr = 0;
-	int error;
-
-	if (parser_type(pr, dc, arg->type, arg->rl) & (FAIL | NONE))
-		return parser_fail(pr);
-
-	s = style(pr->pr_st, AlwaysBreakAfterReturnType);
-	if ((s == All || s == TopLevel) ||
-	    ((arg->flags & PARSER_EXEC_FUNC_PROTO_IMPL) &&
-	     (s == AllDefinitions || s == TopLevelDefinitions)))
-		doc_alloc(DOC_HARDLINE, dc);
-
-	/*
-	 * The function identifier and arguments are intended to fit on a single
-	 * line.
-	 */
-	group = doc_alloc(DOC_GROUP, dc);
-	concat = doc_alloc(DOC_CONCAT, group);
-
-	if (arg->type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
-		/* Function returning function pointer. */
-		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
-			doc_token(lparen, concat);
-		if (lexer_expect(lx, TOKEN_STAR, &tk))
-			doc_token(tk, concat);
-		if (lexer_expect(lx, TOKEN_IDENT, &tk))
-			doc_token(tk, concat);
-		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
-		    &rparen))
-			return parser_fail(pr);
-		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
-			doc_token(lparen, concat);
-		while (parser_func_arg(pr, concat, NULL, rparen) & GOOD)
-			continue;
-		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-			doc_token(rparen, concat);
-		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-			doc_token(rparen, concat);
-	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
-		parser_token_trim_after(pr, tk);
-		doc_token(tk, concat);
-	} else {
-		doc_remove(group, dc);
-		return parser_fail(pr);
-	}
-
-	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
-		return parser_fail(pr);
-	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
-		parser_token_trim_after(pr, lparen);
-		parser_token_trim_before(pr, rparen);
-		parser_token_trim_after(pr, rparen);
-		doc_token(lparen, concat);
-	}
-	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
-		indent = doc_alloc_indent(DOC_INDENT_WIDTH, concat);
-	} else {
-		indent = doc_alloc_indent(
-		    style(pr->pr_st, ContinuationIndentWidth), concat);
-	}
-	while (parser_func_arg(pr, indent, out, rparen) & GOOD)
-		continue;
-	/* Can be empty if arguments are absent. */
-	if (*out == NULL)
-		*out = concat;
-	if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-		doc_token(rparen, *out);
-
-	/* Recognize K&R argument declarations. */
-	kr = doc_alloc(DOC_GROUP, dc);
-	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), kr);
-	doc_alloc(DOC_HARDLINE, indent);
-	if (parser_exec_decl(pr, indent, 0) & GOOD)
-		nkr++;
-	if (nkr == 0)
-		doc_remove(kr, dc);
-
-	attributes = doc_alloc(DOC_GROUP, dc);
-	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attributes);
-	error = parser_attributes(pr, indent, out, PARSER_ATTRIBUTES_HARDLINE);
-	if (error & HALT)
-		doc_remove(attributes, dc);
-
-	return parser_good(pr);
-}
-
-static int
 parser_exec_stmt(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
@@ -975,7 +772,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
 	 *
 	 *     2. Detect expressions before declarations as functions calls
 	 *        would otherwise be treated as declarations. This in turn is
-	 *        caused by parser_exec_decl() being able to detect declarations
+	 *        caused by parser_decl() being able to detect declarations
 	 *        making use of preprocessor directives such as the ones
 	 *        provided by queue(3).
 	 */
@@ -983,7 +780,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
 	    (parser_stmt_expr(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_if(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_return(pr, dc) & GOOD) ||
-	    (parser_exec_decl(pr, dc, PARSER_EXEC_DECL_BREAK) & GOOD) ||
+	    (parser_decl(pr, dc, PARSER_DECL_BREAK) & GOOD) ||
 	    (parser_exec_stmt_case(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_break(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_goto(pr, dc) & GOOD) ||
@@ -1176,7 +973,7 @@ parser_exec_stmt_for(struct parser *pr, struct doc *dc)
 		w = style(pr->pr_st, ContinuationIndentWidth);
 
 	/* Declarations are allowed in the first expression. */
-	if (parser_exec_decl(pr, loop, 0) & NONE) {
+	if (parser_decl(pr, loop, 0) & NONE) {
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc		= loop,
 		    .indent	= w,
@@ -1808,42 +1605,10 @@ parser_peek_decl(struct parser *pr)
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
-	error = parser_exec_decl(pr, dc, 0);
+	error = parser_decl(pr, dc, 0);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
 	return error & GOOD;
-}
-
-/*
- * Returns non-zero if the right brace of a function implementation can be
- * followed by a hard line.
- */
-static int
-parser_peek_func_line(struct parser *pr)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct token *cpp, *ident, *rbrace;
-	struct lexer_state s;
-	int annotated = 0;
-
-	if (lexer_peek_if(lx, LEXER_EOF, NULL) || !lexer_back(lx, &rbrace))
-		return 0;
-
-	if (lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP, &cpp))
-		return cpp->tk_lno - rbrace->tk_lno > 1;
-
-	lexer_peek_enter(lx, &s);
-	if ((lexer_if(lx, TOKEN_IDENT, &ident) ||
-	    lexer_if(lx, TOKEN_ASSEMBLY, &ident)) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_SEMI, NULL) &&
-	    ident->tk_lno - rbrace->tk_lno == 1)
-		annotated = 1;
-	lexer_peek_leave(lx, &s);
-	if (annotated)
-		return 0;
-
-	return 1;
 }
 
 int
