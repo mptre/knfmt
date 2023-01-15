@@ -30,11 +30,6 @@
 #include "style.h"
 #include "token.h"
 
-enum parser_peek {
-	PARSER_PEEK_FUNCDECL	= 1,
-	PARSER_PEEK_FUNCIMPL	= 2,
-};
-
 struct parser_exec_decl_init_arg {
 	struct doc		*dc;
 	struct doc		*out;
@@ -125,9 +120,8 @@ static struct doc	*parser_simple_stmt_ifelse_enter(struct parser *,
 static void		 parser_simple_stmt_ifelse_leave(struct parser *,
     void *);
 
-static int		parser_peek_decl(struct parser *);
-static enum parser_peek	parser_peek_func(struct parser *, struct token **);
-static int		parser_peek_func_line(struct parser *);
+static int	parser_peek_decl(struct parser *);
+static int	parser_peek_func_line(struct parser *);
 
 static int	parser_get_error(const struct parser *);
 
@@ -367,7 +361,6 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat;
 	struct token *beg, *end, *fun, *semi, *tk;
-	enum parser_peek peek;
 	int error;
 
 	if (parser_exec_decl_cppdefs(pr, dc) & GOOD)
@@ -382,9 +375,12 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	 * Presence of a type does not necessarily imply that this a declaration
 	 * since it could be a function declaration or implementation.
 	 */
-	if ((peek = parser_peek_func(pr, &fun))) {
-		if (peek == PARSER_PEEK_FUNCDECL)
-			return parser_exec_func_decl(pr, dc, rl, fun);
+	switch (parser_func_peek(pr, &fun)) {
+	case PARSER_FUNC_PEEK_NONE:
+		break;
+	case PARSER_FUNC_PEEK_DECL:
+		return parser_exec_func_decl(pr, dc, rl, fun);
+	case PARSER_FUNC_PEEK_IMPL:
 		return parser_none(pr);
 	}
 
@@ -797,7 +793,7 @@ parser_exec_func_impl(struct parser *pr, struct doc *dc)
 	struct token *type;
 	int error;
 
-	if (parser_peek_func(pr, &type) != PARSER_PEEK_FUNCIMPL)
+	if (parser_func_peek(pr, &type) != PARSER_FUNC_PEEK_IMPL)
 		return parser_none(pr);
 
 	ruler_init(&rl, 1, RULER_ALIGN_FIXED);
@@ -1816,55 +1812,6 @@ parser_peek_decl(struct parser *pr)
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
 	return error & GOOD;
-}
-
-/*
- * Returns non-zero if the next tokens denotes a function. The type argument
- * points to the last token of the return type.
- */
-static enum parser_peek
-parser_peek_func(struct parser *pr, struct token **type)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	enum parser_peek peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	if (parser_type_peek(pr, type, 0) &&
-	    lexer_seek(lx, token_next(*type))) {
-		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
-			/* nothing */
-		} else if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
-		    lexer_if(lx, TOKEN_STAR, NULL) &&
-		    lexer_if(lx, TOKEN_IDENT, NULL) &&
-		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
-		    lexer_if(lx, TOKEN_RPAREN, NULL)) {
-			/*
-			 * Function returning a function pointer, used by
-			 * parser_exec_func_proto().
-			 */
-			(*type)->tk_flags |= TOKEN_FLAG_TYPE_FUNC;
-		} else {
-			goto out;
-		}
-
-		if (!lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
-			goto out;
-
-		while (lexer_if(lx, TOKEN_ATTRIBUTE, NULL) &&
-		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
-			continue;
-
-		if (lexer_if(lx, TOKEN_SEMI, NULL))
-			peek = PARSER_PEEK_FUNCDECL;
-		else if (lexer_if(lx, TOKEN_LBRACE, NULL))
-			peek = PARSER_PEEK_FUNCIMPL;
-		else if (parser_type_peek(pr, NULL, 0))
-			peek = PARSER_PEEK_FUNCIMPL;	/* K&R */
-	}
-out:
-	lexer_peek_leave(lx, &s);
-	return peek;
 }
 
 /*
