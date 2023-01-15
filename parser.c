@@ -50,7 +50,6 @@ struct parser_exec_func_proto_arg {
 	struct doc		*dc;
 	struct ruler		*rl;
 	const struct token	*type;
-	struct doc		*out;
 	unsigned int		 flags;
 #define PARSER_EXEC_FUNC_PROTO_IMPL		0x00000001u
 };
@@ -88,7 +87,7 @@ static int	parser_exec_func_decl(struct parser *, struct doc *,
 static int	parser_exec_func_impl(struct parser *, struct doc *);
 static int	parser_exec_func_impl1(struct parser *, struct doc *,
     struct ruler *, const struct token *);
-static int	parser_exec_func_proto(struct parser *,
+static int	parser_exec_func_proto(struct parser *, struct doc **,
     struct parser_exec_func_proto_arg *);
 
 #define PARSER_EXEC_STMT_EXPR_DOWHILE		0x00000001u
@@ -772,20 +771,21 @@ static int
 parser_exec_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *type)
 {
-	struct parser_exec_func_proto_arg arg = {
-		.rl	= rl,
-		.type	= type,
-		.flags	= 0,
-	};
 	struct lexer *lx = pr->pr_lx;
+	struct doc *out = NULL;
 	struct token *tk;
+	int error;
 
-	arg.dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	if (parser_exec_func_proto(pr, &arg) & (FAIL | NONE))
+	error = parser_exec_func_proto(pr, &out, &(struct parser_exec_func_proto_arg){
+	    .dc		= doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc)),
+	    .rl		= rl,
+	    .type	= type,
+	});
+	if (error & (FAIL | NONE))
 		return parser_fail(pr);
 
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, arg.out);
+		doc_token(tk, out);
 
 	return parser_good(pr);
 }
@@ -812,16 +812,18 @@ static int
 parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *type)
 {
-	struct parser_exec_func_proto_arg arg = {
+	struct lexer *lx = pr->pr_lx;
+	struct doc *out = NULL;
+	int error;
+
+	error = parser_exec_func_proto(pr, &out,
+	    &(struct parser_exec_func_proto_arg){
 		.dc	= dc,
 		.rl	= rl,
 		.type	= type,
 		.flags	= PARSER_EXEC_FUNC_PROTO_IMPL,
-	};
-	struct lexer *lx = pr->pr_lx;
-	int error;
-
-	if (parser_exec_func_proto(pr, &arg) & (FAIL | NONE))
+	});
+	if (error & (FAIL | NONE))
 		return parser_fail(pr);
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, NULL))
 		return parser_fail(pr);
@@ -849,7 +851,7 @@ parser_exec_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
  * return type.
  */
 static int
-parser_exec_func_proto(struct parser *pr,
+parser_exec_func_proto(struct parser *pr, struct doc **out,
     struct parser_exec_func_proto_arg *arg)
 {
 	struct doc *dc = arg->dc;
@@ -917,13 +919,13 @@ parser_exec_func_proto(struct parser *pr,
 		indent = doc_alloc_indent(
 		    style(pr->pr_st, ContinuationIndentWidth), concat);
 	}
-	while (parser_func_arg(pr, indent, &arg->out, rparen) & GOOD)
+	while (parser_func_arg(pr, indent, out, rparen) & GOOD)
 		continue;
 	/* Can be empty if arguments are absent. */
-	if (arg->out == NULL)
-		arg->out = concat;
+	if (*out == NULL)
+		*out = concat;
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-		doc_token(rparen, arg->out);
+		doc_token(rparen, *out);
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);
@@ -936,8 +938,7 @@ parser_exec_func_proto(struct parser *pr,
 
 	attributes = doc_alloc(DOC_GROUP, dc);
 	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attributes);
-	error = parser_attributes(pr, indent, &arg->out,
-	    PARSER_ATTRIBUTES_HARDLINE);
+	error = parser_attributes(pr, indent, out, PARSER_ATTRIBUTES_HARDLINE);
 	if (error & HALT)
 		doc_remove(attributes, dc);
 
