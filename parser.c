@@ -1159,7 +1159,7 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	struct doc *dedent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *colon = NULL;
-	struct token *ident, *nx;
+	struct token *ident;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -1185,6 +1185,8 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	}
 
 	if (lexer_expect(lx, TOKEN_COLON, &colon)) {
+		struct token *nx;
+
 		doc_token(colon, dedent);
 
 		/*
