@@ -65,7 +65,6 @@ static int	parser_exec_stmt1(struct parser *, struct doc *);
 static int	parser_exec_stmt_if(struct parser *, struct doc *);
 static int	parser_exec_stmt_for(struct parser *, struct doc *);
 static int	parser_exec_stmt_dowhile(struct parser *, struct doc *);
-static int	parser_exec_stmt_return(struct parser *, struct doc *);
 static int	parser_exec_stmt_kw_expr(struct parser *, struct doc *,
     const struct token *, unsigned int);
 static int	parser_exec_stmt_label(struct parser *, struct doc *);
@@ -735,7 +734,7 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
 	if ((parser_stmt_block(pr, &ps) & GOOD) ||
 	    (parser_stmt_expr(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_if(pr, dc) & GOOD) ||
-	    (parser_exec_stmt_return(pr, dc) & GOOD) ||
+	    (parser_stmt_return(pr, dc) & GOOD) ||
 	    (parser_decl(pr, dc, PARSER_DECL_BREAK) & GOOD) ||
 	    (parser_exec_stmt_case(pr, dc) & GOOD) ||
 	    (parser_exec_stmt_break(pr, dc) & GOOD) ||
@@ -1047,38 +1046,6 @@ parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc)
 		    PARSER_EXEC_STMT_EXPR_DOWHILE);
 	}
 	return parser_fail(pr);
-}
-
-static int
-parser_exec_stmt_return(struct parser *pr, struct doc *dc)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct doc *concat, *expr;
-	struct token *tk;
-
-	if (!lexer_if(lx, TOKEN_RETURN, &tk))
-		return parser_none(pr);
-
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	parser_token_trim_after(pr, tk);
-	doc_token(tk, concat);
-	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
-		int error;
-
-		doc_literal(" ", concat);
-		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
-		    .dc		= concat,
-		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
-		    .flags	= EXPR_EXEC_NOPARENS,
-		});
-		if (error & HALT)
-			return parser_fail(pr);
-	} else {
-		expr = concat;
-	}
-	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, expr);
-	return parser_good(pr);
 }
 
 /*
