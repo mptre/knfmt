@@ -529,9 +529,11 @@ parser_exec_decl_init1(struct parser *pr, struct doc *dc,
 	} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
 		doc_token(tk, dc);
 		return parser_good(pr);
-	} else if (parser_attributes(pr, dc, NULL, 0) & GOOD) {
-		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL))
+	} else if (parser_attributes(pr, dc, &arg->out, 0) & GOOD) {
+		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
 			doc_literal(" ", dc);
+			arg->out = NULL;
+		}
 		return parser_good(pr);
 	}
 
