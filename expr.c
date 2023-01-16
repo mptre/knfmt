@@ -983,24 +983,29 @@ expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	struct doc *ternary;
+	struct doc *ternary = dc;
 
 	if (style(es->es_st, BreakBeforeTernaryOperators) == True) {
+		struct doc *cond;
+
 		if (ex->ex_tokens[0] != NULL)
 			token_move_next_line(ex->ex_tokens[0]);
 		if (ex->ex_tokens[1] != NULL)
 			token_move_next_line(ex->ex_tokens[1]);
+		cond = expr_doc(ex->ex_lhs, es, dc);
+		doc_alloc(DOC_LINE, cond);
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], dc);	/* ? */
 	} else {
 		if (ex->ex_tokens[0] != NULL)
 			token_move_prev_line(ex->ex_tokens[0]);
 		if (ex->ex_tokens[1] != NULL)
 			token_move_prev_line(ex->ex_tokens[1]);
+		ternary = expr_doc(ex->ex_lhs, es, dc);
+		doc_alloc(DOC_LINE, ternary);
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], ternary);	/* ? */
 	}
-
-	ternary = expr_doc(ex->ex_lhs, es, dc);
-	doc_alloc(DOC_LINE, ternary);
-	if (ex->ex_tokens[0] != NULL)
-		doc_token(ex->ex_tokens[0], ternary);	/* ? */
 
 	/* The true expression can be empty, GNU extension. */
 	if (ex->ex_rhs != NULL) {
