@@ -756,7 +756,7 @@ int
 lexer_peek(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state s;
-	struct token *t;
+	struct token *t = NULL;
 	int pop;
 
 	lexer_peek_enter(lx, &s);
@@ -979,7 +979,7 @@ int
 lexer_until(struct lexer *lx, int type, struct token **tk)
 {
 	for (;;) {
-		struct token *t;
+		struct token *t = NULL;
 
 		if (!lexer_pop(lx, &t) || t->tk_type == LEXER_EOF)
 			return 0;
