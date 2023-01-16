@@ -149,13 +149,20 @@ static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
     struct doc *);
 
-static struct doc	*expr_doc_align_enter(struct expr *,
-    struct expr_state *, struct doc *, unsigned int);
-static void		 expr_doc_align_leave(struct expr_state *);
-static struct doc	*expr_doc_align_disable(struct expr *,
-    struct expr_state *, struct doc *);
-static void		 expr_doc_align_init(struct expr_state *,
+#define expr_doc_align_enter(a, b, c, d) \
+	expr_doc_align_enter0((a), (b), (c), (d), __func__, __LINE__)
+static struct doc	*expr_doc_align_enter0(struct expr *,
+    struct expr_state *, struct doc *, unsigned int, const char *, int);
+
+#define expr_doc_align_disable(a, b, c) \
+	expr_doc_align_disable0((a), (b), (c), __func__, __LINE__)
+static struct doc	*expr_doc_align_disable0(struct expr *,
+    struct expr_state *, struct doc *, const char *, int);
+
+static void	expr_doc_align_leave(struct expr_state *);
+static void	expr_doc_align_init(struct expr_state *,
     struct doc_minimize *, size_t);
+
 static struct doc	*expr_doc_indent_parens(const struct expr_state *,
     struct doc *);
 static int		 expr_doc_has_spaces(const struct expr *);
@@ -1033,8 +1040,8 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
  * not cause exceesive new line(s). Otherwise, fallback to regular indentation.
  */
 static struct doc *
-expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
-    struct doc *dc, unsigned int indent)
+expr_doc_align_enter0(struct expr *UNUSED(ex), struct expr_state *es,
+    struct doc *dc, unsigned int indent, const char *fun, int lno)
 {
 	struct doc_minimize minimizers[2];
 
@@ -1043,7 +1050,7 @@ expr_doc_align_enter(struct expr *UNUSED(ex), struct expr_state *es,
 	if (es->es_nalign > 0 || (es->es_flags & EXPR_EXEC_HARDLINE))
 		minimizers[1].indent = indent;
 	es->es_nalign++;
-	return doc_minimize(dc, minimizers);
+	return doc_minimize0(dc, minimizers, 2, fun, lno);
 }
 
 static void
@@ -1054,15 +1061,15 @@ expr_doc_align_leave(struct expr_state *es)
 }
 
 static struct doc *
-expr_doc_align_disable(struct expr *UNUSED(ex), struct expr_state *es,
-    struct doc *dc)
+expr_doc_align_disable0(struct expr *UNUSED(ex), struct expr_state *es,
+    struct doc *dc, const char *fun, int lno)
 {
 	struct doc_minimize minimizers[2];
 
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[1].flags |= DOC_MINIMIZE_FORCE;
 	es->es_nalign++;
-	return doc_minimize(dc, minimizers);
+	return doc_minimize0(dc, minimizers, 2, fun, lno);
 }
 
 static void
