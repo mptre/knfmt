@@ -1422,8 +1422,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	struct token *lbrace, *rbrace;
 
 	/* Ignore nested statements, they will be handled later on. */
-	if ((pr->pr_op->op_flags & OPTIONS_SIMPLE) == 0 ||
-	    pr->pr_simple.nstmt != 1)
+	if (pr->pr_simple.nstmt != 1)
 		return dc;
 
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
