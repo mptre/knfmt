@@ -953,8 +953,11 @@ static struct doc *
 expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct expr *e;
+	int doalign = style(es->es_st, AlignOperands) == Align;
 	int i = 0;
 
+	if (doalign)
+		dc = expr_doc_align_enter(ex, es, dc, 0);
 	TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {
 		struct doc *tmp;
 
@@ -965,6 +968,8 @@ expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (i++ == 0)
 			dc = tmp;
 	}
+	if (doalign)
+		expr_doc_align_leave(es);
 	return dc;
 }
 
