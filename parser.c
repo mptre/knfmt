@@ -759,7 +759,8 @@ parser_exec_stmt1(struct parser *pr, struct doc *dc)
 int
 parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 {
-	struct doc *concat, *dc, *indent, *line;
+	struct doc *dc = arg->tail;
+	struct doc *concat, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *nx, *rbrace, *tk;
 	int isswitch = arg->flags & PARSER_STMT_BLOCK_SWITCH;
@@ -783,7 +784,8 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 		pr->pr_nindent++;
 	pr->pr_nblocks++;
 
-	dc = parser_simple_stmt_block(pr, arg->tail);
+	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0)
+		dc = parser_simple_stmt_block(pr, dc);
 
 	parser_token_trim_before(pr, rbrace);
 
