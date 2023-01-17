@@ -61,7 +61,7 @@ buffer_read_fd(int fd)
 {
 	struct buffer *bf;
 
-	bf = buffer_alloc(1024);
+	bf = buffer_alloc(1 << 13);
 	for (;;) {
 		ssize_t n;
 
