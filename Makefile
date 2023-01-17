@@ -1001,6 +1001,10 @@ clean:
 		${DEPS_test} ${OBJS_test} ${PROG_test}
 .PHONY: clean
 
+cleandir: clean
+	cd ${.CURDIR} && rm -f config.h config.log config.mk
+.PHONY: cleandir
+
 dist:
 	set -e; \
 	d=knfmt-${VERSION}; \
