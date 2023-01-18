@@ -1160,7 +1160,7 @@ static int
 parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 {
 	struct lexer_state s;
-	struct doc *dedent;
+	struct doc *noindent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *colon = NULL;
 	struct token *ident;
@@ -1174,11 +1174,11 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	if (!peek)
 		return parser_none(pr);
 
-	dedent = doc_alloc_dedent(dc);
+	noindent = doc_alloc(DOC_CONCAT, doc_alloc(DOC_NOINDENT, dc));
 	if (lexer_expect(lx, TOKEN_IDENT, &ident)) {
 		struct doc *label;
 
-		label = doc_token(ident, dedent);
+		label = doc_token(ident, noindent);
 		/*
 		 * Honor indentation before label but make sure to emit it right
 		 * before the label. Necessary when the label is prefixed with
@@ -1191,7 +1191,7 @@ parser_exec_stmt_label(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_COLON, &colon)) {
 		struct token *nx;
 
-		doc_token(colon, dedent);
+		doc_token(colon, noindent);
 
 		/*
 		 * A label is not necessarily followed by a hard line, there

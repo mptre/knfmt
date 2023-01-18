@@ -111,10 +111,10 @@ The following type of documents are available:
   Indent increases the indentation, the same indentation is not emitted until
   emitting a new line.
 
-* DOC_DEDENT
-  Dedent immediately removes the current indentation by trimming the current
-  line, assuming nothing other than indentation has been emitted. The only use
-  case for this type of document is goto labels which should never be indented.
+* DOC_NOINDENT
+  Removes the current indentation by trimming the current line, assuming nothing
+  other than indentation has been emitted. The only use case for this type of
+  document is goto labels which should never be indented.
 
 * DOC_ALIGN
   Align emits enough white space in order to reach the column associated with

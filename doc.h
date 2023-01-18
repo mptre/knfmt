@@ -12,7 +12,7 @@ enum doc_type {
 	DOC_CONCAT,
 	DOC_GROUP,
 	DOC_INDENT,
-	DOC_DEDENT,
+	DOC_NOINDENT,
 	DOC_ALIGN,
 	DOC_LITERAL,
 	DOC_VERBATIM,
@@ -95,8 +95,6 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
 
 #define doc_alloc_indent(a, b) \
 	doc_alloc_indent0(DOC_INDENT, (a), (b), __func__, __LINE__)
-#define doc_alloc_dedent(a) \
-	doc_alloc_indent0(DOC_DEDENT, 0, (a), __func__, __LINE__)
 struct doc	*doc_alloc_indent0(enum doc_type, int, struct doc *,
     const char *, int);
 

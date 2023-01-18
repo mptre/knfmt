@@ -292,7 +292,7 @@ doc_free(struct doc *dc)
 
 	case DOC_GROUP:
 	case DOC_INDENT:
-	case DOC_DEDENT:
+	case DOC_NOINDENT:
 	case DOC_OPTIONAL:
 	case DOC_SCOPE:
 		doc_free(dc->dc_doc);
@@ -530,7 +530,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		doc_exec_indent(dc, st);
 		break;
 
-	case DOC_DEDENT: {
+	case DOC_NOINDENT: {
 		int oldindent;
 
 		doc_trim_spaces(dc, st);
@@ -909,7 +909,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 
 		case DOC_GROUP:
 		case DOC_INDENT:
-		case DOC_DEDENT:
+		case DOC_NOINDENT:
 		case DOC_OPTIONAL:
 		case DOC_MINIMIZE:
 		case DOC_SCOPE:
@@ -996,7 +996,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	case DOC_CONCAT:
 	case DOC_GROUP:
 	case DOC_INDENT:
-	case DOC_DEDENT:
+	case DOC_NOINDENT:
 	case DOC_ALIGN:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
@@ -1633,7 +1633,7 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_INDENT:
-	case DOC_DEDENT:
+	case DOC_NOINDENT:
 	case DOC_OPTIONAL: {
 		struct buffer *bf;
 
@@ -1712,7 +1712,7 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 		/* FALLTHROUGH */
 	case DOC_GROUP:
 	case DOC_INDENT:
-	case DOC_DEDENT:
+	case DOC_NOINDENT:
 	case DOC_OPTIONAL:
 	case DOC_MINIMIZE:
 	case DOC_SCOPE:
@@ -1754,7 +1754,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_CONCAT);
 	CASE(DOC_GROUP);
 	CASE(DOC_INDENT);
-	CASE(DOC_DEDENT);
+	CASE(DOC_NOINDENT);
 	CASE(DOC_ALIGN);
 	CASE(DOC_LITERAL);
 	CASE(DOC_VERBATIM);
