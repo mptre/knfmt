@@ -392,12 +392,21 @@ doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
 }
 
 struct doc *
-doc_alloc_indent0(enum doc_type type, int val, struct doc *dc,
-    const char *fun, int lno)
+doc_alloc_indent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *indent;
 
-	indent = doc_alloc0(type, dc, val, fun, lno);
+	indent = doc_alloc0(DOC_INDENT, dc, val, fun, lno);
+	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
+}
+
+struct doc *
+doc_alloc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
+{
+	struct doc *indent;
+	int ival = val;
+
+	indent = doc_alloc0(DOC_INDENT, dc, -ival, fun, lno);
 	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
 }
 

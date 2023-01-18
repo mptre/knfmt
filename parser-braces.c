@@ -202,7 +202,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			if (token_cmp(pv, rbrace) < 0) {
 				if (arg->flags &
 				    PARSER_EXEC_DECL_BRACES_DEDENT) {
-					braces = doc_alloc_indent(-arg->indent,
+					braces = doc_alloc_dedent(arg->indent,
 					    braces);
 				}
 				doc_alloc(DOC_HARDLINE, braces);
