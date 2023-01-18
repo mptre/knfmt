@@ -70,7 +70,7 @@ buffer_read_fd(int fd)
 			goto err;
 		if (n == 0)
 			break;
-		bf->bf_len += n;
+		bf->bf_len += (size_t)n;
 		if (bf->bf_len > bf->bf_siz / 2)
 			buffer_grow(bf, 1);
 	}
@@ -146,11 +146,11 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	va_end(cp);
 	if (n < 0)
 		err(1, "vsnprintf");
-	bf->bf_len += n;
+	bf->bf_len += (size_t)n;
 }
 
 size_t
-buffer_indent(struct buffer *bf, int indent, int usetabs, size_t pos)
+buffer_indent(struct buffer *bf, size_t indent, int usetabs, size_t pos)
 {
 	if (usetabs) {
 		for (; indent >= 8; indent -= 8) {

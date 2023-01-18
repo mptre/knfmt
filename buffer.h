@@ -16,7 +16,7 @@ void		 buffer_putc(struct buffer *, char);
 void		 buffer_printf(struct buffer *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
 void		 buffer_vprintf(struct buffer *, const char *, va_list);
-size_t		 buffer_indent(struct buffer *, int, int, size_t);
+size_t		 buffer_indent(struct buffer *, size_t, int, size_t);
 char		*buffer_release(struct buffer *);
 void		 buffer_reset(struct buffer *);
 int		 buffer_cmp(const struct buffer *, const struct buffer *);
