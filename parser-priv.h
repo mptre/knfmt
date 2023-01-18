@@ -6,10 +6,10 @@ struct token;
  * but disjoint values are favored allowing the caller to catch multiple return
  * values.
  */
-#define GOOD	0x00000001u
-#define FAIL	0x00000002u
-#define NONE	0x00000004u
-#define BRCH	0x00000008u
+#define GOOD	0x00000001
+#define FAIL	0x00000002
+#define NONE	0x00000004
+#define BRCH	0x00000008
 #define HALT	(FAIL | NONE | BRCH)
 
 struct parser {
