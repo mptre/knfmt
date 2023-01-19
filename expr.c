@@ -306,13 +306,11 @@ expr_peek(const struct expr_exec_arg *ea)
 	struct expr_state es;
 	struct expr *ex;
 	int peek = 0;
-	int error;
 
 	expr_state_init(&es, ea);
 
 	ex = expr_exec1(&es, PC0);
-	error = lexer_get_error(es.es_lx);
-	if (ex != NULL && error == 0)
+	if (ex != NULL && lexer_get_error(es.es_lx) == 0)
 		peek = 1;
 	expr_free(ex);
 	expr_state_reset(&es);
