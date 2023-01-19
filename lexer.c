@@ -145,7 +145,7 @@ lexer_init(void)
 		struct token *dst;
 		unsigned char slot;
 
-		slot = src->tk_str[0];
+		slot = (unsigned char)src->tk_str[0];
 		if (tokens[slot] == NULL) {
 			if (VECTOR_INIT(tokens[slot]) == NULL)
 				err(1, NULL);
@@ -268,7 +268,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		*ch = '\0';
 		return 0;
 	}
-	c = bf->bf_ptr[lx->lx_st.st_off++];
+	c = (unsigned char)bf->bf_ptr[lx->lx_st.st_off++];
 	if (c == '\n') {
 		lx->lx_st.st_lno++;
 		lx->lx_st.st_cno = 1;
@@ -354,7 +354,7 @@ lexer_serialize(struct lexer *lx, const struct token *tk)
 	return *str;
 }
 
-int
+unsigned int
 lexer_get_error(const struct lexer *lx)
 {
 	return lx->lx_st.st_err;
@@ -1501,7 +1501,7 @@ lexer_find_token(const struct lexer *lx, const struct lexer_state *st)
 
 	len = lx->lx_st.st_off - st->st_off;
 	key = &lx->lx_bf->bf_ptr[st->st_off];
-	slot = key[0];
+	slot = (unsigned char)key[0];
 	if (tokens[slot] == NULL)
 		return NULL;
 	for (i = 0; i < VECTOR_LENGTH(tokens[slot]); i++) {
