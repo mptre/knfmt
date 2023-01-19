@@ -97,7 +97,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	}
 
 	if (hasline) {
-		int val = arg->indent;
+		unsigned int val = arg->indent;
 
 		if (arg->flags & PARSER_EXEC_DECL_BRACES_INDENT_MAYBE)
 			val |= DOC_INDENT_NEWLINE;
