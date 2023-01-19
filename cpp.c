@@ -54,6 +54,7 @@ cpp_exec(const struct token *tk, const struct style *st,
 	for (;;) {
 		struct doc *concat;
 		const char *ep, *sp;
+		size_t cpplen, linelen;
 
 		concat = doc_alloc(DOC_CONCAT, dc);
 
@@ -64,14 +65,16 @@ cpp_exec(const struct token *tk, const struct style *st,
 
 		if (nlines > 0)
 			doc_alloc(DOC_HARDLINE, concat);
-		if (ep - sp > 0)
-			doc_literal_n(sp, ep - sp, concat);
+		cpplen = (size_t)(ep - sp);
+		if (cpplen > 0)
+			doc_literal_n(sp, cpplen, concat);
 		ruler_insert(&rl, tk, concat, 1,
 		    doc_width(concat, bf, st, op), 0);
 		doc_literal("\\", concat);
 
-		len -= nx - str;
-		str += nx - str;
+		linelen = (size_t)(nx - str);
+		len -= linelen;
+		str += linelen;
 		nlines++;
 	}
 	if (len > 0) {
