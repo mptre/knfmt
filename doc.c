@@ -1855,12 +1855,14 @@ countlines(const char *str, size_t len)
 
 	while (len > 0) {
 		const char *p;
+		size_t linelen;
 
 		p = memchr(str, '\n', len);
 		if (p == NULL)
 			break;
 		nlines++;
-		len -= (p - str) + 1;
+		linelen = (size_t)(p - str);
+		len -= linelen + 1;
 		str = p + 1;
 	}
 	return nlines;
