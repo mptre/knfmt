@@ -33,24 +33,29 @@ comment_exec(const struct token *tk, const struct style *st,
 	bf = buffer_alloc(len);
 	for (;;) {
 		const char *ep;
+		size_t commlen;
 
 		ep = skipws(sp, len);
 		if (ep != NULL && (*ep == '*' || *ep == '/')) {
-			buffer_indent(bf, strwidth(sp, ep - sp, 0),
+			size_t wslen;
+
+			wslen = (size_t)(ep - sp);
+			buffer_indent(bf, strwidth(sp, wslen, 0),
 			    style(st, UseTab) != Never, 0);
-			len -= ep - sp;
-			sp += ep - sp;
+			len -= wslen;
+			sp += wslen;
 		}
 		ep = nextline(sp, len);
 		if (ep == NULL)
 			break;
-		buffer_puts(bf, sp, rskipws(sp, ep - sp));
+		commlen = (size_t)(ep - sp);
+		buffer_puts(bf, sp, rskipws(sp, commlen));
 		if (iscrlf)
 			buffer_putc(bf, '\r');
 		buffer_putc(bf, '\n');
 
-		len -= ep - sp;
-		sp += ep - sp;
+		len -= commlen;
+		sp += commlen;
 	}
 	buffer_putc(bf, '\0');
 
