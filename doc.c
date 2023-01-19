@@ -357,6 +357,14 @@ doc_set_indent(struct doc *dc, unsigned int indent)
 }
 
 void
+doc_set_dedent(struct doc *dc, unsigned int indent)
+{
+	int val = indent;
+
+	dc->dc_int = -val;
+}
+
+void
 doc_set_align(struct doc *dc, const struct doc_align *align)
 {
 	dc->dc_align = *align;

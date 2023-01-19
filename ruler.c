@@ -20,7 +20,7 @@ struct ruler_column {
 struct ruler_indent {
 	struct doc	*ri_dc;
 	unsigned int	 ri_rd;
-	int		 ri_indent;
+	int		 ri_sign;
 };
 
 struct ruler_datum {
@@ -111,7 +111,7 @@ ruler_insert0(struct ruler *rl, const struct token *tk, struct doc *dc,
  */
 struct doc *
 ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
-    int indent, const char *fun, int lno)
+    int sign, const char *fun, int lno)
 {
 	struct ruler_column *rc;
 	struct ruler_indent *ri;
@@ -130,7 +130,7 @@ ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 	if (ri == NULL)
 		err(1, NULL);
 	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
-	ri->ri_indent = indent;
+	ri->ri_sign = sign;
 	ri->ri_dc = doc_alloc0(DOC_INDENT, dc, 0, fun, lno);
 	if (cookie != NULL)
 		*cookie = ri;
@@ -221,7 +221,10 @@ ruler_exec_indent(struct ruler *rl)
 		} else {
 			indent = rd->rd_len + rd->rd_nspaces + 1;
 		}
-		doc_set_indent(ri->ri_dc, ri->ri_indent * indent);
+		if (ri->ri_sign > 0)
+			doc_set_indent(ri->ri_dc, indent);
+		else
+			doc_set_dedent(ri->ri_dc, indent);
 	}
 }
 

@@ -67,6 +67,7 @@ void		doc_append_before(struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);
 int		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, unsigned int);
+void		doc_set_dedent(struct doc *, unsigned int);
 void		doc_set_align(struct doc *, const struct doc_align *);
 
 #define doc_alloc(a, b) \
