@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <string.h>
 
-static int	ctotrace(unsigned char c);
+static int	ctotrace(char c);
 
 void
 options_init(struct options *op)
@@ -44,7 +44,7 @@ trace(const struct options *op, char c)
 }
 
 static int
-ctotrace(unsigned char c)
+ctotrace(char c)
 {
 	size_t len = sizeof(traces);
 	size_t i;
