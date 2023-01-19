@@ -994,6 +994,20 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_alloc(DOC_LINE, cond);
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], dc);	/* ? */
+
+		/* The true expression can be empty, GNU extension. */
+		if (ex->ex_rhs != NULL) {
+			struct doc *lhs;
+
+			doc_alloc(DOC_LINE, dc);
+			lhs = expr_doc_soft(ex->ex_rhs, es, dc,
+			    soft_weights.ternary);
+			doc_alloc(DOC_LINE, lhs);
+		}
+
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], dc);	/* : */
+		doc_alloc(DOC_LINE, dc);
 	} else {
 		if (ex->ex_tokens[0] != NULL)
 			token_move_prev_line(ex->ex_tokens[0]);
@@ -1003,21 +1017,22 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_alloc(DOC_LINE, ternary);
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], ternary);	/* ? */
+
+		/* The true expression can be empty, GNU extension. */
+		if (ex->ex_rhs != NULL) {
+			doc_alloc(DOC_LINE, ternary);
+			ternary = expr_doc_soft(ex->ex_rhs, es, dc,
+			    soft_weights.ternary);
+			doc_alloc(DOC_LINE, ternary);
+		} else {
+			ternary = dc;
+		}
+
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], ternary);	/* : */
+		doc_alloc(DOC_LINE, ternary);
 	}
 
-	/* The true expression can be empty, GNU extension. */
-	if (ex->ex_rhs != NULL) {
-		doc_alloc(DOC_LINE, ternary);
-		ternary = expr_doc_soft(ex->ex_rhs, es, dc,
-		    soft_weights.ternary);
-		doc_alloc(DOC_LINE, ternary);
-	} else {
-		ternary = dc;
-	}
-
-	if (ex->ex_tokens[1] != NULL)
-		doc_token(ex->ex_tokens[1], ternary);	/* : */
-	doc_alloc(DOC_LINE, ternary);
 	return expr_doc_soft(ex->ex_ternary, es, dc, soft_weights.ternary);
 }
 

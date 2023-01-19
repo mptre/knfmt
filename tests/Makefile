@@ -493,6 +493,7 @@ TESTS+=	style-BreakBeforeBinaryOperators-011.c
 TESTS+=	style-BreakBeforeTernaryOperators-001.c
 TESTS+=	style-BreakBeforeTernaryOperators-002.c
 TESTS+=	style-BreakBeforeTernaryOperators-003.c
+TESTS+=	style-BreakBeforeTernaryOperators-004.c
 TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ContinuationIndentWidth-001.c
 TESTS+=	style-IncludeCategories-001.c

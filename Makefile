@@ -589,6 +589,7 @@ DISTFILES+=	tests/style-BreakBeforeTernaryOperators-001.ok
 DISTFILES+=	tests/style-BreakBeforeTernaryOperators-002.c
 DISTFILES+=	tests/style-BreakBeforeTernaryOperators-002.ok
 DISTFILES+=	tests/style-BreakBeforeTernaryOperators-003.c
+DISTFILES+=	tests/style-BreakBeforeTernaryOperators-004.c
 DISTFILES+=	tests/style-ColumnLimit-001.c
 DISTFILES+=	tests/style-ContinuationIndentWidth-001.c
 DISTFILES+=	tests/style-ContinuationIndentWidth-001.ok
