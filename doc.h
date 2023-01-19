@@ -32,7 +32,7 @@ struct doc_minimize {
 	} type;
 
 	union {
-		int indent;
+		unsigned int indent;
 	};
 
 	struct {
@@ -47,9 +47,9 @@ struct doc_minimize {
 };
 
 struct doc_align {
-	int	indent;
-	int	spaces;
-	int	tabalign;
+	unsigned int	indent;
+	unsigned int	spaces;
+	unsigned int	tabalign;
 };
 
 #define DOC_EXEC_DIFF	    0x00000001u
@@ -66,7 +66,7 @@ void		doc_append(struct doc *, struct doc *);
 void		doc_append_before(struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);
 int		doc_remove_tail(struct doc *);
-void		doc_set_indent(struct doc *, int);
+void		doc_set_indent(struct doc *, unsigned int);
 void		doc_set_align(struct doc *, const struct doc_align *);
 
 #define doc_alloc(a, b) \

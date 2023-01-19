@@ -71,8 +71,8 @@ struct doc {
 };
 
 struct doc_state_indent {
-	int	cur;	/* current indent */
-	int	pre;	/* last emitted indent */
+	unsigned int	cur;	/* current indent */
+	unsigned int	pre;	/* last emitted indent */
 };
 
 struct doc_state {
@@ -81,7 +81,7 @@ struct doc_state {
 	struct buffer			*st_bf;
 	struct lexer			*st_lx;
 
-	enum {
+	enum doc_mode {
 		BREAK,
 		MUNGE,
 	} st_mode;
@@ -147,28 +147,35 @@ struct doc_diff {
 	int			 dd_covers;	/* doc_diff_covers() return value */
 };
 
-static void	doc_exec1(const struct doc *, struct doc_state *);
-static void	doc_exec_indent(const struct doc *, struct doc_state *);
-static void	doc_exec_align(const struct doc *, struct doc_state *);
-static void	doc_exec_minimize(const struct doc *, struct doc_state *);
-static void	doc_exec_minimize1(struct doc *, struct doc_state *, int);
-static ssize_t	doc_exec_minimize_indent(struct doc *, struct doc_state *);
-static void	doc_exec_scope(const struct doc *, struct doc_state *);
-static void	doc_walk(const struct doc *, struct doc_state *,
+static void		doc_exec1(const struct doc *, struct doc_state *);
+static void		doc_exec_indent(const struct doc *, struct doc_state *);
+static void		doc_exec_align(const struct doc *, struct doc_state *);
+static void		doc_exec_minimize(const struct doc *,
+    struct doc_state *);
+static void		doc_exec_minimize1(struct doc *, struct doc_state *,
+    int);
+static ssize_t		doc_exec_minimize_indent(struct doc *,
+    struct doc_state *);
+static void		doc_exec_scope(const struct doc *, struct doc_state *);
+static void		doc_walk(const struct doc *, struct doc_state *,
     int (*)(const struct doc *, struct doc_state *, void *), void *);
-static int	doc_fits(const struct doc *, struct doc_state *);
-static int	doc_fits1(const struct doc *, struct doc_state *, void *);
-static int	doc_indent(const struct doc *, struct doc_state *, int);
-static int	doc_indent1(const struct doc *, struct doc_state *, int);
-static void	doc_trim_spaces(const struct doc *, struct doc_state *);
-static void	doc_trim_lines(const struct doc *, struct doc_state *);
-static int	doc_is_mute(const struct doc_state *);
-static int	doc_parens_align(const struct doc_state *);
-static int	doc_has_list(const struct doc *);
-static void	doc_column(struct doc_state *, const char *, size_t);
-static int	doc_max1(const struct doc *, struct doc_state *, void *);
+static int		doc_fits(const struct doc *, struct doc_state *);
+static int		doc_fits1(const struct doc *, struct doc_state *,
+    void *);
+static unsigned int	doc_indent(const struct doc *, struct doc_state *,
+    unsigned int);
+static unsigned int	doc_indent1(const struct doc *, struct doc_state *,
+    unsigned int);
+static void		doc_trim_spaces(const struct doc *, struct doc_state *);
+static void		doc_trim_lines(const struct doc *, struct doc_state *);
+static int		doc_is_mute(const struct doc_state *);
+static int		doc_parens_align(const struct doc_state *);
+static int		doc_has_list(const struct doc *);
+static void		doc_column(struct doc_state *, const char *, size_t);
+static int		doc_max1(const struct doc *, struct doc_state *,
+    void *);
 
-static void	doc_state_init(struct doc_state *, int, unsigned int);
+static void	doc_state_init(struct doc_state *, enum doc_mode, unsigned int);
 static void	doc_state_reset(struct doc_state *);
 static void	doc_state_snapshot(struct doc_state_snapshot *,
     const struct doc_state *);
@@ -344,7 +351,7 @@ doc_remove_tail(struct doc *parent)
 }
 
 void
-doc_set_indent(struct doc *dc, int indent)
+doc_set_indent(struct doc *dc, unsigned int indent)
 {
 	dc->dc_int = indent;
 }
@@ -540,7 +547,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_NOINDENT: {
-		int oldindent;
+		unsigned int oldindent;
 
 		doc_trim_spaces(dc, st);
 		oldindent = st->st_indent.cur;
@@ -720,8 +727,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 static void
 doc_exec_indent(const struct doc *dc, struct doc_state *st)
 {
-	int oldparens = 0;
-	int indent = 0;
+	unsigned int oldparens = 0;
+	unsigned int indent = 0;
 
 	if (IS_DOC_INDENT_PARENS(dc)) {
 		oldparens = st->st_parens;
@@ -854,12 +861,12 @@ doc_exec_minimize_indent(struct doc *dc, struct doc_state *st)
 		mi->penality.sum = p;
 
 		if (mi->flags & DOC_MINIMIZE_FORCE) {
-			best = i;
+			best = (ssize_t)i;
 			break;
 		}
 		if (p < minpenality) {
 			minpenality = p;
-			best = i;
+			best = (ssize_t)i;
 		}
 	}
 
@@ -943,7 +950,7 @@ static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
 	unsigned int col = 0;
-	int optline = 0;
+	unsigned int optline = 0;
 
 	if (st->st_flags & DOC_EXEC_TRACE)
 		st->st_stats.nfits++;
@@ -967,7 +974,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 		col = fst.st_col;
 		optline = fst.st_fits.optline;
 	}
-	doc_trace(dc, st, "%s: %u %s %u, optline %d", __func__,
+	doc_trace(dc, st, "%s: %u %s %u, optline %u", __func__,
 	    col, st->st_fits.fits ? "<=" : ">", style(st->st_st, ColumnLimit),
 	    optline);
 
@@ -1022,8 +1029,8 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	return 1;
 }
 
-static int
-doc_indent(const struct doc *dc, struct doc_state *st, int indent)
+static unsigned int
+doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
 {
 	if (st->st_parens > 0) {
 		/* Align with the left parenthesis on the previous line. */
@@ -1034,8 +1041,9 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 	return doc_indent1(dc, st, indent);
 }
 
-static int
-doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st, int indent)
+static unsigned int
+doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
+    unsigned int indent)
 {
 	unsigned int oldcol = st->st_col;
 
@@ -1111,7 +1119,7 @@ doc_trim_spaces(const struct doc *dc, struct doc_state *st)
 	unsigned int oldcol = st->st_col;
 
 	while (bf->bf_len > 0) {
-		unsigned char ch;
+		char ch;
 
 		ch = bf->bf_ptr[bf->bf_len - 1];
 		if (ch != ' ' && ch != '\t')
@@ -1553,7 +1561,7 @@ doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 }
 
 static void
-doc_state_init(struct doc_state *st, int mode, unsigned int flags)
+doc_state_init(struct doc_state *st, enum doc_mode mode, unsigned int flags)
 {
 	memset(st, 0, sizeof(*st));
 	st->st_mode = mode;
