@@ -26,10 +26,10 @@
  * returned but disjoint values are favored allowing the caller to catch
  * multiple return values.
  */
-#define NONE	0x00000000u
-#define GOOD	0x00000001u
-#define SKIP	0x00000002u
-#define FAIL	0x00000004u
+#define NONE	0x00000000
+#define GOOD	0x00000001
+#define SKIP	0x00000002
+#define FAIL	0x00000004
 
 /* Continuation of token types used to represent YAML primitives. */
 enum yaml_type {
@@ -206,7 +206,7 @@ style_init(void)
 		struct style_option *dst;
 		unsigned char slot;
 
-		slot = src->so_key[0];
+		slot = (unsigned char)src->so_key[0];
 		if (keywords[slot] == NULL) {
 			if (VECTOR_INIT(keywords[slot]) == NULL)
 				err(1, NULL);
@@ -531,7 +531,7 @@ yaml_find_keyword(const char *str, size_t len)
 	size_t i;
 	unsigned char slot;
 
-	slot = str[0];
+	slot = (unsigned char)str[0];
 	if (keywords[slot] == NULL)
 		return NULL;
 	for (i = 0; i < VECTOR_LENGTH(keywords[slot]); i++) {
