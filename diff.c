@@ -23,8 +23,8 @@
 static void	diff_end(struct diffchunk *, unsigned int);
 
 static int	matchpath(char *, char *, size_t);
-static int	matchchunk(char *, int *, int *);
-static int	matchline(const char *, int, struct file *);
+static int	matchchunk(char *, unsigned int *, unsigned int *);
+static int	matchline(const char *, unsigned int, struct file *);
 
 static char		*skipline(char *);
 static const char	*trimprefix(const char *, size_t *);
@@ -97,7 +97,7 @@ diff_parse(struct files *files, const struct options *op)
 
 	for (;;) {
 		char path[PATH_MAX];
-		int el, sl;
+		unsigned int el, sl;
 
 		if (matchpath(buf, path, sizeof(path))) {
 			fe = files_alloc(files, path, op);
@@ -192,7 +192,7 @@ matchpath(char *str, char *path, size_t pathsiz)
 		return 0;
 
 	buf = str + rm[1].rm_so;
-	len = rm[1].rm_eo - rm[1].rm_so;
+	len = (size_t)(rm[1].rm_eo - rm[1].rm_so);
 	if (strncmp(buf, "b/", 2) == 0) {
 		/* Trim git prefix. */
 		buf = trimprefix(buf, &len);
@@ -221,7 +221,7 @@ matchpath(char *str, char *path, size_t pathsiz)
 }
 
 static int
-matchchunk(char *str, int *sl, int *el)
+matchchunk(char *str, unsigned int *sl, unsigned int *el)
 {
 	regmatch_t rm[4];
 	long n;
@@ -249,7 +249,7 @@ matchchunk(char *str, int *sl, int *el)
 }
 
 static int
-matchline(const char *str, int lno, struct file *fe)
+matchline(const char *str, unsigned int lno, struct file *fe)
 {
 	struct diffchunk *du;
 
@@ -289,7 +289,7 @@ trimprefix(const char *str, size_t *len)
 	p = memchr(str, '/', *len);
 	if (p == NULL)
 		return str;
-	*len -= (p - str) + 1;
+	*len -= (size_t)((p - str) + 1);
 	return &p[1];
 }
 
