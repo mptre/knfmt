@@ -46,7 +46,7 @@ strnice_buffer(struct buffer *bf, const char *str, size_t len)
 	size_t i;
 
 	for (i = 0; i < len; i++) {
-		unsigned char c = str[i];
+		char c = str[i];
 
 		if (c == '\n')
 			buffer_printf(bf, "\\n");
