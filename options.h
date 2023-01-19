@@ -22,4 +22,4 @@ struct options {
 void	options_init(struct options *);
 int	options_trace_parse(struct options *, const char *);
 
-unsigned int	trace(const struct options *, unsigned char);
+unsigned int	trace(const struct options *, char);

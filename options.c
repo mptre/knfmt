@@ -38,7 +38,7 @@ options_trace_parse(struct options *op, const char *flags)
 }
 
 unsigned int
-trace(const struct options *op, unsigned char c)
+trace(const struct options *op, char c)
 {
 	return op->op_trace[ctotrace(c)];
 }
