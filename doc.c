@@ -1702,7 +1702,7 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 
 	case DOC_MINIMIZE:
 		fprintf(stderr, "(%d", st->st_minimize.idx == -1 ? -1 :
-		    dc->dc_minimizers[st->st_minimize.idx].indent);
+		    (int)dc->dc_minimizers[st->st_minimize.idx].indent);
 		break;
 
 	case DOC_SCOPE:
