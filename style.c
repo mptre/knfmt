@@ -335,7 +335,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 
 out:
 	lexer_free(lx);
-	error_flush(er, trace(op, 's'));
+	error_flush(er, trace(op, 's') > 0);
 	error_free(er);
 	return error;
 }
@@ -497,7 +497,7 @@ yaml_serialize(const struct token *tk)
 	if (tk->tk_type < Last)
 		buffer_printf(bf, "Keyword");
 	else
-		buffer_printf(bf, "%s", stryaml(tk->tk_type));
+		buffer_printf(bf, "%s", stryaml((enum yaml_type)tk->tk_type));
 	buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
 	strnice_buffer(bf, tk->tk_str, tk->tk_len);
 	buffer_printf(bf, "\")");
