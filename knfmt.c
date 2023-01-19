@@ -240,11 +240,11 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 	if (pid == 0) {
 		char label[PATH_MAX];
 		const char *diff = "/usr/bin/diff";
-		ssize_t siz = sizeof(label);
+		size_t siz = sizeof(label);
 		int n;
 
 		n = snprintf(label, siz, "%s.orig", path);
-		if (n < 0 || n >= siz)
+		if (n < 0 || (size_t)n >= siz)
 			errc(1, ENAMETOOLONG, "%s: label", __func__);
 
 		execl(diff, diff, "-u", "-L", label, "-L", path,
@@ -270,7 +270,7 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 {
 	char tmppath[PATH_MAX];
 	const char *buf;
-	ssize_t siz = sizeof(tmppath);
+	size_t siz = sizeof(tmppath);
 	size_t len;
 	int fd, n;
 
@@ -278,7 +278,7 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 		return 0;
 
 	n = snprintf(tmppath, siz, "%s.XXXXXXXX", path);
-	if (n < 0 || n >= siz) {
+	if (n < 0 || (size_t)n >= siz) {
 		warnc(ENAMETOOLONG, "%s", __func__);
 		return 1;
 	}
@@ -299,7 +299,7 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 			goto err;
 		}
 		buf += nw;
-		len -= nw;
+		len -= (size_t)nw;
 	}
 	close(fd);
 	fd = -1;
@@ -332,15 +332,15 @@ fileprint(const struct buffer *dst)
 	size_t len = dst->bf_len;
 
 	while (len > 0) {
-		ssize_t n;
+		ssize_t nw;
 
-		n = write(1, str, len);
-		if (n == -1) {
+		nw = write(1, str, len);
+		if (nw == -1) {
 			warn("write: /dev/stdout");
 			return 1;
 		}
-		len -= n;
-		str += n;
+		len -= (size_t)nw;
+		str += nw;
 	}
 	return 0;
 }
@@ -382,12 +382,12 @@ static int
 tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
 {
 	char tmppath[PATH_MAX];
-	ssize_t siz = sizeof(tmppath);
+	size_t siz = sizeof(tmppath);
 	int fd = -1;
 	int n;
 
 	n = snprintf(tmppath, siz, "/tmp/knfmt.XXXXXXXX");
-	if (n < 0 || n >= siz) {
+	if (n < 0 || (size_t)n >= siz) {
 		warnc(ENAMETOOLONG, "%s: tmp", __func__);
 		return -1;
 	}
@@ -410,7 +410,7 @@ tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
 			goto err;
 		}
 		buf += nw;
-		buflen -= nw;
+		buflen -= (size_t)nw;
 	}
 	if (lseek(fd, 0, SEEK_SET) == -1) {
 		warn("lseek");
@@ -419,7 +419,7 @@ tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
 
 	siz = pathsiz;
 	n = snprintf(path, siz, "/dev/fd/%d", fd);
-	if (n < 0 || n >= siz) {
+	if (n < 0 || (size_t)n >= siz) {
 		warnc(ENAMETOOLONG, "%s: path", __func__);
 		goto err;
 	}
