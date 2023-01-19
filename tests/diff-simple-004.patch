@@ -1,0 +1,9 @@
+--- diff-simple-004.c	2023-01-19 15:49:46.968868606 +0100
++++ diff-simple-004.c	2023-01-19 15:50:04.995749642 +0100
+@@ -2,5 +2,5 @@
+ main(void)
+ {
+ 	if (1)
+-		aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(1);
++		aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(11);
+ }

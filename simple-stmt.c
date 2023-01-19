@@ -205,8 +205,7 @@ add_braces(struct simple_stmt *ss)
 		token_move_suffixes(pv, lbrace);
 
 		pv = token_prev(st->st_rbrace);
-		rbrace = lexer_insert_before(lx, st->st_rbrace,
-		    TOKEN_RBRACE, "}");
+		rbrace = lexer_insert_after(lx, pv, TOKEN_RBRACE, "}");
 		token_move_suffixes_if(pv, rbrace, TOKEN_SPACE);
 	}
 }
