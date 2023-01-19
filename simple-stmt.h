@@ -8,8 +8,8 @@ struct simple_stmt	*simple_stmt_enter(struct lexer *,
 void			 simple_stmt_leave(struct simple_stmt *);
 void			 simple_stmt_free(struct simple_stmt *);
 struct doc		*simple_stmt_block(struct simple_stmt *,
-    struct token *, struct token *, int);
+    struct token *, struct token *, unsigned int);
 struct doc		*simple_stmt_ifelse_enter(struct simple_stmt *,
-    struct token *, int, void **);
+    struct token *, unsigned int, void **);
 void			 simple_stmt_ifelse_leave(struct simple_stmt *,
     struct token *, void *);

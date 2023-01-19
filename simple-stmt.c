@@ -35,7 +35,7 @@ struct simple_stmt {
 	const struct style	*ss_st;
 };
 
-static struct stmt	*simple_stmt_alloc(struct simple_stmt *, int,
+static struct stmt	*simple_stmt_alloc(struct simple_stmt *, unsigned int,
     unsigned int);
 
 static void	add_braces(struct simple_stmt *);
@@ -123,7 +123,7 @@ simple_stmt_free(struct simple_stmt *ss)
 
 struct doc *
 simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
-    struct token *rbrace, int indent)
+    struct token *rbrace, unsigned int indent)
 {
 	struct stmt *st;
 	unsigned int flags = STMT_BRACES;
@@ -143,7 +143,7 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
 
 struct doc *
 simple_stmt_ifelse_enter(struct simple_stmt *ss, struct token *lbrace,
-    int indent, void **cookie)
+    unsigned int indent, void **cookie)
 {
 	struct stmt *st;
 
@@ -171,7 +171,8 @@ stmt_is_empty(const struct stmt *st)
 }
 
 static struct stmt *
-simple_stmt_alloc(struct simple_stmt *ss, int indent, unsigned int flags)
+simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
+    unsigned int flags)
 {
 	struct stmt *st;
 
