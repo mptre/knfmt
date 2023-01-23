@@ -476,6 +476,7 @@ TESTS+=	style-AlignOperands-007.c
 TESTS+=	style-AlignOperands-008.c
 TESTS+=	style-AlignOperands-009.c
 TESTS+=	style-AlignOperands-010.c
+TESTS+=	style-AlignOperands-011.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-AlwaysBreakAfterReturnType-002.c
 TESTS+=	style-BraceWrapping-001.c

@@ -951,9 +951,13 @@ static struct doc *
 expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct expr *e;
-	int doalign = style(es->es_st, AlignOperands) == Align;
+	struct token *pv;
 	int i = 0;
+	int doalign;
 
+	pv = token_prev(TAILQ_FIRST(&ex->ex_concat)->ex_tk);
+	doalign = style(es->es_st, AlignOperands) == Align &&
+	    !token_has_line(pv, 1);
 	if (doalign)
 		dc = expr_doc_align_enter(ex, es, dc, 0);
 	TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {

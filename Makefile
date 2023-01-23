@@ -563,6 +563,7 @@ DISTFILES+=	tests/style-AlignOperands-007.c
 DISTFILES+=	tests/style-AlignOperands-008.c
 DISTFILES+=	tests/style-AlignOperands-009.c
 DISTFILES+=	tests/style-AlignOperands-010.c
+DISTFILES+=	tests/style-AlignOperands-011.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.c
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-001.ok
 DISTFILES+=	tests/style-AlwaysBreakAfterReturnType-002.c
