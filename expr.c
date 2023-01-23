@@ -110,7 +110,6 @@ struct expr_state {
 	unsigned int		 es_nassign;	/* # nested binary assignments */
 	unsigned int		 es_ncalls;	/* # nested calls */
 	unsigned int		 es_noparens;	/* parens indent disabled */
-	unsigned int		 es_nalign;	/* alignment fallback indent */
 	unsigned int		 es_col;	/* ruler column */
 };
 
@@ -159,7 +158,6 @@ static struct doc	*expr_doc_align_enter0(struct expr *,
 static struct doc	*expr_doc_align_disable0(struct expr *,
     struct expr_state *, struct doc *, const char *, int);
 
-static void	expr_doc_align_leave(struct expr_state *);
 static void	expr_doc_align_init(struct expr_state *,
     struct doc_minimize *, size_t);
 
@@ -833,9 +831,6 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			} else {
 				dc = expr_doc(ex->ex_rhs, es, dc);
 			}
-
-			if (doalign)
-				expr_doc_align_leave(es);
 		}
 		es->es_nassign--;
 	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
@@ -857,9 +852,6 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			doc_literal(" ", dc);
 		if (ex->ex_rhs != NULL)
 			dc = expr_doc(ex->ex_rhs, es, dc);
-
-		if (doalign)
-			expr_doc_align_leave(es);
 	} else {
 		struct doc *lhs;
 		int dospace;
@@ -936,15 +928,16 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 
 		if (doalign) {
-			unsigned int indent = es->es_ea.indent;
+			unsigned int indent = 0;
 
+			if (es->es_ncalls > 1 ||
+			    (es->es_flags & EXPR_EXEC_HARDLINE))
+				indent = es->es_ea.indent;
 			dc = token_has_line(lparen, 1) ?
 			    expr_doc_align_disable(ex, es, dc) :
 			    expr_doc_align_enter(ex, es, parent, indent);
 		}
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
-		if (doalign)
-			expr_doc_align_leave(es);
 	}
 	if (rparen != NULL)
 		doc_token(rparen, dc);
@@ -973,8 +966,6 @@ expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (i++ == 0)
 			dc = tmp;
 	}
-	if (doalign)
-		expr_doc_align_leave(es);
 	return dc;
 }
 
@@ -1039,10 +1030,8 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	if (ex->ex_tk->tk_type == TOKEN_LBRACE) {
+	if (ex->ex_tk->tk_type == TOKEN_LBRACE)
 		dc = expr_doc_align_disable(ex, es, dc);
-		expr_doc_align_leave(es);
-	}
 
 	doc_append(ex->ex_dc, dc);
 	/*
@@ -1065,17 +1054,8 @@ expr_doc_align_enter0(struct expr *UNUSED(ex), struct expr_state *es,
 
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[0].indent = DOC_INDENT_WIDTH;
-	if (es->es_nalign > 0 || (es->es_flags & EXPR_EXEC_HARDLINE))
-		minimizers[1].indent = indent;
-	es->es_nalign++;
+	minimizers[1].indent = indent;
 	return doc_minimize0(dc, minimizers, 2, fun, lno);
-}
-
-static void
-expr_doc_align_leave(struct expr_state *es)
-{
-	assert(es->es_nalign > 0);
-	es->es_nalign--;
 }
 
 static struct doc *
@@ -1086,7 +1066,6 @@ expr_doc_align_disable0(struct expr *UNUSED(ex), struct expr_state *es,
 
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[1].flags |= DOC_MINIMIZE_FORCE;
-	es->es_nalign++;
 	return doc_minimize0(dc, minimizers, 2, fun, lno);
 }
 

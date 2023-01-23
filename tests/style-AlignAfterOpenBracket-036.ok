@@ -2,7 +2,6 @@ int
 main(void)
 {
 	if (foo() || bar(cpu,
-			 constantconstanconstant)
-		     == somethingsomethingsomethingsomething)
+	    constantconstanconstant) == somethingsomethingsomethingsomething)
 		return 1;
 }
