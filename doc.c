@@ -71,8 +71,8 @@ struct doc {
 };
 
 struct doc_state_indent {
-	unsigned int	cur;	/* current indent */
-	unsigned int	pre;	/* last emitted indent */
+	int	cur;	/* current indent */
+	int	pre;	/* last emitted indent */
 };
 
 struct doc_state {
@@ -162,10 +162,9 @@ static void		doc_walk(const struct doc *, struct doc_state *,
 static int		doc_fits(const struct doc *, struct doc_state *);
 static int		doc_fits1(const struct doc *, struct doc_state *,
     void *);
-static unsigned int	doc_indent(const struct doc *, struct doc_state *,
-    unsigned int);
+static unsigned int	doc_indent(const struct doc *, struct doc_state *, int);
 static unsigned int	doc_indent1(const struct doc *, struct doc_state *,
-    unsigned int);
+    int);
 static void		doc_trim_spaces(const struct doc *, struct doc_state *);
 static void		doc_trim_lines(const struct doc *, struct doc_state *);
 static int		doc_is_mute(const struct doc_state *);
@@ -554,7 +553,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_NOINDENT: {
-		unsigned int oldindent;
+		int oldindent;
 
 		doc_trim_spaces(dc, st);
 		oldindent = st->st_indent.cur;
@@ -623,7 +622,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		 */
 		if (isblock || isnewline) {
 			struct doc_state_indent *it = &st->st_indent;
-			unsigned int indent;
+			int indent;
 
 			if (oldcol > 0) {
 				/*
@@ -731,15 +730,11 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	doc_trace_leave(dc, st);
 }
 
-#ifdef HAVE_PRAGMA_DIAGNOSTIC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#endif
 static void
 doc_exec_indent(const struct doc *dc, struct doc_state *st)
 {
 	unsigned int oldparens = 0;
-	unsigned int indent = 0;
+	int indent = 0;
 
 	if (IS_DOC_INDENT_PARENS(dc)) {
 		oldparens = st->st_parens;
@@ -753,7 +748,7 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 			st->st_indent.cur += indent;
 		}
 	} else if (IS_DOC_INDENT_WIDTH(dc)) {
-		indent = st->st_col - st->st_indent.cur;
+		indent = (int)st->st_col - st->st_indent.cur;
 		st->st_indent.cur += indent;
 	} else {
 		indent = dc->dc_int;
@@ -768,21 +763,23 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 		st->st_indent.cur -= indent;
 	}
 }
-#ifdef HAVE_PRAGMA_DIAGNOSTIC
-#pragma GCC diagnostic pop
-#endif
 
 static void
 doc_exec_align(const struct doc *dc, struct doc_state *st)
 {
 	if (dc->dc_align.tabalign) {
-		int indent = (int)dc->dc_align.indent;
+		unsigned int indent = dc->dc_align.indent;
 
-		while (indent > 0)
-			indent -= (int)doc_indent1(dc, st, 8);
-		doc_indent1(dc, st, dc->dc_align.spaces);
+		while (indent > 0) {
+			unsigned int n;
+
+			n = doc_indent1(dc, st, 8);
+			indent = n < indent ? indent - n : 0;
+		}
+		doc_indent1(dc, st, (int)dc->dc_align.spaces);
 	} else {
-		doc_indent1(dc, st, dc->dc_align.indent + dc->dc_align.spaces);
+		doc_indent1(dc, st,
+		    (int)(dc->dc_align.indent + dc->dc_align.spaces));
 	}
 }
 
@@ -894,7 +891,7 @@ doc_exec_minimize_indent(struct doc *dc, struct doc_state *st)
 			else if ((ssize_t)i == best)
 				suffix = ", best";
 			doc_trace(dc, st, "%s: type indent, penality %.2f, "
-			    "indent %u, nlines %u, nexceeds %u%s",
+			    "indent %d, nlines %u, nexceeds %u%s",
 			    __func__, mi->penality.sum, mi->indent,
 			    mi->penality.nlines, mi->penality.nexceeds,
 			    suffix);
@@ -1044,11 +1041,11 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 }
 
 static unsigned int
-doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
+doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 {
 	if (st->st_parens > 0) {
 		/* Align with the left parenthesis on the previous line. */
-		indent = st->st_indent.pre + st->st_parens;
+		indent = st->st_indent.pre + (int)st->st_parens;
 	} else {
 		st->st_indent.pre = indent;
 	}
@@ -1057,7 +1054,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
 
 static unsigned int
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
-    unsigned int indent)
+    int indent)
 {
 	unsigned int oldcol = st->st_col;
 

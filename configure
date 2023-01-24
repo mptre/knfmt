@@ -119,7 +119,6 @@ set -x
 HAVE_DEAD=0
 HAVE_ERRC=0
 HAVE_PLEDGE=0
-HAVE_PRAGMA_DIAGNOSTIC=1
 HAVE_QUEUE=0
 HAVE_WARNC=0
 
@@ -154,7 +153,6 @@ exec 1>config.h
 
 [ $HAVE_ERRC -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
 [ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
-[ $HAVE_PRAGMA_DIAGNOSTIC -eq 1 ] && printf '#define HAVE_PRAGMA_DIAGNOSTIC\t1\n'
 [ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
 
 [ $HAVE_DEAD -eq 0 ] &&

@@ -150,7 +150,7 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 }
 
 size_t
-buffer_indent(struct buffer *bf, size_t indent, int usetabs, size_t pos)
+buffer_indent(struct buffer *bf, int indent, int usetabs, size_t pos)
 {
 	if (usetabs) {
 		for (; indent >= 8; indent -= 8) {
