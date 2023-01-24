@@ -353,15 +353,13 @@ doc_remove_tail(struct doc *parent)
 void
 doc_set_indent(struct doc *dc, unsigned int indent)
 {
-	dc->dc_int = indent;
+	dc->dc_int = (int)indent;
 }
 
 void
 doc_set_dedent(struct doc *dc, unsigned int indent)
 {
-	int val = indent;
-
-	dc->dc_int = -val;
+	dc->dc_int = -(int)indent;
 }
 
 void
@@ -411,7 +409,8 @@ doc_alloc_indent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *indent;
 
-	indent = doc_alloc0(DOC_INDENT, dc, val, fun, lno);
+	indent = doc_alloc0(DOC_INDENT, dc, 0, fun, lno);
+	doc_set_indent(indent, val);
 	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
 }
 
@@ -419,9 +418,9 @@ struct doc *
 doc_alloc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *indent;
-	int ival = val;
 
-	indent = doc_alloc0(DOC_INDENT, dc, -ival, fun, lno);
+	indent = doc_alloc0(DOC_INDENT, dc, 0, fun, lno);
+	doc_set_dedent(indent, val);
 	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
 }
 
@@ -770,7 +769,7 @@ static void
 doc_exec_align(const struct doc *dc, struct doc_state *st)
 {
 	if (dc->dc_align.tabalign) {
-		int indent = dc->dc_align.indent;
+		int indent = (int)dc->dc_align.indent;
 
 		while (indent > 0)
 			indent -= doc_indent1(dc, st, 8);
@@ -815,7 +814,7 @@ doc_exec_minimize1(struct doc *dc, struct doc_state *st, int idx)
 
 	switch (minimizers[idx].type) {
 	case DOC_MINIMIZE_INDENT:
-		dc->dc_int = minimizers[idx].indent;
+		doc_set_indent(dc, minimizers[idx].indent);
 		doc_exec_indent(dc, st);
 		break;
 	}
