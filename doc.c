@@ -779,7 +779,7 @@ doc_exec_align(const struct doc *dc, struct doc_state *st)
 		int indent = (int)dc->dc_align.indent;
 
 		while (indent > 0)
-			indent -= doc_indent1(dc, st, 8);
+			indent -= (int)doc_indent1(dc, st, 8);
 		doc_indent1(dc, st, dc->dc_align.spaces);
 	} else {
 		doc_indent1(dc, st, dc->dc_align.indent + dc->dc_align.spaces);
