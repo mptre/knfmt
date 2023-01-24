@@ -67,7 +67,7 @@ jobs:
       - name: test
         env:
           CC: ${{matrix.cc || matrix.compiler}}
-          CFLAGS: -Werror -Wmissing-prototypes -Wpedantic -Wshadow -Wwrite-strings ${{matrix.cflags}}
+          CFLAGS: -Werror -Wmissing-prototypes -Wpedantic -Wshadow -Wsign-conversion -Wwrite-strings ${{matrix.cflags}}
           CPPFLAGS: ${{matrix.cppflags}}
           DEBUG: -g -O2 ${{matrix.debug}}
           EXEC: ${{matrix.exec}}
