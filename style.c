@@ -558,7 +558,7 @@ parse_bool(struct style *st, struct lexer *lx, const struct style_option *so)
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
-	st->st_options[key->tk_type] = val->tk_type;
+	st->st_options[key->tk_type] = (unsigned int)val->tk_type;
 	return GOOD;
 }
 
@@ -575,7 +575,7 @@ parse_enum(struct style *st, struct lexer *lx, const struct style_option *so)
 
 	for (v = so->so_val; *v != 0; v++) {
 		if (lexer_if(lx, *v, &val)) {
-			st->st_options[key->tk_type] = val->tk_type;
+			st->st_options[key->tk_type] = (unsigned int)val->tk_type;
 			return GOOD;
 		}
 	}
@@ -601,7 +601,7 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
-	st->st_options[key->tk_type] = val->tk_int;
+	st->st_options[key->tk_type] = (unsigned int)val->tk_int;
 	return GOOD;
 }
 
