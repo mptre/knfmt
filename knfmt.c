@@ -170,7 +170,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 		error = 1;
 		goto out;
 	}
-	cl = clang_alloc(op);
+	cl = clang_alloc(op, st);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= fe->fe_path,
 	    .bf		= src,

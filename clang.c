@@ -28,6 +28,7 @@
 
 struct clang {
 	const struct options	*cl_op;
+	const struct style	*cl_st;
 	VECTOR(struct token *)	 cl_branches;
 };
 
@@ -114,12 +115,13 @@ clang_shutdown(void)
 }
 
 struct clang *
-clang_alloc(const struct options *op)
+clang_alloc(const struct options *op, const struct style *st)
 {
 	struct clang *cl;
 
 	cl = ecalloc(1, sizeof(*cl));
 	cl->cl_op = op;
+	cl->cl_st = st;
 	if (VECTOR_INIT(cl->cl_branches) == NULL)
 		err(1, NULL);
 	return cl;
