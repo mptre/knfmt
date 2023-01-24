@@ -976,8 +976,6 @@ expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	struct doc *ternary = dc;
-
 	if (style(es->es_st, BreakBeforeTernaryOperators) == True) {
 		struct doc *cond;
 
@@ -1004,6 +1002,8 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			doc_token(ex->ex_tokens[1], dc);	/* : */
 		doc_alloc(DOC_LINE, dc);
 	} else {
+		struct doc *ternary;
+
 		if (ex->ex_tokens[0] != NULL)
 			token_move_prev_line(ex->ex_tokens[0]);
 		if (ex->ex_tokens[1] != NULL)
