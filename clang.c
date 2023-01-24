@@ -540,6 +540,8 @@ clang_read_cpp(struct lexer *lx)
 		type = TOKEN_CPP_ELSE;
 	else if (lexer_buffer_streq(lx, &cmpst, "endif"))
 		type = TOKEN_CPP_ENDIF;
+	else if (lexer_buffer_streq(lx, &cmpst, "include"))
+		type = TOKEN_CPP_INCLUDE;
 
 	/*
 	 * As cpp tokens are emitted as is, honor up to 2 hard line(s).
