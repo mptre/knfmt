@@ -48,14 +48,12 @@ struct lexer_state {
 	size_t		 st_off;
 };
 
-void		 lexer_init(void);
-void		 lexer_shutdown(void);
 struct lexer	*lexer_alloc(const struct lexer_arg *);
 void		 lexer_free(struct lexer *);
 
-struct token	*lexer_read(struct lexer *, void *);
-
 struct lexer_state	lexer_get_state(const struct lexer *);
+void			lexer_set_state(struct lexer *,
+    const struct lexer_state *);
 
 int		 lexer_getc(struct lexer *, unsigned char *);
 void		 lexer_ungetc(struct lexer *);
@@ -65,7 +63,15 @@ struct token	*lexer_emit(const struct lexer *, const struct lexer_state *,
     const struct token *);
 void		 lexer_error(struct lexer *, const char *, ...);
 const char	*lexer_serialize(struct lexer *, const struct token *);
+int		 lexer_eat_lines(struct lexer *, int, struct token **);
+int		 lexer_eat_spaces(struct lexer *, struct token **);
 
+int		 lexer_buffer_streq(const struct lexer *,
+    const struct lexer_state *, const char *);
+const char	*lexer_buffer_slice(const struct lexer *,
+    const struct lexer_state *, size_t *);
+
+int		lexer_eof(const struct lexer *);
 unsigned int	lexer_get_error(const struct lexer *);
 int		lexer_get_lines(const struct lexer *, unsigned int,
     unsigned int, const char **, size_t *);

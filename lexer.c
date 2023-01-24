@@ -3,7 +3,6 @@
 #include "config.h"
 
 #include <assert.h>
-#include <ctype.h>
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,22 +46,7 @@ struct lexer {
 	VECTOR(char *)		 lx_serialized;
 };
 
-static int		 lexer_eat_lines(struct lexer *, int, struct token **);
-static int		 lexer_eat_spaces(struct lexer *, struct token **);
-static struct token	*lexer_keyword(struct lexer *);
-static struct token	*lexer_keyword1(struct lexer *);
-static struct token	*lexer_comment(struct lexer *, int);
-static struct token	*lexer_cpp(struct lexer *);
-static struct token	*lexer_ellipsis(struct lexer *,
-    const struct lexer_state *);
-static int		 lexer_eof(const struct lexer *);
-
 static void	lexer_line_alloc(struct lexer *, unsigned int);
-
-static struct token	*lexer_find_token(const struct lexer *,
-    const struct lexer_state *);
-static int		 lexer_buffer_streq(const struct lexer *,
-    const struct lexer_state *, const char *);
 
 static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
@@ -81,91 +65,6 @@ static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 	if (trace((lx)->lx_op, 'l') >= 2)				\
 		tracef('L', __func__, (fmt), __VA_ARGS__);		\
 } while (0)
-
-static void	token_prolong(struct token *, struct token *);
-
-static int	isnum(unsigned char, int);
-
-static struct token *tokens[256];
-
-static const struct token tkcomment = {
-	.tk_type	= TOKEN_COMMENT,
-};
-static const struct token tkcpp = {
-	.tk_type	= TOKEN_CPP,
-	.tk_flags	= TOKEN_FLAG_CPP,
-};
-static struct token tkeof = {
-	.tk_type	= LEXER_EOF,
-	.tk_str		= "",
-};
-static const struct token tkident = {
-	.tk_type	= TOKEN_IDENT,
-};
-static const struct token tkline = {
-	.tk_type	= TOKEN_SPACE,
-	.tk_str		= "\n",
-	.tk_len		= 1,
-};
-static const struct token tklit = {
-	.tk_type	= TOKEN_LITERAL,
-};
-static const struct token tkspace = {
-	.tk_type	= TOKEN_SPACE,
-};
-static const struct token tkstr = {
-	.tk_type	= TOKEN_STRING,
-};
-
-/*
- * Populate the token hash map.
- */
-void
-lexer_init(void)
-{
-	static const struct token keywords[] = {
-#define T(t, s, f) {							\
-	.tk_type	= (t),						\
-	.tk_lno		= 0,						\
-	.tk_cno		= 0,						\
-	.tk_flags	= (f),						\
-	.tk_str		= (s),						\
-	.tk_len		= sizeof((s)) - 1,				\
-	.tk_prefixes	= { NULL, NULL },				\
-	.tk_suffixes	= { NULL, NULL },				\
-	.tk_entry	= { NULL, NULL }				\
-},
-#define A(t, s, f) T(t, s, f)
-#include "token-defs.h"
-	};
-	unsigned int i;
-
-	for (i = 0; keywords[i].tk_type != TOKEN_NONE; i++) {
-		const struct token *src = &keywords[i];
-		struct token *dst;
-		unsigned char slot;
-
-		slot = (unsigned char)src->tk_str[0];
-		if (tokens[slot] == NULL) {
-			if (VECTOR_INIT(tokens[slot]) == NULL)
-				err(1, NULL);
-		}
-		dst = VECTOR_ALLOC(tokens[slot]);
-		if (dst == NULL)
-			err(1, NULL);
-		*dst = *src;
-	}
-}
-
-void
-lexer_shutdown(void)
-{
-	size_t nslots = sizeof(tokens) / sizeof(tokens[0]);
-	size_t i;
-
-	for (i = 0; i < nslots; i++)
-		VECTOR_FREE(tokens[i]);
-}
 
 struct lexer *
 lexer_alloc(const struct lexer_arg *arg)
@@ -250,6 +149,12 @@ struct lexer_state
 lexer_get_state(const struct lexer *lx)
 {
 	return lx->lx_st;
+}
+
+void
+lexer_set_state(struct lexer *lx, const struct lexer_state *st)
+{
+	lx->lx_st = *st;
 }
 
 int
@@ -1048,137 +953,6 @@ lexer_dump(struct lexer *lx)
 	}
 }
 
-struct token *
-lexer_read(struct lexer *lx, void *UNUSED(arg))
-{
-	struct lexer_state st;
-	struct token_list prefixes;
-	struct token *tk = NULL;
-	struct token *t, *tmp;
-	int ncomments = 0;
-	int nlines;
-	unsigned char ch;
-
-	TAILQ_INIT(&prefixes);
-
-	/* Consume all comments and preprocessor directives. */
-	for (;;) {
-		struct token *last;
-
-		if ((tmp = lexer_comment(lx, 1)) == NULL &&
-		    (tmp = lexer_cpp(lx)) == NULL)
-			break;
-
-		if (tmp->tk_type == TOKEN_COMMENT &&
-		    (last = TAILQ_LAST(&prefixes, token_list)) != NULL &&
-		    last->tk_type == TOKEN_COMMENT &&
-		    token_cmp(tmp, last) == 0)
-			token_prolong(last, tmp);
-		else
-			TAILQ_INSERT_TAIL(&prefixes, tmp, tk_entry);
-	}
-
-	if ((tk = lexer_keyword(lx)) != NULL)
-		goto out;
-
-	st = lx->lx_st;
-	if (lexer_getc(lx, &ch))
-		goto eof;
-
-	if (ch == 'L') {
-		unsigned char peek;
-
-		if (lexer_getc(lx, &peek) == 0 && (peek == '"' || peek == '\''))
-			ch = peek;
-		else
-			lexer_ungetc(lx);
-	}
-
-	if (ch == '"' || ch == '\'') {
-		unsigned char delim = ch;
-		unsigned char pch = ch;
-
-		for (;;) {
-			if (lexer_getc(lx, &ch))
-				goto eof;
-			if (pch == '\\' && ch == '\\')
-				ch = '\0';
-			else if (pch != '\\' && ch == delim)
-				break;
-			pch = ch;
-		}
-		tk = lexer_emit(lx, &st, delim == '"' ? &tkstr : &tklit);
-		goto out;
-	}
-
-	if (isnum(ch, 1)) {
-		do {
-			if (lexer_getc(lx, &ch))
-				goto eof;
-		} while (isnum(ch, 0));
-		lexer_ungetc(lx);
-		tk = lexer_emit(lx, &st, &tklit);
-		goto out;
-	}
-
-	if (isalpha(ch) || ch == '_') {
-		do {
-			if (lexer_getc(lx, &ch))
-				goto eof;
-		} while (isalnum(ch) || ch == '_');
-		lexer_ungetc(lx);
-
-		t = lexer_find_token(lx, &st);
-		if (t != NULL) {
-			tk = lexer_emit(lx, &st, t);
-		} else {
-			/* Fallback, treat everything as an identifier. */
-			tk = lexer_emit(lx, &st, &tkident);
-		}
-		goto out;
-	}
-
-	tk = lexer_emit(lx, &st, &(struct token){
-	    .tk_type	= TOKEN_NONE,
-	});
-	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
-	lexer_error(lx, "unknown token %s", lexer_serialize(lx, tk));
-	token_rele(tk);
-	return NULL;
-
-eof:
-	tk = lexer_emit(lx, &st, &tkeof);
-
-out:
-	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
-
-	/* Consume trailing/interwined comments. */
-	for (;;) {
-		if ((tmp = lexer_comment(lx, 0)) == NULL)
-			break;
-		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
-		ncomments++;
-	}
-
-	/*
-	 * Trailing whitespace is only honored if it's present immediately after
-	 * the token.
-	 */
-	if (ncomments == 0 && lexer_eat_spaces(lx, &tmp)) {
-		tmp->tk_flags |= TOKEN_FLAG_OPTSPACE;
-		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
-	}
-
-	/* Consume hard line(s). */
-	if ((nlines = lexer_eat_lines(lx, 0, &tmp)) > 0) {
-		if (nlines == 1)
-			tmp->tk_flags |= TOKEN_FLAG_OPTLINE;
-		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
-	}
-
-	return tk;
-}
-
 /*
  * Consume empty line(s) until a line beginning with optional whitespace
  * followed by none whitespace is found. The lexer will be positioned before the
@@ -1209,7 +983,7 @@ lexer_eat_lines_and_spaces(struct lexer *lx, struct lexer_state *st)
 	}
 }
 
-static int
+int
 lexer_eat_lines(struct lexer *lx, int threshold, struct token **tk)
 {
 	struct lexer_state oldst, st;
@@ -1235,12 +1009,17 @@ lexer_eat_lines(struct lexer *lx, int threshold, struct token **tk)
 	lx->lx_st = oldst;
 	if (nlines == 0 || nlines < threshold || lexer_eof(lx))
 		return 0;
-	if (tk != NULL)
-		*tk = lexer_emit(lx, &st, &tkline);
+	if (tk != NULL) {
+		*tk = lexer_emit(lx, &st, &(struct token){
+		    .tk_type	= TOKEN_SPACE,
+		    .tk_str	= "\n",
+		    .tk_len	= 1,
+		});
+	}
 	return nlines;
 }
 
-static int
+int
 lexer_eat_spaces(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state st;
@@ -1256,219 +1035,15 @@ lexer_eat_spaces(struct lexer *lx, struct token **tk)
 
 	if (st.st_off == lx->lx_st.st_off)
 		return 0;
-	if (tk != NULL)
-		*tk = lexer_emit(lx, &st, &tkspace);
+	if (tk != NULL) {
+		*tk = lexer_emit(lx, &st, &(struct token){
+		    .tk_type	= TOKEN_SPACE,
+		});
+	}
 	return 1;
 }
 
-static struct token *
-lexer_keyword(struct lexer *lx)
-{
-	for (;;) {
-		struct token *tk;
-
-		lexer_eat_lines_and_spaces(lx, NULL);
-		tk = lexer_keyword1(lx);
-		if (tk == NULL)
-			break;
-		if ((tk->tk_flags & TOKEN_FLAG_DISCARD) == 0)
-			return tk;
-	}
-	return NULL;
-}
-
-static struct token *
-lexer_keyword1(struct lexer *lx)
-{
-	struct lexer_state st = lx->lx_st;
-	struct token *pv = NULL;
-	struct token *tk = NULL;
-	unsigned char ch;
-
-	if (lexer_getc(lx, &ch))
-		return NULL;
-
-	for (;;) {
-		struct token *ellipsis, *tmp;
-
-		tmp = lexer_find_token(lx, &st);
-		if (tmp == NULL) {
-			lexer_ungetc(lx);
-			tk = pv;
-			break;
-		}
-		if ((tmp->tk_flags & TOKEN_FLAG_AMBIGUOUS) == 0) {
-			tk = tmp;
-			break;
-		}
-
-		/* Hack to detect ellipses since ".." is not a valid token. */
-		if (tmp->tk_type == TOKEN_PERIOD &&
-		    (ellipsis = lexer_ellipsis(lx, &st)) != NULL) {
-			tk = ellipsis;
-			break;
-		}
-
-		pv = tmp;
-		if (lexer_getc(lx, &ch)) {
-			tk = tmp;
-			break;
-		}
-	}
-	if (tk == NULL) {
-		lx->lx_st = st;
-		return NULL;
-	}
-	if (tk->tk_flags & TOKEN_FLAG_DISCARD)
-		return tk;
-	return lexer_emit(lx, &st, tk);
-}
-
-static struct token *
-lexer_comment(struct lexer *lx, int block)
-{
-	struct lexer_state oldst, st;
-	struct token *tk;
-	int c99;
-	unsigned char ch;
-
-	oldst = st = lx->lx_st;
-	if (block)
-		lexer_eat_lines_and_spaces(lx, &st);
-	else
-		lexer_eat_spaces(lx, NULL);
-	if (lexer_getc(lx, &ch) || ch != '/') {
-		lx->lx_st = oldst;
-		return NULL;
-	}
-	if (lexer_getc(lx, &ch) || (ch != '/' && ch != '*')) {
-		lx->lx_st = oldst;
-		return NULL;
-	}
-
-	c99 = ch == '/';
-	ch = '\0';
-	for (;;) {
-		unsigned char peek;
-
-		if (lexer_getc(lx, &peek))
-			break;
-		if (c99) {
-			if (peek == '\n') {
-				lexer_ungetc(lx);
-				break;
-			}
-		} else {
-			if (ch == '*' && peek == '/')
-				break;
-			ch = peek;
-		}
-	}
-
-	if (block) {
-		/*
-		 * For block comments, consume trailing whitespace and up to 2
-		 * hard lines(s), will be hanging of the comment token.
-		 */
-		lexer_eat_spaces(lx, NULL);
-		lexer_eat_lines(lx, 2, NULL);
-	}
-
-	tk = lexer_emit(lx, &st, &tkcomment);
-	if (c99)
-		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
-	/* Discard any remaining hard line(s). */
-	if (block)
-		lexer_eat_lines(lx, 0, NULL);
-
-	return tk;
-}
-
-static struct token *
-lexer_cpp(struct lexer *lx)
-{
-	struct lexer_state cmpst, oldst, st;
-	struct token *tk;
-	int type = TOKEN_CPP;
-	int comment;
-	unsigned char ch;
-
-	oldst = lx->lx_st;
-	lexer_eat_lines_and_spaces(lx, &st);
-	if (lexer_getc(lx, &ch) || ch != '#') {
-		lx->lx_st = oldst;
-		return NULL;
-	}
-
-	/* Space before keyword is allowed. */
-	lexer_eat_spaces(lx, NULL);
-	cmpst = lx->lx_st;
-
-	ch = '\0';
-	comment = 0;
-	for (;;) {
-		unsigned char peek;
-
-		if (lexer_getc(lx, &peek))
-			break;
-
-		/*
-		 * Make block comments part of the preprocessor
-		 * directive.
-		 */
-		if (ch == '/' && peek == '*') {
-			comment = 1;
-		} else if (comment && ch == '*' && peek == '/') {
-			comment = 0;
-		} else if (!comment && ch != '\\' && peek == '\n') {
-			lexer_ungetc(lx);
-			break;
-		}
-		ch = peek;
-	}
-
-	if (lexer_buffer_streq(lx, &cmpst, "if"))
-		type = TOKEN_CPP_IF;
-	else if (lexer_buffer_streq(lx, &cmpst, "else") ||
-	    lexer_buffer_streq(lx, &cmpst, "elif"))
-		type = TOKEN_CPP_ELSE;
-	else if (lexer_buffer_streq(lx, &cmpst, "endif"))
-		type = TOKEN_CPP_ENDIF;
-
-	/*
-	 * As cpp tokens are emitted as is, honor up to 2 hard line(s).
-	 * Additional ones are excessive and will be discarded.
-	 */
-	lexer_eat_lines(lx, 2, NULL);
-
-	tk = lexer_emit(lx, &st, &(struct token){
-	    .tk_type	= type,
-	    .tk_flags	= TOKEN_FLAG_CPP,
-	});
-	/* Discard any remaining hard line(s). */
-	lexer_eat_lines(lx, 0, NULL);
-	return tk;
-}
-
-static struct token *
-lexer_ellipsis(struct lexer *lx, const struct lexer_state *st)
-{
-	struct lexer_state oldst;
-	unsigned char ch;
-	int i;
-
-	oldst = lx->lx_st;
-
-	for (i = 0; i < 2; i++) {
-		if (lexer_eof(lx) || lexer_getc(lx, &ch) || ch != '.') {
-			lx->lx_st = oldst;
-			return NULL;
-		}
-	}
-	return lexer_find_token(lx, st);
-}
-
-static int
+int
 lexer_eof(const struct lexer *lx)
 {
 	return lx->lx_st.st_off == lx->lx_bf->bf_len;
@@ -1492,28 +1067,7 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 	*dst = lx->lx_st.st_off;
 }
 
-static struct token *
-lexer_find_token(const struct lexer *lx, const struct lexer_state *st)
-{
-	const char *key;
-	size_t i, len;
-	unsigned char slot;
-
-	len = lx->lx_st.st_off - st->st_off;
-	key = &lx->lx_bf->bf_ptr[st->st_off];
-	slot = (unsigned char)key[0];
-	if (tokens[slot] == NULL)
-		return NULL;
-	for (i = 0; i < VECTOR_LENGTH(tokens[slot]); i++) {
-		struct token *tk = &tokens[slot][i];
-
-		if (len == tk->tk_len && strncmp(tk->tk_str, key, len) == 0)
-			return tk;
-	}
-	return NULL;
-}
-
-static int
+int
 lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
     const char *str)
 {
@@ -1528,6 +1082,14 @@ lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
 		return 0;
 	buf = &lx->lx_bf->bf_ptr[st->st_off];
 	return strncmp(buf, str, len) == 0;
+}
+
+const char *
+lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
+    size_t *len)
+{
+	*len = lx->lx_st.st_off - st->st_off;
+	return &lx->lx_bf->bf_ptr[st->st_off];
 }
 
 static void
@@ -1563,19 +1125,6 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 }
 
 /*
- * Prolong the dst token to also cover the src token. They are required to be of
- * the same type and be adjacent to each other.
- */
-static void
-token_prolong(struct token *dst, struct token *src)
-{
-	assert(src->tk_type == dst->tk_type);
-	assert(src->tk_off >= dst->tk_off + dst->tk_len);
-	dst->tk_len += src->tk_len;
-	token_rele(src);
-}
-
-/*
  * Fold tokens covered by the branch into a prefix.
  */
 static void
@@ -1592,7 +1141,10 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	off = src->tk_off;
 	len = (dst->tk_off + dst->tk_len) - off;
 
-	prefix = token_alloc(&tkcpp);
+	prefix = token_alloc(&(struct token){
+	    .tk_type	= TOKEN_CPP,
+	    .tk_flags	= TOKEN_FLAG_CPP,
+	});
 	prefix->tk_lno = src->tk_lno;
 	prefix->tk_cno = src->tk_cno;
 	prefix->tk_off = off;
@@ -1737,15 +1289,4 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 	}
 
 	return NULL;
-}
-
-static int
-isnum(unsigned char ch, int prefix)
-{
-	if (prefix)
-		return isdigit(ch);
-
-	ch = tolower(ch);
-	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
-	    ch == 'u' || ch == '.';
 }

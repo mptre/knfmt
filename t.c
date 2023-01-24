@@ -93,7 +93,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	lexer_init();
+	clang_init();
 	cx = context_alloc();
 
 	error |= test_parser_expr("1", "(1)");
@@ -258,7 +258,7 @@ main(int argc, char *argv[])
 
 out:
 	context_free(cx);
-	lexer_shutdown();
+	clang_shutdown();
 	return error;
 }
 

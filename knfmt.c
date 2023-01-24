@@ -94,7 +94,7 @@ main(int argc, char *argv[])
 
 	if (op.op_flags & OPTIONS_DIFFPARSE)
 		diff_init();
-	lexer_init();
+	clang_init();
 	style_init();
 	if (VECTOR_INIT(files.fs_vc) == NULL) {
 		error = 1;
@@ -123,7 +123,7 @@ out:
 	files_free(&files);
 	style_free(st);
 	style_teardown();
-	lexer_shutdown();
+	clang_shutdown();
 	if (op.op_flags & OPTIONS_DIFFPARSE)
 		diff_shutdown();
 
