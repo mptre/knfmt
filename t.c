@@ -59,13 +59,13 @@ static int	test_strwidth0(const char *, size_t, size_t,
     const char *, int);
 
 struct context {
-	struct options	 cx_op;
-	struct buffer	*cx_bf;
-	struct error	*cx_er;
-	struct style	*cx_st;
-	struct clang	*cx_cl;
-	struct lexer	*cx_lx;
-	struct parser	*cx_pr;
+	struct options	 op;
+	struct buffer	*bf;
+	struct error	*er;
+	struct style	*st;
+	struct clang	*cl;
+	struct lexer	*lx;
+	struct parser	*pr;
 };
 
 static __dead void	usage(void);
@@ -281,7 +281,7 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp,
 	context_init(cx, src);
 
 	concat = doc_alloc(DOC_CONCAT, NULL);
-	error = parser_expr(cx->cx_pr, &expr, &(struct parser_expr_arg){
+	error = parser_expr(cx->pr, &expr, &(struct parser_expr_arg){
 	    .dc	= concat,
 	});
 	if (error & HALT) {
@@ -292,7 +292,7 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp,
 	error = 0;
 
 	bf = buffer_alloc(128);
-	doc_exec(concat, cx->cx_lx, bf, cx->cx_st, &cx->cx_op, 0);
+	doc_exec(concat, cx->lx, bf, cx->st, &cx->op, 0);
 	buffer_putc(bf, '\0');
 	act = bf->bf_ptr;
 	if (strcmp(exp, act) != 0) {
@@ -320,7 +320,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 
 	context_init(cx, src);
 
-	if (!parser_type_peek(cx->cx_pr, &end, flags)) {
+	if (!parser_type_peek(cx->pr, &end, flags)) {
 		fprintf(stderr, "%s:%d: lexer_peek_if_type() failure\n",
 		    fun, lno);
 		error = 1;
@@ -329,7 +329,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 
 	bf = buffer_alloc(128);
 	for (;;) {
-		if (!lexer_pop(cx->cx_lx, &tk))
+		if (!lexer_pop(cx->lx, &tk))
 			errx(1, "%s:%d: out of tokens", fun, lno);
 
 		if (ntokens++ > 0)
@@ -369,14 +369,14 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 		const char *end, *str;
 		size_t tokenlen;
 
-		if (!lexer_pop(cx->cx_lx, &tk))
+		if (!lexer_pop(cx->lx, &tk))
 			errx(1, "%s:%d: out of tokens", fun, lno);
 		if (tk->tk_type == LEXER_EOF)
 			break;
 
 		if (ntokens++ > 0)
 			buffer_putc(bf, ' ');
-		str = lexer_serialize(cx->cx_lx, tk);
+		str = lexer_serialize(cx->lx, tk);
 		/* Strip of the token position and verbatim representation. */
 		end = strchr(str, '<');
 		tokenlen = (size_t)(end - str);
@@ -415,9 +415,9 @@ context_alloc(void)
 	struct context *cx;
 
 	cx = ecalloc(1, sizeof(*cx));
-	options_init(&cx->cx_op);
-	cx->cx_op.op_flags |= OPTIONS_TEST;
-	cx->cx_bf = buffer_alloc(128);
+	options_init(&cx->op);
+	cx->op.op_flags |= OPTIONS_TEST;
+	cx->bf = buffer_alloc(128);
 	return cx;
 }
 
@@ -428,7 +428,7 @@ context_free(struct context *cx)
 		return;
 
 	context_reset(cx);
-	buffer_free(cx->cx_bf);
+	buffer_free(cx->bf);
 	free(cx);
 }
 
@@ -437,49 +437,49 @@ context_init(struct context *cx, const char *src)
 {
 	static const char *path = "test.c";
 
-	buffer_puts(cx->cx_bf, src, strlen(src));
-	cx->cx_er = error_alloc(0);
-	cx->cx_st = style_parse(NULL, &cx->cx_op);
-	cx->cx_cl = clang_alloc(&cx->cx_op, cx->cx_st);
-	cx->cx_lx = lexer_alloc(&(const struct lexer_arg){
+	buffer_puts(cx->bf, src, strlen(src));
+	cx->er = error_alloc(0);
+	cx->st = style_parse(NULL, &cx->op);
+	cx->cl = clang_alloc(&cx->op, cx->st);
+	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
-	    .bf		= cx->cx_bf,
-	    .er		= cx->cx_er,
+	    .bf		= cx->bf,
+	    .er		= cx->er,
 	    .diff	= NULL,
-	    .op		= &cx->cx_op,
+	    .op		= &cx->op,
 	    .callbacks	= {
 		.read		= clang_read,
 		.serialize	= token_serialize,
-		.arg		= cx->cx_cl,
+		.arg		= cx->cl,
 	    },
 	});
-	cx->cx_pr = parser_alloc(path, cx->cx_lx, cx->cx_er, cx->cx_st,
-	    &cx->cx_op);
+	cx->pr = parser_alloc(path, cx->lx, cx->er, cx->st,
+	    &cx->op);
 }
 
 static void
 context_reset(struct context *cx)
 {
-	buffer_reset(cx->cx_bf);
+	buffer_reset(cx->bf);
 
-	if (cx->cx_er != NULL) {
-		error_flush(cx->cx_er, 1);
-		error_free(cx->cx_er);
-		cx->cx_er = NULL;
+	if (cx->er != NULL) {
+		error_flush(cx->er, 1);
+		error_free(cx->er);
+		cx->er = NULL;
 	}
 
-	style_free(cx->cx_st);
-	cx->cx_st = NULL;
+	style_free(cx->st);
+	cx->st = NULL;
 
-	parser_free(cx->cx_pr);
-	cx->cx_pr = NULL;
+	parser_free(cx->pr);
+	cx->pr = NULL;
 
-	lexer_free(cx->cx_lx);
-	cx->cx_lx = NULL;
+	lexer_free(cx->lx);
+	cx->lx = NULL;
 
-	clang_free(cx->cx_cl);
-	cx->cx_cl = NULL;
+	clang_free(cx->cl);
+	cx->cl = NULL;
 
-	parser_free(cx->cx_pr);
-	cx->cx_pr = NULL;
+	parser_free(cx->pr);
+	cx->pr = NULL;
 }
