@@ -42,6 +42,7 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
+static struct token	*clang_read_prefix(struct lexer *, struct token_list *);
 static struct token	*clang_read_comment(struct lexer *, int);
 static struct token	*clang_read_cpp(struct lexer *);
 static struct token	*clang_keyword(struct lexer *);
@@ -150,19 +151,9 @@ clang_read(struct lexer *lx, void *arg)
 
 	/* Consume all comments and preprocessor directives. */
 	for (;;) {
-		struct token *last;
-
-		if ((tmp = clang_read_comment(lx, 1)) == NULL &&
-		    (tmp = clang_read_cpp(lx)) == NULL)
+		prefix = clang_read_prefix(lx, &prefixes);
+		if (prefix == NULL)
 			break;
-
-		if (tmp->tk_type == TOKEN_COMMENT &&
-		    (last = TAILQ_LAST(&prefixes, token_list)) != NULL &&
-		    last->tk_type == TOKEN_COMMENT &&
-		    token_cmp(tmp, last) == 0)
-			token_prolong(last, tmp);
-		else
-			TAILQ_INSERT_TAIL(&prefixes, tmp, tk_entry);
 	}
 
 	if ((tk = clang_keyword(lx)) != NULL)
@@ -406,6 +397,35 @@ clang_branch_purge(struct clang *cl, struct lexer *lx)
 			tk = pv;
 		} while (tk != NULL);
 	}
+}
+
+static struct token *
+clang_read_prefix(struct lexer *lx, struct token_list *prefixes)
+{
+	struct token *comment, *cpp;
+
+	comment = clang_read_comment(lx, 1);
+	if (comment != NULL) {
+		struct token *pv;
+
+		pv = TAILQ_LAST(prefixes, token_list);
+		if (pv != NULL &&
+		    pv->tk_type == TOKEN_COMMENT &&
+		    token_cmp(comment, pv) == 0) {
+			token_prolong(pv, comment);
+			return pv;
+		}
+		TAILQ_INSERT_TAIL(prefixes, comment, tk_entry);
+		return comment;
+	}
+
+	cpp = clang_read_cpp(lx);
+	if (cpp != NULL) {
+		TAILQ_INSERT_TAIL(prefixes, cpp, tk_entry);
+		return cpp;
+	}
+
+	return NULL;
 }
 
 static struct token *
