@@ -57,7 +57,7 @@ strnice_buffer(struct buffer *bf, const char *str, size_t len)
 		else if (isprint(c))
 			buffer_putc(bf, c);
 		else
-			buffer_printf(bf, "\\x%02x", c);
+			buffer_printf(bf, "\\x%02x", (unsigned char)c);
 	}
 }
 
