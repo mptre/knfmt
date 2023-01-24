@@ -1,4 +1,4 @@
-static const unsigned char traces[] = {
+static const char traces[] = {
 	'a',	/* all */
 	'c',	/* clang */
 	'd',	/* doc */
