@@ -731,6 +731,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	doc_trace_leave(dc, st);
 }
 
+#ifdef HAVE_PRAGMA_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
 static void
 doc_exec_indent(const struct doc *dc, struct doc_state *st)
 {
@@ -764,6 +768,9 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 		st->st_indent.cur -= indent;
 	}
 }
+#ifdef HAVE_PRAGMA_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
 
 static void
 doc_exec_align(const struct doc *dc, struct doc_state *st)
