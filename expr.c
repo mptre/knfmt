@@ -985,6 +985,8 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			token_move_next_line(ex->ex_tokens[1]);
 		cond = expr_doc(ex->ex_lhs, es, dc);
 		doc_alloc(DOC_LINE, cond);
+		if (style(es->es_st, AlignOperands) == Align)
+			dc = expr_doc_align(ex, es, dc, 0);
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], dc);	/* ? */
 
