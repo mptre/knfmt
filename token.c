@@ -135,6 +135,24 @@ token_cmp(const struct token *t1, const struct token *t2)
 	return 0;
 }
 
+int
+token_strcmp(const struct token *a, const struct token *b)
+{
+	size_t minlen;
+	int cmp;
+
+	minlen = a->tk_len < b->tk_len ? a->tk_len : b->tk_len;
+	cmp = strncmp(a->tk_str, b->tk_str, minlen);
+	if (cmp != 0)
+		return cmp;
+
+	if (a->tk_len < b->tk_len)
+		return -1;
+	if (a->tk_len > b->tk_len)
+		return 1;
+	return 0;
+}
+
 /*
  * Returns non-zero if the given token is preceded with whitespace.
  * Such whitespace is never emitted by the lexer we therefore have to resort to

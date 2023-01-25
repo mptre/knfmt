@@ -335,21 +335,10 @@ token_range_str(const struct token_range *tr)
 static int
 decl_var_cmp(const void *p1, const void *p2)
 {
-	const struct token *tk1 = ((const struct decl_var *)p1)->dv_sort;
-	const struct token *tk2 = ((const struct decl_var *)p2)->dv_sort;
-	size_t minlen;
-	int cmp;
+	const struct decl_var *a = p1;
+	const struct decl_var *b = p2;
 
-	minlen = tk1->tk_len < tk2->tk_len ? tk1->tk_len : tk2->tk_len;
-	cmp = strncmp(tk1->tk_str, tk2->tk_str, minlen);
-	if (cmp != 0)
-		return cmp;
-
-	if (tk1->tk_len < tk2->tk_len)
-		return -1;
-	if (tk1->tk_len > tk2->tk_len)
-		return 1;
-	return 0;
+	return token_strcmp(a->dv_sort, b->dv_sort);
 }
 
 static int
