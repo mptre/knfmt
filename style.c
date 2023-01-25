@@ -93,9 +93,13 @@ void
 style_init(void)
 {
 	static struct style_option kw[] = {
+/* Top level style option. */
 #define S(t)	0,	#t,	sizeof(#t) - 1,	(t)
+/* Nested style option. */
 #define N(s, t)	(s),	#t,	sizeof(#t) - 1,	(t)
+/* Enum style option value. */
 #define E(t)	0,	#t,	sizeof(#t) - 1,	(t),	NULL,	{0}
+/* YAML primitive. */
 #define P(t, s)	0,	(s),	sizeof(s) - 1,	(t),	NULL,	{0}
 
 		{ S(AlignAfterOpenBracket), parse_enum,
