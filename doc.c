@@ -15,7 +15,7 @@
 #include "buffer.h"
 #include "cdefs.h"
 #include "comment.h"
-#include "cpp.h"
+#include "cpp-align.h"
 #include "diff.h"
 #include "lexer.h"
 #include "options.h"
@@ -605,7 +605,8 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			doc_print(dc, st, str, strlen(str), 0);
 			free(str);
 		} else if (dc->dc_tk->tk_type == TOKEN_CPP &&
-		    (str = cpp_exec(dc->dc_tk, st->st_st, st->st_op)) != NULL) {
+		    (str = cpp_align(dc->dc_tk, st->st_st, st->st_op)) !=
+		    NULL) {
 			doc_print(dc, st, str, strlen(str), 0);
 			free(str);
 		} else {

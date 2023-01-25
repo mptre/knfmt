@@ -1,4 +1,4 @@
-#include "cpp.h"
+#include "cpp-align.h"
 
 #include "config.h"
 
@@ -15,11 +15,10 @@
 static const char	*nextline(const char *, size_t, const char **);
 
 /*
- * Formatting of preprocessor tokens. Currently limited to alignment of line
- * continuations.
+ * Align of line continuations.
  */
 char *
-cpp_exec(const struct token *tk, const struct style *st,
+cpp_align(const struct token *tk, const struct style *st,
     const struct options *op)
 {
 	struct ruler rl;
