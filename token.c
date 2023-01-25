@@ -125,11 +125,11 @@ token_serialize(const struct token *tk)
 }
 
 int
-token_cmp(const struct token *t1, const struct token *t2)
+token_cmp(const struct token *a, const struct token *b)
 {
-	if (t1->tk_lno < t2->tk_lno)
+	if (a->tk_lno < b->tk_lno)
 		return -1;
-	if (t1->tk_lno > t2->tk_lno)
+	if (a->tk_lno > b->tk_lno)
 		return 1;
 	/* Intentionally not comparing the column. */
 	return 0;
