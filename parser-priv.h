@@ -23,7 +23,7 @@ struct parser {
 	unsigned int		 pr_nblocks;	/* # stmt blocks */
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
-	struct {
+	struct parser_simple {
 		struct simple_stmt	*stmt;
 		struct simple_decl	*decl;
 		int			 nstmt;
@@ -44,6 +44,9 @@ int	parser_none(const struct parser *);
 int	parser_fail0(struct parser *, const char *, int);
 
 void	parser_reset(struct parser *);
+
+void parser_simple_disable(struct parser *, struct parser_simple *);
+void parser_simple_enable(struct parser *, struct parser_simple *);
 
 void	parser_token_trim_after(const struct parser *, struct token *);
 void	parser_token_trim_before(const struct parser *, struct token *);

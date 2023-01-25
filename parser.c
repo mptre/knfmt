@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "alloc.h"
 #include "buffer.h"
@@ -1569,6 +1570,19 @@ parser_token_trim_before(const struct parser *pr, struct token *tk)
 	pv = token_prev(tk);
 	if (pv != NULL)
 		token_trim(pv);
+}
+
+void
+parser_simple_disable(struct parser *pr, struct parser_simple *simple)
+{
+	*simple = pr->pr_simple;
+	memset(&pr->pr_simple, 0, sizeof(pr->pr_simple));
+}
+
+void
+parser_simple_enable(struct parser *pr, struct parser_simple *simple)
+{
+	pr->pr_simple = *simple;
 }
 
 /*

@@ -29,15 +29,18 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 		},
 	};
 	struct lexer_state s;
+	struct parser_simple simple;
 	struct lexer *lx = pr->pr_lx;
 	int peek = 0;
 
+	parser_simple_disable(pr, &simple);
 	lexer_peek_enter(lx, &s);
 	if (expr_peek(&ea)) {
 		peek = 1;
 		lexer_back(lx, tk);
 	}
 	lexer_peek_leave(lx, &s);
+	parser_simple_enable(pr, &simple);
 	return peek;
 }
 
