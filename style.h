@@ -3,10 +3,7 @@ struct style;
 
 /* Supported clang format options and values. */
 enum {
-	/* Pseudo option indicating presence of clang format configuration. */
-	ClangFormat = 1,
-
-	AfterCaseLabel,
+	AfterCaseLabel = 1,
 	AfterClass,
 	AfterControlStatement,
 	AfterEnum,

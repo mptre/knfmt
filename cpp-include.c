@@ -27,6 +27,8 @@ struct include {
 	} path;
 };
 
+static int	sort_includes(const struct options *, const struct style *);
+
 static void	cpp_include_exec(struct cpp_include *);
 static void	cpp_include_reset(struct cpp_include *);
 
@@ -43,12 +45,8 @@ cpp_include_alloc(const struct options *op, const struct style *st)
 {
 	struct cpp_include *ci;
 
-	if (style(st, ClangFormat) == True) {
-		if (style(st, SortIncludes) != CaseSensitive)
-			return NULL;
-	} else if ((op->op_flags & OPTIONS_SIMPLE) == 0) {
+	if (!sort_includes(op, st))
 		return NULL;
-	}
 
 	ci = ecalloc(1, sizeof(*ci));
 	if (VECTOR_INIT(ci->includes) == NULL)
@@ -110,6 +108,13 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 
 	cpp_include_exec(ci);
 	cpp_include_reset(ci);
+}
+
+static int
+sort_includes(const struct options *op, const struct style *st)
+{
+	return (op->op_flags & OPTIONS_SIMPLE) ||
+	    style(st, SortIncludes) == CaseSensitive;
 }
 
 static void
