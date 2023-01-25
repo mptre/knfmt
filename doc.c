@@ -150,6 +150,8 @@ struct doc_diff {
 static void		doc_exec1(const struct doc *, struct doc_state *);
 static void		doc_exec_indent(const struct doc *, struct doc_state *);
 static void		doc_exec_align(const struct doc *, struct doc_state *);
+static void		doc_exec_verbatim(const struct doc *,
+    struct doc_state *);
 static void		doc_exec_minimize(const struct doc *,
     struct doc_state *);
 static void		doc_exec_minimize1(struct doc *, struct doc_state *,
@@ -573,80 +575,9 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		doc_print(dc, st, dc->dc_str, dc->dc_len, DOC_PRINT_INDENT);
 		break;
 
-	case DOC_VERBATIM: {
-		char *str;
-		unsigned int diff, oldcol;
-		int unmute = 0;
-		int isblock, isnewline;
-
-		if (doc_is_mute(st)) {
-			if (DOC_DIFF(st) &&
-			    st->st_diff.verbatim == dc->dc_tk)
-				unmute = 1;
-			else
-				break;
-		}
-
-		diff = doc_diff_verbatim(dc, st);
-
-		isblock = dc->dc_len > 1 && dc->dc_str[dc->dc_len - 1] == '\n';
-		isnewline = dc->dc_len == 1 && dc->dc_str[0] == '\n';
-
-		/* Verbatims must never be indented. */
-		doc_trim_spaces(dc, st);
-		oldcol = st->st_col;
-
-		/* Verbatim blocks must always start on a new line. */
-		if (isblock && st->st_col > 0)
-			st->st_newline = 1;
-
-		if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
-		    (str = comment_exec(dc->dc_tk, st->st_st, st->st_op))) {
-			doc_print(dc, st, str, strlen(str), 0);
-			free(str);
-		} else if (dc->dc_tk->tk_type == TOKEN_CPP &&
-		    (str = cpp_align(dc->dc_tk, st->st_st, st->st_op)) !=
-		    NULL) {
-			doc_print(dc, st, str, strlen(str), 0);
-			free(str);
-		} else {
-			doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
-		}
-
-		/* Restore indentation in diff mode. */
-		if (unmute)
-			st->st_diff.verbatim = NULL;
-
-		/*
-		 * Restore the indentation after emitting a verbatim block or
-		 * new line.
-		 */
-		if (isblock || isnewline) {
-			struct doc_state_indent *it = &st->st_indent;
-			int indent;
-
-			if (oldcol > 0) {
-				/*
-				 * The line is not empty after trimming. Assume
-				 * this a continuation in which the current
-				 * indentation level must be used.
-				 */
-				indent = it->cur;
-			} else {
-				/*
-				 * The line is empty after trimming. Assume this
-				 * is not a continuation in which the previously
-				 * emitted indentation must be used.
-				 */
-				indent = it->pre;
-			}
-			doc_indent(dc, st, indent);
-		}
-
-		doc_diff_leave(dc, st, diff);
-
+	case DOC_VERBATIM:
+		doc_exec_verbatim(dc, st);
 		break;
-	}
 
 	case DOC_LINE:
 		switch (st->st_mode) {
@@ -782,6 +713,77 @@ doc_exec_align(const struct doc *dc, struct doc_state *st)
 		doc_indent1(dc, st,
 		    (int)(dc->dc_align.indent + dc->dc_align.spaces));
 	}
+}
+
+static void
+doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
+{
+	char *str;
+	unsigned int diff, oldcol;
+	int unmute = 0;
+	int isblock, isnewline;
+
+	if (doc_is_mute(st)) {
+		if (DOC_DIFF(st) &&
+		    st->st_diff.verbatim == dc->dc_tk)
+			unmute = 1;
+		else
+			return;
+	}
+
+	diff = doc_diff_verbatim(dc, st);
+
+	isblock = dc->dc_len > 1 && dc->dc_str[dc->dc_len - 1] == '\n';
+	isnewline = dc->dc_len == 1 && dc->dc_str[0] == '\n';
+
+	/* Verbatims must never be indented. */
+	doc_trim_spaces(dc, st);
+	oldcol = st->st_col;
+
+	/* Verbatim blocks must always start on a new line. */
+	if (isblock && st->st_col > 0)
+		st->st_newline = 1;
+
+	if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
+	    (str = comment_exec(dc->dc_tk, st->st_st, st->st_op)) != NULL) {
+		doc_print(dc, st, str, strlen(str), 0);
+		free(str);
+	} else if (dc->dc_tk->tk_type == TOKEN_CPP &&
+	    (str = cpp_align(dc->dc_tk, st->st_st, st->st_op)) != NULL) {
+		doc_print(dc, st, str, strlen(str), 0);
+		free(str);
+	} else {
+		doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
+	}
+
+	/* Restore indentation in diff mode. */
+	if (unmute)
+		st->st_diff.verbatim = NULL;
+
+	/* Restore indentation after emitting a verbatim block or new line. */
+	if (isblock || isnewline) {
+		struct doc_state_indent *it = &st->st_indent;
+		int indent;
+
+		if (oldcol > 0) {
+			/*
+			 * The line is not empty after trimming. Assume this a
+			 * continuation in which the current indentation level
+			 * must be used.
+			 */
+			indent = it->cur;
+		} else {
+			/*
+			 * The line is empty after trimming. Assume this is not
+			 * a continuation in which the previously emitted
+			 * indentation must be used.
+			 */
+			indent = it->pre;
+		}
+		doc_indent(dc, st, indent);
+	}
+
+	doc_diff_leave(dc, st, diff);
 }
 
 static void
