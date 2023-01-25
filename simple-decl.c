@@ -14,8 +14,8 @@
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
-#include "vector.h"
 #include "util.h"
+#include "vector.h"
 
 struct token_range {
 	struct token	*tr_beg;

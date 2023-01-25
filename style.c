@@ -3,8 +3,8 @@
 #include "config.h"
 
 #include <assert.h>
-#include <err.h>
 #include <ctype.h>
+#include <err.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>

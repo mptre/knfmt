@@ -13,8 +13,8 @@
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
-#include "vector.h"
 #include "util.h"
+#include "vector.h"
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
