@@ -255,8 +255,11 @@ style_parse(const char *path, const struct options *op)
 			close(fd);
 		}
 	}
-	if (bf != NULL)
+	if (bf != NULL) {
 		error = style_parse_yaml(st, path, bf, op);
+		if (error == 0)
+			st->st_options[ClangFormat] = True;
+	}
 	buffer_free(bf);
 	if (error) {
 		style_free(st);
@@ -297,6 +300,7 @@ style_brace_wrapping(const struct style *st, int option)
 static void
 style_defaults(struct style *st)
 {
+	st->st_options[ClangFormat] = False;
 	st->st_options[AlignAfterOpenBracket] = DontAlign;
 	st->st_options[AlignEscapedNewlines] = Right;
 	st->st_options[AlignOperands] = DontAlign;
