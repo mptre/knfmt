@@ -148,9 +148,9 @@ static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
     struct doc *);
 
-#define expr_doc_align_enter(a, b, c, d) \
-	expr_doc_align_enter0((a), (b), (c), (d), __func__, __LINE__)
-static struct doc	*expr_doc_align_enter0(struct expr *,
+#define expr_doc_align(a, b, c, d) \
+	expr_doc_align0((a), (b), (c), (d), __func__, __LINE__)
+static struct doc	*expr_doc_align0(struct expr *,
     struct expr_state *, struct doc *, unsigned int, const char *, int);
 
 #define expr_doc_align_disable(a, b, c) \
@@ -818,7 +818,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			if (doalign) {
 				dc = token_has_line(ex->ex_tk, 1) ?
 				    expr_doc_align_disable(ex, es, dc) :
-				    expr_doc_align_enter(ex, es, dc, 0);
+				    expr_doc_align(ex, es, dc, 0);
 			}
 
 			/*
@@ -838,7 +838,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		int dospace;
 
 		if (doalign)
-			dc = expr_doc_align_enter(ex, es, dc, 0);
+			dc = expr_doc_align(ex, es, dc, 0);
 
 		token_move_next_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
@@ -935,7 +935,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 				indent = es->es_ea.indent;
 			dc = token_has_line(lparen, 1) ?
 			    expr_doc_align_disable(ex, es, dc) :
-			    expr_doc_align_enter(ex, es, parent, indent);
+			    expr_doc_align(ex, es, parent, indent);
 		}
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
 	}
@@ -959,7 +959,7 @@ expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 	doalign = style(es->es_st, AlignOperands) == Align &&
 	    !token_has_line(pv, 1);
 	if (doalign)
-		dc = expr_doc_align_enter(ex, es, dc, 0);
+		dc = expr_doc_align(ex, es, dc, 0);
 	TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {
 		struct doc *tmp;
 
@@ -1051,8 +1051,8 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
  * not cause exceesive new line(s). Otherwise, fallback to regular indentation.
  */
 static struct doc *
-expr_doc_align_enter0(struct expr *UNUSED(ex), struct expr_state *es,
-    struct doc *dc, unsigned int indent, const char *fun, int lno)
+expr_doc_align0(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc,
+    unsigned int indent, const char *fun, int lno)
 {
 	struct doc_minimize minimizers[2];
 
