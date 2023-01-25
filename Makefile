@@ -495,6 +495,7 @@ DISTFILES+=	tests/simple-025.c
 DISTFILES+=	tests/simple-025.ok
 DISTFILES+=	tests/simple-026.c
 DISTFILES+=	tests/simple-026.ok
+DISTFILES+=	tests/simple-027.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-001.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-002.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-003.c

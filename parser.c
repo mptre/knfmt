@@ -1425,7 +1425,8 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	struct token *lbrace, *rbrace;
 
 	/* Ignore nested statements, they will be handled later on. */
-	if (pr->pr_simple.nstmt != 1)
+	if (pr->pr_simple.nstmt != 1 ||
+	    pr->pr_simple.ndecl > 0)
 		return dc;
 
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
@@ -1443,7 +1444,9 @@ parser_simple_stmt_ifelse_enter(struct parser *pr, struct doc *dc,
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
 
-	if (pr->pr_simple.nstmt != 1 || !lexer_peek(lx, &lbrace))
+	if (pr->pr_simple.nstmt != 1 ||
+	    pr->pr_simple.ndecl > 0 ||
+	    !lexer_peek(lx, &lbrace))
 		return dc;
 	return simple_stmt_ifelse_enter(pr->pr_simple.stmt, lbrace,
 	    (pr->pr_nindent + 1) * style(pr->pr_st, IndentWidth), cookie);
