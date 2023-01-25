@@ -415,6 +415,7 @@ TESTS+=	simple-024.c
 TESTS+=	simple-025.c
 TESTS+=	simple-026.c
 TESTS+=	simple-027.c
+TESTS+=	simple-028.c
 
 TESTS+=	inplace-001.c
 
@@ -504,6 +505,7 @@ TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ContinuationIndentWidth-001.c
 TESTS+=	style-IncludeCategories-001.c
 TESTS+=	style-IndentWidth-001.c
+TESTS+=	style-SortIncludes-001.c
 TESTS+=	style-UseTab-001.c
 TESTS+=	style-UseTab-002.c
 TESTS+=	style-bug-BraceWrapping-001.c
@@ -525,6 +527,8 @@ TESTS+=	../clang.h
 TESTS+=	../comment.c
 TESTS+=	../comment.h
 TESTS+=	../compat-pledge.c
+TESTS+=	../cpp-include.c
+TESTS+=	../cpp-include.h
 TESTS+=	../cpp.c
 TESTS+=	../cpp.h
 TESTS+=	../diff.c

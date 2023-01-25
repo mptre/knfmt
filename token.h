@@ -34,7 +34,7 @@ struct token {
 #define TOKEN_FLAG_UNMUTE	0x00000200u
 #define TOKEN_FLAG_COMMENT_C99	0x00000400u
 #define TOKEN_FLAG_CPP		0x00000800u
-/* was  TOKEN_FLAG_FREE		0x00001000u */
+#define TOKEN_FLAG_DIRTY	0x00001000u
 /*
  * Token followed by exactly one new line. Dangling suffix and only emitted
  * in certain contexts.
@@ -101,6 +101,9 @@ struct token	*token_get_branch(struct token *);
 struct token	*token_next(const struct token *);
 struct token	*token_prev(const struct token *);
 
+void	token_list_insert(struct token_list *, struct token *);
+void	token_list_insert_after(struct token_list *, struct token *,
+    struct token *);
 void	token_list_remove(struct token_list *, struct token *);
 void	token_list_copy(struct token_list *, struct token_list *);
 

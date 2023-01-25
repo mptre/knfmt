@@ -303,6 +303,18 @@ Indentation width for line continuations.
 .It Cm IndentWidth
 Indentation width.
 .Pq default 8
+.It Cm SortIncludes
+Sort blocks of preprocessor include directives.
+.Bl -tag -width Ds
+.It Cm Never
+Do not sort includes.
+.Pq default
+.It Cm CaseSensitive
+Sort includes in a case sensitive manner.
+.It Cm CaseInsensitive
+Not supported, interpreted as
+.Cm Never .
+.El
 .It Cm UseTab
 Use tabs for indentation.
 .Bl -tag -width Ds

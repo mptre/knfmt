@@ -156,6 +156,9 @@ style_init(void)
 
 		{ S(IndentWidth), parse_integer, {0} },
 
+		{ S(SortIncludes), parse_enum,
+		  { Never, CaseSensitive, CaseInsensitive } },
+
 		{ S(UseTab), parse_enum,
 		  { Never, ForIndentation, ForContinuationAndIndentation,
 		    AlignWithSpaces, Always } },
@@ -311,6 +314,7 @@ style_defaults(struct style *st)
 	st->st_options[ColumnLimit] = 80;
 	st->st_options[ContinuationIndentWidth] = 4;
 	st->st_options[IndentWidth] = 8;
+	st->st_options[SortIncludes] = Never;
 	st->st_options[UseTab] = Always;
 }
 

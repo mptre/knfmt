@@ -57,6 +57,8 @@ token_rele(struct token *tk)
 	}
 	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
 		token_list_remove(&tk->tk_suffixes, fix);
+	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
+		free((void *)tk->tk_str);
 	free(tk);
 }
 
@@ -332,6 +334,21 @@ token_prev(const struct token *tk)
 }
 
 void
+token_list_insert(struct token_list *tl, struct token *tk)
+{
+	token_ref(tk);
+	TAILQ_INSERT_TAIL(tl, tk, tk_entry);
+}
+
+void
+token_list_insert_after(struct token_list *tl, struct token *after,
+    struct token *tk)
+{
+	token_ref(tk);
+	TAILQ_INSERT_AFTER(tl, after, tk, tk_entry);
+}
+
+void
 token_list_remove(struct token_list *tl, struct token *tk)
 {
 	TAILQ_REMOVE(tl, tk, tk_entry);
@@ -495,6 +512,7 @@ strflags(struct buffer *bf, unsigned int token_flags)
 	} flags[] = {
 #define F(f, s) { (s), sizeof(s) - 1, (f) }
 		F(TOKEN_FLAG_COMMENT_C99,	"C99"),
+		F(TOKEN_FLAG_DIRTY,		"DIRTY"),
 		F(TOKEN_FLAG_OPTLINE,		"OPTLINE"),
 		F(TOKEN_FLAG_OPTSPACE,		"OPTSPACE"),
 		F(TOKEN_FLAG_DIFF,		"DIFF"),

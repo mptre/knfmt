@@ -9,6 +9,7 @@
 
 #include "alloc.h"
 #include "cdefs.h"
+#include "cpp-include.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
@@ -28,7 +29,7 @@
 
 struct clang {
 	const struct options	*cl_op;
-	const struct style	*cl_st;
+	struct cpp_include	*cl_ci;
 	VECTOR(struct token *)	 cl_branches;
 };
 
@@ -121,7 +122,7 @@ clang_alloc(const struct options *op, const struct style *st)
 
 	cl = ecalloc(1, sizeof(*cl));
 	cl->cl_op = op;
-	cl->cl_st = st;
+	cl->cl_ci = cpp_include_alloc(op, st);
 	if (VECTOR_INIT(cl->cl_branches) == NULL)
 		err(1, NULL);
 	return cl;
@@ -133,6 +134,7 @@ clang_free(struct clang *cl)
 	if (cl == NULL)
 		return;
 
+	cpp_include_free(cl->cl_ci);
 	assert(VECTOR_EMPTY(cl->cl_branches));
 	VECTOR_FREE(cl->cl_branches);
 	free(cl);
@@ -152,11 +154,14 @@ clang_read(struct lexer *lx, void *arg)
 	TAILQ_INIT(&prefixes);
 
 	/* Consume all comments and preprocessor directives. */
+	cpp_include_enter(cl->cl_ci, &prefixes);
 	for (;;) {
 		prefix = clang_read_prefix(lx, &prefixes);
 		if (prefix == NULL)
 			break;
+		cpp_include_add(cl->cl_ci, prefix);
 	}
+	cpp_include_leave(cl->cl_ci);
 
 	if ((tk = clang_keyword(lx)) != NULL)
 		goto out;
