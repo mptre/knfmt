@@ -100,7 +100,6 @@ struct expr_state {
 #define es_op		es_ea.op
 #define es_lx		es_ea.lx
 #define es_dc		es_ea.dc
-#define es_stop		es_ea.stop
 #define es_flags	es_ea.flags
 
 	const struct expr_rule	*es_er;
@@ -127,6 +126,8 @@ static struct expr	*expr_exec_sizeof(struct expr_state *, struct expr *);
 static struct expr	*expr_exec_squares(struct expr_state *, struct expr *);
 static struct expr	*expr_exec_ternary(struct expr_state *, struct expr *);
 static struct expr	*expr_exec_unary(struct expr_state *, struct expr *);
+
+static int	expr_exec_peek(struct expr_state *, struct token **);
 
 static struct expr	*expr_alloc(enum expr_type, const struct expr_state *);
 static void		 expr_free(struct expr *);
@@ -320,14 +321,14 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 {
 	const struct expr_rule *er;
 	struct expr *ex = NULL;
+	struct token *tk;
 
-	if (lexer_get_error(es->es_lx) ||
-	    (!lexer_peek(es->es_lx, &es->es_tk) || es->es_tk == es->es_stop))
+	if (!expr_exec_peek(es, &tk))
 		return NULL;
 
 	/* Only consider unary operators. */
-	er = expr_rule_find(es->es_tk, 1);
-	if (er == NULL || es->es_tk->tk_type == TOKEN_IDENT) {
+	er = expr_rule_find(tk, 1);
+	if (er == NULL || tk->tk_type == TOKEN_IDENT) {
 		/*
 		 * Even if a literal operator was found, let the parser recover
 		 * before continuing. Otherwise, pointer types can be
@@ -349,12 +350,11 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 	for (;;) {
 		struct expr *tmp;
 
-		if (!lexer_peek(es->es_lx, &es->es_tk) ||
-		    es->es_tk == es->es_stop)
+		if (!expr_exec_peek(es, &tk))
 			break;
 
 		/* Only consider binary operators. */
-		er = expr_rule_find(es->es_tk, 0);
+		er = expr_rule_find(tk, 0);
 		if (er == NULL)
 			break;
 		es->es_er = er;
@@ -597,6 +597,20 @@ expr_exec_unary(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 	ex = expr_alloc(EXPR_UNARY, es);
 	ex->ex_lhs = expr_exec1(es, PC(es->es_er->er_pc));
 	return ex;
+}
+
+static int
+expr_exec_peek(struct expr_state *es, struct token **tk)
+{
+	struct lexer *lx = es->es_lx;
+
+	if (lexer_get_error(lx) ||
+	    !lexer_peek(lx, &es->es_tk) ||
+	    es->es_tk == es->es_ea.stop)
+		return 0;
+
+	*tk = es->es_tk;
+	return 1;
 }
 
 static struct expr *
