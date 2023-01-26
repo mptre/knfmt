@@ -122,10 +122,7 @@ expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 				return 1;
 		}
 	} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-		/*
-		 * Some macros allow empty arguments such as the ones provided
-		 * by queue(3).
-		 */
+		/* Some macros allow empty arguments such as queue(3). */
 		doc_token(tk, dc);
 		return 1;
 	}

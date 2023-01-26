@@ -6,9 +6,9 @@ struct expr_exec_arg {
 	struct doc		*dc;
 
 	/*
-	 * Reaching this token causes the expression parser to stop. Passing
-	 * NULL instructs the parser to continue until reaching something
-	 * unknown.
+	 * Reaching this token causes the expression parser to stop.
+	 * Passing NULL instructs the parser to continue until reaching
+	 * something unknown.
 	 */
 	const struct token	*stop;
 
@@ -28,8 +28,9 @@ struct expr_exec_arg {
 
 	struct {
 		/*
-		 * Invoked when an invalid expression is encountered. Returning
-		 * non-zero implies that the expression parser can continue.
+		 * Invoked when an invalid expression is encountered.
+		 * Returning non-zero implies that the expression parser can
+		 * continue.
 		 */
 		int	 (*recover)(const struct expr_exec_arg *, struct doc *,
 		    void *);
@@ -42,6 +43,7 @@ struct expr_exec_arg {
 		int	 (*recover_cast)(const struct expr_exec_arg *,
 		    struct doc *, void *);
 
+		/* Opaque argument passed to recover routines. */
 		void	*arg;
 	} callbacks;
 };
