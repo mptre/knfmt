@@ -41,7 +41,7 @@ struct decl_var {
 	struct token		*dv_delim;
 };
 
-static int	decl_var_cmp(const void *, const void *);
+static int	decl_var_cmp(const struct decl_var *, const struct decl_var *);
 static int	decl_var_is_empty(const struct decl_var *);
 
 struct decl_type {
@@ -161,8 +161,7 @@ simple_decl_leave(struct simple_decl *sd)
 			}
 
 			/* Sort the variables in alphabetical order. */
-			qsort(ds->ds_vars, VECTOR_LENGTH(ds->ds_vars),
-			    sizeof(*ds->ds_vars), decl_var_cmp);
+			VECTOR_SORT(ds->ds_vars, decl_var_cmp);
 
 			/* Move variables to the new type declaration. */
 			for (j = 0; j < VECTOR_LENGTH(ds->ds_vars); j++) {
@@ -333,11 +332,8 @@ token_range_str(const struct token_range *tr)
 }
 
 static int
-decl_var_cmp(const void *p1, const void *p2)
+decl_var_cmp(const struct decl_var *a, const struct decl_var *b)
 {
-	const struct decl_var *a = p1;
-	const struct decl_var *b = p2;
-
 	return token_strcmp(a->dv_sort, b->dv_sort);
 }
 

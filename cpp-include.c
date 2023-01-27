@@ -32,7 +32,7 @@ static int	sort_includes(const struct options *, const struct style *);
 static void	cpp_include_exec(struct cpp_include *);
 static void	cpp_include_reset(struct cpp_include *);
 
-static int	include_cmp(const void *, const void *);
+static int	include_cmp(const struct include *, const struct include *);
 
 static const char	*findpath(const char *, size_t, size_t *);
 
@@ -155,8 +155,7 @@ cpp_include_exec(struct cpp_include *ci)
 
 	doline = prefix_has_line(VECTOR_LAST(ci->includes)->tk);
 
-	qsort(ci->includes, VECTOR_LENGTH(ci->includes), sizeof(*ci->includes),
-	    include_cmp);
+	VECTOR_SORT(ci->includes, include_cmp);
 
 	for (i = 0; i < nincludes; i++) {
 		struct include *include = &ci->includes[i];
@@ -188,11 +187,8 @@ cpp_include_reset(struct cpp_include *ci)
 }
 
 static int
-include_cmp(const void *p1, const void *p2)
+include_cmp(const struct include *a, const struct include *b)
 {
-	const struct include *a = p1;
-	const struct include *b = p2;
-
 	return token_strcmp(a->tk, b->tk);
 }
 
