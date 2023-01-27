@@ -117,6 +117,15 @@ vector_clear(void *v)
 	vc->vc_len = 0;
 }
 
+void
+vector_sort(void *v, int (*cmp)(const void *, const void *))
+{
+	struct vector *vc = ptov(v);
+
+	if (vc->vc_len > 0)
+		qsort(v, vc->vc_len, vc->vc_stride, cmp);
+}
+
 size_t
 vector_first(void *v)
 {

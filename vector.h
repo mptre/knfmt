@@ -53,6 +53,12 @@ size_t	vector_pop(void *);
 #define VECTOR_CLEAR(vc) vector_clear((void *)(vc))
 void	vector_clear(void *);
 
+#define VECTOR_SORT(vc, c) __extension__ ({				\
+	int (*_c)(const typeof(*(vc)) *, const typeof(*(vc)) *) = &c;	\
+	vector_sort((void *)vc, (int (*)(const void *, const void *))_c);\
+})
+void	vector_sort(void *, int (*)(const void *, const void *));
+
 #define VECTOR_FIRST(vc) __extension__ ({				\
 	size_t _i = vector_first((void *)(vc));				\
 	_i == ULONG_MAX ? NULL : (vc) + _i;				\
