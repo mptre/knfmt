@@ -40,7 +40,7 @@ comment_exec(const struct token *tk, const struct style *st,
 			size_t wslen;
 
 			wslen = (size_t)(ep - sp);
-			buffer_indent(bf, strwidth(sp, wslen, 0),
+			strindent_buffer(bf, strwidth(sp, wslen, 0),
 			    style(st, UseTab) != Never, 0);
 			len -= wslen;
 			sp += wslen;

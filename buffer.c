@@ -149,22 +149,6 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	bf->bf_len += (size_t)n;
 }
 
-size_t
-buffer_indent(struct buffer *bf, int indent, int usetabs, size_t pos)
-{
-	if (usetabs) {
-		for (; indent >= 8; indent -= 8) {
-			buffer_putc(bf, '\t');
-			pos += 8 - (pos % 8);
-		}
-	}
-	for (; indent > 0; indent--) {
-		buffer_putc(bf, ' ');
-		pos++;
-	}
-	return pos;
-}
-
 /*
  * Release and take ownership of the underlying buffer.
  */

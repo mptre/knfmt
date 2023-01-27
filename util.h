@@ -5,6 +5,8 @@ struct buffer;
 void	tracef(unsigned char, const char *, const char *, ...)
 	__attribute__((__format__(printf, 3, 4)));
 
+size_t	strindent_buffer(struct buffer *, int, int, size_t);
+
 char	*strnice(const char *, size_t);
 void	 strnice_buffer(struct buffer *, const char *, size_t);
 

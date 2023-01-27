@@ -1061,7 +1061,7 @@ doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
 {
 	unsigned int oldcol = st->st_col;
 
-	st->st_col = buffer_indent(st->st_bf, indent,
+	st->st_col = strindent_buffer(st->st_bf, indent,
 	    style(st->st_st, UseTab) != Never, st->st_col);
 	return st->st_col - oldcol;
 }

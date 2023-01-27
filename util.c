@@ -26,6 +26,22 @@ tracef(unsigned char ident, const char *fun, const char *fmt, ...)
 	fprintf(stderr, "\n");
 }
 
+size_t
+strindent_buffer(struct buffer *bf, int indent, int usetabs, size_t pos)
+{
+	if (usetabs) {
+		for (; indent >= 8; indent -= 8) {
+			buffer_putc(bf, '\t');
+			pos += 8 - (pos % 8);
+		}
+	}
+	for (; indent > 0; indent--) {
+		buffer_putc(bf, ' ');
+		pos++;
+	}
+	return pos;
+}
+
 char *
 strnice(const char *str, size_t len)
 {
