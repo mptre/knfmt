@@ -36,7 +36,7 @@ static int	include_cmp(const struct include *, const struct include *);
 
 static const char	*findpath(const char *, size_t, size_t *);
 
-static int	prefix_has_line(const struct token *);
+static int	token_has_verbatim_line(const struct token *);
 static void	token_add_line(struct token *);
 static void	token_trim_line(struct token *);
 
@@ -102,7 +102,7 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 			err(1, NULL);
 		token_ref(tk);
 		include->tk = tk;
-		if (!prefix_has_line(tk))
+		if (!token_has_verbatim_line(tk))
 			return;
 	}
 
@@ -153,7 +153,7 @@ cpp_include_exec(struct cpp_include *ci)
 			return;
 	}
 
-	doline = prefix_has_line(VECTOR_LAST(ci->includes)->tk);
+	doline = token_has_verbatim_line(VECTOR_LAST(ci->includes)->tk);
 
 	VECTOR_SORT(ci->includes, include_cmp);
 
@@ -213,7 +213,7 @@ findpath(const char *str, size_t len, size_t *pathlen)
 }
 
 static int
-prefix_has_line(const struct token *tk)
+token_has_verbatim_line(const struct token *tk)
 {
 	const char *str = tk->tk_str;
 	size_t len = tk->tk_len;
