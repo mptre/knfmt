@@ -226,7 +226,7 @@ token_add_line(struct token *tk)
 {
 	struct buffer *bf;
 
-	bf = buffer_alloc(128);
+	bf = buffer_alloc(tk->tk_len + 1);
 	buffer_printf(bf, "%.*s\n", (int)tk->tk_len, tk->tk_str);
 	tk->tk_len = bf->bf_len;
 	tk->tk_str = buffer_release(bf);
