@@ -71,6 +71,8 @@ simple_stmt_leave(struct simple_stmt *ss)
 		return;
 
 	bf = buffer_alloc(1024);
+	if (bf == NULL)
+		err(1, NULL);
 	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 		struct stmt *st = &ss->ss_stmts[i];
 		const char *buf;
@@ -80,8 +82,8 @@ simple_stmt_leave(struct simple_stmt *ss)
 			continue;
 
 		doc_exec(st->st_root, lx, bf, ss->ss_st, ss->ss_op, 0);
-		buflen = bf->bf_len;
-		buf = strtrim(bf->bf_ptr, &buflen);
+		buflen = buffer_get_len(bf);
+		buf = strtrim(buffer_get_ptr(bf), &buflen);
 		if (stmt_is_empty(st) || !isoneline(buf, buflen) ||
 		    ((st->st_flags & STMT_BRACES) &&
 		     token_has_prefix(st->st_rbrace, TOKEN_COMMENT))) {

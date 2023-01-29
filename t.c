@@ -292,9 +292,11 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp,
 	error = 0;
 
 	bf = buffer_alloc(128);
+	if (bf == NULL)
+		err(1, NULL);
 	doc_exec(concat, cx->lx, bf, cx->st, &cx->op, 0);
 	buffer_putc(bf, '\0');
-	act = bf->bf_ptr;
+	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
@@ -328,6 +330,8 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	}
 
 	bf = buffer_alloc(128);
+	if (bf == NULL)
+		err(1, NULL);
 	for (;;) {
 		if (!lexer_pop(cx->lx, &tk))
 			errx(1, "%s:%d: out of tokens", fun, lno);
@@ -340,7 +344,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 			break;
 	}
 	buffer_putc(bf, '\0');
-	act = bf->bf_ptr;
+	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
@@ -364,6 +368,8 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 	context_init(cx, src);
 
 	bf = buffer_alloc(128);
+	if (bf == NULL)
+		err(1, NULL);
 	for (;;) {
 		struct token *tk;
 		const char *end, *str;
@@ -383,7 +389,7 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 		buffer_puts(bf, str, tokenlen);
 	}
 	buffer_putc(bf, '\0');
-	act = bf->bf_ptr;
+	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
@@ -418,6 +424,8 @@ context_alloc(void)
 	options_init(&cx->op);
 	cx->op.op_flags |= OPTIONS_TEST;
 	cx->bf = buffer_alloc(128);
+	if (cx->bf == NULL)
+		err(1, NULL);
 	return cx;
 }
 

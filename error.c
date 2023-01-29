@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,8 +38,11 @@ error_free(struct error *er)
 struct buffer *
 error_begin(struct error *er)
 {
-	if (er->er_bf == NULL)
+	if (er->er_bf == NULL) {
 		er->er_bf = buffer_alloc(1024);
+		if (er->er_bf == NULL)
+			err(1, NULL);
+	}
 	return er->er_bf;
 }
 
@@ -58,14 +62,15 @@ error_reset(struct error *er)
 void
 error_flush(struct error *er, int force)
 {
+	size_t buflen;
+
 	if (er->er_bf == NULL)
 		return;
 	if (!force && !er->er_flush)
 		return;
 
-	if (er->er_bf->bf_len > 0) {
-		fprintf(stderr, "%.*s",
-		    (int)er->er_bf->bf_len, er->er_bf->bf_ptr);
-	}
+	buflen = buffer_get_len(er->er_bf);
+	if (buflen > 0)
+		fprintf(stderr, "%.*s", (int)buflen, buffer_get_ptr(er->er_bf));
 	error_reset(er);
 }

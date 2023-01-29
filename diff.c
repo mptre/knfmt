@@ -93,7 +93,7 @@ diff_parse(struct files *files, const struct options *op)
 	if (bf == NULL)
 		return 1;
 	buffer_putc(bf, '\0');
-	buf = bf->bf_ptr;
+	buf = (char *)buffer_get_ptr(bf);
 
 	for (;;) {
 		char path[PATH_MAX];

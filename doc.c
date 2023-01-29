@@ -1129,16 +1129,17 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 static void
 doc_trim_spaces(const struct doc *dc, struct doc_state *st)
 {
-	struct buffer *bf = st->st_bf;
+	const char *buf = buffer_get_ptr(st->st_bf);
+	size_t buflen = buffer_get_len(st->st_bf);
 	unsigned int oldcol = st->st_col;
 
-	while (bf->bf_len > 0) {
+	while (buflen > 0) {
 		char ch;
 
-		ch = bf->bf_ptr[bf->bf_len - 1];
+		ch = buf[buflen - 1];
 		if (ch != ' ' && ch != '\t')
 			break;
-		bf->bf_len--;
+		buflen -= buffer_pop(st->st_bf, 1);
 		st->st_col -= ch == '\t' ? 8 - (st->st_col % 8) : 1;
 	}
 	if (oldcol > st->st_col) {
@@ -1155,13 +1156,13 @@ doc_trim_spaces(const struct doc *dc, struct doc_state *st)
 static void
 doc_trim_lines(const struct doc *dc, struct doc_state *st)
 {
-	struct buffer *bf = st->st_bf;
+	const char *buf = buffer_get_ptr(st->st_bf);
+	size_t buflen = buffer_get_len(st->st_bf);
 	unsigned int oldcol = st->st_col;
 
-	while (bf->bf_len > 1 &&
-	    bf->bf_ptr[bf->bf_len - 1] == '\n' &&
-	    bf->bf_ptr[bf->bf_len - 2] == '\n') {
-		bf->bf_len--;
+	while (buflen > 1 &&
+	    buf[buflen - 1] == '\n' && buf[buflen - 2] == '\n') {
+		buflen -= buffer_pop(st->st_bf, 1);
 		st->st_col--;
 	}
 	if (oldcol > st->st_col) {
@@ -1515,20 +1516,18 @@ doc_is_mute(const struct doc_state *st)
 static int
 doc_parens_align(const struct doc_state *st)
 {
-	const char *buf;
-	size_t i;
+	const char *buf = buffer_get_ptr(st->st_bf);
+	size_t buflen = buffer_get_len(st->st_bf);
 	int nparens = 0;
 
-	buf = st->st_bf->bf_ptr;
-	i = st->st_bf->bf_len;
-	for (; i > 0 && buf[i - 1] == '('; i--)
+	for (; buflen > 0 && buf[buflen - 1] == '('; buflen--)
 		nparens++;
-	if (nparens == 0 || i == 0)
+	if (nparens == 0 || buflen == 0)
 		return 0;
-	while (--i > 0) {
-		if (buf[i - 1] == '\n')
+	while (--buflen > 0) {
+		if (buf[buflen - 1] == '\n')
 			break;
-		if (buf[i - 1] != ' ' && buf[i - 1] != '\t')
+		if (buf[buflen - 1] != ' ' && buf[buflen - 1] != '\t')
 			return 0;
 	}
 	return 1;
@@ -1594,12 +1593,13 @@ doc_state_reset(struct doc_state *st)
 static void
 doc_state_snapshot(struct doc_state_snapshot *sn, const struct doc_state *st)
 {
-	struct buffer *bf = st->st_bf;
+	const char *buf = buffer_get_ptr(st->st_bf);
+	size_t buflen = buffer_get_len(st->st_bf);
 
 	sn->sn_st = *st;
-	sn->sn_bf.ptr = emalloc(bf->bf_len);
-	sn->sn_bf.len = bf->bf_len;
-	memcpy(sn->sn_bf.ptr, bf->bf_ptr, bf->bf_len);
+	sn->sn_bf.ptr = emalloc(buflen);
+	sn->sn_bf.len = buflen;
+	memcpy(sn->sn_bf.ptr, buf, buflen);
 }
 
 static void
@@ -1609,8 +1609,8 @@ doc_state_snapshot_restore(const struct doc_state_snapshot *sn,
 	struct buffer *bf = st->st_bf;
 
 	*st = sn->sn_st;
-	memcpy(bf->bf_ptr, sn->sn_bf.ptr, sn->sn_bf.len);
-	bf->bf_len = sn->sn_bf.len;
+	buffer_reset(bf);
+	buffer_puts(bf, sn->sn_bf.ptr, sn->sn_bf.len);
 }
 
 static void
@@ -1670,8 +1670,11 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 
 		fprintf(stderr, "(");
 		bf = buffer_alloc(32);
+		if (bf == NULL)
+			err(1, NULL);
 		indentstr(dc, st, bf);
-		fprintf(stderr, "%.*s", (int)bf->bf_len, bf->bf_ptr);
+		buffer_putc(bf, '\0');
+		fprintf(stderr, "%s", buffer_get_ptr(bf));
 		buffer_free(bf);
 		break;
 	}

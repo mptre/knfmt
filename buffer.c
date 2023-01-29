@@ -1,16 +1,37 @@
+/*
+ * Copyright (c) 2023 Anton Lindqvist <anton@basename.se>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
 #include "buffer.h"
 
-#include "config.h"
-
-#include <err.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-static void	buffer_grow(struct buffer *, unsigned int);
+struct buffer {
+	char	*bf_ptr;
+	size_t	 bf_siz;
+	size_t	 bf_len;
+};
+
+static int	buffer_grow(struct buffer *, unsigned int);
 
 struct buffer *
 buffer_alloc(size_t sizhint)
@@ -24,19 +45,18 @@ buffer_alloc(size_t sizhint)
 
 	ptr = malloc(siz);
 	if (ptr == NULL)
-		err(1, NULL);
+		return NULL;
 	bf = calloc(1, sizeof(*bf));
-	if (bf == NULL)
-		err(1, NULL);
+	if (bf == NULL) {
+		free(ptr);
+		return NULL;
+	}
 	bf->bf_ptr = ptr;
 	bf->bf_siz = siz;
 
 	return bf;
 }
 
-/*
- * Read the file located at path into a buffer.
- */
 struct buffer *
 buffer_read(const char *path)
 {
@@ -44,14 +64,10 @@ buffer_read(const char *path)
 	int fd;
 
 	fd = open(path, O_RDONLY | O_CLOEXEC);
-	if (fd == -1) {
-		warn("open: %s", path);
+	if (fd == -1)
 		return NULL;
-	}
 
 	bf = buffer_read_fd(fd);
-	if (bf == NULL)
-		warn("read: %s", path);
 	close(fd);
 	return bf;
 }
@@ -71,8 +87,8 @@ buffer_read_fd(int fd)
 		if (n == 0)
 			break;
 		bf->bf_len += (size_t)n;
-		if (bf->bf_len > bf->bf_siz / 2)
-			buffer_grow(bf, 1);
+		if (bf->bf_len > bf->bf_siz / 2 && buffer_grow(bf, 1))
+			goto err;
 	}
 	return bf;
 
@@ -91,42 +107,59 @@ buffer_free(struct buffer *bf)
 	free(bf);
 }
 
-void
+int
 buffer_puts(struct buffer *bf, const char *str, size_t len)
 {
+	if (len > ULONG_MAX - bf->bf_len)
+		goto overflow;
 	if (bf->bf_len + len >= bf->bf_siz) {
 		size_t siz = bf->bf_siz;
-		unsigned int shift;
+		unsigned int shift = 1;
 
-		for (shift = 1; bf->bf_len + len >= siz << shift; shift++)
-			continue;
-		buffer_grow(bf, shift);
+		for (;;) {
+			if (siz > ULONG_MAX / 2)
+				goto overflow;
+			siz *= 2;
+			if (siz > bf->bf_len + len)
+				break;
+			shift++;
+		}
+		if (buffer_grow(bf, shift))
+			return 1;
 	}
 
 	memcpy(&bf->bf_ptr[bf->bf_len], str, len);
 	bf->bf_len += len;
+	return 0;
+
+overflow:
+	errno = EOVERFLOW;
+	return 1;
 }
 
-void
+int
 buffer_putc(struct buffer *bf, char ch)
 {
-	buffer_puts(bf, &ch, 1);
+	return buffer_puts(bf, &ch, 1);
 }
 
-void
+int
 buffer_printf(struct buffer *bf, const char *fmt, ...)
 {
 	va_list ap;
+	int error;
 
 	va_start(ap, fmt);
-	buffer_vprintf(bf, fmt, ap);
+	error = buffer_vprintf(bf, fmt, ap);
 	va_end(ap);
+	return error;
 }
 
-void
+int
 buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 {
 	va_list cp;
+	size_t len, siz;
 	unsigned int shift = 0;
 	int n;
 
@@ -134,24 +167,33 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 
 	n = vsnprintf(NULL, 0, fmt, ap);
 	if (n < 0)
-		err(1, "vsnprintf");
+		return 1;
 
-	while ((bf->bf_siz << shift) - bf->bf_len <= (size_t)n)
+	siz = bf->bf_siz;
+	for (;;) {
+		if (siz > bf->bf_len + (size_t)n)
+			break;
+		if (siz > ULONG_MAX / 2)
+			goto overflow;
+		siz *= 2;
 		shift++;
-	if (shift > 0)
-		buffer_grow(bf, shift);
+	}
+	if (shift > 0 && buffer_grow(bf, shift))
+		return 1;
 
-	n = vsnprintf(&bf->bf_ptr[bf->bf_len], bf->bf_siz - bf->bf_len, fmt,
-	    cp);
+	len = bf->bf_siz - bf->bf_len;
+	n = vsnprintf(&bf->bf_ptr[bf->bf_len], len, fmt, cp);
 	va_end(cp);
-	if (n < 0)
-		err(1, "vsnprintf");
+	if (n < 0 || (size_t)n >= len)
+		return 1;
 	bf->bf_len += (size_t)n;
+	return 0;
+
+overflow:
+	errno = EOVERFLOW;
+	return 1;
 }
 
-/*
- * Release and take ownership of the underlying buffer.
- */
 char *
 buffer_release(struct buffer *bf)
 {
@@ -170,6 +212,15 @@ buffer_reset(struct buffer *bf)
 	bf->bf_len = 0;
 }
 
+size_t
+buffer_pop(struct buffer *bf, size_t n)
+{
+	if (n > bf->bf_len)
+		n = bf->bf_len;
+	bf->bf_len -= n;
+	return n;
+}
+
 int
 buffer_cmp(const struct buffer *b1, const struct buffer *b2)
 {
@@ -178,14 +229,42 @@ buffer_cmp(const struct buffer *b1, const struct buffer *b2)
 	return memcmp(b1->bf_ptr, b2->bf_ptr, b1->bf_len);
 }
 
-static void
+const char *
+buffer_get_ptr(const struct buffer *bf)
+{
+	return bf->bf_ptr;
+}
+
+size_t
+buffer_get_len(const struct buffer *bf)
+{
+	return bf->bf_len;
+}
+
+size_t
+buffer_get_size(const struct buffer *bf)
+{
+	return bf->bf_siz;
+}
+
+static int
 buffer_grow(struct buffer *bf, unsigned int shift)
 {
+	char *ptr;
+	size_t nbits = sizeof(size_t) * 8;
 	size_t newsiz;
 
+	if (shift >= nbits || bf->bf_siz > ULONG_MAX / (1 << shift))
+		goto overflow;
 	newsiz = bf->bf_siz << shift;
-	bf->bf_ptr = realloc(bf->bf_ptr, newsiz);
-	if (bf->bf_ptr == NULL)
-		err(1, NULL);
+	ptr = realloc(bf->bf_ptr, newsiz);
+	if (ptr == NULL)
+		return 1;
+	bf->bf_ptr = ptr;
 	bf->bf_siz = newsiz;
+	return 0;
+
+overflow:
+	errno = EOVERFLOW;
+	return 1;
 }

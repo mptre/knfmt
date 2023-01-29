@@ -1,6 +1,7 @@
 #include "token.h"
 
 #include <assert.h>
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,6 +111,8 @@ token_serialize(const struct token *tk)
 	char *buf;
 
 	bf = buffer_alloc(128);
+	if (bf == NULL)
+		err(1, NULL);
 	buffer_printf(bf, "%s", strtype(tk->tk_type));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u", tk->tk_lno, tk->tk_cno);

@@ -192,7 +192,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 		error = 1;
 		goto out;
 	}
-	dst = parser_exec(pr, src->bf_len);
+	dst = parser_exec(pr, buffer_get_len(src));
 	if (dst == NULL) {
 		error = 1;
 		goto out;
@@ -225,10 +225,12 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	srcfd = tmpfd(src->bf_ptr, src->bf_len, srcpath, sizeof(srcpath));
+	srcfd = tmpfd(buffer_get_ptr(src), buffer_get_len(src),
+	    srcpath, sizeof(srcpath));
 	if (srcfd == -1)
 		goto out;
-	dstfd = tmpfd(dst->bf_ptr, dst->bf_len, dstpath, sizeof(dstpath));
+	dstfd = tmpfd(buffer_get_ptr(dst), buffer_get_len(dst),
+	    dstpath, sizeof(dstpath));
 	if (dstfd == -1)
 		goto out;
 
@@ -271,7 +273,7 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 	char tmppath[PATH_MAX];
 	const char *buf;
 	size_t siz = sizeof(tmppath);
-	size_t len;
+	size_t buflen;
 	int fd, n;
 
 	if (buffer_cmp(src, dst) == 0)
@@ -288,18 +290,18 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 		return 1;
 	}
 
-	buf = dst->bf_ptr;
-	len = dst->bf_len;
-	while (len > 0) {
+	buf = buffer_get_ptr(dst);
+	buflen = buffer_get_len(dst);
+	while (buflen > 0) {
 		ssize_t nw;
 
-		nw = write(fd, buf, len);
+		nw = write(fd, buf, buflen);
 		if (nw == -1) {
 			warn("write: %s", tmppath);
 			goto err;
 		}
 		buf += nw;
-		len -= (size_t)nw;
+		buflen -= (size_t)nw;
 	}
 	close(fd);
 	fd = -1;
@@ -328,19 +330,19 @@ err:
 static int
 fileprint(const struct buffer *dst)
 {
-	const char *str = dst->bf_ptr;
-	size_t len = dst->bf_len;
+	const char *buf = buffer_get_ptr(dst);
+	size_t buflen = buffer_get_len(dst);
 
-	while (len > 0) {
+	while (buflen > 0) {
 		ssize_t nw;
 
-		nw = write(1, str, len);
+		nw = write(1, buf, buflen);
 		if (nw == -1) {
 			warn("write: /dev/stdout");
 			return 1;
 		}
-		len -= (size_t)nw;
-		str += nw;
+		buflen -= (size_t)nw;
+		buf += nw;
 	}
 	return 0;
 }

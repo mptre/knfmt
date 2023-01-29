@@ -317,6 +317,8 @@ token_range_str(const struct token_range *tr)
 	int ntokens = 0;
 
 	bf = buffer_alloc(64);
+	if (bf == NULL)
+		err(1, NULL);
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
 		if (tk->tk_type == TOKEN_STAR)
 			continue;

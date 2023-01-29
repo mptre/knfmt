@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <err.h>
 #include <string.h>
 
 #include "buffer.h"
@@ -36,6 +37,8 @@ cpp_align(const struct token *tk, const struct style *st,
 		return NULL;
 
 	bf = buffer_alloc(len);
+	if (bf == NULL)
+		err(1, NULL);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	switch (style(st, AlignEscapedNewlines)) {
 	case DontAlign:

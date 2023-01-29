@@ -49,6 +49,8 @@ strnice(const char *str, size_t len)
 	char *buf;
 
 	bf = buffer_alloc(2 * len + 1);
+	if (bf == NULL)
+		err(1, NULL);
 	strnice_buffer(bf, str, len);
 	buffer_putc(bf, '\0');
 	buf = buffer_release(bf);

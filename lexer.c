@@ -160,10 +160,10 @@ lexer_set_state(struct lexer *lx, const struct lexer_state *st)
 int
 lexer_getc(struct lexer *lx, unsigned char *ch)
 {
-	const struct buffer *bf = lx->lx_bf;
+	const char *buf;
 	unsigned char c;
 
-	if (lx->lx_st.st_off == bf->bf_len) {
+	if (lexer_eof(lx)) {
 		/*
 		 * Do not immediately report EOF. Instead, return something
 		 * that's not expected while reading a token.
@@ -173,7 +173,9 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		*ch = '\0';
 		return 0;
 	}
-	c = (unsigned char)bf->bf_ptr[lx->lx_st.st_off++];
+
+	buf = buffer_get_ptr(lx->lx_bf);
+	c = (unsigned char)buf[lx->lx_st.st_off++];
 	if (c == '\n') {
 		lx->lx_st.st_lno++;
 		lx->lx_st.st_cno = 1;
@@ -188,13 +190,16 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 void
 lexer_ungetc(struct lexer *lx)
 {
+	const char *buf;
+
 	if (lx->lx_eof)
 		return;
 
 	assert(lx->lx_st.st_off > 0);
 	lx->lx_st.st_off--;
 
-	if (lx->lx_bf->bf_ptr[lx->lx_st.st_off] == '\n') {
+	buf = buffer_get_ptr(lx->lx_bf);
+	if (buf[lx->lx_st.st_off] == '\n') {
 		assert(lx->lx_st.st_lno > 0);
 		lx->lx_st.st_lno--;
 		lx->lx_st.st_cno = 1;
@@ -217,7 +222,9 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 	if (lexer_get_diffchunk(lx, t->tk_lno) != NULL)
 		t->tk_flags |= TOKEN_FLAG_DIFF;
 	if (t->tk_str == NULL) {
-		t->tk_str = &lx->lx_bf->bf_ptr[st->st_off];
+		const char *buf = buffer_get_ptr(lx->lx_bf);
+
+		t->tk_str = &buf[st->st_off];
 		t->tk_len = lx->lx_st.st_off - st->st_off;
 	}
 	return t;
@@ -273,15 +280,15 @@ int
 lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
     const char **str, size_t *len)
 {
-	const struct buffer *bf = lx->lx_bf;
+	const char *buf = buffer_get_ptr(lx->lx_bf);
 	size_t bo, eo;
 
 	bo = lx->lx_lines[beg - 1];
 	if (end == 0)
-		eo = bf->bf_len;
+		eo = buffer_get_len(lx->lx_bf);
 	else
 		eo = lx->lx_lines[end - 1];
-	*str = &bf->bf_ptr[bo];
+	*str = &buf[bo];
 	*len = eo - bo;
 	return 1;
 }
@@ -1046,7 +1053,7 @@ lexer_eat_spaces(struct lexer *lx, struct token **tk)
 int
 lexer_eof(const struct lexer *lx)
 {
-	return lx->lx_st.st_off == lx->lx_bf->bf_len;
+	return lx->lx_st.st_off == buffer_get_len(lx->lx_bf);
 }
 
 static void
@@ -1080,16 +1087,18 @@ lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
 	len = strlen(str);
 	if (len > buflen)
 		return 0;
-	buf = &lx->lx_bf->bf_ptr[st->st_off];
-	return strncmp(buf, str, len) == 0;
+	buf = buffer_get_ptr(lx->lx_bf);
+	return strncmp(&buf[st->st_off], str, len) == 0;
 }
 
 const char *
 lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
     size_t *len)
 {
+	const char *buf = buffer_get_ptr(lx->lx_bf);
+
 	*len = lx->lx_st.st_off - st->st_off;
-	return &lx->lx_bf->bf_ptr[st->st_off];
+	return &buf[st->st_off];
 }
 
 static void
@@ -1131,6 +1140,7 @@ static void
 lexer_branch_fold(struct lexer *lx, struct token *src)
 {
 	struct token *dst, *prefix, *pv, *rm;
+	const char *buf = buffer_get_ptr(lx->lx_bf);
 	size_t len, off;
 	int unmute = 0;
 
@@ -1148,7 +1158,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	prefix->tk_lno = src->tk_lno;
 	prefix->tk_cno = src->tk_cno;
 	prefix->tk_off = off;
-	prefix->tk_str = &lx->lx_bf->bf_ptr[off];
+	prefix->tk_str = &buf[off];
 	prefix->tk_len = len;
 
 	/*

@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -109,6 +110,8 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 	pr->pr_op = op;
 	pr->pr_lx = lx;
 	pr->pr_scratch = buffer_alloc(1024);
+	if (pr->pr_scratch == NULL)
+		err(1, NULL);
 	return pr;
 }
 
@@ -170,6 +173,8 @@ parser_exec(struct parser *pr, size_t sizhint)
 	}
 
 	bf = buffer_alloc(sizhint);
+	if (bf == NULL)
+		err(1, NULL);
 	if (pr->pr_op->op_flags & OPTIONS_DIFFPARSE)
 		flags |= DOC_EXEC_DIFF;
 	if (trace(pr->pr_op, 'd'))

@@ -502,6 +502,8 @@ yaml_serialize(const struct token *tk)
 	char *buf;
 
 	bf = buffer_alloc(128);
+	if (bf == NULL)
+		err(1, NULL);
 	if (tk->tk_type < Last)
 		buffer_printf(bf, "Keyword");
 	else

@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <err.h>
 #include <string.h>
 
 #include "buffer.h"
@@ -31,6 +32,8 @@ comment_trim(const struct token *tk, const struct style *st,
 
 	iscrlf = len >= 2 && sp[len - 2] == '\r' && sp[len - 1] == '\n';
 	bf = buffer_alloc(len);
+	if (bf == NULL)
+		err(1, NULL);
 	for (;;) {
 		const char *ep;
 		size_t commlen;
