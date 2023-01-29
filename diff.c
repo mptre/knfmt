@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "buffer.h"
 #include "error.h"
 #include "file.h"
@@ -20,16 +21,22 @@
 #include "util.h"
 #include "vector.h"
 
+struct reader {
+	char	*buf;
+	size_t	 off;
+};
+
 static void	diff_end(struct diffchunk *, unsigned int);
 
-static int	matchpath(char *, char *, size_t);
-static int	matchchunk(char *, unsigned int *, unsigned int *);
+static int	matchpath(const char *, char *, size_t);
+static int	matchchunk(const char *, unsigned int *, unsigned int *);
 static int	matchline(const char *, unsigned int, struct file *);
 
-static char		*skipline(char *);
-static const char	*trimprefix(const char *, size_t *);
+static struct reader	*reader_open(const char *);
+static const char	*reader_getline(struct reader *);
+static void		 reader_close(struct reader *);
 
-static int	xregexec(const regex_t *, char *, regmatch_t *, size_t);
+static const char	*trimprefix(const char *, size_t *);
 
 static void	diff_trace(const char *, ...)
 	__attribute__((__format__(printf, 1, 2)));
@@ -86,52 +93,40 @@ int
 diff_parse(struct files *files, const struct options *op)
 {
 	struct file *fe = NULL;
-	char *buf;
-	struct buffer *bf;
+	struct reader *rd;
+	const char *line;
+	int error = 0;
 
-	bf = buffer_read("/dev/stdin");
-	if (bf == NULL) {
-		warn("/dev/stdin");
+	rd = reader_open("/dev/stdin");
+	if (rd == NULL)
 		return 1;
-	}
-	buffer_putc(bf, '\0');
-	buf = (char *)buffer_get_ptr(bf);
 
-	for (;;) {
+	while ((line = reader_getline(rd)) != NULL) {
 		char path[PATH_MAX];
 		unsigned int el, sl;
 
-		if (matchpath(buf, path, sizeof(path))) {
+		if (matchpath(line, path, sizeof(path))) {
 			fe = files_alloc(files, path, op);
-
-			buf = skipline(buf);
-			if (buf == NULL)
-				goto err;
-		} else if (matchchunk(buf, &sl, &el)) {
+		} else if (matchchunk(line, &sl, &el)) {
 			/* Chunks cannot be present before the path. */
-			if (fe == NULL)
-				goto err;
-
-			buf = skipline(buf);
-			if (buf == NULL)
-				goto err;
+			if (fe == NULL) {
+				error = 1;
+				goto out;
+			}
 
 			while (sl <= el) {
-				if (matchline(buf, sl, fe))
-					sl++;
+				line = reader_getline(rd);
+				if (line == NULL) {
+					error = 1;
+					goto out;
+				}
 
-				buf = skipline(buf);
-				if (buf == NULL)
-					goto err;
+				if (matchline(line, sl, fe))
+					sl++;
 			}
 
 			diff_end(fe->fe_diff, el);
-		} else {
-			buf = skipline(buf);
 		}
-
-		if (buf == NULL)
-			break;
 	}
 
 	if (trace(op, 'D')) {
@@ -150,12 +145,9 @@ diff_parse(struct files *files, const struct options *op)
 		}
 	}
 
-	buffer_free(bf);
-	return 0;
-
-err:
-	buffer_free(bf);
-	return 1;
+out:
+	reader_close(rd);
+	return error;
 }
 
 const struct diffchunk *
@@ -183,14 +175,14 @@ diff_end(struct diffchunk *chunks, unsigned int lno)
 }
 
 static int
-matchpath(char *str, char *path, size_t pathsiz)
+matchpath(const char *str, char *path, size_t pathsiz)
 {
 	regmatch_t rm[2];
 	const char *buf;
 	size_t len;
 	int i;
 
-	if (xregexec(&repath, str, rm, 2))
+	if (regexec(&repath, str, 2, rm, 0))
 		return 0;
 
 	buf = str + rm[1].rm_so;
@@ -223,12 +215,12 @@ matchpath(char *str, char *path, size_t pathsiz)
 }
 
 static int
-matchchunk(char *str, unsigned int *sl, unsigned int *el)
+matchchunk(const char *str, unsigned int *sl, unsigned int *el)
 {
 	regmatch_t rm[4];
 	long n;
 
-	if (xregexec(&rechunk, str, rm, 4))
+	if (regexec(&rechunk, str, 4, rm, 0))
 		return 0;
 
 	errno = 0;
@@ -240,7 +232,7 @@ matchchunk(char *str, unsigned int *sl, unsigned int *el)
 	if (rm[3].rm_so != -1 && rm[3].rm_eo != -1) {
 		errno = 0;
 		n = strtol(str + rm[3].rm_so, NULL, 10);
-		if (n == 0 || errno)
+		if (n == 0 || errno != 0)
 			return 0;
 		*el = (*sl + n) - 1;
 	} else {
@@ -272,15 +264,47 @@ matchline(const char *str, unsigned int lno, struct file *fe)
 	return 1;
 }
 
-static char *
-skipline(char *str)
+static struct reader *
+reader_open(const char *path)
 {
-	char *p;
+	struct buffer *bf;
+	struct reader *rd;
 
-	p = strchr(str, '\n');
+	bf = buffer_read(path);
+	if (bf == NULL) {
+		warn("%s", path);
+		return NULL;
+	}
+	buffer_putc(bf, '\0');
+
+	rd = ecalloc(1, sizeof(*rd));
+	rd->buf = buffer_release(bf);
+	buffer_free(bf);
+	return rd;
+}
+
+static const char *
+reader_getline(struct reader *rd)
+{
+	const char *line;
+	char *p;
+	size_t len;
+
+	line = &rd->buf[rd->off];
+	p = strchr(line, '\n');
 	if (p == NULL)
 		return NULL;
-	return p + 1;
+	*p = '\0';
+	len = (size_t)(p - line) + 1;
+	rd->off += len;
+	return line;
+}
+
+static void
+reader_close(struct reader *rd)
+{
+	free(rd->buf);
+	free(rd);
 }
 
 static const char *
@@ -293,22 +317,6 @@ trimprefix(const char *str, size_t *len)
 		return str;
 	*len -= (size_t)((p - str) + 1);
 	return &p[1];
-}
-
-static int
-xregexec(const regex_t *re, char *str, regmatch_t *rm, size_t n)
-{
-	char *end;
-	int error;
-
-	end = skipline(str);
-	if (end == NULL)
-		return REG_NOMATCH;
-	/* Ugly, operate on a per line basis. */
-	end[-1] = '\0';
-	error = regexec(re, str, n, rm, 0);
-	end[-1] = '\n';
-	return error;
 }
 
 static void
