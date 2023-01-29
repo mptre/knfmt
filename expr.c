@@ -1137,7 +1137,12 @@ expr_doc_width(struct expr_state *es, const struct doc *dc)
 		if (es->es_bf == NULL)
 			err(1, NULL);
 	}
-	return doc_width(dc, es->es_bf, es->es_st, es->es_op);
+	return doc_width(&(struct doc_exec_arg){
+	    .dc	= dc,
+	    .bf	= es->es_bf,
+	    .st	= es->es_st,
+	    .op	= es->es_op,
+	});
 }
 
 /*

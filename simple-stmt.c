@@ -81,7 +81,13 @@ simple_stmt_leave(struct simple_stmt *ss)
 		if (st->st_flags & STMT_IGNORE)
 			continue;
 
-		doc_exec(st->st_root, lx, bf, ss->ss_st, ss->ss_op, 0);
+		doc_exec(&(struct doc_exec_arg){
+		    .dc	= st->st_root,
+		    .lx	= lx,
+		    .bf	= bf,
+		    .st	= ss->ss_st,
+		    .op	= ss->ss_op,
+		});
 		buflen = buffer_get_len(bf);
 		buf = strtrim(buffer_get_ptr(bf), &buflen);
 		if (stmt_is_empty(st) || !isoneline(buf, buflen) ||

@@ -26,6 +26,20 @@ enum doc_type {
 	DOC_SCOPE,
 };
 
+struct doc_exec_arg {
+	const struct doc	*dc;
+	struct lexer		*lx;
+	struct buffer		*bf;
+	const struct style	*st;
+	const struct options	*op;
+	unsigned int		 flags;
+#define DOC_EXEC_DIFF	    0x00000001u
+#define DOC_EXEC_TRACE	    0x00000002u
+#define DOC_EXEC_WIDTH	    0x00000004u
+#define DOC_EXEC_TRIM	    0x00000008u
+
+};
+
 struct doc_minimize {
 	enum {
 		DOC_MINIMIZE_INDENT,
@@ -52,15 +66,8 @@ struct doc_align {
 	unsigned int	tabalign;
 };
 
-#define DOC_EXEC_DIFF	    0x00000001u
-#define DOC_EXEC_TRACE	    0x00000002u
-#define DOC_EXEC_WIDTH	    0x00000004u
-#define DOC_EXEC_TRIM	    0x00000008u
-
-void		doc_exec(const struct doc *, struct lexer *, struct buffer *,
-    const struct style *, const struct options *, unsigned int);
-unsigned int	doc_width(const struct doc *, struct buffer *,
-    const struct style *, const struct options *);
+void		doc_exec(struct doc_exec_arg *);
+unsigned int	doc_width(struct doc_exec_arg *);
 void		doc_free(struct doc *);
 void		doc_append(struct doc *, struct doc *);
 void		doc_append_before(struct doc *, struct doc *);

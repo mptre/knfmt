@@ -294,7 +294,13 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp,
 	bf = buffer_alloc(128);
 	if (bf == NULL)
 		err(1, NULL);
-	doc_exec(concat, cx->lx, bf, cx->st, &cx->op, 0);
+	doc_exec(&(struct doc_exec_arg){
+	    .dc	= concat,
+	    .lx	= cx->lx,
+	    .bf	= bf,
+	    .st	= cx->st,
+	    .op	= &cx->op,
+	});
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {

@@ -246,17 +246,18 @@ static const char	*statestr(const struct doc_state *, unsigned int,
 static unsigned int	countlines(const char *, size_t);
 
 void
-doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
-    const struct style *style, const struct options *op, unsigned int flags)
+doc_exec(struct doc_exec_arg *arg)
 {
+	const struct doc *dc = arg->dc;
 	struct doc_state st;
+	unsigned int flags = arg->flags;
 
-	buffer_reset(bf);
+	buffer_reset(arg->bf);
 	doc_state_init(&st, BREAK, flags);
-	st.st_op = op;
-	st.st_st = style;
-	st.st_bf = bf;
-	st.st_lx = lx;
+	st.st_op = arg->op;
+	st.st_st = arg->st;
+	st.st_bf = arg->bf;
+	st.st_lx = arg->lx;
 	doc_exec1(dc, &st);
 	if ((flags & DOC_EXEC_TRIM) && (flags & DOC_EXEC_DIFF) == 0)
 		doc_trim_lines(dc, &st);
@@ -266,17 +267,16 @@ doc_exec(const struct doc *dc, struct lexer *lx, struct buffer *bf,
 }
 
 unsigned int
-doc_width(const struct doc *dc, struct buffer *bf, const struct style *style,
-    const struct options *op)
+doc_width(struct doc_exec_arg *arg)
 {
 	struct doc_state st;
 
-	buffer_reset(bf);
+	buffer_reset(arg->bf);
 	doc_state_init(&st, MUNGE, 0);
-	st.st_op = op;
-	st.st_st = style;
-	st.st_bf = bf;
-	doc_exec1(dc, &st);
+	st.st_op = arg->op;
+	st.st_st = arg->st;
+	st.st_bf = arg->bf;
+	doc_exec1(arg->dc, &st);
 	doc_state_reset(&st);
 	return st.st_col;
 }

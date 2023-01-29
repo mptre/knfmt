@@ -179,7 +179,14 @@ parser_exec(struct parser *pr, size_t sizhint)
 		flags |= DOC_EXEC_DIFF;
 	if (trace(pr->pr_op, 'd'))
 		flags |= DOC_EXEC_TRACE;
-	doc_exec(dc, pr->pr_lx, bf, pr->pr_st, pr->pr_op, flags);
+	doc_exec(&(struct doc_exec_arg){
+	    .dc		= dc,
+	    .lx		= pr->pr_lx,
+	    .bf		= bf,
+	    .st		= pr->pr_st,
+	    .op		= pr->pr_op,
+	    .flags	= flags
+	});
 
 out:
 	doc_free(dc);
@@ -1611,7 +1618,12 @@ parser_token_trim_after(const struct parser *pr, struct token *tk)
 unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
-	return doc_width(dc, pr->pr_scratch, pr->pr_st, pr->pr_op);
+	return doc_width(&(struct doc_exec_arg){
+	    .dc	= dc,
+	    .bf	= pr->pr_scratch,
+	    .st	= pr->pr_st,
+	    .op	= pr->pr_op
+	});
 }
 
 static int

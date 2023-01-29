@@ -57,6 +57,7 @@ cpp_align(const struct token *tk, const struct style *st,
 		struct doc *concat;
 		const char *ep, *sp;
 		size_t cpplen, linelen;
+		unsigned int w;
 
 		concat = doc_alloc(DOC_CONCAT, dc);
 
@@ -70,8 +71,13 @@ cpp_align(const struct token *tk, const struct style *st,
 		cpplen = (size_t)(ep - sp);
 		if (cpplen > 0)
 			doc_literal_n(sp, cpplen, concat);
-		ruler_insert(&rl, tk, concat, 1,
-		    doc_width(concat, bf, st, op), 0);
+		w = doc_width(&(struct doc_exec_arg){
+		    .dc	= concat,
+		    .bf	= bf,
+		    .st	= st,
+		    .op	= op,
+		});
+		ruler_insert(&rl, tk, concat, 1, w, 0);
 		doc_literal("\\", concat);
 
 		linelen = (size_t)(nx - str);
@@ -88,7 +94,12 @@ cpp_align(const struct token *tk, const struct style *st,
 	/* Alignment only wanted for multiple lines. */
 	if (nlines > 1)
 		ruler_exec(&rl);
-	doc_exec(dc, NULL, bf, st, op, 0);
+	doc_exec(&(struct doc_exec_arg){
+	    .dc	= dc,
+	    .bf	= bf,
+	    .st	= st,
+	    .op	= op,
+	});
 	buffer_putc(bf, '\0');
 
 	p = buffer_release(bf);
