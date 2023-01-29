@@ -12,5 +12,4 @@ struct parser_expr_arg {
 };
 
 int	parser_expr_peek(struct parser *, struct token **);
-
 int	parser_expr(struct parser *, struct doc **, struct parser_expr_arg *);
