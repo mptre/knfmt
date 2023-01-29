@@ -154,7 +154,7 @@ clang_read(struct lexer *lx, void *arg)
 	TAILQ_INIT(&prefixes);
 
 	/* Consume all comments and preprocessor directives. */
-	cpp_include_enter(cl->cl_ci, &prefixes);
+	cpp_include_enter(cl->cl_ci, lx, &prefixes);
 	for (;;) {
 		prefix = clang_read_prefix(lx, &prefixes);
 		if (prefix == NULL)

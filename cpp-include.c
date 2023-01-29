@@ -7,6 +7,7 @@
 
 #include "alloc.h"
 #include "buffer.h"
+#include "lexer.h"
 #include "options.h"
 #include "style.h"
 #include "token.h"
@@ -15,6 +16,7 @@
 
 struct cpp_include {
 	VECTOR(struct include)	 includes;
+	struct lexer		*lx;
 	struct token_list	*prefixes;
 	struct token		*after;
 };
@@ -32,12 +34,13 @@ static int	sort_includes(const struct options *, const struct style *);
 static void	cpp_include_exec(struct cpp_include *);
 static void	cpp_include_reset(struct cpp_include *);
 
+static void	add_line(struct cpp_include *, struct token *);
+
 static int	include_cmp(const struct include *, const struct include *);
 
 static const char	*findpath(const char *, size_t, size_t *);
 
 static int	token_has_verbatim_line(const struct token *);
-static void	token_add_line(struct token *);
 static void	token_trim_line(struct token *);
 
 struct cpp_include *
@@ -66,11 +69,14 @@ cpp_include_free(struct cpp_include *ci)
 }
 
 void
-cpp_include_enter(struct cpp_include *ci, struct token_list *prefixes)
+cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
+    struct token_list *prefixes)
 {
 	if (ci == NULL)
 		return;
 
+	assert(ci->lx == NULL);
+	ci->lx = lx;
 	assert(ci->prefixes == NULL);
 	ci->prefixes = prefixes;
 }
@@ -83,6 +89,7 @@ cpp_include_leave(struct cpp_include *ci)
 
 	cpp_include_exec(ci);
 	cpp_include_reset(ci);
+	ci->lx = NULL;
 	ci->prefixes = NULL;
 }
 
@@ -161,8 +168,6 @@ cpp_include_exec(struct cpp_include *ci)
 		struct include *include = &ci->includes[i];
 
 		token_trim_line(include->tk);
-		if (doline && i + 1 == nincludes)
-			token_add_line(include->tk);
 		token_list_remove(ci->prefixes, include->tk);
 		if (after != NULL) {
 			token_list_insert_after(ci->prefixes, after,
@@ -171,6 +176,8 @@ cpp_include_exec(struct cpp_include *ci)
 			token_list_insert(ci->prefixes, include->tk);
 		}
 		after = include->tk;
+		if (doline && i + 1 == nincludes)
+			add_line(ci, after);
 	}
 }
 
@@ -184,6 +191,22 @@ cpp_include_reset(struct cpp_include *ci)
 		token_rele(include->tk);
 	}
 	ci->after = NULL;
+}
+
+static void
+add_line(struct cpp_include *ci, struct token *after)
+{
+	struct lexer_state st;
+	struct lexer *lx = ci->lx;
+	struct token *tk;
+
+	st = lexer_get_state(lx);
+	tk = lexer_emit(lx, &st, &(struct token){
+	    .tk_type	= TOKEN_SPACE,
+	    .tk_str	= "\n",
+	    .tk_len	= 1,
+	});
+	token_list_insert_after(ci->prefixes, after, tk);
 }
 
 static int
@@ -219,19 +242,6 @@ token_has_verbatim_line(const struct token *tk)
 	size_t len = tk->tk_len;
 
 	return len >= 2 && str[len - 1] == '\n' && str[len - 2] == '\n';
-}
-
-static void
-token_add_line(struct token *tk)
-{
-	struct buffer *bf;
-
-	bf = buffer_alloc(tk->tk_len + 1);
-	buffer_printf(bf, "%.*s\n", (int)tk->tk_len, tk->tk_str);
-	tk->tk_len = bf->bf_len;
-	tk->tk_str = buffer_release(bf);
-	tk->tk_flags |= TOKEN_FLAG_DIRTY;
-	buffer_free(bf);
 }
 
 static void
