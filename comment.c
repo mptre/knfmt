@@ -17,7 +17,7 @@ static const char	*skipws(const char *, size_t);
 static size_t		 rskipws(const char *, size_t);
 
 char *
-comment_exec(const struct token *tk, const struct style *st,
+comment_trim(const struct token *tk, const struct style *st,
     const struct options *UNUSED(op))
 {
 	struct buffer *bf;

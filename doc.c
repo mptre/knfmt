@@ -745,7 +745,7 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 		st->st_newline = 1;
 
 	if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
-	    (str = comment_exec(dc->dc_tk, st->st_st, st->st_op)) != NULL) {
+	    (str = comment_trim(dc->dc_tk, st->st_st, st->st_op)) != NULL) {
 		doc_print(dc, st, str, strlen(str), 0);
 		free(str);
 	} else if (dc->dc_tk->tk_type == TOKEN_CPP &&
