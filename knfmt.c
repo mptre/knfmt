@@ -167,6 +167,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 
 	src = buffer_read(fe->fe_path);
 	if (src == NULL) {
+		warn("%s", fe->fe_path);
 		error = 1;
 		goto out;
 	}

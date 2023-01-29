@@ -90,8 +90,10 @@ diff_parse(struct files *files, const struct options *op)
 	struct buffer *bf;
 
 	bf = buffer_read("/dev/stdin");
-	if (bf == NULL)
+	if (bf == NULL) {
+		warn("/dev/stdin");
 		return 1;
+	}
 	buffer_putc(bf, '\0');
 	buf = (char *)buffer_get_ptr(bf);
 
