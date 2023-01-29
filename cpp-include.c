@@ -41,7 +41,7 @@ static int	include_cmp(const struct include *, const struct include *);
 static const char	*findpath(const char *, size_t, size_t *);
 
 static int	token_has_verbatim_line(const struct token *);
-static void	token_trim_line(struct token *);
+static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
 cpp_include_alloc(const struct options *op, const struct style *st)
@@ -167,7 +167,7 @@ cpp_include_exec(struct cpp_include *ci)
 	for (i = 0; i < nincludes; i++) {
 		struct include *include = &ci->includes[i];
 
-		token_trim_line(include->tk);
+		token_trim_verbatim_line(include->tk);
 		token_list_remove(ci->prefixes, include->tk);
 		if (after != NULL) {
 			token_list_insert_after(ci->prefixes, after,
@@ -245,7 +245,7 @@ token_has_verbatim_line(const struct token *tk)
 }
 
 static void
-token_trim_line(struct token *tk)
+token_trim_verbatim_line(struct token *tk)
 {
 	const char *str = tk->tk_str;
 	size_t len = tk->tk_len;
