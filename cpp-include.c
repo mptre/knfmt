@@ -176,9 +176,9 @@ cpp_include_exec(struct cpp_include *ci)
 			token_list_insert(ci->prefixes, include->tk);
 		}
 		after = include->tk;
-		if (doline && i + 1 == nincludes)
-			add_line(ci, after);
 	}
+	if (doline)
+		add_line(ci, after);
 }
 
 static void
@@ -207,6 +207,8 @@ add_line(struct cpp_include *ci, struct token *after)
 	    .tk_len	= 1,
 	});
 	token_list_insert_after(ci->prefixes, after, tk);
+	/* Drop reference obtained by token_list_insert_after(). */
+	token_rele(tk);
 }
 
 static int
