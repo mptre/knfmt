@@ -46,7 +46,7 @@ static regex_t	rechunk, repath;
 /*
  * Number of directories above the current working directory where a Git
  * repository resides. Used to adjust diff paths when invoking knfmt from a
- * directory other than the repository root.
+ * directory nested below the repository root.
  */
 static int	git_ndirs;
 
