@@ -18,7 +18,7 @@ struct parser {
 	const struct options	*pr_op;
 	const struct style	*pr_st;
 	struct lexer		*pr_lx;
-	struct buffer		*pr_bf;		/* scratch buffer */
+	struct buffer		*pr_scratch;
 	unsigned int		 pr_error;
 	unsigned int		 pr_nblocks;	/* # stmt blocks */
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
