@@ -1595,7 +1595,7 @@ parser_simple_disable(struct parser *pr, struct parser_simple *simple)
 }
 
 void
-parser_simple_enable(struct parser *pr, struct parser_simple *simple)
+parser_simple_enable(struct parser *pr, const struct parser_simple *simple)
 {
 	pr->pr_simple = *simple;
 }
