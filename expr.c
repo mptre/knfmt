@@ -16,12 +16,7 @@
 #include "ruler.h"
 #include "style.h"
 #include "token.h"
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
+#include "vector.h"
 
 /*
  * Precedence, from lowest to highest.
@@ -68,22 +63,20 @@ enum expr_type {
 };
 
 struct expr {
-	enum expr_type		 ex_type;
-	struct token		*ex_tk;
-	struct expr		*ex_lhs;
-	struct expr		*ex_rhs;
-	struct token		*ex_beg;
-	struct token		*ex_end;
-	struct token		*ex_tokens[2];
+	enum expr_type	 ex_type;
+	struct token	*ex_tk;
+	struct expr	*ex_lhs;
+	struct expr	*ex_rhs;
+	struct token	*ex_beg;
+	struct token	*ex_end;
+	struct token	*ex_tokens[2];
 
 	union {
 		struct expr		*ex_ternary;
 		struct doc		*ex_dc;
 		int			 ex_sizeof;
-		TAILQ_HEAD(, expr)	 ex_concat;
+		VECTOR(struct expr *)	 ex_concat;
 	};
-
-	TAILQ_ENTRY(expr)	 ex_entry;
 };
 
 struct expr_state;
@@ -440,11 +433,12 @@ expr_exec_concat(struct expr_state *es, struct expr *lhs)
 		ex = lhs;
 	} else {
 		ex = expr_alloc(EXPR_CONCAT, es);
-		TAILQ_INIT(&ex->ex_concat);
-		TAILQ_INSERT_TAIL(&ex->ex_concat, lhs, ex_entry);
+		if (VECTOR_INIT(ex->ex_concat) == NULL)
+			err(1, NULL);
+		*VECTOR_ALLOC(ex->ex_concat) = lhs;
 	}
 	rhs = expr_exec_literal(es, NULL);
-	TAILQ_INSERT_TAIL(&ex->ex_concat, rhs, ex_entry);
+	*VECTOR_ALLOC(ex->ex_concat) = rhs;
 	return ex;
 }
 
@@ -636,12 +630,9 @@ expr_free(struct expr *ex)
 	if (ex->ex_type == EXPR_TERNARY) {
 		expr_free(ex->ex_ternary);
 	} else if (ex->ex_type == EXPR_CONCAT) {
-		struct expr *concat;
-
-		while ((concat = TAILQ_FIRST(&ex->ex_concat)) != NULL) {
-			TAILQ_REMOVE(&ex->ex_concat, concat, ex_entry);
-			expr_free(concat);
-		}
+		while (!VECTOR_EMPTY(ex->ex_concat))
+			expr_free(*VECTOR_POP(ex->ex_concat));
+		VECTOR_FREE(ex->ex_concat);
 	} else if (ex->ex_type == EXPR_RECOVER) {
 		doc_free(ex->ex_dc);
 	}
@@ -965,24 +956,25 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	struct expr *e;
 	struct token *pv;
-	int i = 0;
+	size_t i, n;
 	int doalign;
 
-	pv = token_prev(TAILQ_FIRST(&ex->ex_concat)->ex_tk);
+	pv = token_prev(ex->ex_concat[0]->ex_tk);
 	doalign = style(es->es_st, AlignOperands) == Align &&
 	    !token_has_line(pv, 1);
 	if (doalign)
 		dc = expr_doc_align(ex, es, dc, 0);
-	TAILQ_FOREACH(e, &ex->ex_concat, ex_entry) {
+	n = VECTOR_LENGTH(ex->ex_concat);
+	for (i = 0; i < n; i++) {
+		struct expr *e = ex->ex_concat[i];
 		struct doc *tmp;
 
 		tmp = expr_doc(e, es, dc);
-		if (TAILQ_NEXT(e, ex_entry) != NULL)
+		if (i + 1 < n)
 			doc_alloc(DOC_LINE, tmp);
 		/* Nest subsequent expressions under the first one. */
-		if (i++ == 0)
+		if (i == 0)
 			dc = tmp;
 	}
 	return dc;
