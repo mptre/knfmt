@@ -40,8 +40,8 @@ buffer_alloc(size_t sizhint)
 	char *ptr;
 	size_t siz = 1;
 
-	for (siz = 1; siz < sizhint; siz <<= 1)
-		continue;
+	while (siz < sizhint)
+		siz <<= 1;
 
 	ptr = malloc(siz);
 	if (ptr == NULL)
@@ -161,13 +161,16 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	va_list cp;
 	size_t len, siz;
 	unsigned int shift = 0;
+	int error = 0;
 	int n;
 
 	va_copy(cp, ap);
 
 	n = vsnprintf(NULL, 0, fmt, ap);
-	if (n < 0)
-		return 1;
+	if (n < 0) {
+		error = 1;
+		goto out;
+	}
 
 	siz = bf->bf_siz;
 	for (;;) {
@@ -178,16 +181,23 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 		siz *= 2;
 		shift++;
 	}
-	if (shift > 0 && buffer_grow(bf, shift))
-		return 1;
+	if (shift > 0 && buffer_grow(bf, shift)) {
+		error = 1;
+		goto out;
+	}
 
 	len = bf->bf_siz - bf->bf_len;
 	n = vsnprintf(&bf->bf_ptr[bf->bf_len], len, fmt, cp);
 	va_end(cp);
-	if (n < 0 || (size_t)n >= len)
-		return 1;
+	if (n < 0 || (size_t)n >= len) {
+		error = 1;
+		goto out;
+	}
 	bf->bf_len += (size_t)n;
-	return 0;
+
+out:
+	va_end(cp);
+	return error;
 
 overflow:
 	errno = EOVERFLOW;
@@ -254,7 +264,7 @@ buffer_grow(struct buffer *bf, unsigned int shift)
 	size_t nbits = sizeof(size_t) * 8;
 	size_t newsiz;
 
-	if (shift >= nbits || bf->bf_siz > ULONG_MAX / (1 << shift))
+	if (shift >= nbits || bf->bf_siz > ULONG_MAX / (1ULL << shift))
 		goto overflow;
 	newsiz = bf->bf_siz << shift;
 	ptr = realloc(bf->bf_ptr, newsiz);
