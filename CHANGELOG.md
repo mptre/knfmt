@@ -56,7 +56,11 @@
   (Anton Lindqvist)
 
 - Add support for basic inline assembler.
-  (bd1e3af)
+  (bd1e3af, 76778d3)
+  (Anton Lindqvist)
+
+- Sort includes in simple mode.
+  (9612032)
   (Anton Lindqvist)
 
 ## Bug fixes
@@ -115,6 +119,10 @@
 
 - Add missing space after brace initializers followed by attributes.
   (b0502c3)
+  (Anton Lindqvist)
+
+- Break long attributes.
+  (7e760c9)
   (Anton Lindqvist)
 
 # 3.0.1 - 2022-08-14
