@@ -1,5 +1,6 @@
 config.h
 config.log
 config.mk
+fuzz-style
 knfmt
 t

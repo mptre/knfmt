@@ -48,6 +48,12 @@ OBJS_test=	${SRCS_test:.c=.o}
 DEPS_test=	${SRCS_test:.c=.d}
 PROG_test=	t
 
+SRCS_fuzz-style+=	${SRCS}
+SRCS_fuzz-style+=	fuzz-style.c
+OBJS_fuzz-style=	${SRCS_fuzz-style:.c=.o}
+DEPS_fuzz-style=	${SRCS_fuzz-style:.c=.d}
+PROG_fuzz-style=	fuzz-style
+
 KNFMT+=	alloc.c
 KNFMT+=	alloc.h
 KNFMT+=	buffer.c
@@ -72,6 +78,7 @@ KNFMT+=	expr.c
 KNFMT+=	expr.h
 KNFMT+=	file.c
 KNFMT+=	file.h
+KNFMT+=	fuzz-style.c
 KNFMT+=	knfmt.c
 KNFMT+=	lexer.c
 KNFMT+=	lexer.h
@@ -140,6 +147,7 @@ CLANGTIDY+=	expr.c
 CLANGTIDY+=	expr.h
 CLANGTIDY+=	file.c
 CLANGTIDY+=	file.h
+CLANGTIDY+=	fuzz-style.c
 CLANGTIDY+=	knfmt.c
 CLANGTIDY+=	lexer.c
 CLANGTIDY+=	lexer.h
@@ -193,6 +201,7 @@ CPPCHECK+=	doc.c
 CPPCHECK+=	error.c
 CPPCHECK+=	expr.c
 CPPCHECK+=	file.c
+CPPCHECK+=	fuzz-style.c
 CPPCHECK+=	knfmt.c
 CPPCHECK+=	lexer.c
 CPPCHECK+=	options.c
@@ -247,6 +256,7 @@ DISTFILES+=	expr.c
 DISTFILES+=	expr.h
 DISTFILES+=	file.c
 DISTFILES+=	file.h
+DISTFILES+=	fuzz-style.c
 DISTFILES+=	knfmt.1
 DISTFILES+=	knfmt.c
 DISTFILES+=	lexer.c
@@ -1023,9 +1033,15 @@ ${PROG_knfmt}: ${OBJS_knfmt}
 ${PROG_test}: ${OBJS_test}
 	${CC} ${DEBUG} -o ${PROG_test} ${OBJS_test} ${LDFLAGS}
 
+fuzz: ${PROG_fuzz-style}
+
+${PROG_fuzz-style}: ${OBJS_fuzz-style}
+	${CC} ${DEBUG} -o ${PROG_fuzz-style} ${OBJS_fuzz-style} ${LDFLAGS}
+
 clean:
 	rm -f ${DEPS_knfmt} ${OBJS_knfmt} ${PROG_knfmt} \
-		${DEPS_test} ${OBJS_test} ${PROG_test}
+		${DEPS_test} ${OBJS_test} ${PROG_test} \
+		${DEPS_fuzz-style} ${OBJS_fuzz-style} ${PROG_fuzz-style}
 .PHONY: clean
 
 cleandir: clean

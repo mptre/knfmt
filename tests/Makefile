@@ -544,6 +544,7 @@ TESTS+=	../expr.c
 TESTS+=	../expr.h
 TESTS+=	../file.c
 TESTS+=	../file.h
+TESTS+=	../fuzz-style.c
 TESTS+=	../knfmt.c
 TESTS+=	../lexer.c
 TESTS+=	../lexer.h

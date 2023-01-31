@@ -2,7 +2,7 @@ export LC_ALL=C
 
 mkls "$@" \
 SRCS \
-	!(knfmt|t).c \
+	!(fuzz-*|knfmt|t).c \
 	-- \
 KNFMT \
 	!(compat-*).c !(compat-*|config).h \
