@@ -984,7 +984,7 @@ static struct doc *
 expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	if (style(es->es_st, BreakBeforeTernaryOperators) == True) {
-		struct doc *cond;
+		struct doc *cond, *lhs, *rhs;
 
 		if (ex->ex_tokens[0] != NULL)
 			token_move_next_line(ex->ex_tokens[0]);
@@ -994,22 +994,25 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_alloc(DOC_LINE, cond);
 		if (style(es->es_st, AlignOperands) == Align)
 			dc = expr_doc_align(ex, es, dc, 0);
+
+		lhs = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+		doc_alloc(DOC_SOFTLINE, lhs);
 		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], dc);	/* ? */
-
-		/* The true expression can be empty, GNU extension. */
+			doc_token(ex->ex_tokens[0], lhs);	/* ? */
+		/* The lhs expression can be empty, GNU extension. */
 		if (ex->ex_rhs != NULL) {
-			struct doc *lhs;
-
-			doc_alloc(DOC_LINE, dc);
-			lhs = expr_doc_soft(ex->ex_rhs, es, dc,
+			doc_literal(" ", lhs);
+			lhs = expr_doc_soft(ex->ex_rhs, es, lhs,
 			    soft_weights.ternary);
 			doc_alloc(DOC_LINE, lhs);
 		}
 
+		rhs = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+		doc_alloc(DOC_SOFTLINE, rhs);
 		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], dc);	/* : */
-		doc_alloc(DOC_LINE, dc);
+			doc_token(ex->ex_tokens[1], rhs);	/* : */
+		doc_literal(" ", rhs);
+		return expr_doc(ex->ex_ternary, es, rhs);
 	} else {
 		struct doc *ternary;
 
@@ -1035,9 +1038,10 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], ternary);	/* : */
 		doc_alloc(DOC_LINE, ternary);
-	}
 
-	return expr_doc_soft(ex->ex_ternary, es, dc, soft_weights.ternary);
+		return expr_doc_soft(ex->ex_ternary, es, dc,
+		    soft_weights.ternary);
+	}
 }
 
 static struct doc *
