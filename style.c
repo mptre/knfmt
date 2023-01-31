@@ -114,6 +114,9 @@ style_init(void)
 		{ S(AlwaysBreakAfterReturnType), parse_enum,
 		  { None, All, TopLevel, AllDefinitions, TopLevelDefinitions } },
 
+		{ S(BitFieldColonSpacing), parse_enum,
+		  { Both, None, Before, After } },
+
 		{ S(BraceWrapping), parse_nested, {0} },
 		{ N(BraceWrapping, AfterCaseLabel), parse_bool, {0} },
 		{ N(BraceWrapping, AfterClass), parse_bool, {0} },
@@ -164,6 +167,7 @@ style_init(void)
 		    AlignWithSpaces, Always } },
 
 		/* enum */
+		{ E(After) },
 		{ E(Align) },
 		{ E(AlignAfterOperator) },
 		{ E(AlignWithSpaces) },
@@ -173,7 +177,9 @@ style_init(void)
 		{ E(Always) },
 		{ E(AlwaysBreak) },
 		{ E(Attach) },
+		{ E(Before) },
 		{ E(BlockIndent) },
+		{ E(Both) },
 		{ E(Custom) },
 		{ E(DontAlign) },
 		{ E(ForContinuationAndIndentation) },
@@ -182,6 +188,7 @@ style_init(void)
 		{ E(Left) },
 		{ E(Linux) },
 		{ E(Mozilla) },
+		{ E(MultiLine) },
 		{ E(Never) },
 		{ E(NonAssignment) },
 		{ E(None) },
@@ -191,7 +198,6 @@ style_init(void)
 		{ E(TopLevelDefinitions) },
 		{ E(WebKit) },
 		{ E(Whitesmiths) },
-		{ E(MultiLine) },
 
 		/* primitives */
 		{ P(Colon, ":") },
@@ -304,6 +310,7 @@ style_defaults(struct style *st)
 	st->st_options[AlignEscapedNewlines] = Right;
 	st->st_options[AlignOperands] = DontAlign;
 	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
+	st->st_options[BitFieldColonSpacing] = None;
 	st->st_options[BreakBeforeBinaryOperators] = None;
 	st->st_options[BreakBeforeBraces] = Linux;
 	st->st_options[BreakBeforeTernaryOperators] = False;

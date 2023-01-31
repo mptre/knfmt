@@ -3,7 +3,8 @@ struct style;
 
 /* Supported clang format options and values. */
 enum {
-	AfterCaseLabel = 1,
+	After = 1,
+	AfterCaseLabel,
 	AfterClass,
 	AfterControlStatement,
 	AfterEnum,
@@ -26,11 +27,14 @@ enum {
 	AlwaysBreak,
 	AlwaysBreakAfterReturnType,
 	Attach,
+	Before,
 	BeforeCatch,
 	BeforeElse,
 	BeforeLambdaBody,
 	BeforeWhile,
+	BitFieldColonSpacing,
 	BlockIndent,
+	Both,
 	BraceWrapping,
 	BreakBeforeBinaryOperators,
 	BreakBeforeBraces,

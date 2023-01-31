@@ -161,6 +161,31 @@ definition(void)
 Not supported, interpreted as
 .Cm AllDefinitions .
 .El
+.It Cm BitFieldColonSpacing
+Insert spaces around bitfields.
+.Bl -tag -width Ds
+.It Cm Both
+Add spaces on each side of the colon.
+.Bd -literal
+unsigned int field : 1;
+.Ed
+.It Cm None
+Do not insert spaces.
+.Pq default
+.Bd -literal
+unsigned int field:1;
+.Ed
+.It Cm Before
+Add space before the colon.
+.Bd -literal
+unsigned int field :1;
+.Ed
+.It Cm After
+Add space after the colon.
+.Bd -literal
+unsigned int field: 1;
+.Ed
+.El
 .It Cm BraceWrapping
 Break before or after braces in certain contexts.
 The supported nested options are as follows:

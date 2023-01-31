@@ -611,11 +611,16 @@ parser_exec_decl_bitfield(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *colon, *size;
+	unsigned int dospace = style(pr->pr_st, BitFieldColonSpacing);
 
 	if (!lexer_if(lx, TOKEN_COLON, &colon))
 		return parser_none(pr);
 
+	if (dospace == Both || dospace == Before)
+		doc_literal(" ", dc);
 	doc_token(colon, dc);
+	if (dospace == Both || dospace == After)
+		doc_literal(" ", dc);
 	if (lexer_expect(lx, TOKEN_LITERAL, &size))
 		doc_token(size, dc);
 	return parser_good(pr);
