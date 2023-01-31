@@ -1,0 +1,4 @@
+.clang-format: unknown option Unknown<2:1>("AlignEscapedNewnded")
+.clang-format: unknown option Unknown<2:25>("clang")
+.clang-format: unknown option Unknown<2:38>(">")
+.clang-format: unknown option Integer<2:41>("10")

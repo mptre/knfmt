@@ -60,10 +60,8 @@ struct token {
 	size_t			 tk_len;
 	size_t			 tk_off;
 
-	union {
-		struct token	*tk_token;
-		int		 tk_int;
-	};
+	struct token		*tk_token;
+	int			 tk_int;
 
 	struct {
 		struct token	*br_pv;
