@@ -242,7 +242,7 @@ out:
 	for (;;) {
 		if ((tmp = clang_read_comment(lx, 0)) == NULL)
 			break;
-		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
+		token_list_insert(&tk->tk_suffixes, tmp);
 		ncomments++;
 	}
 
@@ -252,14 +252,14 @@ out:
 	 */
 	if (ncomments == 0 && lexer_eat_spaces(lx, &tmp)) {
 		tmp->tk_flags |= TOKEN_FLAG_OPTSPACE;
-		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
+		token_list_insert(&tk->tk_suffixes, tmp);
 	}
 
 	/* Consume hard line(s). */
 	if ((nlines = lexer_eat_lines(lx, 0, &tmp)) > 0) {
 		if (nlines == 1)
 			tmp->tk_flags |= TOKEN_FLAG_OPTLINE;
-		TAILQ_INSERT_TAIL(&tk->tk_suffixes, tmp, tk_entry);
+		token_list_insert(&tk->tk_suffixes, tmp);
 	}
 
 	/* Establish links between cpp branches. */
@@ -417,13 +417,13 @@ clang_read_prefix(struct lexer *lx, struct token_list *prefixes)
 			token_prolong(pv, comment);
 			return pv;
 		}
-		TAILQ_INSERT_TAIL(prefixes, comment, tk_entry);
+		token_list_insert(prefixes, comment);
 		return comment;
 	}
 
 	cpp = clang_read_cpp(lx);
 	if (cpp != NULL) {
-		TAILQ_INSERT_TAIL(prefixes, cpp, tk_entry);
+		token_list_insert(prefixes, cpp);
 		return cpp;
 	}
 
