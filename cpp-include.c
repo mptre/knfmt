@@ -169,6 +169,7 @@ cpp_include_exec(struct cpp_include *ci)
 
 		token_trim_verbatim_line(include->tk);
 		token_list_remove(ci->prefixes, include->tk);
+		token_ref(include->tk);
 		if (after != NULL) {
 			token_list_insert_after(ci->prefixes, after,
 			    include->tk);
@@ -207,8 +208,6 @@ add_line(struct cpp_include *ci, struct token *after)
 	    .tk_len	= 1,
 	});
 	token_list_insert_after(ci->prefixes, after, tk);
-	/* Drop reference obtained by token_list_insert_after(). */
-	token_rele(tk);
 }
 
 static int

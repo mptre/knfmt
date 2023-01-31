@@ -329,7 +329,6 @@ token_prev(const struct token *tk)
 void
 token_list_insert(struct token_list *tl, struct token *tk)
 {
-	token_ref(tk);
 	TAILQ_INSERT_TAIL(tl, tk, tk_entry);
 }
 
@@ -337,7 +336,6 @@ void
 token_list_insert_after(struct token_list *tl, struct token *after,
     struct token *tk)
 {
-	token_ref(tk);
 	TAILQ_INSERT_AFTER(tl, after, tk, tk_entry);
 }
 
