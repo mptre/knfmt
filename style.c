@@ -55,7 +55,7 @@ struct style_option {
 	int		 so_type;
 	int		 (*so_parse)(struct style *, struct lexer *,
 	    const struct style_option *);
-	int		 so_val[32];
+	int		 so_val[16];
 };
 
 static void	style_defaults(struct style *);
