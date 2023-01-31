@@ -169,14 +169,6 @@ token_has_indent(const struct token *tk)
 }
 
 int
-token_has_prefix(const struct token *tk, int type)
-{
-	struct token_list *list = (struct token_list *)&tk->tk_prefixes;
-
-	return token_list_find(list, type) != NULL;
-}
-
-int
 token_has_suffix(const struct token *tk, int type)
 {
 	struct token_list *list = (struct token_list *)&tk->tk_suffixes;

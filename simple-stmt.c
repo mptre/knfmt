@@ -92,7 +92,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 		buf = strtrim(buffer_get_ptr(bf), &buflen);
 		if (stmt_is_empty(st) || !isoneline(buf, buflen) ||
 		    ((st->st_flags & STMT_BRACES) &&
-		     token_has_prefix(st->st_rbrace, TOKEN_COMMENT))) {
+		     !token_is_moveable(st->st_rbrace))) {
 			/*
 			 * No point in continuing as at least one statement
 			 * spans over multiple lines.
