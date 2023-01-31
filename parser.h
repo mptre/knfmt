@@ -1,8 +1,6 @@
 #include <stddef.h>	/* size_t */
 
-struct doc;
 struct error;
-struct expr_exec_arg;
 struct lexer;
 struct options;
 struct style;
