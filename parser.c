@@ -55,6 +55,7 @@ static int	parser_exec_decl_init1(struct parser *, struct doc *,
     struct parser_exec_decl_init_arg *);
 static int	parser_exec_decl_init_assign(struct parser *,
     struct doc *, struct parser_exec_decl_init_arg *);
+static int	parser_exec_decl_bitfield(struct parser *, struct doc *);
 static int	parser_exec_decl_cpp(struct parser *, struct doc *,
     struct ruler *, unsigned int);
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
@@ -528,11 +529,7 @@ parser_exec_decl_init1(struct parser *pr, struct doc *dc,
 		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 			doc_literal(" ", dc);
 		return parser_good(pr);
-	} else if (lexer_if(lx, TOKEN_COLON, &tk)) {
-		/* Handle bitfields. */
-		doc_token(tk, dc);
-		if (lexer_expect(lx, TOKEN_LITERAL, &tk))
-			doc_token(tk, dc);
+	} else if (parser_exec_decl_bitfield(pr, dc) & GOOD) {
 		return parser_good(pr);
 	} else if (lexer_if_flags(lx,
 	    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
@@ -606,6 +603,21 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 			return parser_fail(pr);
 	}
 
+	return parser_good(pr);
+}
+
+static int
+parser_exec_decl_bitfield(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *colon, *size;
+
+	if (!lexer_if(lx, TOKEN_COLON, &colon))
+		return parser_none(pr);
+
+	doc_token(colon, dc);
+	if (lexer_expect(lx, TOKEN_LITERAL, &size))
+		doc_token(size, dc);
 	return parser_good(pr);
 }
 
