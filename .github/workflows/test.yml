@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04, macos-latest]
         compiler: [gcc, clang]
-        mode: [asan, ubsan, musl, valgrind]
+        mode: [asan, ubsan, musl, valgrind, fuzz]
         exclude:
           - os: macos-latest
             compiler: gcc
@@ -29,6 +29,13 @@ jobs:
           - mode: valgrind
             os: ubuntu-22.04
             compiler: clang
+
+          - mode: fuzz
+            os: ubuntu-22.04
+            compiler: clang
+
+          - mode: fuzz
+            os: macos-latest
 
         include:
           - os: ubuntu-22.04
@@ -57,6 +64,10 @@ jobs:
             exec: valgrind
             valgrind: --quiet --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=all --show-leak-kinds=all
 
+          - mode: fuzz
+            cc: afl-gcc
+            deps_mode: afl
+
     steps:
       - uses: actions/checkout@v2
 
@@ -71,6 +82,7 @@ jobs:
           CPPFLAGS: ${{matrix.cppflags}}
           DEBUG: -g -O2 ${{matrix.debug}}
           EXEC: ${{matrix.exec}}
+          MODE: ${{matrix.mode}}
           MUSL: ${{matrix.musl}}
           TESTFLAGS: ${{matrix.testflags}}
           VALGRIND_OPTS: ${{matrix.valgrind}}
@@ -80,6 +92,10 @@ jobs:
           MAKE="make -j `${{matrix.nproc}}`"
           ./configure || :
           cat config.log
+          if [ "${MODE}" == "fuzz" ]; then
+            ${MAKE} fuzz
+            exit 0
+          fi
           ${MAKE} test "TESTFLAGS=${TESTFLAGS}" ${TESTS:+"TESTS=${TESTS}"}
           # Ensure assertions are free from side effects.
           env CPPFLAGS="${CPPFLAGS} -DNDEBUG" ./configure || :
