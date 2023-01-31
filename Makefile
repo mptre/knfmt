@@ -1038,10 +1038,10 @@ ${PROG_knfmt}: ${OBJS_knfmt}
 ${PROG_test}: ${OBJS_test}
 	${CC} ${DEBUG} -o ${PROG_test} ${OBJS_test} ${LDFLAGS}
 
-fuzz: ${PROG_fuzz-style}
-
 ${PROG_fuzz-style}: ${OBJS_fuzz-style}
 	${CC} ${DEBUG} -o ${PROG_fuzz-style} ${OBJS_fuzz-style} ${LDFLAGS}
+
+fuzz: ${PROG_fuzz-style}
 
 clean:
 	rm -f ${DEPS_knfmt} ${OBJS_knfmt} ${PROG_knfmt} \
