@@ -74,14 +74,9 @@ clang_init(void)
 	static const struct token keywords[] = {
 #define T(t, s, f) {							\
 	.tk_type	= (t),						\
-	.tk_lno		= 0,						\
-	.tk_cno		= 0,						\
 	.tk_flags	= (f),						\
 	.tk_str		= (s),						\
 	.tk_len		= sizeof((s)) - 1,				\
-	.tk_prefixes	= { NULL, NULL },				\
-	.tk_suffixes	= { NULL, NULL },				\
-	.tk_entry	= { NULL, NULL }				\
 },
 #define A(t, s, f) T(t, s, f)
 #include "token-defs.h"
