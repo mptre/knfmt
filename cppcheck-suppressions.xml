@@ -9,20 +9,17 @@
     <id>toomanyconfigs</id>
   </suppress>
 
+  <!-- buffer.c -->
+  <suppress>
+    <fileName>buffer.c</fileName>
+    <id>unusedFunction</id>
+    <symbolName>buffer_get_size</symbolName>
+  </suppress>
+
   <!-- expr.c -->
   <suppress>
     <fileName>expr.c</fileName>
     <id>constParameter</id>
     <symbolName>lhs</symbolName>
-  </suppress>
-  <suppress>
-    <fileName>expr.c</fileName>
-    <id>unusedStructMember</id>
-    <symbolName>Anonymous7::tqh_first</symbolName>
-  </suppress>
-  <suppress>
-    <fileName>expr.c</fileName>
-    <id>unusedStructMember</id>
-    <symbolName>Anonymous7::tqh_last</symbolName>
   </suppress>
 </suppressions>
