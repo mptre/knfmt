@@ -16,7 +16,7 @@ struct parser_func_proto_arg {
 	struct ruler		*rl;
 	const struct token	*type;
 	unsigned int		 flags;
-#define PARSER_EXEC_FUNC_PROTO_IMPL		0x00000001u
+#define PARSER_FUNC_PROTO_IMPL		0x00000001u
 };
 
 static int	parser_func_impl1(struct parser *, struct doc *,
@@ -195,7 +195,7 @@ parser_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 	    .dc		= dc,
 	    .rl		= rl,
 	    .type	= type,
-	    .flags	= PARSER_EXEC_FUNC_PROTO_IMPL,
+	    .flags	= PARSER_FUNC_PROTO_IMPL,
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
@@ -241,7 +241,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 
 	s = style(pr->pr_st, AlwaysBreakAfterReturnType);
 	if ((s == All || s == TopLevel) ||
-	    ((arg->flags & PARSER_EXEC_FUNC_PROTO_IMPL) &&
+	    ((arg->flags & PARSER_FUNC_PROTO_IMPL) &&
 	     (s == AllDefinitions || s == TopLevelDefinitions)))
 		doc_alloc(DOC_HARDLINE, dc);
 

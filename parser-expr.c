@@ -108,8 +108,8 @@ expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 
 		error = parser_braces(pr, dc,
 		    ea->indent,
-		    PARSER_EXEC_DECL_BRACES_DEDENT |
-		    PARSER_EXEC_DECL_BRACES_INDENT_MAYBE);
+		    PARSER_DECL_BRACES_DEDENT |
+		    PARSER_DECL_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
 			return 1;
 		if (error & FAIL) {

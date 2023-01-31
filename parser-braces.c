@@ -85,7 +85,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
 		return parser_fail(pr);
 	hasline = token_has_line(lbrace, 1);
-	if (arg->flags & PARSER_EXEC_DECL_BRACES_TRIM)
+	if (arg->flags & PARSER_DECL_BRACES_TRIM)
 		parser_token_trim_after(pr, lbrace);
 	doc_token(lbrace, braces);
 
@@ -99,7 +99,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	if (hasline) {
 		unsigned int val = arg->indent;
 
-		if (arg->flags & PARSER_EXEC_DECL_BRACES_INDENT_MAYBE)
+		if (arg->flags & PARSER_DECL_BRACES_INDENT_MAYBE)
 			val |= DOC_INDENT_NEWLINE;
 		indent = doc_alloc_indent(val, braces);
 		doc_alloc(DOC_HARDLINE, indent);
@@ -127,7 +127,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
 
-		if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) ||
+		if ((arg->flags & PARSER_DECL_BRACES_ENUM) ||
 		    lexer_peek_if(lx, TOKEN_PERIOD, NULL) ||
 		    lexer_peek_if(lx, TOKEN_LSQUARE, NULL)) {
 			error = parser_braces_field(pr,
@@ -141,7 +141,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			if (error & HALT)
 				return parser_fail(pr);
 		} else if (lexer_peek_if(lx, TOKEN_LBRACE, &nx)) {
-			unsigned int rmflags = PARSER_EXEC_DECL_BRACES_DEDENT;
+			unsigned int rmflags = PARSER_DECL_BRACES_DEDENT;
 			struct braces_arg newarg = {
 				.dc	= concat,
 				.rl	= arg->rl,
@@ -201,7 +201,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			 */
 			if (token_cmp(pv, rbrace) < 0) {
 				if (arg->flags &
-				    PARSER_EXEC_DECL_BRACES_DEDENT) {
+				    PARSER_DECL_BRACES_DEDENT) {
 					braces = doc_alloc_dedent(arg->indent,
 					    braces);
 				}
@@ -218,7 +218,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		}
 
 next:
-		if (((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) == 0) &&
+		if (((arg->flags & PARSER_DECL_BRACES_ENUM) == 0) &&
 		    lexer_back(lx, &nx) && token_has_line(nx, 2))
 			ruler_exec(arg->rl);
 	}
@@ -320,7 +320,7 @@ parser_braces_field1(struct parser *pr, struct braces_field_arg *arg)
 		doc_token(tk, dc);
 
 		/* Enum making use of preprocessor directives. */
-		if ((arg->flags & PARSER_EXEC_DECL_BRACES_ENUM) &&
+		if ((arg->flags & PARSER_DECL_BRACES_ENUM) &&
 		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
 			struct doc *expr = NULL;
 

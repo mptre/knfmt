@@ -39,7 +39,7 @@ struct parser_exec_decl_init_arg {
 	unsigned int		 indent;
 	unsigned int		 flags;
 /* Insert space before assignment operator. */
-#define PARSER_EXEC_DECL_INIT_ASSIGN		0x00000001u
+#define PARSER_DECL_INIT_ASSIGN		0x00000001u
 };
 
 static int	parser_exec1(struct parser *, struct doc *);
@@ -61,7 +61,7 @@ static int	parser_exec_decl_cpp(struct parser *, struct doc *,
 static int	parser_exec_decl_cppx(struct parser *, struct doc *,
     struct ruler *);
 
-#define PARSER_EXEC_STMT_EXPR_DOWHILE		0x00000001u
+#define PARSER_STMT_EXPR_DOWHILE		0x00000001u
 
 static int	parser_exec_stmt(struct parser *, struct doc *);
 static int	parser_exec_stmt1(struct parser *, struct doc *);
@@ -413,8 +413,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 		w = style(pr->pr_st, IndentWidth);
 		error = parser_braces(pr, concat, w,
-		    PARSER_EXEC_DECL_BRACES_ENUM |
-		    PARSER_EXEC_DECL_BRACES_TRIM);
+		    PARSER_DECL_BRACES_ENUM | PARSER_DECL_BRACES_TRIM);
 		if (error & HALT)
 			return parser_fail(pr);
 	}
@@ -427,7 +426,7 @@ parser_exec_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		.rl	= rl,
 		.semi	= semi,
 		.indent	= style(pr->pr_st, IndentWidth),
-		.flags	= PARSER_EXEC_DECL_INIT_ASSIGN,
+		.flags	= PARSER_DECL_INIT_ASSIGN,
 	};
 	error = parser_exec_decl_init(pr, &arg);
 	if (error & (FAIL | NONE))
@@ -562,7 +561,7 @@ parser_exec_decl_init_assign(struct parser *pr, struct doc *dc,
 	if (!lexer_if(lx, TOKEN_EQUAL, &equal))
 		return parser_none(pr);
 
-	if (arg->flags & PARSER_EXEC_DECL_INIT_ASSIGN)
+	if (arg->flags & PARSER_DECL_INIT_ASSIGN)
 		doc_literal(" ", dc);
 	doc_token(equal, dc);
 	doc_literal(" ", dc);
@@ -690,7 +689,7 @@ parser_exec_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 	    .rl		= rl,
 	    .semi	= semi,
 	    .indent	= style(pr->pr_st, IndentWidth),
-	    .flags	= hasident ? PARSER_EXEC_DECL_INIT_ASSIGN : 0,
+	    .flags	= hasident ? PARSER_DECL_INIT_ASSIGN : 0,
 	});
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
@@ -1076,7 +1075,7 @@ parser_exec_stmt_dowhile(struct parser *pr, struct doc *dc)
 
 	if (lexer_peek_if(lx, TOKEN_WHILE, &tk)) {
 		return parser_exec_stmt_kw_expr(pr, concat, tk,
-		    PARSER_EXEC_STMT_EXPR_DOWHILE);
+		    PARSER_STMT_EXPR_DOWHILE);
 	}
 	return parser_fail(pr);
 }
@@ -1152,7 +1151,7 @@ parser_exec_stmt_kw_expr(struct parser *pr, struct doc *dc,
 		doc_token(rparen, expr);
 	}
 
-	if (flags & PARSER_EXEC_STMT_EXPR_DOWHILE) {
+	if (flags & PARSER_STMT_EXPR_DOWHILE) {
 		if (lexer_expect(lx, TOKEN_SEMI, &tk))
 			doc_token(tk, expr);
 		return parser_good(pr);
