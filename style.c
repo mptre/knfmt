@@ -492,9 +492,12 @@ again:
 		return tk;
 	}
 
-	tk = lexer_emit(lx, &s, NULL);
-	tk->tk_type = Unknown;
-	return tk;
+	tk = lexer_emit(lx, &s, &(struct token){
+	    .tk_type	= Unknown,
+	});
+	lexer_error(lx, "unknown token %s", lexer_serialize(lx, tk));
+	token_rele(tk);
+	return NULL;
 
 eof:
 	tk = lexer_emit(lx, &s, NULL);
