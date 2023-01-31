@@ -39,7 +39,6 @@ jobs:
 
         include:
           - os: ubuntu-22.04
-            deps_os: uthash-dev
             nproc: nproc
 
           - os: macos-latest
