@@ -126,8 +126,6 @@ KNFMT+=	vector.h
 
 CLANGTIDY+=	alloc.c
 CLANGTIDY+=	alloc.h
-CLANGTIDY+=	buffer.c
-CLANGTIDY+=	buffer.h
 CLANGTIDY+=	cdefs.h
 CLANGTIDY+=	clang.c
 CLANGTIDY+=	clang.h
@@ -191,7 +189,6 @@ CLANGTIDY+=	util.c
 CLANGTIDY+=	util.h
 
 CPPCHECK+=	alloc.c
-CPPCHECK+=	buffer.c
 CPPCHECK+=	clang.c
 CPPCHECK+=	comment.c
 CPPCHECK+=	cpp-align.c

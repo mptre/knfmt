@@ -9,10 +9,10 @@ KNFMT \
 	compat-pledge.c \
 	-- \
 CLANGTIDY \
-	!(config|compat-*|token-defs|vector).[ch] \
+	!(buffer|config|compat-*|token-defs|vector).[ch] \
 	-- \
 CPPCHECK \
-	!(compat-*|vector).c \
+	!(buffer|compat-*|vector).c \
 	-- \
 DISTFILES \
 	*.c !(config).h *.md \
