@@ -171,7 +171,7 @@ buffer_release(struct buffer *bf)
 char *
 buffer_str(struct buffer *bf)
 {
-	if (bf->bf_len > 0 && bf->bf_ptr[bf->bf_len - 1] != '\0')
+	if (bf->bf_len == 0 || bf->bf_ptr[bf->bf_len - 1] != '\0')
 		buffer_putc(bf, '\0');
 	return buffer_release(bf);
 }
