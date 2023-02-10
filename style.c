@@ -521,8 +521,7 @@ yaml_serialize(const struct token *tk)
 	buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
 	strnice_buffer(bf, tk->tk_str, tk->tk_len);
 	buffer_printf(bf, "\")");
-	buffer_putc(bf, '\0');
-	buf = buffer_release(bf);
+	buf = buffer_str(bf);
 	buffer_free(bf);
 	return buf;
 }

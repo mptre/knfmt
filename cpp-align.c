@@ -100,9 +100,8 @@ cpp_align(const struct token *tk, const struct style *st,
 	    .st	= st,
 	    .op	= op,
 	});
-	buffer_putc(bf, '\0');
 
-	p = buffer_release(bf);
+	p = buffer_str(bf);
 	ruler_free(&rl);
 	doc_free(dc);
 	buffer_free(bf);

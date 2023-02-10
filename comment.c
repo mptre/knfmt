@@ -60,9 +60,8 @@ comment_trim(const struct token *tk, const struct style *st,
 		len -= commlen;
 		sp += commlen;
 	}
-	buffer_putc(bf, '\0');
 
-	p = buffer_release(bf);
+	p = buffer_str(bf);
 	buffer_free(bf);
 	return p;
 }

@@ -327,8 +327,7 @@ token_range_str(const struct token_range *tr)
 			buffer_putc(bf, ' ');
 		buffer_puts(bf, tk->tk_str, tk->tk_len);
 	}
-	buffer_putc(bf, '\0');
-	str = buffer_release(bf);
+	str = buffer_str(bf);
 	buffer_free(bf);
 	return str;
 }

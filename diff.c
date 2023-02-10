@@ -275,10 +275,9 @@ reader_open(const char *path)
 		warn("%s", path);
 		return NULL;
 	}
-	buffer_putc(bf, '\0');
 
 	rd = ecalloc(1, sizeof(*rd));
-	rd->buf = buffer_release(bf);
+	rd->buf = buffer_str(bf);
 	buffer_free(bf);
 	return rd;
 }
