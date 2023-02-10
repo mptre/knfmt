@@ -24,19 +24,19 @@
 struct context;
 
 #define test_parser_expr(a, b)						\
-	test_parser_expr0(cx, (a), (b), "test_parser_expr", __LINE__);	\
+	error |= test_parser_expr0(cx, (a), (b), "test_parser_expr", __LINE__);\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
 static int	test_parser_expr0(struct context *, const char *, const char *,
     const char *, int);
 
 #define test_parser_type_peek(a, b)					\
-	test_parser_type_peek0(cx, (a), (b), 0,				\
+	error |= test_parser_type_peek0(cx, (a), (b), 0,		\
 		"test_parser_type_peek", __LINE__);			\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
 #define test_parser_type_peek_flags(a, b, c)				\
-	test_parser_type_peek0(cx, (b), (c), (a),			\
+	error |= test_parser_type_peek0(cx, (b), (c), (a),		\
 		"test_parser_type_peek", __LINE__);			\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
@@ -44,7 +44,7 @@ static int	test_parser_type_peek0(struct context *, const char *,
     const char *, unsigned int, const char *, int);
 
 #define test_lexer_read(a, b)						\
-	test_lexer_read0(cx, (a), (b), "test_lexer_read",		\
+	error |= test_lexer_read0(cx, (a), (b), "test_lexer_read",	\
 		__LINE__);						\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
@@ -52,7 +52,7 @@ static int	test_lexer_read0(struct context *, const char *, const char *,
     const char *, int);
 
 #define test_strwidth(a, b, c)						\
-	test_strwidth0((a), (b), (c), "test_strwidth", __LINE__);	\
+	error |= test_strwidth0((a), (b), (c), "test_strwidth", __LINE__);\
 	if (xflag && error) goto out;					\
 	context_reset(cx)
 static int	test_strwidth0(const char *, size_t, size_t,
@@ -96,165 +96,159 @@ main(int argc, char *argv[])
 	clang_init();
 	cx = context_alloc();
 
-	error |= test_parser_expr("1", "(1)");
-	error |= test_parser_expr("x", "(x)");
-	error |= test_parser_expr("\"x\"", "(\"x\")");
-	error |= test_parser_expr("\"x\" \"y\"", "((\"x\") (\"y\"))");
-	error |= test_parser_expr("x(1, 2)", "((x)(((1), (2))))");
-	error |= test_parser_expr("x = 1", "((x) = (1))");
-	error |= test_parser_expr("x += 1", "((x) += (1))");
-	error |= test_parser_expr("x -= 1", "((x) -= (1))");
-	error |= test_parser_expr("x *= 1", "((x) *= (1))");
-	error |= test_parser_expr("x /= 1", "((x) /= (1))");
-	error |= test_parser_expr("x %= 1", "((x) %= (1))");
-	error |= test_parser_expr("x <<= 1", "((x) <<= (1))");
-	error |= test_parser_expr("x >>= 1", "((x) >>= (1))");
-	error |= test_parser_expr("x &= 1", "((x) &= (1))");
-	error |= test_parser_expr("x ^= 1", "((x) ^= (1))");
-	error |= test_parser_expr("x |= 1", "((x) |= (1))");
-	error |= test_parser_expr("x ? 1 : 0", "((x) ? (1) : (0))");
-	error |= test_parser_expr("x ?: 0", "((x) ?: (0))");
-	error |= test_parser_expr("x || y", "((x) || (y))");
-	error |= test_parser_expr("x && y", "((x) && (y))");
-	error |= test_parser_expr("x | y", "((x) | (y))");
-	error |= test_parser_expr("x|y", "((x)|(y))");
-	error |= test_parser_expr("x ^ y", "((x) ^ (y))");
-	error |= test_parser_expr("x & y", "((x) & (y))");
-	error |= test_parser_expr("x == y", "((x) == (y))");
-	error |= test_parser_expr("x != y", "((x) != (y))");
-	error |= test_parser_expr("x < y", "((x) < (y))");
-	error |= test_parser_expr("x <= y", "((x) <= (y))");
-	error |= test_parser_expr("x > y", "((x) > (y))");
-	error |= test_parser_expr("x >= y", "((x) >= (y))");
-	error |= test_parser_expr("x << y", "((x) << (y))");
-	error |= test_parser_expr("x >> y", "((x) >> (y))");
-	error |= test_parser_expr("x + y", "((x) + (y))");
-	error |= test_parser_expr("x - y", "((x) - (y))");
-	error |= test_parser_expr("x * y", "((x) * (y))");
-	error |= test_parser_expr("x*y", "((x)*(y))");
-	error |= test_parser_expr("x / y", "((x) / (y))");
-	error |= test_parser_expr("x/y", "((x)/(y))");
-	error |= test_parser_expr("x % y", "((x) % (y))");
-	error |= test_parser_expr("!x", "(!(x))");
-	error |= test_parser_expr("~x", "(~(x))");
-	error |= test_parser_expr("++x", "(++(x))");
-	error |= test_parser_expr("x++", "((x)++)");
-	error |= test_parser_expr("--x", "(--(x))");
-	error |= test_parser_expr("x--", "((x)--)");
-	error |= test_parser_expr("-x", "(-(x))");
-	error |= test_parser_expr("+x", "(+(x))");
-	error |= test_parser_expr("(int)x", "(((int))(x))");
-	error |= test_parser_expr("(struct s)x", "(((struct s))(x))");
-	error |= test_parser_expr("(struct s*)x", "(((struct s *))(x))");
-	error |= test_parser_expr("(char const* char*)x",
-	    "(((char const *char *))(x))");
-	error |= test_parser_expr("(foo_t)x", "(((foo_t))(x))");
-	error |= test_parser_expr("(foo_t *)x", "(((foo_t *))(x))");
-	error |= test_parser_expr("x * y", "((x) * (y))");
-	error |= test_parser_expr("x & y", "((x) & (y))");
-	error |= test_parser_expr("sizeof x", "(sizeof (x))");
-	error |= test_parser_expr("sizeof x * y", "((sizeof (x)) * (y))");
-	error |= test_parser_expr("sizeof char", "(sizeof (char))");
-	error |= test_parser_expr("sizeof char *c", "((sizeof (char)) * (c))");
-	error |= test_parser_expr("sizeof struct s", "(sizeof (struct s))");
-	error |= test_parser_expr("sizeof(x)", "(sizeof((x)))");
-	error |= test_parser_expr("sizeof(*x)", "(sizeof((*(x))))");
-	error |= test_parser_expr("(x)", "((x))");
-	error |= test_parser_expr("x()", "((x)())");
-	error |= test_parser_expr("x(\"x\" X)", "((x)(((\"x\") (X))))");
-	error |= test_parser_expr("x[1 + 2]", "((x)[((1) + (2))])");
-	error |= test_parser_expr("x->y", "((x)->(y))");
-	error |= test_parser_expr("x.y", "((x).(y))");
+	test_parser_expr("1", "(1)");
+	test_parser_expr("x", "(x)");
+	test_parser_expr("\"x\"", "(\"x\")");
+	test_parser_expr("\"x\" \"y\"", "((\"x\") (\"y\"))");
+	test_parser_expr("x(1, 2)", "((x)(((1), (2))))");
+	test_parser_expr("x = 1", "((x) = (1))");
+	test_parser_expr("x += 1", "((x) += (1))");
+	test_parser_expr("x -= 1", "((x) -= (1))");
+	test_parser_expr("x *= 1", "((x) *= (1))");
+	test_parser_expr("x /= 1", "((x) /= (1))");
+	test_parser_expr("x %= 1", "((x) %= (1))");
+	test_parser_expr("x <<= 1", "((x) <<= (1))");
+	test_parser_expr("x >>= 1", "((x) >>= (1))");
+	test_parser_expr("x &= 1", "((x) &= (1))");
+	test_parser_expr("x ^= 1", "((x) ^= (1))");
+	test_parser_expr("x |= 1", "((x) |= (1))");
+	test_parser_expr("x ? 1 : 0", "((x) ? (1) : (0))");
+	test_parser_expr("x ?: 0", "((x) ?: (0))");
+	test_parser_expr("x || y", "((x) || (y))");
+	test_parser_expr("x && y", "((x) && (y))");
+	test_parser_expr("x | y", "((x) | (y))");
+	test_parser_expr("x|y", "((x)|(y))");
+	test_parser_expr("x ^ y", "((x) ^ (y))");
+	test_parser_expr("x & y", "((x) & (y))");
+	test_parser_expr("x == y", "((x) == (y))");
+	test_parser_expr("x != y", "((x) != (y))");
+	test_parser_expr("x < y", "((x) < (y))");
+	test_parser_expr("x <= y", "((x) <= (y))");
+	test_parser_expr("x > y", "((x) > (y))");
+	test_parser_expr("x >= y", "((x) >= (y))");
+	test_parser_expr("x << y", "((x) << (y))");
+	test_parser_expr("x >> y", "((x) >> (y))");
+	test_parser_expr("x + y", "((x) + (y))");
+	test_parser_expr("x - y", "((x) - (y))");
+	test_parser_expr("x * y", "((x) * (y))");
+	test_parser_expr("x*y", "((x)*(y))");
+	test_parser_expr("x / y", "((x) / (y))");
+	test_parser_expr("x/y", "((x)/(y))");
+	test_parser_expr("x % y", "((x) % (y))");
+	test_parser_expr("!x", "(!(x))");
+	test_parser_expr("~x", "(~(x))");
+	test_parser_expr("++x", "(++(x))");
+	test_parser_expr("x++", "((x)++)");
+	test_parser_expr("--x", "(--(x))");
+	test_parser_expr("x--", "((x)--)");
+	test_parser_expr("-x", "(-(x))");
+	test_parser_expr("+x", "(+(x))");
+	test_parser_expr("(int)x", "(((int))(x))");
+	test_parser_expr("(struct s)x", "(((struct s))(x))");
+	test_parser_expr("(struct s*)x", "(((struct s *))(x))");
+	test_parser_expr("(char const* char*)x", "(((char const *char *))(x))");
+	test_parser_expr("(foo_t)x", "(((foo_t))(x))");
+	test_parser_expr("(foo_t *)x", "(((foo_t *))(x))");
+	test_parser_expr("x * y", "((x) * (y))");
+	test_parser_expr("x & y", "((x) & (y))");
+	test_parser_expr("sizeof x", "(sizeof (x))");
+	test_parser_expr("sizeof x * y", "((sizeof (x)) * (y))");
+	test_parser_expr("sizeof char", "(sizeof (char))");
+	test_parser_expr("sizeof char *c", "((sizeof (char)) * (c))");
+	test_parser_expr("sizeof struct s", "(sizeof (struct s))");
+	test_parser_expr("sizeof(x)", "(sizeof((x)))");
+	test_parser_expr("sizeof(*x)", "(sizeof((*(x))))");
+	test_parser_expr("(x)", "((x))");
+	test_parser_expr("x()", "((x)())");
+	test_parser_expr("x(\"x\" X)", "((x)(((\"x\") (X))))");
+	test_parser_expr("x[1 + 2]", "((x)[((1) + (2))])");
+	test_parser_expr("x->y", "((x)->(y))");
+	test_parser_expr("x.y", "((x).(y))");
 
-	error |= test_parser_type_peek("void", "void");
-	error |= test_parser_type_peek("void *", "void *");
-	error |= test_parser_type_peek("void *p", "void *");
-	error |= test_parser_type_peek("size_t", "size_t");
-	error |= test_parser_type_peek("size_t s)", "size_t");
-	error |= test_parser_type_peek("size_t *", "size_t *");
-	error |= test_parser_type_peek("size_t *p", "size_t *");
-	error |= test_parser_type_peek("void main(int)", "void");
-	error |= test_parser_type_peek("void main(int);", "void");
-	error |= test_parser_type_peek("static foo void", "static foo void");
-	error |= test_parser_type_peek("static void foo", "static void foo");
-	error |= test_parser_type_peek("void foo f(void)", "void foo");
-	error |= test_parser_type_peek("char[]", "char [ ]");
-	error |= test_parser_type_peek("struct wsmouse_param[]",
+	test_parser_type_peek("void", "void");
+	test_parser_type_peek("void *", "void *");
+	test_parser_type_peek("void *p", "void *");
+	test_parser_type_peek("size_t", "size_t");
+	test_parser_type_peek("size_t s)", "size_t");
+	test_parser_type_peek("size_t *", "size_t *");
+	test_parser_type_peek("size_t *p", "size_t *");
+	test_parser_type_peek("void main(int)", "void");
+	test_parser_type_peek("void main(int);", "void");
+	test_parser_type_peek("static foo void", "static foo void");
+	test_parser_type_peek("static void foo", "static void foo");
+	test_parser_type_peek("void foo f(void)", "void foo");
+	test_parser_type_peek("char[]", "char [ ]");
+	test_parser_type_peek("struct wsmouse_param[]",
 	    "struct wsmouse_param [ ]");
-	error |= test_parser_type_peek("void)", "void");
-	error |= test_parser_type_peek("void,", "void");
-	error |= test_parser_type_peek("struct {,", "struct");
-	error |= test_parser_type_peek("struct s,", "struct s");
-	error |= test_parser_type_peek("struct s {,", "struct s");
-	error |= test_parser_type_peek("struct s *,", "struct s *");
-	error |= test_parser_type_peek("struct s **,", "struct s * *");
-	error |= test_parser_type_peek("struct s ***,", "struct s * * *");
-	error |= test_parser_type_peek("union {,", "union");
-	error |= test_parser_type_peek("union u,", "union u");
-	error |= test_parser_type_peek("union u {,", "union u");
-	error |= test_parser_type_peek("const* char*", "const * char *");
-	error |= test_parser_type_peek("char x[]", "char");
-	error |= test_parser_type_peek("va_list ap;", "va_list");
-	error |= test_parser_type_peek("struct s *M(v)", "struct s *");
-	error |= test_parser_type_peek(
+	test_parser_type_peek("void)", "void");
+	test_parser_type_peek("void,", "void");
+	test_parser_type_peek("struct {,", "struct");
+	test_parser_type_peek("struct s,", "struct s");
+	test_parser_type_peek("struct s {,", "struct s");
+	test_parser_type_peek("struct s *,", "struct s *");
+	test_parser_type_peek("struct s **,", "struct s * *");
+	test_parser_type_peek("struct s ***,", "struct s * * *");
+	test_parser_type_peek("union {,", "union");
+	test_parser_type_peek("union u,", "union u");
+	test_parser_type_peek("union u {,", "union u");
+	test_parser_type_peek("const* char*", "const * char *");
+	test_parser_type_peek("char x[]", "char");
+	test_parser_type_peek("va_list ap;", "va_list");
+	test_parser_type_peek("struct s *M(v)", "struct s *");
+	test_parser_type_peek(
 	    "const struct filterops *const sysfilt_ops[]",
 	    "const struct filterops * const");
-	error |= test_parser_type_peek("long __guard_local __attribute__",
-	    "long");
-	error |= test_parser_type_peek("unsigned int f:1", "unsigned int");
-	error |= test_parser_type_peek("usbd_status (*v)(void)",
+	test_parser_type_peek("long __guard_local __attribute__", "long");
+	test_parser_type_peek("unsigned int f:1", "unsigned int");
+	test_parser_type_peek("usbd_status (*v)(void)",
 	    "usbd_status ( * v ) ( void )");
-	error |= test_parser_type_peek("register char", "register char");
-	error |= test_parser_type_peek("...", "...");
-	error |= test_parser_type_peek("int (*f[])(void)",
-	    "int ( * f [ ] ) ( void )");
-	error |= test_parser_type_peek("int (* volatile f)(void);",
+	test_parser_type_peek("register char", "register char");
+	test_parser_type_peek("...", "...");
+	test_parser_type_peek("int (*f[])(void)", "int ( * f [ ] ) ( void )");
+	test_parser_type_peek("int (* volatile f)(void);",
 	    "int ( * volatile f ) ( void )");
-	error |= test_parser_type_peek("int (**f)(void);",
-	    "int ( * * f ) ( void )");
-	error |= test_parser_type_peek("int (*f(void))(void)", "int");
-	error |= test_parser_type_peek("void (*f[1])(void)",
+	test_parser_type_peek("int (**f)(void);", "int ( * * f ) ( void )");
+	test_parser_type_peek("int (*f(void))(void)", "int");
+	test_parser_type_peek("void (*f[1])(void)",
 	    "void ( * f [ 1 ] ) ( void )");
-	error |= test_parser_type_peek("void (*)",
-	    "void ( * )");
-	error |= test_parser_type_peek("char (*v)[1]", "char");
-	error |= test_parser_type_peek("P256_POINT (*table)[16]",
-	    "P256_POINT");
-	error |= test_parser_type_peek("STACK_OF(X509_EXTENSION) x",
+	test_parser_type_peek("void (*)", "void ( * )");
+	test_parser_type_peek("char (*v)[1]", "char");
+	test_parser_type_peek("P256_POINT (*table)[16]", "P256_POINT");
+	test_parser_type_peek("STACK_OF(X509_EXTENSION) x",
 	    "STACK_OF ( X509_EXTENSION ) x");
-	error |= test_parser_type_peek("STACK_OF(X509_EXTENSION) *",
+	test_parser_type_peek("STACK_OF(X509_EXTENSION) *",
 	    "STACK_OF ( X509_EXTENSION ) *");
-	error |= test_parser_type_peek("const STACK_OF(X509_EXTENSION)*",
+	test_parser_type_peek("const STACK_OF(X509_EXTENSION)*",
 	    "const STACK_OF ( X509_EXTENSION ) *");
 
-	error |= test_parser_type_peek_flags(PARSER_TYPE_CAST,
+	test_parser_type_peek_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");
-	error |= test_parser_type_peek_flags(PARSER_TYPE_ARG,
+	test_parser_type_peek_flags(PARSER_TYPE_ARG,
 	    "const foo_t)", "const");
-	error |= test_parser_type_peek_flags(PARSER_TYPE_ARG,
+	test_parser_type_peek_flags(PARSER_TYPE_ARG,
 	    "size_t)", "size_t");
-	error |= test_parser_type_peek_flags(PARSER_TYPE_EXPR,
+	test_parser_type_peek_flags(PARSER_TYPE_EXPR,
 	    "const foo_t)", "const foo_t");
 
-	error |= test_lexer_read("<", "LESS");
-	error |= test_lexer_read("<x", "LESS IDENT");
-	error |= test_lexer_read("<=", "LESSEQUAL");
-	error |= test_lexer_read("<<", "LESSLESS");
-	error |= test_lexer_read("<<=", "LESSLESSEQUAL");
+	test_lexer_read("<", "LESS");
+	test_lexer_read("<x", "LESS IDENT");
+	test_lexer_read("<=", "LESSEQUAL");
+	test_lexer_read("<<", "LESSLESS");
+	test_lexer_read("<<=", "LESSLESSEQUAL");
 
-	error |= test_lexer_read(".", "PERIOD");
-	error |= test_lexer_read("..", "PERIOD PERIOD");
-	error |= test_lexer_read("...", "ELLIPSIS");
-	error |= test_lexer_read(".x", "PERIOD IDENT");
+	test_lexer_read(".", "PERIOD");
+	test_lexer_read("..", "PERIOD PERIOD");
+	test_lexer_read("...", "ELLIPSIS");
+	test_lexer_read(".x", "PERIOD IDENT");
 
-	error |= test_lexer_read("__volatile", "VOLATILE");
-	error |= test_lexer_read("__volatile__", "VOLATILE");
+	test_lexer_read("__volatile", "VOLATILE");
+	test_lexer_read("__volatile__", "VOLATILE");
 
-	error |= test_strwidth("int", 0, 3);
-	error |= test_strwidth("int\tx", 0, 9);
-	error |= test_strwidth("int\tx", 3, 9);
-	error |= test_strwidth("int\nx", 0, 1);
-	error |= test_strwidth("int\n", 0, 0);
+	test_strwidth("int", 0, 3);
+	test_strwidth("int\tx", 0, 9);
+	test_strwidth("int\tx", 3, 9);
+	test_strwidth("int\nx", 0, 1);
+	test_strwidth("int\n", 0, 0);
 
 out:
 	context_free(cx);
