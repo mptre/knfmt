@@ -31,29 +31,20 @@ struct buffer {
 	size_t	 bf_len;
 };
 
-static int	buffer_grow(struct buffer *, unsigned int);
+static int	buffer_reserve(struct buffer *, size_t);
 
 struct buffer *
 buffer_alloc(size_t sizhint)
 {
 	struct buffer *bf;
-	char *ptr;
-	size_t siz = 1;
 
-	while (siz < sizhint)
-		siz <<= 1;
-
-	ptr = malloc(siz);
-	if (ptr == NULL)
-		return NULL;
 	bf = calloc(1, sizeof(*bf));
-	if (bf == NULL) {
-		free(ptr);
+	if (bf == NULL)
+		return NULL;
+	if (buffer_reserve(bf, sizhint)) {
+		buffer_free(bf);
 		return NULL;
 	}
-	bf->bf_ptr = ptr;
-	bf->bf_siz = siz;
-
 	return bf;
 }
 
@@ -87,7 +78,7 @@ buffer_read_fd(int fd)
 		if (n == 0)
 			break;
 		bf->bf_len += (size_t)n;
-		if (bf->bf_len > bf->bf_siz / 2 && buffer_grow(bf, 1))
+		if (buffer_reserve(bf, bf->bf_siz / 2))
 			goto err;
 	}
 	return bf;
@@ -110,31 +101,11 @@ buffer_free(struct buffer *bf)
 int
 buffer_puts(struct buffer *bf, const char *str, size_t len)
 {
-	if (len > ULONG_MAX - bf->bf_len)
-		goto overflow;
-	if (bf->bf_len + len >= bf->bf_siz) {
-		size_t siz = bf->bf_siz;
-		unsigned int shift = 1;
-
-		for (;;) {
-			if (siz > ULONG_MAX / 2)
-				goto overflow;
-			siz *= 2;
-			if (siz > bf->bf_len + len)
-				break;
-			shift++;
-		}
-		if (buffer_grow(bf, shift))
-			return 1;
-	}
-
+	if (buffer_reserve(bf, len))
+		return 1;
 	memcpy(&bf->bf_ptr[bf->bf_len], str, len);
 	bf->bf_len += len;
 	return 0;
-
-overflow:
-	errno = EOVERFLOW;
-	return 1;
 }
 
 int
@@ -159,29 +130,14 @@ int
 buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 {
 	va_list cp;
-	size_t len, siz;
-	unsigned int shift = 0;
+	size_t len;
 	int error = 0;
 	int n;
 
 	va_copy(cp, ap);
 
 	n = vsnprintf(NULL, 0, fmt, ap);
-	if (n < 0) {
-		error = 1;
-		goto out;
-	}
-
-	siz = bf->bf_siz;
-	for (;;) {
-		if (siz > bf->bf_len + (size_t)n)
-			break;
-		if (siz > ULONG_MAX / 2)
-			goto overflow;
-		siz *= 2;
-		shift++;
-	}
-	if (shift > 0 && buffer_grow(bf, shift)) {
+	if (n < 0 || buffer_reserve(bf, (size_t)n + 1)) {
 		error = 1;
 		goto out;
 	}
@@ -198,10 +154,6 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 out:
 	va_end(cp);
 	return error;
-
-overflow:
-	errno = EOVERFLOW;
-	return 1;
 }
 
 char *
@@ -214,6 +166,14 @@ buffer_release(struct buffer *bf)
 	bf->bf_siz = 0;
 	bf->bf_len = 0;
 	return ptr;
+}
+
+char *
+buffer_str(struct buffer *bf)
+{
+	if (bf->bf_len > 0 && bf->bf_ptr[bf->bf_len - 1] != '\0')
+		buffer_putc(bf, '\0');
+	return buffer_release(bf);
 }
 
 void
@@ -258,15 +218,23 @@ buffer_get_size(const struct buffer *bf)
 }
 
 static int
-buffer_grow(struct buffer *bf, unsigned int shift)
+buffer_reserve(struct buffer *bf, size_t len)
 {
+	size_t newlen, newsiz;
 	char *ptr;
-	size_t nbits = sizeof(size_t) * 8;
-	size_t newsiz;
 
-	if (shift >= nbits || bf->bf_siz > ULONG_MAX / (1ULL << shift))
+	if (len > ULONG_MAX - bf->bf_len)
 		goto overflow;
-	newsiz = bf->bf_siz << shift;
+	newlen = bf->bf_len + len;
+	if (bf->bf_siz >= newlen)
+		return 0;
+
+	newsiz = bf->bf_siz ? bf->bf_siz : 16;
+	while (newsiz < newlen) {
+		if (newsiz > ULONG_MAX / 2)
+			goto overflow;
+		newsiz *= 2;
+	}
 	ptr = realloc(bf->bf_ptr, newsiz);
 	if (ptr == NULL)
 		return 1;

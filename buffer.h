@@ -24,6 +24,7 @@ struct buffer	*buffer_read(const char *);
 struct buffer	*buffer_read_fd(int);
 
 char	*buffer_release(struct buffer *);
+char	*buffer_str(struct buffer *);
 void	 buffer_reset(struct buffer *);
 
 size_t	buffer_pop(struct buffer *, size_t);
