@@ -252,6 +252,7 @@ DISTFILES+=	knfmt.1
 DISTFILES+=	knfmt.c
 DISTFILES+=	lexer.c
 DISTFILES+=	lexer.h
+DISTFILES+=	libks/arithmetic.h
 DISTFILES+=	libks/buffer.c
 DISTFILES+=	libks/buffer.h
 DISTFILES+=	libks/vector.c

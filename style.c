@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "alloc.h"
+#include "arithmetic.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "error.h"
@@ -444,15 +445,9 @@ again:
 		while (isdigit(ch)) {
 			int x = ch - '0';
 
-			if (digit > INT_MAX / 10)
+			if (i32_mul_overflow(digit, 10, &digit) ||
+			    i32_add_overflow(digit, x, &digit))
 				overflow = 1;
-			else
-				digit *= 10;
-
-			if (digit > INT_MAX - x)
-				overflow = 1;
-			else
-				digit += x;
 
 			if (lexer_getc(lx, &ch))
 				goto eof;
