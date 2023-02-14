@@ -65,6 +65,7 @@ static int	style_parse_yaml(struct style *, const char *,
 static int	style_parse_yaml1(struct style *, struct lexer *);
 
 static struct token			*yaml_read(struct lexer *, void *);
+static struct token			*yaml_read_integer(struct lexer *);
 static char				*yaml_serialize(const struct token *);
 static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
@@ -415,6 +416,11 @@ yaml_read(struct lexer *lx, void *UNUSED(arg))
 
 again:
 	lexer_eat_lines_and_spaces(lx, NULL);
+
+	tk = yaml_read_integer(lx);
+	if (tk != NULL)
+		return tk;
+
 	s = lexer_get_state(lx);
 	if (lexer_getc(lx, &ch))
 		goto eof;
@@ -436,32 +442,6 @@ again:
 		} while (isalpha(ch) || isdigit(ch) || ch == '_');
 		lexer_ungetc(lx);
 		return yaml_keyword(lx, &s);
-	}
-
-	if (isdigit(ch)) {
-		int overflow = 0;
-		int digit = 0;
-
-		while (isdigit(ch)) {
-			int x = ch - '0';
-
-			if (i32_mul_overflow(digit, 10, &digit) ||
-			    i32_add_overflow(digit, x, &digit))
-				overflow = 1;
-
-			if (lexer_getc(lx, &ch))
-				goto eof;
-		}
-		lexer_ungetc(lx);
-
-		tk = lexer_emit(lx, &s, NULL);
-		tk->tk_type = Integer;
-		tk->tk_int = digit;
-		if (overflow) {
-			lexer_error(lx, "integer %s too large",
-			    lexer_serialize(lx, tk));
-		}
-		return tk;
 	}
 
 	if (ch == '-' || ch == '.' || ch == ':') {
@@ -497,6 +477,59 @@ again:
 eof:
 	tk = lexer_emit(lx, &s, NULL);
 	tk->tk_type = LEXER_EOF;
+	return tk;
+}
+
+static struct token *
+yaml_read_integer(struct lexer *lx)
+{
+	struct lexer_state s;
+	struct token *tk;
+	int digit = 0;
+	int overflow = 0;
+	int peek = 0;
+	int sign = 1;
+	unsigned char ch;
+
+	s = lexer_get_state(lx);
+
+	if (lexer_getc(lx, &ch))
+		return NULL;
+	if (isdigit(ch)) {
+		peek = 1;
+	} else if (ch == '-' && lexer_getc(lx, &ch) == 0) {
+		sign = -1;
+		peek = isdigit(ch);
+		if (!peek)
+			lexer_ungetc(lx);
+	}
+	if (!peek) {
+		lexer_ungetc(lx);
+		return NULL;
+	}
+
+	while (isdigit(ch)) {
+		int x = ch - '0';
+
+		if (i32_mul_overflow(digit, 10, &digit) ||
+		    i32_add_overflow(digit, x, &digit))
+			overflow = 1;
+
+		if (lexer_getc(lx, &ch))
+			return NULL;
+	}
+	lexer_ungetc(lx);
+
+	if (i32_mul_overflow(digit, sign, &digit))
+		overflow = 1;
+
+	tk = lexer_emit(lx, &s, NULL);
+	tk->tk_type = Integer;
+	tk->tk_int = digit;
+	if (overflow) {
+		lexer_error(lx, "integer %s too large",
+		    lexer_serialize(lx, tk));
+	}
 	return tk;
 }
 

@@ -13,6 +13,7 @@
  *   - 'for_each'
  * UseTab: false # ensure options after sequences are detected
  * ColumnLimit: 2147483648 # addition overflow
+ * ColumnLimit: -2147483648 # addition overflow
  * ColumnLimit: 9999999999 # multiplication overflow
  * AlignAfterOpenBracket: 0
  * BraceWrapping: # skip nested option
