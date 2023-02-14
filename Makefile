@@ -1078,7 +1078,7 @@ lint: ${PROG_knfmt}
 .PHONY: lint
 
 lint-clang-tidy:
-	cd ${.CURDIR} && clang-tidy --quiet ${CLANGTIDY}
+	cd ${.CURDIR} && clang-tidy --quiet ${CLANGTIDY} -- ${CPPFLAGS}
 .PHONY: lint-clang-tidy
 
 lint-cppcheck:
