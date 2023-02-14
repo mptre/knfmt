@@ -145,7 +145,11 @@ parser_exec(struct parser *pr, size_t sizhint)
 
 		/* Always emit EOF token as it could have dangling tokens. */
 		if (lexer_if(lx, LEXER_EOF, &tk)) {
-			doc_token(tk, concat);
+			struct doc *eof;
+
+			eof = doc_alloc(DOC_CONCAT,
+			    doc_alloc(DOC_GROUP, concat));
+			doc_token(tk, eof);
 			error = 0;
 			break;
 		}
