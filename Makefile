@@ -56,8 +56,6 @@ PROG_fuzz-style=	fuzz-style
 
 KNFMT+=	alloc.c
 KNFMT+=	alloc.h
-KNFMT+=	buffer.c
-KNFMT+=	buffer.h
 KNFMT+=	cdefs.h
 KNFMT+=	clang.c
 KNFMT+=	clang.h
@@ -121,8 +119,6 @@ KNFMT+=	token.c
 KNFMT+=	token.h
 KNFMT+=	util.c
 KNFMT+=	util.h
-KNFMT+=	vector.c
-KNFMT+=	vector.h
 
 CLANGTIDY+=	alloc.c
 CLANGTIDY+=	alloc.h
@@ -227,8 +223,6 @@ DISTFILES+=	Makefile
 DISTFILES+=	README.md
 DISTFILES+=	alloc.c
 DISTFILES+=	alloc.h
-DISTFILES+=	buffer.c
-DISTFILES+=	buffer.h
 DISTFILES+=	cdefs.h
 DISTFILES+=	clang.c
 DISTFILES+=	clang.h
@@ -258,6 +252,10 @@ DISTFILES+=	knfmt.1
 DISTFILES+=	knfmt.c
 DISTFILES+=	lexer.c
 DISTFILES+=	lexer.h
+DISTFILES+=	libks/buffer.c
+DISTFILES+=	libks/buffer.h
+DISTFILES+=	libks/vector.c
+DISTFILES+=	libks/vector.h
 DISTFILES+=	options.c
 DISTFILES+=	options.h
 DISTFILES+=	parser-attributes.c
@@ -1024,8 +1022,6 @@ DISTFILES+=	token.c
 DISTFILES+=	token.h
 DISTFILES+=	util.c
 DISTFILES+=	util.h
-DISTFILES+=	vector.c
-DISTFILES+=	vector.h
 
 all: ${PROG_knfmt}
 

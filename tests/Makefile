@@ -526,8 +526,6 @@ TESTS+=	style-simple-AlignOperands-002.c
 
 TESTS+=	../alloc.c
 TESTS+=	../alloc.h
-TESTS+=	../buffer.c
-TESTS+=	../buffer.h
 TESTS+=	../cdefs.h
 TESTS+=	../clang.c
 TESTS+=	../clang.h
@@ -552,6 +550,10 @@ TESTS+=	../fuzz-style.c
 TESTS+=	../knfmt.c
 TESTS+=	../lexer.c
 TESTS+=	../lexer.h
+TESTS+=	../libks/buffer.c
+TESTS+=	../libks/buffer.h
+TESTS+=	../libks/vector.c
+TESTS+=	../libks/vector.h
 TESTS+=	../options.c
 TESTS+=	../options.h
 TESTS+=	../parser-attributes.c
@@ -591,8 +593,6 @@ TESTS+=	../token.c
 TESTS+=	../token.h
 TESTS+=	../util.c
 TESTS+=	../util.h
-TESTS+=	../vector.c
-TESTS+=	../vector.h
 
 .SUFFIXES: .c .h .cfake .hfake
 

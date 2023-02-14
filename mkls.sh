@@ -3,19 +3,20 @@ export LC_ALL=C
 mkls "$@" \
 SRCS \
 	!(fuzz-*|knfmt|t).c \
+	$(find libks -type f -name '*.c' -exec basename {} \;) \
 	-- \
 KNFMT \
 	!(compat-*).c !(compat-*|config).h \
 	compat-pledge.c \
 	-- \
 CLANGTIDY \
-	!(buffer|config|compat-*|token-defs|vector).[ch] \
+	!(config|compat-*|token-defs).[ch] \
 	-- \
 CPPCHECK \
-	!(buffer|compat-*|vector).c \
+	!(compat-*).c \
 	-- \
 DISTFILES \
-	*.c !(config).h *.md \
+	*.c !(config).h libks/*.[ch] *.md \
 	GNUmakefile LICENSE Makefile configure knfmt.1 \
 	tests/*.+(c|ok|patch|sh) \
 	tests/GNUmakefile tests/Makefile
@@ -33,4 +34,5 @@ TESTS bug*.c -- \
 TESTS style*.c -- \
 TESTS \
 	../!(compat-*).c ../!(compat-*|config).h \
-	../compat-pledge.c
+	../compat-pledge.c \
+	../libks/*.[ch]

@@ -172,7 +172,7 @@ exec 1>config.mk
 cat <<EOF
 CC=		$(echo $CC)
 CFLAGS=		$(echo $CFLAGS)
-CPPFLAGS=	$(echo $CPPFLAGS -I\${.CURDIR})
+CPPFLAGS=	$(echo $CPPFLAGS -I\${.CURDIR} -I\${.CURDIR}/libks)
 DEBUG=		$(echo $DEBUG)
 LDFLAGS=	$(echo $LDFLAGS)
 
@@ -180,4 +180,7 @@ BINDIR?=	$(echo $BINDIR)
 MANDIR?=	$(echo $MANDIR)
 INSTALL?=	$(echo $INSTALL)
 INSTALL_MAN?=	\${INSTALL}
+
+.PATH:	\${.CURDIR}/libks
+VPATH=	\${.CURDIR}/libks
 EOF
