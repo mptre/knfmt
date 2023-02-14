@@ -101,6 +101,8 @@ buffer_free(struct buffer *bf)
 int
 buffer_puts(struct buffer *bf, const char *str, size_t len)
 {
+	if (str == NULL || len == 0)
+		return 0;
 	if (buffer_reserve(bf, len))
 		return 1;
 	memcpy(&bf->bf_ptr[bf->bf_len], str, len);
