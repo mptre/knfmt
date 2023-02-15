@@ -1,5 +1,7 @@
 #include "parser-cpp.h"
 
+#include "config.h"
+
 #include <ctype.h>
 #include <string.h>
 

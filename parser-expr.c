@@ -1,5 +1,7 @@
 #include "parser-expr.h"
 
+#include "config.h"
+
 #include "cdefs.h"
 #include "doc.h"
 #include "expr.h"

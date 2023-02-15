@@ -1,5 +1,7 @@
 #include "parser-func.h"
 
+#include "config.h"
+
 #include "doc.h"
 #include "lexer.h"
 #include "parser-attributes.h"

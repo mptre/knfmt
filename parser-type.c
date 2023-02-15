@@ -1,5 +1,7 @@
 #include "parser-type.h"
 
+#include "config.h"
+
 #include <string.h>
 
 #include "cdefs.h"

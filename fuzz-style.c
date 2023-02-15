@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "options.h"
 #include "style.h"
 

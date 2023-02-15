@@ -1,5 +1,7 @@
 #include "parser-stmt-expr.h"
 
+#include "config.h"
+
 #include "doc.h"
 #include "lexer.h"
 #include "parser-expr.h"
