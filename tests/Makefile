@@ -564,6 +564,7 @@ TESTS+=	../parser-braces.c
 TESTS+=	../parser-braces.h
 TESTS+=	../parser-cpp.c
 TESTS+=	../parser-cpp.h
+TESTS+=	../parser-decl.c
 TESTS+=	../parser-decl.h
 TESTS+=	../parser-expr.c
 TESTS+=	../parser-expr.h
