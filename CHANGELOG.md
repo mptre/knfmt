@@ -1,9 +1,9 @@
-# 4.0.0 - YYYY-MM-DD
+# 4.0.0 - 2022-02-15
 
 ## Changes
 
 - Start honoring clang format configuration, currently limited to a subset of
-  all the knobs.
+  all the style options.
   See the manual for further reference.
   (8fb32ce)
   (Anton Lindqvist)
@@ -73,7 +73,7 @@
   (4c7c898)
   (Anton Lindqvist)
 
-- Fix inline assembler parens handling bug.
+- Fix inline assembler handling of parenthesis bug.
   (112ecdd)
   (Anton Lindqvist)
 
@@ -81,11 +81,11 @@
   (0dc1c19)
   (Anton Lindqvist)
 
-- Trim trailing new lines when if the file ends with usage of cpp.
+- Trim trailing new lines when the file ends with usage of cpp.
   (7526024)
   (Anton Lindqvist)
 
-- Fix break of long expressions.
+- Break of long expressions.
   (5add695)
   (Anton Lindqvist)
 
@@ -93,7 +93,7 @@
   (0b51384)
   (Anton Lindqvist)
 
-- Trim right parens as part of expressions.
+- Trim right parenthesis as part of a expression.
   (deb21a1)
   (Anton Lindqvist)
 
@@ -101,7 +101,7 @@
   (aa0ef35)
   (Anton Lindqvist)
 
-- Trim right parens as part of inline assembler.
+- Trim right parenthesis as part of inline assembler.
   (03f7c4d)
   (Anton Lindqvist)
 
