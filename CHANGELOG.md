@@ -125,6 +125,15 @@
   (7e760c9)
   (Anton Lindqvist)
 
+- In simple mode, preserve statement braces with trailing comments.
+  (8afad71)
+  (Anton Lindqvist)
+
+- In diff mode, fix edge case when the source code only consists of macros and
+  comments.
+  (9463a1c)
+  (Anton Lindqvist)
+
 # 3.0.1 - 2022-08-14
 
 ## Bug fixes
