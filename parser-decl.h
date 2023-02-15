@@ -8,4 +8,5 @@ struct parser;
 /* Parsing of declarations on root level. */
 #define PARSER_DECL_ROOT			0x00000004u
 
+int	parser_decl_peek(struct parser *);
 int	parser_decl(struct parser *, struct doc *, unsigned int);

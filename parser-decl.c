@@ -46,6 +46,22 @@ static int	parser_simple_decl_enter(struct parser *, unsigned int);
 static void	parser_simple_decl_leave(struct parser *, int);
 
 int
+parser_decl_peek(struct parser *pr)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct doc *dc;
+	int error;
+
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	lexer_peek_enter(lx, &s);
+	error = parser_decl(pr, dc, 0);
+	lexer_peek_leave(lx, &s);
+	doc_free(dc);
+	return error & GOOD;
+}
+
+int
 parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	int error, simple;
