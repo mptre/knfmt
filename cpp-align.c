@@ -8,7 +8,6 @@
 
 #include "buffer.h"
 #include "doc.h"
-#include "options.h"
 #include "ruler.h"
 #include "style.h"
 #include "token.h"

@@ -8,7 +8,6 @@
 
 #include "buffer.h"
 #include "cdefs.h"
-#include "options.h"
 #include "style.h"
 #include "token.h"
 #include "util.h"

@@ -8,7 +8,6 @@
 #include <string.h>
 
 #include "alloc.h"
-#include "cdefs.h"
 #include "cpp-include.h"
 #include "lexer.h"
 #include "options.h"
