@@ -14,7 +14,8 @@ int
 parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
     unsigned int flags)
 {
-	struct doc *concat, *def;
+	struct doc *concat = NULL;
+	struct doc *def;
 	struct lexer *lx = pr->pr_lx;
 	enum doc_type linetype;
 	int nattributes = 0;
