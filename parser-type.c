@@ -380,18 +380,11 @@ lexer_peek_if_type_cpp(struct lexer *lx)
 	    lexer_if(lx, TOKEN_RPAREN, NULL)) {
 		struct token *nx;
 
-		if (lexer_if(lx, TOKEN_IDENT, &nx)) {
-			size_t len = nx->tk_len;
-
-			/* Ugly, do not confuse cppx. */
-			if (!lexer_peek_if(lx, TOKEN_LPAREN, NULL) &&
-			    (lexer_pop(lx, &nx) && token_cmp(nx, ident) == 0) &&
-			    (ident->tk_len != len ||
-			     strncmp(ident->tk_str, nx->tk_str, len) != 0))
-				peek = 1;
-		} else if (lexer_if(lx, TOKEN_STAR, NULL)) {
+		if (lexer_if(lx, TOKEN_IDENT, &nx) &&
+		    token_cmp(ident, nx) == 0)
 			peek = 1;
-		}
+		else if (lexer_if(lx, TOKEN_STAR, NULL))
+			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
