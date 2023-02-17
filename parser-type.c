@@ -385,6 +385,7 @@ lexer_peek_if_type_cpp(struct lexer *lx)
 
 			/* Ugly, do not confuse cppx. */
 			if (!lexer_peek_if(lx, TOKEN_LPAREN, NULL) &&
+			    (lexer_pop(lx, &nx) && token_cmp(nx, ident) == 0) &&
 			    (ident->tk_len != len ||
 			     strncmp(ident->tk_str, nx->tk_str, len) != 0))
 				peek = 1;

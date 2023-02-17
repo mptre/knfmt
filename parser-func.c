@@ -329,7 +329,7 @@ static int
 want_line_after_func_impl(struct parser *pr)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *cpp, *ident, *rbrace;
+	struct token *cpp, *ident, *rbrace, *rparen;
 	struct lexer_state s;
 	int annotated = 0;
 
@@ -342,10 +342,17 @@ want_line_after_func_impl(struct parser *pr)
 	lexer_peek_enter(lx, &s);
 	if ((lexer_if(lx, TOKEN_IDENT, &ident) ||
 	    lexer_if(lx, TOKEN_ASSEMBLY, &ident)) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_SEMI, NULL) &&
-	    ident->tk_lno - rbrace->tk_lno == 1)
-		annotated = 1;
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen)) {
+		struct token *nx;
+
+		if (lexer_if(lx, TOKEN_SEMI, NULL) &&
+		    ident->tk_lno - rbrace->tk_lno == 1)
+			annotated = 1;
+		else if (lexer_pop(lx, &nx) && nx->tk_lno - rparen->tk_lno > 1)
+			annotated = 1;
+		else if (lexer_if(lx, LEXER_EOF, NULL))
+			annotated = 1;
+	}
 	lexer_peek_leave(lx, &s);
 	if (annotated)
 		return 0;
