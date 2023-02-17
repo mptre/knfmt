@@ -134,6 +134,8 @@ static struct doc	*expr_doc_binary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_parens(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_field(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_concat(struct expr *, struct expr_state *,
@@ -701,10 +703,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		break;
 
 	case EXPR_FIELD:
-		concat = expr_doc(ex->ex_lhs, es, concat);
-		doc_token(ex->ex_tk, concat);
-		if (ex->ex_rhs != NULL)
-			concat = expr_doc(ex->ex_rhs, es, concat);
+		concat = expr_doc_field(ex, es, concat);
 		break;
 
 	case EXPR_CALL:
@@ -900,6 +899,16 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	if (doparens && ex->ex_tokens[1] != NULL)
 		doc_token(ex->ex_tokens[1], dc);	/* ) */
+	return dc;
+}
+
+static struct doc *
+expr_doc_field(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	dc = expr_doc(ex->ex_lhs, es, dc);
+	doc_token(ex->ex_tk, dc);
+	if (ex->ex_rhs != NULL)
+		dc = expr_doc(ex->ex_rhs, es, dc);
 	return dc;
 }
 
