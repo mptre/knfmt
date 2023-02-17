@@ -906,6 +906,7 @@ static struct doc *
 expr_doc_field(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	dc = expr_doc(ex->ex_lhs, es, dc);
+	token_trim(ex->ex_tk);
 	doc_token(ex->ex_tk, dc);
 	if (ex->ex_rhs != NULL)
 		dc = expr_doc(ex->ex_rhs, es, dc);
