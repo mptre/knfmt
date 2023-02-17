@@ -6,7 +6,9 @@
 #include <string.h>
 
 #include "doc.h"
+#include "expr.h"
 #include "lexer.h"
+#include "parser-expr.h"
 #include "parser-priv.h"
 #include "token.h"
 
@@ -51,6 +53,33 @@ parser_cpp_peek_x(struct parser *pr, struct token **tk)
 	if (peek && tk != NULL)
 		*tk = rparen;
 	return peek;
+}
+
+int
+parser_cpp_x(struct parser *pr, struct doc *dc, struct ruler *rl)
+{
+	struct doc *concat;
+	struct lexer *lx = pr->pr_lx;
+	struct token *rparen, *stop, *tk;
+
+	if (!parser_cpp_peek_x(pr, NULL))
+		return parser_none(pr);
+
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+
+	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, &tk)) {
+		doc_token(tk, concat);
+		doc_alloc(DOC_LINE, concat);
+	}
+	if (!lexer_peek_until_freestanding(lx, TOKEN_RPAREN, NULL, &rparen) ||
+	    (stop = token_next(rparen)) == NULL)
+		return parser_fail(pr);
+	return parser_expr(pr, NULL, &(struct parser_expr_arg){
+	    .dc		= dc,
+	    .stop	= stop,
+	    .rl		= rl,
+	    .flags	= EXPR_EXEC_ALIGN,
+	});
 }
 
 /*

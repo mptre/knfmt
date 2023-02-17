@@ -41,7 +41,6 @@ static int	parser_decl_init_assign(struct parser *, struct doc *,
 static int	parser_decl_bitfield(struct parser *, struct doc *);
 static int	parser_decl_cpp(struct parser *, struct doc *, struct ruler *,
     unsigned int);
-static int	parser_decl_cppx(struct parser *, struct doc *, struct ruler *);
 
 static int	parser_simple_decl_active(const struct parser *);
 static int	parser_simple_decl_enter(struct parser *, unsigned int);
@@ -484,7 +483,7 @@ parser_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		lexer_peek_leave(lx, &s);
 	}
 	if (!peek) {
-		if (parser_decl_cppx(pr, dc, rl) & GOOD)
+		if (parser_cpp_x(pr, dc, rl) & GOOD)
 			return parser_good(pr);
 		return parser_none(pr);
 	}
@@ -508,33 +507,6 @@ parser_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		doc_token(tk, expr);
 
 	return parser_good(pr);
-}
-
-static int
-parser_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
-{
-	struct doc *concat;
-	struct lexer *lx = pr->pr_lx;
-	struct token *rparen, *stop, *tk;
-
-	if (!parser_cpp_peek_x(pr, NULL))
-		return parser_none(pr);
-
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-
-	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, &tk)) {
-		doc_token(tk, concat);
-		doc_alloc(DOC_LINE, concat);
-	}
-	if (!lexer_peek_until_freestanding(lx, TOKEN_RPAREN, NULL, &rparen) ||
-	    (stop = token_next(rparen)) == NULL)
-		return parser_fail(pr);
-	return parser_expr(pr, NULL, &(struct parser_expr_arg){
-	    .dc		= dc,
-	    .stop	= stop,
-	    .rl		= rl,
-	    .flags	= EXPR_EXEC_ALIGN,
-	});
 }
 
 static int
