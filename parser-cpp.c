@@ -75,7 +75,7 @@ parser_cpp_x(struct parser *pr, struct doc *dc, struct ruler *rl)
 	    (stop = token_next(rparen)) == NULL)
 		return parser_fail(pr);
 	return parser_expr(pr, NULL, &(struct parser_expr_arg){
-	    .dc		= dc,
+	    .dc		= concat,
 	    .stop	= stop,
 	    .rl		= rl,
 	    .flags	= EXPR_EXEC_ALIGN,
