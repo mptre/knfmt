@@ -484,8 +484,8 @@ parser_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 		lexer_peek_leave(lx, &s);
 	}
 	if (!peek) {
-		if (parser_cpp_peek_x(pr, NULL))
-			return parser_decl_cppx(pr, dc, rl);
+		if (parser_decl_cppx(pr, dc, rl) & GOOD)
+			return parser_good(pr);
 		return parser_none(pr);
 	}
 
@@ -516,6 +516,9 @@ parser_decl_cppx(struct parser *pr, struct doc *dc, struct ruler *rl)
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
 	struct token *rparen, *stop, *tk;
+
+	if (!parser_cpp_peek_x(pr, NULL))
+		return parser_none(pr);
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
