@@ -26,7 +26,7 @@ static int	parser_func_impl1(struct parser *, struct doc *,
 static int	parser_func_proto(struct parser *, struct doc **,
     struct parser_func_proto_arg *);
 
-static int	peek_impl_line(struct parser *);
+static int	want_line_after_func_impl(struct parser *);
 
 /*
  * Returns non-zero if the next tokens denotes a function. The type argument
@@ -215,7 +215,7 @@ parser_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
 	doc_alloc(DOC_HARDLINE, dc);
-	if (peek_impl_line(pr))
+	if (want_line_after_func_impl(pr))
 		doc_alloc(DOC_HARDLINE, dc);
 
 	return parser_good(pr);
@@ -326,7 +326,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
  * followed by a hard line.
  */
 static int
-peek_impl_line(struct parser *pr)
+want_line_after_func_impl(struct parser *pr)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *cpp, *ident, *rbrace;
