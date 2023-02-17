@@ -43,10 +43,9 @@ parser_cpp_peek_type(struct parser *pr)
 }
 
 /*
- * Returns non-zero if the next tokens denotes a X macro. That is, something
- * that looks like a function call but is not followed by a semicolon nor comma
- * if being part of an initializer. One example are the macros provided by
- * RBT_PROTOTYPE(9).
+ * Detect usage of X macro. That is, something that looks like a function call
+ * but is not followed by a semicolon nor comma if being part of an initializer.
+ * One example are the macros provided by RBT_PROTOTYPE(9).
  */
 int
 parser_cpp_peek_x(struct parser *pr, struct token **tk)
