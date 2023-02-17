@@ -15,6 +15,34 @@
 static int	iscdefs(const char *, size_t);
 
 /*
+ * Detect usage of types hidden behind cpp such as STACK_OF(X509).
+ */
+int
+parser_cpp_peek_type(struct parser *pr)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *ident;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
+	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_RPAREN, NULL)) {
+		struct token *nx;
+
+		if (lexer_if(lx, TOKEN_IDENT, &nx) &&
+		    token_cmp(ident, nx) == 0)
+			peek = 1;
+		else if (lexer_if(lx, TOKEN_STAR, NULL))
+			peek = 1;
+	}
+	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+/*
  * Returns non-zero if the next tokens denotes a X macro. That is, something
  * that looks like a function call but is not followed by a semicolon nor comma
  * if being part of an initializer. One example are the macros provided by

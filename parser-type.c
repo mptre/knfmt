@@ -8,6 +8,7 @@
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
+#include "parser-cpp.h"
 #include "parser-func.h"
 #include "parser-priv.h"
 #include "ruler.h"
@@ -17,7 +18,6 @@
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
-static int	lexer_peek_if_type_cpp(struct lexer *lx);
 
 int
 parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
@@ -65,7 +65,7 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 			if (ntokens == 0)
 				break;
 			peek = 1;
-		} else if (lexer_peek_if_type_cpp(lx)) {
+		} else if (parser_cpp_peek_type(pr)) {
 			lexer_if(lx, TOKEN_IDENT, NULL);
 			lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &t);
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
@@ -360,32 +360,5 @@ lexer_peek_if_type_ident(struct lexer *lx)
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 
-	return peek;
-}
-
-/*
- * Detect usage of types hidden behind cpp such as STACK_OF(X509).
- */
-static int
-lexer_peek_if_type_cpp(struct lexer *lx)
-{
-	struct lexer_state s;
-	struct token *ident;
-	int peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_IDENT, NULL) &&
-	    lexer_if(lx, TOKEN_RPAREN, NULL)) {
-		struct token *nx;
-
-		if (lexer_if(lx, TOKEN_IDENT, &nx) &&
-		    token_cmp(ident, nx) == 0)
-			peek = 1;
-		else if (lexer_if(lx, TOKEN_STAR, NULL))
-			peek = 1;
-	}
-	lexer_peek_leave(lx, &s);
 	return peek;
 }
