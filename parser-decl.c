@@ -39,8 +39,6 @@ static int	parser_decl_init1(struct parser *, struct doc *,
 static int	parser_decl_init_assign(struct parser *, struct doc *,
     struct parser_decl_init_arg *);
 static int	parser_decl_bitfield(struct parser *, struct doc *);
-static int	parser_cpp_peek_decl(struct parser *, struct token **,
-    unsigned int);
 
 static int	parser_simple_decl_active(const struct parser *);
 static int	parser_simple_decl_enter(struct parser *, unsigned int);
@@ -148,9 +146,9 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_good(pr);
 	if ((flags & PARSER_DECL_ROOT) && (parser_cpp_decl_root(pr, dc) & GOOD))
 		return parser_good(pr);
-
 	if (!parser_type_peek(pr, &end, 0)) {
-		iscpp = parser_cpp_peek_decl(pr, &end, flags);
+		iscpp = parser_cpp_peek_decl(pr, &end,
+		    (flags & PARSER_DECL_ROOT) ? PARSER_CPP_DECL_ROOT : 0);
 		if (!iscpp)
 			return parser_cpp_x(pr, dc, rl);
 	}
@@ -438,46 +436,6 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_LITERAL, &size))
 		doc_token(size, dc);
 	return parser_good(pr);
-}
-
-/*
- * Detect usage of preprocessor directives such as the ones provided by
- * queue(3).
- */
-static int
-parser_cpp_peek_decl(struct parser *pr, struct token **end, unsigned int flags)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct token *macro, *tk;
-	int peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
-	    NULL))
-		continue;
-	if (lexer_if(lx, TOKEN_IDENT, &macro) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, end)) {
-		struct token *ident;
-
-		for (;;) {
-			if (!lexer_if(lx, TOKEN_STAR, &tk))
-				break;
-			*end = tk;
-		}
-
-		if (lexer_if(lx, TOKEN_EQUAL, NULL))
-			peek = 1;
-		else if ((flags & PARSER_DECL_ROOT) &&
-		    lexer_if(lx, TOKEN_SEMI, NULL))
-			peek = 1;
-		else if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-		    (token_cmp(macro, ident) == 0 ||
-		     lexer_if(lx, TOKEN_SEMI, NULL)))
-			peek = 1;
-	}
-	lexer_peek_leave(lx, &s);
-	return peek;
 }
 
 static int

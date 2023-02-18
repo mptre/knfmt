@@ -43,6 +43,46 @@ parser_cpp_peek_type(struct parser *pr)
 }
 
 /*
+ * Detect usage of preprocessor directives such as the ones provided by
+ * queue(3).
+ */
+int
+parser_cpp_peek_decl(struct parser *pr, struct token **end, unsigned int flags)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *macro, *tk;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
+	    NULL))
+		continue;
+	if (lexer_if(lx, TOKEN_IDENT, &macro) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, end)) {
+		struct token *ident;
+
+		for (;;) {
+			if (!lexer_if(lx, TOKEN_STAR, &tk))
+				break;
+			*end = tk;
+		}
+
+		if (lexer_if(lx, TOKEN_EQUAL, NULL))
+			peek = 1;
+		else if ((flags & PARSER_CPP_DECL_ROOT) &&
+		    lexer_if(lx, TOKEN_SEMI, NULL))
+			peek = 1;
+		else if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+		    (token_cmp(macro, ident) == 0 ||
+		     lexer_if(lx, TOKEN_SEMI, NULL)))
+			peek = 1;
+	}
+	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+/*
  * Detect usage of X macro. That is, something that looks like a function call
  * but is not followed by a semicolon nor comma if being part of an initializer.
  * One example are the macros provided by RBT_PROTOTYPE(9).
