@@ -25,8 +25,8 @@ struct parser_decl_init_arg {
 	const struct token	*semi;
 	unsigned int		 indent;
 	unsigned int		 flags;
-/* Insert space before assignment operator. */
-#define PARSER_DECL_INIT_ASSIGN		0x00000001u
+/* Insert space before equal operator. */
+#define PARSER_DECL_INIT_SPACE_BEFORE_EQUAL		0x00000001u
 };
 
 static int	parser_decl1(struct parser *, struct doc *, unsigned int);
@@ -39,7 +39,7 @@ static int	parser_decl_init1(struct parser *, struct doc *,
 static int	parser_decl_init_assign(struct parser *, struct doc *,
     struct parser_decl_init_arg *);
 static int	parser_decl_bitfield(struct parser *, struct doc *);
-static int	parser_decl_cpp(struct parser *, struct doc *, struct ruler *,
+static int	parser_cpp_peek_decl(struct parser *, struct token **,
     unsigned int);
 
 static int	parser_simple_decl_active(const struct parser *);
@@ -141,6 +141,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat;
 	struct token *beg, *end, *fun, *semi, *tk;
+	int iscpp = 0;
 	int error;
 
 	if (parser_cpp_cdefs(pr, dc) & GOOD)
@@ -149,8 +150,9 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_good(pr);
 
 	if (!parser_type_peek(pr, &end, 0)) {
-		/* No type found, this declaration could make use of cpp. */
-		return parser_decl_cpp(pr, dc, rl, flags);
+		iscpp = parser_cpp_peek_decl(pr, &end, flags);
+		if (!iscpp)
+			return parser_cpp_x(pr, dc, rl);
 	}
 
 	/*
@@ -238,7 +240,8 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		.rl	= rl,
 		.semi	= semi,
 		.indent	= style(pr->pr_st, IndentWidth),
-		.flags	= PARSER_DECL_INIT_ASSIGN,
+		.flags	= iscpp && lexer_peek_if(lx, TOKEN_EQUAL, NULL) ? 0 :
+			PARSER_DECL_INIT_SPACE_BEFORE_EQUAL,
 	};
 	error = parser_decl_init(pr, &arg);
 	if (error & (FAIL | NONE))
@@ -373,7 +376,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc,
 	if (!lexer_if(lx, TOKEN_EQUAL, &equal))
 		return parser_none(pr);
 
-	if (arg->flags & PARSER_DECL_INIT_ASSIGN)
+	if (arg->flags & PARSER_DECL_INIT_SPACE_BEFORE_EQUAL)
 		doc_literal(" ", dc);
 	doc_token(equal, dc);
 	doc_literal(" ", dc);
@@ -438,32 +441,29 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 }
 
 /*
- * Parse a declaration making use of preprocessor directives such as the ones
- * provided by queue(3).
+ * Detect usage of preprocessor directives such as the ones provided by
+ * queue(3).
  */
 static int
-parser_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
-    unsigned int flags)
+parser_cpp_peek_decl(struct parser *pr, struct token **end, unsigned int flags)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *end, *macro, *semi, *tk;
-	struct doc *expr = dc;
+	struct token *macro, *tk;
 	int peek = 0;
-	int error, hasident;
 
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
 	    NULL))
 		continue;
 	if (lexer_if(lx, TOKEN_IDENT, &macro) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &end)) {
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, end)) {
 		struct token *ident;
 
 		for (;;) {
 			if (!lexer_if(lx, TOKEN_STAR, &tk))
 				break;
-			end = tk;
+			*end = tk;
 		}
 
 		if (lexer_if(lx, TOKEN_EQUAL, NULL))
@@ -477,31 +477,7 @@ parser_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
-	if (!peek) {
-		if (parser_cpp_x(pr, dc, rl) & GOOD)
-			return parser_good(pr);
-		return parser_none(pr);
-	}
-
-	if (parser_type(pr, dc, end, rl) & (FAIL | NONE))
-		return parser_fail(pr);
-
-	if (!lexer_peek_until(lx, TOKEN_SEMI, &semi))
-		return parser_fail(pr);
-	hasident = !lexer_peek_if(lx, TOKEN_EQUAL, NULL);
-	error = parser_decl_init(pr, &(struct parser_decl_init_arg){
-	    .dc		= dc,
-	    .rl		= rl,
-	    .semi	= semi,
-	    .indent	= style(pr->pr_st, IndentWidth),
-	    .flags	= hasident ? PARSER_DECL_INIT_ASSIGN : 0,
-	});
-	if (error & (FAIL | NONE))
-		return parser_fail(pr);
-	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, expr);
-
-	return parser_good(pr);
+	return peek;
 }
 
 static int
