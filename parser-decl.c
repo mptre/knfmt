@@ -145,6 +145,8 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	if (parser_cpp_cdefs(pr, dc) & GOOD)
 		return parser_good(pr);
+	if ((flags & PARSER_DECL_ROOT) && (parser_cpp_decl_root(pr, dc) & GOOD))
+		return parser_good(pr);
 
 	if (!parser_type_peek(pr, &end, 0)) {
 		/* No type found, this declaration could make use of cpp. */
@@ -475,13 +477,6 @@ parser_decl_cpp(struct parser *pr, struct doc *dc, struct ruler *rl,
 			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
-	if (!peek && (flags & PARSER_DECL_ROOT)) {
-		lexer_peek_enter(lx, &s);
-		if (lexer_if(lx, TOKEN_IDENT, &end) &&
-		    lexer_if(lx, TOKEN_SEMI, NULL))
-			peek = 1;
-		lexer_peek_leave(lx, &s);
-	}
 	if (!peek) {
 		if (parser_cpp_x(pr, dc, rl) & GOOD)
 			return parser_good(pr);

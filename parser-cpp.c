@@ -135,6 +135,29 @@ parser_cpp_cdefs(struct parser *pr, struct doc *dc)
 	return parser_good(pr);
 }
 
+int
+parser_cpp_decl_root(struct parser *pr, struct doc *dc)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *ident, *semi;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_SEMI, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+	if (!peek)
+		return parser_none(pr);
+
+	if (lexer_expect(lx, TOKEN_IDENT, &ident))
+		doc_token(ident, dc);
+	if (lexer_expect(lx, TOKEN_SEMI, &semi))
+		doc_token(semi, dc);
+	return parser_good(pr);
+}
+
 static int
 iscdefs(const char *str, size_t len)
 {
