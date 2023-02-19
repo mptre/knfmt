@@ -20,7 +20,6 @@
 
 struct parser_decl_init_arg {
 	struct doc		*dc;
-	struct doc		*out;
 	struct ruler		*rl;
 	const struct token	*semi;
 	unsigned int		 indent;
@@ -32,12 +31,12 @@ struct parser_decl_init_arg {
 static int	parser_decl1(struct parser *, struct doc *, unsigned int);
 static int	parser_decl2(struct parser *, struct doc *, struct ruler *,
     unsigned int);
-static int	parser_decl_init(struct parser *,
+static int	parser_decl_init(struct parser *, struct doc **,
     struct parser_decl_init_arg *);
-static int	parser_decl_init1(struct parser *, struct doc *,
+static int	parser_decl_init1(struct parser *, struct doc *, struct doc **,
     struct parser_decl_init_arg *);
 static int	parser_decl_init_assign(struct parser *, struct doc *,
-    struct parser_decl_init_arg *);
+    struct doc **, struct parser_decl_init_arg *);
 static int	parser_decl_bitfield(struct parser *, struct doc *);
 
 static int	parser_simple_decl_active(const struct parser *);
@@ -137,6 +136,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
     unsigned int flags)
 {
 	struct lexer *lx = pr->pr_lx;
+	struct doc *out = NULL;
 	struct doc *concat;
 	struct token *beg, *end, *fun, *semi, *tk;
 	int iscpp = 0;
@@ -241,11 +241,11 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		.flags	= iscpp && lexer_peek_if(lx, TOKEN_EQUAL, NULL) ? 0 :
 			PARSER_DECL_INIT_SPACE_BEFORE_EQUAL,
 	};
-	error = parser_decl_init(pr, &arg);
+	error = parser_decl_init(pr, &out, &arg);
 	if (error & (FAIL | NONE))
 		return parser_fail(pr);
-	if (arg.out != NULL)
-		concat = arg.out;
+	if (out != NULL)
+		concat = out;
 
 out:
 	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
@@ -260,7 +260,8 @@ out:
  * Parse any initialization as part of a declaration.
  */
 static int
-parser_decl_init(struct parser *pr, struct parser_decl_init_arg *arg)
+parser_decl_init(struct parser *pr, struct doc **out,
+    struct parser_decl_init_arg *arg)
 {
 	struct doc *concat, *dc, *indent;
 	struct lexer *lx = pr->pr_lx;
@@ -278,7 +279,7 @@ parser_decl_init(struct parser *pr, struct parser_decl_init_arg *arg)
 		if (lexer_peek(lx, &tk) && tk == arg->semi)
 			break;
 
-		error = parser_decl_init1(pr, concat, arg);
+		error = parser_decl_init1(pr, concat, out, arg);
 		if (error & NONE)
 			break;
 		ninit++;
@@ -300,7 +301,7 @@ parser_decl_init(struct parser *pr, struct parser_decl_init_arg *arg)
 			 * Any preceeding expr cannot be the last one of this
 			 * declaration.
 			 */
-			arg->out = concat;
+			*out = concat;
 		}
 	}
 	if (ninit == 0) {
@@ -311,7 +312,7 @@ parser_decl_init(struct parser *pr, struct parser_decl_init_arg *arg)
 }
 
 static int
-parser_decl_init1(struct parser *pr, struct doc *dc,
+parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out,
     struct parser_decl_init_arg *arg)
 {
 	struct lexer *lx = pr->pr_lx;
@@ -351,19 +352,19 @@ parser_decl_init1(struct parser *pr, struct doc *dc,
 	} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
 		doc_token(tk, dc);
 		return parser_good(pr);
-	} else if (parser_attributes(pr, dc, &arg->out, 0) & GOOD) {
+	} else if (parser_attributes(pr, dc, out, 0) & GOOD) {
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
 			doc_literal(" ", dc);
-			arg->out = NULL;
+			*out = NULL;
 		}
 		return parser_good(pr);
 	}
 
-	return parser_decl_init_assign(pr, dc, arg);
+	return parser_decl_init_assign(pr, dc, out, arg);
 }
 
 static int
-parser_decl_init_assign(struct parser *pr, struct doc *dc,
+parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
     struct parser_decl_init_arg *arg)
 {
 	struct doc *dedent;
@@ -405,7 +406,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc,
 			flags |= EXPR_EXEC_HARDLINE;
 
 		lexer_peek_until_comma(lx, arg->semi, &stop);
-		error = parser_expr(pr, &arg->out, &(struct parser_expr_arg){
+		error = parser_expr(pr, out, &(struct parser_expr_arg){
 		    .dc		= dedent,
 		    .stop	= stop,
 		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
