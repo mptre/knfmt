@@ -296,17 +296,21 @@ expr_exec(const struct expr_exec_arg *ea)
 }
 
 int
-expr_peek(const struct expr_exec_arg *ea)
+expr_peek(struct token **tk, const struct expr_exec_arg *ea)
 {
 	struct expr_state es;
+	struct lexer_state s;
 	struct expr *ex;
+	struct lexer *lx = ea->lx;
 	int peek = 0;
 
 	expr_state_init(&es, ea);
 
+	lexer_peek_enter(lx, &s);
 	ex = expr_exec1(&es, PC0);
-	if (ex != NULL && lexer_get_error(es.es_lx) == 0)
+	if (ex != NULL && lexer_get_error(lx) == 0 && lexer_back(lx, tk))
 		peek = 1;
+	lexer_peek_leave(lx, &s);
 	expr_free(ex);
 	expr_state_reset(&es);
 	return peek;

@@ -49,4 +49,4 @@ struct expr_exec_arg {
 };
 
 struct doc	*expr_exec(const struct expr_exec_arg *);
-int		 expr_peek(const struct expr_exec_arg *);
+int		 expr_peek(struct token **, const struct expr_exec_arg *);
