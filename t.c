@@ -453,7 +453,6 @@ context_init(struct context *cx, const char *src)
 	    .path	= path,
 	    .bf		= cx->bf,
 	    .er		= cx->er,
-	    .diff	= NULL,
 	    .op		= &cx->op,
 	    .callbacks	= {
 		.read		= clang_read,

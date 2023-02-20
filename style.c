@@ -336,7 +336,6 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 	    .path	= path,
 	    .bf		= bf,
 	    .er		= er,
-	    .diff	= NULL,
 	    .op		= op,
 	    .callbacks	= {
 		.read		= yaml_read,
