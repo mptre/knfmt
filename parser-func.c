@@ -126,7 +126,6 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	struct lexer *lx = pr->pr_lx;
 	struct token *pv = NULL;
 	struct token *tk, *type;
-	int error = 0;
 
 	if (!parser_type_peek(pr, &type, PARSER_TYPE_ARG))
 		return parser_none(pr);
@@ -140,7 +139,7 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	doc_alloc(DOC_SOFTLINE, concat);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, concat));
 
-	if (parser_type(pr, concat, type, NULL) & (FAIL | NONE))
+	if (parser_type(pr, concat, type, NULL) & HALT)
 		return parser_fail(pr);
 
 	/* Put the argument identifier in its own group to trigger a refit. */
@@ -159,8 +158,8 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			return parser_fail(pr);
 
-		if (parser_attributes(pr, concat, NULL, 0) & GOOD)
-			break;
+		if (parser_attributes(pr, concat, NULL, 0) & FAIL)
+			return parser_fail(pr);
 
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 			doc_token(tk, concat);
@@ -170,10 +169,8 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_peek(lx, &tk) && tk == rparen)
 			break;
 
-		if (!lexer_pop(lx, &tk)) {
-			error = parser_fail(pr);
-			break;
-		}
+		if (!lexer_pop(lx, &tk))
+			return parser_fail(pr);
 		/* Identifiers must be separated. */
 		if (pv != NULL && pv->tk_type == TOKEN_IDENT &&
 		    tk->tk_type == TOKEN_IDENT)
@@ -182,7 +179,7 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		pv = tk;
 	}
 
-	return error ? error : parser_good(pr);
+	return parser_good(pr);
 }
 
 static int
