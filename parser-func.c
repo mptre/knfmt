@@ -231,7 +231,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	struct doc *attributes, *concat, *group, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
-	unsigned int s;
+	unsigned int s, w;
 	int nkr = 0;
 	int error;
 
@@ -286,11 +286,22 @@ parser_func_proto(struct parser *pr, struct doc **out,
 		parser_token_trim_after(pr, rparen);
 		doc_token(lparen, concat);
 	}
+	w = style(pr->pr_st, ContinuationIndentWidth);
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
-		indent = doc_alloc_indent(DOC_INDENT_WIDTH, concat);
+		const struct doc_minimize minimizers[2] = {
+			{
+				.type	= DOC_MINIMIZE_INDENT,
+				.indent	= DOC_INDENT_WIDTH,
+			},
+			{
+				.type	= DOC_MINIMIZE_INDENT,
+				.indent	= w,
+			},
+		};
+
+		indent = doc_minimize(dc, minimizers);
 	} else {
-		indent = doc_alloc_indent(
-		    style(pr->pr_st, ContinuationIndentWidth), concat);
+		indent = doc_alloc_indent(w, concat);
 	}
 	while (parser_func_arg(pr, indent, out, rparen) & GOOD)
 		continue;
