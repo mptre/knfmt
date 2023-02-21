@@ -154,8 +154,11 @@ simple_stmt_ifelse_enter(struct simple_stmt *ss, struct token *lbrace,
     unsigned int indent, void **cookie)
 {
 	struct stmt *st;
+	unsigned int flags = 0;
 
-	st = simple_stmt_alloc(ss, indent, 0);
+	if (!token_is_moveable(lbrace))
+		flags |= STMT_IGNORE;
+	st = simple_stmt_alloc(ss, indent, flags);
 	token_ref(lbrace);
 	st->st_lbrace = lbrace;
 	*cookie = st;
@@ -168,6 +171,8 @@ simple_stmt_ifelse_leave(struct simple_stmt *UNUSED(ss), struct token *rbrace,
 {
 	struct stmt *st = cookie;
 
+	if (!token_is_moveable(rbrace))
+		st->st_flags |= STMT_IGNORE;
 	token_ref(rbrace);
 	st->st_rbrace = rbrace;
 }

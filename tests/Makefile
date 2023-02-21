@@ -421,6 +421,7 @@ TESTS+=	simple-026.c
 TESTS+=	simple-027.c
 TESTS+=	simple-028.c
 TESTS+=	simple-029.c
+TESTS+=	simple-030.c
 
 TESTS+=	inplace-001.c
 
