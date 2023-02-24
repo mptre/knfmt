@@ -1498,6 +1498,12 @@ doc_diff_leave0(const struct doc *dc, struct doc_state *st, unsigned int end,
 	st->st_diff.mute = 0;
 	doc_trace(dc, st, "doc_diff_leave: %s: leave chunk: beg %u",
 	    fun, st->st_diff.beg);
+	/*
+	 * Emit pending new line immediately as we would otherwise lose track of
+	 * it while being mute.
+	 */
+	if (st->st_newline)
+		doc_print(dc, st, "\n", 1, DOC_PRINT_FORCE);
 }
 
 static int

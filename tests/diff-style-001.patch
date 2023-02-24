@@ -1,0 +1,10 @@
+--- diff-style-001.c
++++ diff-style-001.c
+@@ -1,6 +1,6 @@
+ int
+ main(int a,
+-     int b,
++     int b, int d,
+      int c)
+ {
+ }

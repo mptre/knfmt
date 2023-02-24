@@ -36,6 +36,8 @@ TESTS+=	diff-simple-002.c
 TESTS+=	diff-simple-003.c
 TESTS+=	diff-simple-004.c
 
+TESTS+=	diff-style-001.c
+
 TESTS+=	error-001.c
 TESTS+=	error-002.c
 TESTS+=	error-003.c
