@@ -178,6 +178,7 @@ static int		doc_max1(const struct doc *, struct doc_state *,
 
 static void	doc_state_init(struct doc_state *, enum doc_mode, unsigned int);
 static void	doc_state_reset(struct doc_state *);
+static void	doc_state_reset_lines(struct doc_state *);
 static void	doc_state_snapshot(struct doc_state_snapshot *,
     const struct doc_state *);
 static void	doc_state_snapshot_restore(const struct doc_state_snapshot *,
@@ -632,10 +633,12 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		 * to emit any missed new line.
 		 */
 		if (st->st_mute == 0) {
+			unsigned int muteline;
+
 			doc_diff_mute_leave(dc, st);
-			st->st_nlines = 0;
-			st->st_newline = st->st_muteline;
-			st->st_muteline = 0;
+			muteline = st->st_muteline;
+			doc_state_reset_lines(st);
+			st->st_newline = muteline;
 		}
 		break;
 
@@ -1320,6 +1323,7 @@ doc_diff_mute_leave(const struct doc *dc, struct doc_state *st)
 	if (st->st_diff.muteline && st->st_muteline) {
 		doc_trace(dc, st, "%s: muteline %u", __func__,
 		    st->st_diff.muteline);
+		doc_state_reset_lines(st);
 		doc_print(dc, st, "\n", 1, DOC_PRINT_FORCE);
 	}
 	st->st_diff.muteline = 0;
@@ -1414,9 +1418,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 		free(s);
 	}
 
-	st->st_nlines = 0;
-	st->st_newline = 0;
-	st->st_muteline = 0;
+	doc_state_reset_lines(st);
 	doc_trim_spaces(dc, st);
 	doc_print(dc, st, str, len, DOC_PRINT_FORCE);
 	doc_indent(dc, st, st->st_indent.cur);
@@ -1588,6 +1590,17 @@ static void
 doc_state_reset(struct doc_state *st)
 {
 	VECTOR_FREE(st->st_walk);
+}
+
+/*
+ * Reset state related to emitting new lines.
+ */
+static void
+doc_state_reset_lines(struct doc_state *st)
+{
+	st->st_nlines = 0;
+	st->st_newline = 0;
+	st->st_muteline = 0;
 }
 
 static void
