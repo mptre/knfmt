@@ -151,6 +151,9 @@ bug-*)
 diff-simple-*)
 	testcase "$_abs" -- -Ds -vl "$@"
 	;;
+diff-style-*)
+	testcase -c "$_abs" -- -Ds -vl "$@"
+	;;
 diff-*)
 	testcase "$_abs" -- -D -vl "$@"
 	;;
