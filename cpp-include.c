@@ -251,9 +251,6 @@ token_has_verbatim_line(const struct token *tk)
 static void
 token_trim_verbatim_line(struct token *tk)
 {
-	const char *str = tk->tk_str;
-	size_t len = tk->tk_len;
-
-	if (len > 2 && str[len - 1] == '\n' && str[len - 2] == '\n')
+	if (token_has_verbatim_line(tk))
 		tk->tk_len--;
 }
