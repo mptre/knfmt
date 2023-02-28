@@ -5,106 +5,108 @@ on:
   - pull_request
 
 jobs:
-  test:
-    runs-on: ${{matrix.os}}
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, macos-latest]
-        compiler: [gcc, clang]
-        mode: [asan, ubsan, musl, valgrind, fuzz]
-        exclude:
-          - os: macos-latest
-            compiler: gcc
-
-          - mode: musl
-            os: macos-latest
-
-          - mode: musl
-            os: ubuntu-22.04
-            compiler: clang
-
-          - mode: valgrind
-            os: macos-latest
-
-          - mode: valgrind
-            os: ubuntu-22.04
-            compiler: clang
-
-          - mode: fuzz
-            os: ubuntu-22.04
-            compiler: clang
-
-          - mode: fuzz
-            os: macos-latest
-
-        include:
-          - os: ubuntu-22.04
-            nproc: nproc
-
-          - os: macos-latest
-            nproc: sysctl -n hw.logicalcpu
-
-          - compiler: gcc
-            cflags: -Wformat-signedness
-
-          - mode: asan
-            debug: -fsanitize=address
-
-          - mode: ubsan
-            debug: -fsanitize=undefined -fno-sanitize-recover=all
-
-          - mode: musl
-            cc: musl-gcc
-            deps_mode: musl-tools
-            musl: 1
-
-          - mode: valgrind
-            deps_mode: valgrind
-            exec: valgrind
-            valgrind: --quiet --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=all --show-leak-kinds=all
-
-          - mode: fuzz
-            cc: afl-gcc
-            deps_mode: afl
-
+  linux-gcc-asan-ubsan:
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
-
-      - name: dependenices
-        if: ${{matrix.deps_os || matrix.deps_mode}}
-        run: sudo apt-get update && sudo apt-get install ${{matrix.deps_os}} ${{matrix.deps_mode}}
-
+      - name: checkout
+        uses: actions/checkout@v2
       - name: test
         env:
-          CC: ${{matrix.cc || matrix.compiler}}
-          CFLAGS: -Werror -Wmissing-prototypes -Wpedantic -Wshadow -Wsign-conversion -Wwrite-strings ${{matrix.cflags}}
-          CPPFLAGS: ${{matrix.cppflags}}
-          DEBUG: -g -O2 ${{matrix.debug}}
-          EXEC: ${{matrix.exec}}
-          MODE: ${{matrix.mode}}
-          MUSL: ${{matrix.musl}}
-          TESTFLAGS: ${{matrix.testflags}}
-          VALGRIND_OPTS: ${{matrix.valgrind}}
+          CC: gcc
+          CFLAGS: -Wformat-signedness
+          DEBUG: -fsanitize=address,undefined -fno-sanitize-recover=all
         run: |
-          set -ex
-          ${CC} -v
-          MAKE="make -j `${{matrix.nproc}}`"
-          ./configure || :
-          cat config.log
-          if [ "${MODE}" == "fuzz" ]; then
-            ${MAKE} fuzz
-            exit 0
-          fi
-          ${MAKE} test "TESTFLAGS=${TESTFLAGS}" ${TESTS:+"TESTS=${TESTS}"}
-          # Ensure assertions are free from side effects.
-          env CPPFLAGS="${CPPFLAGS} -DNDEBUG" ./configure || :
-          cat config.log
-          ${MAKE} test "TESTFLAGS=${TESTFLAGS}" ${TESTS:+"TESTS=${TESTS}"}
+          ./configure --pedantic
+          make -j`nproc` test
+
+  linux-clang-asan-ubsan:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: test
+        env:
+          CC: clang
+          DEBUG: -fsanitize=address,undefined -fno-sanitize-recover=all
+        run: |
+          ./configure --pedantic
+          make -j`nproc` test
+
+  macos-clang-asan-ubsan:
+    runs-on: macos-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: test
+        env:
+          CC: clang
+          DEBUG: -fsanitize=address,undefined -fno-sanitize-recover=all
+        run: |
+          ./configure --pedantic
+          make -j`sysctl -n hw.logicalcpu` test
+
+  valgrind:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: dependenices
+        run: sudo apt-get update && sudo apt-get install valgrind
+      - name: test
+        env:
+          CC: gcc
+          EXEC: valgrind
+          VALGRIND_OPTS: --quiet --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=all --show-leak-kinds=all
+        run: |
+          ./configure --pedantic
+          make -j`nproc` test
+
+  musl:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: dependenices
+        run: sudo apt-get update && sudo apt-get install musl-tools
+      - name: test
+        env:
+          CC: musl-gcc
+        run: |
+          ./configure --pedantic
+          make -j`nproc` test
+
+  ndebug:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: test
+        env:
+          CC: gcc
+          CPPFLAGS: -DNDEBUG
+        run: |
+          ./configure --pedantic
+          make -j`nproc` test
+
+  fuzz:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: dependenices
+        run: sudo apt-get update && sudo apt-get install afl
+      - name: test
+        env:
+          CC: afl-gcc
+        run: |
+          ./configure --pedantic
+          make -j`nproc` fuzz
 
   clang-tidy:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout
+        uses: actions/checkout@v2
       - name: clang-tidy
         run: |
           ./configure
@@ -113,7 +115,8 @@ jobs:
   cppcheck:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout
+        uses: actions/checkout@v2
       - name: dependenices
         run: sudo apt-get update && sudo apt-get install cppcheck
       - name: cppcheck
