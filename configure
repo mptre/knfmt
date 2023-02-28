@@ -42,6 +42,16 @@ makevar() {
 	fi
 }
 
+# rmdup arg ...
+#
+# Remove duplicates from the given arguments while preserving the order.
+rmdup() {
+	echo "$@" |
+	xargs printf '%s\n' |
+	awk '!x[$1]++' |
+	xargs
+}
+
 check_dead() {
 	compile <<-EOF
 	#include <stdlib.h>
@@ -103,6 +113,20 @@ check_warnc() {
 	}
 	EOF
 }
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+	--pedantic)
+		CFLAGS="-O2 -Werror -Wmissing-prototypes -Wpedantic -Wshadow -Wsign-conversion -Wwrite-strings ${CFLAGS:-}"
+		export CFLAGS
+		DEBUG="-g ${DEBUG:-}"
+		export DEBUG
+		;;
+	*)
+		;;
+	esac
+	shift
+done
 
 TMP1=$(mktemp -t configure.XXXXXX)
 TMP2=$(mktemp -t configure.XXXXXX)
@@ -171,10 +195,10 @@ exec 1>config.mk
 # Use echo to normalize whitespace.
 cat <<EOF
 CC=		$(echo $CC)
-CFLAGS=		$(echo $CFLAGS)
-CPPFLAGS=	$(echo $CPPFLAGS -I\${.CURDIR} -I\${.CURDIR}/libks)
-DEBUG=		$(echo $DEBUG)
-LDFLAGS=	$(echo $LDFLAGS)
+CFLAGS=		$(rmdup $CFLAGS)
+CPPFLAGS=	$(rmdup $CPPFLAGS -I\${.CURDIR} -I\${.CURDIR}/libks)
+DEBUG=		$(rmdup $DEBUG)
+LDFLAGS=	$(rmdup $LDFLAGS)
 
 BINDIR?=	$(echo $BINDIR)
 MANDIR?=	$(echo $MANDIR)
