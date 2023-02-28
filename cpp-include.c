@@ -31,7 +31,8 @@ struct include {
 	} path;
 };
 
-static int	sort_includes(const struct options *, const struct style *);
+static int	is_sort_includes_enabled(const struct options *,
+    const struct style *);
 
 static void	cpp_include_exec(struct cpp_include *);
 static void	cpp_include_reset(struct cpp_include *);
@@ -50,7 +51,7 @@ cpp_include_alloc(const struct options *op, const struct style *st)
 {
 	struct cpp_include *ci;
 
-	if (!sort_includes(op, st))
+	if (!is_sort_includes_enabled(op, st))
 		return NULL;
 
 	ci = ecalloc(1, sizeof(*ci));
@@ -120,7 +121,7 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 }
 
 static int
-sort_includes(const struct options *op, const struct style *st)
+is_sort_includes_enabled(const struct options *op, const struct style *st)
 {
 	return (op->op_flags & OPTIONS_SIMPLE) ||
 	    style(st, SortIncludes) == CaseSensitive;
