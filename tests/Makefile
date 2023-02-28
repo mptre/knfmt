@@ -393,6 +393,7 @@ TESTS+=	valid-301.c
 TESTS+=	valid-302.c
 TESTS+=	valid-303.c
 TESTS+=	valid-304.c
+TESTS+=	valid-305.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
