@@ -1161,17 +1161,15 @@ doc_trim_lines(const struct doc *dc, struct doc_state *st)
 {
 	const char *buf = buffer_get_ptr(st->st_bf);
 	size_t buflen = buffer_get_len(st->st_bf);
-	unsigned int oldcol = st->st_col;
+	int ntrim = 0;
 
 	while (buflen > 1 &&
 	    buf[buflen - 1] == '\n' && buf[buflen - 2] == '\n') {
 		buflen -= buffer_pop(st->st_bf, 1);
-		st->st_col--;
+		ntrim++;
 	}
-	if (oldcol > st->st_col) {
-		doc_trace(dc, st, "%s: trimmed %u line(s)", __func__,
-		    oldcol - st->st_col);
-	}
+	if (ntrim > 0)
+		doc_trace(dc, st, "%s: trimmed %d line(s)", __func__, ntrim);
 }
 
 static int
