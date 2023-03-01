@@ -251,16 +251,15 @@ doc_exec(struct doc_exec_arg *arg)
 {
 	const struct doc *dc = arg->dc;
 	struct doc_state st;
-	unsigned int flags = arg->flags;
 
 	buffer_reset(arg->bf);
-	doc_state_init(&st, BREAK, flags);
+	doc_state_init(&st, BREAK, arg->flags);
 	st.st_op = arg->op;
 	st.st_st = arg->st;
 	st.st_bf = arg->bf;
 	st.st_lx = arg->lx;
 	doc_exec1(dc, &st);
-	if ((flags & DOC_EXEC_TRIM) && (flags & DOC_EXEC_DIFF) == 0)
+	if (arg->flags & DOC_EXEC_TRIM)
 		doc_trim_lines(dc, &st);
 	doc_state_reset(&st);
 	doc_diff_exit(dc, &st);
