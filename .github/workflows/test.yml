@@ -27,7 +27,7 @@ jobs:
       - name: test
         env:
           CC: clang
-          DEBUG: -fsanitize=address,undefined -fno-sanitize-recover=all
+          DEBUG: -fsanitize=address,undefined,unsigned-integer-overflow -fno-sanitize-recover=all
         run: |
           ./configure --pedantic
           make -j`nproc` test
@@ -40,7 +40,7 @@ jobs:
       - name: test
         env:
           CC: clang
-          DEBUG: -fsanitize=address,undefined -fno-sanitize-recover=all
+          DEBUG: -fsanitize=address,undefined,unsigned-integer-overflow -fno-sanitize-recover=all
         run: |
           ./configure --pedantic
           make -j`sysctl -n hw.logicalcpu` test
