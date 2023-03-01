@@ -4,16 +4,8 @@
   <suppress>
     <id>missingIncludeSystem</id>
   </suppress>
-  <!-- nofile -->
   <suppress>
     <id>toomanyconfigs</id>
-  </suppress>
-
-  <!-- buffer.c -->
-  <suppress>
-    <fileName>buffer.c</fileName>
-    <id>unusedFunction</id>
-    <symbolName>buffer_get_size</symbolName>
   </suppress>
 
   <!-- expr.c -->
