@@ -13,7 +13,6 @@ jobs:
       - name: test
         env:
           CC: gcc
-          CFLAGS: -Wformat-signedness
           DEBUG: -fsanitize=address,undefined -fno-sanitize-recover=all
         run: |
           ./configure --pedantic

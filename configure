@@ -19,6 +19,12 @@ compile() {
 	$CC $CPPFLAGS -Werror -o /dev/null -x c - $@
 }
 
+cc_has_option() {
+	if echo 'int main(void) { return 0; }' | compile "$@"; then
+		echo "$@"
+	fi
+}
+
 fatal() {
 	[ $# -gt 0 ] && echo "fatal: ${*}"
 	exec 1>&3 2>&4
@@ -40,6 +46,21 @@ makevar() {
 	else
 		return 1
 	fi
+}
+
+# pedantic
+#
+# Pedantic flags supported by most compilers.
+pedantic() {
+	cat <<-EOF | xargs
+	-O2
+	-Werror
+	-Wmissing-prototypes
+	-Wpedantic
+	-Wshadow
+	-Wsign-conversion
+	-Wwrite-strings
+	EOF
 }
 
 # rmdup arg ...
@@ -114,16 +135,12 @@ check_warnc() {
 	EOF
 }
 
+_pedantic=0
+
 while [ $# -gt 0 ]; do
 	case "$1" in
-	--pedantic)
-		CFLAGS="-O2 -Werror -Wmissing-prototypes -Wpedantic -Wshadow -Wsign-conversion -Wwrite-strings ${CFLAGS:-}"
-		export CFLAGS
-		DEBUG="-g ${DEBUG:-}"
-		export DEBUG
-		;;
-	*)
-		;;
+	--pedantic)	_pedantic=1;;
+	*)		;;
 	esac
 	shift
 done
@@ -154,6 +171,14 @@ CFLAGS="$(unset CFLAGS DEBUG; makevar CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
 CFLAGS="${CFLAGS} -Wall -Wextra -MD -MP"
 CPPFLAGS="$(makevar CPPFLAGS || :)"
 LDFLAGS="$(DEBUG= makevar LDFLAGS || :)"
+
+# Must happen after CC is defined.
+if [ "$_pedantic" = 1 ]; then
+	CFLAGS="$(cc_has_option -Wformat-signedness) ${CFLAGS}"
+	CFLAGS="$(cc_has_option -Wimplicit-fallthrough) ${CFLAGS}"
+	CFLAGS="-g $(pedantic) ${CFLAGS}"
+	DEBUG="-g ${DEBUG}"
+fi
 
 PREFIX="$(makevar PREFIX || echo /usr/local)"
 BINDIR="$(makevar BINDIR || echo "${PREFIX}/bin")"
