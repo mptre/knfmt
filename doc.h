@@ -35,9 +35,7 @@ struct doc_exec_arg {
 	unsigned int		 flags;
 #define DOC_EXEC_DIFF	    0x00000001u
 #define DOC_EXEC_TRACE	    0x00000002u
-#define DOC_EXEC_WIDTH	    0x00000004u
-#define DOC_EXEC_TRIM	    0x00000008u
-
+#define DOC_EXEC_TRIM	    0x00000004u
 };
 
 struct doc_minimize {
