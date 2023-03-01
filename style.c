@@ -84,6 +84,8 @@ static int	parse_nested(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_AlignOperands(struct style *, struct lexer *,
     const struct style_option *);
+static int	parse_ColumnLimit(struct style *, struct lexer *,
+    const struct style_option *);
 static int	parse_IncludeCategories(struct style *, struct lexer *,
     const struct style_option *);
 
@@ -149,7 +151,7 @@ style_init(void)
 
 		{ S(BreakBeforeTernaryOperators), parse_bool, {0} },
 
-		{ S(ColumnLimit), parse_integer, {0} },
+		{ S(ColumnLimit), parse_ColumnLimit, {0} },
 
 		{ S(ContinuationIndentWidth), parse_integer, {0} },
 
@@ -699,6 +701,18 @@ parse_AlignOperands(struct style *st, struct lexer *lx,
 		else if (st->st_options[AlignOperands] == False)
 			st->st_options[AlignOperands] = DontAlign;
 	}
+	return error;
+}
+
+static int
+parse_ColumnLimit(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	int error;
+
+	error = parse_integer(st, lx, so);
+	if ((error & GOOD) && st->st_options[ColumnLimit] == 0)
+		st->st_options[ColumnLimit] = UINT_MAX;
 	return error;
 }
 

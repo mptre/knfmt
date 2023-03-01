@@ -643,6 +643,7 @@ DISTFILES+=	tests/style-BreakBeforeTernaryOperators-005.c
 DISTFILES+=	tests/style-BreakBeforeTernaryOperators-006.c
 DISTFILES+=	tests/style-BreakBeforeTernaryOperators-006.ok
 DISTFILES+=	tests/style-ColumnLimit-001.c
+DISTFILES+=	tests/style-ColumnLimit-002.c
 DISTFILES+=	tests/style-ContinuationIndentWidth-001.c
 DISTFILES+=	tests/style-ContinuationIndentWidth-001.ok
 DISTFILES+=	tests/style-IncludeCategories-001.c
