@@ -1,0 +1,5 @@
+/*
+ * ---
+ * AttributeMacros:
+ *  - __capability
+ */

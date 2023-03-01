@@ -434,7 +434,7 @@ again:
 		goto again;
 	}
 
-	if (isalpha(ch)) {
+	if (isalpha(ch) || ch == '_') {
 		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;

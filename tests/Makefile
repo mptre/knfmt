@@ -531,6 +531,7 @@ TESTS+=	style-error-003.c
 TESTS+=	style-error-004.c
 TESTS+=	style-error-005.c
 TESTS+=	style-error-006.c
+TESTS+=	style-error-007.c
 TESTS+=	style-simple-AlignOperands-001.c
 TESTS+=	style-simple-AlignOperands-002.c
 
