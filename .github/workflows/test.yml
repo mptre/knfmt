@@ -5,7 +5,7 @@ on:
   - pull_request
 
 jobs:
-  linux-gcc-asan-ubsan:
+  linux-gcc-sanitize:
     runs-on: ubuntu-22.04
     steps:
       - name: checkout
@@ -19,7 +19,7 @@ jobs:
           ./configure --pedantic
           make -j`nproc` test
 
-  linux-clang-asan-ubsan:
+  linux-clang-sanitize:
     runs-on: ubuntu-22.04
     steps:
       - name: checkout
@@ -32,7 +32,7 @@ jobs:
           ./configure --pedantic
           make -j`nproc` test
 
-  macos-clang-asan-ubsan:
+  macos-clang-sanitize:
     runs-on: macos-latest
     steps:
       - name: checkout
@@ -109,7 +109,7 @@ jobs:
         uses: actions/checkout@v2
       - name: clang-tidy
         run: |
-          ./configure
+          ./configure --pedantic
           make lint-clang-tidy
 
   cppcheck:
@@ -121,5 +121,5 @@ jobs:
         run: sudo apt-get update && sudo apt-get install cppcheck
       - name: cppcheck
         run: |
-          ./configure
+          ./configure --pedantic
           make lint-cppcheck
