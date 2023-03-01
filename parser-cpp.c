@@ -127,7 +127,7 @@ parser_cpp_x(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rparen, *stop, *tk;
+	struct token *tk;
 
 	if (!parser_cpp_peek_x(pr, NULL))
 		return parser_none(pr);
@@ -138,15 +138,18 @@ parser_cpp_x(struct parser *pr, struct doc *dc, struct ruler *rl)
 		doc_token(tk, concat);
 		doc_alloc(DOC_LINE, concat);
 	}
-	if (!lexer_peek_until_freestanding(lx, TOKEN_RPAREN, NULL, &rparen) ||
-	    (stop = token_next(rparen)) == NULL)
-		return parser_fail(pr);
-	return parser_expr(pr, NULL, &(struct parser_expr_arg){
+	if (lexer_expect(lx, TOKEN_IDENT, &tk))
+		doc_token(tk, concat);
+	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
+		doc_token(tk, concat);
+	parser_expr(pr, NULL, &(struct parser_expr_arg){
 	    .dc		= concat,
-	    .stop	= stop,
 	    .rl		= rl,
 	    .flags	= EXPR_EXEC_ALIGN,
 	});
+	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+		doc_token(tk, concat);
+	return parser_good(pr);
 }
 
 /*
