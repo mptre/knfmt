@@ -537,7 +537,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 				doc_exec1(dc->dc_doc, st);
 				break;
 			}
-			/* FALLTHROUGH */
+			FALLTHROUGH;
 		case BREAK:
 			st->st_refit = 0;
 			oldmode = st->st_mode;
@@ -1437,7 +1437,7 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 	case DOC_VERBATIM:
 		if ((dc->dc_tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
 			dd->dd_verbatim = dc->dc_tk;
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case DOC_LITERAL:
 		if (dc->dc_tk != NULL) {
 			unsigned int lno = dc->dc_tk->tk_lno;
@@ -1762,7 +1762,7 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 	switch (dc->dc_type) {
 	case DOC_CONCAT:
 		brackets = 1;
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case DOC_GROUP:
 	case DOC_INDENT:
 	case DOC_NOINDENT:
