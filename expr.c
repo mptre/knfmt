@@ -67,8 +67,6 @@ struct expr {
 	struct token	*ex_tk;
 	struct expr	*ex_lhs;
 	struct expr	*ex_rhs;
-	struct token	*ex_beg;
-	struct token	*ex_end;
 	struct token	*ex_tokens[2];
 
 	union {
