@@ -69,6 +69,9 @@ buffer_read_fd(int fd)
 	struct buffer *bf;
 
 	bf = buffer_alloc(1 << 13);
+	if (bf == NULL)
+		goto err;
+
 	for (;;) {
 		ssize_t n;
 
