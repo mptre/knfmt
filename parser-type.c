@@ -48,7 +48,7 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 			if (t->tk_type == TOKEN_ENUM ||
 			    t->tk_type == TOKEN_STRUCT ||
 			    t->tk_type == TOKEN_UNION)
-				lexer_if(lx, TOKEN_IDENT, &t);
+				(void)lexer_if(lx, TOKEN_IDENT, &t);
 			/* Recognize constructs like `struct s[]'. */
 			(void)lexer_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE,
 			    &t);
@@ -97,7 +97,8 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 				break;
 
 			/* Identifier is part of the type, consume it. */
-			lexer_if(lx, TOKEN_IDENT, &t);
+			if (!lexer_if(lx, TOKEN_IDENT, &t))
+				break;
 		} else if (ntokens > 0 && lexer_peek_if_func_ptr(lx, &t)) {
 			struct token *align;
 

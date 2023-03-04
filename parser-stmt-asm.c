@@ -36,7 +36,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_ASSEMBLY, &assembly)) {
-		lexer_if(lx, TOKEN_VOLATILE, NULL);
+		(void)lexer_if(lx, TOKEN_VOLATILE, NULL);
 		if (lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
 		    lexer_if(lx, TOKEN_SEMI, NULL))
 			peek = 1;

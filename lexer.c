@@ -636,7 +636,7 @@ lexer_expect0(struct lexer *lx, int type, struct token **tk,
 
 	if (!lexer_if(lx, type, &t)) {
 		/* Peek at the next token to provide meaningful errors. */
-		lexer_peek(lx, &t);
+		(void)lexer_peek(lx, &t);
 		lexer_expect_error(lx, type, t, fun, lno);
 		return 0;
 	}

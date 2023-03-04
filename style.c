@@ -391,14 +391,15 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 			struct token *val;
 
 			/* Best effort, try to continue parsing. */
-			lexer_pop(lx, &key);
-			lexer_if(lx, Colon, NULL);
+			(void)lexer_pop(lx, &key);
+			(void)lexer_if(lx, Colon, NULL);
 			if (lexer_peek_if(lx, Sequence, NULL)) {
 				/* Ignore sequences. */
-				while (lexer_if(lx, Sequence, NULL))
-					lexer_pop(lx, &val);
+				while (lexer_if(lx, Sequence, NULL) &&
+				    lexer_pop(lx, &val))
+					continue;
 			} else {
-				lexer_pop(lx, &val);
+				(void)lexer_pop(lx, &val);
 			}
 			lexer_error(lx, "unknown option %s",
 			    lexer_serialize(lx, key));
