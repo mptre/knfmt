@@ -35,10 +35,6 @@ cpp_align(const struct token *tk, const struct style *st,
 	if (nextline(str, len, &nx) == NULL)
 		return NULL;
 
-	bf = buffer_alloc(len);
-	if (bf == NULL)
-		err(1, NULL);
-	dc = doc_alloc(DOC_CONCAT, NULL);
 	switch (style(st, AlignEscapedNewlines)) {
 	case DontAlign:
 		ruler_init(&rl, 1, RULER_ALIGN_FIXED);
@@ -50,7 +46,14 @@ cpp_align(const struct token *tk, const struct style *st,
 		ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth),
 		    RULER_ALIGN_MAX | (usetab ? RULER_ALIGN_TABS : 0));
 		break;
+	default:
+		return NULL;
 	}
+
+	bf = buffer_alloc(len);
+	if (bf == NULL)
+		err(1, NULL);
+	dc = doc_alloc(DOC_CONCAT, NULL);
 
 	for (;;) {
 		struct doc *concat;
