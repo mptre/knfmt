@@ -28,11 +28,11 @@ static int	filelist(int, char **, struct files *, const struct options *);
 static int	fileformat(struct file *, const struct style *,
     const struct options *);
 static int	filediff(const struct buffer *, const struct buffer *,
-    const char *);
+    const struct file *);
 static int	filewrite(const struct buffer *, const struct buffer *,
-    const char *);
+    const struct file *);
 static int	fileprint(const struct buffer *);
-static int	fileattr(const char *, const char *);
+static int	fileattr(const char *, int, const char *, int);
 
 static int	tmpfd(const char *, size_t, char *, size_t);
 
@@ -166,9 +166,8 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 	struct parser *pr = NULL;
 	int error = 0;
 
-	src = buffer_read(fe->fe_path);
+	src = file_read(fe);
 	if (src == NULL) {
-		warn("%s", fe->fe_path);
 		error = 1;
 		goto out;
 	}
@@ -201,9 +200,9 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 	}
 
 	if (op->op_flags & OPTIONS_DIFF)
-		error = filediff(src, dst, fe->fe_path);
+		error = filediff(src, dst, fe);
 	else if (op->op_flags & OPTIONS_INPLACE)
-		error = filewrite(src, dst, fe->fe_path);
+		error = filewrite(src, dst, fe);
 	else
 		error = fileprint(dst);
 
@@ -217,7 +216,8 @@ out:
 }
 
 static int
-filediff(const struct buffer *src, const struct buffer *dst, const char *path)
+filediff(const struct buffer *src, const struct buffer *dst,
+    const struct file *fe)
 {
 	char dstpath[PATH_MAX], srcpath[PATH_MAX];
 	pid_t pid;
@@ -247,11 +247,11 @@ filediff(const struct buffer *src, const struct buffer *dst, const char *path)
 		size_t siz = sizeof(label);
 		int n;
 
-		n = snprintf(label, siz, "%s.orig", path);
+		n = snprintf(label, siz, "%s.orig", fe->fe_path);
 		if (n < 0 || (size_t)n >= siz)
 			errc(1, ENAMETOOLONG, "%s: label", __func__);
 
-		execl(diff, diff, "-u", "-L", label, "-L", path,
+		execl(diff, diff, "-u", "-L", label, "-L", fe->fe_path,
 		    srcpath, dstpath, NULL);
 		_exit(1);
 	}
@@ -270,7 +270,8 @@ out:
 }
 
 static int
-filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
+filewrite(const struct buffer *src, const struct buffer *dst,
+    const struct file *fe)
 {
 	char tmppath[PATH_MAX];
 	const char *buf;
@@ -282,7 +283,7 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	n = snprintf(tmppath, siz, "%s.XXXXXXXX", path);
+	n = snprintf(tmppath, siz, "%s.XXXXXXXX", fe->fe_path);
 	if (n < 0 || (size_t)n >= siz) {
 		warnc(ENAMETOOLONG, "%s", __func__);
 		return 1;
@@ -308,17 +309,15 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 		buf += nw;
 		buflen -= (size_t)nw;
 	}
-	close(fd);
-	fd = -1;
 
-	if (fileattr(tmppath, path))
+	if (fileattr(tmppath, fd, fe->fe_path, fe->fe_fd))
 		goto err;
 
 	/*
 	 * Atomically replace the file using rename(2), matches what
 	 * clang-format does.
 	 */
-	if (rename(tmppath, path) == -1) {
+	if (rename(tmppath, fe->fe_path) == -1) {
 		warn("rename: %s", tmppath);
 		goto err;
 	}
@@ -353,26 +352,26 @@ fileprint(const struct buffer *dst)
 }
 
 static int
-fileattr(const char *srcpath, const char *dstpath)
+fileattr(const char *srcpath, int srcfd, const char *dstpath, int dstfd)
 {
 	struct stat dstsb, srcsb;
 
-	if (stat(srcpath, &srcsb) == -1) {
+	if (fstat(srcfd, &srcsb) == -1) {
 		warn("stat: %s", srcpath);
 		return 1;
 	}
-	if (stat(dstpath, &dstsb) == -1) {
+	if (fstat(dstfd, &dstsb) == -1) {
 		warn("stat: %s", dstpath);
 		return 1;
 	}
 
 	if (srcsb.st_mode != dstsb.st_mode &&
-	    chmod(srcpath, dstsb.st_mode) == -1) {
+	    fchmod(srcfd, dstsb.st_mode) == -1) {
 		warn("chmod: %s", srcpath);
 		return 1;
 	}
 	if ((srcsb.st_uid != dstsb.st_uid || srcsb.st_gid != dstsb.st_gid) &&
-	    chown(srcpath, dstsb.st_uid, dstsb.st_gid) == -1) {
+	    fchown(srcfd, dstsb.st_uid, dstsb.st_gid) == -1) {
 		warn("chown: %s", srcpath);
 		return 1;
 	}
