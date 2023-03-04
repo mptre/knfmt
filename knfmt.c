@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
@@ -275,6 +276,7 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 	const char *buf;
 	size_t siz = sizeof(tmppath);
 	size_t buflen;
+	mode_t old_umask;
 	int fd, n;
 
 	if (buffer_cmp(src, dst) == 0)
@@ -285,7 +287,9 @@ filewrite(const struct buffer *src, const struct buffer *dst, const char *path)
 		warnc(ENAMETOOLONG, "%s", __func__);
 		return 1;
 	}
+	old_umask = umask(0022);
 	fd = mkstemp(tmppath);
+	umask(old_umask);
 	if (fd == -1) {
 		warn("mkstemp: %s", tmppath);
 		return 1;
@@ -386,6 +390,7 @@ tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
 {
 	char tmppath[PATH_MAX];
 	size_t siz = sizeof(tmppath);
+	mode_t old_umask;
 	int fd = -1;
 	int n;
 
@@ -394,7 +399,9 @@ tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
 		warnc(ENAMETOOLONG, "%s: tmp", __func__);
 		return -1;
 	}
+	old_umask = umask(0022);
 	fd = mkstemp(tmppath);
+	umask(old_umask);
 	if (fd == -1) {
 		warn("mkstemp: %s", tmppath);
 		return -1;
