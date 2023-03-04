@@ -142,7 +142,8 @@ searchpath(const char *filename, int *nlevels)
 	}
 
 out:
-	close(dirfd);
+	if (dirfd != -1)
+		close(dirfd);
 	if (fd != -1 && nlevels != NULL)
 		*nlevels = i;
 	return fd;
