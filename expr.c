@@ -959,7 +959,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 			if (es->es_ncalls > 1 ||
 			    (es->es_flags & EXPR_EXEC_HARDLINE))
 				indent = es->es_ea.indent;
-			dc = token_has_line(lparen, 1) ?
+			dc = lparen != NULL && token_has_line(lparen, 1) ?
 			    expr_doc_align_disable(ex, es, dc) :
 			    expr_doc_align(ex, es, parent, indent);
 		}
