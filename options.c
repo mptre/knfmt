@@ -40,7 +40,10 @@ options_trace_parse(struct options *op, const char *flags)
 unsigned int
 trace(const struct options *op, char c)
 {
-	return op->op_trace[ctotrace(c)];
+	int idx;
+
+	idx = ctotrace(c);
+	return idx == -1 ? 0 : op->op_trace[idx];
 }
 
 static int
