@@ -129,7 +129,7 @@ check_warnc() {
 	#include <err.h>
 
 	int main(void) {
-		warnc(0, "");
+		warnc(1, "");
 		return 0;
 	}
 	EOF
@@ -211,8 +211,9 @@ exec 1>config.h
 	printf '\t__attribute__((__noreturn__, __format__ (printf, 3, 4)));\n'; }
 [ $HAVE_PLEDGE -eq 0 ] &&
 	printf 'int pledge(const char *, const char *);\n'
-[ $HAVE_WARNC -eq 0 ] &&
-	printf 'void warnc(int, const char *, ...);\n';
+[ $HAVE_WARNC -eq 0 ] && {
+	printf 'void warnc(int, const char *, ...)\n'
+	printf '\t__attribute__((__format__ (printf, 2, 3)));\n'; }
 
 # Redirect stdout to config.mk.
 exec 1>config.mk
