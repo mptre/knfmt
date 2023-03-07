@@ -73,18 +73,6 @@ rmdup() {
 	xargs
 }
 
-check_dead() {
-	compile <<-EOF
-	#include <stdlib.h>
-
-	__dead int dead(void);
-
-	int main(void) {
-		return 0;
-	}
-	EOF
-}
-
 check_errc() {
 	compile <<-EOF
 	#include <err.h>
@@ -157,7 +145,6 @@ set -u
 # Enable tracing, will end up in config.log.
 set -x
 
-HAVE_DEAD=0
 HAVE_ERRC=0
 HAVE_PLEDGE=0
 HAVE_QUEUE=0
@@ -186,7 +173,6 @@ MANDIR="$(makevar MANDIR || echo "${PREFIX}/man")"
 INSTALL="$(makevar INSTALL || echo install)"
 INSTALL_MAN="$(makevar INSTALL_MAN || echo install)"
 
-check_dead && HAVE_DEAD=1
 check_errc && HAVE_ERRC=1
 check_pledge && HAVE_PLEDGE=1
 check_queue && HAVE_QUEUE=1
@@ -204,8 +190,6 @@ exec 1>config.h
 [ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
 
-[ $HAVE_DEAD -eq 0 ] &&
-	printf '#define __dead\t__attribute__((__noreturn__))\n'
 [ $HAVE_ERRC -eq 0 ] && {
 	printf 'void errc(int, int, const char *, ...)\n';
 	printf '\t__attribute__((__noreturn__, __format__ (printf, 3, 4)));\n'; }

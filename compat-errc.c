@@ -38,7 +38,7 @@ extern int	unused;
 #include <errno.h>
 #include <stdarg.h>
 
-void __dead
+void
 errc(int eval, int code, const char *fmt, ...)
 {
 	va_list ap;

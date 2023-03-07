@@ -68,7 +68,8 @@ struct context {
 	struct parser	*pr;
 };
 
-static __dead void	usage(void);
+static void	usage(void)
+	__attribute__((__noreturn__));
 
 static struct context	*context_alloc(void);
 static void		 context_free(struct context *);
@@ -256,7 +257,7 @@ out:
 	return error;
 }
 
-static __dead void
+static void
 usage(void)
 {
 	fprintf(stderr, "usage: t [-x]\n");
