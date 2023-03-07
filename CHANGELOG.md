@@ -1,3 +1,37 @@
+# 4.1.0 - 2023-03-07
+
+## News
+
+- Never break struct field access.
+  (e90c90a)
+  (Anton Lindqvist)
+
+- Minimize indentation for function arguments with AlignAfterOpenBracket.
+  (3808d91)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Honor cpp x macros after function implementations.
+  (17c87c7)
+  (Anton Lindqvist)
+
+- In simple mode, only add braces when tokens are moveable.
+  (00444ca)
+  (Anton Lindqvist)
+
+- In diff mode, emit missing new line.
+  (26ad403)
+  (Anton Lindqvist)
+
+- Improve handling of trailing comments after binary operators.
+  (e2746f4)
+  (Anton Lindqvist)
+
+- Handle unlimited ColumnLimit.
+  (51359b6)
+  (Anton Lindqvist)
+
 # 4.0.0 - 2022-02-15
 
 ## Changes
