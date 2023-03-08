@@ -158,7 +158,7 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			return parser_fail(pr);
 
-		if (parser_attributes(pr, concat, NULL, 0) & FAIL)
+		if (parser_attributes(pr, concat, NULL) & FAIL)
 			return parser_fail(pr);
 
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
@@ -233,7 +233,6 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	struct token *lparen, *rparen, *tk;
 	unsigned int s, w;
 	int nkr = 0;
-	int error;
 
 	if (parser_type(pr, dc, arg->type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
@@ -322,8 +321,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 
 	attributes = doc_alloc(DOC_GROUP, dc);
 	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attributes);
-	error = parser_attributes(pr, indent, out, PARSER_ATTRIBUTES_HARDLINE);
-	if (error & HALT)
+	if (parser_attributes(pr, indent, out) & HALT)
 		doc_remove(attributes, dc);
 
 	return parser_good(pr);

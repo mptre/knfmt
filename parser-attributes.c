@@ -11,37 +11,34 @@
 #include "token.h"
 
 int
-parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
-    unsigned int flags)
+parser_attributes(struct parser *pr, struct doc *dc, struct doc **out)
 {
-	struct doc *concat = NULL;
-	struct doc *def;
+	struct doc *def, *optional;
 	struct lexer *lx = pr->pr_lx;
+	struct token *pv;
 	enum doc_type linetype;
-	int nattributes = 0;
 
 	if (!lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
 		return parser_none(pr);
 
 	if (out == NULL)
 		out = &def;
-	linetype = (flags & PARSER_ATTRIBUTES_HARDLINE) ?
+	linetype = lexer_back(lx, &pv) && token_has_line(pv, 1) ?
 	    DOC_HARDLINE : DOC_LINE;
 
-	doc_alloc(linetype, dc);
+	optional = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, dc));
 	for (;;) {
+		struct doc *concat;
 		struct token *tk;
 		int error;
 
 		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk))
 			break;
 
-		if (nattributes > 0)
-			doc_alloc(linetype, concat);
-		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+		doc_alloc(linetype, optional);
+		linetype = DOC_LINE;
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, optional));
 		*out = concat;
-		if (nattributes > 0)
-			doc_alloc(DOC_SOFTLINE, concat);
 		doc_token(tk, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			doc_token(tk, concat);
@@ -54,7 +51,6 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 			doc_token(tk, *out);
-		nattributes++;
 	}
 
 	return parser_good(pr);
