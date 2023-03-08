@@ -31,7 +31,7 @@ ecalloc(size_t nmemb, size_t size)
 char *
 estrdup(const char *str)
 {
-	void *p;
+	char *p;
 
 	p = strdup(str);
 	if (p == NULL)
