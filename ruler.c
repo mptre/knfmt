@@ -152,10 +152,10 @@ void
 ruler_exec(struct ruler *rl)
 {
 	size_t i, j;
-	unsigned int maxlen = 0;
 
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_columns); i++) {
 		struct ruler_column *rc = &rl->rl_columns[i];
+		unsigned int maxlen = 0;
 
 		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_REQUIRE_TABS))
 			continue;
