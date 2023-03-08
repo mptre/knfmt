@@ -46,7 +46,10 @@ enum yaml_type {
 struct style {
 	const struct options	*st_op;
 	int			 st_scope;
-	unsigned int		 st_options[Last];
+	struct {
+		unsigned int	isset;
+		unsigned int	val;
+	} st_options[Last];
 };
 
 struct style_option {
@@ -60,6 +63,7 @@ struct style_option {
 };
 
 static void	style_defaults(struct style *);
+static void	style_set(struct style *, int, unsigned int);
 static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *, const struct options *);
 static int	style_parse_yaml1(struct style *, struct lexer *);
@@ -290,13 +294,13 @@ unsigned int
 style(const struct style *st, int option)
 {
 	assert(option < Last);
-	return st->st_options[option];
+	return st->st_options[option].val;
 }
 
 int
 style_brace_wrapping(const struct style *st, int option)
 {
-	switch (st->st_options[BreakBeforeBraces]) {
+	switch (st->st_options[BreakBeforeBraces].val) {
 	case Linux:
 		switch (option) {
 		case AfterFunction:
@@ -304,25 +308,32 @@ style_brace_wrapping(const struct style *st, int option)
 		}
 		break;
 	}
-	return st->st_options[option] == True;
+	return st->st_options[option].val == True;
 }
 
 static void
 style_defaults(struct style *st)
 {
-	st->st_options[AlignAfterOpenBracket] = DontAlign;
-	st->st_options[AlignEscapedNewlines] = Right;
-	st->st_options[AlignOperands] = DontAlign;
-	st->st_options[AlwaysBreakAfterReturnType] = AllDefinitions;
-	st->st_options[BitFieldColonSpacing] = None;
-	st->st_options[BreakBeforeBinaryOperators] = None;
-	st->st_options[BreakBeforeBraces] = Linux;
-	st->st_options[BreakBeforeTernaryOperators] = False;
-	st->st_options[ColumnLimit] = 80;
-	st->st_options[ContinuationIndentWidth] = 4;
-	st->st_options[IndentWidth] = 8;
-	st->st_options[SortIncludes] = Never;
-	st->st_options[UseTab] = Always;
+	st->st_options[AlignAfterOpenBracket].val = DontAlign;
+	st->st_options[AlignEscapedNewlines].val = Right;
+	st->st_options[AlignOperands].val = DontAlign;
+	st->st_options[AlwaysBreakAfterReturnType].val = AllDefinitions;
+	st->st_options[BitFieldColonSpacing].val = None;
+	st->st_options[BreakBeforeBinaryOperators].val = None;
+	st->st_options[BreakBeforeBraces].val = Linux;
+	st->st_options[BreakBeforeTernaryOperators].val = False;
+	st->st_options[ColumnLimit].val = 80;
+	st->st_options[ContinuationIndentWidth].val = 4;
+	st->st_options[IndentWidth].val = 8;
+	st->st_options[SortIncludes].val = Never;
+	st->st_options[UseTab].val = Always;
+}
+
+static void
+style_set(struct style *st, int option, unsigned int val)
+{
+	st->st_options[option].isset = 1;
+	st->st_options[option].val = val;
 }
 
 static int
@@ -607,7 +618,7 @@ parse_bool(struct style *st, struct lexer *lx, const struct style_option *so)
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
-	st->st_options[key->tk_type] = (unsigned int)val->tk_type;
+	style_set(st, key->tk_type, (unsigned int)val->tk_type);
 	return GOOD;
 }
 
@@ -624,7 +635,7 @@ parse_enum(struct style *st, struct lexer *lx, const struct style_option *so)
 
 	for (v = so->so_val; *v != 0; v++) {
 		if (lexer_if(lx, *v, &val)) {
-			st->st_options[key->tk_type] = (unsigned int)val->tk_type;
+			style_set(st, key->tk_type, (unsigned int)val->tk_type);
 			return GOOD;
 		}
 	}
@@ -650,7 +661,7 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
-	st->st_options[key->tk_type] = (unsigned int)val->tk_int;
+	style_set(st, key->tk_type, (unsigned int)val->tk_int);
 	return GOOD;
 }
 
@@ -697,10 +708,10 @@ parse_AlignOperands(struct style *st, struct lexer *lx,
 
 	error = parse_enum(st, lx, so);
 	if (error & GOOD) {
-		if (st->st_options[AlignOperands] == True)
-			st->st_options[AlignOperands] = Align;
-		else if (st->st_options[AlignOperands] == False)
-			st->st_options[AlignOperands] = DontAlign;
+		if (st->st_options[AlignOperands].val == True)
+			style_set(st, AlignOperands, (unsigned int)Align);
+		else if (st->st_options[AlignOperands].val == False)
+			style_set(st, AlignOperands, (unsigned int)DontAlign);
 	}
 	return error;
 }
@@ -712,8 +723,8 @@ parse_ColumnLimit(struct style *st, struct lexer *lx,
 	int error;
 
 	error = parse_integer(st, lx, so);
-	if ((error & GOOD) && st->st_options[ColumnLimit] == 0)
-		st->st_options[ColumnLimit] = UINT_MAX;
+	if ((error & GOOD) && st->st_options[ColumnLimit].val == 0)
+		style_set(st, ColumnLimit, UINT_MAX);
 	return error;
 }
 
