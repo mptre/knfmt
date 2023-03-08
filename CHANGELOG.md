@@ -1,3 +1,15 @@
+# 4.1.1 - 2023-03-09
+
+## Bug fixes
+
+- Do not unconditionally break before attributes.
+  (68cd9f2)
+  (Anton Lindqvist)
+
+- Reduce number of open file descriptors.
+  (77ef18f)
+  (Anton Lindqvist)
+
 # 4.1.0 - 2023-03-07
 
 ## News
