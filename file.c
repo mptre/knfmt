@@ -41,8 +41,7 @@ files_free(struct files *files)
 		VECTOR_FREE(fe->fe_diff);
 		free(fe->fe_path);
 		error_free(fe->fe_error);
-		if (fe->fe_fd != -1)
-			close(fe->fe_fd);
+		file_close(fe);
 	}
 	VECTOR_FREE(files->fs_vc);
 }
@@ -67,4 +66,13 @@ err:
 	if (fd != -1)
 		close(fd);
 	return NULL;
+}
+
+void
+file_close(struct file *fe)
+{
+	if (fe->fe_fd == -1)
+		return;
+	close(fe->fe_fd);
+	fe->fe_fd = -1;
 }

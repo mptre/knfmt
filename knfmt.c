@@ -118,6 +118,7 @@ main(int argc, char *argv[])
 			error = 1;
 			error_flush(fe->fe_error, 1);
 		}
+		file_close(fe);
 	}
 
 out:

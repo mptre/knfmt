@@ -16,3 +16,4 @@ struct file	*files_alloc(struct files *, const char *,
 void		 files_free(struct files *);
 
 struct buffer	*file_read(struct file *);
+void		 file_close(struct file *);
