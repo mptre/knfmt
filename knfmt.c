@@ -22,8 +22,7 @@
 #include "token.h"
 #include "vector.h"
 
-static void	usage(void)
-	__attribute__((__noreturn__));
+static void	usage(void) __attribute__((__noreturn__));
 
 static int	filelist(int, char **, struct files *, const struct options *);
 static int	fileformat(struct file *, const struct style *,

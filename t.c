@@ -68,8 +68,7 @@ struct context {
 	struct parser	*pr;
 };
 
-static void	usage(void)
-	__attribute__((__noreturn__));
+static void	usage(void) __attribute__((__noreturn__));
 
 static struct context	*context_alloc(void);
 static void		 context_free(struct context *);
