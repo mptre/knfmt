@@ -622,4 +622,5 @@ TESTS+=	../util.h
 all: ${TESTS:.c=.cfake}
 all: ${TESTS:.h=.hfake}
 	sh ${.CURDIR}/diff.sh
+	sh ${.CURDIR}/enoent.sh
 	sh ${.CURDIR}/git.sh
