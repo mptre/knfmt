@@ -23,40 +23,32 @@
 
 struct context;
 
-#define test_parser_expr(a, b)						\
-	error |= test_parser_expr0(cx, (a), (b), "test_parser_expr", __LINE__);\
+#define test(e) do {							\
+	error |= (e);							\
 	if (xflag && error) goto out;					\
-	context_reset(cx)
+	context_reset(cx);						\
+} while (0)
+
+#define test_parser_expr(a, b) \
+	test(test_parser_expr0(cx, (a), (b), __LINE__))
 static int	test_parser_expr0(struct context *, const char *, const char *,
-    const char *, int);
+    int);
 
-#define test_parser_type_peek(a, b)					\
-	error |= test_parser_type_peek0(cx, (a), (b), 0,		\
-		"test_parser_type_peek", __LINE__);			\
-	if (xflag && error) goto out;					\
-	context_reset(cx)
-#define test_parser_type_peek_flags(a, b, c)				\
-	error |= test_parser_type_peek0(cx, (b), (c), (a),		\
-		"test_parser_type_peek", __LINE__);			\
-	if (xflag && error) goto out;					\
-	context_reset(cx)
+#define test_parser_type_peek(a, b) \
+	test(test_parser_type_peek0(cx, (a), (b), 0, __LINE__))
+#define test_parser_type_peek_flags(a, b, c) \
+	test(test_parser_type_peek0(cx, (b), (c), (a), __LINE__))
 static int	test_parser_type_peek0(struct context *, const char *,
-    const char *, unsigned int, const char *, int);
+    const char *, unsigned int, int);
 
-#define test_lexer_read(a, b)						\
-	error |= test_lexer_read0(cx, (a), (b), "test_lexer_read",	\
-		__LINE__);						\
-	if (xflag && error) goto out;					\
-	context_reset(cx)
+#define test_lexer_read(a, b) \
+	test(test_lexer_read0(cx, (a), (b), __LINE__))
 static int	test_lexer_read0(struct context *, const char *, const char *,
-    const char *, int);
+    int);
 
-#define test_strwidth(a, b, c)						\
-	error |= test_strwidth0((a), (b), (c), "test_strwidth", __LINE__);\
-	if (xflag && error) goto out;					\
-	context_reset(cx)
-static int	test_strwidth0(const char *, size_t, size_t,
-    const char *, int);
+#define test_strwidth(a, b, c) \
+	test(test_strwidth0((a), (b), (c), __LINE__))
+static int	test_strwidth0(const char *, size_t, size_t, int);
 
 struct context {
 	struct options	 op;
@@ -264,8 +256,7 @@ usage(void)
 }
 
 static int
-test_parser_expr0(struct context *cx, const char *src, const char *exp,
-    const char *fun, int lno)
+test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
 {
 	struct buffer *bf = NULL;
 	struct doc *concat, *expr;
@@ -279,7 +270,8 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp,
 	    .dc	= concat,
 	});
 	if (error & HALT) {
-		fprintf(stderr, "%s:%d: parser_expr() failure\n", fun, lno);
+		fprintf(stderr, "parser_expr:%d: want %x, got %x\n", lno,
+		    (unsigned int)GOOD, (unsigned int)error);
 		error = 1;
 		goto out;
 	}
@@ -298,8 +290,8 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp,
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
-		    fun, lno, exp, act);
+		fprintf(stderr, "parser_expr:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
+		    lno, exp, act);
 		error = 1;
 	}
 
@@ -311,8 +303,7 @@ out:
 
 static int
 test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
-    unsigned int flags,
-    const char *fun, int lno)
+    unsigned int flags, int lno)
 {
 	struct buffer *bf = NULL;
 	struct token *end, *tk;
@@ -323,8 +314,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	context_init(cx, src);
 
 	if (!parser_type_peek(cx->pr, &end, flags)) {
-		fprintf(stderr, "%s:%d: lexer_peek_if_type() failure\n",
-		    fun, lno);
+		fprintf(stderr, "parser_type_peek:%d: want 1, got 0\n", lno);
 		error = 1;
 		goto out;
 	}
@@ -334,7 +324,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 		err(1, NULL);
 	for (;;) {
 		if (!lexer_pop(cx->lx, &tk))
-			errx(1, "%s:%d: out of tokens", fun, lno);
+			errx(1, "parser_type_peek:%d: out of tokens", lno);
 
 		if (ntokens++ > 0)
 			buffer_putc(bf, ' ');
@@ -346,8 +336,9 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
-		    fun, lno, exp, act);
+		fprintf(stderr, "parser_type_peek:%d:\n"
+		    "\texp \"%s\"\n\tgot \"%s\"\n",
+		    lno, exp, act);
 		error = 1;
 	}
 
@@ -358,7 +349,7 @@ out:
 
 static int
 test_lexer_read0(struct context *cx, const char *src, const char *exp,
-    const char *fun, int lno)
+    int lno)
 {
 	struct buffer *bf = NULL;
 	const char *act;
@@ -376,7 +367,7 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 		size_t tokenlen;
 
 		if (!lexer_pop(cx->lx, &tk))
-			errx(1, "%s:%d: out of tokens", fun, lno);
+			errx(1, "lexer_read:%d: out of tokens", lno);
 		if (tk->tk_type == LEXER_EOF)
 			break;
 
@@ -391,8 +382,8 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "%s:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
-		    fun, lno, exp, act);
+		fprintf(stderr, "lexer_read:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
+		    lno, exp, act);
 		error = 1;
 	}
 
@@ -401,15 +392,14 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 }
 
 static int
-test_strwidth0(const char *str, size_t pos, size_t exp,
-    const char *fun, int lno)
+test_strwidth0(const char *str, size_t pos, size_t exp, int lno)
 {
 	size_t act;
 
 	act = strwidth(str, strlen(str), pos);
 	if (exp != act) {
-		fprintf(stderr, "%s:%d:\n\texp %zu\n\tgot %zu\n",
-		    fun, lno, exp, act);
+		fprintf(stderr, "strwidth:%d:\n\texp %zu\n\tgot %zu\n",
+		    lno, exp, act);
 		return 1;
 	}
 	return 0;
