@@ -619,7 +619,7 @@ TESTS+=	../util.h
 .h.hfake:
 	sh ${.CURDIR}/knfmt.sh $< ${V}
 
-
 all: ${TESTS:.c=.cfake}
 all: ${TESTS:.h=.hfake}
+	sh ${.CURDIR}/diff.sh
 	sh ${.CURDIR}/git.sh
