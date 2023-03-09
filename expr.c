@@ -939,8 +939,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	es->es_noparens--;
 
-	if (lparen != NULL)
-		doc_token(lparen, dc);
+	doc_token(lparen, dc);
 	if (ex->ex_rhs != NULL) {
 		int doalign = style(es->es_st, AlignAfterOpenBracket) == Align;
 
@@ -959,7 +958,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 			if (es->es_ncalls > 1 ||
 			    (es->es_flags & EXPR_EXEC_HARDLINE))
 				indent = es->es_ea.indent;
-			dc = lparen != NULL && token_has_line(lparen, 1) ?
+			dc = token_has_line(lparen, 1) ?
 			    expr_doc_align_disable(ex, es, dc) :
 			    expr_doc_align(ex, es, parent, indent);
 		}
