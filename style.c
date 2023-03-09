@@ -452,7 +452,7 @@ again:
 		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;
-		} while (isalpha(ch) || isdigit(ch) || ch == '_');
+		} while (!isspace(ch) && ch != ':');
 		lexer_ungetc(lx);
 		return yaml_keyword(lx, &s);
 	}
