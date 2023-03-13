@@ -174,10 +174,10 @@ cpp_include_exec(struct cpp_include *ci)
 		token_list_remove(ci->prefixes, include->tk);
 		token_ref(include->tk);
 		if (after != NULL) {
-			token_list_insert_after(ci->prefixes, after,
+			token_list_append_after(ci->prefixes, after,
 			    include->tk);
 		} else {
-			token_list_insert_head(ci->prefixes, include->tk);
+			token_list_prepend(ci->prefixes, include->tk);
 		}
 		after = include->tk;
 	}
@@ -210,7 +210,7 @@ add_line(struct cpp_include *ci, struct token *after)
 	    .tk_str	= "\n",
 	    .tk_len	= 1,
 	});
-	token_list_insert_after(ci->prefixes, after, tk);
+	token_list_append_after(ci->prefixes, after, tk);
 }
 
 static int

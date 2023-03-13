@@ -98,9 +98,9 @@ struct token	*token_get_branch(struct token *);
 struct token	*token_next(const struct token *);
 struct token	*token_prev(const struct token *);
 
-void	token_list_insert(struct token_list *, struct token *);
-void	token_list_insert_head(struct token_list *, struct token *);
-void	token_list_insert_after(struct token_list *, struct token *,
+void	token_list_prepend(struct token_list *, struct token *);
+void	token_list_append(struct token_list *, struct token *);
+void	token_list_append_after(struct token_list *, struct token *,
     struct token *);
 void	token_list_remove(struct token_list *, struct token *);
 void	token_list_copy(struct token_list *, struct token_list *);
