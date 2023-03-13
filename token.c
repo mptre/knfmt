@@ -354,9 +354,9 @@ token_list_remove(struct token_list *tl, struct token *tk)
 }
 
 void
-token_list_copy(struct token_list *src, struct token_list *dst)
+token_list_copy(const struct token_list *src, struct token_list *dst)
 {
-	struct token *tk;
+	const struct token *tk;
 
 	TAILQ_FOREACH(tk, src, tk_entry) {
 		struct token *cp;
