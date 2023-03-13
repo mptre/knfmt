@@ -177,7 +177,7 @@ cpp_include_exec(struct cpp_include *ci)
 			token_list_insert_after(ci->prefixes, after,
 			    include->tk);
 		} else {
-			token_list_insert(ci->prefixes, include->tk);
+			token_list_insert_head(ci->prefixes, include->tk);
 		}
 		after = include->tk;
 	}
