@@ -101,10 +101,8 @@ expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace)) {
 		int error;
 
-		error = parser_braces(pr, dc,
-		    ea->indent,
-		    PARSER_DECL_BRACES_DEDENT |
-		    PARSER_DECL_BRACES_INDENT_MAYBE);
+		error = parser_braces(pr, dc, ea->indent,
+		    PARSER_BRACES_DEDENT | PARSER_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
 			return 1;
 		if (error & FAIL) {

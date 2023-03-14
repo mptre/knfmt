@@ -225,7 +225,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 		w = style(pr->pr_st, IndentWidth);
 		error = parser_braces(pr, concat, w,
-		    PARSER_DECL_BRACES_ENUM | PARSER_DECL_BRACES_TRIM);
+		    PARSER_BRACES_ENUM | PARSER_BRACES_TRIM);
 		if (error & HALT)
 			return parser_fail(pr);
 	}
