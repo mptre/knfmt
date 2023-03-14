@@ -65,7 +65,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 {
 	struct doc *braces, *indent;
 	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *rbrace, *tk;
+	struct token *lbrace, *pv, *rbrace, *tk;
 	unsigned int w = 0;
 	int align = 1;
 	int error, hasline;
@@ -105,6 +105,15 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			val |= DOC_INDENT_NEWLINE;
 		indent = doc_alloc_indent(val, braces);
 		doc_alloc(DOC_HARDLINE, indent);
+	} else if ((pv = token_prev(lbrace)) != NULL &&
+	    token_cmp(pv, lbrace) == 0) {
+		/*
+		 * The lbrace is not the first token on this line. Do not try to
+		 * align column(s) that doesn't fit on the current line.
+		 */
+		if (token_has_spaces(lbrace))
+			doc_literal(" ", braces);
+		indent = doc_alloc_indent(arg->indent, braces);
 	} else {
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
@@ -120,7 +129,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	for (;;) {
 		struct doc *expr = NULL;
 		struct doc *concat;
-		struct token *comma, *nx, *pv;
+		struct token *comma, *nx;
 
 		if (!lexer_peek(lx, &tk) || tk->tk_type == LEXER_EOF)
 			return parser_fail(pr);
