@@ -33,7 +33,6 @@ static int	parser_braces_field1(struct parser *,
     struct braces_field_arg *);
 
 static struct token	*peek_expr_stop(struct parser *, struct token *);
-static int		 peek_hardline(struct parser *, const struct token *);
 static struct token	*lbrace_cache(struct parser *, struct token *);
 static void		 lbrace_cache_purge(struct parser *);
 
@@ -75,17 +74,15 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 
 	lbrace_cache_purge(pr);
 
-	/*
-	 * If any column is followed by a hard line, do not align but
-	 * instead respect existing hard line(s).
-	 */
-	if (peek_hardline(pr, rbrace))
-		align = 0;
-
 	braces = doc_alloc(DOC_CONCAT, arg->dc);
 
 	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
 		return parser_fail(pr);
+	/*
+	 * If any column is followed by a hard line, do not align but
+	 * instead respect existing hard line(s).
+	 */
+	align = token_cmp(lbrace, rbrace) == 0;
 	hasline = token_has_line(lbrace, 1);
 	if (arg->flags & PARSER_BRACES_TRIM)
 		parser_token_trim_after(pr, lbrace);
@@ -370,38 +367,6 @@ peek_expr_stop(struct parser *pr, struct token *rbrace)
 	if (lexer_peek_until_comma(lx, stop, &comma))
 		return comma;
 	return stop;
-}
-
-/*
- * Returns non-zero if any token up to the given stop token exclusively is
- * followed by a hard line.
- */
-static int
-peek_hardline(struct parser *pr, const struct token *stop)
-{
-	struct lexer_state s;
-	struct lexer *lx = pr->pr_lx;
-	struct token *pv = NULL;
-	int peek = 0;
-
-	lexer_peek_enter(lx, &s);
-	for (;;) {
-		struct token *tk;
-
-		if (!lexer_pop(lx, &tk))
-			return parser_fail(pr);
-		if (tk == stop)
-			break;
-
-		if (pv != NULL && token_cmp(tk, pv) > 0) {
-			peek = 1;
-			break;
-		}
-		pv = tk;
-	}
-	lexer_peek_leave(lx, &s);
-
-	return peek;
 }
 
 static struct token *
