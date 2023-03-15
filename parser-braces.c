@@ -161,12 +161,10 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			if (parser_braces1(pr, &newarg) & HALT)
 				return parser_fail(pr);
 			/*
-			 * If the nested braces are positioned on the same line
-			 * as the braces currently being parsed, inherit the
-			 * column as we're still on the same row in terms of
-			 * alignment.
+			 * Inherit the column as we're still on the same row in
+			 * terms of alignment.
 			 */
-			if (token_cmp(lbrace, nx) == 0)
+			if (align)
 				arg->col = newarg.col;
 		} else {
 			struct token *stop;
