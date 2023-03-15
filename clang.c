@@ -159,7 +159,8 @@ clang_read(struct lexer *lx, void *arg)
 	}
 	cpp_include_leave(cl->cl_ci);
 
-	if ((tk = clang_keyword(lx)) != NULL)
+	tk = clang_keyword(lx);
+	if (tk != NULL)
 		goto out;
 
 	st = lexer_get_state(lx);
@@ -241,9 +242,12 @@ out:
 
 	/* Consume trailing/interwined comments. */
 	for (;;) {
-		if ((tmp = clang_read_comment(lx, 0)) == NULL)
+		struct token *comment;
+
+		comment = clang_read_comment(lx, 0);
+		if (comment == NULL)
 			break;
-		token_list_append(&tk->tk_suffixes, tmp);
+		token_list_append(&tk->tk_suffixes, comment);
 		ncomments++;
 	}
 
@@ -257,7 +261,8 @@ out:
 	}
 
 	/* Consume hard line(s). */
-	if ((nlines = lexer_eat_lines(lx, 0, &tmp)) > 0) {
+	nlines = lexer_eat_lines(lx, 0, &tmp);
+	if (nlines > 0) {
 		if (nlines == 1)
 			tmp->tk_flags |= TOKEN_FLAG_OPTLINE;
 		token_list_append(&tk->tk_suffixes, tmp);
@@ -589,7 +594,7 @@ clang_keyword1(struct lexer *lx)
 		return NULL;
 
 	for (;;) {
-		struct token *ellipsis, *tmp;
+		struct token *tmp;
 
 		tmp = clang_find_keyword(lx, &st);
 		if (tmp == NULL) {
@@ -603,10 +608,14 @@ clang_keyword1(struct lexer *lx)
 		}
 
 		/* Hack to detect ellipses since ".." is not a valid token. */
-		if (tmp->tk_type == TOKEN_PERIOD &&
-		    (ellipsis = clang_ellipsis(lx, &st)) != NULL) {
-			tk = ellipsis;
-			break;
+		if (tmp->tk_type == TOKEN_PERIOD) {
+			struct token *ellipsis;
+
+			ellipsis = clang_ellipsis(lx, &st);
+			if (ellipsis != NULL) {
+				tk = ellipsis;
+				break;
+			}
 		}
 
 		pv = tmp;
