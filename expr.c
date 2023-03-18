@@ -898,8 +898,12 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 	doparens = !(es->es_depth == 1 &&
 	    (es->es_op->op_flags & OPTIONS_SIMPLE) &&
 	    (es->es_flags & EXPR_EXEC_NOPARENS));
-	if (doparens && ex->ex_tokens[0] != NULL)
-		doc_token(ex->ex_tokens[0], dc);	/* ( */
+	if (doparens) {
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], dc);	/* ( */
+		if (ex->ex_tokens[1] != NULL)
+			token_move_prev_line(ex->ex_tokens[1]);
+	}
 	if (doparens) {
 		if (style(es->es_st, AlignAfterOpenBracket) == Align)
 			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
