@@ -840,7 +840,8 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			}
 		}
 		es->es_nassign--;
-	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment) {
+	} else if (style(st, BreakBeforeBinaryOperators) == NonAssignment ||
+	    style(st, BreakBeforeBinaryOperators) == All) {
 		struct doc *lhs;
 		int dospace;
 
