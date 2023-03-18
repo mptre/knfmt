@@ -1400,6 +1400,13 @@ doc_diff_exit(const struct doc *dc, struct doc_state *st)
 {
 	if (!DOC_DIFF(st))
 		return;
+
+	/*
+	 * Ensure to leave any previous diff chunk, can happen if the last group
+	 * is covered by a diff chunk.
+	 */
+	if (st->st_diff.end > 0)
+		doc_diff_leave(dc, st, 1);
 	doc_diff_emit(dc, st, st->st_diff.beg, 0);
 }
 

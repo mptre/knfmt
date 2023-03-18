@@ -283,6 +283,10 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 	const char *buf = buffer_get_ptr(lx->lx_bf);
 	size_t bo, eo;
 
+	if (beg >= VECTOR_LENGTH(lx->lx_lines) ||
+	    end >= VECTOR_LENGTH(lx->lx_lines))
+		return 0;
+
 	bo = lx->lx_lines[beg - 1];
 	if (end == 0)
 		eo = buffer_get_len(lx->lx_bf);
