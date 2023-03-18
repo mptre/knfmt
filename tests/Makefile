@@ -516,6 +516,7 @@ TESTS+=	style-BreakBeforeBinaryOperators-008.c
 TESTS+=	style-BreakBeforeBinaryOperators-009.c
 TESTS+=	style-BreakBeforeBinaryOperators-010.c
 TESTS+=	style-BreakBeforeBinaryOperators-011.c
+TESTS+=	style-BreakBeforeBinaryOperators-012.c
 TESTS+=	style-BreakBeforeTernaryOperators-001.c
 TESTS+=	style-BreakBeforeTernaryOperators-002.c
 TESTS+=	style-BreakBeforeTernaryOperators-003.c

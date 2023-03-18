@@ -893,17 +893,19 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	struct doc *parent = dc;
 	int doparens;
 
 	doparens = !(es->es_depth == 1 &&
 	    (es->es_op->op_flags & OPTIONS_SIMPLE) &&
 	    (es->es_flags & EXPR_EXEC_NOPARENS));
 	if (doparens) {
+		struct token *pv;
+
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], dc);	/* ( */
-		if (ex->ex_tokens[1] != NULL)
-			token_move_prev_line(ex->ex_tokens[1]);
+		if (ex->ex_tokens[1] != NULL &&
+		    (pv = token_prev(ex->ex_tokens[1])) != NULL)
+			token_trim(pv);
 	}
 	if (doparens) {
 		if (style(es->es_st, AlignAfterOpenBracket) == Align)
@@ -915,7 +917,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	if (doparens && ex->ex_tokens[1] != NULL)
 		doc_token(ex->ex_tokens[1], dc);	/* ) */
-	return parent;
+	return dc;
 }
 
 static struct doc *
