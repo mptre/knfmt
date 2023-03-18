@@ -893,6 +893,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
+	struct doc *parent = dc;
 	int doparens;
 
 	doparens = !(es->es_depth == 1 &&
@@ -914,7 +915,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	if (doparens && ex->ex_tokens[1] != NULL)
 		doc_token(ex->ex_tokens[1], dc);	/* ) */
-	return dc;
+	return parent;
 }
 
 static struct doc *
