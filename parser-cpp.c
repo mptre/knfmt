@@ -18,7 +18,7 @@ static int	iscdefs(const char *, size_t);
  * Detect usage of types hidden behind cpp such as STACK_OF(X509).
  */
 int
-parser_cpp_peek_type(struct parser *pr)
+parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
@@ -29,7 +29,7 @@ parser_cpp_peek_type(struct parser *pr)
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
 	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_IDENT, NULL) &&
-	    lexer_if(lx, TOKEN_RPAREN, NULL)) {
+	    lexer_if(lx, TOKEN_RPAREN, rparen)) {
 		struct token *nx;
 
 		if (lexer_if(lx, TOKEN_IDENT, &nx) &&

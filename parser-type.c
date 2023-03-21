@@ -37,6 +37,8 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
+		struct token *rparen;
+
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			break;
 
@@ -65,9 +67,9 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 			if (ntokens == 0)
 				break;
 			peek = 1;
-		} else if (parser_cpp_peek_type(pr)) {
-			lexer_if(lx, TOKEN_IDENT, NULL);
-			lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &t);
+		} else if (parser_cpp_peek_type(pr, &rparen)) {
+			t = rparen;
+			lexer_seek(lx, token_next(rparen));
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
 			struct lexer_state ss;
 			int ident;
