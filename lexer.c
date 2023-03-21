@@ -709,10 +709,19 @@ lexer_peek_if(struct lexer *lx, int type, struct token **tk)
 int
 lexer_if(struct lexer *lx, int type, struct token **tk)
 {
+	struct lexer_state s;
 	struct token *t;
 
-	if (!lexer_peek_if(lx, type, tk) || !lexer_pop(lx, &t))
+	/* Must use lexer_pop() without peeking to not cross branches. */
+	s = lexer_get_state(lx);
+	if (!lexer_pop(lx, &t))
 		return 0;
+	if (t->tk_type != type) {
+		lexer_set_state(lx, &s);
+		return 0;
+	}
+	if (tk != NULL)
+		*tk = t;
 	return 1;
 }
 
