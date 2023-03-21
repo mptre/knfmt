@@ -906,8 +906,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[1] != NULL &&
 		    (pv = token_prev(ex->ex_tokens[1])) != NULL)
 			token_trim(pv);
-	}
-	if (doparens) {
+
 		if (style(es->es_st, AlignAfterOpenBracket) == Align)
 			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
 		else
