@@ -148,10 +148,10 @@ static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_align0(struct expr *,
     struct expr_state *, struct doc *, unsigned int, const char *, int);
 
-#define expr_doc_align_disable(a, b, c) \
-	expr_doc_align_disable0((a), (b), (c), __func__, __LINE__)
+#define expr_doc_align_disable(a, b, c, d) \
+	expr_doc_align_disable0((a), (b), (c), (d), __func__, __LINE__)
 static struct doc	*expr_doc_align_disable0(struct expr *,
-    struct expr_state *, struct doc *, const char *, int);
+    struct expr_state *, struct doc *, unsigned int, const char *, int);
 
 static void	expr_doc_align_init(struct expr_state *,
     struct doc_minimize *, size_t);
@@ -824,7 +824,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_rhs != NULL) {
 			if (doalign) {
 				dc = token_has_line(ex->ex_tk, 1) ?
-				    expr_doc_align_disable(ex, es, dc) :
+				    expr_doc_align_disable(ex, es, dc, 0) :
 				    expr_doc_align(ex, es, dc, 0);
 			}
 
@@ -933,7 +933,6 @@ expr_doc_field(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	struct doc *parent = dc;
 	struct token *lparen = ex->ex_tokens[0];
 	struct token *rparen = ex->ex_tokens[1];
 
@@ -948,8 +947,6 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	doc_token(lparen, dc);
 	if (ex->ex_rhs != NULL) {
-		int doalign = style(es->es_st, AlignAfterOpenBracket) == Align;
-
 		if (rparen != NULL) {
 			struct token *pv;
 
@@ -959,15 +956,13 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 				token_trim(pv);
 		}
 
-		if (doalign) {
-			unsigned int indent = 0;
+		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
+			unsigned int indent;
 
-			if (es->es_ncalls > 1 ||
-			    (es->es_flags & EXPR_EXEC_HARDLINE))
-				indent = es->es_ea.indent;
+			indent = es->es_ea.indent | DOC_INDENT_NEWLINE;
 			dc = token_has_line(lparen, 1) ?
-			    expr_doc_align_disable(ex, es, dc) :
-			    expr_doc_align(ex, es, parent, indent);
+			    expr_doc_align_disable(ex, es, dc, indent) :
+			    expr_doc_align(ex, es, dc, indent);
 		}
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
 	}
@@ -1074,7 +1069,7 @@ static struct doc *
 expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	if (ex->ex_tk->tk_type == TOKEN_LBRACE)
-		dc = expr_doc_align_disable(ex, es, dc);
+		dc = expr_doc_align_disable(ex, es, dc, 0);
 
 	doc_append(ex->ex_dc, dc);
 	/*
@@ -1103,11 +1098,12 @@ expr_doc_align0(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc,
 
 static struct doc *
 expr_doc_align_disable0(struct expr *UNUSED(ex), struct expr_state *es,
-    struct doc *dc, const char *fun, int lno)
+    struct doc *dc, unsigned int indent, const char *fun, int lno)
 {
 	struct doc_minimize minimizers[2];
 
 	expr_doc_align_init(es, minimizers, 2);
+	minimizers[1].indent = indent;
 	minimizers[1].flags |= DOC_MINIMIZE_FORCE;
 	return doc_minimize0(dc, minimizers, 2, fun, lno);
 }
