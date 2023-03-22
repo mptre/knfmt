@@ -459,18 +459,23 @@ clang_read_comment(struct lexer *lx, int block)
 	}
 
 	c99 = ch == '/';
-	ch = '\0';
-	for (;;) {
-		unsigned char peek;
 
-		if (lexer_getc(lx, &peek))
-			break;
-		if (c99) {
-			if (peek == '\n') {
+	if (c99) {
+		for (;;) {
+			if (lexer_getc(lx, &ch))
+				break;
+			if (ch == '\n') {
 				lexer_ungetc(lx);
 				break;
 			}
-		} else {
+		}
+	} else {
+		unsigned char peek;
+
+		ch = '\0';
+		for (;;) {
+			if (lexer_getc(lx, &peek))
+				break;
 			if (ch == '*' && peek == '/')
 				break;
 			ch = peek;
