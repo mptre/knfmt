@@ -45,11 +45,11 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
+struct token		*clang_read1(struct clang *, struct lexer *lx);
 static struct token	*clang_read_prefix(struct lexer *, struct token_list *);
 static struct token	*clang_read_comment(struct lexer *, int);
 static struct token	*clang_read_cpp(struct lexer *);
 static struct token	*clang_keyword(struct lexer *);
-static struct token	*clang_keyword1(struct lexer *);
 static struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
 static struct token	*clang_ellipsis(struct lexer *,
@@ -140,6 +140,27 @@ struct token *
 clang_read(struct lexer *lx, void *arg)
 {
 	struct clang *cl = arg;
+	struct token *tk;
+
+	for (;;) {
+		struct token *last;
+
+		tk = clang_read1(cl, lx);
+		if (tk == NULL || (tk->tk_flags & TOKEN_FLAG_DISCARD) == 0)
+			break;
+
+		/* Preserve suffixes to keep track of hard line(s). */
+		last = lexer_last(lx);
+		if (last != NULL)
+			token_move_suffixes(tk, last);
+		token_rele(tk);
+	}
+	return tk;
+}
+
+struct token *
+clang_read1(struct clang *cl, struct lexer *lx)
+{
 	struct token *prefix, *t, *tk, *tmp;
 	struct lexer_state st;
 	struct token_list prefixes;
@@ -574,27 +595,13 @@ clang_read_cpp(struct lexer *lx)
 static struct token *
 clang_keyword(struct lexer *lx)
 {
-	for (;;) {
-		struct token *tk;
-
-		lexer_eat_lines_and_spaces(lx, NULL);
-		tk = clang_keyword1(lx);
-		if (tk == NULL)
-			break;
-		if ((tk->tk_flags & TOKEN_FLAG_DISCARD) == 0)
-			return tk;
-	}
-	return NULL;
-}
-
-static struct token *
-clang_keyword1(struct lexer *lx)
-{
-	struct lexer_state st = lexer_get_state(lx);
+	struct lexer_state st;
 	struct token *pv = NULL;
 	struct token *tk = NULL;
 	unsigned char ch;
 
+	lexer_eat_lines_and_spaces(lx, NULL);
+	st = lexer_get_state(lx);
 	if (lexer_getc(lx, &ch))
 		return NULL;
 
@@ -633,8 +640,6 @@ clang_keyword1(struct lexer *lx)
 		lexer_set_state(lx, &st);
 		return NULL;
 	}
-	if (tk->tk_flags & TOKEN_FLAG_DISCARD)
-		return tk;
 	return lexer_emit(lx, &st, tk);
 }
 
