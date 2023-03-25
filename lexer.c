@@ -1033,7 +1033,7 @@ lexer_eat_lines(struct lexer *lx, int threshold, struct token **tk)
 		}
 	}
 	lx->lx_st = oldst;
-	if (nlines == 0 || nlines < threshold || lexer_eof(lx))
+	if (nlines == 0 || nlines < threshold)
 		return 0;
 	if (tk != NULL) {
 		*tk = lexer_emit(lx, &st, &(struct token){
