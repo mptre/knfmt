@@ -136,7 +136,9 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), struct doc *dc,
 	lexer_peek_enter(lx, &s);
 	if (parser_type_peek(pr, &tk, PARSER_TYPE_CAST) &&
 	    lexer_seek(lx, token_next(tk)) &&
-	    lexer_if(lx, TOKEN_RPAREN, NULL) && !lexer_if(lx, LEXER_EOF, NULL))
+	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
+	    !lexer_if(lx, TOKEN_COMMA, NULL) &&
+	    !lexer_if(lx, LEXER_EOF, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 	if (!peek)

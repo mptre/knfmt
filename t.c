@@ -141,6 +141,7 @@ main(int argc, char *argv[])
 	test_parser_expr("(char const* char*)x", "(((char const *char *))(x))");
 	test_parser_expr("(foo_t)x", "(((foo_t))(x))");
 	test_parser_expr("(foo_t *)x", "(((foo_t *))(x))");
+	test_parser_expr("(a), (b)", "(((a)), ((b)))");
 	test_parser_expr("x * y", "((x) * (y))");
 	test_parser_expr("x & y", "((x) & (y))");
 	test_parser_expr("sizeof x", "(sizeof (x))");
