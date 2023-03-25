@@ -84,10 +84,10 @@ token_add_optline(struct token *tk)
 int
 token_trim(struct token *tk)
 {
-	struct token *suffix, *tmp;
+	struct token *suffix;
 	int ntrim = 0;
 
-	TAILQ_FOREACH_SAFE(suffix, &tk->tk_suffixes, tk_entry, tmp) {
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
 		/*
 		 * Optional spaces are never emitted and must therefore be
 		 * preserved.
@@ -96,13 +96,10 @@ token_trim(struct token *tk)
 			continue;
 
 		if (suffix->tk_type == TOKEN_SPACE) {
-			token_list_remove(&tk->tk_suffixes, suffix);
+			suffix->tk_flags |= TOKEN_FLAG_TRIMMED;
 			ntrim++;
 		}
 	}
-	if (ntrim > 0)
-		tk->tk_flags |= TOKEN_FLAG_TRIMMED;
-
 	return ntrim;
 }
 
@@ -188,9 +185,6 @@ token_has_line(const struct token *tk, int nlines)
 	unsigned int flags = TOKEN_FLAG_OPTSPACE;
 
 	assert(nlines > 0 && nlines <= 2);
-
-	if (nlines == 1 && (tk->tk_flags & TOKEN_FLAG_TRIMMED))
-		return 1;
 
 	if (nlines > 1)
 		flags |= TOKEN_FLAG_OPTLINE;

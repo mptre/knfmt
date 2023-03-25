@@ -86,6 +86,8 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 	for (;;) {
 		struct token *tk;
 
+		if (ndecl > 0)
+			line = doc_alloc(DOC_HARDLINE, decl);
 		error = parser_decl2(pr, decl, &rl, flags);
 		if (error & (FAIL | NONE)) {
 			if (line != NULL)
@@ -95,8 +97,6 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 		ndecl++;
 		if (error & BRCH)
 			break;
-
-		line = doc_alloc(DOC_HARDLINE, decl);
 
 		if (flags & PARSER_DECL_BREAK) {
 			/*
@@ -111,10 +111,8 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 			 * of declarations.
 			 */
 			if (lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP,
-			    NULL)) {
-				doc_remove(line, decl);
+			    NULL))
 				break;
-			}
 		}
 	}
 	if (ndecl == 0)

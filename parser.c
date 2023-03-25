@@ -8,6 +8,7 @@
 
 #include "alloc.h"
 #include "buffer.h"
+#include "cdefs.h"
 #include "doc.h"
 #include "error.h"
 #include "lexer.h"
@@ -18,8 +19,6 @@
 #include "parser-priv.h"
 #include "parser-stmt-asm.h"
 #include "token.h"
-
-static int	parser_simple_active(const struct parser *);
 
 static int	parser_get_error(const struct parser *);
 
@@ -143,12 +142,6 @@ parser_exec1(struct parser *pr, struct doc *dc)
 	return error;
 }
 
-static int
-parser_simple_active(const struct parser *pr)
-{
-	return pr->pr_simple.stmt != NULL || pr->pr_simple.decl != NULL;
-}
-
 int
 parser_fail0(struct parser *pr, const char *fun, int lno)
 {
@@ -181,13 +174,9 @@ out:
  * prefixes intended to be emitted.
  */
 void
-parser_token_trim_before(const struct parser *pr, struct token *tk)
+parser_token_trim_before(const struct parser *UNUSED(pr), struct token *tk)
 {
 	struct token *pv;
-
-	/* Avoid side effects in simple mode. */
-	if (parser_simple_active(pr))
-		return;
 
 	if (!token_is_moveable(tk))
 		return;
@@ -213,11 +202,8 @@ parser_simple_enable(struct parser *pr, const struct parser_simple *simple)
  * Remove any subsequent hard line(s) from the given token.
  */
 void
-parser_token_trim_after(const struct parser *pr, struct token *tk)
+parser_token_trim_after(const struct parser *UNUSED(pr), struct token *tk)
 {
-	/* Avoid side effects in simple mode. */
-	if (parser_simple_active(pr))
-		return;
 	token_trim(tk);
 }
 
