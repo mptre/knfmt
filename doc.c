@@ -485,7 +485,7 @@ doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
 	token->dc_len = tk->tk_len;
 
 	TAILQ_FOREACH(tmp, &tk->tk_suffixes, tk_entry) {
-		if (tmp->tk_flags & TOKEN_FLAG_TRIMMED)
+		if (tmp->tk_flags & TOKEN_FLAG_DISCARD)
 			continue;
 		if (tmp->tk_flags & TOKEN_FLAG_OPTLINE)
 			doc_alloc(DOC_OPTLINE, dc);

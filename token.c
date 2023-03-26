@@ -96,7 +96,7 @@ token_trim(struct token *tk)
 			continue;
 
 		if (suffix->tk_type == TOKEN_SPACE) {
-			suffix->tk_flags |= TOKEN_FLAG_TRIMMED;
+			suffix->tk_flags |= TOKEN_FLAG_DISCARD;
 			ntrim++;
 		}
 	}
