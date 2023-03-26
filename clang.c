@@ -277,7 +277,7 @@ out:
 	 * the token.
 	 */
 	if (ncomments == 0 && lexer_eat_spaces(lx, &tmp)) {
-		tmp->tk_flags |= TOKEN_FLAG_OPTSPACE;
+		tmp->tk_flags |= TOKEN_FLAG_OPTSPACE | TOKEN_FLAG_DISCARD;
 		token_list_append(&tk->tk_suffixes, tmp);
 	}
 

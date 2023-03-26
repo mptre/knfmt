@@ -489,7 +489,7 @@ doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
 			continue;
 		if (tmp->tk_flags & TOKEN_FLAG_OPTLINE)
 			doc_alloc(DOC_OPTLINE, dc);
-		else if ((tmp->tk_flags & TOKEN_FLAG_OPTSPACE) == 0)
+		else
 			doc_token0(tmp, dc, DOC_VERBATIM, __func__, __LINE__);
 	}
 
