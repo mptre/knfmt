@@ -283,7 +283,6 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
 		err(1, NULL);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc	= concat,
-	    .lx	= cx->lx,
 	    .bf	= bf,
 	    .st	= cx->st,
 	    .op	= &cx->op,

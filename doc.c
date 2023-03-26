@@ -15,6 +15,7 @@
 #include "buffer.h"
 #include "cdefs.h"
 #include "comment.h"
+#include "consistency.h"
 #include "cpp-align.h"
 #include "diff.h"
 #include "lexer.h"
@@ -252,6 +253,8 @@ doc_exec(struct doc_exec_arg *arg)
 {
 	const struct doc *dc = arg->dc;
 	struct doc_state st;
+
+	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->lx);
 
 	buffer_reset(arg->bf);
 	doc_state_init(&st, arg, BREAK);

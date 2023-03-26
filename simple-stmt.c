@@ -63,7 +63,6 @@ void
 simple_stmt_leave(struct simple_stmt *ss)
 {
 	struct buffer *bf = NULL;
-	struct lexer *lx = ss->ss_lx;
 	size_t i;
 	int oneline = 1;
 
@@ -83,7 +82,6 @@ simple_stmt_leave(struct simple_stmt *ss)
 
 		doc_exec(&(struct doc_exec_arg){
 		    .dc	= st->st_root,
-		    .lx	= lx,
 		    .bf	= bf,
 		    .st	= ss->ss_st,
 		    .op	= ss->ss_op,

@@ -58,6 +58,7 @@ parser_exec(struct parser *pr, size_t sizehint)
 	struct lexer *lx = pr->pr_lx;
 	unsigned int flags = 0;
 	int error = 0;
+	int dodiff;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
 
@@ -105,7 +106,8 @@ parser_exec(struct parser *pr, size_t sizehint)
 	if (bf == NULL)
 		err(1, NULL);
 
-	if (pr->pr_op->op_flags & OPTIONS_DIFFPARSE)
+	dodiff = pr->pr_op->op_flags & OPTIONS_DIFFPARSE;
+	if (dodiff)
 		flags |= DOC_EXEC_DIFF;
 	else
 		flags |= DOC_EXEC_TRIM;
@@ -113,7 +115,7 @@ parser_exec(struct parser *pr, size_t sizehint)
 		flags |= DOC_EXEC_TRACE;
 	doc_exec(&(struct doc_exec_arg){
 	    .dc		= dc,
-	    .lx		= pr->pr_lx,
+	    .lx		= dodiff ? pr->pr_lx : NULL,
 	    .bf		= bf,
 	    .st		= pr->pr_st,
 	    .op		= pr->pr_op,
