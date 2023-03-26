@@ -10,6 +10,7 @@
 #include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
+#include "consistency.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -262,6 +263,8 @@ expr_exec(const struct expr_exec_arg *ea)
 	struct expr_state es;
 	struct doc *dc, *expr, *indent, *optional;
 	struct expr *ex;
+
+	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
 
 	expr_state_init(&es, ea);
 
