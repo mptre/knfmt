@@ -176,7 +176,8 @@ static void		doc_column(struct doc_state *, const char *, size_t);
 static int		doc_max1(const struct doc *, struct doc_state *,
     void *);
 
-static void	doc_state_init(struct doc_state *, enum doc_mode, unsigned int);
+static void	doc_state_init(struct doc_state *, struct doc_exec_arg *,
+    enum doc_mode);
 static void	doc_state_reset(struct doc_state *);
 static void	doc_state_reset_lines(struct doc_state *);
 static void	doc_state_snapshot(struct doc_state_snapshot *,
@@ -253,11 +254,7 @@ doc_exec(struct doc_exec_arg *arg)
 	struct doc_state st;
 
 	buffer_reset(arg->bf);
-	doc_state_init(&st, BREAK, arg->flags);
-	st.st_op = arg->op;
-	st.st_st = arg->st;
-	st.st_bf = arg->bf;
-	st.st_lx = arg->lx;
+	doc_state_init(&st, arg, BREAK);
 	doc_exec1(dc, &st);
 	if (arg->flags & DOC_EXEC_TRIM)
 		doc_trim_lines(dc, &st);
@@ -272,7 +269,7 @@ doc_width(struct doc_exec_arg *arg)
 	struct doc_state st;
 
 	buffer_reset(arg->bf);
-	doc_state_init(&st, MUNGE, 0);
+	doc_state_init(&st, arg, MUNGE);
 	st.st_op = arg->op;
 	st.st_st = arg->st;
 	st.st_bf = arg->bf;
@@ -508,9 +505,10 @@ int
 doc_max(const struct doc *dc)
 {
 	struct doc_state st;
+	struct doc_exec_arg arg = {0};
 	int max = 0;
 
-	doc_state_init(&st, BREAK, 0);
+	doc_state_init(&st, &arg, BREAK);
 	doc_walk(dc, &st, doc_max1, &max);
 	doc_state_reset(&st);
 	return max;
@@ -1598,12 +1596,17 @@ doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 }
 
 static void
-doc_state_init(struct doc_state *st, enum doc_mode mode, unsigned int flags)
+doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
+    enum doc_mode mode)
 {
 	memset(st, 0, sizeof(*st));
+	st->st_op = arg->op;
+	st->st_st = arg->st;
+	st->st_bf = arg->bf;
+	st->st_lx = arg->lx;
+	st->st_flags = arg->flags;
 	st->st_mode = mode;
 	st->st_diff.beg = 1;
-	st->st_flags = flags;
 	st->st_minimize.idx = -1;
 	st->st_minimize.force = -1;
 }
