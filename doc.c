@@ -733,6 +733,7 @@ doc_exec_align(const struct doc *dc, struct doc_state *st)
 static void
 doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 {
+	const struct token *tk = dc->dc_tk;
 	char *str;
 	unsigned int diff, oldcol;
 	int unmute = 0;
@@ -740,7 +741,7 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 
 	if (doc_is_mute(st)) {
 		if (DOC_DIFF(st) &&
-		    st->st_diff.verbatim == dc->dc_tk)
+		    st->st_diff.verbatim == tk)
 			unmute = 1;
 		else
 			return;
@@ -759,12 +760,12 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 	if (isblock && st->st_col > 0)
 		st->st_newline = 1;
 
-	if (dc->dc_tk->tk_type == TOKEN_COMMENT &&
-	    (str = comment_trim(dc->dc_tk, st->st_st, st->st_op)) != NULL) {
+	if (tk->tk_type == TOKEN_COMMENT &&
+	    (str = comment_trim(tk, st->st_st, st->st_op)) != NULL) {
 		doc_print(dc, st, str, strlen(str), 0);
 		free(str);
-	} else if (dc->dc_tk->tk_type == TOKEN_CPP &&
-	    (str = cpp_align(dc->dc_tk, st->st_st, st->st_op)) != NULL) {
+	} else if (tk->tk_type == TOKEN_CPP &&
+	    (str = cpp_align(tk, st->st_st, st->st_op)) != NULL) {
 		doc_print(dc, st, str, strlen(str), 0);
 		free(str);
 	} else {
