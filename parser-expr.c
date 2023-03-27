@@ -138,6 +138,8 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), struct doc *dc,
 	    lexer_seek(lx, token_next(tk)) &&
 	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
 	    !lexer_if(lx, TOKEN_COMMA, NULL) &&
+	    !(lexer_if(lx, TOKEN_AMP, NULL) &&
+	     lexer_if(lx, TOKEN_TILDE, NULL)) &&
 	    !lexer_if(lx, LEXER_EOF, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
