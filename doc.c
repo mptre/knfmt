@@ -1533,7 +1533,7 @@ doc_is_mute(const struct doc_state *st)
 /*
  * Returns non-zero if the current line is suitable for parenthesis alignment,
  * i.e. a line consisting of whitespace followed by one or many left
- * parenthesisa. This is the desired outcome:
+ * parenthesis. This is the desired outcome:
  *
  * 	if (a &&
  * 	    ((b &&
