@@ -106,7 +106,7 @@ parser_exec(struct parser *pr, size_t sizehint)
 	if (bf == NULL)
 		err(1, NULL);
 
-	dodiff = pr->pr_op->op_flags & OPTIONS_DIFFPARSE;
+	dodiff = pr->pr_op->op_flags.diffparse;
 	if (dodiff)
 		flags |= DOC_EXEC_DIFF;
 	else

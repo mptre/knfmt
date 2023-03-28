@@ -135,7 +135,7 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
 	unsigned int flags = STMT_BRACES;
 
 	/* Make sure both braces are covered by a diff chunk. */
-	if ((ss->ss_op->op_flags & OPTIONS_DIFFPARSE) &&
+	if (ss->ss_op->op_flags.diffparse &&
 	    ((lbrace->tk_flags & TOKEN_FLAG_DIFF) == 0 ||
 	     (rbrace->tk_flags & TOKEN_FLAG_DIFF) == 0))
 		flags |= STMT_IGNORE;

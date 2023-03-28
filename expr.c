@@ -661,8 +661,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	 * Testing backdoor wrapping each expression in parenthesis used for
 	 * validation of operator precedence.
 	 */
-	if ((es->es_op->op_flags & OPTIONS_TEST) &&
-	    ex->ex_type != EXPR_PARENS)
+	if (es->es_op->op_flags.test && ex->ex_type != EXPR_PARENS)
 		doc_literal("(", concat);
 
 	switch (ex->ex_type) {
@@ -792,8 +791,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	}
 
 	/* Testing backdoor, see above. */
-	if ((es->es_op->op_flags & OPTIONS_TEST) &&
-	    ex->ex_type != EXPR_PARENS)
+	if (es->es_op->op_flags.test && ex->ex_type != EXPR_PARENS)
 		doc_literal(")", concat);
 
 	es->es_depth--;
@@ -899,7 +897,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 	int doparens;
 
 	doparens = !(es->es_depth == 1 &&
-	    (es->es_op->op_flags & OPTIONS_SIMPLE) &&
+	    es->es_op->op_flags.simple &&
 	    (es->es_flags & EXPR_EXEC_NOPARENS));
 	if (doparens) {
 		struct token *pv;

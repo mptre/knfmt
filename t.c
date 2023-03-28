@@ -413,7 +413,7 @@ context_alloc(void)
 
 	cx = ecalloc(1, sizeof(*cx));
 	options_init(&cx->op);
-	cx->op.op_flags |= OPTIONS_TEST;
+	cx->op.op_flags.test = 1;
 	cx->bf = buffer_alloc(128);
 	if (cx->bf == NULL)
 		err(1, NULL);

@@ -123,8 +123,7 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 static int
 is_sort_includes_enabled(const struct options *op, const struct style *st)
 {
-	return (op->op_flags & OPTIONS_SIMPLE) ||
-	    style(st, SortIncludes) == CaseSensitive;
+	return op->op_flags.simple || style(st, SortIncludes) == CaseSensitive;
 }
 
 static void

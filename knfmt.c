@@ -58,16 +58,16 @@ main(int argc, char *argv[])
 			clang_format = optarg;
 			break;
 		case 'D':
-			op.op_flags |= OPTIONS_DIFFPARSE;
+			op.op_flags.diffparse = 1;
 			break;
 		case 'd':
-			op.op_flags |= OPTIONS_DIFF;
+			op.op_flags.diff = 1;
 			break;
 		case 'i':
-			op.op_flags |= OPTIONS_INPLACE;
+			op.op_flags.inplace = 1;
 			break;
 		case 's':
-			op.op_flags |= OPTIONS_SIMPLE;
+			op.op_flags.simple = 1;
 			break;
 		case 'v':
 			if (options_trace_parse(&op, optarg))
@@ -79,13 +79,13 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
-	if ((op.op_flags & OPTIONS_DIFFPARSE) && argc > 0)
+	if (op.op_flags.diffparse && argc > 0)
 		usage();
 
-	if (op.op_flags & OPTIONS_DIFF) {
+	if (op.op_flags.diff) {
 		if (pledge("stdio rpath wpath cpath proc exec", NULL) == -1)
 			err(1, "pledge");
-	} else if (op.op_flags & OPTIONS_INPLACE) {
+	} else if (op.op_flags.inplace) {
 		if (pledge("stdio rpath wpath cpath fattr chown", NULL) == -1)
 			err(1, "pledge");
 	} else {
@@ -93,7 +93,7 @@ main(int argc, char *argv[])
 			err(1, "pledge");
 	}
 
-	if (op.op_flags & OPTIONS_DIFFPARSE)
+	if (op.op_flags.diffparse)
 		diff_init();
 	clang_init();
 	style_init();
@@ -126,7 +126,7 @@ out:
 	style_free(st);
 	style_teardown();
 	clang_shutdown();
-	if (op.op_flags & OPTIONS_DIFFPARSE)
+	if (op.op_flags.diffparse)
 		diff_shutdown();
 
 	return error;
@@ -143,7 +143,7 @@ static int
 filelist(int argc, char **argv, struct files *files,
     const struct options *op)
 {
-	if (op->op_flags & OPTIONS_DIFFPARSE)
+	if (op->op_flags.diffparse)
 		return diff_parse(files, op);
 
 	if (argc == 0) {
@@ -200,9 +200,9 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 		goto out;
 	}
 
-	if (op->op_flags & OPTIONS_DIFF)
+	if (op->op_flags.diff)
 		error = filediff(src, dst, fe);
-	else if (op->op_flags & OPTIONS_INPLACE)
+	else if (op->op_flags.inplace)
 		error = filewrite(src, dst, fe);
 	else
 		error = fileprint(dst);

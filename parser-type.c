@@ -186,7 +186,7 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	if (pr->pr_op->op_flags & OPTIONS_SIMPLE) {
+	if (pr->pr_op->op_flags.simple) {
 		struct token *tk = beg;
 		int ntokens = 0;
 

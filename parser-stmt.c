@@ -127,7 +127,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	 */
 	nx = token_next(rbrace);
 	if (nx != NULL && nx->tk_type == TOKEN_SEMI &&
-	    (pr->pr_op->op_flags & OPTIONS_SIMPLE))
+	    pr->pr_op->op_flags.simple)
 		lexer_remove(lx, nx, 1);
 
 	if (doindent)
@@ -786,7 +786,7 @@ parser_simple_stmt_enter(struct parser *pr)
 	struct lexer *lx = pr->pr_lx;
 	int error;
 
-	if ((pr->pr_op->op_flags & OPTIONS_SIMPLE) == 0)
+	if (!pr->pr_op->op_flags.simple)
 		return 0;
 	if (++pr->pr_simple.nstmt > 1)
 		return 1;

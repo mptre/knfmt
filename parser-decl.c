@@ -454,7 +454,7 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 	struct doc *dc;
 	int error;
 
-	if ((pr->pr_op->op_flags & OPTIONS_SIMPLE) == 0)
+	if (!pr->pr_op->op_flags.simple)
 		return -1;
 
 	if (pr->pr_simple.ndecl++ > 0)
