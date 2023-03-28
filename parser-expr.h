@@ -1,3 +1,5 @@
+#include "expr.h"
+
 struct doc;
 struct parser;
 struct ruler;
