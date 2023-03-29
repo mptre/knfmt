@@ -160,7 +160,9 @@ lexer_set_state(struct lexer *lx, const struct lexer_state *st)
 int
 lexer_getc(struct lexer *lx, unsigned char *ch)
 {
+	struct lexer_state *st = &lx->lx_st;
 	const char *buf;
+	size_t off;
 	unsigned char c;
 
 	if (lexer_eof(lx)) {
@@ -174,14 +176,17 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		return 0;
 	}
 
-	buf = buffer_get_ptr(lx->lx_bf);
-	c = (unsigned char)buf[lx->lx_st.st_off++];
+	off = st->st_off++;
+	buf = buffer_get_ptr(lx->lx_bf) + off;
+	c = (unsigned char)buf[0];
 	if (c == '\n') {
-		lx->lx_st.st_lno++;
-		lx->lx_st.st_cno = 1;
-		lexer_line_alloc(lx, lx->lx_st.st_lno);
+		st->st_lno++;
+		st->st_cno = 1;
+		lexer_line_alloc(lx, st->st_lno);
+	} else if (c == '\t') {
+		st->st_cno = ((st->st_cno + 8) & ~0x7u) + 1;
 	} else {
-		lx->lx_st.st_cno++;
+		st->st_cno++;
 	}
 	*ch = c;
 	return 0;
@@ -190,22 +195,28 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 void
 lexer_ungetc(struct lexer *lx)
 {
+	struct lexer_state *st = &lx->lx_st;
 	const char *buf;
+	unsigned char c;
 
 	if (lx->lx_eof)
 		return;
 
-	assert(lx->lx_st.st_off > 0);
-	lx->lx_st.st_off--;
+	assert(st->st_off > 0);
+	st->st_off--;
 
-	buf = buffer_get_ptr(lx->lx_bf);
-	if (buf[lx->lx_st.st_off] == '\n') {
-		assert(lx->lx_st.st_lno > 0);
-		lx->lx_st.st_lno--;
-		lx->lx_st.st_cno = 1;
+	buf = buffer_get_ptr(lx->lx_bf) + st->st_off;
+	c = (unsigned char)buf[0];
+	if (c == '\n') {
+		assert(st->st_lno > 0);
+		st->st_lno--;
+		st->st_cno = 1;
+	} else if (c == '\t') {
+		assert(st->st_cno >= 8);
+		st->st_cno -= 8;
 	} else {
-		assert(lx->lx_st.st_cno > 0);
-		lx->lx_st.st_cno--;
+		assert(st->st_cno > 0);
+		st->st_cno--;
 	}
 }
 

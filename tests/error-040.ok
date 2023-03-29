@@ -1,1 +1,1 @@
-test.c: expected type SEMI got RPAREN<4:7>(")")
+test.c: expected type SEMI got RPAREN<4:14>(")")
