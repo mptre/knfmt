@@ -52,7 +52,7 @@ main(int argc, char *argv[])
 
 	options_init(&op);
 
-	while ((ch = getopt(argc, argv, "c:Ddisv:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:Ddist:")) != -1) {
 		switch (ch) {
 		case 'c':
 			clang_format = optarg;
@@ -69,7 +69,7 @@ main(int argc, char *argv[])
 		case 's':
 			op.op_flags.simple = 1;
 			break;
-		case 'v':
+		case 't':
 			if (options_trace_parse(&op, optarg))
 				return 1;
 			break;

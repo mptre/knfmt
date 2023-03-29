@@ -624,10 +624,10 @@ TESTS+=	../util.h
 .SUFFIXES: .c .h .cfake .hfake
 
 .c.cfake:
-	sh ${.CURDIR}/knfmt.sh $< ${V}
+	sh ${.CURDIR}/knfmt.sh $< ${T}
 
 .h.hfake:
-	sh ${.CURDIR}/knfmt.sh $< ${V}
+	sh ${.CURDIR}/knfmt.sh $< ${T}
 
 all: ${TESTS:.c=.cfake}
 all: ${TESTS:.h=.hfake}
