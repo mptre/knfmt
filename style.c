@@ -314,19 +314,29 @@ style_brace_wrapping(const struct style *st, int option)
 static void
 style_defaults(struct style *st)
 {
-	st->st_options[AlignAfterOpenBracket].val = DontAlign;
-	st->st_options[AlignEscapedNewlines].val = Right;
-	st->st_options[AlignOperands].val = DontAlign;
-	st->st_options[AlwaysBreakAfterReturnType].val = AllDefinitions;
-	st->st_options[BitFieldColonSpacing].val = None;
-	st->st_options[BreakBeforeBinaryOperators].val = None;
-	st->st_options[BreakBeforeBraces].val = Linux;
-	st->st_options[BreakBeforeTernaryOperators].val = False;
-	st->st_options[ColumnLimit].val = 80;
-	st->st_options[ContinuationIndentWidth].val = 4;
-	st->st_options[IndentWidth].val = 8;
-	st->st_options[SortIncludes].val = Never;
-	st->st_options[UseTab].val = Always;
+	static const struct {
+		unsigned int	key;
+		unsigned int	val;
+	} defaults[] = {
+		{ AlignAfterOpenBracket,	DontAlign },
+		{ AlignEscapedNewlines,		Right },
+		{ AlignOperands,		DontAlign },
+		{ AlwaysBreakAfterReturnType,	AllDefinitions },
+		{ BitFieldColonSpacing,		None },
+		{ BreakBeforeBinaryOperators,	None },
+		{ BreakBeforeBraces,		Linux },
+		{ BreakBeforeTernaryOperators,	False },
+		{ ColumnLimit,			80 },
+		{ ContinuationIndentWidth,	4 },
+		{ IndentWidth,			8 },
+		{ SortIncludes,			Never },
+		{ UseTab,			Always },
+	};
+	size_t ndefaults = sizeof(defaults) / sizeof(defaults[0]);
+	size_t i;
+
+	for (i = 0; i < ndefaults; i++)
+		st->st_options[defaults[i].key].val = defaults[i].val;
 }
 
 static void
