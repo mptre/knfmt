@@ -14,7 +14,8 @@
 #include "lexer.h"
 #include "util.h"
 
-static struct token	*token_list_find(struct token_list *, int);
+static struct token	*token_list_find(const struct token_list *, int,
+    unsigned int);
 
 static void		 strflags(struct buffer *, unsigned int);
 static const char	*strtype(int);
@@ -169,9 +170,7 @@ token_has_indent(const struct token *tk)
 int
 token_has_suffix(const struct token *tk, int type)
 {
-	struct token_list *list = (struct token_list *)&tk->tk_suffixes;
-
-	return token_list_find(list, type) != NULL;
+	return token_list_find(&tk->tk_suffixes, type, 0) != NULL;
 }
 
 /*
@@ -220,27 +219,15 @@ token_has_tabs(const struct token *tk)
 int
 token_has_spaces(const struct token *tk)
 {
-	const struct token *suffix;
-
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-		if (suffix->tk_type == TOKEN_SPACE &&
-		    (suffix->tk_flags & TOKEN_FLAG_OPTSPACE))
-			return 1;
-	}
-	return 0;
+	return token_list_find(&tk->tk_suffixes, TOKEN_SPACE,
+	    TOKEN_FLAG_OPTSPACE) != NULL;
 }
 
 int
 token_has_c99_comment(const struct token *tk)
 {
-	const struct token *suffix;
-
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-		if (suffix->tk_type == TOKEN_COMMENT &&
-		    (suffix->tk_flags & TOKEN_FLAG_COMMENT_C99))
-			return 1;
-	}
-	return 0;
+	return token_list_find(&tk->tk_suffixes,
+	    TOKEN_COMMENT, TOKEN_FLAG_COMMENT_C99) != NULL;
 }
 
 /*
@@ -279,7 +266,7 @@ token_is_decl(const struct token *tk, int type)
 int
 token_is_moveable(const struct token *tk)
 {
-	const struct token *prefix, *suffix;
+	const struct token *prefix;
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		if (prefix->tk_type == TOKEN_COMMENT ||
@@ -287,10 +274,8 @@ token_is_moveable(const struct token *tk)
 			return 0;
 	}
 
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-		if (suffix->tk_type == TOKEN_COMMENT)
-			return 0;
-	}
+	if (token_list_find(&tk->tk_suffixes, TOKEN_COMMENT, 0) != NULL)
+		return 0;
 
 	return 1;
 }
@@ -303,7 +288,7 @@ token_get_branch(struct token *tk)
 {
 	struct token *br;
 
-	br = token_list_find(&tk->tk_prefixes, TOKEN_CPP_ELSE);
+	br = token_list_find(&tk->tk_prefixes, TOKEN_CPP_ELSE, 0);
 	if (br == NULL)
 		return NULL;
 	return br->tk_branch.br_pv;
@@ -483,14 +468,22 @@ token_flags_inherit(const struct token *tk)
 }
 
 static struct token *
-token_list_find(struct token_list *list, int type)
+token_list_find(const struct token_list *tokens, int type, unsigned int flags)
 {
 	struct token *tk;
 
-	TAILQ_FOREACH(tk, list, tk_entry) {
-		if (tk->tk_type == type)
-			return tk;
+	if (flags > 0) {
+		TAILQ_FOREACH(tk, tokens, tk_entry) {
+			if (tk->tk_type == type && (tk->tk_flags & flags))
+				return tk;
+		}
+	} else {
+		TAILQ_FOREACH(tk, tokens, tk_entry) {
+			if (tk->tk_type == type)
+				return tk;
+		}
 	}
+
 	return NULL;
 }
 
