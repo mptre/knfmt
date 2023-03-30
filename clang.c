@@ -45,7 +45,6 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
-struct token		*clang_read1(struct clang *, struct lexer *lx);
 static struct token	*clang_read_prefix(struct lexer *, struct token_list *);
 static struct token	*clang_read_comment(struct lexer *, int);
 static struct token	*clang_read_cpp(struct lexer *);
@@ -140,27 +139,6 @@ struct token *
 clang_read(struct lexer *lx, void *arg)
 {
 	struct clang *cl = arg;
-	struct token *tk;
-
-	for (;;) {
-		struct token *last;
-
-		tk = clang_read1(cl, lx);
-		if (tk == NULL || (tk->tk_flags & TOKEN_FLAG_DISCARD) == 0)
-			break;
-
-		/* Preserve suffixes to keep track of hard line(s). */
-		last = lexer_last(lx);
-		if (last != NULL)
-			token_move_suffixes(tk, last);
-		token_rele(tk);
-	}
-	return tk;
-}
-
-struct token *
-clang_read1(struct clang *cl, struct lexer *lx)
-{
 	struct token *prefix, *t, *tk, *tmp;
 	struct lexer_state st;
 	struct token_list prefixes;
@@ -261,15 +239,21 @@ eof:
 out:
 	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
 
-	/* Consume trailing/interwined comments. */
-	for (;;) {
-		struct token *comment;
+	/*
+	 * Consume trailing/interwined comments. If the token is about to be
+	 * discarded, skip this causing any comment to be treated as a prefix
+	 * instead.
+	 */
+	if ((tk->tk_flags & TOKEN_FLAG_DISCARD) == 0) {
+		for (;;) {
+			struct token *comment;
 
-		comment = clang_read_comment(lx, 0);
-		if (comment == NULL)
-			break;
-		token_list_append(&tk->tk_suffixes, comment);
-		ncomments++;
+			comment = clang_read_comment(lx, 0);
+			if (comment == NULL)
+				break;
+			token_list_append(&tk->tk_suffixes, comment);
+			ncomments++;
+		}
 	}
 
 	/*

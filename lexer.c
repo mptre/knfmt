@@ -69,8 +69,8 @@ static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 struct lexer *
 lexer_alloc(const struct lexer_arg *arg)
 {
+	VECTOR(struct token *) discarded;
 	struct lexer *lx;
-	int error = 0;
 
 	lx = ecalloc(1, sizeof(*lx));
 	lx->lx_callbacks = arg->callbacks;
@@ -90,28 +90,41 @@ lexer_alloc(const struct lexer_arg *arg)
 		err(1, NULL);
 	lexer_line_alloc(lx, 1);
 
+	if (VECTOR_INIT(discarded) == NULL)
+		err(1, NULL);
+
 	for (;;) {
 		struct token *tk;
 
 		tk = lx->lx_callbacks.read(lx, lx->lx_callbacks.arg);
-		if (tk == NULL) {
-			error = 1;
-			break;
-		}
+		if (tk == NULL)
+			goto err;
 		TAILQ_INSERT_TAIL(&lx->lx_tokens, tk, tk_entry);
+		if (tk->tk_flags & TOKEN_FLAG_DISCARD) {
+			struct token **dst;
+
+			dst = VECTOR_ALLOC(discarded);
+			if (dst == NULL)
+				err(1, NULL);
+			*dst = tk;
+		}
 		if (tk->tk_type == LEXER_EOF)
 			break;
 	}
 
-	if (error) {
-		lexer_free(lx);
-		return NULL;
-	}
+	while (!VECTOR_EMPTY(discarded))
+		lexer_remove(lx, *VECTOR_POP(discarded), 1);
+	VECTOR_FREE(discarded);
 
 	if (trace(lx->lx_op, 'l') >= 3)
 		lexer_dump(lx);
 
 	return lx;
+
+err:
+	VECTOR_FREE(discarded);
+	lexer_free(lx);
+	return NULL;
 }
 
 void
