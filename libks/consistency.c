@@ -28,7 +28,7 @@ assert_consistency(int consistent, const char *a, const char *b,
 		return 0;
 
 	fprintf(stderr,
-	    "consistency \"%s == %s\" failed: function \"%s\", line %d\n",
+	    "consistency \"(%s) == (%s)\" failed: function \"%s\", line %d\n",
 	    a, b, fun, lno);
 	return 1;
 }
