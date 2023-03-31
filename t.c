@@ -235,6 +235,9 @@ main(int argc, char *argv[])
 	test_lexer_read("...", "ELLIPSIS");
 	test_lexer_read(".x", "PERIOD IDENT");
 
+	test_lexer_read("restrict", "RESTRICT");
+	test_lexer_read("__restrict", "RESTRICT");
+
 	test_lexer_read("__volatile", "VOLATILE");
 	test_lexer_read("__volatile__", "VOLATILE");
 
