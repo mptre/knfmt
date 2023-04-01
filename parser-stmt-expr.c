@@ -4,6 +4,7 @@
 
 #include "doc.h"
 #include "lexer.h"
+#include "options.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
 #include "parser-stmt.h"
@@ -53,8 +54,13 @@ parser_stmt_expr(struct parser *pr, struct doc *dc)
 	});
 	if (error & HALT)
 		return parser_fail(pr);
-	if (lexer_expect(lx, TOKEN_SEMI, &semi))
+	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
 		doc_token(semi, expr);
+		while (lexer_peek_if(lx, TOKEN_SEMI, &nx) &&
+		    token_cmp(semi, nx) == 0 &&
+		    lexer_pop(lx, &nx))
+			lexer_remove(lx, nx, 1);
+	}
 	return parser_good(pr);
 }
 
