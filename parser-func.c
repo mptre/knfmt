@@ -360,8 +360,5 @@ want_line_after_func_impl(struct parser *pr)
 			annotated = 1;
 	}
 	lexer_peek_leave(lx, &s);
-	if (annotated)
-		return 0;
-
-	return 1;
+	return !annotated;
 }
