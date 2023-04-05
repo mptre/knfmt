@@ -537,12 +537,6 @@ lexer_back(const struct lexer *lx, struct token **tk)
 }
 
 struct token *
-lexer_last(struct lexer *lx)
-{
-	return TAILQ_LAST(&lx->lx_tokens, token_list);
-}
-
-struct token *
 lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 {
 	struct token *tk;
