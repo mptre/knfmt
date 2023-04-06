@@ -167,7 +167,7 @@ static int		doc_fits1(const struct doc *, struct doc_state *,
     void *);
 static unsigned int	doc_indent(const struct doc *, struct doc_state *, int);
 static unsigned int	doc_indent1(const struct doc *, struct doc_state *,
-    int);
+    int, int);
 static void		doc_trim_spaces(const struct doc *, struct doc_state *);
 static void		doc_trim_lines(const struct doc *, struct doc_state *);
 static int		doc_is_mute(const struct doc_state *);
@@ -720,13 +720,13 @@ doc_exec_align(const struct doc *dc, struct doc_state *st)
 		while (indent > 0) {
 			unsigned int n;
 
-			n = doc_indent1(dc, st, 8);
+			n = doc_indent1(dc, st, 8, 1);
 			indent = n < indent ? indent - n : 0;
 		}
-		doc_indent1(dc, st, (int)dc->dc_align.spaces);
+		doc_indent1(dc, st, (int)dc->dc_align.spaces, 0);
 	} else {
 		doc_indent1(dc, st,
-		    (int)(dc->dc_align.indent + dc->dc_align.spaces));
+		    (int)(dc->dc_align.indent + dc->dc_align.spaces), 0);
 	}
 }
 
@@ -1068,17 +1068,16 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 	} else {
 		st->st_indent.pre = indent;
 	}
-	return doc_indent1(dc, st, indent);
+	return doc_indent1(dc, st, indent, style(st->st_st, UseTab) != Never);
 }
 
 static unsigned int
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
-    int indent)
+    int indent, int usetabs)
 {
 	unsigned int oldcol = st->st_col;
 
-	st->st_col = strindent_buffer(st->st_bf, indent,
-	    style(st->st_st, UseTab) != Never, st->st_col);
+	st->st_col = strindent_buffer(st->st_bf, indent, usetabs, st->st_col);
 	return st->st_col - oldcol;
 }
 
