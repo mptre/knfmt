@@ -31,6 +31,10 @@ struct ruler {
  * alignment.
  */
 #define RULER_REQUIRE_TABS	0x00000010u
+/*
+ * Sense and honor existing alignment.
+ */
+#define RULER_ALIGN_SENSE	0x00000020u
 };
 
 void	ruler_init(struct ruler *, unsigned int, unsigned int);

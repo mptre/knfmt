@@ -8,6 +8,7 @@
 
 #include "doc.h"
 #include "token.h"
+#include "util.h"
 #include "vector.h"
 
 struct ruler_column {
@@ -25,12 +26,15 @@ struct ruler_indent {
 
 struct ruler_datum {
 	struct doc	*rd_dc;
+	struct token	*rd_tk;
 	unsigned int	 rd_len;
 	unsigned int	 rd_nspaces;
 };
 
 static void	ruler_exec_indent(struct ruler *);
 static void	ruler_reset(struct ruler *);
+
+static unsigned int	ruler_column_alignment(const struct ruler_column *);
 
 static int		minimize(const struct ruler_column *);
 static unsigned int	tabalign(unsigned int);
@@ -50,7 +54,10 @@ ruler_free(struct ruler *rl)
 {
 	while (!VECTOR_EMPTY(rl->rl_columns)) {
 		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
+		size_t i;
 
+		for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++)
+			token_rele(rc->rc_datums[i].rd_tk);
 		VECTOR_FREE(rc->rc_datums);
 	}
 	VECTOR_FREE(rl->rl_columns);
@@ -85,6 +92,8 @@ ruler_insert0(struct ruler *rl, struct token *tk, struct doc *dc,
 	if (rd == NULL)
 		err(1, NULL);
 	rd->rd_dc = doc_alloc0(DOC_ALIGN, dc, 1, fun, lno);
+	token_ref(tk);
+	rd->rd_tk = tk;
 	rd->rd_len = len;
 	rd->rd_nspaces = nspaces;
 
@@ -156,6 +165,7 @@ ruler_exec(struct ruler *rl)
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_columns); i++) {
 		struct ruler_column *rc = &rl->rl_columns[i];
 		unsigned int maxlen = 0;
+		unsigned int tabalign = rl->rl_flags & RULER_ALIGN_TABS;
 
 		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_REQUIRE_TABS))
 			continue;
@@ -166,10 +176,20 @@ ruler_exec(struct ruler *rl)
 			maxlen = rl->rl_align;
 		} else if (rl->rl_flags & RULER_ALIGN_FIXED) {
 			maxlen = rl->rl_align;
+		} else if (rl->rl_flags & RULER_ALIGN_SENSE) {
+			maxlen = ruler_column_alignment(rc);
+			if (maxlen == 0) {
+				if (rc->rc_ntabs > 0)
+					goto tabs;
+				continue;
+			}
+			tabalign = rc->rc_ntabs > 0;
 		} else if (rl->rl_flags & RULER_ALIGN_TABS) {
+tabs:
 			maxlen = rc->rc_len;
 			if (!minimize(rc))
 				maxlen++;
+			tabalign = 1;
 		}
 
 		for (j = 0; j < VECTOR_LENGTH(rc->rc_datums); j++) {
@@ -188,7 +208,7 @@ ruler_exec(struct ruler *rl)
 			doc_set_align(rd->rd_dc, &(struct doc_align){
 			    .indent	= maxlen - rd->rd_len,
 			    .spaces	= rc->rc_nspaces - rd->rd_nspaces,
-			    .tabalign	= rl->rl_flags & RULER_ALIGN_TABS,
+			    .tabalign	= tabalign,
 			});
 		}
 	}
@@ -233,10 +253,46 @@ ruler_reset(struct ruler *rl)
 {
 	while (!VECTOR_EMPTY(rl->rl_columns)) {
 		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
+		size_t i;
 
+		for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++)
+			token_rele(rc->rc_datums[i].rd_tk);
 		VECTOR_FREE(rc->rc_datums);
 	}
 	VECTOR_FREE(rl->rl_indent);
+}
+
+static unsigned int
+ruler_column_alignment(const struct ruler_column *rc)
+{
+	struct token *tk = NULL;
+	size_t i;
+	unsigned int cno = 0;
+	unsigned int w;
+
+	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
+		const struct ruler_datum *rd = &rc->rc_datums[i];
+		struct token *nx;
+
+		if (!token_is_moveable(rd->rd_tk))
+			return 0;
+
+		nx = token_next(rd->rd_tk);
+		if (nx == NULL || token_cmp(rd->rd_tk, nx) != 0)
+			return 0;
+
+		w = nx->tk_cno - (rc->rc_nspaces - rd->rd_nspaces);
+		if (cno == 0)
+			cno = w;
+		else if (cno != w)
+			return 0;
+		if (rd->rd_len == rc->rc_len)
+			tk = rd->rd_tk;
+	}
+	assert(tk != NULL);
+
+	w = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
+	return rc->rc_len + (cno - w);
 }
 
 static int
