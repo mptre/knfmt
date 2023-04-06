@@ -733,7 +733,7 @@ doc_exec_align(const struct doc *dc, struct doc_state *st)
 static void
 doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 {
-	const struct token *tk = dc->dc_tk;
+	struct token *tk = dc->dc_tk;
 	char *str;
 	unsigned int diff, oldcol;
 	int unmute = 0;

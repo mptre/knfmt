@@ -18,8 +18,7 @@ static const char	*nextline(const char *, size_t, const char **);
  * Align of line continuations.
  */
 char *
-cpp_align(const struct token *tk, const struct style *st,
-    const struct options *op)
+cpp_align(struct token *tk, const struct style *st, const struct options *op)
 {
 	struct ruler rl;
 	struct buffer *bf;

@@ -39,7 +39,7 @@ void	ruler_exec(struct ruler *);
 
 #define ruler_insert(a, b, c, d, e, f) \
 	ruler_insert0((a), (b), (c), (d), (e), (f), __func__, __LINE__)
-void	ruler_insert0(struct ruler *, const struct token *, struct doc *,
+void	ruler_insert0(struct ruler *, struct token *, struct doc *,
     unsigned int, unsigned int, unsigned int, const char *, int);
 
 #define ruler_indent(a, b, c) \
