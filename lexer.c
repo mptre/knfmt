@@ -36,6 +36,9 @@ struct lexer {
 	/* Line number to buffer offset mapping. */
 	VECTOR(unsigned int)	 lx_lines;
 
+	/* Previous column, used when compensating for tabs. */
+	VECTOR(unsigned int)	 lx_columns;
+
 	int			 lx_eof;
 	int			 lx_peek;
 
@@ -82,6 +85,8 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	if (VECTOR_INIT(lx->lx_lines) == NULL)
+		err(1, NULL);
+	if (VECTOR_INIT(lx->lx_columns) == NULL)
 		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
 	if (VECTOR_INIT(lx->lx_stamps) == NULL)
@@ -136,6 +141,7 @@ lexer_free(struct lexer *lx)
 		return;
 
 	VECTOR_FREE(lx->lx_lines);
+	VECTOR_FREE(lx->lx_columns);
 	if (lx->lx_unmute != NULL)
 		token_rele(lx->lx_unmute);
 	while (!VECTOR_EMPTY(lx->lx_stamps)) {
@@ -176,6 +182,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 	struct lexer_state *st = &lx->lx_st;
 	const char *buf;
 	size_t off;
+	unsigned int oldcno;
 	unsigned char c;
 
 	if (lexer_eof(lx)) {
@@ -189,6 +196,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		return 0;
 	}
 
+	oldcno = st->st_cno;
 	off = st->st_off++;
 	buf = buffer_get_ptr(lx->lx_bf) + off;
 	c = (unsigned char)buf[0];
@@ -197,11 +205,21 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		st->st_cno = 1;
 		lexer_line_alloc(lx, st->st_lno);
 	} else if (c == '\t') {
-		st->st_cno = ((st->st_cno + 8) & ~0x7u) + 1;
+		st->st_cno = ((st->st_cno + 8 - 1) & ~0x7u) + 1;
 	} else {
 		st->st_cno++;
 	}
 	*ch = c;
+
+	if (c == '\n' || c == '\t') {
+		unsigned int *cno;
+
+		cno = VECTOR_ALLOC(lx->lx_columns);
+		if (cno == NULL)
+			err(1, NULL);
+		*cno = oldcno;
+	}
+
 	return 0;
 }
 
@@ -221,14 +239,14 @@ lexer_ungetc(struct lexer *lx)
 	buf = buffer_get_ptr(lx->lx_bf) + st->st_off;
 	c = (unsigned char)buf[0];
 	if (c == '\n') {
-		assert(st->st_lno > 0);
 		st->st_lno--;
-		st->st_cno = 1;
+		assert(!VECTOR_EMPTY(lx->lx_columns));
+		st->st_cno = *VECTOR_POP(lx->lx_columns);
 	} else if (c == '\t') {
-		assert(st->st_cno >= 8);
-		st->st_cno -= 8;
+		assert(!VECTOR_EMPTY(lx->lx_columns));
+		st->st_cno = *VECTOR_POP(lx->lx_columns);
 	} else {
-		assert(st->st_cno > 0);
+		assert(st->st_cno > 1);
 		st->st_cno--;
 	}
 }
