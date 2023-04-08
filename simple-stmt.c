@@ -148,7 +148,7 @@ simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
 }
 
 struct doc *
-simple_stmt_ifelse_enter(struct simple_stmt *ss, struct token *lbrace,
+simple_stmt_no_braces_enter(struct simple_stmt *ss, struct token *lbrace,
     unsigned int indent, void **cookie)
 {
 	struct stmt *st;
@@ -164,8 +164,8 @@ simple_stmt_ifelse_enter(struct simple_stmt *ss, struct token *lbrace,
 }
 
 void
-simple_stmt_ifelse_leave(struct simple_stmt *UNUSED(ss), struct token *rbrace,
-    void *cookie)
+simple_stmt_no_braces_leave(struct simple_stmt *UNUSED(ss),
+    struct token *rbrace, void *cookie)
 {
 	struct stmt *st = cookie;
 

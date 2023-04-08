@@ -38,9 +38,9 @@ static int		 parser_simple_stmt_enter(struct parser *);
 static void		 parser_simple_stmt_leave(struct parser *, int);
 static struct doc	*parser_simple_stmt_block(struct parser *,
     struct doc *);
-static struct doc	*parser_simple_stmt_ifelse_enter(struct parser *,
+static struct doc	*parser_simple_stmt_no_braces_enter(struct parser *,
     struct doc *, void **);
-static void		 parser_simple_stmt_ifelse_leave(struct parser *,
+static void		 parser_simple_stmt_no_braces_leave(struct parser *,
     void *);
 
 static int
@@ -237,10 +237,10 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 				    style(pr->pr_st, IndentWidth), dc);
 				doc_alloc(DOC_HARDLINE, dc);
 
-				dc = parser_simple_stmt_ifelse_enter(pr, dc,
+				dc = parser_simple_stmt_no_braces_enter(pr, dc,
 				    &simple);
 				error = parser_stmt(pr, dc);
-				parser_simple_stmt_ifelse_leave(pr, simple);
+				parser_simple_stmt_no_braces_leave(pr, simple);
 				if (error & (FAIL | NONE))
 					parser_fail(pr);
 			}
@@ -494,13 +494,13 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 
 		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
 		doc_alloc(DOC_HARDLINE, indent);
-		if (type->tk_type == TOKEN_IF) {
-			indent = parser_simple_stmt_ifelse_enter(pr, indent,
+		if (type->tk_type == TOKEN_IF || type->tk_type == TOKEN_IDENT) {
+			indent = parser_simple_stmt_no_braces_enter(pr, indent,
 			    &simple);
 		}
 		error = parser_stmt(pr, indent);
-		if (type->tk_type == TOKEN_IF)
-			parser_simple_stmt_ifelse_leave(pr, simple);
+		if (type->tk_type == TOKEN_IF || type->tk_type == TOKEN_IDENT)
+			parser_simple_stmt_no_braces_leave(pr, simple);
 		return error;
 	}
 }
@@ -832,27 +832,26 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 }
 
 static struct doc *
-parser_simple_stmt_ifelse_enter(struct parser *pr, struct doc *dc,
+parser_simple_stmt_no_braces_enter(struct parser *pr, struct doc *dc,
     void **cookie)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
 
-	if (pr->pr_simple.nstmt != 1 ||
-	    pr->pr_simple.ndecl > 0 ||
+	if (pr->pr_simple.nstmt != 1 || pr->pr_simple.ndecl > 0 ||
 	    !lexer_peek(lx, &lbrace))
 		return dc;
-	return simple_stmt_ifelse_enter(pr->pr_simple.stmt, lbrace,
+	return simple_stmt_no_braces_enter(pr->pr_simple.stmt, lbrace,
 	    (pr->pr_nindent + 1) * style(pr->pr_st, IndentWidth), cookie);
 }
 
 static void
-parser_simple_stmt_ifelse_leave(struct parser *pr, void *cookie)
+parser_simple_stmt_no_braces_leave(struct parser *pr, void *cookie)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *rbrace;
 
 	if (cookie == NULL || !lexer_peek(lx, &rbrace))
 		return;
-	simple_stmt_ifelse_leave(pr->pr_simple.stmt, rbrace, cookie);
+	simple_stmt_no_braces_leave(pr->pr_simple.stmt, rbrace, cookie);
 }
