@@ -177,9 +177,10 @@ simple_decl_leave(struct simple_decl *sd)
 					    after, TOKEN_COMMA, ",");
 				}
 
-				TOKEN_RANGE_FOREACH(ident, &dv->dv_ident, tmp)
+				TOKEN_RANGE_FOREACH(ident, &dv->dv_ident, tmp) {
 					after = lexer_move_after(sd->sd_lx,
 					    after, ident);
+				}
 			}
 
 			after = lexer_insert_after(sd->sd_lx, after,
