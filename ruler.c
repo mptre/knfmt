@@ -36,8 +36,7 @@ static void	ruler_reset(struct ruler *);
 
 static unsigned int	ruler_column_alignment(const struct ruler_column *);
 
-static int		minimize(const struct ruler_column *);
-static unsigned int	tabalign(unsigned int);
+static int	minimize(const struct ruler_column *);
 
 void
 ruler_init(struct ruler *rl, unsigned int align, unsigned int flags)
@@ -236,7 +235,7 @@ ruler_exec_indent(struct ruler *rl)
 		if (rc->rc_ntabs > 0) {
 			indent = rc->rc_len;
 			if (!minimize(rc))
-				indent = tabalign(indent);
+				indent = (indent + 8 - 1) & ~0x7u;
 			indent += rc->rc_nspaces;
 		} else {
 			indent = rd->rd_len + rd->rd_nspaces + 1;
@@ -324,13 +323,4 @@ minimize(const struct ruler_column *rc)
 	 * datums will overlap.
 	 */
 	return minspaces >= rc->rc_nspaces;
-}
-
-/*
- * Ceil to multiple of 8.
- */
-static unsigned int
-tabalign(unsigned int len)
-{
-	return len + (8 - (len % 8));
 }
