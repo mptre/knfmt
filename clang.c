@@ -30,6 +30,7 @@
 } while (0)
 
 struct clang {
+	const struct style	*cl_st;
 	const struct options	*cl_op;
 	struct cpp_include	*cl_ci;
 	VECTOR(struct token *)	 cl_branches;
@@ -119,6 +120,7 @@ clang_alloc(const struct style *st, const struct options *op)
 	struct clang *cl;
 
 	cl = ecalloc(1, sizeof(*cl));
+	cl->cl_st = st;
 	cl->cl_op = op;
 	cl->cl_ci = cpp_include_alloc(op, st);
 	if (VECTOR_INIT(cl->cl_branches) == NULL)
