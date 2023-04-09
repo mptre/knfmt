@@ -103,8 +103,8 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	} else if ((pv = token_prev(lbrace)) != NULL &&
 	    token_cmp(pv, lbrace) == 0) {
 		/*
-		 * The lbrace is not the first token on this line. Do not try to
-		 * align column(s) that doesn't fit on the current line.
+		 * The lbrace is not the first token on this line. Regular
+		 * continuation indentation is wanted.
 		 */
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
