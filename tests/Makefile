@@ -405,6 +405,7 @@ TESTS+=	valid-311.c
 TESTS+=	valid-312.c
 TESTS+=	valid-313.c
 TESTS+=	valid-314.c
+TESTS+=	valid-315.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -445,7 +446,6 @@ TESTS+=	trace-001.c
 
 TESTS+=	bug-002.c
 TESTS+=	bug-003.c
-TESTS+=	bug-005.c
 
 TESTS+=	style-AlignAfterOpenBracket-001.c
 TESTS+=	style-AlignAfterOpenBracket-002.c
