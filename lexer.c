@@ -560,6 +560,7 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 	struct token *tk;
 
 	tk = token_alloc(src);
+	token_position_after(after, tk);
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
 }
@@ -589,8 +590,6 @@ lexer_insert_after(struct lexer *lx, struct token *after, int type,
 {
 	const struct token cp = {
 		.tk_type	= type,
-		.tk_lno		= after->tk_lno,
-		.tk_cno		= after->tk_cno,
 		.tk_flags	= token_flags_inherit(after),
 		.tk_str		= str,
 		.tk_len		= strlen(str),
@@ -598,6 +597,7 @@ lexer_insert_after(struct lexer *lx, struct token *after, int type,
 	struct token *tk;
 
 	tk = token_alloc(&cp);
+	token_position_after(after, tk);
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
 }
@@ -606,8 +606,7 @@ struct token *
 lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
 {
 	TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
-	tk->tk_lno = after->tk_lno;
-	tk->tk_cno = after->tk_cno + after->tk_len;
+	token_position_after(after, tk);
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
 }

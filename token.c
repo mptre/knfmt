@@ -126,6 +126,34 @@ token_serialize(const struct token *tk)
 	return buf;
 }
 
+void
+token_position_after(struct token *after, struct token *tk)
+{
+	struct token *last, *prefix, *suffix;
+	unsigned int cno, lno;
+
+	last = TAILQ_EMPTY(&after->tk_suffixes) ?
+	    after : TAILQ_LAST(&after->tk_suffixes, token_list);
+	cno = strwidth(last->tk_str, last->tk_len, last->tk_cno);
+	lno = after->tk_lno;
+
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		prefix->tk_cno = cno;
+		prefix->tk_lno = lno;
+		cno = strwidth(prefix->tk_str, prefix->tk_len, prefix->tk_cno);
+	}
+
+	tk->tk_cno = cno;
+	tk->tk_lno = lno;
+	cno = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
+
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		suffix->tk_cno = cno;
+		suffix->tk_lno = lno;
+		cno = strwidth(suffix->tk_str, suffix->tk_len, suffix->tk_cno);
+	}
+}
+
 int
 token_cmp(const struct token *a, const struct token *b)
 {
