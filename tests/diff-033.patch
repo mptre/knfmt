@@ -1,0 +1,8 @@
+--- diff-033.c
++++ diff-033.c
+@@ -1,4 +1,3 @@
+ struct {
+-	int		 a;
+-	const char	*b;
++	int		 x;
+ };

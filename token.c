@@ -391,6 +391,13 @@ token_list_copy(const struct token_list *src, struct token_list *dst)
 	}
 }
 
+struct token *
+token_find_suffix_spaces(struct token *tk)
+{
+	return token_list_find(&tk->tk_suffixes, TOKEN_SPACE,
+	    TOKEN_FLAG_OPTSPACE);
+}
+
 void
 token_move_prefixes(struct token *src, struct token *dst)
 {

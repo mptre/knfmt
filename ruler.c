@@ -34,7 +34,8 @@ struct ruler_datum {
 static void	ruler_exec_indent(struct ruler *);
 static void	ruler_reset(struct ruler *);
 
-static unsigned int	ruler_column_alignment(const struct ruler_column *);
+static unsigned int	ruler_column_alignment(struct ruler_column *);
+static unsigned int	countspaces(const char *, size_t);
 
 static int	minimize(const struct ruler_column *);
 
@@ -259,16 +260,17 @@ ruler_reset(struct ruler *rl)
 }
 
 static unsigned int
-ruler_column_alignment(const struct ruler_column *rc)
+ruler_column_alignment(struct ruler_column *rc)
 {
 	struct token *tk = NULL;
 	size_t i;
 	unsigned int cno = 0;
-	unsigned int w;
+	unsigned int nspaces = 0;
+	unsigned int maxlen, w;
 
 	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
-		const struct ruler_datum *rd = &rc->rc_datums[i];
-		struct token *nx;
+		struct ruler_datum *rd = &rc->rc_datums[i];
+		struct token *nx, *suffix;
 
 		if (!token_is_moveable(rd->rd_tk))
 			return 0;
@@ -284,11 +286,40 @@ ruler_column_alignment(const struct ruler_column *rc)
 			return 0;
 		if (rd->rd_len == rc->rc_len)
 			tk = rd->rd_tk;
+
+		/*
+		 * Allow redundant spaces, reduces churn when removing pointer
+		 * types from declarations.
+		 */
+		if (rc->rc_ntabs > 0 && rc->rc_nspaces == 0 &&
+		    (suffix = token_find_suffix_spaces(rd->rd_tk)) != NULL) {
+			unsigned int n;
+
+			n = countspaces(suffix->tk_str, suffix->tk_len);
+			if (n > nspaces)
+				nspaces = n;
+		}
 	}
 	assert(tk != NULL);
+	if (nspaces > 0)
+		rc->rc_nspaces = nspaces;
 
 	w = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
-	return rc->rc_len + (cno - w);
+	maxlen = rc->rc_len + (cno - w);
+	if (nspaces > 0)
+		maxlen -= nspaces;
+	return maxlen;
+}
+
+static unsigned int
+countspaces(const char *str, size_t len)
+{
+	size_t i = len > 0 ? len - 1 : 0;
+	unsigned int nspaces = 0;
+
+	for (; i > 0 && str[i] == ' '; i--, nspaces++)
+		continue;
+	return nspaces;
 }
 
 static int
