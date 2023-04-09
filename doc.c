@@ -1549,7 +1549,7 @@ doc_parens_align(const struct doc_state *st)
 		nparens++;
 	if (nparens == 0 || buflen == 0)
 		return 0;
-	while (--buflen > 0) {
+	for (; buflen > 0; buflen--) {
 		if (buf[buflen - 1] == '\n')
 			break;
 		if (buf[buflen - 1] != ' ' && buf[buflen - 1] != '\t')
