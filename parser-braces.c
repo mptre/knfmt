@@ -195,8 +195,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 
 		if (!lexer_back(lx, &pv) || !lexer_peek(lx, &nx)) {
 			return parser_fail(pr);
-		} else if (token_has_spaces(pv) &&
-		    (nx != rbrace || token_cmp(pv, rbrace) == 0)) {
+		} else if (token_has_spaces(pv)) {
 			/* Previous token already emitted, honor spaces. */
 			doc_token(token_find_suffix_spaces(pv), concat);
 		} else if (nx == rbrace) {
