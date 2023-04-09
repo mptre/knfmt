@@ -11,6 +11,7 @@
 
 #include "alloc.h"
 #include "cdefs.h"
+#include "cpp-align.h"
 #include "cpp-include.h"
 #include "lexer.h"
 #include "options.h"
@@ -515,10 +516,11 @@ clang_read_comment(struct clang *UNUSED(cl), struct lexer *lx, int block)
 }
 
 static struct token *
-clang_read_cpp(struct clang *UNUSED(cl), struct lexer *lx)
+clang_read_cpp(struct clang *cl, struct lexer *lx)
 {
 	struct lexer_state cmpst, oldst, st;
 	struct token *tk;
+	char *str;
 	int type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
@@ -577,8 +579,17 @@ clang_read_cpp(struct clang *UNUSED(cl), struct lexer *lx)
 	    .tk_type	= type,
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});
+
+	str = cpp_align(tk, cl->cl_st, cl->cl_op);
+	if (str != NULL) {
+		tk->tk_flags |= TOKEN_FLAG_DIRTY;
+		tk->tk_str = str;
+		tk->tk_len = strlen(str);
+	}
+
 	/* Discard any remaining hard line(s). */
 	lexer_eat_lines(lx, 0, NULL);
+
 	return tk;
 }
 

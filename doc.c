@@ -16,7 +16,6 @@
 #include "cdefs.h"
 #include "comment.h"
 #include "consistency.h"
-#include "cpp-align.h"
 #include "diff.h"
 #include "lexer.h"
 #include "options.h"
@@ -762,10 +761,6 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 
 	if (tk->tk_type == TOKEN_COMMENT &&
 	    (str = comment_trim(tk, st->st_st, st->st_op)) != NULL) {
-		doc_print(dc, st, str, strlen(str), 0);
-		free(str);
-	} else if (tk->tk_type == TOKEN_CPP &&
-	    (str = cpp_align(tk, st->st_st, st->st_op)) != NULL) {
 		doc_print(dc, st, str, strlen(str), 0);
 		free(str);
 	} else {
