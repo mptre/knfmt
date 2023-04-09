@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "alloc.h"
+#include "cdefs.h"
 #include "cpp-include.h"
 #include "lexer.h"
 #include "options.h"
@@ -45,9 +46,11 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
-static struct token	*clang_read_prefix(struct lexer *, struct token_list *);
-static struct token	*clang_read_comment(struct lexer *, int);
-static struct token	*clang_read_cpp(struct lexer *);
+static struct token	*clang_read_prefix(struct clang *, struct lexer *,
+    struct token_list *);
+static struct token	*clang_read_comment(struct clang *, struct lexer *,
+    int);
+static struct token	*clang_read_cpp(struct clang *, struct lexer *);
 static struct token	*clang_keyword(struct lexer *);
 static struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
@@ -151,7 +154,7 @@ clang_read(struct lexer *lx, void *arg)
 	/* Consume all comments and preprocessor directives. */
 	cpp_include_enter(cl->cl_ci, lx, &prefixes);
 	for (;;) {
-		prefix = clang_read_prefix(lx, &prefixes);
+		prefix = clang_read_prefix(cl, lx, &prefixes);
 		if (prefix == NULL)
 			break;
 		cpp_include_add(cl->cl_ci, prefix);
@@ -248,7 +251,7 @@ out:
 		for (;;) {
 			struct token *comment;
 
-			comment = clang_read_comment(lx, 0);
+			comment = clang_read_comment(cl, lx, 0);
 			if (comment == NULL)
 				break;
 			token_list_append(&tk->tk_suffixes, comment);
@@ -413,11 +416,12 @@ clang_branch_purge(struct clang *cl, struct lexer *lx)
 }
 
 static struct token *
-clang_read_prefix(struct lexer *lx, struct token_list *prefixes)
+clang_read_prefix(struct clang *cl, struct lexer *lx,
+    struct token_list *prefixes)
 {
 	struct token *comment, *cpp;
 
-	comment = clang_read_comment(lx, 1);
+	comment = clang_read_comment(cl, lx, 1);
 	if (comment != NULL) {
 		struct token *pv;
 
@@ -432,7 +436,7 @@ clang_read_prefix(struct lexer *lx, struct token_list *prefixes)
 		return comment;
 	}
 
-	cpp = clang_read_cpp(lx);
+	cpp = clang_read_cpp(cl, lx);
 	if (cpp != NULL) {
 		token_list_append(prefixes, cpp);
 		return cpp;
@@ -442,7 +446,7 @@ clang_read_prefix(struct lexer *lx, struct token_list *prefixes)
 }
 
 static struct token *
-clang_read_comment(struct lexer *lx, int block)
+clang_read_comment(struct clang *UNUSED(cl), struct lexer *lx, int block)
 {
 	struct lexer_state oldst, st;
 	struct token *tk;
@@ -509,7 +513,7 @@ clang_read_comment(struct lexer *lx, int block)
 }
 
 static struct token *
-clang_read_cpp(struct lexer *lx)
+clang_read_cpp(struct clang *UNUSED(cl), struct lexer *lx)
 {
 	struct lexer_state cmpst, oldst, st;
 	struct token *tk;
