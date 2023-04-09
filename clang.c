@@ -114,7 +114,7 @@ clang_shutdown(void)
 }
 
 struct clang *
-clang_alloc(const struct options *op, const struct style *st)
+clang_alloc(const struct style *st, const struct options *op)
 {
 	struct clang *cl;
 

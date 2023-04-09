@@ -516,7 +516,7 @@ context_init(struct context *cx, const char *src)
 	buffer_puts(cx->bf, src, strlen(src));
 	cx->er = error_alloc(0);
 	cx->st = style_parse(NULL, &cx->op);
-	cx->cl = clang_alloc(&cx->op, cx->st);
+	cx->cl = clang_alloc(cx->st, &cx->op);
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= cx->bf,
