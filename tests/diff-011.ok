@@ -240,8 +240,8 @@ struct sadb_x_counter {
 };
 
 struct sadb_x_mtu {
-	uint16_t sadb_x_mtu_len;
-	uint16_t sadb_x_mtu_exttype;
+	uint16_t  sadb_x_mtu_len;
+	uint16_t  sadb_x_mtu_exttype;
 	u_int32_t sadb_x_mtu_mtu;
 };
 

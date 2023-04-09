@@ -166,9 +166,6 @@ ruler_exec(struct ruler *rl)
 		unsigned int maxlen = 0;
 		unsigned int tabalign = rl->rl_flags & RULER_ALIGN_TABS;
 
-		if (rc->rc_ntabs == 0 && (rl->rl_flags & RULER_REQUIRE_TABS))
-			continue;
-
 		if (rl->rl_flags & RULER_ALIGN_MIN) {
 			maxlen = rc->rc_len + 1;
 		} else if (rl->rl_flags & RULER_ALIGN_MAX) {

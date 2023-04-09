@@ -80,7 +80,7 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 	int error;
 
 	decl = doc_alloc(DOC_CONCAT, dc);
-	ruler_init(&rl, 0, RULER_ALIGN_TABS | RULER_REQUIRE_TABS);
+	ruler_init(&rl, 0, RULER_ALIGN_SENSE);
 
 	for (;;) {
 		struct token *tk;

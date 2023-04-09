@@ -26,12 +26,6 @@ struct ruler {
  */
 #define RULER_ALIGN_TABS	0x00000008u
 /*
- * While used in conjuction with RULER_ALIGN_TABS, require that at least one
- * datum per column to already have tab(s) present in order to perform
- * alignment.
- */
-#define RULER_REQUIRE_TABS	0x00000010u
-/*
  * Sense and honor existing alignment.
  */
 #define RULER_ALIGN_SENSE	0x00000020u
