@@ -130,12 +130,30 @@ void
 token_position_after(struct token *after, struct token *tk)
 {
 	struct token *last, *prefix, *suffix;
-	unsigned int cno, lno;
+	unsigned int lno = after->tk_lno;
+	unsigned int cno;
 
 	last = TAILQ_EMPTY(&after->tk_suffixes) ?
 	    after : TAILQ_LAST(&after->tk_suffixes, token_list);
+
 	cno = strwidth(last->tk_str, last->tk_len, last->tk_cno);
-	lno = after->tk_lno;
+	/*
+	 * If after is the last token on this line, use the column from the
+	 * first token on the same line.
+	 */
+	if (cno == 0) {
+		struct token *pv = after;
+
+		for (;;) {
+			struct token *tmp;
+
+			cno = pv->tk_cno;
+			tmp = token_prev(pv);
+			if (tmp == NULL || tmp->tk_lno != lno)
+				break;
+			pv = tmp;
+		}
+	}
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		prefix->tk_cno = cno;

@@ -46,6 +46,20 @@ static int	test_parser_type_peek0(struct context *, const char *,
 static int	test_lexer_read0(struct context *, const char *, const char *,
     int);
 
+struct test_token_position_after {
+	const char	*src;
+	int		 after;
+	int		 move;
+	unsigned int	 lno;
+	unsigned int	 cno;
+};
+
+#define test_token_position_after(a) \
+	test(test_token_position_after0(cx, (a), __LINE__))
+static int	test_token_position_after0(struct context *,
+    struct test_token_position_after *, int);
+static int	find_token(struct lexer *, int, struct token **);
+
 #define test_strwidth(a, b, c) \
 	test(test_strwidth0((a), (b), (c), __LINE__))
 static int	test_strwidth0(const char *, size_t, size_t, int);
@@ -241,6 +255,14 @@ main(int argc, char *argv[])
 	test_lexer_read("__volatile", "VOLATILE");
 	test_lexer_read("__volatile__", "VOLATILE");
 
+	test_token_position_after((&(struct test_token_position_after){
+	    .src	= "\tint a;\n\tchar b;\n",
+	    .after	= TOKEN_SEMI,
+	    .move	= TOKEN_CHAR,
+	    .lno	= 1,
+	    .cno	= 9,
+	}));
+
 	test_strwidth("int", 0, 3);
 	test_strwidth("int\tx", 0, 9);
 	test_strwidth("int\tx", 3, 9);
@@ -393,6 +415,58 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 
 	buffer_free(bf);
 	return error;
+}
+
+static int
+test_token_position_after0(struct context *cx,
+    struct test_token_position_after *arg, int lno)
+{
+	const char *fun = "token_position_after";
+	struct token *after, *move;
+	int error = 0;
+
+	context_init(cx, arg->src);
+
+	if (!find_token(cx->lx, arg->after, &after)) {
+		fprintf(stderr, "%s:%d: could not find after token", fun, lno);
+		return 0;
+	}
+	if (!find_token(cx->lx, arg->move, &move)) {
+		fprintf(stderr, "%s:%d: could not find move token", fun, lno);
+		return 0;
+	}
+
+	token_position_after(after, move);
+
+	if (arg->lno != move->tk_lno) {
+		fprintf(stderr, "%s:%d: lno: want %u, got %u\n", fun, lno,
+		    arg->lno, move->tk_lno);
+		error = 1;
+	}
+	if (arg->cno != move->tk_cno) {
+		fprintf(stderr, "%s:%d: cno: want %u, got %u\n", fun, lno,
+		    arg->cno, move->tk_cno);
+		error = 1;
+	}
+
+	return error;
+}
+
+static int
+find_token(struct lexer *lx, int type, struct token **tk)
+{
+	struct lexer_state s;
+	struct token *discard;
+
+	lexer_peek_enter(lx, &s);
+	while (!lexer_if(lx, LEXER_EOF, NULL)) {
+		if (lexer_if(lx, type, tk))
+			return 1;
+		if (!lexer_pop(lx, &discard))
+			return 0;
+	}
+	lexer_peek_leave(lx, &s);
+	return 0;
 }
 
 static int
