@@ -197,7 +197,8 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			return parser_fail(pr);
 		} else if (token_has_spaces(pv) &&
 		    (nx != rbrace || token_cmp(pv, rbrace) == 0)) {
-			doc_literal(" ", concat);
+			/* Previous token already emitted, honor spaces. */
+			doc_token(token_find_suffix_spaces(pv), concat);
 		} else if (nx == rbrace) {
 			/*
 			 * Put the last hard line outside to get indentation

@@ -1084,6 +1084,7 @@ DISTFILES+=	tests/valid-313.c
 DISTFILES+=	tests/valid-314.c
 DISTFILES+=	tests/valid-315.c
 DISTFILES+=	tests/valid-316.c
+DISTFILES+=	tests/valid-317.c
 DISTFILES+=	token-defs.h
 DISTFILES+=	token.c
 DISTFILES+=	token.h
