@@ -138,9 +138,9 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), struct doc *dc,
 	    lexer_if(lx, TOKEN_RPAREN, &rparens) &&
 	    !lexer_if(lx, TOKEN_COMMA, NULL) &&
 	    !(lexer_peek_if_flags(lx, TOKEN_FLAG_BINARY, &op) &&
-	     token_has_spaces(rparens) && token_has_spaces(op)) &&
+	    token_has_spaces(rparens) && token_has_spaces(op)) &&
 	    !(lexer_if(lx, TOKEN_AMP, NULL) &&
-	     lexer_if(lx, TOKEN_TILDE, NULL)) &&
+	    lexer_if(lx, TOKEN_TILDE, NULL)) &&
 	    !lexer_if(lx, LEXER_EOF, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
