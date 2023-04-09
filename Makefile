@@ -313,7 +313,6 @@ DISTFILES+=	tests/bug-002.c
 DISTFILES+=	tests/bug-002.ok
 DISTFILES+=	tests/bug-003.c
 DISTFILES+=	tests/bug-003.ok
-DISTFILES+=	tests/bug-004.ok
 DISTFILES+=	tests/cp.sh
 DISTFILES+=	tests/diff-001.c
 DISTFILES+=	tests/diff-001.ok
