@@ -66,7 +66,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	struct token *lbrace, *pv, *rbrace, *tk;
 	unsigned int w = 0;
 	int align = 1;
-	int error, hasline;
+	int error;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_fail(pr);
@@ -82,7 +82,6 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	 * instead respect existing hard line(s).
 	 */
 	align = token_cmp(lbrace, rbrace) == 0;
-	hasline = token_has_line(lbrace, 1);
 	if (arg->flags & PARSER_BRACES_TRIM)
 		parser_token_trim_after(pr, lbrace);
 	doc_token(lbrace, braces);
@@ -94,7 +93,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		goto out;
 	}
 
-	if (hasline) {
+	if (token_has_line(lbrace, 1)) {
 		unsigned int val = arg->indent;
 
 		if (arg->flags & PARSER_BRACES_INDENT_MAYBE)
