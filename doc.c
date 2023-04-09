@@ -14,7 +14,6 @@
 #include "alloc.h"
 #include "buffer.h"
 #include "cdefs.h"
-#include "comment.h"
 #include "consistency.h"
 #include "diff.h"
 #include "lexer.h"
@@ -733,7 +732,6 @@ static void
 doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 {
 	struct token *tk = dc->dc_tk;
-	char *str;
 	unsigned int diff, oldcol;
 	int unmute = 0;
 	int isblock, isnewline;
@@ -759,13 +757,7 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 	if (isblock && st->st_col > 0)
 		st->st_newline = 1;
 
-	if (tk->tk_type == TOKEN_COMMENT &&
-	    (str = comment_trim(tk, st->st_st, st->st_op)) != NULL) {
-		doc_print(dc, st, str, strlen(str), 0);
-		free(str);
-	} else {
-		doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
-	}
+	doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
 
 	/* Restore indentation in diff mode. */
 	if (unmute)
