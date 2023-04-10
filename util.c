@@ -89,7 +89,7 @@ strnice_buffer(struct buffer *bf, const char *str, size_t len)
 			buffer_printf(bf, "\\t");
 		else if (c == '"')
 			buffer_printf(bf, "\\\"");
-		else if (isprint(c))
+		else if (isprint((unsigned char)c))
 			buffer_putc(bf, c);
 		else
 			buffer_printf(bf, "\\x%02x", (unsigned char)c);
