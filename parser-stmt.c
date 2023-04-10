@@ -85,7 +85,8 @@ parser_stmt1(struct parser *pr, struct doc *dc)
 	    (parser_stmt_expr(pr, dc) & GOOD) ||
 	    (parser_stmt_if(pr, dc) & GOOD) ||
 	    (parser_stmt_return(pr, dc) & GOOD) ||
-	    (parser_decl(pr, dc, PARSER_DECL_BREAK) & GOOD) ||
+	    (parser_decl(pr, dc,
+	     PARSER_DECL_BREAK | PARSER_DECL_SIMPLE) & GOOD) ||
 	    (parser_stmt_case(pr, dc) & GOOD) ||
 	    (parser_stmt_break(pr, dc) & GOOD) ||
 	    (parser_stmt_goto(pr, dc) & GOOD) ||
@@ -131,7 +132,6 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 
 	if (doindent)
 		pr->pr_nindent++;
-	pr->pr_nblocks++;
 
 	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0)
 		dc = parser_simple_stmt_block(pr, dc);
@@ -191,7 +191,6 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 
 	if (doindent)
 		pr->pr_nindent--;
-	pr->pr_nblocks--;
 
 	return parser_good(pr);
 }

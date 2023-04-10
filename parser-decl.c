@@ -452,10 +452,10 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 	struct doc *dc;
 	int error;
 
-	if (!pr->pr_op->op_flags.simple || pr->pr_nblocks == 0)
+	if (!pr->pr_op->op_flags.simple)
 		return -1;
 
-	if (pr->pr_simple.ndecl++ > 0)
+	if (pr->pr_simple.ndecl++ > 0 || (flags & PARSER_DECL_SIMPLE) == 0)
 		return 1;
 
 	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_op);

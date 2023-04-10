@@ -7,6 +7,8 @@ struct parser;
 #define PARSER_DECL_LINE			0x00000002u
 /* Parsing of declarations on root level. */
 #define PARSER_DECL_ROOT			0x00000004u
+/* Simplify declarations. */
+#define PARSER_DECL_SIMPLE			0x00000008u
 
 int	parser_decl_peek(struct parser *);
 int	parser_decl(struct parser *, struct doc *, unsigned int);

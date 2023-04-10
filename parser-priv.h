@@ -20,7 +20,6 @@ struct parser {
 	struct lexer		*pr_lx;
 	struct buffer		*pr_scratch;
 	unsigned int		 pr_error;
-	unsigned int		 pr_nblocks;	/* # stmt blocks */
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
 	struct parser_simple {
