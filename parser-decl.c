@@ -439,8 +439,7 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 static int
 parser_simple_decl_active(const struct parser *pr)
 {
-	return pr->pr_nblocks > 0 &&
-	    pr->pr_simple.nstmt == 0 &&
+	return pr->pr_simple.nstmt == 0 &&
 	    pr->pr_simple.ndecl == 1 &&
 	    pr->pr_simple.decl != NULL;
 }
@@ -453,7 +452,7 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 	struct doc *dc;
 	int error;
 
-	if (!pr->pr_op->op_flags.simple)
+	if (!pr->pr_op->op_flags.simple || pr->pr_nblocks == 0)
 		return -1;
 
 	if (pr->pr_simple.ndecl++ > 0)
