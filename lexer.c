@@ -200,14 +200,10 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 	off = st->st_off++;
 	buf = buffer_get_ptr(lx->lx_bf) + off;
 	c = (unsigned char)buf[0];
+	st->st_cno = colwidth(buf, 1, st->st_cno);
 	if (c == '\n') {
 		st->st_lno++;
-		st->st_cno = 1;
 		lexer_line_alloc(lx, st->st_lno);
-	} else if (c == '\t') {
-		st->st_cno = ((st->st_cno + 8 - 1) & ~0x7u) + 1;
-	} else {
-		st->st_cno++;
 	}
 	*ch = c;
 

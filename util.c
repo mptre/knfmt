@@ -26,6 +26,24 @@ tracef(unsigned char ident, const char *fun, const char *fmt, ...)
 	fprintf(stderr, "\n");
 }
 
+unsigned int
+colwidth(const char *str, size_t len, unsigned int cno)
+{
+	for (; len > 0; len--, str++) {
+		switch (str[0]) {
+		case '\n':
+			cno = 1;
+			break;
+		case '\t':
+			cno = ((cno + 8 - 1) & ~0x7u) + 1;
+			break;
+		default:
+			cno++;
+		}
+	}
+	return cno;
+}
+
 size_t
 strindent_buffer(struct buffer *bf, int indent, int usetabs, size_t pos)
 {
