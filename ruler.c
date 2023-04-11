@@ -280,6 +280,9 @@ ruler_column_alignment(struct ruler_column *rc)
 			return 0;
 
 		w = nx->tk_cno - (rc->rc_nspaces - rd->rd_nspaces);
+		if (w == rd->rd_tk->tk_cno + rd->rd_len)
+			return 0; /* no spaces between datum and next token */
+
 		if (cno == 0)
 			cno = w;
 		else if (cno != w)
@@ -301,13 +304,14 @@ ruler_column_alignment(struct ruler_column *rc)
 		}
 	}
 	assert(tk != NULL);
-	if (nspaces > 0)
-		rc->rc_nspaces = nspaces;
 
 	w = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
 	maxlen = rc->rc_len + (cno - w);
-	if (nspaces > 0)
+	if (nspaces > 0) {
 		maxlen -= nspaces;
+		rc->rc_nspaces = nspaces;
+	}
+
 	return maxlen;
 }
 
