@@ -138,12 +138,12 @@ token_position_after(struct token *after, struct token *tk)
 	last = TAILQ_EMPTY(&after->tk_suffixes) ?
 	    after : TAILQ_LAST(&after->tk_suffixes, token_list);
 
-	cno = strwidth(last->tk_str, last->tk_len, last->tk_cno);
+	cno = colwidth(last->tk_str, last->tk_len, last->tk_cno);
 	/*
 	 * If after is the last token on this line, use the column from the
 	 * first token on the same line.
 	 */
-	if (cno == 0) {
+	if (cno == 1) {
 		struct token *pv = after;
 
 		for (;;) {
@@ -160,17 +160,17 @@ token_position_after(struct token *after, struct token *tk)
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		prefix->tk_cno = cno;
 		prefix->tk_lno = lno;
-		cno = strwidth(prefix->tk_str, prefix->tk_len, prefix->tk_cno);
+		cno = colwidth(prefix->tk_str, prefix->tk_len, prefix->tk_cno);
 	}
 
 	tk->tk_cno = cno;
 	tk->tk_lno = lno;
-	cno = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
+	cno = colwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
 
 	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
 		suffix->tk_cno = cno;
 		suffix->tk_lno = lno;
-		cno = strwidth(suffix->tk_str, suffix->tk_len, suffix->tk_cno);
+		cno = colwidth(suffix->tk_str, suffix->tk_len, suffix->tk_cno);
 	}
 }
 
