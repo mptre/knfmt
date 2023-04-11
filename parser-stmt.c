@@ -42,18 +42,15 @@ static struct doc	*parser_simple_stmt_no_braces_enter(struct parser *,
     struct doc *, void **);
 static void		 parser_simple_stmt_no_braces_leave(struct parser *,
     void *);
+static int		 peek_simple_stmt(struct parser *);
 
 static int
 parser_stmt(struct parser *pr, struct doc *dc)
 {
-	struct lexer *lx = pr->pr_lx;
 	int simple = -1;
 	int error;
 
-	if (lexer_peek_if(lx, TOKEN_IF, NULL) ||
-	    lexer_peek_if(lx, TOKEN_FOR, NULL) ||
-	    lexer_peek_if(lx, TOKEN_WHILE, NULL) ||
-	    lexer_peek_if(lx, TOKEN_IDENT, NULL))
+	if (peek_simple_stmt(pr))
 		simple = parser_simple_stmt_enter(pr);
 	error = parser_stmt1(pr, dc);
 	parser_simple_stmt_leave(pr, simple);
@@ -784,8 +781,6 @@ parser_simple_stmt_enter(struct parser *pr)
 	struct lexer *lx = pr->pr_lx;
 	int error;
 
-	if (!pr->pr_op->op_flags.simple)
-		return 0;
 	if (++pr->pr_simple.nstmt > 1)
 		return 1;
 
@@ -853,4 +848,26 @@ parser_simple_stmt_no_braces_leave(struct parser *pr, void *cookie)
 	if (cookie == NULL || !lexer_peek(lx, &rbrace))
 		return;
 	simple_stmt_no_braces_leave(pr->pr_simple.stmt, rbrace, cookie);
+}
+
+static int
+peek_simple_stmt(struct parser *pr)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	int peek = 0;
+
+	if (!pr->pr_op->op_flags.simple)
+		return 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IF, NULL) ||
+	    lexer_if(lx, TOKEN_FOR, NULL) ||
+	    lexer_if(lx, TOKEN_WHILE, NULL) ||
+	    (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	     lexer_if(lx, TOKEN_LPAREN, NULL)))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+
+	return peek;
 }
