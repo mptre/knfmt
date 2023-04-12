@@ -108,6 +108,11 @@ lexer_alloc(const struct lexer_arg *arg)
 		if (tk->tk_flags & TOKEN_FLAG_DISCARD) {
 			struct token **dst;
 
+			/* Discarded tokens must leave the column intact. */
+			lx->lx_st.st_cno -= strwidth(tk->tk_str, tk->tk_len, 0);
+			if (lx->lx_st.st_cno == 0)
+				lx->lx_st.st_cno = 1;
+
 			dst = VECTOR_ALLOC(discarded);
 			if (dst == NULL)
 				err(1, NULL);

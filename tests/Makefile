@@ -91,6 +91,7 @@ TESTS+=	error-048.c
 TESTS+=	error-049.c
 TESTS+=	error-050.c
 TESTS+=	error-051.c
+TESTS+=	error-052.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c
@@ -412,6 +413,7 @@ TESTS+=	valid-317.c
 TESTS+=	valid-318.c
 TESTS+=	valid-319.c
 TESTS+=	valid-320.c
+TESTS+=	valid-321.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
