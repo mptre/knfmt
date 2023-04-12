@@ -11,5 +11,8 @@ Checks: |
   cert-c-*,
   performance-*,
   portability-*,
+CheckOptions:
+  - key:   bugprone-suspicious-string-compare.StringCompareLikeFunctions
+    value: buffer_cmp;token_cmp;
 WarningsAsErrors: '*'
 ...
