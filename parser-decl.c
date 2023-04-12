@@ -249,6 +249,8 @@ out:
 		doc_token(semi, concat);
 		if (parser_simple_decl_active(pr))
 			simple_decl_semi(pr->pr_simple.decl, semi);
+		while (lexer_if(lx, TOKEN_SEMI, NULL))
+			continue;
 	}
 	return parser_good(pr);
 }

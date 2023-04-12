@@ -1,0 +1,5 @@
+/*
+ * Excessive semicolon.
+ */
+
+int x;;
