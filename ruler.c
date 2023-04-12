@@ -271,6 +271,7 @@ ruler_column_alignment(struct ruler_column *rc)
 	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
 		struct ruler_datum *rd = &rc->rc_datums[i];
 		struct token *nx, *suffix;
+		unsigned int end;
 
 		if (token_has_suffix(rd->rd_tk, TOKEN_COMMENT) ||
 		    (nx = token_next(rd->rd_tk)) == NULL ||
@@ -278,7 +279,9 @@ ruler_column_alignment(struct ruler_column *rc)
 			return 0;
 
 		w = nx->tk_cno - (rc->rc_nspaces - rd->rd_nspaces);
-		if (w == rd->rd_tk->tk_cno + rd->rd_len)
+		end = colwidth(rd->rd_tk->tk_str, rd->rd_tk->tk_len,
+		    rd->rd_tk->tk_cno);
+		if (end > w)
 			return 0; /* no spaces between datum and next token */
 
 		if (cno == 0)
