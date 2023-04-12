@@ -272,11 +272,9 @@ ruler_column_alignment(struct ruler_column *rc)
 		struct ruler_datum *rd = &rc->rc_datums[i];
 		struct token *nx, *suffix;
 
-		if (token_has_suffix(rd->rd_tk, TOKEN_COMMENT))
-			return 0;
-
-		nx = token_next(rd->rd_tk);
-		if (nx == NULL || token_cmp(rd->rd_tk, nx) != 0)
+		if (token_has_suffix(rd->rd_tk, TOKEN_COMMENT) ||
+		    (nx = token_next(rd->rd_tk)) == NULL ||
+		    token_cmp(rd->rd_tk, nx) != 0)
 			return 0;
 
 		w = nx->tk_cno - (rc->rc_nspaces - rd->rd_nspaces);
