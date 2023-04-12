@@ -294,7 +294,7 @@ ruler_column_alignment(struct ruler_column *rc)
 		 * Allow redundant spaces, reduces churn when removing pointer
 		 * types from declarations.
 		 */
-		if (rc->rc_ntabs > 0 && rc->rc_nspaces == 0 &&
+		if (rc->rc_nspaces == 0 && token_has_tabs(rd->rd_tk) &&
 		    (suffix = token_find_suffix_spaces(rd->rd_tk)) != NULL) {
 			unsigned int n;
 
