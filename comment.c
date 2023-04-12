@@ -16,13 +16,12 @@ static const char	*nextline(const char *, size_t);
 static const char	*skipws(const char *, size_t);
 static size_t		 rskipws(const char *, size_t);
 
-char *
+struct buffer *
 comment_trim(const struct token *tk, const struct style *st,
     const struct options *UNUSED(op))
 {
 	struct buffer *bf;
 	const char *sp = tk->tk_str;
-	char *p;
 	size_t len = tk->tk_len;
 	int iscrlf;
 
@@ -60,9 +59,7 @@ comment_trim(const struct token *tk, const struct style *st,
 		sp += commlen;
 	}
 
-	p = buffer_str(bf);
-	buffer_free(bf);
-	return p;
+	return bf;
 }
 
 static const char *
