@@ -3,6 +3,7 @@ Checks: |
   -*,
   android-cloexec-*,
   bugprone-*,
+    -bugprone-assignment-in-if-condition,
     -bugprone-branch-clone,
     -bugprone-easily-swappable-parameters,
     -bugprone-narrowing-conversions,
