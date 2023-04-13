@@ -35,7 +35,7 @@ static void	ruler_exec_indent(struct ruler *);
 static void	ruler_reset(struct ruler *);
 
 static unsigned int	ruler_column_alignment(struct ruler_column *);
-static unsigned int	countspaces(const char *, size_t);
+static int		countspaces(const char *, size_t, unsigned int *);
 
 static int	minimize(const struct ruler_column *);
 
@@ -263,68 +263,85 @@ static unsigned int
 ruler_column_alignment(struct ruler_column *rc)
 {
 	struct token *tk = NULL;
+	size_t oldnspaces = rc->rc_nspaces;
 	size_t i;
 	unsigned int cno = 0;
 	unsigned int nspaces = 0;
 	unsigned int maxlen, w;
 
+	/*
+	 * Allow redundant spaces, reduces churn when removing pointer types
+	 * from declarations.
+	 */
+	if (rc->rc_ntabs > 0 && rc->rc_nspaces == 0) {
+		for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
+			struct ruler_datum *rd = &rc->rc_datums[i];
+			struct token *suffix;
+			unsigned int n;
+
+			if (!token_has_tabs(rd->rd_tk))
+				continue;
+			suffix = token_find_suffix_spaces(rd->rd_tk);
+			if (suffix == NULL)
+				continue;
+
+			if (!countspaces(suffix->tk_str, suffix->tk_len, &n))
+				goto noalign;
+			if (n > nspaces)
+				nspaces = n;
+		}
+
+		rc->rc_nspaces = nspaces;
+	}
+
 	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
 		struct ruler_datum *rd = &rc->rc_datums[i];
-		struct token *nx, *suffix;
+		struct token *nx;
 		unsigned int end;
 
 		if (token_has_suffix(rd->rd_tk, TOKEN_COMMENT) ||
 		    (nx = token_next(rd->rd_tk)) == NULL ||
 		    token_cmp(rd->rd_tk, nx) != 0)
-			return 0;
+			goto noalign;
 
 		w = nx->tk_cno - (rc->rc_nspaces - rd->rd_nspaces);
 		end = colwidth(rd->rd_tk->tk_str, rd->rd_tk->tk_len,
 		    rd->rd_tk->tk_cno);
 		if (end > w)
-			return 0; /* no spaces between datum and next token */
+			goto noalign;
 
 		if (cno == 0)
 			cno = w;
 		else if (cno != w)
-			return 0;
+			goto noalign;
 		if (rd->rd_len == rc->rc_len)
 			tk = rd->rd_tk;
-
-		/*
-		 * Allow redundant spaces, reduces churn when removing pointer
-		 * types from declarations.
-		 */
-		if (rc->rc_nspaces == 0 && token_has_tabs(rd->rd_tk) &&
-		    (suffix = token_find_suffix_spaces(rd->rd_tk)) != NULL) {
-			unsigned int n;
-
-			n = countspaces(suffix->tk_str, suffix->tk_len);
-			if (n > nspaces)
-				nspaces = n;
-		}
 	}
 	assert(tk != NULL);
 
 	w = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
 	maxlen = rc->rc_len + (cno - w);
-	if (nspaces > 0) {
-		maxlen -= nspaces;
-		rc->rc_nspaces = nspaces;
-	}
 
 	return maxlen;
+
+noalign:
+	rc->rc_nspaces = oldnspaces;
+	return 0;
 }
 
-static unsigned int
-countspaces(const char *str, size_t len)
+static int
+countspaces(const char *str, size_t len, unsigned int *out)
 {
-	size_t i = len > 0 ? len - 1 : 0;
 	unsigned int nspaces = 0;
 
-	for (; i > 0 && str[i] == ' '; i--, nspaces++)
+	for (; len > 0 && str[0] == '\t'; len--, str++)
 		continue;
-	return nspaces;
+	for (; len > 0 && str[0] == ' '; len--, str++, nspaces++)
+		continue;
+	if (len > 0)
+		return 0;
+	*out = nspaces;
+	return 1;
 }
 
 static int

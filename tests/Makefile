@@ -415,6 +415,8 @@ TESTS+=	valid-319.c
 TESTS+=	valid-320.c
 TESTS+=	valid-321.c
 TESTS+=	valid-322.c
+TESTS+=	valid-323.c
+TESTS+=	valid-324.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
