@@ -266,7 +266,6 @@ ruler_column_alignment(struct ruler_column *rc)
 	size_t oldnspaces = rc->rc_nspaces;
 	size_t i;
 	unsigned int cno = 0;
-	unsigned int nspaces = 0;
 	unsigned int maxlen, w;
 
 	/*
@@ -274,6 +273,8 @@ ruler_column_alignment(struct ruler_column *rc)
 	 * from declarations.
 	 */
 	if (rc->rc_ntabs > 0 && rc->rc_nspaces == 0) {
+		unsigned int nspaces = 0;
+
 		for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
 			struct ruler_datum *rd = &rc->rc_datums[i];
 			struct token *suffix;
@@ -297,14 +298,17 @@ ruler_column_alignment(struct ruler_column *rc)
 	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
 		struct ruler_datum *rd = &rc->rc_datums[i];
 		struct token *nx;
-		unsigned int end;
+		unsigned int end, nspaces;
 
 		if (token_has_suffix(rd->rd_tk, TOKEN_COMMENT) ||
 		    (nx = token_next(rd->rd_tk)) == NULL ||
 		    token_cmp(rd->rd_tk, nx) != 0)
 			goto noalign;
 
-		w = nx->tk_cno - (rc->rc_nspaces - rd->rd_nspaces);
+		nspaces = rc->rc_nspaces - rd->rd_nspaces;
+		if (nspaces > nx->tk_cno)
+			goto noalign;
+		w = nx->tk_cno - nspaces;
 		end = colwidth(rd->rd_tk->tk_str, rd->rd_tk->tk_len,
 		    rd->rd_tk->tk_cno);
 		if (end > w)
