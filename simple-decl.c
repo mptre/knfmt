@@ -153,12 +153,8 @@ simple_decl_leave(struct simple_decl *sd)
 			assert(after->tk_type == TOKEN_SEMI);
 
 			/* Create new type declaration. */
-			TOKEN_RANGE_FOREACH(tk, &dt->dt_tr, tmp) {
+			TOKEN_RANGE_FOREACH(tk, &dt->dt_tr, tmp)
 				after = lexer_copy_after(sd->sd_lx, after, tk);
-				/* Intentionally ignore prefixes. */
-				token_list_copy(&tk->tk_suffixes,
-				    &after->tk_suffixes);
-			}
 
 			/* Sort the variables in alphabetical order. */
 			VECTOR_SORT(ds->ds_vars, decl_var_cmp);

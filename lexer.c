@@ -561,6 +561,8 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 	struct token *tk;
 
 	tk = token_alloc(src);
+	token_list_copy(&src->tk_prefixes, &tk->tk_prefixes);
+	token_list_copy(&src->tk_suffixes, &tk->tk_suffixes);
 	token_position_after(after, tk);
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
