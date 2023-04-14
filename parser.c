@@ -187,6 +187,13 @@ parser_token_trim_before(const struct parser *UNUSED(pr), struct token *tk)
 		token_trim(pv);
 }
 
+int
+parser_simple_active(const struct parser *pr)
+{
+	return pr->pr_simple.nstmt > 0 ||
+	    (pr->pr_simple.ndecl == 1 && pr->pr_simple.decl != NULL);
+}
+
 void
 parser_simple_disable(struct parser *pr, struct parser_simple *simple)
 {
