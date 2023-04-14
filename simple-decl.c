@@ -98,7 +98,6 @@ static struct decl_type	*simple_decl_type_find(struct simple_decl *,
 static struct decl_var	*simple_decl_var_init(struct simple_decl *);
 static struct decl_var	*simple_decl_var_end(struct simple_decl *,
     struct token *);
-static int		 simple_decl_var_reject(struct simple_decl *);
 
 static int		isident(const struct token_range *);
 static unsigned int	nstars(const struct token_range *);
@@ -443,8 +442,10 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	slot = nstars(&dv->dv_ident);
 	ds = decl_type_slot(sd->sd_dt, slot);
 
-	if (!token_is_moveable(end) || !isident(&dv->dv_ident))
-		rejected = simple_decl_var_reject(sd);
+	if (!token_is_moveable(end) || !isident(&dv->dv_ident)) {
+		dc->dc_nrejects++;
+		rejected = 1;
+	}
 
 	/*
 	 * Favor insertion of the merged declaration after the last kept
@@ -478,15 +479,6 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	    sd->sd_dt->dt_str, slot, lexer_serialize(sd->sd_lx, dv->dv_sort));
 
 	return dst;
-}
-
-static int
-simple_decl_var_reject(struct simple_decl *sd)
-{
-	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
-
-	dc->dc_nrejects++;
-	return 1;
 }
 
 static int
