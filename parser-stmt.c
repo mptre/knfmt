@@ -112,7 +112,8 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *nx, *rbrace, *tk;
 	int isswitch = arg->flags & PARSER_STMT_BLOCK_SWITCH;
-	int doindent = !isswitch && pr->pr_simple.nstmt == SIMPLE_STATE_DISABLE;
+	int doindent = !isswitch && pr->pr_op->op_flags.simple &&
+	    pr->pr_simple->nstmt == SIMPLE_STATE_DISABLE;
 	int nstmt = 0;
 	int error;
 
@@ -780,31 +781,34 @@ parser_simple_stmt_enter(struct parser *pr)
 	struct lexer_state s;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
-	int restore = pr->pr_simple.nstmt;
-	int error;
+	int error, restore;
 
-	if (pr->pr_simple.ndecl != SIMPLE_STATE_DISABLE) {
-		pr->pr_simple.nstmt = SIMPLE_STATE_DISABLE;
+	if (!pr->pr_op->op_flags.simple)
+		return SIMPLE_STATE_NOP;
+	restore = pr->pr_simple->nstmt;
+
+	if (pr->pr_simple->ndecl != SIMPLE_STATE_DISABLE) {
+		pr->pr_simple->nstmt = SIMPLE_STATE_DISABLE;
 		return restore;
 	}
 
-	if (pr->pr_simple.nstmt != SIMPLE_STATE_DISABLE) {
-		pr->pr_simple.nstmt = SIMPLE_STATE_IGNORE;
+	if (pr->pr_simple->nstmt != SIMPLE_STATE_DISABLE) {
+		pr->pr_simple->nstmt = SIMPLE_STATE_IGNORE;
 		return restore;
 	}
 
-	pr->pr_simple.nstmt = SIMPLE_STATE_ENABLE;
-	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
+	pr->pr_simple->nstmt = SIMPLE_STATE_ENABLE;
+	pr->pr_simple->stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_stmt1(pr, dc);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
 	if (error & GOOD)
-		simple_stmt_leave(pr->pr_simple.stmt);
-	simple_stmt_free(pr->pr_simple.stmt);
-	pr->pr_simple.stmt = NULL;
-	pr->pr_simple.nstmt = restore;
+		simple_stmt_leave(pr->pr_simple->stmt);
+	simple_stmt_free(pr->pr_simple->stmt);
+	pr->pr_simple->stmt = NULL;
+	pr->pr_simple->nstmt = restore;
 
 	return SIMPLE_STATE_NOP;
 }
@@ -813,7 +817,7 @@ static void
 parser_simple_stmt_leave(struct parser *pr, int restore)
 {
 	if (restore != SIMPLE_STATE_NOP)
-		pr->pr_simple.nstmt = restore;
+		pr->pr_simple->nstmt = restore;
 }
 
 static struct doc *
@@ -823,14 +827,15 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	struct token *lbrace, *rbrace;
 
 	/* Ignore nested statements, they will be handled later on. */
-	if (pr->pr_simple.nstmt != SIMPLE_STATE_ENABLE)
+	if (!pr->pr_op->op_flags.simple ||
+	    pr->pr_simple->nstmt != SIMPLE_STATE_ENABLE)
 		return dc;
 
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return dc;
 
-	return simple_stmt_block(pr->pr_simple.stmt, lbrace, rbrace,
+	return simple_stmt_block(pr->pr_simple->stmt, lbrace, rbrace,
 	    pr->pr_nindent * style(pr->pr_st, IndentWidth));
 }
 
@@ -841,10 +846,11 @@ parser_simple_stmt_no_braces_enter(struct parser *pr, struct doc *dc,
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
 
-	if (pr->pr_simple.nstmt != SIMPLE_STATE_ENABLE ||
+	if (!pr->pr_op->op_flags.simple ||
+	    pr->pr_simple->nstmt != SIMPLE_STATE_ENABLE ||
 	    !lexer_peek(lx, &lbrace))
 		return dc;
-	return simple_stmt_no_braces_enter(pr->pr_simple.stmt, lbrace,
+	return simple_stmt_no_braces_enter(pr->pr_simple->stmt, lbrace,
 	    (pr->pr_nindent + 1) * style(pr->pr_st, IndentWidth), cookie);
 }
 
@@ -856,7 +862,7 @@ parser_simple_stmt_no_braces_leave(struct parser *pr, void *cookie)
 
 	if (cookie == NULL || !lexer_peek(lx, &rbrace))
 		return;
-	simple_stmt_no_braces_leave(pr->pr_simple.stmt, rbrace, cookie);
+	simple_stmt_no_braces_leave(pr->pr_simple->stmt, rbrace, cookie);
 }
 
 static int
