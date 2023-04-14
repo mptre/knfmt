@@ -125,6 +125,7 @@ simple_decl_enter(struct lexer *lx, const struct options *op)
 void
 simple_decl_leave(struct simple_decl *sd)
 {
+	struct lexer *lx = sd->sd_lx;
 	struct token *tk, *tmp;
 	size_t i;
 
@@ -156,30 +157,27 @@ simple_decl_leave(struct simple_decl *sd)
 
 			/* Create new type declaration. */
 			TOKEN_RANGE_FOREACH(tk, &dt->dt_tr, tmp)
-				after = lexer_copy_after(sd->sd_lx, after, tk);
+				after = lexer_copy_after(lx, after, tk);
 
 			/* Move variables to the new type declaration. */
 			for (j = 0; j < VECTOR_LENGTH(ds->ds_vars); j++) {
 				struct decl_var *dv = &ds->ds_vars[j];
 				struct token *ident;
 
-				if (dv->dv_delim != NULL) {
-					lexer_remove(sd->sd_lx, dv->dv_delim,
-					    1);
-				}
+				if (dv->dv_delim != NULL)
+					lexer_remove(lx, dv->dv_delim, 1);
 				if (j > 0) {
-					after = lexer_insert_after(sd->sd_lx,
-					    after, TOKEN_COMMA, ",");
+					after = lexer_insert_after(lx, after,
+					    TOKEN_COMMA, ",");
 				}
 
 				TOKEN_RANGE_FOREACH(ident, &dv->dv_ident, tmp) {
-					after = lexer_move_after(sd->sd_lx,
-					    after, ident);
+					after = lexer_move_after(lx, after,
+					    ident);
 				}
 			}
 
-			after = lexer_insert_after(sd->sd_lx, after,
-			    TOKEN_SEMI, ";");
+			after = lexer_insert_after(lx, after, TOKEN_SEMI, ";");
 
 			/* Move line break(s) to the new semicolon. */
 			if (semi != NULL) {
@@ -194,7 +192,7 @@ simple_decl_leave(struct simple_decl *sd)
 		struct decl *dc = &sd->sd_empty_decls[i];
 
 		TOKEN_RANGE_FOREACH(tk, &dc->dc_tr, tmp)
-			lexer_remove(sd->sd_lx, tk, 1);
+			lexer_remove(lx, tk, 1);
 	}
 }
 
