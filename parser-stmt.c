@@ -8,6 +8,7 @@
 #include "parser-decl.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
+#include "parser-simple.h"
 #include "parser-stmt-asm.h"
 #include "parser-stmt-expr.h"
 #include "simple-stmt.h"
@@ -47,7 +48,7 @@ static int		 peek_simple_stmt(struct parser *);
 static int
 parser_stmt(struct parser *pr, struct doc *dc)
 {
-	int simple = -1;
+	int simple = SIMPLE_STATE_NOP;
 	int error;
 
 	if (peek_simple_stmt(pr))
@@ -111,7 +112,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *nx, *rbrace, *tk;
 	int isswitch = arg->flags & PARSER_STMT_BLOCK_SWITCH;
-	int doindent = !isswitch && pr->pr_simple.nstmt == 0;
+	int doindent = !isswitch && pr->pr_simple.nstmt == SIMPLE_STATE_DISABLE;
 	int nstmt = 0;
 	int error;
 
@@ -779,11 +780,20 @@ parser_simple_stmt_enter(struct parser *pr)
 	struct lexer_state s;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
+	int restore = pr->pr_simple.nstmt;
 	int error;
 
-	if (++pr->pr_simple.nstmt > 1)
-		return 1;
+	if (pr->pr_simple.ndecl != SIMPLE_STATE_DISABLE) {
+		pr->pr_simple.nstmt = SIMPLE_STATE_DISABLE;
+		return restore;
+	}
 
+	if (pr->pr_simple.nstmt != SIMPLE_STATE_DISABLE) {
+		pr->pr_simple.nstmt = SIMPLE_STATE_IGNORE;
+		return restore;
+	}
+
+	pr->pr_simple.nstmt = SIMPLE_STATE_ENABLE;
 	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
@@ -794,16 +804,16 @@ parser_simple_stmt_enter(struct parser *pr)
 		simple_stmt_leave(pr->pr_simple.stmt);
 	simple_stmt_free(pr->pr_simple.stmt);
 	pr->pr_simple.stmt = NULL;
-	pr->pr_simple.nstmt--;
+	pr->pr_simple.nstmt = restore;
 
-	return 0;
+	return SIMPLE_STATE_NOP;
 }
 
 static void
-parser_simple_stmt_leave(struct parser *pr, int simple)
+parser_simple_stmt_leave(struct parser *pr, int restore)
 {
-	if (simple == 1)
-		pr->pr_simple.nstmt--;
+	if (restore != SIMPLE_STATE_NOP)
+		pr->pr_simple.nstmt = restore;
 }
 
 static struct doc *
@@ -813,8 +823,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	struct token *lbrace, *rbrace;
 
 	/* Ignore nested statements, they will be handled later on. */
-	if (pr->pr_simple.nstmt != 1 ||
-	    pr->pr_simple.ndecl > 0)
+	if (pr->pr_simple.nstmt != SIMPLE_STATE_ENABLE)
 		return dc;
 
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
@@ -832,7 +841,7 @@ parser_simple_stmt_no_braces_enter(struct parser *pr, struct doc *dc,
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
 
-	if (pr->pr_simple.nstmt != 1 || pr->pr_simple.ndecl > 0 ||
+	if (pr->pr_simple.nstmt != SIMPLE_STATE_ENABLE ||
 	    !lexer_peek(lx, &lbrace))
 		return dc;
 	return simple_stmt_no_braces_enter(pr->pr_simple.stmt, lbrace,

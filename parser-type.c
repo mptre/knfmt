@@ -11,6 +11,7 @@
 #include "parser-cpp.h"
 #include "parser-func.h"
 #include "parser-priv.h"
+#include "parser-simple.h"
 #include "ruler.h"
 #include "style.h"
 #include "token.h"

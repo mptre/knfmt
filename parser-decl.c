@@ -11,6 +11,7 @@
 #include "parser-expr.h"
 #include "parser-func.h"
 #include "parser-priv.h"
+#include "parser-simple.h"
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
@@ -441,9 +442,7 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 static int
 parser_simple_decl_active(const struct parser *pr)
 {
-	return pr->pr_simple.nstmt == 0 &&
-	    pr->pr_simple.ndecl == 1 &&
-	    pr->pr_simple.decl != NULL;
+	return pr->pr_simple.ndecl == SIMPLE_STATE_ENABLE;
 }
 
 static int
@@ -452,14 +451,24 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc;
+	int restore = pr->pr_simple.ndecl;
 	int error;
 
 	if (!pr->pr_op->op_flags.simple)
-		return -1;
+		return SIMPLE_STATE_NOP;
 
-	if (pr->pr_simple.ndecl++ > 0 || (flags & PARSER_DECL_SIMPLE) == 0)
-		return 1;
+	if (pr->pr_simple.nstmt != SIMPLE_STATE_DISABLE) {
+		pr->pr_simple.ndecl = SIMPLE_STATE_DISABLE;
+		return restore;
+	}
 
+	if (pr->pr_simple.ndecl != SIMPLE_STATE_DISABLE ||
+	    (flags & PARSER_DECL_SIMPLE) == 0) {
+		pr->pr_simple.ndecl = SIMPLE_STATE_IGNORE;
+		return restore;
+	}
+
+	pr->pr_simple.ndecl = SIMPLE_STATE_ENABLE;
 	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
@@ -470,12 +479,14 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 		simple_decl_leave(pr->pr_simple.decl);
 	simple_decl_free(pr->pr_simple.decl);
 	pr->pr_simple.decl = NULL;
-	return 1;
+	pr->pr_simple.ndecl = restore;
+
+	return SIMPLE_STATE_NOP;
 }
 
 static void
-parser_simple_decl_leave(struct parser *pr, int simple)
+parser_simple_decl_leave(struct parser *pr, int restore)
 {
-	if (simple == 1)
-		pr->pr_simple.ndecl--;
+	if (restore != SIMPLE_STATE_NOP)
+		pr->pr_simple.ndecl = restore;
 }

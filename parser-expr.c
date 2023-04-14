@@ -7,6 +7,7 @@
 #include "lexer.h"
 #include "parser-braces.h"
 #include "parser-priv.h"
+#include "parser-simple.h"
 #include "parser-stmt-expr.h"
 #include "parser-type.h"
 #include "token.h"

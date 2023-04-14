@@ -44,10 +44,6 @@ int	parser_fail0(struct parser *, const char *, int);
 
 void	parser_reset(struct parser *);
 
-int	parser_simple_active(const struct parser *);
-void	parser_simple_disable(struct parser *, struct parser_simple *);
-void	parser_simple_enable(struct parser *, const struct parser_simple *);
-
 void	parser_token_trim_after(const struct parser *, struct token *);
 void	parser_token_trim_before(const struct parser *, struct token *);
 
