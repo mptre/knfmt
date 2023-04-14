@@ -101,8 +101,7 @@ static struct decl_var	*simple_decl_var_init(struct simple_decl *);
 static struct decl_var	*simple_decl_var_end(struct simple_decl *,
     struct token *);
 
-static int		isident(const struct token_range *);
-static unsigned int	nstars(const struct token_range *);
+static int	classify(const struct token_range *, unsigned int *);
 
 #define simple_trace(sd, fmt, ...) do {					\
 	if (trace((sd)->sd_op, 'S'))					\
@@ -438,19 +437,17 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	assert(dv->dv_ident.tr_end == NULL);
 	/* The delimiter is not part of the identifier. */
 	dv->dv_ident.tr_end = token_prev(end);
-
-	/*
-	 * Allocate the slot even if the variable is about to be rejected since
-	 * there could be other variables of the same type that we want to place
-	 * after this rejected declaration.
-	 */
-	slot = nstars(&dv->dv_ident);
-	ds = decl_type_slot(sd->sd_dt, slot);
-
-	if (!token_is_moveable(end) || !isident(&dv->dv_ident)) {
+	if (!classify(&dv->dv_ident, &slot) || !token_is_moveable(end)) {
 		dc->dc_nrejects++;
 		rejected = 1;
 	}
+
+	/*
+	 * Allocate the slot even if the variable is rejected since there could
+	 * be other variables of the same type that we want to place after this
+	 * rejected declaration.
+	 */
+	ds = decl_type_slot(sd->sd_dt, slot);
 
 	/*
 	 * Favor insertion of the merged declaration after the last kept
@@ -487,14 +484,16 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 }
 
 static int
-isident(const struct token_range *tr)
+classify(const struct token_range *tr, unsigned int *slot)
 {
 	struct token *tk, *tmp;
-	int nident = 0;
+	unsigned int nident = 0;
+	unsigned int nstars = 0;
 
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
 		switch (tk->tk_type) {
 		case TOKEN_STAR:
+			nstars++;
 			break;
 		case TOKEN_IDENT:
 			nident++;
@@ -506,18 +505,9 @@ isident(const struct token_range *tr)
 		if (!token_is_moveable(tk))
 			return 0;
 	}
-	return nident;
-}
+	if (nident == 0)
+		return 0;
 
-static unsigned int
-nstars(const struct token_range *tr)
-{
-	const struct token *tk, *tmp;
-	unsigned int n = 0;
-
-	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
-		if (tk->tk_type == TOKEN_STAR)
-			n++;
-	}
-	return n;
+	*slot = nstars;
+	return 1;
 }
