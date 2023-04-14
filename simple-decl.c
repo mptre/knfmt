@@ -141,6 +141,9 @@ simple_decl_leave(struct simple_decl *sd)
 			if (VECTOR_LENGTH(ds->ds_vars) == 0)
 				continue;
 
+			/* Sort the variables in alphabetical order. */
+			VECTOR_SORT(ds->ds_vars, decl_var_cmp);
+
 			/*
 			 * Favor insertion after the stamped semi if present,
 			 * otherwise continue after the previous type slot.
@@ -154,9 +157,6 @@ simple_decl_leave(struct simple_decl *sd)
 			/* Create new type declaration. */
 			TOKEN_RANGE_FOREACH(tk, &dt->dt_tr, tmp)
 				after = lexer_copy_after(sd->sd_lx, after, tk);
-
-			/* Sort the variables in alphabetical order. */
-			VECTOR_SORT(ds->ds_vars, decl_var_cmp);
 
 			/* Move variables to the new type declaration. */
 			for (j = 0; j < VECTOR_LENGTH(ds->ds_vars); j++) {
