@@ -187,7 +187,7 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	if (pr->pr_op->op_flags.simple && !parser_simple_active(pr)) {
+	if (pr->pr_op->op_flags.simple && !is_simple_any_enabled(pr)) {
 		struct token *tk = beg;
 		int ntokens = 0;
 

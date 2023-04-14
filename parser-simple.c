@@ -1,5 +1,6 @@
 #include "parser-simple.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -22,10 +23,66 @@ parser_simple_free(struct parser_simple *simple)
 }
 
 int
-parser_simple_active(const struct parser *pr)
+parser_simple_enter(struct parser *pr, unsigned int pass, int ignore,
+    int *restore)
 {
-	return pr->pr_simple->nstmt == SIMPLE_STATE_ENABLE ||
-	    pr->pr_simple->ndecl == SIMPLE_STATE_ENABLE;
+	struct parser_simple *simple = pr->pr_simple;
+	unsigned int i;
+
+	assert(pass < SIMPLE_LAST);
+
+	if (!pr->pr_op->op_flags.simple) {
+		*restore = SIMPLE_STATE_NOP;
+		return 0;
+	}
+	*restore = simple->states[pass];
+
+	for (i = 0; i < SIMPLE_LAST; i++) {
+		if (i != pass && simple->states[i] != SIMPLE_STATE_DISABLE) {
+			simple->states[pass] = SIMPLE_STATE_DISABLE;
+			return 0;
+		}
+	}
+
+	if (ignore || simple->states[pass] != SIMPLE_STATE_DISABLE) {
+		simple->states[pass] = SIMPLE_STATE_IGNORE;
+		return 0;
+	}
+
+	simple->states[pass] = SIMPLE_STATE_ENABLE;
+	return 1;
+}
+
+void
+parser_simple_leave(struct parser *pr, unsigned int pass, int restore)
+{
+	struct parser_simple *simple = pr->pr_simple;
+
+	assert(pass < SIMPLE_LAST);
+	if (restore == SIMPLE_STATE_NOP)
+		return;
+	simple->states[pass] = restore;
+}
+
+int
+is_simple_enabled(const struct parser *pr, unsigned int pass)
+{
+	assert(pass < SIMPLE_LAST);
+	return pr->pr_op->op_flags.simple &&
+	    pr->pr_simple->states[pass] == SIMPLE_STATE_ENABLE;
+}
+
+int
+is_simple_any_enabled(const struct parser *pr)
+{
+	struct parser_simple *simple = pr->pr_simple;
+	int i;
+
+	for (i = 0; i < SIMPLE_LAST; i++) {
+		if (simple->states[i] == SIMPLE_STATE_ENABLE)
+			return 1;
+	}
+	return 0;
 }
 
 void

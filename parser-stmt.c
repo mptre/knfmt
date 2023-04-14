@@ -36,7 +36,6 @@ static int	parser_stmt_semi(struct parser *, struct doc *);
 static int	parser_stmt_cpp(struct parser *, struct doc *);
 
 static int		 parser_simple_stmt_enter(struct parser *);
-static void		 parser_simple_stmt_leave(struct parser *, int);
 static struct doc	*parser_simple_stmt_block(struct parser *,
     struct doc *);
 static struct doc	*parser_simple_stmt_no_braces_enter(struct parser *,
@@ -54,7 +53,7 @@ parser_stmt(struct parser *pr, struct doc *dc)
 	if (peek_simple_stmt(pr))
 		simple = parser_simple_stmt_enter(pr);
 	error = parser_stmt1(pr, dc);
-	parser_simple_stmt_leave(pr, simple);
+	parser_simple_leave(pr, SIMPLE_STMT, simple);
 	return error;
 }
 
@@ -112,8 +111,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *nx, *rbrace, *tk;
 	int isswitch = arg->flags & PARSER_STMT_BLOCK_SWITCH;
-	int doindent = !isswitch && pr->pr_op->op_flags.simple &&
-	    pr->pr_simple->nstmt == SIMPLE_STATE_DISABLE;
+	int doindent = !isswitch && !is_simple_enabled(pr, SIMPLE_STMT);
 	int nstmt = 0;
 	int error;
 
@@ -773,7 +771,7 @@ parser_stmt_cpp(struct parser *pr, struct doc *dc)
  *
  * The return value is used to signal when a nested statement is entered which
  * is ignored as only one scope is handled at a time. The same return value must
- * later on be passed to parser_simple_stmt_leave().
+ * later on be passed to parser_simple_leave().
  */
 static int
 parser_simple_stmt_enter(struct parser *pr)
@@ -783,21 +781,9 @@ parser_simple_stmt_enter(struct parser *pr)
 	struct lexer *lx = pr->pr_lx;
 	int error, restore;
 
-	if (!pr->pr_op->op_flags.simple)
-		return SIMPLE_STATE_NOP;
-	restore = pr->pr_simple->nstmt;
-
-	if (pr->pr_simple->ndecl != SIMPLE_STATE_DISABLE) {
-		pr->pr_simple->nstmt = SIMPLE_STATE_DISABLE;
+	if (!parser_simple_enter(pr, SIMPLE_STMT, 0, &restore))
 		return restore;
-	}
 
-	if (pr->pr_simple->nstmt != SIMPLE_STATE_DISABLE) {
-		pr->pr_simple->nstmt = SIMPLE_STATE_IGNORE;
-		return restore;
-	}
-
-	pr->pr_simple->nstmt = SIMPLE_STATE_ENABLE;
 	pr->pr_simple->stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
@@ -808,16 +794,9 @@ parser_simple_stmt_enter(struct parser *pr)
 		simple_stmt_leave(pr->pr_simple->stmt);
 	simple_stmt_free(pr->pr_simple->stmt);
 	pr->pr_simple->stmt = NULL;
-	pr->pr_simple->nstmt = restore;
+	parser_simple_leave(pr, SIMPLE_STMT, restore);
 
 	return SIMPLE_STATE_NOP;
-}
-
-static void
-parser_simple_stmt_leave(struct parser *pr, int restore)
-{
-	if (restore != SIMPLE_STATE_NOP)
-		pr->pr_simple->nstmt = restore;
 }
 
 static struct doc *
@@ -827,8 +806,7 @@ parser_simple_stmt_block(struct parser *pr, struct doc *dc)
 	struct token *lbrace, *rbrace;
 
 	/* Ignore nested statements, they will be handled later on. */
-	if (!pr->pr_op->op_flags.simple ||
-	    pr->pr_simple->nstmt != SIMPLE_STATE_ENABLE)
+	if (!is_simple_enabled(pr, SIMPLE_STMT))
 		return dc;
 
 	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
@@ -846,8 +824,7 @@ parser_simple_stmt_no_braces_enter(struct parser *pr, struct doc *dc,
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
 
-	if (!pr->pr_op->op_flags.simple ||
-	    pr->pr_simple->nstmt != SIMPLE_STATE_ENABLE ||
+	if (!is_simple_enabled(pr, SIMPLE_STMT) ||
 	    !lexer_peek(lx, &lbrace))
 		return dc;
 	return simple_stmt_no_braces_enter(pr->pr_simple->stmt, lbrace,

@@ -39,9 +39,7 @@ static int	parser_decl_init_assign(struct parser *, struct doc *,
     struct doc **, struct parser_decl_init_arg *);
 static int	parser_decl_bitfield(struct parser *, struct doc *);
 
-static int	parser_simple_decl_active(const struct parser *);
 static int	parser_simple_decl_enter(struct parser *, unsigned int);
-static void	parser_simple_decl_leave(struct parser *, int);
 
 int
 parser_decl_peek(struct parser *pr)
@@ -66,7 +64,7 @@ parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 	simple = parser_simple_decl_enter(pr, flags);
 	error = parser_decl1(pr, dc, flags);
-	parser_simple_decl_leave(pr, simple);
+	parser_simple_leave(pr, SIMPLE_DECL, simple);
 	return error;
 }
 
@@ -168,7 +166,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	if (!lexer_peek(lx, &beg))
 		return parser_fail(pr);
-	if (parser_simple_decl_active(pr))
+	if (is_simple_enabled(pr, SIMPLE_DECL))
 		simple_decl_type(pr->pr_simple->decl, beg, end);
 	if (parser_type(pr, concat, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
@@ -248,7 +246,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 out:
 	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
 		doc_token(semi, concat);
-		if (parser_simple_decl_active(pr))
+		if (is_simple_enabled(pr, SIMPLE_DECL))
 			simple_decl_semi(pr->pr_simple->decl, semi);
 		while (lexer_if(lx, TOKEN_SEMI, NULL))
 			continue;
@@ -289,7 +287,7 @@ parser_decl_init(struct parser *pr, struct doc **out,
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
 			doc_token(comma, concat);
 			doc_alloc(DOC_LINE, concat);
-			if (parser_simple_decl_active(pr))
+			if (is_simple_enabled(pr, SIMPLE_DECL))
 				simple_decl_comma(pr->pr_simple->decl, comma);
 			/* Break before the argument. */
 			concat = doc_alloc(DOC_CONCAT,
@@ -390,7 +388,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 		unsigned int flags = 0;
 
 		/* Never break before the assignment operator. */
-		if (!parser_simple_decl_active(pr) &&
+		if (!is_simple_enabled(pr, SIMPLE_DECL) &&
 		    (pv = token_prev(equal)) != NULL &&
 		    token_has_line(pv, 1)) {
 			parser_token_trim_after(pr, pv);
@@ -440,36 +438,17 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 }
 
 static int
-parser_simple_decl_active(const struct parser *pr)
-{
-	return pr->pr_op->op_flags.simple &&
-	    pr->pr_simple->ndecl == SIMPLE_STATE_ENABLE;
-}
-
-static int
 parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc;
+	int ignore = (flags & PARSER_DECL_SIMPLE) == 0;
 	int error, restore;
 
-	if (!pr->pr_op->op_flags.simple)
-		return SIMPLE_STATE_NOP;
-	restore = pr->pr_simple->ndecl;
-
-	if (pr->pr_simple->nstmt != SIMPLE_STATE_DISABLE) {
-		pr->pr_simple->ndecl = SIMPLE_STATE_DISABLE;
+	if (!parser_simple_enter(pr, SIMPLE_DECL, ignore, &restore))
 		return restore;
-	}
 
-	if (pr->pr_simple->ndecl != SIMPLE_STATE_DISABLE ||
-	    (flags & PARSER_DECL_SIMPLE) == 0) {
-		pr->pr_simple->ndecl = SIMPLE_STATE_IGNORE;
-		return restore;
-	}
-
-	pr->pr_simple->ndecl = SIMPLE_STATE_ENABLE;
 	pr->pr_simple->decl = simple_decl_enter(lx, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
@@ -480,14 +459,7 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 		simple_decl_leave(pr->pr_simple->decl);
 	simple_decl_free(pr->pr_simple->decl);
 	pr->pr_simple->decl = NULL;
-	pr->pr_simple->ndecl = restore;
+	parser_simple_leave(pr, SIMPLE_DECL, restore);
 
 	return SIMPLE_STATE_NOP;
-}
-
-static void
-parser_simple_decl_leave(struct parser *pr, int restore)
-{
-	if (restore != SIMPLE_STATE_NOP)
-		pr->pr_simple->ndecl = restore;
 }
