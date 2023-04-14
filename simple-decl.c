@@ -94,6 +94,8 @@ static struct decl_type	*simple_decl_type_create(struct simple_decl *,
     const char *, const struct token_range *);
 static struct decl_type	*simple_decl_type_find(struct simple_decl *,
     const char *);
+static struct token	*simple_decl_move_vars(struct simple_decl *,
+    struct decl_type *, struct decl_type_vars *, struct token *);
 
 static struct decl_var	*simple_decl_var_init(struct simple_decl *);
 static struct decl_var	*simple_decl_var_end(struct simple_decl *,
@@ -137,7 +139,6 @@ simple_decl_leave(struct simple_decl *sd)
 		for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
 			struct decl_type_vars *ds = &dt->dt_slots[slot];
 			struct token *semi;
-			size_t j;
 
 			if (VECTOR_LENGTH(ds->ds_vars) == 0)
 				continue;
@@ -155,30 +156,7 @@ simple_decl_leave(struct simple_decl *sd)
 				semi = after;
 			assert(after->tk_type == TOKEN_SEMI);
 
-			/* Create new type declaration. */
-			TOKEN_RANGE_FOREACH(tk, &dt->dt_tr, tmp)
-				after = lexer_copy_after(lx, after, tk);
-
-			/* Move variables to the new type declaration. */
-			for (j = 0; j < VECTOR_LENGTH(ds->ds_vars); j++) {
-				struct decl_var *dv = &ds->ds_vars[j];
-				struct token *ident;
-
-				if (dv->dv_delim != NULL)
-					lexer_remove(lx, dv->dv_delim, 1);
-				if (j > 0) {
-					after = lexer_insert_after(lx, after,
-					    TOKEN_COMMA, ",");
-				}
-
-				TOKEN_RANGE_FOREACH(ident, &dv->dv_ident, tmp) {
-					after = lexer_move_after(lx, after,
-					    ident);
-				}
-			}
-
-			after = lexer_insert_after(lx, after, TOKEN_SEMI, ";");
-
+			after = simple_decl_move_vars(sd, dt, ds, after);
 			/* Move line break(s) to the new semicolon. */
 			if (semi != NULL) {
 				token_move_suffixes_if(semi, after,
@@ -407,6 +385,35 @@ simple_decl_type_find(struct simple_decl *sd, const char *type)
 			return dt;
 	}
 	return NULL;
+}
+
+static struct token *
+simple_decl_move_vars(struct simple_decl *sd, struct decl_type *dt,
+    struct decl_type_vars *ds, struct token *after)
+{
+	struct lexer *lx = sd->sd_lx;
+	struct token *tk, *tmp;
+	size_t i;
+
+	/* Create new type declaration. */
+	TOKEN_RANGE_FOREACH(tk, &dt->dt_tr, tmp)
+		after = lexer_copy_after(lx, after, tk);
+
+	/* Move variables to the new type declaration. */
+	for (i = 0; i < VECTOR_LENGTH(ds->ds_vars); i++) {
+		struct decl_var *dv = &ds->ds_vars[i];
+		struct token *ident;
+
+		if (dv->dv_delim != NULL)
+			lexer_remove(lx, dv->dv_delim, 1);
+		if (i > 0)
+			after = lexer_insert_after(lx, after, TOKEN_COMMA, ",");
+
+		TOKEN_RANGE_FOREACH(ident, &dv->dv_ident, tmp)
+			after = lexer_move_after(lx, after, ident);
+	}
+
+	return lexer_insert_after(lx, after, TOKEN_SEMI, ";");
 }
 
 static struct decl_var *
