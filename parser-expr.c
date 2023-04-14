@@ -30,12 +30,11 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 			.arg		= pr,
 		},
 	};
-	struct parser_simple simple;
-	int peek;
+	int peek, simple;
 
-	parser_simple_disable(pr, &simple);
+	simple = parser_simple_disable(pr);
 	peek = expr_peek(tk, &ea);
-	parser_simple_enable(pr, &simple);
+	parser_simple_enable(pr, simple);
 	return peek;
 }
 

@@ -37,8 +37,7 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 	pr->pr_scratch = buffer_alloc(1024);
 	if (pr->pr_scratch == NULL)
 		err(1, NULL);
-	if (op->op_flags.simple)
-		pr->pr_simple = parser_simple_alloc();
+	pr->pr_simple = parser_simple_alloc(op);
 	return pr;
 }
 

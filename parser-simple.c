@@ -9,9 +9,13 @@
 #include "parser-priv.h"
 
 struct parser_simple *
-parser_simple_alloc(void)
+parser_simple_alloc(const struct options *op)
 {
-	return ecalloc(1, sizeof(struct parser_simple));
+	struct parser_simple *simple;
+
+	simple = ecalloc(1, sizeof(struct parser_simple));
+	simple->enable = op->op_flags.simple;
+	return simple;
 }
 
 void
@@ -31,7 +35,7 @@ parser_simple_enter(struct parser *pr, unsigned int pass, int ignore,
 
 	assert(pass < SIMPLE_LAST);
 
-	if (!pr->pr_op->op_flags.simple) {
+	if (!simple->enable) {
 		*restore = SIMPLE_STATE_NOP;
 		return 0;
 	}
@@ -68,7 +72,7 @@ int
 is_simple_enabled(const struct parser *pr, unsigned int pass)
 {
 	assert(pass < SIMPLE_LAST);
-	return pr->pr_op->op_flags.simple &&
+	return pr->pr_simple->enable &&
 	    pr->pr_simple->states[pass] == SIMPLE_STATE_ENABLE;
 }
 
@@ -85,19 +89,17 @@ is_simple_any_enabled(const struct parser *pr)
 	return 0;
 }
 
-void
-parser_simple_disable(struct parser *pr, struct parser_simple *simple)
+int
+parser_simple_disable(struct parser *pr)
 {
-	if (!pr->pr_op->op_flags.simple)
-		return;
-	*simple = *pr->pr_simple;
-	memset(pr->pr_simple, 0, sizeof(*pr->pr_simple));
+	int restore = pr->pr_simple->enable;
+
+	pr->pr_simple->enable = 0;
+	return restore;
 }
 
 void
-parser_simple_enable(struct parser *pr, const struct parser_simple *simple)
+parser_simple_enable(struct parser *pr, int restore)
 {
-	if (!pr->pr_op->op_flags.simple)
-		return;
-	*pr->pr_simple = *simple;
+	pr->pr_simple->enable = restore;
 }
