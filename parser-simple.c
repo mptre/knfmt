@@ -1,12 +1,13 @@
 #include "parser-simple.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "alloc.h"
 #include "options.h"
 #include "parser-priv.h"
+
+static int	is_pass_valid(unsigned int);
 
 struct parser_simple *
 parser_simple_alloc(const struct options *op)
@@ -33,9 +34,7 @@ parser_simple_enter(struct parser *pr, unsigned int pass, int ignore,
 	struct parser_simple *simple = pr->pr_simple;
 	unsigned int i;
 
-	assert(pass < SIMPLE_LAST);
-
-	if (!simple->enable) {
+	if (!simple->enable || !is_pass_valid(pass)) {
 		*restore = SIMPLE_STATE_NOP;
 		return 0;
 	}
@@ -62,8 +61,7 @@ parser_simple_leave(struct parser *pr, unsigned int pass, int restore)
 {
 	struct parser_simple *simple = pr->pr_simple;
 
-	assert(pass < SIMPLE_LAST);
-	if (restore == SIMPLE_STATE_NOP)
+	if (restore == SIMPLE_STATE_NOP || !is_pass_valid(pass))
 		return;
 	simple->states[pass] = restore;
 }
@@ -71,8 +69,7 @@ parser_simple_leave(struct parser *pr, unsigned int pass, int restore)
 int
 is_simple_enabled(const struct parser *pr, unsigned int pass)
 {
-	assert(pass < SIMPLE_LAST);
-	return pr->pr_simple->enable &&
+	return is_pass_valid(pass) &&
 	    pr->pr_simple->states[pass] == SIMPLE_STATE_ENABLE;
 }
 
@@ -102,4 +99,10 @@ void
 parser_simple_enable(struct parser *pr, int restore)
 {
 	pr->pr_simple->enable = restore;
+}
+
+static int
+is_pass_valid(unsigned int pass)
+{
+	return pass < SIMPLE_LAST;
 }
