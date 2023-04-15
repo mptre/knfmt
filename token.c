@@ -204,6 +204,21 @@ token_strcmp(const struct token *a, const struct token *b)
 }
 
 /*
+ * Returns non-zero if the given token preceded with preprocessor directives.
+ */
+int
+token_has_cpp(const struct token *tk)
+{
+	const struct token *prefix;
+
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		if (prefix->tk_flags & TOKEN_FLAG_CPP)
+			return 1;
+	}
+	return 0;
+}
+
+/*
  * Returns non-zero if the given token is preceded with whitespace.
  * Such whitespace is never emitted by the lexer we therefore have to resort to
  * inspecting the source code through the underlying lexer buffer.
