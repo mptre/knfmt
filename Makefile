@@ -1131,11 +1131,6 @@ ${PROG_knfmt}: ${OBJS_knfmt}
 ${PROG_test}: ${OBJS_test}
 	${CC} ${DEBUG} -o ${PROG_test} ${OBJS_test} ${LDFLAGS}
 
-${PROG_fuzz-style}: ${OBJS_fuzz-style}
-	${CC} ${DEBUG} -o ${PROG_fuzz-style} ${OBJS_fuzz-style} ${LDFLAGS}
-
-fuzz: ${PROG_fuzz-style}
-
 clean:
 	rm -f ${DEPS_knfmt} ${OBJS_knfmt} ${PROG_knfmt} \
 		${DEPS_test} ${OBJS_test} ${PROG_test} \
@@ -1163,6 +1158,11 @@ dist:
 format: ${PROG_knfmt}
 	cd ${.CURDIR} && ${.OBJDIR}/${PROG_knfmt} -is ${KNFMT}
 .PHONY: format
+
+fuzz: ${PROG_fuzz-style}
+
+${PROG_fuzz-style}: ${OBJS_fuzz-style}
+	${CC} ${DEBUG} -o ${PROG_fuzz-style} ${OBJS_fuzz-style} ${LDFLAGS}
 
 install: all
 	@mkdir -p ${DESTDIR}${BINDIR}
