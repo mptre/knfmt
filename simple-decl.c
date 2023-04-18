@@ -489,6 +489,7 @@ classify(const struct token_range *tr, unsigned int *slot)
 	struct token *tk, *tmp;
 	unsigned int nident = 0;
 	unsigned int nstars = 0;
+	int error = 0;
 
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
 		switch (tk->tk_type) {
@@ -499,15 +500,13 @@ classify(const struct token_range *tr, unsigned int *slot)
 			nident++;
 			break;
 		default:
-			return 0;
+			error = 1;
 		}
 
 		if (!token_is_moveable(tk))
-			return 0;
+			error = 1;
 	}
-	if (nident == 0)
-		return 0;
-
 	*slot = nstars;
-	return 1;
+
+	return !error && nident > 0;
 }
