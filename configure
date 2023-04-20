@@ -159,19 +159,19 @@ CFLAGS="${CFLAGS} -Wall -Wextra -MD -MP"
 CPPFLAGS="$(makevar CPPFLAGS || :)"
 LDFLAGS="$(DEBUG= makevar LDFLAGS || :)"
 
-# Must happen after CC is defined.
+PREFIX="$(makevar PREFIX || echo /usr/local)"
+BINDIR="$(makevar BINDIR || echo "${PREFIX}/bin")"
+MANDIR="$(makevar MANDIR || echo "${PREFIX}/man")"
+INSTALL="$(makevar INSTALL || echo install)"
+INSTALL_MAN="$(makevar INSTALL_MAN || echo install)"
+
+# Following chunks must happen after CC is defined.
 if [ "$_pedantic" = 1 ]; then
 	CFLAGS="$(cc_has_option -Wformat-signedness) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wimplicit-fallthrough) ${CFLAGS}"
 	CFLAGS="-g $(pedantic) ${CFLAGS}"
 	DEBUG="-g ${DEBUG}"
 fi
-
-PREFIX="$(makevar PREFIX || echo /usr/local)"
-BINDIR="$(makevar BINDIR || echo "${PREFIX}/bin")"
-MANDIR="$(makevar MANDIR || echo "${PREFIX}/man")"
-INSTALL="$(makevar INSTALL || echo install)"
-INSTALL_MAN="$(makevar INSTALL_MAN || echo install)"
 
 check_errc && HAVE_ERRC=1
 check_pledge && HAVE_PLEDGE=1
