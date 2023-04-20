@@ -1,5 +1,7 @@
 #include "parser-simple.h"
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 
