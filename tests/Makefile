@@ -595,6 +595,7 @@ TESTS+=	../fuzz-style.c
 TESTS+=	../knfmt.c
 TESTS+=	../lexer.c
 TESTS+=	../lexer.h
+TESTS+=	../libks/arithmetic.c
 TESTS+=	../libks/arithmetic.h
 TESTS+=	../libks/buffer.c
 TESTS+=	../libks/buffer.h

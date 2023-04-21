@@ -16,74 +16,18 @@
 
 #include <stdint.h>
 
-static inline int
-i32_add_overflow(int32_t a, int32_t b, int32_t *c)
-{
-	return __builtin_add_overflow(a, b, c) ? 1 : 0;
-}
+int	i32_add_overflow(int32_t, int32_t, int32_t *c);
+int	i32_sub_overflow(int32_t, int32_t, int32_t *c);
+int	i32_mul_overflow(int32_t, int32_t, int32_t *c);
 
-static inline int
-i32_sub_overflow(int32_t a, int32_t b, int32_t *c)
-{
-	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
-}
+int	i64_add_overflow(int64_t, int64_t, int64_t *c);
+int	i64_sub_overflow(int64_t, int64_t, int64_t *c);
+int	i64_mul_overflow(int64_t, int64_t, int64_t *c);
 
-static inline int
-i32_mul_overflow(int32_t a, int32_t b, int32_t *c)
-{
-	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
-}
+int	u32_add_overflow(uint32_t, uint32_t, uint32_t *c);
+int	u32_sub_overflow(uint32_t, uint32_t, uint32_t *c);
+int	u32_mul_overflow(uint32_t, uint32_t, uint32_t *c);
 
-static inline int
-i64_add_overflow(int64_t a, int64_t b, int64_t *c)
-{
-	return __builtin_add_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-i64_sub_overflow(int64_t a, int64_t b, int64_t *c)
-{
-	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-i64_mul_overflow(int64_t a, int64_t b, int64_t *c)
-{
-	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-u32_add_overflow(uint32_t a, uint32_t b, uint32_t *c)
-{
-	return __builtin_add_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-u32_sub_overflow(uint32_t a, uint32_t b, uint32_t *c)
-{
-	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-u32_mul_overflow(uint32_t a, uint32_t b, uint32_t *c)
-{
-	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-u64_add_overflow(uint64_t a, uint64_t b, uint64_t *c)
-{
-	return __builtin_add_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-u64_sub_overflow(uint64_t a, uint64_t b, uint64_t *c)
-{
-	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
-}
-
-static inline int
-u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *c)
-{
-	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
-}
+int	u64_add_overflow(uint64_t, uint64_t, uint64_t *c);
+int	u64_sub_overflow(uint64_t, uint64_t, uint64_t *c);
+int	u64_mul_overflow(uint64_t, uint64_t, uint64_t *c);

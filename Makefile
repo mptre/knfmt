@@ -3,6 +3,7 @@ include ${.CURDIR}/config.mk
 VERSION=	4.1.1
 
 SRCS+=	alloc.c
+SRCS+=	arithmetic.c
 SRCS+=	buffer.c
 SRCS+=	clang.c
 SRCS+=	comment.c
@@ -269,6 +270,7 @@ DISTFILES+=	knfmt.1
 DISTFILES+=	knfmt.c
 DISTFILES+=	lexer.c
 DISTFILES+=	lexer.h
+DISTFILES+=	libks/arithmetic.c
 DISTFILES+=	libks/arithmetic.h
 DISTFILES+=	libks/buffer.c
 DISTFILES+=	libks/buffer.h
