@@ -73,6 +73,20 @@ rmdup() {
 	xargs
 }
 
+check_attribute_fallthrough() {
+	compile <<-EOF
+	int main(void) {
+		switch (0) {
+		case 0:
+			__attribute__((__fallthrough__));
+		case 1:
+			return 1;
+		}
+		return 0;
+	}
+	EOF
+}
+
 check_errc() {
 	compile <<-EOF
 	#include <err.h>
@@ -145,6 +159,7 @@ set -u
 # Enable tracing, will end up in config.log.
 set -x
 
+HAVE_ATTRIBUTE_FALLTHROUGH=0
 HAVE_ERRC=0
 HAVE_PLEDGE=0
 HAVE_QUEUE=0
@@ -173,6 +188,7 @@ if [ "$_pedantic" = 1 ]; then
 	DEBUG="-g ${DEBUG}"
 fi
 
+check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
 check_errc && HAVE_ERRC=1
 check_pledge && HAVE_PLEDGE=1
 check_queue && HAVE_QUEUE=1
@@ -189,6 +205,12 @@ exec 1>config.h
 [ $HAVE_ERRC -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
 [ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
+
+if [ $HAVE_ATTRIBUTE_FALLTHROUGH -eq 1 ]; then
+	printf '#define FALLTHROUGH __attribute__((__fallthrough__))\n'
+else
+	printf '#define FALLTHROUGH do {} while (0) /* FALLTHROUGH */\n'
+fi
 
 [ $HAVE_ERRC -eq 0 ] && {
 	printf 'void errc(int, int, const char *, ...)\n';
