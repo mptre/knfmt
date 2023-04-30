@@ -137,6 +137,8 @@ static struct doc	*expr_doc_field(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_arg(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_concat(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
@@ -714,28 +716,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		concat = expr_doc_call(ex, es, concat);
 		break;
 
-	case EXPR_ARG: {
-		struct doc *lhs = concat;
-
-		if (ex->ex_lhs != NULL)
-			lhs = expr_doc(ex->ex_lhs, es, concat);
-		doc_token(ex->ex_tk, lhs);
-		if (es->es_flags & EXPR_EXEC_ALIGN) {
-			unsigned int w;
-
-			w = expr_doc_width(es,
-			    es->es_col == 0 ? es->es_dc : lhs);
-			ruler_insert(es->es_ea.rl, ex->ex_tk, lhs,
-			    ++es->es_col, w, 0);
-		} else {
-			doc_alloc(DOC_LINE, lhs);
-		}
-		if (ex->ex_rhs != NULL) {
-			concat = expr_doc_soft(ex->ex_rhs, es, concat,
-			    soft_weights.arg);
-		}
+	case EXPR_ARG:
+		concat = expr_doc_arg(ex, es, concat);
 		break;
-	}
 
 	case EXPR_CAST:
 		if (ex->ex_tokens[0] != NULL)
@@ -972,6 +955,27 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	es->es_ncalls--;
 
+	return dc;
+}
+
+static struct doc *
+expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	struct doc *lhs = dc;
+
+	if (ex->ex_lhs != NULL)
+		lhs = expr_doc(ex->ex_lhs, es, dc);
+	doc_token(ex->ex_tk, lhs);
+	if (es->es_flags & EXPR_EXEC_ALIGN) {
+		unsigned int w;
+
+		w = expr_doc_width(es, es->es_col == 0 ? es->es_dc : lhs);
+		ruler_insert(es->es_ea.rl, ex->ex_tk, lhs, ++es->es_col, w, 0);
+	} else {
+		doc_alloc(DOC_LINE, lhs);
+	}
+	if (ex->ex_rhs != NULL)
+		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.arg);
 	return dc;
 }
 
