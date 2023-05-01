@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <float.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -154,6 +155,92 @@ struct doc_diff {
 	int			 dd_covers;	/* doc_diff_covers() return value */
 };
 
+/*
+ * Description of per document type specific semantics.
+ */
+static const struct doc_description {
+	const char	*name;
+
+	/* Indicates which field in child union being used. */
+	struct {
+		uint8_t	many:1;		/* dc_list */
+		uint8_t	one:1;		/* dc_doc */
+		uint8_t	token:1;	/* dc_tk */
+	} children;
+
+	/* Indicates which field in value union being used. */
+	struct {
+		uint8_t	minimizers:1;	/* dc_minimizers */
+		uint8_t	integer:1;	/* dc_int */
+		uint8_t	string:1;	/* dc_str/dc_len */
+	} value;
+} doc_descriptions[] = {
+	[DOC_CONCAT] = {
+		.name		= "CONCAT",
+		.children	= { .many = 1 },
+	},
+	[DOC_GROUP] = {
+		.name		= "GROUP",
+		.children	= { .one = 1 },
+	},
+	[DOC_INDENT] = {
+		.name		= "INDENT",
+		.children	= { .one = 1 },
+	},
+	[DOC_NOINDENT] = {
+		.name		= "NOINDENT",
+		.children	= { .one = 1 },
+	},
+	[DOC_ALIGN] = {
+		.name		= "ALIGN",
+		.value		= { .integer = 1 },
+	},
+	[DOC_LITERAL] = {
+		.name		= "LITERAL",
+		.children	= { .token = 1 },
+		.value		= { .string = 1 },
+	},
+	[DOC_VERBATIM] = {
+		.name		= "VERBATIM",
+		.children	= { .token = 1 },
+		.value		= { .string = 1 },
+	},
+	[DOC_LINE] = {
+		.name		= "LINE",
+	},
+	[DOC_SOFTLINE] = {
+		.name		= "SOFTLINE",
+	},
+	[DOC_HARDLINE] = {
+		.name		= "HARDLINE",
+	},
+	[DOC_OPTLINE] = {
+		.name		= "OPTLINE",
+	},
+	[DOC_MUTE] = {
+		.name		= "MUTE",
+		.value		= { .integer = 1 },
+	},
+	[DOC_OPTIONAL] = {
+		.name		= "OPTIONAL",
+		.children	= { .one = 1 },
+	},
+	[DOC_MINIMIZE] = {
+		.name		= "MINIMIZE",
+		.children	= { .one = 1 },
+		.value		= { .minimizers = 1 },
+	},
+	[DOC_SCOPE] = {
+		.name		= "SCOPE",
+		.children	= { .one = 1 },
+	},
+	[DOC_MAXLINES] = {
+		.name		= "MAXLINES",
+		.children	= { .one = 1 },
+		.value		= { .integer = 1 },
+	},
+};
+
 static void		doc_exec1(const struct doc *, struct doc_state *);
 static void		doc_exec_indent(const struct doc *, struct doc_state *);
 static void		doc_exec_align(const struct doc *, struct doc_state *);
@@ -292,47 +379,28 @@ doc_width(struct doc_exec_arg *arg)
 void
 doc_free(struct doc *dc)
 {
+	const struct doc_description *desc;
+
 	if (dc == NULL)
 		return;
+	desc = &doc_descriptions[dc->dc_type];
 
-	switch (dc->dc_type) {
-	case DOC_CONCAT: {
+	if (desc->children.many) {
 		struct doc *concat;
 
 		while ((concat = TAILQ_FIRST(&dc->dc_list)) != NULL) {
 			TAILQ_REMOVE(&dc->dc_list, concat, dc_entry);
 			doc_free(concat);
 		}
-		break;
+	} else if (desc->children.one) {
+		doc_free(dc->dc_doc);
 	}
 
-	case DOC_GROUP:
-	case DOC_INDENT:
-	case DOC_NOINDENT:
-	case DOC_OPTIONAL:
-	case DOC_SCOPE:
-	case DOC_MAXLINES:
-		doc_free(dc->dc_doc);
-		break;
-
-	case DOC_LITERAL:
-	case DOC_VERBATIM:
+	if (desc->children.token) {
 		if (dc->dc_tk != NULL)
 			token_rele(dc->dc_tk);
-		break;
-
-	case DOC_MINIMIZE:
+	} else if (desc->value.minimizers) {
 		VECTOR_FREE(dc->dc_minimizers);
-		doc_free(dc->dc_doc);
-		break;
-
-	case DOC_ALIGN:
-	case DOC_LINE:
-	case DOC_SOFTLINE:
-	case DOC_HARDLINE:
-	case DOC_OPTLINE:
-	case DOC_MUTE:
-		break;
 	}
 
 	free(dc);
@@ -951,39 +1019,21 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 	/* Recursion flatten into a loop for increased performance. */
 	*VECTOR_ALLOC(st->st_walk) = dc;
 	while (!VECTOR_EMPTY(st->st_walk)) {
+		const struct doc_description *desc;
+
 		dc = *VECTOR_POP(st->st_walk);
+		desc = &doc_descriptions[dc->dc_type];
 
 		if (!cb(dc, st, arg))
 			break;
 
-		switch (dc->dc_type) {
-		case DOC_CONCAT: {
+		if (desc->children.many) {
 			const struct doc_list *dl = &dc->dc_list;
 
 			TAILQ_FOREACH_REVERSE(dc, dl, doc_list, dc_entry)
 				*VECTOR_ALLOC(st->st_walk) = dc;
-			break;
-		}
-
-		case DOC_GROUP:
-		case DOC_INDENT:
-		case DOC_NOINDENT:
-		case DOC_OPTIONAL:
-		case DOC_MINIMIZE:
-		case DOC_SCOPE:
-		case DOC_MAXLINES:
+		} else if (desc->children.one) {
 			*VECTOR_ALLOC(st->st_walk) = dc->dc_doc;
-			break;
-
-		case DOC_ALIGN:
-		case DOC_LITERAL:
-		case DOC_VERBATIM:
-		case DOC_LINE:
-		case DOC_SOFTLINE:
-		case DOC_HARDLINE:
-		case DOC_OPTLINE:
-		case DOC_MUTE:
-			break;
 		}
 	}
 	VECTOR_CLEAR(st->st_walk);
@@ -1574,13 +1624,7 @@ doc_parens_align(const struct doc_state *st)
 static int
 doc_has_list(const struct doc *dc)
 {
-	switch (dc->dc_type) {
-	case DOC_CONCAT:
-		return 1;
-	default:
-		break;
-	}
-	return 0;
+	return doc_descriptions[dc->dc_type].children.many;
 }
 
 /*
@@ -1698,6 +1742,7 @@ static void
 doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 {
 	char buf[128];
+	const struct doc_description *desc = &doc_descriptions[dc->dc_type];
 	unsigned int depth = st->st_depth;
 	unsigned int i;
 
@@ -1709,21 +1754,25 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		fprintf(stderr, "  ");
 
 	fprintf(stderr, "%s", docstr(dc, buf, sizeof(buf)));
+	fprintf(stderr, "(");
+	if (desc->children.many)
+		fprintf(stderr, "[");
+	if (desc->value.integer)
+		fprintf(stderr, "%d", dc->dc_int);
+	if (desc->value.string) {
+		char *str;
+
+		str = strnice(dc->dc_str, dc->dc_len);
+		fprintf(stderr, "\"%s\", %zu", str, dc->dc_len);
+		free(str);
+	}
+
 	switch (dc->dc_type) {
-	case DOC_CONCAT:
-		fprintf(stderr, "([");
-		break;
-
-	case DOC_GROUP:
-		fprintf(stderr, "(");
-		break;
-
 	case DOC_INDENT:
 	case DOC_NOINDENT:
 	case DOC_OPTIONAL: {
 		struct buffer *bf;
 
-		fprintf(stderr, "(");
 		bf = buffer_alloc(32);
 		if (bf == NULL)
 			err(1, NULL);
@@ -1734,57 +1783,36 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 		break;
 	}
 
-	case DOC_ALIGN:
-		fprintf(stderr, "(%d)", dc->dc_int);
-		break;
-
-	case DOC_LITERAL:
-	case DOC_VERBATIM: {
-		char *str;
-
-		str = strnice(dc->dc_str, dc->dc_len);
-		fprintf(stderr, "(\"%s\", %zu)", str, dc->dc_len);
-		free(str);
-		break;
-	}
-
 	case DOC_LINE:
-		fprintf(stderr, "(\"%s\", 1)",
+		fprintf(stderr, "\"%s\", 1)",
 		    st->st_mode == BREAK ? "\\n" : " ");
 		break;
 
 	case DOC_SOFTLINE:
-		fprintf(stderr, "(\"%s\", %d)",
+		fprintf(stderr, "\"%s\", %d)",
 		    st->st_mode == BREAK ? "\\n" : "",
 		    st->st_mode == BREAK ? 1 : 0);
 		break;
 
 	case DOC_HARDLINE:
-		fprintf(stderr, "(\"\\n\", 1)");
+		fprintf(stderr, "\"\\n\", 1)");
 		break;
 
 	case DOC_OPTLINE:
-		fprintf(stderr, "(\"%s\", %d)",
+		fprintf(stderr, "\"%s\", %d)",
 		    st->st_optline ? "\\n" : "", st->st_optline ? 1 : 0);
 		break;
 
-	case DOC_MUTE:
-		fprintf(stderr, "(%d)", dc->dc_int);
-		break;
-
 	case DOC_MINIMIZE:
-		fprintf(stderr, "(%d", st->st_minimize.idx == -1 ? -1 :
+		fprintf(stderr, "%d", st->st_minimize.idx == -1 ? -1 :
 		    (int)dc->dc_minimizers[st->st_minimize.idx].indent);
 		break;
 
-	case DOC_SCOPE:
-		fprintf(stderr, "(");
-		break;
-
-	case DOC_MAXLINES:
-		fprintf(stderr, "(%d", dc->dc_int);
+	default:
 		break;
 	}
+	if (!desc->children.many && !desc->children.one)
+		fprintf(stderr, ")");
 	fprintf(stderr, "\n");
 }
 
@@ -1792,46 +1820,21 @@ static void
 doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 {
 	char buf[128];
+	const struct doc_description *desc = &doc_descriptions[dc->dc_type];
 	unsigned int depth = st->st_depth;
 	unsigned int i;
-	int parens = 0;
-	int brackets = 0;
 
 	st->st_depth--;
 
-	switch (dc->dc_type) {
-	case DOC_CONCAT:
-		brackets = 1;
-		FALLTHROUGH;
-	case DOC_GROUP:
-	case DOC_INDENT:
-	case DOC_NOINDENT:
-	case DOC_OPTIONAL:
-	case DOC_MINIMIZE:
-	case DOC_SCOPE:
-	case DOC_MAXLINES:
-		parens = 1;
-		break;
-	case DOC_ALIGN:
-	case DOC_LITERAL:
-	case DOC_VERBATIM:
-	case DOC_LINE:
-	case DOC_SOFTLINE:
-	case DOC_HARDLINE:
-	case DOC_OPTLINE:
-	case DOC_MUTE:
-		break;
-	}
-
-	if (!parens && !brackets)
+	if (!desc->children.many && !desc->children.one)
 		return;
 
 	fprintf(stderr, "%s ", statestr(st, depth, buf, sizeof(buf)));
 	for (i = 0; i < st->st_depth; i++)
 		fprintf(stderr, "  ");
-	if (brackets)
+	if (desc->children.many)
 		fprintf(stderr, "]");
-	if (parens)
+	if (desc->children.many || desc->children.one)
 		fprintf(stderr, ")");
 	fprintf(stderr, "\n");
 }
@@ -1839,33 +1842,13 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 static char *
 docstr(const struct doc *dc, char *buf, size_t bufsiz)
 {
-	const char *str = NULL;
+	const char *name;
 	int suffix = dc->dc_suffix != NULL;
 	int n;
 
-	switch (dc->dc_type) {
-#define CASE(t) case t: str = &#t[sizeof("DOC_") - 1]; break
-	CASE(DOC_CONCAT);
-	CASE(DOC_GROUP);
-	CASE(DOC_INDENT);
-	CASE(DOC_NOINDENT);
-	CASE(DOC_ALIGN);
-	CASE(DOC_LITERAL);
-	CASE(DOC_VERBATIM);
-	CASE(DOC_LINE);
-	CASE(DOC_SOFTLINE);
-	CASE(DOC_HARDLINE);
-	CASE(DOC_OPTLINE);
-	CASE(DOC_MUTE);
-	CASE(DOC_OPTIONAL);
-	CASE(DOC_MINIMIZE);
-	CASE(DOC_SCOPE);
-	CASE(DOC_MAXLINES);
-#undef CASE
-	}
-
+	name = doc_descriptions[dc->dc_type].name;
 	n = snprintf(buf, bufsiz, "%s<%s:%d%s%s%s>",
-	    str, dc->dc_fun, dc->dc_lno,
+	    name, dc->dc_fun, dc->dc_lno,
 	    suffix ? ", \"" : "",
 	    suffix ? dc->dc_suffix : "",
 	    suffix ? "\"" : "");
