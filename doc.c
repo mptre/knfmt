@@ -118,6 +118,8 @@ struct doc_state {
 	unsigned int			 st_depth;
 	unsigned int			 st_refit;
 	unsigned int			 st_parens;
+	/* # allowed consecutive new line(s). */
+	unsigned int			 st_maxlines;
 	/* # consecutive emitted new line(s). */
 	unsigned int			 st_nlines;
 	/* Pending new line emitted on next doc_print() invocation. */
@@ -1101,8 +1103,7 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 	}
 
 	if (isnewline) {
-		/* Never emit more than two consecutive lines. */
-		if (st->st_nlines >= 2)
+		if (st->st_nlines >= st->st_maxlines)
 			return;
 		st->st_nlines++;
 		st->st_stats.nlines++;
@@ -1600,6 +1601,7 @@ doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
 	st->st_st = arg->st;
 	st->st_bf = arg->bf;
 	st->st_lx = arg->lx;
+	st->st_maxlines = 2;
 	st->st_flags = arg->flags;
 	st->st_mode = mode;
 	st->st_diff.beg = 1;
