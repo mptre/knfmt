@@ -157,6 +157,9 @@ The following type of documents are available:
   Used to enter a new "scope" in some arbitrary sense. Has the side effect of
   resetting document related state, used by DOC_INDENT_NEWLINE for instance.
 
+* DOC_MAXLINES
+  Used to alter the maximum number of allowed consecutive new line(s).
+
 cpp.c
 =====
 

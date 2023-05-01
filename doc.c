@@ -166,6 +166,8 @@ static void		doc_exec_minimize1(struct doc *, struct doc_state *,
 static ssize_t		doc_exec_minimize_indent(struct doc *,
     struct doc_state *);
 static void		doc_exec_scope(const struct doc *, struct doc_state *);
+static void		doc_exec_maxlines(const struct doc *,
+    struct doc_state *);
 static void		doc_walk(const struct doc *, struct doc_state *,
     int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int		doc_fits(const struct doc *, struct doc_state *);
@@ -309,6 +311,7 @@ doc_free(struct doc *dc)
 	case DOC_NOINDENT:
 	case DOC_OPTIONAL:
 	case DOC_SCOPE:
+	case DOC_MAXLINES:
 		doc_free(dc->dc_doc);
 		break;
 
@@ -678,6 +681,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_SCOPE:
 		doc_exec_scope(dc, st);
 		break;
+
+	case DOC_MAXLINES:
+		doc_exec_maxlines(dc, st);
+		break;
 	}
 
 	doc_trace_leave(dc, st);
@@ -923,6 +930,16 @@ doc_exec_scope(const struct doc *dc, struct doc_state *st)
 }
 
 static void
+doc_exec_maxlines(const struct doc *dc, struct doc_state *st)
+{
+	unsigned int restore = st->st_maxlines;
+
+	st->st_maxlines = (unsigned int)dc->dc_int;
+	doc_exec1(dc->dc_doc, st);
+	st->st_maxlines = restore;
+}
+
+static void
 doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
@@ -954,6 +971,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		case DOC_OPTIONAL:
 		case DOC_MINIMIZE:
 		case DOC_SCOPE:
+		case DOC_MAXLINES:
 			*VECTOR_ALLOC(st->st_walk) = dc->dc_doc;
 			break;
 
@@ -1044,6 +1062,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	case DOC_MUTE:
 	case DOC_MINIMIZE:
 	case DOC_SCOPE:
+	case DOC_MAXLINES:
 		break;
 	}
 
@@ -1761,6 +1780,10 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	case DOC_SCOPE:
 		fprintf(stderr, "(");
 		break;
+
+	case DOC_MAXLINES:
+		fprintf(stderr, "(%d", dc->dc_int);
+		break;
 	}
 	fprintf(stderr, "\n");
 }
@@ -1786,6 +1809,7 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 	case DOC_OPTIONAL:
 	case DOC_MINIMIZE:
 	case DOC_SCOPE:
+	case DOC_MAXLINES:
 		parens = 1;
 		break;
 	case DOC_ALIGN:
@@ -1836,6 +1860,7 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 	CASE(DOC_OPTIONAL);
 	CASE(DOC_MINIMIZE);
 	CASE(DOC_SCOPE);
+	CASE(DOC_MAXLINES);
 #undef CASE
 	}
 

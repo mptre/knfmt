@@ -24,6 +24,7 @@ enum doc_type {
 	DOC_OPTIONAL,
 	DOC_MINIMIZE,
 	DOC_SCOPE,
+	DOC_MAXLINES,
 };
 
 struct doc_exec_arg {
@@ -124,6 +125,9 @@ struct doc	*doc_literal0(const char *, size_t, struct doc *,
 	doc_token0((a), (b), DOC_LITERAL, __func__, __LINE__)
 struct doc	*doc_token0(const struct token *, struct doc *, enum doc_type,
     const char *, int);
+
+#define doc_max_lines(a, b) \
+	doc_alloc0(DOC_MAXLINES, (b), (a), __func__, __LINE__)
 
 int	doc_max(const struct doc *);
 

@@ -278,7 +278,8 @@ expr_exec(const struct expr_exec_arg *ea)
 		return NULL;
 	}
 
-	dc = doc_alloc(DOC_SCOPE, ea->dc);
+	dc = doc_max_lines(1, ea->dc);
+	dc = doc_alloc(DOC_SCOPE, dc);
 	dc = doc_alloc(DOC_GROUP, dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
 	if (ea->indent > 0)
