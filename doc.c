@@ -118,12 +118,18 @@ struct doc_state {
 	unsigned int			 st_depth;
 	unsigned int			 st_refit;
 	unsigned int			 st_parens;
+	/* # consecutive emitted new line(s). */
 	unsigned int			 st_nlines;
+	/* Pending new line emitted on next doc_print() invocation. */
 	unsigned int			 st_newline;
-	unsigned int			 st_muteline;	/* missed new line while muted */
+	/* Missed new line while muted. */
+	unsigned int			 st_muteline;
+	/* Optional new line(s) honored. */
 	int				 st_optline;
+	/* Muted, doc_print() does not emit anything. */
 	int				 st_mute;
-	unsigned int			 st_flags;	/* doc_exec() flags */
+	/* Flags given to doc_exec(). */
+	unsigned int			 st_flags;
 };
 
 struct doc_state_snapshot {
