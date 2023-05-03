@@ -100,6 +100,7 @@ main(int argc, char *argv[])
 	}
 
 	clang_init();
+	expr_init();
 	cx = context_alloc();
 
 	test_parser_expr("1", "(1)");
@@ -271,6 +272,7 @@ main(int argc, char *argv[])
 
 out:
 	context_free(cx);
+	expr_shutdown();
 	clang_shutdown();
 	return error;
 }

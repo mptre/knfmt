@@ -14,6 +14,7 @@
 #include "clang.h"
 #include "diff.h"
 #include "error.h"
+#include "expr.h"
 #include "file.h"
 #include "lexer.h"
 #include "options.h"
@@ -96,6 +97,7 @@ main(int argc, char *argv[])
 	if (op.op_flags.diffparse)
 		diff_init();
 	clang_init();
+	expr_init();
 	style_init();
 	if (VECTOR_INIT(files.fs_vc) == NULL) {
 		error = 1;
@@ -125,6 +127,7 @@ out:
 	files_free(&files);
 	style_free(st);
 	style_teardown();
+	expr_shutdown();
 	clang_shutdown();
 	if (op.op_flags.diffparse)
 		diff_shutdown();

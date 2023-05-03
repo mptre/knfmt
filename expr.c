@@ -181,7 +181,7 @@ static void	token_move_prev_line(struct token *);
 
 static const char	*strexpr(enum expr_type);
 
-static const struct expr_rule	rules[] = {
+static const struct expr_rule rules[] = {
 	{ PC0 | PCUNARY,	0,	TOKEN_IDENT,			expr_exec_literal },
 	{ PC0 | PCUNARY,	0,	TOKEN_LITERAL,			expr_exec_literal },
 	{ PC0 | PCUNARY,	0,	TOKEN_STRING,			expr_exec_literal },
@@ -238,6 +238,9 @@ static const struct expr_rule	rules[] = {
 	{ PC15,			0,	TOKEN_PERIOD,			expr_exec_field },
 };
 
+/* Table for constant time expr rules lookup. */
+static const struct expr_rule *table_rules[TOKEN_NONE][2];
+
 /*
  * Weights for emitted softline(s) through expr_doc_soft(). Several softline(s)
  * can be emitted per expression in which the one with highest weight is
@@ -258,6 +261,24 @@ static const struct {
 	.ternary	= 2,	/* before ternary true/false expr */
 	.squares	= 1,	/* after lsquare */
 };
+
+void
+expr_init(void)
+{
+	size_t nrules = sizeof(rules) / sizeof(rules[0]);
+	size_t i;
+
+	for (i = 0; i < nrules; i++) {
+		const struct expr_rule *er = &rules[i];
+
+		table_rules[er->er_type][(er->er_pc & PCUNARY) ? 1 : 0] = er;
+	}
+}
+
+void
+expr_shutdown(void)
+{
+}
 
 struct doc *
 expr_exec(const struct expr_exec_arg *ea)
@@ -611,7 +632,8 @@ expr_exec_peek(struct expr_state *es, struct token **tk)
 
 	if (lexer_get_error(lx) ||
 	    !lexer_peek(lx, &es->es_tk) ||
-	    es->es_tk == es->es_ea.stop)
+	    es->es_tk == es->es_ea.stop ||
+	    es->es_tk->tk_type == LEXER_EOF)
 		return 0;
 
 	*tk = es->es_tk;
@@ -1210,17 +1232,7 @@ expr_state_reset(struct expr_state *es)
 static const struct expr_rule *
 expr_rule_find(const struct token *tk, int unary)
 {
-	static unsigned int nrules = sizeof(rules) / sizeof(*rules);
-	unsigned int i;
-
-	for (i = 0; i < nrules; i++) {
-		const struct expr_rule *er = &rules[i];
-		int isunary = (er->er_pc & PCUNARY) ? 1 : 0;
-
-		if (er->er_type == tk->tk_type && unary == isunary)
-			return &rules[i];
-	}
-	return NULL;
+	return table_rules[tk->tk_type][unary];
 }
 
 /*
