@@ -181,6 +181,9 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
 			if (expr == NULL)
 				expr = concat;
+			if (lexer_peek_if(lx, TOKEN_RBRACE, &nx) &&
+			    token_is_moveable(nx))
+				token_trim(comma);
 			doc_token(comma, expr);
 
 			if (align) {
