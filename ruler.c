@@ -206,27 +206,28 @@ ruler_exec(struct ruler *rl)
 static void
 ruler_exec_indent(struct ruler *rl)
 {
+	struct ruler_length len = {0};
+	struct ruler_column *rc;
 	size_t i;
 
 	if (rl->rl_indent == NULL)
 		return;
 
 	assert(VECTOR_LENGTH(rl->rl_columns) == 1);
+	rc = &rl->rl_columns[0];
+	(void)ruler_column_length(rl, rc, &len);
+	if (len.tabalign)
+		len.max = (len.max + 8 - 1) & ~0x7u;
 
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_indent); i++) {
 		struct ruler_indent *ri = &rl->rl_indent[i];
-		const struct ruler_column *rc = &rl->rl_columns[0];
 		const struct ruler_datum *rd = &rc->rc_datums[ri->ri_rd];
 		unsigned int indent;
 
-		if (rc->rc_ntabs > 0) {
-			indent = rc->rc_len;
-			if (!minimize(rc))
-				indent = (indent + 8 - 1) & ~0x7u;
-			indent += rc->rc_nspaces;
-		} else {
-			indent = rd->rd_len + rd->rd_nspaces + 1;
-		}
+		if (len.max > 0)
+			indent = len.max + (rc->rc_nspaces - rd->rd_nspaces);
+		else
+			indent = rd->rd_len + 1;
 		if (ri->ri_sign > 0)
 			doc_set_indent(ri->ri_dc, indent);
 		else
