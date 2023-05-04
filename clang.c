@@ -66,7 +66,7 @@ static void	token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char, int);
 
-static struct token *tokens[256];
+static struct token *table_tokens[256];
 
 static const struct token tklit = {
 	.tk_type	= TOKEN_LITERAL,
@@ -96,11 +96,11 @@ clang_init(void)
 		unsigned char slot;
 
 		slot = (unsigned char)src->tk_str[0];
-		if (tokens[slot] == NULL) {
-			if (VECTOR_INIT(tokens[slot]) == NULL)
+		if (table_tokens[slot] == NULL) {
+			if (VECTOR_INIT(table_tokens[slot]) == NULL)
 				err(1, NULL);
 		}
-		dst = VECTOR_ALLOC(tokens[slot]);
+		dst = VECTOR_ALLOC(table_tokens[slot]);
 		if (dst == NULL)
 			err(1, NULL);
 		*dst = *src;
@@ -110,11 +110,11 @@ clang_init(void)
 void
 clang_shutdown(void)
 {
-	size_t nslots = sizeof(tokens) / sizeof(tokens[0]);
+	size_t nslots = sizeof(table_tokens) / sizeof(table_tokens[0]);
 	size_t i;
 
 	for (i = 0; i < nslots; i++)
-		VECTOR_FREE(tokens[i]);
+		VECTOR_FREE(table_tokens[i]);
 }
 
 struct clang *
@@ -665,10 +665,10 @@ clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 
 	key = lexer_buffer_slice(lx, st, &len);
 	slot = (unsigned char)key[0];
-	if (tokens[slot] == NULL)
+	if (table_tokens[slot] == NULL)
 		return NULL;
-	for (i = 0; i < VECTOR_LENGTH(tokens[slot]); i++) {
-		struct token *tk = &tokens[slot][i];
+	for (i = 0; i < VECTOR_LENGTH(table_tokens[slot]); i++) {
+		struct token *tk = &table_tokens[slot][i];
 
 		if (len == tk->tk_len && strncmp(tk->tk_str, key, len) == 0)
 			return tk;
