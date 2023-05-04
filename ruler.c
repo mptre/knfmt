@@ -31,10 +31,17 @@ struct ruler_datum {
 	unsigned int	 rd_nspaces;
 };
 
+struct ruler_length {
+	unsigned int	max;
+	unsigned int	tabalign;
+};
+
 static void	ruler_exec_indent(struct ruler *);
 static void	ruler_reset(struct ruler *);
 
 static unsigned int	ruler_column_alignment(struct ruler_column *);
+static int		ruler_column_length(const struct ruler *,
+    struct ruler_column *, struct ruler_length *);
 static int		countspaces(const char *, size_t, unsigned int *);
 
 static int	minimize(const struct ruler_column *);
@@ -163,49 +170,29 @@ ruler_exec(struct ruler *rl)
 	size_t i, j;
 
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_columns); i++) {
+		struct ruler_length len;
 		struct ruler_column *rc = &rl->rl_columns[i];
-		unsigned int maxlen = 0;
-		unsigned int tabalign = rl->rl_flags & RULER_ALIGN_TABS;
 
-		if (rl->rl_flags & RULER_ALIGN_MIN) {
-			maxlen = rc->rc_len + 1;
-		} else if (rl->rl_flags & RULER_ALIGN_MAX) {
-			maxlen = rl->rl_align;
-		} else if (rl->rl_flags & RULER_ALIGN_FIXED) {
-			maxlen = rl->rl_align;
-		} else if (rl->rl_flags & RULER_ALIGN_SENSE) {
-			maxlen = ruler_column_alignment(rc);
-			if (maxlen == 0) {
-				if (rc->rc_ntabs > 0)
-					goto tabs;
-				continue;
-			}
-			tabalign = rc->rc_ntabs > 0;
-		} else if (rl->rl_flags & RULER_ALIGN_TABS) {
-tabs:
-			maxlen = rc->rc_len;
-			if (!minimize(rc))
-				maxlen++;
-			tabalign = 1;
-		}
+		if (ruler_column_length(rl, rc, &len))
+			continue;
 
 		for (j = 0; j < VECTOR_LENGTH(rc->rc_datums); j++) {
 			struct ruler_datum *rd = &rc->rc_datums[j];
 
 			if (rl->rl_flags & RULER_ALIGN_FIXED) {
-				doc_set_indent(rd->rd_dc, maxlen);
+				doc_set_indent(rd->rd_dc, len.max);
 				continue;
 			}
-			if (rd->rd_len > maxlen) {
+			if (rd->rd_len > len.max) {
 				assert(rl->rl_flags & RULER_ALIGN_MAX);
 				doc_set_indent(rd->rd_dc, 0);
 				continue;
 			}
 
 			doc_set_align(rd->rd_dc, &(struct doc_align){
-			    .indent	= maxlen - rd->rd_len,
+			    .indent	= len.max - rd->rd_len,
 			    .spaces	= rc->rc_nspaces - rd->rd_nspaces,
-			    .tabalign	= tabalign,
+			    .tabalign	= len.tabalign,
 			});
 		}
 	}
@@ -332,6 +319,40 @@ ruler_column_alignment(struct ruler_column *rc)
 
 noalign:
 	rc->rc_nspaces = oldnspaces;
+	return 0;
+}
+
+static int
+ruler_column_length(const struct ruler *rl, struct ruler_column *rc,
+    struct ruler_length *len)
+{
+	unsigned int maxlen = 0;
+	unsigned int tabalign = rl->rl_flags & RULER_ALIGN_TABS;
+
+	if (rl->rl_flags & RULER_ALIGN_MIN) {
+		maxlen = rc->rc_len + 1;
+	} else if (rl->rl_flags & RULER_ALIGN_MAX) {
+		maxlen = rl->rl_align;
+	} else if (rl->rl_flags & RULER_ALIGN_FIXED) {
+		maxlen = rl->rl_align;
+	} else if (rl->rl_flags & RULER_ALIGN_SENSE) {
+		maxlen = ruler_column_alignment(rc);
+		if (maxlen == 0) {
+			if (rc->rc_ntabs > 0)
+				goto tabs;
+			return 1;
+		}
+		tabalign = rc->rc_ntabs > 0;
+	} else if (rl->rl_flags & RULER_ALIGN_TABS) {
+tabs:
+		maxlen = rc->rc_len;
+		if (!minimize(rc))
+			maxlen++;
+		tabalign = 1;
+	}
+
+	len->max = maxlen;
+	len->tabalign = tabalign;
 	return 0;
 }
 
