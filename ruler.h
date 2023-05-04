@@ -46,4 +46,5 @@ void	ruler_insert0(struct ruler *, struct token *, struct doc *,
 	ruler_indent0((a), (b), (c), -1, __func__, __LINE__)
 struct doc	*ruler_indent0(struct ruler *, struct doc *,
     struct ruler_indent **, int, const char *, int);
-void		 ruler_remove(struct ruler *, const struct ruler_indent *);
+void		 ruler_indent_remove(struct ruler *,
+    const struct ruler_indent *);

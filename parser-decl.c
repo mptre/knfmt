@@ -303,7 +303,7 @@ parser_decl_init(struct parser *pr, struct doc **out,
 		}
 	}
 	if (ninit == 0) {
-		ruler_remove(arg->rl, cookie);
+		ruler_indent_remove(arg->rl, cookie);
 		doc_remove(indent, arg->dc);
 	}
 	return parser_good(pr);

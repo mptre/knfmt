@@ -121,9 +121,9 @@ ruler_insert0(struct ruler *rl, struct token *tk, struct doc *dc,
  * 	int x, y,
  * 	    z;
  *
- * The optional cookie argument can be passed to ruler_remove() in order to
- * remove the indentation. As the ruler does not own the returned document, the
- * caller is expected to free it.
+ * The optional cookie argument can be passed to ruler_indent_remove() in order
+ * to remove the indentation. As the ruler does not own the returned document,
+ * the caller is expected to free it.
  */
 struct doc *
 ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
@@ -157,7 +157,7 @@ err:
 }
 
 void
-ruler_remove(struct ruler *rl, const struct ruler_indent *ri)
+ruler_indent_remove(struct ruler *rl, const struct ruler_indent *ri)
 {
 	if (ri == NULL)
 		return;
