@@ -174,7 +174,7 @@ static void	expr_state_init(struct expr_state *,
     const struct expr_exec_arg *);
 static void	expr_state_reset(struct expr_state *);
 
-static const struct expr_rule	*expr_rule_find(const struct token *, int);
+static const struct expr_rule	*expr_find_rule(const struct token *, int);
 
 static void	token_move_next_line(struct token *);
 static void	token_move_prev_line(struct token *);
@@ -352,7 +352,7 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 		return NULL;
 
 	/* Only consider unary operators. */
-	er = expr_rule_find(tk, 1);
+	er = expr_find_rule(tk, 1);
 	if (er == NULL || tk->tk_type == TOKEN_IDENT) {
 		/*
 		 * Even if a literal operator was found, let the parser recover
@@ -379,7 +379,7 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 			break;
 
 		/* Only consider binary operators. */
-		er = expr_rule_find(tk, 0);
+		er = expr_find_rule(tk, 0);
 		if (er == NULL)
 			break;
 		es->es_er = er;
@@ -1230,7 +1230,7 @@ expr_state_reset(struct expr_state *es)
 }
 
 static const struct expr_rule *
-expr_rule_find(const struct token *tk, int unary)
+expr_find_rule(const struct token *tk, int unary)
 {
 	return table_rules[tk->tk_type][unary];
 }
