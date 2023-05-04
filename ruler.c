@@ -224,6 +224,8 @@ ruler_exec_indent(struct ruler *rl)
 	if (rl->rl_indent == NULL)
 		return;
 
+	assert(VECTOR_LENGTH(rl->rl_columns) == 1);
+
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_indent); i++) {
 		struct ruler_indent *ri = &rl->rl_indent[i];
 		const struct ruler_column *rc = &rl->rl_columns[0];
