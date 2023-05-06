@@ -15,6 +15,9 @@ CLANGTIDY \
 CPPCHECK \
 	!(compat-*).c \
 	-- \
+SHLINT \
+	configure tests/*.sh \
+	-- \
 DISTFILES \
 	*.c !(config).h libks/*.[ch] *.md \
 	GNUmakefile LICENSE Makefile configure knfmt.1 \

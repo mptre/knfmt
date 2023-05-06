@@ -234,6 +234,13 @@ CPPCHECK+=	t.c
 CPPCHECK+=	token.c
 CPPCHECK+=	util.c
 
+SHLINT+=	configure
+SHLINT+=	tests/cp.sh
+SHLINT+=	tests/diff.sh
+SHLINT+=	tests/enoent.sh
+SHLINT+=	tests/git.sh
+SHLINT+=	tests/knfmt.sh
+
 DISTFILES+=	CHANGELOG.md
 DISTFILES+=	GNUmakefile
 DISTFILES+=	LICENSE
@@ -1131,6 +1138,12 @@ DISTFILES+=	token.h
 DISTFILES+=	util.c
 DISTFILES+=	util.h
 
+SHELLCHECKFLAGS+=	-f gcc
+SHELLCHECKFLAGS+=	-s ksh
+SHELLCHECKFLAGS+=	-o add-default-case
+SHELLCHECKFLAGS+=	-o avoid-nullary-conditions
+SHELLCHECKFLAGS+=	-o quote-safe-variables
+
 all: ${PROG_knfmt}
 
 ${PROG_knfmt}: ${OBJS_knfmt}
@@ -1193,6 +1206,10 @@ lint-cppcheck:
 		--max-configs=2 --suppress-xml=cppcheck-suppressions.xml \
 		${CPPFLAGS} ${CPPCHECK}
 .PHONY: lint-cppcheck
+
+lint-shellcheck:
+	cd ${.CURDIR} && shellcheck ${SHELLCHECKFLAGS} ${SHLINT}
+.PHONY: lint-shellcheck
 
 test: ${PROG_knfmt} test-${PROG_test}
 	${MAKE} -C ${.CURDIR}/tests "KNFMT=${.OBJDIR}/${PROG_knfmt}"
