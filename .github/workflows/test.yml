@@ -13,9 +13,8 @@ jobs:
       - name: test
         env:
           CC: gcc
-          DEBUG: -fsanitize=address,undefined -fno-sanitize-recover=all
         run: |
-          ./configure --pedantic
+          ./configure --pedantic --sanitize
           make -j`nproc` test
 
   linux-gcc-4:
@@ -40,9 +39,8 @@ jobs:
       - name: test
         env:
           CC: clang
-          DEBUG: -fsanitize=address,undefined,unsigned-integer-overflow -fno-sanitize-recover=all
         run: |
-          ./configure --pedantic
+          ./configure --pedantic --sanitize
           make -j`nproc` test
 
   macos-clang-sanitize:
@@ -53,9 +51,8 @@ jobs:
       - name: test
         env:
           CC: clang
-          DEBUG: -fsanitize=address,undefined,unsigned-integer-overflow -fno-sanitize-recover=all
         run: |
-          ./configure --pedantic
+          ./configure --pedantic --sanitize
           make -j`sysctl -n hw.logicalcpu` test
 
   valgrind:
