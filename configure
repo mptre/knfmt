@@ -10,13 +10,14 @@ atexit() {
 	set -x
 	[ -e config.h ] && cat config.h
 	[ -e config.mk ] && cat config.mk
-	rm -f "$@"
+	rm -rf "$@" || :
 	[ "$_err" -ne 0 ] && fatal
 	exit 0
 }
 
 compile() {
-	$CC $CPPFLAGS -Werror -o /dev/null -x c - $@
+	# shellcheck disable=SC2086
+	"$CC" $CPPFLAGS -Werror -o /dev/null -x c - "$@"
 }
 
 cc_has_option() {
@@ -33,13 +34,16 @@ fatal() {
 }
 
 headers() {
-	cat >"$TMP1"
-	[ -s "$TMP1" ] || return 0
+	local _tmp="${WRKDIR}/headers"
 
-	xargs printf '#include <%s>\n' <"$TMP1"
+	cat >"$_tmp"
+	[ -s "$_tmp" ] || return 0
+
+	xargs printf '#include <%s>\n' <"$_tmp"
 }
 
 makevar() {
+	# shellcheck disable=SC2016
 	var="$(printf 'all:\n\t@echo ${%s}\n' "$1" | make -sf -)"
 	if [ -n "$var" ]; then
 		echo "$var"
@@ -147,9 +151,8 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-TMP1=$(mktemp -t configure.XXXXXX)
-TMP2=$(mktemp -t configure.XXXXXX)
-trap "atexit $TMP1 $TMP2" EXIT
+WRKDIR=$(mktemp -dt configure.XXXXXX)
+trap 'atexit $WRKDIR' EXIT
 
 exec 3>&1 4>&2
 exec 1>config.log 2>&1
@@ -172,13 +175,13 @@ CC=$(makevar CC || fatal "CC: not defined")
 CFLAGS="$(unset CFLAGS DEBUG; makevar CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
 CFLAGS="${CFLAGS} -Wall -Wextra -MD -MP"
 CPPFLAGS="$(makevar CPPFLAGS || :)"
-LDFLAGS="$(DEBUG= makevar LDFLAGS || :)"
+LDFLAGS="$(DEBUG='' makevar LDFLAGS || :)"
 
 PREFIX="$(makevar PREFIX || echo /usr/local)"
 BINDIR="$(makevar BINDIR || echo "${PREFIX}/bin")"
 MANDIR="$(makevar MANDIR || echo "${PREFIX}/man")"
 INSTALL="$(makevar INSTALL || echo install)"
-INSTALL_MAN="$(makevar INSTALL_MAN || echo install)"
+INSTALL_MAN="$(makevar INSTALL_MAN || echo "$INSTALL")"
 
 # Following chunks must happen after CC is defined.
 if [ "$_pedantic" = 1 ]; then
@@ -199,25 +202,25 @@ exec 1>config.h
 
 # Headers needed for function prototypes.
 {
-[ $HAVE_PLEDGE -eq 0 ] && echo stdlib.h
+[ "$HAVE_PLEDGE" -eq 0 ] && echo stdlib.h
 } | sort | uniq | headers
 
-[ $HAVE_ERRC -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
-[ $HAVE_PLEDGE -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
-[ $HAVE_QUEUE -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
+[ "$HAVE_ERRC" -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
+[ "$HAVE_PLEDGE" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
+[ "$HAVE_QUEUE" -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
 
-if [ $HAVE_ATTRIBUTE_FALLTHROUGH -eq 1 ]; then
+if [ "$HAVE_ATTRIBUTE_FALLTHROUGH" -eq 1 ]; then
 	printf '#define FALLTHROUGH __attribute__((__fallthrough__))\n'
 else
 	printf '#define FALLTHROUGH do {} while (0) /* FALLTHROUGH */\n'
 fi
 
-[ $HAVE_ERRC -eq 0 ] && {
+[ "$HAVE_ERRC" -eq 0 ] && {
 	printf 'void errc(int, int, const char *, ...)\n';
 	printf '\t__attribute__((__noreturn__, __format__ (printf, 3, 4)));\n'; }
-[ $HAVE_PLEDGE -eq 0 ] &&
+[ "$HAVE_PLEDGE" -eq 0 ] &&
 	printf 'int pledge(const char *, const char *);\n'
-[ $HAVE_WARNC -eq 0 ] && {
+[ "$HAVE_WARNC" -eq 0 ] && {
 	printf 'void warnc(int, const char *, ...)\n'
 	printf '\t__attribute__((__format__ (printf, 2, 3)));\n'; }
 
@@ -225,6 +228,7 @@ fi
 exec 1>config.mk
 
 # Use echo to normalize whitespace.
+# shellcheck disable=all
 cat <<EOF
 CC=		$(echo $CC)
 CFLAGS=		$(rmdup $CFLAGS)
@@ -235,7 +239,7 @@ LDFLAGS=	$(rmdup $LDFLAGS)
 BINDIR?=	$(echo $BINDIR)
 MANDIR?=	$(echo $MANDIR)
 INSTALL?=	$(echo $INSTALL)
-INSTALL_MAN?=	\${INSTALL}
+INSTALL_MAN?=	$(echo $INSTALL_MAN)
 
 .PATH:	\${.CURDIR}/libks
 VPATH=	\${.CURDIR}/libks
