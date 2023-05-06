@@ -26,6 +26,17 @@ cc_has_option() {
 	fi
 }
 
+cc_has_sanitizer() {
+	local _sanitizer
+
+	_sanitizer="$1"; : "${_sanitizer:?}"
+	if echo 'int main(void) { return 0; }' |
+	   compile "-fsanitize=${_sanitizer}"
+	then
+		echo "$@"
+	fi
+}
+
 fatal() {
 	[ $# -gt 0 ] && echo "fatal: ${*}"
 	exec 1>&3 2>&4
@@ -142,10 +153,12 @@ check_warnc() {
 }
 
 _pedantic=0
+_sanitize=0
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 	--pedantic)	_pedantic=1;;
+	--sanitize)	_sanitize=1;;
 	*)		;;
 	esac
 	shift
@@ -189,6 +202,19 @@ if [ "$_pedantic" = 1 ]; then
 	CFLAGS="$(cc_has_option -Wimplicit-fallthrough) ${CFLAGS}"
 	CFLAGS="-g $(pedantic) ${CFLAGS}"
 	DEBUG="-g ${DEBUG}"
+fi
+if [ "$_sanitize" -eq 1 ]; then
+	{
+		cc_has_sanitizer address
+		cc_has_sanitizer undefined
+		cc_has_sanitizer unsigned-integer-overflow
+	} >"${WRKDIR}/sanitize"
+	if ! cmp -s /dev/null "${WRKDIR}/sanitize"; then
+		_sanitize="-fsanitize=$(paste -sd , "${WRKDIR}/sanitize")"
+		_sanitize="${_sanitize} $(cc_has_option -fno-sanitize-recover=all)"
+		CFLAGS="${_sanitize} ${CFLAGS}"
+		DEBUG="${_sanitize} ${DEBUG}"
+	fi
 fi
 
 check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
