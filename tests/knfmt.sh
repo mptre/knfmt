@@ -119,6 +119,7 @@ testcase() {
 # Enable hardening malloc(3) options on OpenBSD.
 case "$(uname -s)" in
 OpenBSD)	export MALLOC_OPTIONS="RS";;
+*)		;;
 esac
 
 # Use a distinct ASan exit code.
