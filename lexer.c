@@ -522,7 +522,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 
 		st->st_tk = token_next(st->st_tk);
 		if (st->st_tk == NULL)
-			return 1;
+			return 0;
 		br = token_get_branch(st->st_tk);
 		if (br == NULL)
 			goto out;
