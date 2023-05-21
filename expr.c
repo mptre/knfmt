@@ -456,6 +456,7 @@ expr_exec_binary(struct expr_state *es, struct expr *lhs)
 static struct expr *
 expr_exec_concat(struct expr_state *es, struct expr *lhs)
 {
+	struct expr **dst;
 	struct expr *ex, *rhs;
 
 	assert(lhs != NULL);
@@ -466,10 +467,16 @@ expr_exec_concat(struct expr_state *es, struct expr *lhs)
 		ex = expr_alloc(EXPR_CONCAT, es);
 		if (VECTOR_INIT(ex->ex_concat))
 			err(1, NULL);
-		*VECTOR_ALLOC(ex->ex_concat) = lhs;
+		dst = VECTOR_ALLOC(ex->ex_concat);
+		if (dst == NULL)
+			err(1, NULL);
+		*dst = lhs;
 	}
 	rhs = expr_exec_literal(es, NULL);
-	*VECTOR_ALLOC(ex->ex_concat) = rhs;
+	dst = VECTOR_ALLOC(ex->ex_concat);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = rhs;
 	return ex;
 }
 
@@ -662,8 +669,12 @@ expr_free(struct expr *ex)
 	if (ex->ex_type == EXPR_TERNARY) {
 		expr_free(ex->ex_ternary);
 	} else if (ex->ex_type == EXPR_CONCAT) {
-		while (!VECTOR_EMPTY(ex->ex_concat))
-			expr_free(*VECTOR_POP(ex->ex_concat));
+		while (!VECTOR_EMPTY(ex->ex_concat)) {
+			struct expr **tail;
+
+			tail = VECTOR_POP(ex->ex_concat);
+			expr_free(*tail);
+		}
 		VECTOR_FREE(ex->ex_concat);
 	} else if (ex->ex_type == EXPR_RECOVER) {
 		doc_free(ex->ex_dc);

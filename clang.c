@@ -319,14 +319,16 @@ static void
 clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
     struct token *tk)
 {
+	struct token **last;
 	struct token *br;
 
 	/* Silently ignore broken branch. */
-	if (VECTOR_EMPTY(cl->cl_branches)) {
+	last = VECTOR_LAST(cl->cl_branches);
+	if (last == NULL) {
 		token_branch_unlink(cpp);
 		return;
 	}
-	br = *VECTOR_LAST(cl->cl_branches);
+	br = *last;
 
 	/*
 	 * Discard branches hanging of the same token, such branch cannot cause
@@ -342,21 +344,23 @@ clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
 
 	cpp->tk_token = tk;
 	token_branch_link(br, cpp);
-	*VECTOR_LAST(cl->cl_branches) = cpp;
+	*last = cpp;
 }
 
 static void
 clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
     struct token *tk)
 {
+	struct token **last;
 	struct token *br;
 
 	/* Silently ignore broken branch. */
-	if (VECTOR_EMPTY(cl->cl_branches)) {
+	last = VECTOR_LAST(cl->cl_branches);
+	if (last == NULL) {
 		token_branch_unlink(cpp);
 		return;
 	}
-	br = *VECTOR_LAST(cl->cl_branches);
+	br = *last;
 
 	/*
 	 * Discard branches hanging of the same token, such branch cannot cause
@@ -404,9 +408,11 @@ static void
 clang_branch_purge(struct clang *cl, struct lexer *lx)
 {
 	while (!VECTOR_EMPTY(cl->cl_branches)) {
+		struct token **tail;
 		struct token *pv, *tk;
 
-		tk = *VECTOR_POP(cl->cl_branches);
+		tail = VECTOR_POP(cl->cl_branches);
+		tk = *tail;
 		do {
 			pv = tk->tk_branch.br_pv;
 			clang_trace(cl, "broken branch: %s%s%s",

@@ -524,8 +524,14 @@ doc_minimize0(struct doc *parent, const struct doc_minimize *minimizers,
 		err(1, NULL);
 	if (VECTOR_RESERVE(dc->dc_minimizers, nminimizers))
 		err(1, NULL);
-	for (i = 0; i < nminimizers; i++)
-		*VECTOR_ALLOC(dc->dc_minimizers) = minimizers[i];
+	for (i = 0; i < nminimizers; i++) {
+		struct doc_minimize *dst;
+
+		dst = VECTOR_ALLOC(dc->dc_minimizers);
+		if (dst == NULL)
+			err(1, NULL);
+		*dst = minimizers[i];
+	}
 	return doc_alloc0(DOC_CONCAT, dc, 0, fun, lno);
 }
 
@@ -1011,17 +1017,24 @@ static void
 doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
+	const struct doc **dst;
+
 	if (st->st_walk == NULL) {
 		if (VECTOR_INIT(st->st_walk))
 			err(1, NULL);
 	}
 
 	/* Recursion flatten into a loop for increased performance. */
-	*VECTOR_ALLOC(st->st_walk) = dc;
+	dst = VECTOR_ALLOC(st->st_walk);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = dc;
 	while (!VECTOR_EMPTY(st->st_walk)) {
+		const struct doc **tail;
 		const struct doc_description *desc;
 
-		dc = *VECTOR_POP(st->st_walk);
+		tail = VECTOR_POP(st->st_walk);
+		dc = *tail;
 		desc = &doc_descriptions[dc->dc_type];
 
 		if (!cb(dc, st, arg))
@@ -1030,10 +1043,17 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		if (desc->children.many) {
 			const struct doc_list *dl = &dc->dc_list;
 
-			TAILQ_FOREACH_REVERSE(dc, dl, doc_list, dc_entry)
-				*VECTOR_ALLOC(st->st_walk) = dc;
+			TAILQ_FOREACH_REVERSE(dc, dl, doc_list, dc_entry) {
+				dst = VECTOR_ALLOC(st->st_walk);
+				if (dst == NULL)
+					err(1, NULL);
+				*dst = dc;
+			}
 		} else if (desc->children.one) {
-			*VECTOR_ALLOC(st->st_walk) = dc->dc_doc;
+			dst = VECTOR_ALLOC(st->st_walk);
+			if (dst == NULL)
+				err(1, NULL);
+			*dst = dc->dc_doc;
 		}
 	}
 	VECTOR_CLEAR(st->st_walk);
@@ -1431,11 +1451,13 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 static unsigned int
 doc_diff_verbatim(const struct doc *dc, struct doc_state *st)
 {
-	unsigned int lno = dc->dc_tk->tk_lno;
-	unsigned int n;
+	unsigned int lno, n;
 
 	if (!DOC_DIFF(st))
 		return 0;
+
+	assert(dc->dc_tk != NULL);
+	lno = dc->dc_tk->tk_lno;
 	if (lno == 0 || st->st_diff.end == 0)
 		return 0;
 

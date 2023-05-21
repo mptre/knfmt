@@ -129,6 +129,7 @@ is_sort_includes_enabled(const struct options *op, const struct style *st)
 static void
 cpp_include_exec(struct cpp_include *ci)
 {
+	struct include *last;
 	struct token *after = ci->after;
 	size_t i, nincludes;
 	unsigned int nbrackets = 0;
@@ -162,7 +163,8 @@ cpp_include_exec(struct cpp_include *ci)
 			return;
 	}
 
-	doline = token_has_verbatim_line(VECTOR_LAST(ci->includes)->tk);
+	last = VECTOR_LAST(ci->includes);
+	doline = token_has_verbatim_line(last->tk);
 
 	VECTOR_SORT(ci->includes, include_cmp);
 

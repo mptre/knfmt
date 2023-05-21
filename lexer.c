@@ -122,8 +122,12 @@ lexer_alloc(const struct lexer_arg *arg)
 			break;
 	}
 
-	while (!VECTOR_EMPTY(discarded))
-		lexer_remove(lx, *VECTOR_POP(discarded), 1);
+	while (!VECTOR_EMPTY(discarded)) {
+		struct token **tail;
+
+		tail = VECTOR_POP(discarded);
+		lexer_remove(lx, *tail, 1);
+	}
 	VECTOR_FREE(discarded);
 
 	if (trace(lx->lx_op, 'l') >= 3)
@@ -150,8 +154,10 @@ lexer_free(struct lexer *lx)
 	if (lx->lx_unmute != NULL)
 		token_rele(lx->lx_unmute);
 	while (!VECTOR_EMPTY(lx->lx_stamps)) {
-		tk = *VECTOR_POP(lx->lx_stamps);
-		token_rele(tk);
+		struct token **tail;
+
+		tail = VECTOR_POP(lx->lx_stamps);
+		token_rele(*tail);
 	}
 	VECTOR_FREE(lx->lx_stamps);
 	while ((tk = TAILQ_FIRST(&lx->lx_tokens)) != NULL) {
@@ -160,10 +166,10 @@ lexer_free(struct lexer *lx)
 		token_rele(tk);
 	}
 	while (!VECTOR_EMPTY(lx->lx_serialized)) {
-		char *str;
+		char **tail;
 
-		str = *VECTOR_POP(lx->lx_serialized);
-		free(str);
+		tail = VECTOR_POP(lx->lx_serialized);
+		free(*tail);
 	}
 	VECTOR_FREE(lx->lx_serialized);
 	free(lx);
@@ -229,6 +235,7 @@ lexer_ungetc(struct lexer *lx)
 {
 	struct lexer_state *st = &lx->lx_st;
 	const char *buf;
+	unsigned int *tail;
 	unsigned char c;
 
 	if (lx->lx_eof)
@@ -242,10 +249,12 @@ lexer_ungetc(struct lexer *lx)
 	if (c == '\n') {
 		st->st_lno--;
 		assert(!VECTOR_EMPTY(lx->lx_columns));
-		st->st_cno = *VECTOR_POP(lx->lx_columns);
+		tail = VECTOR_POP(lx->lx_columns);
+		st->st_cno = *tail;
 	} else if (c == '\t') {
 		assert(!VECTOR_EMPTY(lx->lx_columns));
-		st->st_cno = *VECTOR_POP(lx->lx_columns);
+		tail = VECTOR_POP(lx->lx_columns);
+		st->st_cno = *tail;
 	} else {
 		assert(st->st_cno > 1);
 		st->st_cno--;
@@ -349,6 +358,7 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 void
 lexer_stamp(struct lexer *lx)
 {
+	struct token **dst;
 	struct token *tk;
 
 	tk = lx->lx_st.st_tk;
@@ -358,7 +368,10 @@ lexer_stamp(struct lexer *lx)
 	lexer_trace(lx, "stamp %s", lexer_serialize(lx, tk));
 	tk->tk_flags |= TOKEN_FLAG_STAMP;
 	token_ref(tk);
-	*VECTOR_ALLOC(lx->lx_stamps) = tk;
+	dst = VECTOR_ALLOC(lx->lx_stamps);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = tk;
 }
 
 /*
@@ -435,6 +448,7 @@ lexer_recover(struct lexer *lx)
 int
 lexer_branch(struct lexer *lx)
 {
+	struct token **last;
 	struct token *br, *dst, *rm, *seek, *tk;
 
 	if (!lexer_back(lx, &tk))
@@ -479,7 +493,8 @@ lexer_branch(struct lexer *lx)
 	lexer_branch_unmute(lx, dst);
 
 	/* Rewind to last stamped token. */
-	seek = VECTOR_EMPTY(lx->lx_stamps) ? NULL : *VECTOR_LAST(lx->lx_stamps);
+	last = VECTOR_LAST(lx->lx_stamps);
+	seek = last == NULL ? NULL : *last;
 	lexer_trace(lx, "seek to %s",
 	    lexer_serialize(lx, seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
 	lx->lx_st.st_tk = seek;
