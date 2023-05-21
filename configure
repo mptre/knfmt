@@ -69,7 +69,9 @@ makevar() {
 pedantic() {
 	cat <<-EOF | xargs
 	-O2
+	-Wall
 	-Werror
+	-Wextra
 	-Wmissing-prototypes
 	-Wpedantic
 	-Wshadow
@@ -186,7 +188,7 @@ DEBUG="$(makevar DEBUG || :)"
 
 CC=$(makevar CC || fatal "CC: not defined")
 CFLAGS="$(unset CFLAGS DEBUG; makevar CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
-CFLAGS="${CFLAGS} -Wall -Wextra -MD -MP"
+CFLAGS="${CFLAGS} -MD -MP"
 CPPFLAGS="$(makevar CPPFLAGS || :)"
 LDFLAGS="$(DEBUG='' makevar LDFLAGS || :)"
 
