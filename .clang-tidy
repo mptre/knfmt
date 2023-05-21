@@ -9,6 +9,10 @@ Checks: |
     -bugprone-narrowing-conversions,
     -bugprone-sizeof-expression,
   cert-c-*,
+  clang-analyzer-*,
+    -clang-analyzer-optin.performance.Padding,
+    -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+    -clang-analyzer-unix.Malloc,
   performance-*,
   portability-*,
 CheckOptions:
