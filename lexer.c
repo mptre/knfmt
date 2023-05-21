@@ -306,6 +306,8 @@ lexer_serialize(struct lexer *lx, const struct token *tk)
 	if (str == NULL)
 		err(1, NULL);
 	*str = lx->lx_callbacks.serialize(tk);
+	if (*str == NULL)
+		err(1, NULL);
 	return *str;
 }
 

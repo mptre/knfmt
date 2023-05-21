@@ -71,6 +71,8 @@ strnice(const char *str, size_t len)
 		err(1, NULL);
 	strnice_buffer(bf, str, len);
 	buf = buffer_str(bf);
+	if (buf == NULL)
+		err(1, NULL);
 	buffer_free(bf);
 	return buf;
 }

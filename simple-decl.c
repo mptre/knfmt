@@ -299,6 +299,8 @@ token_range_str(const struct token_range *tr)
 		buffer_puts(bf, tk->tk_str, tk->tk_len);
 	}
 	str = buffer_str(bf);
+	if (str == NULL)
+		err(1, NULL);
 	buffer_free(bf);
 	return str;
 }

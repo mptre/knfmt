@@ -267,19 +267,26 @@ matchline(const char *str, unsigned int lno, struct file *fe)
 static struct reader *
 reader_open(const char *path)
 {
-	struct buffer *bf;
-	struct reader *rd;
+	struct buffer *bf = NULL;
+	struct reader *rd = NULL;
 
 	bf = buffer_read(path);
 	if (bf == NULL) {
 		warn("%s", path);
-		return NULL;
+		goto err;
 	}
 
 	rd = ecalloc(1, sizeof(*rd));
 	rd->buf = buffer_str(bf);
+	if (rd->buf == NULL)
+		goto err;
 	buffer_free(bf);
 	return rd;
+
+err:
+	reader_close(rd);
+	buffer_free(bf);
+	return NULL;
 }
 
 static const char *
@@ -302,6 +309,8 @@ reader_getline(struct reader *rd)
 static void
 reader_close(struct reader *rd)
 {
+	if (rd == NULL)
+		return;
 	free(rd->buf);
 	free(rd);
 }
