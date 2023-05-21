@@ -464,7 +464,7 @@ expr_exec_concat(struct expr_state *es, struct expr *lhs)
 		ex = lhs;
 	} else {
 		ex = expr_alloc(EXPR_CONCAT, es);
-		if (VECTOR_INIT(ex->ex_concat) == NULL)
+		if (VECTOR_INIT(ex->ex_concat))
 			err(1, NULL);
 		*VECTOR_ALLOC(ex->ex_concat) = lhs;
 	}

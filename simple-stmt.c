@@ -52,7 +52,7 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 	struct simple_stmt *ss;
 
 	ss = ecalloc(1, sizeof(*ss));
-	if (VECTOR_INIT(ss->ss_stmts) == NULL)
+	if (VECTOR_INIT(ss->ss_stmts))
 		err(1, NULL);
 	ss->ss_lx = lx;
 	ss->ss_op = op;

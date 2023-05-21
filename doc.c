@@ -520,9 +520,9 @@ doc_minimize0(struct doc *parent, const struct doc_minimize *minimizers,
 	size_t i;
 
 	dc = doc_alloc0(DOC_MINIMIZE, parent, 0, fun, lno);
-	if (VECTOR_INIT(dc->dc_minimizers) == NULL)
+	if (VECTOR_INIT(dc->dc_minimizers))
 		err(1, NULL);
-	if (VECTOR_RESERVE(dc->dc_minimizers, nminimizers) == NULL)
+	if (VECTOR_RESERVE(dc->dc_minimizers, nminimizers))
 		err(1, NULL);
 	for (i = 0; i < nminimizers; i++)
 		*VECTOR_ALLOC(dc->dc_minimizers) = minimizers[i];
@@ -1012,7 +1012,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
 	if (st->st_walk == NULL) {
-		if (VECTOR_INIT(st->st_walk) == NULL)
+		if (VECTOR_INIT(st->st_walk))
 			err(1, NULL);
 	}
 

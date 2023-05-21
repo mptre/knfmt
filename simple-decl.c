@@ -114,9 +114,9 @@ simple_decl_enter(struct lexer *lx, const struct options *op)
 	struct simple_decl *sd;
 
 	sd = ecalloc(1, sizeof(*sd));
-	if (VECTOR_INIT(sd->sd_empty_decls) == NULL)
+	if (VECTOR_INIT(sd->sd_empty_decls))
 		err(1, NULL);
-	if (VECTOR_INIT(sd->sd_types) == NULL)
+	if (VECTOR_INIT(sd->sd_types))
 		err(1, NULL);
 	sd->sd_lx = lx;
 	sd->sd_op = op;
@@ -334,7 +334,7 @@ decl_type_slot(struct decl_type *dt, unsigned int n)
 		ds = VECTOR_CALLOC(dt->dt_slots);
 		if (ds == NULL)
 			err(1, NULL);
-		if (VECTOR_INIT(ds->ds_vars) == NULL)
+		if (VECTOR_INIT(ds->ds_vars))
 			err(1, NULL);
 	}
 	return &dt->dt_slots[n];
@@ -367,7 +367,7 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 	assert(end != NULL);
 	dt->dt_tr.tr_end = end;
 
-	if (VECTOR_INIT(dt->dt_slots) == NULL)
+	if (VECTOR_INIT(dt->dt_slots))
 		err(1, NULL);
 	dt->dt_str = estrdup(type);
 	simple_trace(sd, "new type \"%s\"", dt->dt_str);

@@ -32,14 +32,14 @@ static int vector_reserve1(struct vector **, size_t);
 static struct vector		*ptov(void *);
 static const struct vector	*cptov(const void *);
 
-size_t
+int
 vector_init(void **vv, size_t stride)
 {
 	struct vector *vc;
 
 	vc = calloc(1, sizeof(*vc));
 	if (vc == NULL)
-		return ULONG_MAX;
+		return 1;
 	vc->vc_stride = stride;
 	*vv = &vc[1];
 	return 0;
@@ -48,15 +48,16 @@ vector_init(void **vv, size_t stride)
 void
 vector_free(void **vv)
 {
-	struct vector *vc = ptov(*vv);
+	struct vector *vc;
 
-	if (vc == NULL)
+	if (*vv == NULL)
 		return;
+	vc = ptov(*vv);
 	free(vc);
 	*vv = NULL;
 }
 
-size_t
+int
 vector_reserve(void **vv, size_t n)
 {
 	struct vector *vc = ptov(*vv);
@@ -68,7 +69,7 @@ vector_reserve(void **vv, size_t n)
 	case 0:
 		break;
 	case -1:
-		return ULONG_MAX;
+		return 1;
 	}
 	return 0;
 }
@@ -158,6 +159,7 @@ static int
 vector_reserve1(struct vector **vv, size_t len)
 {
 	struct vector *vc = *vv;
+	struct vector *newvc;
 	size_t newsiz, totlen;
 
 	if (vc->vc_len > ULONG_MAX - len)
@@ -178,11 +180,11 @@ vector_reserve1(struct vector **vv, size_t len)
 	if (totlen > ULONG_MAX - sizeof(*vc))
 		goto overflow;
 	totlen += sizeof(*vc);
-	vc = realloc(vc, totlen);
-	if (vc == NULL)
+	newvc = realloc(vc, totlen);
+	if (newvc == NULL)
 		return -1;
-	vc->vc_siz = newsiz;
-	*vv = vc;
+	newvc->vc_siz = newsiz;
+	*vv = newvc;
 	return 1;
 
 overflow:
@@ -195,7 +197,7 @@ cptov(const void *v)
 {
 	const struct vector *vc = (struct vector *)v;
 
-	return vc == NULL ? NULL : &vc[-1];
+	return &vc[-1];
 }
 
 static struct vector *
@@ -203,5 +205,5 @@ ptov(void *v)
 {
 	struct vector *vc = (struct vector *)v;
 
-	return vc == NULL ? NULL : &vc[-1];
+	return &vc[-1];
 }

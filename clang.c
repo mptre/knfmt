@@ -97,7 +97,7 @@ clang_init(void)
 
 		slot = (unsigned char)src->tk_str[0];
 		if (table_tokens[slot] == NULL) {
-			if (VECTOR_INIT(table_tokens[slot]) == NULL)
+			if (VECTOR_INIT(table_tokens[slot]))
 				err(1, NULL);
 		}
 		dst = VECTOR_ALLOC(table_tokens[slot]);
@@ -126,7 +126,7 @@ clang_alloc(const struct style *st, const struct options *op)
 	cl->cl_st = st;
 	cl->cl_op = op;
 	cl->cl_ci = cpp_include_alloc(op, st);
-	if (VECTOR_INIT(cl->cl_branches) == NULL)
+	if (VECTOR_INIT(cl->cl_branches))
 		err(1, NULL);
 	return cl;
 }

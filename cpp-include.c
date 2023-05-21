@@ -55,7 +55,7 @@ cpp_include_alloc(const struct options *op, const struct style *st)
 		return NULL;
 
 	ci = ecalloc(1, sizeof(*ci));
-	if (VECTOR_INIT(ci->includes) == NULL)
+	if (VECTOR_INIT(ci->includes))
 		err(1, NULL);
 	return ci;
 }

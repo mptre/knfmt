@@ -50,7 +50,7 @@ void
 ruler_init(struct ruler *rl, unsigned int align, unsigned int flags)
 {
 	memset(rl, 0, sizeof(*rl));
-	if (VECTOR_INIT(rl->rl_columns) == NULL)
+	if (VECTOR_INIT(rl->rl_columns))
 		err(1, NULL);
 	rl->rl_align = align;
 	rl->rl_flags = flags;
@@ -90,7 +90,7 @@ ruler_insert0(struct ruler *rl, struct token *tk, struct doc *dc,
 		rc = VECTOR_CALLOC(rl->rl_columns);
 		if (rc == NULL)
 			err(1, NULL);
-		if (VECTOR_INIT(rc->rc_datums) == NULL)
+		if (VECTOR_INIT(rc->rc_datums))
 			err(1, NULL);
 	}
 	rc = &rl->rl_columns[col - 1];
@@ -139,7 +139,7 @@ ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 		goto err;
 
 	if (rl->rl_indent == NULL) {
-		if (VECTOR_INIT(rl->rl_indent) == NULL)
+		if (VECTOR_INIT(rl->rl_indent))
 			err(1, NULL);
 	}
 	ri = VECTOR_CALLOC(rl->rl_indent);

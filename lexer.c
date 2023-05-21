@@ -84,18 +84,18 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_path = arg->path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
-	if (VECTOR_INIT(lx->lx_lines) == NULL)
+	if (VECTOR_INIT(lx->lx_lines))
 		err(1, NULL);
-	if (VECTOR_INIT(lx->lx_columns) == NULL)
+	if (VECTOR_INIT(lx->lx_columns))
 		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
-	if (VECTOR_INIT(lx->lx_stamps) == NULL)
+	if (VECTOR_INIT(lx->lx_stamps))
 		err(1, NULL);
-	if (VECTOR_INIT(lx->lx_serialized) == NULL)
+	if (VECTOR_INIT(lx->lx_serialized))
 		err(1, NULL);
 	lexer_line_alloc(lx, 1);
 
-	if (VECTOR_INIT(discarded) == NULL)
+	if (VECTOR_INIT(discarded))
 		err(1, NULL);
 
 	for (;;) {

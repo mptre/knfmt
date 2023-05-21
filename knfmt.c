@@ -99,7 +99,7 @@ main(int argc, char *argv[])
 	clang_init();
 	expr_init();
 	style_init();
-	if (VECTOR_INIT(files.fs_vc) == NULL) {
+	if (VECTOR_INIT(files.fs_vc)) {
 		error = 1;
 		goto out;
 	}

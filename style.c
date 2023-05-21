@@ -229,7 +229,7 @@ style_init(void)
 
 		slot = (unsigned char)src->so_key[0];
 		if (keywords[slot] == NULL) {
-			if (VECTOR_INIT(keywords[slot]) == NULL)
+			if (VECTOR_INIT(keywords[slot]))
 				err(1, NULL);
 		}
 		dst = VECTOR_ALLOC(keywords[slot]);

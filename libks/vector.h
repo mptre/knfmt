@@ -19,20 +19,14 @@
 
 #define VECTOR(type) type *
 
-#define VECTOR_INIT(vc) __extension__ ({				\
-	size_t _i = vector_init((void **)&(vc), sizeof(*(vc)));		\
-	_i == ULONG_MAX ? NULL : (vc) + _i;				\
-})
-size_t	vector_init(void **, size_t);
+#define VECTOR_INIT(vc) vector_init((void **)&(vc), sizeof(*(vc)))
+int	vector_init(void **, size_t);
 
 #define VECTOR_FREE(vc) vector_free((void **)&(vc))
 void	vector_free(void **);
 
-#define VECTOR_RESERVE(vc, n) __extension__ ({				\
-	size_t _i = vector_reserve((void **)&(vc), n);			\
-	_i == ULONG_MAX ? NULL : (vc) + _i;				\
-})
-size_t	vector_reserve(void **, size_t);
+#define VECTOR_RESERVE(vc, n) vector_reserve((void **)&(vc), (n))
+int	vector_reserve(void **, size_t);
 
 #define VECTOR_ALLOC(vc) __extension__ ({				\
 	size_t _i = vector_alloc((void **)&(vc), 0);			\
