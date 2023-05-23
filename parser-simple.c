@@ -36,11 +36,16 @@ parser_simple_enter(struct parser *pr, unsigned int pass, int ignore,
 	struct parser_simple *simple = pr->pr_simple;
 	unsigned int i;
 
-	if (!simple->enable || !is_pass_valid(pass)) {
+	if (!is_pass_valid(pass)) {
 		*restore = SIMPLE_STATE_NOP;
 		return 0;
 	}
+
 	*restore = simple->states[pass];
+	if (!simple->enable) {
+		simple->states[pass] = SIMPLE_STATE_DISABLE;
+		return 0;
+	}
 
 	for (i = 0; i < SIMPLE_LAST; i++) {
 		if (i != pass && simple->states[i] != SIMPLE_STATE_DISABLE) {
