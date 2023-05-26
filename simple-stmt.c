@@ -67,7 +67,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 {
 	struct buffer *bf;
 	size_t i;
-	int oneline = 1;
+	int dobraces = 0;
 
 	if (VECTOR_EMPTY(ss->ss_stmts))
 		return;
@@ -85,16 +85,16 @@ simple_stmt_leave(struct simple_stmt *ss)
 			 * No point in continuing as at least one statement
 			 * spans over multiple lines.
 			 */
-			oneline = 0;
+			dobraces = 1;
 			break;
 		}
 	}
 	buffer_free(bf);
 
-	if (oneline)
-		remove_braces(ss);
-	else
+	if (dobraces)
 		add_braces(ss);
+	else
+		remove_braces(ss);
 }
 
 void
