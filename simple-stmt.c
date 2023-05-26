@@ -81,6 +81,11 @@ simple_stmt_leave(struct simple_stmt *ss)
 		if (st->st_flags & STMT_IGNORE)
 			continue;
 
+		if (is_stmt_empty(st)) {
+			oneline = 0;
+			break;
+		}
+
 		doc_exec(&(struct doc_exec_arg){
 		    .dc	= st->st_root,
 		    .bf	= bf,
@@ -89,7 +94,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 		});
 		buflen = buffer_get_len(bf);
 		buf = strtrim(buffer_get_ptr(bf), &buflen);
-		if (is_stmt_empty(st) || !isoneline(buf, buflen) ||
+		if (!isoneline(buf, buflen) ||
 		    ((st->st_flags & STMT_BRACES) &&
 		     !token_is_moveable(st->st_rbrace))) {
 			/*
