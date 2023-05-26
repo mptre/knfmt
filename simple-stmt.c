@@ -26,7 +26,7 @@ struct stmt {
 #define STMT_IGNORE			0x00000002u
 };
 
-static int stmt_is_empty(const struct stmt *);
+static int is_stmt_empty(const struct stmt *);
 
 struct simple_stmt {
 	VECTOR(struct stmt)	 ss_stmts;
@@ -89,7 +89,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 		});
 		buflen = buffer_get_len(bf);
 		buf = strtrim(buffer_get_ptr(bf), &buflen);
-		if (stmt_is_empty(st) || !isoneline(buf, buflen) ||
+		if (is_stmt_empty(st) || !isoneline(buf, buflen) ||
 		    ((st->st_flags & STMT_BRACES) &&
 		     !token_is_moveable(st->st_rbrace))) {
 			/*
@@ -177,7 +177,7 @@ simple_stmt_no_braces_leave(struct simple_stmt *UNUSED(ss),
 }
 
 static int
-stmt_is_empty(const struct stmt *st)
+is_stmt_empty(const struct stmt *st)
 {
 	return token_prev(st->st_rbrace) == st->st_lbrace;
 }
