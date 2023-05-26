@@ -38,6 +38,8 @@ struct simple_stmt {
 static struct stmt	*simple_stmt_alloc(struct simple_stmt *, unsigned int,
     unsigned int);
 
+static int	need_braces(struct simple_stmt *, const struct stmt *,
+    struct buffer *);
 static void	add_braces(struct simple_stmt *);
 static void	remove_braces(struct simple_stmt *);
 
@@ -63,7 +65,7 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 void
 simple_stmt_leave(struct simple_stmt *ss)
 {
-	struct buffer *bf = NULL;
+	struct buffer *bf;
 	size_t i;
 	int oneline = 1;
 
@@ -74,29 +76,11 @@ simple_stmt_leave(struct simple_stmt *ss)
 	if (bf == NULL)
 		err(1, NULL);
 	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
-		struct stmt *st = &ss->ss_stmts[i];
-		const char *buf;
-		size_t buflen;
+		const struct stmt *st = &ss->ss_stmts[i];
 
 		if (st->st_flags & STMT_IGNORE)
 			continue;
-
-		if (is_stmt_empty(st)) {
-			oneline = 0;
-			break;
-		}
-
-		doc_exec(&(struct doc_exec_arg){
-		    .dc	= st->st_root,
-		    .bf	= bf,
-		    .st	= ss->ss_st,
-		    .op	= ss->ss_op,
-		});
-		buflen = buffer_get_len(bf);
-		buf = strtrim(buffer_get_ptr(bf), &buflen);
-		if (!isoneline(buf, buflen) ||
-		    ((st->st_flags & STMT_BRACES) &&
-		     !token_is_moveable(st->st_rbrace))) {
+		if (need_braces(ss, st, bf)) {
 			/*
 			 * No point in continuing as at least one statement
 			 * spans over multiple lines.
@@ -201,6 +185,30 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
 	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;
 	return st;
+}
+
+static int
+need_braces(struct simple_stmt *ss, const struct stmt *st, struct buffer *bf)
+{
+	const char *buf;
+	size_t buflen;
+
+	if (is_stmt_empty(st))
+		return 1;
+
+	doc_exec(&(struct doc_exec_arg){
+	    .dc	= st->st_root,
+	    .bf	= bf,
+	    .st	= ss->ss_st,
+	    .op	= ss->ss_op,
+	});
+	buflen = buffer_get_len(bf);
+	buf = strtrim(buffer_get_ptr(bf), &buflen);
+	if (isoneline(buf, buflen)) {
+		return (st->st_flags & STMT_BRACES) &&
+		    !token_is_moveable(st->st_rbrace);
+	}
+	return 1;
 }
 
 static void
