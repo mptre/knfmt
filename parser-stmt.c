@@ -132,8 +132,8 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 
 	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0 &&
 	    is_simple_enabled(pr, SIMPLE_STMT)) {
-		dc = simple_stmt_block(pr->pr_simple->stmt, lbrace, rbrace,
-		    pr->pr_nindent * style(pr->pr_st, IndentWidth));
+		dc = simple_stmt_braces_enter(pr->pr_simple->stmt, lbrace,
+		    rbrace, pr->pr_nindent * style(pr->pr_st, IndentWidth));
 	}
 
 	parser_token_trim_before(pr, rbrace);

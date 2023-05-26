@@ -118,7 +118,7 @@ simple_stmt_free(struct simple_stmt *ss)
 }
 
 struct doc *
-simple_stmt_block(struct simple_stmt *ss, struct token *lbrace,
+simple_stmt_braces_enter(struct simple_stmt *ss, struct token *lbrace,
     struct token *rbrace, unsigned int indent)
 {
 	struct stmt *st;
