@@ -36,8 +36,6 @@ static int	parser_stmt_semi(struct parser *, struct doc *);
 static int	parser_stmt_cpp(struct parser *, struct doc *);
 
 static int		 parser_simple_stmt_enter(struct parser *);
-static struct doc	*parser_simple_stmt_block(struct parser *,
-    struct doc *);
 static struct doc	*parser_simple_stmt_no_braces_enter(struct parser *,
     struct doc *, void **);
 static void		 parser_simple_stmt_no_braces_leave(struct parser *,
@@ -115,7 +113,8 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	int nstmt = 0;
 	int error;
 
-	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
+	    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_none(pr);
 
 	/*
@@ -130,8 +129,11 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	if (doindent)
 		pr->pr_nindent++;
 
-	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0)
-		dc = parser_simple_stmt_block(pr, dc);
+	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0 &&
+	    is_simple_enabled(pr, SIMPLE_STMT)) {
+		dc = simple_stmt_block(pr->pr_simple->stmt, lbrace, rbrace,
+		    pr->pr_nindent * style(pr->pr_st, IndentWidth));
+	}
 
 	parser_token_trim_before(pr, rbrace);
 
@@ -797,24 +799,6 @@ parser_simple_stmt_enter(struct parser *pr)
 	parser_simple_leave(pr, SIMPLE_STMT, restore);
 
 	return SIMPLE_STATE_NOP;
-}
-
-static struct doc *
-parser_simple_stmt_block(struct parser *pr, struct doc *dc)
-{
-	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *rbrace;
-
-	/* Ignore nested statements, they will be handled later on. */
-	if (!is_simple_enabled(pr, SIMPLE_STMT))
-		return dc;
-
-	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
-	    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
-		return dc;
-
-	return simple_stmt_block(pr->pr_simple->stmt, lbrace, rbrace,
-	    pr->pr_nindent * style(pr->pr_st, IndentWidth));
 }
 
 static struct doc *
