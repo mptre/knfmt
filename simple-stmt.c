@@ -44,7 +44,7 @@ static void	add_braces(struct simple_stmt *);
 static void	remove_braces(struct simple_stmt *);
 
 static int		 isoneline(const char *, size_t);
-static int		 is_stmt_ignored(const struct token *);
+static int		 is_brace_moveable(const struct token *);
 static const char	*strtrim(const char *, size_t *);
 
 struct simple_stmt *
@@ -144,7 +144,7 @@ simple_stmt_no_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 	struct stmt *st;
 	unsigned int flags = 0;
 
-	if (is_stmt_ignored(lbrace))
+	if (!is_brace_moveable(lbrace))
 		flags |= STMT_IGNORE;
 	st = simple_stmt_alloc(ss, indent, flags);
 	token_ref(lbrace);
@@ -159,7 +159,7 @@ simple_stmt_no_braces_leave(struct simple_stmt *UNUSED(ss),
 {
 	struct stmt *st = cookie;
 
-	if (is_stmt_ignored(rbrace))
+	if (!is_brace_moveable(rbrace))
 		st->st_flags |= STMT_IGNORE;
 	token_ref(rbrace);
 	st->st_rbrace = rbrace;
@@ -260,10 +260,10 @@ isoneline(const char *str, size_t len)
 }
 
 static int
-is_stmt_ignored(const struct token *tk)
+is_brace_moveable(const struct token *tk)
 {
 	/* Do not require token to be moveable as we can cope with comments. */
-	return token_has_cpp(tk);
+	return !token_has_cpp(tk);
 }
 
 static const char *
