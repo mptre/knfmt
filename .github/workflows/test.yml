@@ -125,11 +125,10 @@ jobs:
 
   cppcheck:
     runs-on: ubuntu-22.04
+    container: ghcr.io/mptre/cppcheck:latest
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - name: dependenices
-        run: sudo apt-get update && sudo apt-get install cppcheck
       - name: cppcheck
         run: |
           ./configure --pedantic
