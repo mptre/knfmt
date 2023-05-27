@@ -775,10 +775,6 @@ parser_stmt_cpp(struct parser *pr, struct doc *dc)
  * single line, making the curly braces redundant and thus removed. Otherwise,
  * curly braces will be added around all covered statements for consistency.
  * Once this routine returns, parsing continues as usual.
- *
- * The return value is used to signal when a nested statement is entered which
- * is ignored as only one scope is handled at a time. The same return value must
- * later on be passed to parser_simple_leave().
  */
 static int
 parser_simple_stmt_enter(struct parser *pr)
