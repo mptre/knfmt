@@ -5,6 +5,7 @@ struct parser_simple;
 enum simple_pass {
 	SIMPLE_DECL,
 	SIMPLE_STMT,
+	SIMPLE_STMT_SEMI,
 
 	SIMPLE_LAST, /* sentinel */
 };

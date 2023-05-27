@@ -123,9 +123,13 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	 * optional lines.
 	 */
 	nx = token_next(rbrace);
-	if (nx != NULL && nx->tk_type == TOKEN_SEMI &&
-	    pr->pr_op->op_flags.simple)
-		lexer_remove(lx, nx, 1);
+	if (nx != NULL && nx->tk_type == TOKEN_SEMI) {
+		int simple;
+
+		if (parser_simple_enter(pr, SIMPLE_STMT_SEMI, 0, &simple))
+			lexer_remove(lx, nx, 1);
+		parser_simple_leave(pr, SIMPLE_STMT_SEMI, simple);
+	}
 
 	if (doindent)
 		pr->pr_nindent++;
