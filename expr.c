@@ -15,6 +15,7 @@
 #include "lexer.h"
 #include "options.h"
 #include "ruler.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 #include "vector.h"
@@ -914,12 +915,16 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	int doparens;
+	struct simple_arg arg = {
+		.ignore	= !(es->es_depth == 1 &&
+			(es->es_flags & EXPR_EXEC_NOPARENS)),
+	};
+	int simple;
 
-	doparens = !(es->es_depth == 1 &&
-	    es->es_op->op_flags.simple &&
-	    (es->es_flags & EXPR_EXEC_NOPARENS));
-	if (doparens) {
+	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_NOPARENS, &arg, &simple)) {
+		if (ex->ex_lhs != NULL)
+			dc = expr_doc(ex->ex_lhs, es, dc);
+	} else {
 		struct token *pv;
 
 		if (ex->ex_tokens[0] != NULL)
@@ -932,11 +937,13 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
 		else
 			dc = expr_doc_indent_parens(es, dc);
+		if (ex->ex_lhs != NULL)
+			dc = expr_doc(ex->ex_lhs, es, dc);
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], dc);	/* ) */
 	}
-	if (ex->ex_lhs != NULL)
-		dc = expr_doc(ex->ex_lhs, es, dc);
-	if (doparens && ex->ex_tokens[1] != NULL)
-		doc_token(ex->ex_tokens[1], dc);	/* ) */
+	simple_leave(es->es_ea.si, SIMPLE_EXPR_NOPARENS, simple);
+
 	return dc;
 }
 
@@ -1234,6 +1241,7 @@ static void
 expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
     enum expr_mode mode)
 {
+	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->si);
 	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->dc);
 

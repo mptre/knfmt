@@ -43,6 +43,7 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 {
 	const struct expr_exec_arg ea = {
 		.st		= pr->pr_st,
+		.si		= pr->pr_si,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
 		.rl		= arg->rl,
