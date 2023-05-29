@@ -1,11 +1,11 @@
 struct options;
 
 enum simple_pass {
+	SIMPLE_CPP_SORT_INCLUDES,
 	SIMPLE_DECL,
 	SIMPLE_EXPR_NOPARENS,
 	SIMPLE_STMT,
 	SIMPLE_STMT_SEMI,
-	SIMPLE_SORT_INCLUDES,
 
 	SIMPLE_LAST, /* sentinel */
 };

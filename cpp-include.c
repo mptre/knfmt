@@ -79,7 +79,7 @@ cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
 		.enable	= style(ci->st, SortIncludes) == CaseSensitive,
 	};
 
-	if (!simple_enter(ci->si, SIMPLE_SORT_INCLUDES, &arg, &ci->cookie))
+	if (!simple_enter(ci->si, SIMPLE_CPP_SORT_INCLUDES, &arg, &ci->cookie))
 		return;
 
 	assert(ci->lx == NULL);
@@ -91,7 +91,7 @@ cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
 void
 cpp_include_leave(struct cpp_include *ci)
 {
-	if (!is_simple_enabled(ci->si, SIMPLE_SORT_INCLUDES))
+	if (!is_simple_enabled(ci->si, SIMPLE_CPP_SORT_INCLUDES))
 		return;
 
 	cpp_include_exec(ci);
@@ -99,13 +99,13 @@ cpp_include_leave(struct cpp_include *ci)
 	ci->lx = NULL;
 	ci->prefixes = NULL;
 
-	simple_leave(ci->si, SIMPLE_SORT_INCLUDES, ci->cookie);
+	simple_leave(ci->si, SIMPLE_CPP_SORT_INCLUDES, ci->cookie);
 }
 
 void
 cpp_include_add(struct cpp_include *ci, struct token *tk)
 {
-	if (!is_simple_enabled(ci->si, SIMPLE_SORT_INCLUDES))
+	if (!is_simple_enabled(ci->si, SIMPLE_CPP_SORT_INCLUDES))
 		return;
 
 	if (tk->tk_type == TOKEN_CPP_INCLUDE) {
