@@ -13,7 +13,7 @@ struct simple {
 	int			 enable;
 };
 
-static int	is_pass_valid(unsigned int);
+static int	is_pass_valid(enum simple_pass);
 
 struct simple *
 simple_alloc(const struct options *op)
@@ -34,7 +34,7 @@ simple_free(struct simple *si)
 }
 
 int
-simple_enter(struct simple *si, unsigned int pass, int ignore,
+simple_enter(struct simple *si, enum simple_pass pass, int ignore,
     int *restore)
 {
 	unsigned int i;
@@ -67,7 +67,7 @@ simple_enter(struct simple *si, unsigned int pass, int ignore,
 }
 
 void
-simple_leave(struct simple *si, unsigned int pass, int restore)
+simple_leave(struct simple *si, enum simple_pass pass, int restore)
 {
 	if (restore == SIMPLE_STATE_NOP || !is_pass_valid(pass))
 		return;
@@ -75,7 +75,7 @@ simple_leave(struct simple *si, unsigned int pass, int restore)
 }
 
 int
-is_simple_enabled(const struct simple *si, unsigned int pass)
+is_simple_enabled(const struct simple *si, enum simple_pass pass)
 {
 	return is_pass_valid(pass) &&
 	    si->states[pass] == SIMPLE_STATE_ENABLE;
@@ -109,7 +109,7 @@ simple_enable(struct simple *si, int restore)
 }
 
 static int
-is_pass_valid(unsigned int pass)
+is_pass_valid(enum simple_pass pass)
 {
 	return pass < SIMPLE_LAST;
 }

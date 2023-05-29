@@ -18,9 +18,9 @@ enum simple_state {
 struct simple	*simple_alloc(const struct options *);
 void		 simple_free(struct simple *);
 
-int	simple_enter(struct simple *, unsigned int, int, int *);
-void	simple_leave(struct simple *, unsigned int, int);
-int	is_simple_enabled(const struct simple *, unsigned int);
+int	simple_enter(struct simple *, enum simple_pass, int, int *);
+void	simple_leave(struct simple *, enum simple_pass, int);
+int	is_simple_enabled(const struct simple *, enum simple_pass);
 int	is_simple_any_enabled(const struct simple *);
 
 int	simple_disable(struct simple *);
