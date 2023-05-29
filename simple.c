@@ -36,10 +36,15 @@ simple_enter(struct simple *si, enum simple_pass pass, struct simple_arg *arg,
     int *restore)
 {
 	unsigned int i;
-	int ignore = arg != NULL && arg->ignore;
+
+	if (arg == NULL) {
+		static struct simple_arg def;
+
+		arg = &def;
+	}
 
 	*restore = si->states[pass];
-	if (!si->enable) {
+	if (!si->enable && !arg->enable) {
 		si->states[pass] = SIMPLE_STATE_DISABLE;
 		return 0;
 	}
@@ -51,7 +56,7 @@ simple_enter(struct simple *si, enum simple_pass pass, struct simple_arg *arg,
 		}
 	}
 
-	if (ignore || si->states[pass] != SIMPLE_STATE_DISABLE) {
+	if (arg->ignore || si->states[pass] != SIMPLE_STATE_DISABLE) {
 		si->states[pass] = SIMPLE_STATE_IGNORE;
 		return 0;
 	}

@@ -17,6 +17,7 @@
 #include "parser-priv.h"
 #include "parser-type.h"
 #include "parser.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 #include "util.h"
@@ -69,6 +70,7 @@ struct context {
 	struct buffer	*bf;
 	struct error	*er;
 	struct style	*st;
+	struct simple	*si;
 	struct clang	*cl;
 	struct lexer	*lx;
 	struct parser	*pr;
@@ -518,7 +520,8 @@ context_init(struct context *cx, const char *src)
 	buffer_puts(cx->bf, src, strlen(src));
 	cx->er = error_alloc(0);
 	cx->st = style_parse(NULL, &cx->op);
-	cx->cl = clang_alloc(cx->st, &cx->op);
+	cx->si = simple_alloc(&cx->op);
+	cx->cl = clang_alloc(cx->st, cx->si, &cx->op);
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= cx->bf,
@@ -547,6 +550,9 @@ context_reset(struct context *cx)
 
 	style_free(cx->st);
 	cx->st = NULL;
+
+	simple_free(cx->si);
+	cx->si = NULL;
 
 	parser_free(cx->pr);
 	cx->pr = NULL;

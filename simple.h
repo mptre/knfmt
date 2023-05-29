@@ -4,6 +4,7 @@ enum simple_pass {
 	SIMPLE_DECL,
 	SIMPLE_STMT,
 	SIMPLE_STMT_SEMI,
+	SIMPLE_SORT_INCLUDES,
 
 	SIMPLE_LAST, /* sentinel */
 };
@@ -16,6 +17,7 @@ enum simple_state {
 };
 
 struct simple_arg {
+	unsigned int	enable:1;	/* force enable */
 	unsigned int	ignore:1;
 };
 

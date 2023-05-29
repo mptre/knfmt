@@ -11,6 +11,7 @@
 #include "buffer.h"
 #include "lexer.h"
 #include "options.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 #include "util.h"
@@ -21,6 +22,9 @@ struct cpp_include {
 	struct lexer		*lx;
 	struct token_list	*prefixes;
 	struct token		*after;
+	const struct style	*st;
+	struct simple		*si;
+	int			 cookie;	/* simple cookie */
 };
 
 struct include {
@@ -30,9 +34,6 @@ struct include {
 		size_t		 len;
 	} path;
 };
-
-static int	is_sort_includes_enabled(const struct options *,
-    const struct style *);
 
 static void	cpp_include_exec(struct cpp_include *);
 static void	cpp_include_reset(struct cpp_include *);
@@ -47,16 +48,15 @@ static int	token_has_verbatim_line(const struct token *);
 static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
-cpp_include_alloc(const struct style *st, const struct options *op)
+cpp_include_alloc(const struct style *st, struct simple *si)
 {
 	struct cpp_include *ci;
-
-	if (!is_sort_includes_enabled(op, st))
-		return NULL;
 
 	ci = ecalloc(1, sizeof(*ci));
 	if (VECTOR_INIT(ci->includes))
 		err(1, NULL);
+	ci->st = st;
+	ci->si = si;
 	return ci;
 }
 
@@ -75,7 +75,11 @@ void
 cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
     struct token_list *prefixes)
 {
-	if (ci == NULL)
+	struct simple_arg arg = {
+		.enable	= style(ci->st, SortIncludes) == CaseSensitive,
+	};
+
+	if (!simple_enter(ci->si, SIMPLE_SORT_INCLUDES, &arg, &ci->cookie))
 		return;
 
 	assert(ci->lx == NULL);
@@ -87,19 +91,21 @@ cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
 void
 cpp_include_leave(struct cpp_include *ci)
 {
-	if (ci == NULL)
+	if (!is_simple_enabled(ci->si, SIMPLE_SORT_INCLUDES))
 		return;
 
 	cpp_include_exec(ci);
 	cpp_include_reset(ci);
 	ci->lx = NULL;
 	ci->prefixes = NULL;
+
+	simple_leave(ci->si, SIMPLE_SORT_INCLUDES, ci->cookie);
 }
 
 void
 cpp_include_add(struct cpp_include *ci, struct token *tk)
 {
-	if (ci == NULL)
+	if (!is_simple_enabled(ci->si, SIMPLE_SORT_INCLUDES))
 		return;
 
 	if (tk->tk_type == TOKEN_CPP_INCLUDE) {
@@ -118,12 +124,6 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 
 	cpp_include_exec(ci);
 	cpp_include_reset(ci);
-}
-
-static int
-is_sort_includes_enabled(const struct options *op, const struct style *st)
-{
-	return op->op_flags.simple || style(st, SortIncludes) == CaseSensitive;
 }
 
 static void
