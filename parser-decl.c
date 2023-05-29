@@ -11,10 +11,10 @@
 #include "parser-expr.h"
 #include "parser-func.h"
 #include "parser-priv.h"
-#include "parser-simple.h"
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 
@@ -64,7 +64,7 @@ parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 
 	simple = parser_simple_decl_enter(pr, flags);
 	error = parser_decl1(pr, dc, flags);
-	parser_simple_leave(pr, SIMPLE_DECL, simple);
+	simple_leave(pr->pr_si, SIMPLE_DECL, simple);
 	return error;
 }
 
@@ -166,8 +166,8 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 	if (!lexer_peek(lx, &beg))
 		return parser_fail(pr);
-	if (is_simple_enabled(pr, SIMPLE_DECL))
-		simple_decl_type(pr->pr_simple->decl, beg, end);
+	if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
+		simple_decl_type(pr->pr_simple.decl, beg, end);
 	if (parser_type(pr, concat, end, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
@@ -246,8 +246,8 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 out:
 	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
 		doc_token(semi, concat);
-		if (is_simple_enabled(pr, SIMPLE_DECL))
-			simple_decl_semi(pr->pr_simple->decl, semi);
+		if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
+			simple_decl_semi(pr->pr_simple.decl, semi);
 		while (lexer_if(lx, TOKEN_SEMI, NULL))
 			continue;
 	}
@@ -287,8 +287,8 @@ parser_decl_init(struct parser *pr, struct doc **out,
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
 			doc_token(comma, concat);
 			doc_alloc(DOC_LINE, concat);
-			if (is_simple_enabled(pr, SIMPLE_DECL))
-				simple_decl_comma(pr->pr_simple->decl, comma);
+			if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
+				simple_decl_comma(pr->pr_simple.decl, comma);
 			/* Break before the argument. */
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, dc));
@@ -388,7 +388,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 		unsigned int flags = 0;
 
 		/* Never break before the assignment operator. */
-		if (!is_simple_enabled(pr, SIMPLE_DECL) &&
+		if (!is_simple_enabled(pr->pr_si, SIMPLE_DECL) &&
 		    (pv = token_prev(equal)) != NULL &&
 		    token_has_line(pv, 1)) {
 			parser_token_trim_after(pr, pv);
@@ -446,20 +446,20 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 	int ignore = (flags & PARSER_DECL_SIMPLE) == 0;
 	int error, restore;
 
-	if (!parser_simple_enter(pr, SIMPLE_DECL, ignore, &restore))
+	if (!simple_enter(pr->pr_si, SIMPLE_DECL, ignore, &restore))
 		return restore;
 
-	pr->pr_simple->decl = simple_decl_enter(lx, pr->pr_op);
+	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
 	if (error & GOOD)
-		simple_decl_leave(pr->pr_simple->decl);
-	simple_decl_free(pr->pr_simple->decl);
-	pr->pr_simple->decl = NULL;
-	parser_simple_leave(pr, SIMPLE_DECL, restore);
+		simple_decl_leave(pr->pr_simple.decl);
+	simple_decl_free(pr->pr_simple.decl);
+	pr->pr_simple.decl = NULL;
+	simple_leave(pr->pr_si, SIMPLE_DECL, restore);
 
 	return SIMPLE_STATE_NOP;
 }

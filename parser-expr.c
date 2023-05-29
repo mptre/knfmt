@@ -7,9 +7,9 @@
 #include "lexer.h"
 #include "parser-braces.h"
 #include "parser-priv.h"
-#include "parser-simple.h"
 #include "parser-stmt-expr.h"
 #include "parser-type.h"
+#include "simple.h"
 #include "token.h"
 
 static int	expr_recover(const struct expr_exec_arg *, struct doc *,
@@ -32,9 +32,9 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 	};
 	int peek, simple;
 
-	simple = parser_simple_disable(pr);
+	simple = simple_disable(pr->pr_si);
 	peek = expr_peek(tk, &ea);
-	parser_simple_enable(pr, simple);
+	simple_enable(pr->pr_si, simple);
 	return peek;
 }
 

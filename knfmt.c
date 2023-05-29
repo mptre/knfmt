@@ -19,6 +19,7 @@
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 #include "vector.h"
@@ -26,7 +27,7 @@
 static void	usage(void) __attribute__((__noreturn__));
 
 static int	filelist(int, char **, struct files *, const struct options *);
-static int	fileformat(struct file *, const struct style *,
+static int	fileformat(struct file *, const struct style *, struct simple *,
     const struct options *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const struct file *);
@@ -42,6 +43,7 @@ main(int argc, char *argv[])
 {
 	struct files files;
 	struct options op;
+	struct simple *si = NULL;
 	struct style *st = NULL;
 	const char *clang_format = NULL;
 	size_t i;
@@ -108,6 +110,7 @@ main(int argc, char *argv[])
 		error = 1;
 		goto out;
 	}
+	si = simple_alloc(&op);
 
 	if (filelist(argc, argv, &files, &op)) {
 		error = 1;
@@ -116,7 +119,7 @@ main(int argc, char *argv[])
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
-		if (fileformat(fe, st, &op)) {
+		if (fileformat(fe, st, si, &op)) {
 			error = 1;
 			error_flush(fe->fe_error, 1);
 		}
@@ -125,6 +128,7 @@ main(int argc, char *argv[])
 
 out:
 	files_free(&files);
+	simple_free(si);
 	style_free(st);
 	style_teardown();
 	expr_shutdown();
@@ -161,7 +165,8 @@ filelist(int argc, char **argv, struct files *files,
 }
 
 static int
-fileformat(struct file *fe, const struct style *st, const struct options *op)
+fileformat(struct file *fe, const struct style *st, struct simple *si,
+    const struct options *op)
 {
 	struct buffer *dst = NULL;
 	struct buffer *src;
@@ -192,7 +197,7 @@ fileformat(struct file *fe, const struct style *st, const struct options *op)
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, st, op);
+	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, st, si, op);
 	if (pr == NULL) {
 		error = 1;
 		goto out;

@@ -16,7 +16,6 @@
 #include "parser-extern.h"
 #include "parser-func.h"
 #include "parser-priv.h"
-#include "parser-simple.h"
 #include "parser-stmt-asm.h"
 #include "token.h"
 
@@ -24,7 +23,7 @@ static int	parser_get_error(const struct parser *);
 
 struct parser *
 parser_alloc(const char *path, struct lexer *lx, struct error *er,
-    const struct style *st, const struct options *op)
+    const struct style *st, struct simple *si, const struct options *op)
 {
 	struct parser *pr;
 
@@ -32,12 +31,12 @@ parser_alloc(const char *path, struct lexer *lx, struct error *er,
 	pr->pr_path = path;
 	pr->pr_er = er;
 	pr->pr_st = st;
+	pr->pr_si = si;
 	pr->pr_op = op;
 	pr->pr_lx = lx;
 	pr->pr_scratch = buffer_alloc(1024);
 	if (pr->pr_scratch == NULL)
 		err(1, NULL);
-	pr->pr_simple = parser_simple_alloc(op);
 	return pr;
 }
 
@@ -48,7 +47,6 @@ parser_free(struct parser *pr)
 		return;
 
 	buffer_free(pr->pr_scratch);
-	parser_simple_free(pr->pr_simple);
 	free(pr);
 }
 

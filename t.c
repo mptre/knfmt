@@ -530,7 +530,7 @@ context_init(struct context *cx, const char *src)
 		.arg		= cx->cl,
 	    },
 	});
-	cx->pr = parser_alloc(path, cx->lx, cx->er, cx->st,
+	cx->pr = parser_alloc(path, cx->lx, cx->er, cx->st, NULL,
 	    &cx->op);
 }
 

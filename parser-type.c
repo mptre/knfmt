@@ -11,8 +11,8 @@
 #include "parser-cpp.h"
 #include "parser-func.h"
 #include "parser-priv.h"
-#include "parser-simple.h"
 #include "ruler.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 
@@ -187,7 +187,7 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	if (pr->pr_op->op_flags.simple && !is_simple_any_enabled(pr)) {
+	if (pr->pr_op->op_flags.simple && !is_simple_any_enabled(pr->pr_si)) {
 		struct token *tk = beg;
 		int ntokens = 0;
 

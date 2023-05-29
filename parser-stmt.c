@@ -8,10 +8,10 @@
 #include "parser-decl.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
-#include "parser-simple.h"
 #include "parser-stmt-asm.h"
 #include "parser-stmt-expr.h"
 #include "simple-stmt.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 
@@ -52,7 +52,7 @@ parser_stmt(struct parser *pr, struct doc *dc)
 	if (peek_simple_stmt(pr))
 		simple = parser_simple_stmt_enter(pr);
 	error = parser_stmt1(pr, dc);
-	parser_simple_leave(pr, SIMPLE_STMT, simple);
+	simple_leave(pr->pr_si, SIMPLE_STMT, simple);
 	return error;
 }
 
@@ -110,7 +110,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *nx, *rbrace, *tk;
 	int isswitch = arg->flags & PARSER_STMT_BLOCK_SWITCH;
-	int doindent = !isswitch && !is_simple_enabled(pr, SIMPLE_STMT);
+	int doindent = !isswitch && !is_simple_enabled(pr->pr_si, SIMPLE_STMT);
 	int nstmt = 0;
 	int error;
 
@@ -126,17 +126,17 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	if (nx != NULL && nx->tk_type == TOKEN_SEMI) {
 		int simple;
 
-		if (parser_simple_enter(pr, SIMPLE_STMT_SEMI, 0, &simple))
+		if (simple_enter(pr->pr_si, SIMPLE_STMT_SEMI, 0, &simple))
 			lexer_remove(lx, nx, 1);
-		parser_simple_leave(pr, SIMPLE_STMT_SEMI, simple);
+		simple_leave(pr->pr_si, SIMPLE_STMT_SEMI, simple);
 	}
 
 	if (doindent)
 		pr->pr_nindent++;
 
 	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0 &&
-	    is_simple_enabled(pr, SIMPLE_STMT)) {
-		dc = simple_stmt_braces_enter(pr->pr_simple->stmt, lbrace,
+	    is_simple_enabled(pr->pr_si, SIMPLE_STMT)) {
+		dc = simple_stmt_braces_enter(pr->pr_simple.stmt, lbrace,
 		    rbrace, pr->pr_nindent * style(pr->pr_st, IndentWidth));
 	}
 
@@ -784,20 +784,20 @@ parser_simple_stmt_enter(struct parser *pr)
 	struct lexer *lx = pr->pr_lx;
 	int error, restore;
 
-	if (!parser_simple_enter(pr, SIMPLE_STMT, 0, &restore))
+	if (!simple_enter(pr->pr_si, SIMPLE_STMT, 0, &restore))
 		return restore;
 
-	pr->pr_simple->stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
+	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_stmt1(pr, dc);
 	lexer_peek_leave(lx, &s);
 	doc_free(dc);
 	if (error & GOOD)
-		simple_stmt_leave(pr->pr_simple->stmt);
-	simple_stmt_free(pr->pr_simple->stmt);
-	pr->pr_simple->stmt = NULL;
-	parser_simple_leave(pr, SIMPLE_STMT, restore);
+		simple_stmt_leave(pr->pr_simple.stmt);
+	simple_stmt_free(pr->pr_simple.stmt);
+	pr->pr_simple.stmt = NULL;
+	simple_leave(pr->pr_si, SIMPLE_STMT, restore);
 
 	return SIMPLE_STATE_NOP;
 }
@@ -809,10 +809,10 @@ parser_simple_stmt_no_braces_enter(struct parser *pr, struct doc *dc,
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
 
-	if (!is_simple_enabled(pr, SIMPLE_STMT) ||
+	if (!is_simple_enabled(pr->pr_si, SIMPLE_STMT) ||
 	    !lexer_peek(lx, &lbrace))
 		return dc;
-	return simple_stmt_no_braces_enter(pr->pr_simple->stmt, lbrace,
+	return simple_stmt_no_braces_enter(pr->pr_simple.stmt, lbrace,
 	    (pr->pr_nindent + 1) * style(pr->pr_st, IndentWidth), cookie);
 }
 
@@ -824,7 +824,7 @@ parser_simple_stmt_no_braces_leave(struct parser *pr, void *cookie)
 
 	if (cookie == NULL || !lexer_peek(lx, &rbrace))
 		return;
-	simple_stmt_no_braces_leave(pr->pr_simple->stmt, rbrace, cookie);
+	simple_stmt_no_braces_leave(pr->pr_simple.stmt, rbrace, cookie);
 }
 
 static int

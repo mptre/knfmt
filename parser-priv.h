@@ -17,11 +17,16 @@ struct parser {
 	struct error		*pr_er;
 	const struct options	*pr_op;
 	const struct style	*pr_st;
+	struct simple		*pr_si;
 	struct lexer		*pr_lx;
 	struct buffer		*pr_scratch;
-	struct parser_simple	*pr_simple;
 	unsigned int		 pr_error;
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
+
+	struct {
+		struct simple_stmt	*stmt;
+		struct simple_decl	*decl;
+	} pr_simple;
 
 	struct {
 		int		 valid;
