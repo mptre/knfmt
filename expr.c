@@ -19,6 +19,11 @@
 #include "token.h"
 #include "vector.h"
 
+enum expr_mode {
+	EXPR_MODE_EXEC,
+	EXPR_MODE_PEEK,
+};
+
 /*
  * Precedence, from lowest to highest.
  */
@@ -171,7 +176,7 @@ static struct doc	*expr_doc_soft0(struct expr *, struct expr_state *,
     struct doc *, int, const char *, int);
 
 static void	expr_state_init(struct expr_state *,
-    const struct expr_exec_arg *);
+    const struct expr_exec_arg *, enum expr_mode);
 static void	expr_state_reset(struct expr_state *);
 
 static const struct expr_rule	*expr_find_rule(const struct token *, int);
@@ -287,9 +292,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	struct doc *dc, *expr, *indent, *optional;
 	struct expr *ex;
 
-	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
-
-	expr_state_init(&es, ea);
+	expr_state_init(&es, ea, EXPR_MODE_EXEC);
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
@@ -329,7 +332,7 @@ expr_peek(struct token **tk, const struct expr_exec_arg *ea)
 	struct lexer *lx = ea->lx;
 	int peek = 0;
 
-	expr_state_init(&es, ea);
+	expr_state_init(&es, ea, EXPR_MODE_PEEK);
 
 	lexer_peek_enter(lx, &s);
 	ex = expr_exec1(&es, PC0);
@@ -1228,8 +1231,12 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 }
 
 static void
-expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea)
+expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
+    enum expr_mode mode)
 {
+	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
+	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->dc);
+
 	memset(es, 0, sizeof(*es));
 	es->es_ea = *ea;
 }
