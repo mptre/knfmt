@@ -32,10 +32,11 @@ simple_free(struct simple *si)
 }
 
 int
-simple_enter(struct simple *si, enum simple_pass pass, int ignore,
+simple_enter(struct simple *si, enum simple_pass pass, struct simple_arg *arg,
     int *restore)
 {
 	unsigned int i;
+	int ignore = arg != NULL && arg->ignore;
 
 	*restore = si->states[pass];
 	if (!si->enable) {

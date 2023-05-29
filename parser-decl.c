@@ -441,12 +441,14 @@ static int
 parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 {
 	struct lexer_state s;
+	struct simple_arg arg = {
+		.ignore	= (flags & PARSER_DECL_SIMPLE) == 0,
+	};
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc;
-	int ignore = (flags & PARSER_DECL_SIMPLE) == 0;
 	int error, restore;
 
-	if (!simple_enter(pr->pr_si, SIMPLE_DECL, ignore, &restore))
+	if (!simple_enter(pr->pr_si, SIMPLE_DECL, &arg, &restore))
 		return restore;
 
 	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_op);

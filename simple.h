@@ -15,10 +15,15 @@ enum simple_state {
 	SIMPLE_STATE_IGNORE	= 2,
 };
 
+struct simple_arg {
+	unsigned int	ignore:1;
+};
+
 struct simple	*simple_alloc(const struct options *);
 void		 simple_free(struct simple *);
 
-int	simple_enter(struct simple *, enum simple_pass, int, int *);
+int	simple_enter(struct simple *, enum simple_pass, struct simple_arg *,
+    int *);
 void	simple_leave(struct simple *, enum simple_pass, int);
 int	is_simple_enabled(const struct simple *, enum simple_pass);
 int	is_simple_any_enabled(const struct simple *);
