@@ -47,7 +47,7 @@ static int	token_has_verbatim_line(const struct token *);
 static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
-cpp_include_alloc(const struct options *op, const struct style *st)
+cpp_include_alloc(const struct style *st, const struct options *op)
 {
 	struct cpp_include *ci;
 

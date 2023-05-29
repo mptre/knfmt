@@ -125,7 +125,7 @@ clang_alloc(const struct style *st, const struct options *op)
 	cl = ecalloc(1, sizeof(*cl));
 	cl->cl_st = st;
 	cl->cl_op = op;
-	cl->cl_ci = cpp_include_alloc(op, st);
+	cl->cl_ci = cpp_include_alloc(st, op);
 	if (VECTOR_INIT(cl->cl_branches))
 		err(1, NULL);
 	return cl;
