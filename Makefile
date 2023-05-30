@@ -234,6 +234,13 @@ CPPCHECK+=	t.c
 CPPCHECK+=	token.c
 CPPCHECK+=	util.c
 
+CPPCHECKFLAGS+=	--quiet
+CPPCHECKFLAGS+=	--enable=all
+CPPCHECKFLAGS+=	--error-exitcode=1
+CPPCHECKFLAGS+=	--max-configs=2
+CPPCHECKFLAGS+=	--suppress-xml=cppcheck-suppressions.xml
+CPPCHECKFLAGS+=	${CPPFLAGS}
+
 SHLINT+=	configure
 SHLINT+=	tests/cp.sh
 SHLINT+=	tests/diff.sh
@@ -1205,9 +1212,7 @@ lint-clang-tidy:
 .PHONY: lint-clang-tidy
 
 lint-cppcheck:
-	cd ${.CURDIR} && cppcheck --quiet --enable=all --error-exitcode=1 \
-		--max-configs=2 --suppress-xml=cppcheck-suppressions.xml \
-		${CPPFLAGS} ${CPPCHECK}
+	cd ${.CURDIR} && cppcheck ${CPPCHECKFLAGS} ${CPPCHECK}
 .PHONY: lint-cppcheck
 
 lint-shellcheck:
