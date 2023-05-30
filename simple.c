@@ -9,7 +9,10 @@
 #include "options.h"
 
 struct simple {
-	int			 states[SIMPLE_LAST];
+	struct {
+		enum simple_state	state;
+		unsigned int		flags;
+	} passes[SIMPLE_LAST];
 	int			 enable;
 };
 
@@ -37,9 +40,9 @@ int
 simple_enter(struct simple *si, enum simple_pass pass, unsigned int flags,
     int *restore)
 {
-	*restore = si->states[pass];
+	*restore = si->passes[pass].state;
 	if (!si->enable && (flags & SIMPLE_FORCE) == 0) {
-		si->states[pass] = SIMPLE_STATE_DISABLE;
+		si->passes[pass].state = SIMPLE_STATE_DISABLE;
 		return 0;
 	}
 
@@ -48,20 +51,21 @@ simple_enter(struct simple *si, enum simple_pass pass, unsigned int flags,
 
 		for (i = 0; i < SIMPLE_LAST; i++) {
 			if (i != pass &&
-			    si->states[i] != SIMPLE_STATE_DISABLE) {
-				si->states[pass] = SIMPLE_STATE_DISABLE;
+			    si->passes[i].state != SIMPLE_STATE_DISABLE) {
+				si->passes[pass].state = SIMPLE_STATE_DISABLE;
 				return 0;
 			}
 		}
 	}
 
 	if ((flags & SIMPLE_IGNORE) ||
-	    si->states[pass] != SIMPLE_STATE_DISABLE) {
-		si->states[pass] = SIMPLE_STATE_IGNORE;
+	    si->passes[pass].state != SIMPLE_STATE_DISABLE) {
+		si->passes[pass].state = SIMPLE_STATE_IGNORE;
 		return 0;
 	}
 
-	si->states[pass] = SIMPLE_STATE_ENABLE;
+	si->passes[pass].state = SIMPLE_STATE_ENABLE;
+	si->passes[pass].flags = flags;
 	return 1;
 }
 
@@ -70,13 +74,14 @@ simple_leave(struct simple *si, enum simple_pass pass, int restore)
 {
 	if (restore == SIMPLE_STATE_NOP)
 		return;
-	si->states[pass] = restore;
+	si->passes[pass].state = restore;
 }
 
 int
 is_simple_enabled(const struct simple *si, enum simple_pass pass)
 {
-	return si->states[pass] == SIMPLE_STATE_ENABLE;
+	return (si->enable || (si->passes[pass].flags & SIMPLE_FORCE)) &&
+	    si->passes[pass].state == SIMPLE_STATE_ENABLE;
 }
 
 int
