@@ -1239,7 +1239,7 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 
 static void
 expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
-    enum expr_mode mode)
+    enum expr_mode MAYBE_UNUSED(mode))
 {
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->si);
 	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
