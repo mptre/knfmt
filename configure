@@ -214,6 +214,7 @@ if [ "$_sanitize" -eq 1 ]; then
 	if ! cmp -s /dev/null "${WRKDIR}/sanitize"; then
 		_sanitize="-fsanitize=$(paste -sd , "${WRKDIR}/sanitize")"
 		_sanitize="${_sanitize} $(cc_has_option -fno-sanitize-recover=all)"
+		_sanitize="${_sanitize} $(cc_has_option -fno-omit-frame-pointer)"
 		CFLAGS="${_sanitize} ${CFLAGS}"
 		DEBUG="${_sanitize} ${DEBUG}"
 	fi
