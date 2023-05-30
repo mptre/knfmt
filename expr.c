@@ -325,7 +325,7 @@ expr_exec(const struct expr_exec_arg *ea)
 }
 
 int
-expr_peek(struct token **tk, const struct expr_exec_arg *ea)
+expr_peek(const struct expr_exec_arg *ea, struct token **tk)
 {
 	struct expr_state es;
 	struct lexer_state s;

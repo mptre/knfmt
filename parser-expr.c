@@ -33,7 +33,7 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 	int peek, simple;
 
 	simple = simple_disable(pr->pr_si);
-	peek = expr_peek(tk, &ea);
+	peek = expr_peek(&ea, tk);
 	simple_enable(pr->pr_si, simple);
 	return peek;
 }
