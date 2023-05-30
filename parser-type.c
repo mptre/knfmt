@@ -188,7 +188,7 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	if (simple_enter(pr->pr_si, SIMPLE_STATIC, NULL, &simple)) {
+	if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple)) {
 		struct token *tk = beg;
 		int ntokens = 0;
 

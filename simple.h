@@ -1,5 +1,10 @@
 struct options;
 
+/* Force enable pass even if simple mode is not enabled. */
+#define SIMPLE_FORCE			0x00000001u
+/* Ignore pass including nested invocations. */
+#define SIMPLE_IGNORE			0x00000002u
+
 enum simple_pass {
 	SIMPLE_CPP_SORT_INCLUDES,
 	SIMPLE_DECL,
@@ -18,16 +23,10 @@ enum simple_state {
 	SIMPLE_STATE_IGNORE	= 2,
 };
 
-struct simple_arg {
-	unsigned int	enable:1;	/* force enable */
-	unsigned int	ignore:1;
-};
-
 struct simple	*simple_alloc(const struct options *);
 void		 simple_free(struct simple *);
 
-int	simple_enter(struct simple *, enum simple_pass, struct simple_arg *,
-    int *);
+int	simple_enter(struct simple *, enum simple_pass, unsigned int, int *);
 void	simple_leave(struct simple *, enum simple_pass, int);
 int	is_simple_enabled(const struct simple *, enum simple_pass);
 

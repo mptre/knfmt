@@ -75,11 +75,12 @@ void
 cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
     struct token_list *prefixes)
 {
-	struct simple_arg arg = {
-		.enable	= style(ci->st, SortIncludes) == CaseSensitive,
-	};
+	unsigned int simple_flags;
 
-	if (!simple_enter(ci->si, SIMPLE_CPP_SORT_INCLUDES, &arg, &ci->cookie))
+	simple_flags = style(ci->st, SortIncludes) == CaseSensitive ?
+	    SIMPLE_FORCE : 0;
+	if (!simple_enter(ci->si, SIMPLE_CPP_SORT_INCLUDES, simple_flags,
+	    &ci->cookie))
 		return;
 
 	assert(ci->lx == NULL);
