@@ -67,15 +67,18 @@ parser_cpp_peek_decl(struct parser *pr, struct token **end, unsigned int flags)
 			*end = tk;
 		}
 
-		if (lexer_if(lx, TOKEN_EQUAL, NULL))
+		if (lexer_if(lx, TOKEN_EQUAL, NULL)) {
 			peek = 1;
-		else if ((flags & PARSER_CPP_DECL_ROOT) &&
-		    lexer_if(lx, TOKEN_SEMI, NULL))
+		} else if ((flags & PARSER_CPP_DECL_ROOT) &&
+		    lexer_if(lx, TOKEN_SEMI, NULL)) {
 			peek = 1;
-		else if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-		    (token_cmp(macro, ident) == 0 ||
-		     lexer_if(lx, TOKEN_SEMI, NULL)))
-			peek = 1;
+		} else if (lexer_if(lx, TOKEN_IDENT, &ident)) {
+			while (lexer_if(lx, TOKEN_IDENT, &ident))
+				continue;
+			if (token_cmp(macro, ident) == 0 ||
+			    lexer_if(lx, TOKEN_SEMI, NULL))
+				peek = 1;
+		}
 	}
 	lexer_peek_leave(lx, &s);
 	return peek;
