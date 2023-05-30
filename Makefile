@@ -247,6 +247,7 @@ SHLINT+=	tests/diff.sh
 SHLINT+=	tests/enoent.sh
 SHLINT+=	tests/git.sh
 SHLINT+=	tests/knfmt.sh
+SHLINT+=	tests/simple.sh
 
 DISTFILES+=	CHANGELOG.md
 DISTFILES+=	GNUmakefile
@@ -583,6 +584,7 @@ DISTFILES+=	tests/simple-037.c
 DISTFILES+=	tests/simple-037.ok
 DISTFILES+=	tests/simple-038.c
 DISTFILES+=	tests/simple-038.ok
+DISTFILES+=	tests/simple.sh
 DISTFILES+=	tests/style-AlignAfterOpenBracket-001.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-002.c
 DISTFILES+=	tests/style-AlignAfterOpenBracket-003.c

@@ -2,10 +2,12 @@
 
 #include "config.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "alloc.h"
+#include "cdefs.h"
 #include "options.h"
 
 struct simple {
@@ -82,6 +84,23 @@ is_simple_enabled(const struct simple *si, enum simple_pass pass)
 {
 	return (si->enable || (si->passes[pass].flags & SIMPLE_FORCE)) &&
 	    si->passes[pass].state == SIMPLE_STATE_ENABLE;
+}
+
+void
+simple_sanity_check(const struct simple *MAYBE_UNUSED(si))
+{
+#ifndef NDEBUG
+	int i;
+
+	for (i = 0; i < SIMPLE_LAST; i++) {
+		if (si->passes[i].state == SIMPLE_STATE_DISABLE)
+			continue;
+
+		fprintf(stderr, "%s: pass %d invalid state: want %d, got %d\n",
+		    __func__, i, SIMPLE_STATE_DISABLE, si->passes[i].state);
+		__builtin_trap();
+	}
+#endif
 }
 
 int

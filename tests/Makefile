@@ -666,3 +666,4 @@ all: ${TESTS:.h=.hfake}
 	sh ${.CURDIR}/diff.sh
 	sh ${.CURDIR}/enoent.sh
 	sh ${.CURDIR}/git.sh
+	sh ${.CURDIR}/simple.sh

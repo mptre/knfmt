@@ -924,7 +924,6 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 	    &simple)) {
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
-		simple_leave(es->es_ea.si, SIMPLE_EXPR_NOPARENS, simple);
 	} else {
 		struct token *pv;
 
@@ -943,6 +942,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], dc);	/* ) */
 	}
+	simple_leave(es->es_ea.si, SIMPLE_EXPR_NOPARENS, simple);
 
 	return dc;
 }

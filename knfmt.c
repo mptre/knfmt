@@ -124,6 +124,7 @@ main(int argc, char *argv[])
 			error_flush(fe->fe_error, 1);
 		}
 		file_close(fe);
+		simple_sanity_check(si);
 	}
 
 out:

@@ -30,5 +30,7 @@ int	simple_enter(struct simple *, enum simple_pass, unsigned int, int *);
 void	simple_leave(struct simple *, enum simple_pass, int);
 int	is_simple_enabled(const struct simple *, enum simple_pass);
 
+void	simple_sanity_check(const struct simple *);
+
 int	simple_disable(struct simple *);
 void	simple_enable(struct simple *, int);
