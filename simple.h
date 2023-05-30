@@ -4,6 +4,7 @@ enum simple_pass {
 	SIMPLE_CPP_SORT_INCLUDES,
 	SIMPLE_DECL,
 	SIMPLE_EXPR_NOPARENS,
+	SIMPLE_STATIC,
 	SIMPLE_STMT,
 	SIMPLE_STMT_SEMI,
 
@@ -29,7 +30,6 @@ int	simple_enter(struct simple *, enum simple_pass, struct simple_arg *,
     int *);
 void	simple_leave(struct simple *, enum simple_pass, int);
 int	is_simple_enabled(const struct simple *, enum simple_pass);
-int	is_simple_any_enabled(const struct simple *);
 
 int	simple_disable(struct simple *);
 void	simple_enable(struct simple *, int);

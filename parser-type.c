@@ -152,6 +152,7 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 	const struct token *align = NULL;
 	struct token *beg;
 	unsigned int nspaces = 0;
+	int simple;
 
 	if (!lexer_peek(lx, &beg))
 		return parser_fail(pr);
@@ -187,7 +188,7 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 		}
 	}
 
-	if (pr->pr_op->op_flags.simple && !is_simple_any_enabled(pr->pr_si)) {
+	if (simple_enter(pr->pr_si, SIMPLE_STATIC, NULL, &simple)) {
 		struct token *tk = beg;
 		int ntokens = 0;
 
@@ -207,6 +208,8 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 			tk = nx;
 			ntokens++;
 		}
+
+		simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 	}
 
 	for (;;) {

@@ -13,6 +13,8 @@ struct simple {
 	int			 enable;
 };
 
+static int	is_pass_mutually_exclusive(enum simple_pass);
+
 struct simple *
 simple_alloc(const struct options *op)
 {
@@ -35,8 +37,6 @@ int
 simple_enter(struct simple *si, enum simple_pass pass, struct simple_arg *arg,
     int *restore)
 {
-	unsigned int i;
-
 	if (arg == NULL) {
 		static struct simple_arg def;
 
@@ -49,10 +49,15 @@ simple_enter(struct simple *si, enum simple_pass pass, struct simple_arg *arg,
 		return 0;
 	}
 
-	for (i = 0; i < SIMPLE_LAST; i++) {
-		if (i != pass && si->states[i] != SIMPLE_STATE_DISABLE) {
-			si->states[pass] = SIMPLE_STATE_DISABLE;
-			return 0;
+	if (is_pass_mutually_exclusive(pass)) {
+		unsigned int i;
+
+		for (i = 0; i < SIMPLE_LAST; i++) {
+			if (i != pass &&
+			    si->states[i] != SIMPLE_STATE_DISABLE) {
+				si->states[pass] = SIMPLE_STATE_DISABLE;
+				return 0;
+			}
 		}
 	}
 
@@ -80,18 +85,6 @@ is_simple_enabled(const struct simple *si, enum simple_pass pass)
 }
 
 int
-is_simple_any_enabled(const struct simple *si)
-{
-	int i;
-
-	for (i = 0; i < SIMPLE_LAST; i++) {
-		if (si->states[i] == SIMPLE_STATE_ENABLE)
-			return 1;
-	}
-	return 0;
-}
-
-int
 simple_disable(struct simple *si)
 {
 	int restore = si->enable;
@@ -104,4 +97,13 @@ void
 simple_enable(struct simple *si, int restore)
 {
 	si->enable = restore;
+}
+
+static int
+is_pass_mutually_exclusive(enum simple_pass pass)
+{
+	/* The static pass runs as part of the decl pass.*/
+	if (pass == SIMPLE_STATIC)
+		return 0;
+	return 1;
 }
