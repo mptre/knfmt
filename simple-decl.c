@@ -31,8 +31,8 @@ struct token_range {
 static char	*token_range_str(const struct token_range *);
 
 struct decl {
-	struct token_range	dc_tr;
-	int			dc_nrejects;
+	struct token_range	tr;
+	int			nrejects;
 };
 
 struct decl_var {
@@ -168,7 +168,7 @@ simple_decl_leave(struct simple_decl *sd)
 	for (i = 0; i < VECTOR_LENGTH(sd->sd_empty_decls); i++) {
 		struct decl *dc = &sd->sd_empty_decls[i];
 
-		TOKEN_RANGE_FOREACH(tk, &dc->dc_tr, tmp)
+		TOKEN_RANGE_FOREACH(tk, &dc->tr, tmp)
 			lexer_remove(lx, tk, 1);
 	}
 }
@@ -228,7 +228,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	dc = VECTOR_CALLOC(sd->sd_empty_decls);
 	if (dc == NULL)
 		err(1, NULL);
-	dc->dc_tr = tr;
+	dc->tr = tr;
 }
 
 void
@@ -245,8 +245,8 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 	 * If the type declaration is empty, ensure deletion of everything
 	 * including the semicolon.
 	 */
-	if (dc->dc_nrejects == 0)
-		dc->dc_tr.tr_end = semi;
+	if (dc->nrejects == 0)
+		dc->tr.tr_end = semi;
 	else
 		VECTOR_POP(sd->sd_empty_decls);
 
@@ -440,7 +440,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	/* The delimiter is not part of the identifier. */
 	dv->dv_ident.tr_end = token_prev(end);
 	if (!classify(&dv->dv_ident, &slot) || !token_is_moveable(end)) {
-		dc->dc_nrejects++;
+		dc->nrejects++;
 		rejected = 1;
 	}
 
@@ -456,7 +456,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	 * declaration.
 	 */
 	if (end->tk_type == TOKEN_SEMI &&
-	    (ds->ds_semi == NULL || dc->dc_nrejects > 0)) {
+	    (ds->ds_semi == NULL || dc->nrejects > 0)) {
 		ds->ds_semi = end;
 		if (slot <= dt->dt_after.slot || dt->dt_after.tk == NULL) {
 			dt->dt_after.tk = end;
