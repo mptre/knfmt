@@ -68,7 +68,13 @@ static struct decl_type_vars	*decl_type_slot(struct decl_type *,
  */
 struct decl_type_vars {
 	VECTOR(struct decl_var)	 ds_vars;
-	struct token		*ds_semi;
+
+	struct {
+		/* Associated with kept declaration. */
+		struct token	*kept;
+		/* Associated with declaration to be removed (i.e. empty). */
+		struct token	*fallback;
+	} ds_semi;
 };
 
 struct simple_decl {
@@ -147,13 +153,10 @@ simple_decl_leave(struct simple_decl *sd)
 			/* Sort the variables in alphabetical order. */
 			VECTOR_SORT(ds->ds_vars, decl_var_cmp);
 
-			// XXX
-			/*
-			 * Favor insertion after the stamped semi if present,
-			 * otherwise continue after the previous type slot.
-			 */
-			after = semi = ds->ds_semi;
-			assert(after != NULL && after->tk_type == TOKEN_SEMI);
+			semi = ds->ds_semi.kept != NULL ? ds->ds_semi.kept :
+			    ds->ds_semi.fallback;
+			assert(semi != NULL && semi->tk_type == TOKEN_SEMI);
+			after = semi;
 
 			after = simple_decl_move_vars(sd, dt, ds, after);
 			/* Move line break(s) to the new semicolon. */
@@ -509,18 +512,37 @@ static void
 associate_semi(struct decl *dc, struct decl_type *dt, struct token *semi)
 {
 	struct decl_type_vars *slots = dt->dt_slots;
-	size_t i;
+	size_t i, nslots;
 
 	while (!VECTOR_EMPTY(dc->slots)) {
 		unsigned int slot;
 
 		slot = *VECTOR_POP(dc->slots);
-		slots[slot].ds_semi = semi;
+		slots[slot].ds_semi.kept = semi;
 	}
 
-	for (i = 0; i < VECTOR_LENGTH(slots); i++) {
-		if (slots[i].ds_semi == NULL)
-			slots[i].ds_semi = semi;
+	/*
+	 * New slot(s) could have been added while handling the current
+	 * declaration. Evaluate if any previously added variables of the same
+	 * type are better placed after the current declaration.
+	 */
+	nslots = VECTOR_LENGTH(slots);
+	for (i = 0; i < nslots; i++) {
+		struct token *newsemi = NULL;
+		size_t j;
+
+		if (slots[i].ds_semi.kept != NULL)
+			continue;
+
+		for (j = i + 1; j < nslots; j++) {
+			newsemi = slots[j].ds_semi.kept;
+			if (newsemi != NULL)
+				break;
+		}
+		if (newsemi != NULL)
+			slots[i].ds_semi.kept = newsemi;
+		else if (slots[i].ds_semi.fallback == NULL)
+			slots[i].ds_semi.fallback = semi;
 	}
 }
 
