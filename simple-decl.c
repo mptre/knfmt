@@ -42,6 +42,8 @@ struct decl {
 	int			nkeep;
 };
 
+static void	decl_free(struct decl *);
+
 struct decl_var {
 	struct token_range	 dv_ident;
 	struct token		*dv_sort;
@@ -178,7 +180,7 @@ simple_decl_free(struct simple_decl *sd)
 		struct decl *dc;
 
 		dc = VECTOR_POP(sd->sd_empty_decls);
-		VECTOR_FREE(dc->slots);
+		decl_free(dc);
 	}
 	VECTOR_FREE(sd->sd_empty_decls);
 
@@ -251,7 +253,7 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 	if (dc->nkeep == 0) {
 		dc->tr.tr_end = semi;
 	} else {
-		assert(VECTOR_EMPTY(dc->slots));
+		decl_free(dc);
 		VECTOR_POP(sd->sd_empty_decls);
 	}
 
@@ -308,6 +310,15 @@ token_range_str(const struct token_range *tr)
 		err(1, NULL);
 	buffer_free(bf);
 	return str;
+}
+
+static void
+decl_free(struct decl *dc)
+{
+	if (dc == NULL)
+		return;
+	assert(VECTOR_EMPTY(dc->slots));
+	VECTOR_FREE(dc->slots);
 }
 
 static int
