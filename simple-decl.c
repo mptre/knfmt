@@ -67,14 +67,14 @@ static struct decl_type_vars	*decl_type_slot(struct decl_type *,
  * Variables associated with a declaration type.
  */
 struct decl_type_vars {
-	VECTOR(struct decl_var)	 ds_vars;
+	VECTOR(struct decl_var)	 vars;
 
 	struct {
 		/* Associated with kept declaration. */
 		struct token	*kept;
 		/* Associated with declaration to be removed (i.e. empty). */
 		struct token	*fallback;
-	} ds_semi;
+	} semi;
 };
 
 struct simple_decl {
@@ -147,14 +147,14 @@ simple_decl_leave(struct simple_decl *sd)
 			struct decl_type_vars *ds = &dt->dt_slots[slot];
 			struct token *semi;
 
-			if (VECTOR_LENGTH(ds->ds_vars) == 0)
+			if (VECTOR_LENGTH(ds->vars) == 0)
 				continue;
 
 			/* Sort the variables in alphabetical order. */
-			VECTOR_SORT(ds->ds_vars, decl_var_cmp);
+			VECTOR_SORT(ds->vars, decl_var_cmp);
 
-			semi = ds->ds_semi.kept != NULL ? ds->ds_semi.kept :
-			    ds->ds_semi.fallback;
+			semi = ds->semi.kept != NULL ? ds->semi.kept :
+			    ds->semi.fallback;
 			assert(semi != NULL && semi->tk_type == TOKEN_SEMI);
 			after = semi;
 
@@ -194,7 +194,7 @@ simple_decl_free(struct simple_decl *sd)
 		while (!VECTOR_EMPTY(dt->dt_slots)) {
 			struct decl_type_vars *ds = VECTOR_POP(dt->dt_slots);
 
-			VECTOR_FREE(ds->ds_vars);
+			VECTOR_FREE(ds->vars);
 		}
 		VECTOR_FREE(dt->dt_slots);
 		decl_type_free(dt);
@@ -353,7 +353,7 @@ decl_type_slot(struct decl_type *dt, unsigned int n)
 		ds = VECTOR_CALLOC(dt->dt_slots);
 		if (ds == NULL)
 			err(1, NULL);
-		if (VECTOR_INIT(ds->ds_vars))
+		if (VECTOR_INIT(ds->vars))
 			err(1, NULL);
 	}
 	return &dt->dt_slots[n];
@@ -420,8 +420,8 @@ simple_decl_move_vars(struct simple_decl *sd, struct decl_type *dt,
 		after = lexer_copy_after(lx, after, tk);
 
 	/* Move variables to the new type declaration. */
-	for (i = 0; i < VECTOR_LENGTH(ds->ds_vars); i++) {
-		struct decl_var *dv = &ds->ds_vars[i];
+	for (i = 0; i < VECTOR_LENGTH(ds->vars); i++) {
+		struct decl_var *dv = &ds->vars[i];
 		struct token *ident;
 
 		if (dv->dv_delim != NULL)
@@ -497,7 +497,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	}
 	dv->dv_sort = sort;
 
-	dst = VECTOR_CALLOC(ds->ds_vars);
+	dst = VECTOR_CALLOC(ds->vars);
 	if (dst == NULL)
 		err(1, NULL);
 	*dst = *dv;
@@ -518,7 +518,7 @@ associate_semi(struct decl *dc, struct decl_type *dt, struct token *semi)
 		unsigned int slot;
 
 		slot = *VECTOR_POP(dc->slots);
-		slots[slot].ds_semi.kept = semi;
+		slots[slot].semi.kept = semi;
 	}
 
 	/*
@@ -531,18 +531,18 @@ associate_semi(struct decl *dc, struct decl_type *dt, struct token *semi)
 		struct token *newsemi = NULL;
 		size_t j;
 
-		if (slots[i].ds_semi.kept != NULL)
+		if (slots[i].semi.kept != NULL)
 			continue;
 
 		for (j = i + 1; j < nslots; j++) {
-			newsemi = slots[j].ds_semi.kept;
+			newsemi = slots[j].semi.kept;
 			if (newsemi != NULL)
 				break;
 		}
 		if (newsemi != NULL)
-			slots[i].ds_semi.kept = newsemi;
-		else if (slots[i].ds_semi.fallback == NULL)
-			slots[i].ds_semi.fallback = semi;
+			slots[i].semi.kept = newsemi;
+		else if (slots[i].semi.fallback == NULL)
+			slots[i].semi.fallback = semi;
 	}
 }
 
