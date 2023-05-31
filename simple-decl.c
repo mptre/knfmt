@@ -30,8 +30,13 @@ struct token_range {
 
 static char	*token_range_str(const struct token_range *);
 
+/*
+ * Represents a single declaration from the source code.
+ */
 struct decl {
+	/* Tokens covering the whole declaration, including the semicolon. */
 	struct token_range	tr;
+	/* Number of variables of the declaration that cannot be moved. */
 	int			nkeep;
 };
 
