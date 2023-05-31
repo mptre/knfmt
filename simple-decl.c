@@ -530,6 +530,7 @@ classify(const struct token_range *tr, unsigned int *slot)
 	struct token *tk, *tmp;
 	unsigned int nident = 0;
 	unsigned int nstars = 0;
+	unsigned int nsquares = 0;
 	int error = 0;
 
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
@@ -540,6 +541,9 @@ classify(const struct token_range *tr, unsigned int *slot)
 		case TOKEN_IDENT:
 			nident++;
 			break;
+		case TOKEN_LSQUARE:
+			nsquares++;
+			FALLTHROUGH;
 		default:
 			error = 1;
 		}
@@ -547,7 +551,18 @@ classify(const struct token_range *tr, unsigned int *slot)
 		if (!token_is_moveable(tk))
 			error = 1;
 	}
-	*slot = nstars;
+	if (nsquares > 0) {
+		/*
+		 * Although array variables are kept, there might be an
+		 * opportunity to place other pointers of the same type after
+		 * this declaration. The slot choice is somewhat arbitrary and
+		 * assumes that usage of more than three level pointers is
+		 * uncommon.
+		 */
+		*slot = 4;
+	} else {
+		*slot = nstars;
+	}
 
 	return !error && nident > 0;
 }
