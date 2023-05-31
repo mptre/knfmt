@@ -1,8 +1,8 @@
 int
 main(void)
 {
-	struct foo *const b;
 	struct foo *const *a;
+	struct foo *const b;
 
 	return 0;
 }

@@ -4,7 +4,7 @@ main(void)
 	char	*aaa, *mmm, *nnn;
 	char	 bbb, ccc, ddd, eee, fff, ggg, hhh, iii, jjj, kkk, lll;
 
+	char	*aaa;
 	char	 bbb, ccc, ddd, eee, fff, ggg, hhh, iii, jjj, kkk, lll, mmm,
 		 nnn;
-	char	*aaa;
 }

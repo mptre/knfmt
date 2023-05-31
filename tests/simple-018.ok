@@ -3,6 +3,6 @@ main(void)
 {
 	char flags[4];
 	char *arg1 = NULL;
-	char *arg0, *flagsp, *path, *ucp;
 	char **pathp, **uap;
+	char *arg0, *flagsp, *path, *ucp;
 }

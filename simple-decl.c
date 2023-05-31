@@ -34,6 +34,8 @@ static char	*token_range_str(const struct token_range *);
  * Represents a single declaration from the source code.
  */
 struct decl {
+	/* Type slots to be placed after this declaration. */
+	VECTOR(unsigned int)	slots;
 	/* Tokens covering the whole declaration, including the semicolon. */
 	struct token_range	tr;
 	/* Number of variables of the declaration that cannot be moved. */
@@ -53,15 +55,6 @@ struct decl_type {
 	struct token_range		 dt_tr;
 	VECTOR(struct decl_type_vars)	 dt_slots;
 	char				*dt_str;
-
-	/*
-	 * First stamped semi in dt_slots. Since new type slots lacks a stamped
-	 * semi we favor insertion of new types after the first kept one.
-	 */
-	struct {
-		struct token	*tk;
-		unsigned int	 slot;
-	} dt_after;
 };
 
 static void			 decl_type_free(struct decl_type *);
@@ -106,6 +99,8 @@ static struct decl_var	*simple_decl_var_init(struct simple_decl *);
 static struct decl_var	*simple_decl_var_end(struct simple_decl *,
     struct token *);
 
+static void	associate_semi(struct decl *, struct decl_type *,
+    struct token *);
 static int	classify(const struct token_range *, unsigned int *);
 
 #define simple_trace(sd, fmt, ...) do {					\
@@ -137,7 +132,7 @@ simple_decl_leave(struct simple_decl *sd)
 
 	for (i = 0; i < VECTOR_LENGTH(sd->sd_types); i++) {
 		struct decl_type *dt = &sd->sd_types[i];
-		struct token *after = dt->dt_after.tk;
+		struct token *after;
 		unsigned int slot;
 
 		for (slot = 0; slot < VECTOR_LENGTH(dt->dt_slots); slot++) {
@@ -150,22 +145,17 @@ simple_decl_leave(struct simple_decl *sd)
 			/* Sort the variables in alphabetical order. */
 			VECTOR_SORT(ds->ds_vars, decl_var_cmp);
 
+			// XXX
 			/*
 			 * Favor insertion after the stamped semi if present,
 			 * otherwise continue after the previous type slot.
 			 */
-			if (ds->ds_semi != NULL)
-				after = semi = ds->ds_semi;
-			else
-				semi = after;
-			assert(after->tk_type == TOKEN_SEMI);
+			after = semi = ds->ds_semi;
+			assert(after != NULL && after->tk_type == TOKEN_SEMI);
 
 			after = simple_decl_move_vars(sd, dt, ds, after);
 			/* Move line break(s) to the new semicolon. */
-			if (semi != NULL) {
-				token_move_suffixes_if(semi, after,
-				    TOKEN_SPACE);
-			}
+			token_move_suffixes_if(semi, after, TOKEN_SPACE);
 		}
 	}
 
@@ -184,6 +174,12 @@ simple_decl_free(struct simple_decl *sd)
 	if (sd == NULL)
 		return;
 
+	while (!VECTOR_EMPTY(sd->sd_empty_decls)) {
+		struct decl *dc;
+
+		dc = VECTOR_POP(sd->sd_empty_decls);
+		VECTOR_FREE(dc->slots);
+	}
 	VECTOR_FREE(sd->sd_empty_decls);
 
 	while (!VECTOR_EMPTY(sd->sd_types)) {
@@ -233,6 +229,8 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	dc = VECTOR_CALLOC(sd->sd_empty_decls);
 	if (dc == NULL)
 		err(1, NULL);
+	if (VECTOR_INIT(dc->slots))
+		err(1, NULL);
 	dc->tr = tr;
 }
 
@@ -250,10 +248,12 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 	 * If the type declaration is empty, ensure deletion of everything
 	 * including the semicolon.
 	 */
-	if (dc->nkeep == 0)
+	if (dc->nkeep == 0) {
 		dc->tr.tr_end = semi;
-	else
+	} else {
+		assert(VECTOR_EMPTY(dc->slots));
 		VECTOR_POP(sd->sd_empty_decls);
+	}
 
 	simple_decl_var_init(sd);
 	sd->sd_dt = NULL;
@@ -433,7 +433,6 @@ static struct decl_var *
 simple_decl_var_end(struct simple_decl *sd, struct token *end)
 {
 	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
-	struct decl_type *dt = sd->sd_dt;
 	struct decl_var *dv = &sd->sd_dv;
 	struct decl_var *dst;
 	struct decl_type_vars *ds;
@@ -457,17 +456,22 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	ds = decl_type_slot(sd->sd_dt, slot);
 
 	/*
-	 * Favor insertion of the merged declaration after the last kept
-	 * declaration.
+	 * If the declaration is kept due to a non-moveable variable associated
+	 * with the current slot, place all other moveable variables associated
+	 * with the same slot after this declaration. We do this even if the
+	 * slot already have a associated semi, causing variables to be placed
+	 * after the last kept declaration.
 	 */
-	if (end->tk_type == TOKEN_SEMI &&
-	    (ds->ds_semi == NULL || dc->nkeep > 0)) {
-		ds->ds_semi = end;
-		if (slot <= dt->dt_after.slot || dt->dt_after.tk == NULL) {
-			dt->dt_after.tk = end;
-			dt->dt_after.slot = slot;
-		}
+	if (keep) {
+		unsigned int *newslot;
+
+		newslot = VECTOR_ALLOC(dc->slots);
+		if (newslot == NULL)
+			err(1, NULL);
+		*newslot = slot;
 	}
+	if (end->tk_type == TOKEN_SEMI)
+		associate_semi(dc, sd->sd_dt, end);
 
 	if (keep)
 		return NULL;
@@ -488,6 +492,25 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	    sd->sd_dt->dt_str, slot, lexer_serialize(sd->sd_lx, dv->dv_sort));
 
 	return dst;
+}
+
+static void
+associate_semi(struct decl *dc, struct decl_type *dt, struct token *semi)
+{
+	struct decl_type_vars *slots = dt->dt_slots;
+	size_t i;
+
+	while (!VECTOR_EMPTY(dc->slots)) {
+		unsigned int slot;
+
+		slot = *VECTOR_POP(dc->slots);
+		slots[slot].ds_semi = semi;
+	}
+
+	for (i = 0; i < VECTOR_LENGTH(slots); i++) {
+		if (slots[i].ds_semi == NULL)
+			slots[i].ds_semi = semi;
+	}
 }
 
 static int
