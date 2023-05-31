@@ -32,7 +32,7 @@ static char	*token_range_str(const struct token_range *);
 
 struct decl {
 	struct token_range	tr;
-	int			nrejects;
+	int			nkeep;
 };
 
 struct decl_var {
@@ -245,7 +245,7 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 	 * If the type declaration is empty, ensure deletion of everything
 	 * including the semicolon.
 	 */
-	if (dc->nrejects == 0)
+	if (dc->nkeep == 0)
 		dc->tr.tr_end = semi;
 	else
 		VECTOR_POP(sd->sd_empty_decls);
@@ -434,20 +434,20 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	struct decl_type_vars *ds;
 	struct token *sort, *tmp;
 	unsigned int slot;
-	int rejected = 0;
+	int keep = 0;
 
 	assert(dv->dv_ident.tr_end == NULL);
 	/* The delimiter is not part of the identifier. */
 	dv->dv_ident.tr_end = token_prev(end);
 	if (!classify(&dv->dv_ident, &slot) || !token_is_moveable(end)) {
-		dc->nrejects++;
-		rejected = 1;
+		dc->nkeep++;
+		keep = 1;
 	}
 
 	/*
-	 * Allocate the slot even if the variable is rejected since there could
+	 * Allocate the slot even if the variable is kept since there could
 	 * be other variables of the same type that we want to place after this
-	 * rejected declaration.
+	 * kept declaration.
 	 */
 	ds = decl_type_slot(sd->sd_dt, slot);
 
@@ -456,7 +456,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	 * declaration.
 	 */
 	if (end->tk_type == TOKEN_SEMI &&
-	    (ds->ds_semi == NULL || dc->nrejects > 0)) {
+	    (ds->ds_semi == NULL || dc->nkeep > 0)) {
 		ds->ds_semi = end;
 		if (slot <= dt->dt_after.slot || dt->dt_after.tk == NULL) {
 			dt->dt_after.tk = end;
@@ -464,7 +464,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 		}
 	}
 
-	if (rejected)
+	if (keep)
 		return NULL;
 
 	/* Find the identifier token used while sorting. */
