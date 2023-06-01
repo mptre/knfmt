@@ -35,7 +35,7 @@ static int	parser_stmt_return(struct parser *, struct doc *);
 static int	parser_stmt_semi(struct parser *, struct doc *);
 static int	parser_stmt_cpp(struct parser *, struct doc *);
 
-static int		 parser_simple_stmt_enter(struct parser *);
+static int		 parser_simple_stmt_enter(struct parser *, int *);
 static struct doc	*parser_simple_stmt_no_braces_enter(struct parser *,
     struct doc *, void **);
 static void		 parser_simple_stmt_no_braces_leave(struct parser *,
@@ -49,8 +49,11 @@ parser_stmt(struct parser *pr, struct doc *dc)
 	int simple = SIMPLE_STATE_NOP;
 	int error;
 
-	if (peek_simple_stmt(pr))
-		simple = parser_simple_stmt_enter(pr);
+	if (peek_simple_stmt(pr)) {
+		error = parser_simple_stmt_enter(pr, &simple);
+		if (error & HALT)
+			return error;
+	}
 	error = parser_stmt1(pr, dc);
 	simple_leave(pr->pr_si, SIMPLE_STMT, simple);
 	return error;
@@ -777,15 +780,15 @@ parser_stmt_cpp(struct parser *pr, struct doc *dc)
  * Once this routine returns, parsing continues as usual.
  */
 static int
-parser_simple_stmt_enter(struct parser *pr)
+parser_simple_stmt_enter(struct parser *pr, int *simple)
 {
 	struct lexer_state s;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
-	int error, restore;
+	int error;
 
-	if (!simple_enter(pr->pr_si, SIMPLE_STMT, 0, &restore))
-		return restore;
+	if (!simple_enter(pr->pr_si, SIMPLE_STMT, 0, simple))
+		return parser_good(pr);
 
 	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
@@ -797,9 +800,10 @@ parser_simple_stmt_enter(struct parser *pr)
 		simple_stmt_leave(pr->pr_simple.stmt);
 	simple_stmt_free(pr->pr_simple.stmt);
 	pr->pr_simple.stmt = NULL;
-	simple_leave(pr->pr_si, SIMPLE_STMT, restore);
+	simple_leave(pr->pr_si, SIMPLE_STMT, *simple);
+	*simple = SIMPLE_STATE_NOP;
 
-	return SIMPLE_STATE_NOP;
+	return error;
 }
 
 static struct doc *

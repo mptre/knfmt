@@ -1,1 +1,1 @@
-test.c: expected type SEMI got RPAREN<4:14>(")")
+test.c: expected type RBRACE got FOR<4:9>("for")

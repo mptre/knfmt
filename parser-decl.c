@@ -39,7 +39,7 @@ static int	parser_decl_init_assign(struct parser *, struct doc *,
     struct doc **, struct parser_decl_init_arg *);
 static int	parser_decl_bitfield(struct parser *, struct doc *);
 
-static int	parser_simple_decl_enter(struct parser *, unsigned int);
+static int	parser_simple_decl_enter(struct parser *, unsigned int, int *);
 
 int
 parser_decl_peek(struct parser *pr)
@@ -62,7 +62,9 @@ parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	int error, simple;
 
-	simple = parser_simple_decl_enter(pr, flags);
+	error = parser_simple_decl_enter(pr, flags, &simple);
+	if (error & HALT)
+		return error;
 	error = parser_decl1(pr, dc, flags);
 	simple_leave(pr->pr_si, SIMPLE_DECL, simple);
 	return error;
@@ -438,17 +440,17 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 }
 
 static int
-parser_simple_decl_enter(struct parser *pr, unsigned int flags)
+parser_simple_decl_enter(struct parser *pr, unsigned int flags, int *simple)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc;
 	unsigned int simple_flags;
-	int error, restore;
+	int error;
 
 	simple_flags = (flags & PARSER_DECL_SIMPLE) ? 0 : SIMPLE_IGNORE;
-	if (!simple_enter(pr->pr_si, SIMPLE_DECL, simple_flags, &restore))
-		return restore;
+	if (!simple_enter(pr->pr_si, SIMPLE_DECL, simple_flags, simple))
+		return parser_good(pr);
 
 	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
@@ -460,7 +462,8 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags)
 		simple_decl_leave(pr->pr_simple.decl);
 	simple_decl_free(pr->pr_simple.decl);
 	pr->pr_simple.decl = NULL;
-	simple_leave(pr->pr_si, SIMPLE_DECL, restore);
+	simple_leave(pr->pr_si, SIMPLE_DECL, *simple);
+	*simple = SIMPLE_STATE_NOP;
 
-	return SIMPLE_STATE_NOP;
+	return error;
 }
