@@ -82,18 +82,18 @@ struct simple_decl {
 	 * Duplicate type declarations ending up empty due to variables of the
 	 * same type being grouped into one declaration.
 	 */
-	VECTOR(struct decl)	 sd_empty_decls;
+	VECTOR(struct decl)	 empty_decls;
 
 	/* All seen type declarations. */
-	VECTOR(struct decl_type) sd_types;
+	VECTOR(struct decl_type) types;
 
 	/* Current type declaration. */
-	struct decl_type	*sd_dt;
+	struct decl_type	*dt;
 
-	struct decl_var		 sd_dv;
+	struct decl_var		 dv;
 
-	struct lexer		*sd_lx;
-	const struct options	*sd_op;
+	struct lexer		*lx;
+	const struct options	*op;
 };
 
 static struct decl_type	*simple_decl_type_create(struct simple_decl *,
@@ -112,7 +112,7 @@ static void	associate_semi(struct decl *, struct decl_type *,
 static int	classify(const struct token_range *, unsigned int *);
 
 #define simple_trace(sd, fmt, ...) do {					\
-	if (trace((sd)->sd_op, 'S'))					\
+	if (trace((sd)->op, 'S'))					\
 		tracef('S', __func__, (fmt), __VA_ARGS__);		\
 } while (0)
 
@@ -122,24 +122,24 @@ simple_decl_enter(struct lexer *lx, const struct options *op)
 	struct simple_decl *sd;
 
 	sd = ecalloc(1, sizeof(*sd));
-	if (VECTOR_INIT(sd->sd_empty_decls))
+	if (VECTOR_INIT(sd->empty_decls))
 		err(1, NULL);
-	if (VECTOR_INIT(sd->sd_types))
+	if (VECTOR_INIT(sd->types))
 		err(1, NULL);
-	sd->sd_lx = lx;
-	sd->sd_op = op;
+	sd->lx = lx;
+	sd->op = op;
 	return sd;
 }
 
 void
 simple_decl_leave(struct simple_decl *sd)
 {
-	struct lexer *lx = sd->sd_lx;
+	struct lexer *lx = sd->lx;
 	struct token *tk, *tmp;
 	size_t i;
 
-	for (i = 0; i < VECTOR_LENGTH(sd->sd_types); i++) {
-		struct decl_type *dt = &sd->sd_types[i];
+	for (i = 0; i < VECTOR_LENGTH(sd->types); i++) {
+		struct decl_type *dt = &sd->types[i];
 		struct token *after;
 		unsigned int slot;
 
@@ -165,8 +165,8 @@ simple_decl_leave(struct simple_decl *sd)
 	}
 
 	/* Remove by now empty declarations. */
-	for (i = 0; i < VECTOR_LENGTH(sd->sd_empty_decls); i++) {
-		struct decl *dc = &sd->sd_empty_decls[i];
+	for (i = 0; i < VECTOR_LENGTH(sd->empty_decls); i++) {
+		struct decl *dc = &sd->empty_decls[i];
 
 		TOKEN_RANGE_FOREACH(tk, &dc->tr, tmp)
 			lexer_remove(lx, tk, 1);
@@ -179,18 +179,18 @@ simple_decl_free(struct simple_decl *sd)
 	if (sd == NULL)
 		return;
 
-	while (!VECTOR_EMPTY(sd->sd_empty_decls)) {
+	while (!VECTOR_EMPTY(sd->empty_decls)) {
 		struct decl *dc;
 
-		dc = VECTOR_POP(sd->sd_empty_decls);
+		dc = VECTOR_POP(sd->empty_decls);
 		decl_free(dc);
 	}
-	VECTOR_FREE(sd->sd_empty_decls);
+	VECTOR_FREE(sd->empty_decls);
 
-	while (!VECTOR_EMPTY(sd->sd_types)) {
+	while (!VECTOR_EMPTY(sd->types)) {
 		struct decl_type *dt;
 
-		dt = VECTOR_POP(sd->sd_types);
+		dt = VECTOR_POP(sd->types);
 		while (!VECTOR_EMPTY(dt->dt_slots)) {
 			struct decl_type_vars *ds = VECTOR_POP(dt->dt_slots);
 
@@ -199,7 +199,7 @@ simple_decl_free(struct simple_decl *sd)
 		VECTOR_FREE(dt->dt_slots);
 		decl_type_free(dt);
 	}
-	VECTOR_FREE(sd->sd_types);
+	VECTOR_FREE(sd->types);
 
 	free(sd);
 }
@@ -222,7 +222,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	}
 
 	type = token_range_str(&tr);
-	sd->sd_dt = simple_decl_type_create(sd, type, &tr);
+	sd->dt = simple_decl_type_create(sd, type, &tr);
 	free(type);
 
 	dv = simple_decl_var_init(sd);
@@ -231,7 +231,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 		end = token_prev(end);
 	dv->dv_ident.tr_beg = token_next(end);
 
-	dc = VECTOR_CALLOC(sd->sd_empty_decls);
+	dc = VECTOR_CALLOC(sd->empty_decls);
 	if (dc == NULL)
 		err(1, NULL);
 	if (VECTOR_INIT(dc->slots))
@@ -242,9 +242,9 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 void
 simple_decl_semi(struct simple_decl *sd, struct token *semi)
 {
-	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
+	struct decl *dc = VECTOR_LAST(sd->empty_decls);
 
-	if (decl_var_is_empty(&sd->sd_dv))
+	if (decl_var_is_empty(&sd->dv))
 		return;
 
 	simple_decl_var_end(sd, semi);
@@ -257,11 +257,11 @@ simple_decl_semi(struct simple_decl *sd, struct token *semi)
 		dc->tr.tr_end = semi;
 	} else {
 		decl_free(dc);
-		VECTOR_POP(sd->sd_empty_decls);
+		VECTOR_POP(sd->empty_decls);
 	}
 
 	simple_decl_var_init(sd);
-	sd->sd_dt = NULL;
+	sd->dt = NULL;
 }
 
 void
@@ -270,7 +270,7 @@ simple_decl_comma(struct simple_decl *sd, struct token *comma)
 	struct decl_var *dv;
 	struct token *delim = NULL;
 
-	if (decl_var_is_empty(&sd->sd_dv))
+	if (decl_var_is_empty(&sd->dv))
 		return;
 
 	dv = simple_decl_var_end(sd, comma);
@@ -374,7 +374,7 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 	if (dt != NULL)
 		return dt;
 
-	dt = VECTOR_CALLOC(sd->sd_types);
+	dt = VECTOR_CALLOC(sd->types);
 	if (dt == NULL)
 		err(1, NULL);
 	dt->dt_tr = *tr;
@@ -398,8 +398,8 @@ simple_decl_type_find(struct simple_decl *sd, const char *type)
 {
 	size_t i;
 
-	for (i = 0; i < VECTOR_LENGTH(sd->sd_types); i++) {
-		struct decl_type *dt = &sd->sd_types[i];
+	for (i = 0; i < VECTOR_LENGTH(sd->types); i++) {
+		struct decl_type *dt = &sd->types[i];
 
 		if (strcmp(dt->dt_str, type) == 0)
 			return dt;
@@ -411,7 +411,7 @@ static struct token *
 simple_decl_move_vars(struct simple_decl *sd, struct decl_type *dt,
     struct decl_type_vars *ds, struct token *after)
 {
-	struct lexer *lx = sd->sd_lx;
+	struct lexer *lx = sd->lx;
 	struct token *tk, *tmp;
 	size_t i;
 
@@ -439,15 +439,15 @@ simple_decl_move_vars(struct simple_decl *sd, struct decl_type *dt,
 static struct decl_var *
 simple_decl_var_init(struct simple_decl *sd)
 {
-	memset(&sd->sd_dv, 0, sizeof(sd->sd_dv));
-	return &sd->sd_dv;
+	memset(&sd->dv, 0, sizeof(sd->dv));
+	return &sd->dv;
 }
 
 static struct decl_var *
 simple_decl_var_end(struct simple_decl *sd, struct token *end)
 {
-	struct decl *dc = VECTOR_LAST(sd->sd_empty_decls);
-	struct decl_var *dv = &sd->sd_dv;
+	struct decl *dc = VECTOR_LAST(sd->empty_decls);
+	struct decl_var *dv = &sd->dv;
 	struct decl_var *dst;
 	struct decl_type_vars *ds;
 	struct token *sort, *tmp;
@@ -467,7 +467,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	 * be other variables of the same type that we want to place after this
 	 * kept declaration.
 	 */
-	ds = decl_type_slot(sd->sd_dt, slot);
+	ds = decl_type_slot(sd->dt, slot);
 
 	/*
 	 * If the declaration is kept due to a non-moveable variable associated
@@ -485,7 +485,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 		*newslot = slot;
 	}
 	if (end->tk_type == TOKEN_SEMI)
-		associate_semi(dc, sd->sd_dt, end);
+		associate_semi(dc, sd->dt, end);
 
 	if (keep)
 		return NULL;
@@ -503,7 +503,7 @@ simple_decl_var_end(struct simple_decl *sd, struct token *end)
 	*dst = *dv;
 
 	simple_trace(sd, "type \"%s\", slot %u, ident %s",
-	    sd->sd_dt->dt_str, slot, lexer_serialize(sd->sd_lx, dv->dv_sort));
+	    sd->dt->dt_str, slot, lexer_serialize(sd->lx, dv->dv_sort));
 
 	return dst;
 }
