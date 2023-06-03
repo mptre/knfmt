@@ -334,6 +334,7 @@ DISTFILES+=	style.h
 DISTFILES+=	t.c
 DISTFILES+=	tests/GNUmakefile
 DISTFILES+=	tests/Makefile
+DISTFILES+=	tests/bug-001.c
 DISTFILES+=	tests/bug-002.c
 DISTFILES+=	tests/bug-002.ok
 DISTFILES+=	tests/bug-003.c

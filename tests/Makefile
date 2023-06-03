@@ -466,6 +466,7 @@ TESTS+=	inplace-001.c
 
 TESTS+=	trace-001.c
 
+TESTS+=	bug-001.c
 TESTS+=	bug-002.c
 TESTS+=	bug-003.c
 
