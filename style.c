@@ -240,7 +240,7 @@ style_init(void)
 }
 
 void
-style_teardown(void)
+style_shutdown(void)
 {
 	size_t nslots = sizeof(keywords) / sizeof(keywords[0]);
 	size_t i;

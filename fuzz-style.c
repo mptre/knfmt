@@ -13,6 +13,6 @@ main(void)
 	style_init();
 	st = style_parse("/dev/stdin", &op);
 	style_free(st);
-	style_teardown();
+	style_shutdown();
 	return 0;
 }

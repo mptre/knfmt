@@ -79,7 +79,7 @@ enum {
 };
 
 void	style_init(void);
-void	style_teardown(void);
+void	style_shutdown(void);
 
 struct style	*style_parse(const char *, const struct options *);
 void		 style_free(struct style *);

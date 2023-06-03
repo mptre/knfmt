@@ -130,7 +130,7 @@ out:
 	files_free(&files);
 	simple_free(si);
 	style_free(st);
-	style_teardown();
+	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();
 	if (op.op_flags.diffparse)
