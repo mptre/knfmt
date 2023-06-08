@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include "doc.h"
+#include "expr.h"
 #include "lexer.h"
 #include "parser-cpp.h"
 #include "parser-expr.h"
