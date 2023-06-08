@@ -540,7 +540,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 		if (st->st_tk == NULL)
 			return 0;
 		br = token_get_branch(st->st_tk);
-		if (br == NULL)
+		if (likely(br == NULL))
 			goto out;
 
 		if (lx->lx_peek == 0) {
