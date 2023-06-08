@@ -2,11 +2,7 @@
 
 #define LEXER_EOF	0x7fffffff
 
-struct buffer;
-struct diffchunk;
-struct error;
 struct lexer;
-struct options;
 
 struct lexer_arg {
 	const char		*path;

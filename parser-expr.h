@@ -1,9 +1,6 @@
 #include "expr.h"
 
-struct doc;
 struct parser;
-struct ruler;
-struct token;
 
 struct parser_expr_arg {
 	struct doc		*dc;

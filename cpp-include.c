@@ -8,13 +8,10 @@
 #include <string.h>
 
 #include "alloc.h"
-#include "buffer.h"
 #include "lexer.h"
-#include "options.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
-#include "util.h"
 #include "vector.h"
 
 struct cpp_include {

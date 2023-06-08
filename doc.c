@@ -18,7 +18,6 @@
 #include "consistency.h"
 #include "diff.h"
 #include "lexer.h"
-#include "options.h"
 #include "style.h"
 #include "token.h"
 #include "util.h"

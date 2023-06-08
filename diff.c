@@ -6,6 +6,7 @@
 
 #include <err.h>
 #include <errno.h>
+#include <limits.h>	/* PATH_MAX */
 #include <regex.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -15,7 +16,6 @@
 
 #include "alloc.h"
 #include "buffer.h"
-#include "error.h"
 #include "file.h"
 #include "options.h"
 #include "util.h"

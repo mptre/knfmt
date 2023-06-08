@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <err.h>
+#include <limits.h>	/* UINT_MAX */
 #include <string.h>
 
 #include "doc.h"

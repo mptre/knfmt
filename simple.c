@@ -3,10 +3,8 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "alloc.h"
-#include "cdefs.h"
 #include "options.h"
 
 struct simple {

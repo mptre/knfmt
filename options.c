@@ -2,7 +2,6 @@
 
 #include "config.h"
 
-#include <ctype.h>
 #include <err.h>
 #include <limits.h>
 #include <string.h>

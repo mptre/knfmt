@@ -4,7 +4,6 @@
 
 #include "doc.h"
 #include "lexer.h"
-#include "options.h"
 #include "parser-attributes.h"
 #include "parser-braces.h"
 #include "parser-cpp.h"

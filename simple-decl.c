@@ -10,7 +10,6 @@
 
 #include "alloc.h"
 #include "buffer.h"
-#include "cdefs.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"

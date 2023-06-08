@@ -7,7 +7,6 @@
 #include "cdefs.h"
 #include "doc.h"
 #include "lexer.h"
-#include "options.h"
 #include "parser-cpp.h"
 #include "parser-func.h"
 #include "parser-priv.h"

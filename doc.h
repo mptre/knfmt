@@ -1,10 +1,6 @@
 #include <stddef.h>	/* size_t */
 
-struct buffer;
 struct doc;
-struct lexer;
-struct options;
-struct style;
 struct token;
 
 /* Keep in sync with DESIGN. */

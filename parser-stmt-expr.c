@@ -4,7 +4,6 @@
 
 #include "doc.h"
 #include "lexer.h"
-#include "options.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
 #include "parser-stmt.h"
