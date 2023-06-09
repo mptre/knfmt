@@ -1222,6 +1222,12 @@ lint-cppcheck:
 	cd ${.CURDIR} && cppcheck ${CPPCHECKFLAGS} ${CPPCHECK}
 .PHONY: lint-cppcheck
 
+IWYU?=	include-what-you-use
+lint-include-what-you-use:
+	cd ${.CURDIR} && echo ${CPPCHECK} | xargs printf '%s\n' | \
+		xargs -I{} ${IWYU} ${CPPFLAGS} {}
+.PHONY: lint-include-what-you-use
+
 lint-shellcheck:
 	cd ${.CURDIR} && shellcheck ${SHELLCHECKFLAGS} ${SHLINT}
 .PHONY: lint-shellcheck
