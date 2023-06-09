@@ -514,10 +514,10 @@ associate_semi(struct decl *dc, struct decl_type *dt, struct token *semi)
 	size_t i, nslots;
 
 	while (!VECTOR_EMPTY(dc->slots)) {
-		unsigned int slot;
+		unsigned int *slot;
 
-		slot = *VECTOR_POP(dc->slots);
-		slots[slot].semi.kept = semi;
+		slot = VECTOR_POP(dc->slots);
+		slots[*slot].semi.kept = semi;
 	}
 
 	/*
