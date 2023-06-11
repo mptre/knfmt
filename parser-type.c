@@ -18,6 +18,7 @@
 static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
+static int	peek_type_noident(struct lexer *, struct token **);
 
 int
 parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
@@ -34,6 +35,16 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 	if (!lexer_peek(lx, &beg))
 		return 0;
 	issizeof = lexer_back(lx, &pv) && pv->tk_type == TOKEN_SIZEOF;
+
+	/*
+	 * Recognize function argument consisting of a single type and no
+	 * variable name.
+	 */
+	if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
+	    peek_type_noident(lx, &t)) {
+		peek = 1;
+		goto out;
+	}
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
@@ -71,27 +82,6 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 			t = rparen;
 			lexer_seek(lx, token_next(rparen));
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
-			struct lexer_state ss;
-			int ident;
-
-			/*
-			 * Recognize function arguments consisting of a single
-			 * type and no variable name.
-			 */
-			ident = 0;
-			lexer_peek_enter(lx, &ss);
-			if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
-			    ntokens == 0 && lexer_if(lx, TOKEN_IDENT, NULL) &&
-			    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
-			     lexer_if(lx, TOKEN_COMMA, NULL)))
-				ident = 1;
-			lexer_peek_leave(lx, &ss);
-			if (ident) {
-				if (lexer_pop(lx, &t))
-					peek = 1;
-				break;
-			}
-
 			/* Ensure this is not the identifier after the type. */
 			if ((flags & PARSER_TYPE_CAST) == 0 &&
 			    (flags & PARSER_TYPE_EXPR) == 0 &&
@@ -138,6 +128,7 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 		peek = 1;
 	}
 
+out:
 	if (peek && tk != NULL)
 		*tk = t;
 	return peek;
@@ -366,5 +357,20 @@ lexer_peek_if_type_ident(struct lexer *lx)
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 
+	return peek;
+}
+
+static int
+peek_type_noident(struct lexer *lx, struct token **tk)
+{
+	struct lexer_state s;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, tk) &&
+	    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
+	     lexer_if(lx, TOKEN_COMMA, NULL)))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
 	return peek;
 }
