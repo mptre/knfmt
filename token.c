@@ -187,18 +187,15 @@ int
 token_strcmp(const struct token *a, const struct token *b)
 {
 	size_t minlen;
-	int cmp;
+	int cmp, gt, le;
 
 	minlen = a->tk_len < b->tk_len ? a->tk_len : b->tk_len;
 	cmp = strncmp(a->tk_str, b->tk_str, minlen);
 	if (cmp != 0)
 		return cmp;
-
-	if (a->tk_len < b->tk_len)
-		return -1;
-	if (a->tk_len > b->tk_len)
-		return 1;
-	return 0;
+	le = a->tk_len < b->tk_len;
+	gt = a->tk_len > b->tk_len;
+	return (le * -1) + (gt * 1);
 }
 
 /*
