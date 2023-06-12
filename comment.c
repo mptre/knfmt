@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "buffer.h"
-#include "cdefs.h"
 #include "style.h"
 #include "token.h"
 #include "util.h"
@@ -17,8 +16,7 @@ static const char	*skipws(const char *, size_t);
 static size_t		 rskipws(const char *, size_t);
 
 struct buffer *
-comment_trim(const struct token *tk, const struct style *st,
-    const struct options *UNUSED(op))
+comment_trim(const struct token *tk, const struct style *st)
 {
 	struct buffer *bf;
 	const char *sp = tk->tk_str;

@@ -517,7 +517,7 @@ clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 	if (c99)
 		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
 
-	bf = comment_trim(tk, cl->cl_st, cl->cl_op);
+	bf = comment_trim(tk, cl->cl_st);
 	if (bf != NULL) {
 		tk->tk_flags |= TOKEN_FLAG_DIRTY;
 		tk->tk_len = buffer_get_len(bf);
