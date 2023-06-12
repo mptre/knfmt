@@ -93,6 +93,7 @@ TESTS+=	error-050.c
 TESTS+=	error-051.c
 TESTS+=	error-052.c
 TESTS+=	error-053.c
+TESTS+=	error-054.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c

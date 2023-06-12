@@ -319,7 +319,6 @@ decl_free(struct decl *dc)
 {
 	if (dc == NULL)
 		return;
-	assert(VECTOR_EMPTY(dc->slots));
 	VECTOR_FREE(dc->slots);
 }
 
