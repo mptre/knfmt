@@ -513,9 +513,8 @@ clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 
 	tk = lexer_emit(lx, &st, &(struct token){
 	    .tk_type	= TOKEN_COMMENT,
+	    .tk_flags	= c99 ? TOKEN_FLAG_COMMENT_C99 : 0,
 	});
-	if (c99)
-		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
 
 	bf = comment_trim(tk, cl->cl_st);
 	if (bf != NULL) {
