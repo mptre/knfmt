@@ -8,9 +8,12 @@
 #define S(t, s, f)
 #endif
 
-/* keywords */
+/* keywords and common aliases */
 T(TOKEN_ASSEMBLY,	"asm",			0)
+A(TOKEN_ASSEMBLY,	"__asm",		0)
+A(TOKEN_ASSEMBLY,	"__asm__",		0)
 T(TOKEN_ATTRIBUTE,	"__attribute__",	0)
+A(TOKEN_ATTRIBUTE,	"__attribute",		0)
 T(TOKEN_BREAK,		"break",		0)
 T(TOKEN_CASE,		"case",			0)
 T(TOKEN_CHAR,		"char",			F(TYPE))
@@ -31,6 +34,7 @@ T(TOKEN_INT,		"int",			F(TYPE))
 T(TOKEN_LONG,		"long",			F(TYPE))
 T(TOKEN_REGISTER,	"register",		F(STORAGE))
 T(TOKEN_RESTRICT,	"restrict",		F(QUALIFIER))
+A(TOKEN_RESTRICT,	"__restrict",		F(QUALIFIER))
 T(TOKEN_RETURN,		"return",		0)
 T(TOKEN_SHORT,		"short",		F(TYPE))
 T(TOKEN_SIGNED,		"signed",		F(TYPE))
@@ -43,15 +47,9 @@ T(TOKEN_UNION,		"union",		F(TYPE))
 T(TOKEN_UNSIGNED,	"unsigned",		F(TYPE))
 T(TOKEN_VOID,		"void",			F(TYPE))
 T(TOKEN_VOLATILE,	"volatile",		F(QUALIFIER))
+A(TOKEN_VOLATILE,	"__volatile",		F(QUALIFIER))
+A(TOKEN_VOLATILE,	"__volatile__",		F(QUALIFIER))
 T(TOKEN_WHILE,		"while",		0)
-
-/* keyword aliases. */
-A(TOKEN_ASSEMBLY,	"__asm",	0)
-A(TOKEN_ASSEMBLY,	"__asm__",	0)
-A(TOKEN_ATTRIBUTE,	"__attribute",	0)
-A(TOKEN_RESTRICT,	"__restrict",	F(QUALIFIER))
-A(TOKEN_VOLATILE,	"__volatile",	F(QUALIFIER))
-A(TOKEN_VOLATILE,	"__volatile__",	F(QUALIFIER))
 
 /* punctuators */
 T(TOKEN_LSQUARE,		"[",	0)
