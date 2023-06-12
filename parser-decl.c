@@ -33,8 +33,7 @@ static int	parser_decl2(struct parser *, struct doc *, struct ruler *,
     unsigned int);
 static int	parser_decl_init(struct parser *, struct doc **,
     struct parser_decl_init_arg *);
-static int	parser_decl_init1(struct parser *, struct doc *, struct doc **,
-    struct parser_decl_init_arg *);
+static int	parser_decl_init1(struct parser *, struct doc *, struct doc **);
 static int	parser_decl_init_assign(struct parser *, struct doc *,
     struct doc **, struct parser_decl_init_arg *);
 static int	parser_decl_bitfield(struct parser *, struct doc *);
@@ -283,7 +282,9 @@ parser_decl_init(struct parser *pr, struct doc **out,
 		if (lexer_peek(lx, &tk) && tk == arg->semi)
 			break;
 
-		error = parser_decl_init1(pr, concat, out, arg);
+		error = parser_decl_init1(pr, concat, out);
+		if (error & NONE)
+			error = parser_decl_init_assign(pr, concat, out, arg);
 		if (error & NONE)
 			break;
 		ninit++;
@@ -316,8 +317,7 @@ parser_decl_init(struct parser *pr, struct doc **out,
 }
 
 static int
-parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out,
-    struct parser_decl_init_arg *arg)
+parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk;
@@ -364,7 +364,7 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out,
 		return parser_good(pr);
 	}
 
-	return parser_decl_init_assign(pr, dc, out, arg);
+	return parser_none(pr);
 }
 
 static int
