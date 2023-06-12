@@ -147,8 +147,12 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	if (!parser_type_peek(pr, &end, 0)) {
 		iscpp = parser_cpp_peek_decl(pr, &end,
 		    (flags & PARSER_DECL_ROOT) ? PARSER_CPP_DECL_ROOT : 0);
-		if (!iscpp)
-			return parser_cpp_x(pr, dc, rl);
+		if (!iscpp) {
+			error = parser_cpp_x(pr, dc, rl);
+			if ((error & GOOD) && !parser_cpp_peek_x(pr, NULL))
+				ruler_exec(rl);
+			return error;
+		}
 	}
 
 	/*
