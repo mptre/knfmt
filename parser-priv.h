@@ -24,8 +24,9 @@ struct parser {
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
 	struct {
-		struct simple_stmt	*stmt;
-		struct simple_decl	*decl;
+		struct simple_stmt		*stmt;
+		struct simple_decl		*decl;
+		struct simple_decl_proto	*decl_proto;
 	} pr_simple;
 
 	struct {

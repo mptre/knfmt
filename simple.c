@@ -101,8 +101,12 @@ simple_enable(struct simple *si, int restore)
 static int
 is_pass_mutually_exclusive(enum simple_pass pass)
 {
-	/* The static pass runs as part of the decl pass. */
-	if (pass == SIMPLE_STATIC)
+	switch (pass) {
+	case SIMPLE_DECL_PROTO:
+	case SIMPLE_STATIC:
+		/* Runs as part of the decl pass and should not interfere. */
 		return 0;
-	return 1;
+	default:
+		return 1;
+	}
 }

@@ -10,6 +10,8 @@
 #include "parser-stmt.h"
 #include "parser-type.h"
 #include "ruler.h"
+#include "simple-decl-proto.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 
@@ -23,6 +25,8 @@ struct parser_func_proto_arg {
 
 static int	parser_func_decl1(struct parser *, struct doc *,
     struct ruler *, const struct token *);
+static int	parser_simple_decl_proto_enter(struct parser *,
+    const struct token *);
 static int	parser_func_impl1(struct parser *, struct doc *,
     struct ruler *, const struct token *);
 static int	parser_func_proto(struct parser *, struct doc **,
@@ -85,6 +89,9 @@ parser_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 {
 	int error;
 
+	error = parser_simple_decl_proto_enter(pr, type);
+	if (error & HALT)
+		return error;
 	error = parser_func_decl1(pr, dc, rl, type);
 	return error;
 }
@@ -110,6 +117,31 @@ parser_func_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 		doc_token(tk, out);
 
 	return parser_good(pr);
+}
+
+static int
+parser_simple_decl_proto_enter(struct parser *pr, const struct token *type)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct doc *dc;
+	int error, simple;
+
+	if (!simple_enter(pr->pr_si, SIMPLE_DECL_PROTO, 0, &simple))
+		return parser_good(pr);
+
+	pr->pr_simple.decl_proto = simple_decl_proto_enter(pr->pr_lx);
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	lexer_peek_enter(lx, &s);
+	error = parser_func_decl1(pr, dc, NULL, type);
+	lexer_peek_leave(lx, &s);
+	doc_free(dc);
+	if (error & GOOD)
+		simple_decl_proto_leave(pr->pr_simple.decl_proto);
+	simple_decl_proto_free(pr->pr_simple.decl_proto);
+	pr->pr_simple.decl_proto = NULL;
+	simple_leave(pr->pr_si, SIMPLE_DECL_PROTO, simple);
+	return error;
 }
 
 int
@@ -141,6 +173,9 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 
 	if (!parser_type_peek(pr, &type, PARSER_TYPE_ARG))
 		return parser_none(pr);
+
+	if (is_simple_enabled(pr->pr_si, SIMPLE_DECL_PROTO))
+		simple_decl_proto_arg(pr->pr_simple.decl_proto);
 
 	/*
 	 * Let each argument begin with a soft line, causing a line to be
@@ -189,6 +224,11 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 			doc_alloc(DOC_LINE, concat);
 		doc_token(tk, concat);
 		pv = tk;
+		if (tk->tk_type == TOKEN_IDENT &&
+		    is_simple_enabled(pr->pr_si, SIMPLE_DECL_PROTO)) {
+			simple_decl_proto_arg_ident(pr->pr_simple.decl_proto,
+			    tk);
+		}
 	}
 
 	return parser_good(pr);

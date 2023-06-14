@@ -466,6 +466,7 @@ TESTS+=	simple-035.c
 TESTS+=	simple-036.c
 TESTS+=	simple-037.c
 TESTS+=	simple-038.c
+TESTS+=	simple-039.c
 
 TESTS+=	inplace-001.c
 
@@ -644,6 +645,8 @@ TESTS+=	../parser.h
 TESTS+=	../queue-fwd.h
 TESTS+=	../ruler.c
 TESTS+=	../ruler.h
+TESTS+=	../simple-decl-proto.c
+TESTS+=	../simple-decl-proto.h
 TESTS+=	../simple-decl.c
 TESTS+=	../simple-decl.h
 TESTS+=	../simple-stmt.c
