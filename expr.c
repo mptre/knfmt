@@ -258,14 +258,12 @@ static const struct {
 	int call;
 	int call_args;
 	int ternary;
-	int squares;
 } soft_weights = {
 	.arg		= 3,	/* after comma, before argument */
 	.binary		= 2,	/* after binary operator */
 	.call		= 2,	/* before call */
 	.call_args	= 2,	/* after lparen, before call arguments */
 	.ternary	= 2,	/* before ternary true/false expr */
-	.squares	= 1,	/* after lsquare */
 };
 
 void
@@ -738,10 +736,8 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], concat);	/* [ */
-		if (ex->ex_rhs != NULL) {
-			concat = expr_doc_soft(ex->ex_rhs, es, concat,
-			    soft_weights.squares);
-		}
+		if (ex->ex_rhs != NULL)
+			concat = expr_doc(ex->ex_rhs, es, concat);
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], concat);	/* ] */
 		break;
