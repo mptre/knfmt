@@ -249,7 +249,7 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 				error = parser_stmt(pr, dc);
 				parser_simple_stmt_no_braces_leave(pr, simple);
 				if (error & (FAIL | NONE))
-					parser_fail(pr);
+					return parser_fail(pr);
 			}
 
 			/* Terminate if/else chain. */
