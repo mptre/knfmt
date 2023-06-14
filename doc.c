@@ -267,7 +267,7 @@ static void		doc_trim_lines(const struct doc *, struct doc_state *);
 static int		doc_is_mute(const struct doc_state *);
 static int		doc_parens_align(const struct doc_state *);
 static int		doc_has_list(const struct doc *);
-static void		doc_column(struct doc_state *, const char *, size_t);
+static unsigned int	doc_column(struct doc_state *, const char *, size_t);
 static int		doc_max1(const struct doc *, struct doc_state *,
     void *);
 
@@ -1098,6 +1098,22 @@ static int
 doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 {
 	switch (dc->dc_type) {
+	case DOC_ALIGN: {
+		unsigned int indent = dc->dc_align.indent;
+		unsigned int spaces = dc->dc_align.spaces;
+
+		if (dc->dc_align.tabalign) {
+			while (indent > 0) {
+				unsigned int n;
+
+				n = doc_column(st, "\t", 1);
+				indent = n < indent ? indent - n : 0;
+			}
+		}
+		st->st_col += indent + spaces;
+		break;
+	}
+
 	case DOC_LITERAL:
 		doc_column(st, dc->dc_str, dc->dc_len);
 		break;
@@ -1126,7 +1142,6 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	case DOC_GROUP:
 	case DOC_INDENT:
 	case DOC_NOINDENT:
-	case DOC_ALIGN:
 	case DOC_SOFTLINE:
 	case DOC_HARDLINE:
 	case DOC_MUTE:
@@ -1653,12 +1668,15 @@ doc_has_list(const struct doc *dc)
  * Set the column position, intended to be given the same string just added to
  * the document buffer.
  */
-static void
+static unsigned int
 doc_column(struct doc_state *st, const char *str, size_t len)
 {
+	unsigned int oldcol = st->st_col;
+
 	st->st_col = strwidth(str, len, st->st_col);
 	if (st->st_col > style(st->st_st, ColumnLimit))
 		st->st_stats.nexceeds++;
+	return st->st_col - oldcol;
 }
 
 static int
