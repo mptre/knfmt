@@ -561,6 +561,7 @@ strflags(struct buffer *bf, unsigned int token_flags)
 		unsigned int	 flag;
 	} flags[] = {
 #define F(f, s) { (s), sizeof(s) - 1, (f) }
+		F(TOKEN_FLAG_DISCARD,		"DISCARD"),
 		F(TOKEN_FLAG_COMMENT_C99,	"C99"),
 		F(TOKEN_FLAG_OPTLINE,		"OPTLINE"),
 		F(TOKEN_FLAG_OPTSPACE,		"OPTSPACE"),
