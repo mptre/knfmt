@@ -894,7 +894,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		doc_token(ex->ex_tk, lhs);
 		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		/*
-		 * If the operator if followed by a trailing comment and a new
+		 * If the operator is followed by a trailing comment and a new
 		 * line, ensure that the new line is honored even when optional
 		 * new line(s) are ignored.
 		 */
