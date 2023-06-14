@@ -21,6 +21,8 @@ struct parser_func_proto_arg {
 #define PARSER_FUNC_PROTO_IMPL		0x00000001u
 };
 
+static int	parser_func_decl1(struct parser *, struct doc *,
+    struct ruler *, const struct token *);
 static int	parser_func_impl1(struct parser *, struct doc *,
     struct ruler *, const struct token *);
 static int	parser_func_proto(struct parser *, struct doc **,
@@ -79,6 +81,16 @@ out:
 
 int
 parser_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
+    const struct token *type)
+{
+	int error;
+
+	error = parser_func_decl1(pr, dc, rl, type);
+	return error;
+}
+
+static int
+parser_func_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
     const struct token *type)
 {
 	struct lexer *lx = pr->pr_lx;
