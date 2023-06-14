@@ -1235,7 +1235,8 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 	concat = expr_doc(ex, es, parent);
 	/*
 	 * Honor the soft line with the highest weight. Using greater than or
-	 * equal is of importance as we want to maximize the column utilisation.
+	 * equal is of importance as we want to maximize column utilisation,
+	 * effectively favoring nested soft line(s).
 	 */
 	if (doc_max(parent) >= weight)
 		doc_remove(softline, dc);
