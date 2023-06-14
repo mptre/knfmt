@@ -1,5 +1,5 @@
 /*
- * Closing parenthesis wrong indentation.
+ * Was bug-003.c. Closing parenthesis wrong indentation.
  */
 
 int

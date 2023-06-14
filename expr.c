@@ -963,6 +963,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct token *lparen = ex->ex_tokens[0];
 	struct token *rparen = ex->ex_tokens[1];
+	int fold_rparens = 0;
 
 	es->es_ncalls++;
 
@@ -978,10 +979,12 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (rparen != NULL) {
 			struct token *pv;
 
-			/* Never break before the closing parens. */
+			/* Try to never break before the closing parens. */
 			pv = token_prev(rparen);
-			if (pv != NULL && !token_has_c99_comment(pv))
+			if (pv != NULL && !token_has_c99_comment(pv)) {
 				token_trim(pv);
+				fold_rparens = 1;
+			}
 		}
 
 		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
@@ -993,6 +996,13 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 			    expr_doc_align(ex, es, dc, indent);
 		}
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
+	}
+	if (!fold_rparens) {
+		/*
+		 * Must break before closing parens, indentation for the outer
+		 * scope is expected.
+		 */
+		dc = doc_alloc_dedent(es->es_ea.indent, dc);
 	}
 	if (rparen != NULL)
 		doc_token(rparen, dc);

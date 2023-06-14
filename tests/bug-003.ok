@@ -1,7 +1,0 @@
-int
-main(void)
-{
-	foo(
-	    bar    // comment
-	    );
-}
