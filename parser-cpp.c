@@ -3,13 +3,16 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
+#include "ruler.h"
 #include "token.h"
 
 static int	iscdefs(const char *, size_t);
@@ -126,7 +129,7 @@ parser_cpp_peek_x(struct parser *pr, struct token **tk)
 }
 
 int
-parser_cpp_x(struct parser *pr, struct doc *dc, struct ruler *rl)
+parser_cpp_x(struct parser *pr, struct doc *dc)
 {
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
@@ -134,6 +137,11 @@ parser_cpp_x(struct parser *pr, struct doc *dc, struct ruler *rl)
 
 	if (!parser_cpp_peek_x(pr, NULL))
 		return parser_none(pr);
+
+	if (pr->pr_cpp.ruler == NULL) {
+		pr->pr_cpp.ruler = emalloc(sizeof(*pr->pr_cpp.ruler));
+		ruler_init(pr->pr_cpp.ruler, 0, RULER_ALIGN_SENSE);
+	}
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
@@ -147,7 +155,7 @@ parser_cpp_x(struct parser *pr, struct doc *dc, struct ruler *rl)
 		doc_token(tk, concat);
 	parser_expr(pr, NULL, &(struct parser_expr_arg){
 	    .dc		= concat,
-	    .rl		= rl,
+	    .rl		= pr->pr_cpp.ruler,
 	    .flags	= EXPR_EXEC_ALIGN,
 	});
 	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
@@ -202,6 +210,30 @@ parser_cpp_decl_root(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
 		doc_token(semi, dc);
 	return parser_good(pr);
+}
+
+void *
+parser_cpp_decl_enter(struct parser *pr)
+{
+	struct ruler *cookie = pr->pr_cpp.ruler;
+
+	/* Cope with nested declarations, use a dedicated ruler per scope. */
+	pr->pr_cpp.ruler = NULL;
+	return cookie;
+}
+
+void
+parser_cpp_decl_leave(struct parser *pr, void *cookie)
+{
+	struct ruler *rl = pr->pr_cpp.ruler;
+
+	pr->pr_cpp.ruler = cookie;
+	if (rl == NULL)
+		return;
+
+	ruler_exec(rl);
+	ruler_free(rl);
+	free(rl);
 }
 
 static int

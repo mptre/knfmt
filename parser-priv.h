@@ -32,6 +32,10 @@ struct parser {
 		int		 valid;
 		struct token	*lbrace;
 	} pr_braces;
+
+	struct {
+		struct ruler	*ruler;		/* align X macros */
+	} pr_cpp;
 };
 
 int	parser_good(const struct parser *);
