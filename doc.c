@@ -652,14 +652,13 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_NOINDENT: {
-		int oldindent;
+		struct doc_state_indent oldindent;
 
 		doc_trim_spaces(dc, st);
-		oldindent = st->st_indent.cur;
-		st->st_indent.cur = 0;
-		st->st_indent.pre = 0;
+		oldindent = st->st_indent;
+		memset(&st->st_indent, 0, sizeof(st->st_indent));
 		doc_exec1(dc->dc_doc, st);
-		st->st_indent.cur = oldindent;
+		st->st_indent = oldindent;
 		break;
 	}
 
