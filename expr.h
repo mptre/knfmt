@@ -25,7 +25,8 @@ struct expr_exec_arg {
 #define EXPR_EXEC_NOPARENS		0x00000008u
 /* Detect inline assembly operands. */
 #define EXPR_EXEC_ASM			0x00000010u
-/* was EXPR_EXEC_TYPE			0x00000020u */
+/* Disable expr_doc_soft() logic. */
+#define EXPR_EXEC_NOSOFT		0x00000020u
 
 	struct {
 		/*

@@ -1228,6 +1228,9 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 {
 	struct doc *concat, *parent, *softline;
 
+	if (es->es_flags & EXPR_EXEC_NOSOFT)
+		return expr_doc(ex, es, dc);
+
 	dc = doc_alloc0(DOC_CONCAT, doc_alloc0(DOC_GROUP, dc, 0, fun, lno),
 	    0, fun, lno);
 	softline = doc_alloc0(DOC_SOFTLINE, dc, weight, fun, lno);

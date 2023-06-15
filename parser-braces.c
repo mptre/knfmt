@@ -174,7 +174,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 				.dc	= concat,
 				.rl	= arg->rl,
 				.stop	= stop,
-				.flags	= EXPR_EXEC_ALIGN,
+				.flags	= EXPR_EXEC_ALIGN | EXPR_EXEC_NOSOFT,
 			});
 			if (error & HALT)
 				return parser_fail(pr);
