@@ -401,9 +401,8 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 		}
 
 		/*
-		 * Honor hard line after assignment operator which must be
-		 * emitted inside the expression document to get indentation
-		 * right.
+		 * Honor hard line after assignment operator, must be emitted
+		 * inside the expression document to get indentation right.
 		 */
 		if (token_has_line(equal, 1))
 			expr_flags |= EXPR_EXEC_HARDLINE;
