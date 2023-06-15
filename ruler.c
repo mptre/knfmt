@@ -259,6 +259,8 @@ ruler_column_alignment(struct ruler_column *rc)
 	unsigned int cno = 0;
 	unsigned int maxlen, w;
 
+	assert(!VECTOR_EMPTY(rc->rc_datums));
+
 	/*
 	 * Allow redundant spaces, reduces churn when removing pointer types
 	 * from declarations.
