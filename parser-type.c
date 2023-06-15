@@ -198,9 +198,8 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 			tk = nx;
 			ntokens++;
 		}
-
-		simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 	}
+	simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 
 	for (;;) {
 		struct doc *concat;
