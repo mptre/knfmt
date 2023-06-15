@@ -15,7 +15,8 @@ struct simple {
 	int			 enable;
 };
 
-static int	is_pass_mutually_exclusive(enum simple_pass);
+static int	is_pass_mutually_exclusive(const struct simple *,
+    enum simple_pass);
 
 struct simple *
 simple_alloc(const struct options *op)
@@ -45,7 +46,7 @@ simple_enter(struct simple *si, enum simple_pass pass, unsigned int flags,
 		return 0;
 	}
 
-	if (is_pass_mutually_exclusive(pass)) {
+	if (is_pass_mutually_exclusive(si, pass)) {
 		unsigned int i;
 
 		for (i = 0; i < SIMPLE_LAST; i++) {
@@ -99,13 +100,19 @@ simple_enable(struct simple *si, int restore)
 }
 
 static int
-is_pass_mutually_exclusive(enum simple_pass pass)
+is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 {
 	switch (pass) {
+	case SIMPLE_STATIC:
+		/*
+		 * Nested under decl pass but can only operate when the decl
+		 * pass is either ignored or disabled. Otherwise, it will
+		 * interfere as the static pass reshuffles declarations.
+		 */
+		return si->passes[SIMPLE_DECL].state == SIMPLE_STATE_ENABLE;
 	case SIMPLE_BRACES:
 	case SIMPLE_DECL_PROTO:
-	case SIMPLE_STATIC:
-		/* Runs as part of the decl pass and should not interfere. */
+		/* Nested under decl pass and should not interfere. */
 		return 0;
 	default:
 		return 1;

@@ -470,6 +470,7 @@ TESTS+=	simple-037.c
 TESTS+=	simple-038.c
 TESTS+=	simple-039.c
 TESTS+=	simple-040.c
+TESTS+=	simple-041.c
 
 TESTS+=	inplace-001.c
 
