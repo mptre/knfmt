@@ -69,8 +69,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *pv, *rbrace, *tk;
 	unsigned int w = 0;
-	int align = 1;
-	int error;
+	int align, error;
 
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
 		return parser_fail(pr);
