@@ -1676,7 +1676,8 @@ doc_column(struct doc_state *st, const char *str, size_t len)
 	st->st_col = strwidth(str, len, st->st_col);
 	if (st->st_col > style(st->st_st, ColumnLimit))
 		st->st_stats.nexceeds++;
-	return st->st_col - oldcol;
+	/* Cope new line(s). */
+	return st->st_col > oldcol ? st->st_col - oldcol : 0;
 }
 
 static int
