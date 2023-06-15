@@ -218,6 +218,13 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
 		if (!token_is_moveable(tk))
 			return;
+
+		/* Ignore type declarations making use of cpp macros. */
+		switch (tk->tk_type) {
+		case TOKEN_LPAREN:
+		case TOKEN_LBRACE:
+			return;
+		}
 	}
 
 	type = token_range_str(&tr);
