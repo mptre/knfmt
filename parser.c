@@ -206,7 +206,7 @@ parser_width(struct parser *pr, const struct doc *dc)
 	    .dc	= dc,
 	    .bf	= pr->pr_scratch,
 	    .st	= pr->pr_st,
-	    .op	= pr->pr_op
+	    .op	= pr->pr_op,
 	});
 }
 

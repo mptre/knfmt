@@ -362,7 +362,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 	    .callbacks	= {
 		.read		= yaml_read,
 		.serialize	= yaml_serialize,
-		.arg		= st
+		.arg		= st,
 	    },
 	});
 	if (lx == NULL) {
