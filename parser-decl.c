@@ -390,7 +390,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 			return parser_fail(pr);
 	} else {
 		struct token *pv, *stop;
-		unsigned int flags = 0;
+		unsigned int expr_flags = 0;
 
 		/* Never break before the assignment operator. */
 		if (!is_simple_enabled(pr->pr_si, SIMPLE_DECL) &&
@@ -406,14 +406,13 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 		 * right.
 		 */
 		if (token_has_line(equal, 1))
-			flags |= EXPR_EXEC_HARDLINE;
-
+			expr_flags |= EXPR_EXEC_HARDLINE;
 		lexer_peek_until_comma(lx, arg->semi, &stop);
 		error = parser_expr(pr, out, &(struct parser_expr_arg){
 		    .dc		= dedent,
 		    .stop	= stop,
 		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
-		    .flags	= flags,
+		    .flags	= expr_flags,
 		});
 		if (error & HALT)
 			return parser_fail(pr);
