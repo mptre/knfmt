@@ -9,6 +9,7 @@
 #include "parser-expr.h"
 #include "parser-priv.h"
 #include "ruler.h"
+#include "simple.h"
 #include "token.h"
 
 struct braces_arg {
@@ -35,6 +36,8 @@ static int	parser_braces_field1(struct parser *,
 static struct token	*peek_expr_stop(struct parser *, struct token *);
 static struct token	*lbrace_cache(struct parser *, struct token *);
 static void		 lbrace_cache_purge(struct parser *);
+static void		 insert_trailing_comma(struct parser *,
+    const struct token *);
 
 int
 parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
@@ -253,7 +256,7 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	struct doc *dc = arg->dc;
 	struct token *equal;
 	int nfields = 0;
-	int error;
+	int error, simple;
 
 	for (;;) {
 		error = parser_braces_field1(pr, arg);
@@ -265,6 +268,10 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	}
 	if (nfields == 0)
 		return parser_fail(pr);
+
+	if (simple_enter(pr->pr_si, SIMPLE_BRACES, 0, &simple))
+		insert_trailing_comma(pr, arg->rbrace);
+	simple_leave(pr->pr_si, SIMPLE_BRACES, simple);
 
 	if (lexer_if(lx, TOKEN_EQUAL, &equal)) {
 		struct token *stop;
@@ -392,4 +399,17 @@ lbrace_cache_purge(struct parser *pr)
 		token_rele(pr->pr_braces.lbrace);
 	pr->pr_braces.lbrace = NULL;
 	pr->pr_braces.valid = 0;
+}
+
+static void
+insert_trailing_comma(struct parser *pr, const struct token *rbrace)
+{
+	struct token *comma, *pv;
+
+	pv = token_prev(rbrace);
+	if (pv->tk_type == TOKEN_COMMA || !token_has_line(pv, 1))
+		return;
+
+	comma = lexer_insert_after(pr->pr_lx, pv, TOKEN_COMMA, ",");
+	token_move_suffixes_if(pv, comma, TOKEN_SPACE);
 }

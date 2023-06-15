@@ -6,6 +6,7 @@ struct options;
 #define SIMPLE_IGNORE			0x00000002u
 
 enum simple_pass {
+	SIMPLE_BRACES,
 	SIMPLE_CPP_SORT_INCLUDES,
 	SIMPLE_DECL,
 	SIMPLE_DECL_PROTO,

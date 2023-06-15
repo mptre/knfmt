@@ -102,6 +102,7 @@ static int
 is_pass_mutually_exclusive(enum simple_pass pass)
 {
 	switch (pass) {
+	case SIMPLE_BRACES:
 	case SIMPLE_DECL_PROTO:
 	case SIMPLE_STATIC:
 		/* Runs as part of the decl pass and should not interfere. */
