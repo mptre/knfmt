@@ -15,3 +15,8 @@ enum {
 };
 
 enum { ONE, TWO };
+
+enum {
+	ONE,
+	TWO(2)
+};

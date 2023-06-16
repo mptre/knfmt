@@ -406,7 +406,9 @@ insert_trailing_comma(struct parser *pr, const struct token *rbrace)
 	struct token *comma, *pv;
 
 	pv = token_prev(rbrace);
-	if (pv->tk_type == TOKEN_COMMA || !token_has_line(pv, 1))
+	if (pv->tk_type == TOKEN_COMMA ||
+	    pv->tk_type == TOKEN_RPAREN ||
+	    !token_has_line(pv, 1))
 		return;
 
 	comma = lexer_insert_after(pr->pr_lx, pv, TOKEN_COMMA, ",");
