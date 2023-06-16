@@ -113,13 +113,15 @@ parser_cpp_peek_x(struct parser *pr, struct token **tk)
 		/*
 		 * The previous token must not reside on the same line as the
 		 * identifier. The next token must reside on the next line and
-		 * have the same or less indentation. This is of importance in
-		 * order to not confuse loop constructs hidden behind cpp.
+		 * have the same or less indentation, assuming the identifier is
+		 * not positioned at the start of the line. This is of
+		 * importance in order to not confuse loop constructs hidden
+		 * behind cpp.
 		 */
 		nx = token_next(rparen);
 		if ((pv == NULL || token_cmp(pv, ident) < 0) &&
 		    (nx == NULL || (token_cmp(nx, rparen) > 0 &&
-		     nx->tk_cno <= ident->tk_cno)))
+		     (ident->tk_cno == 1 || nx->tk_cno <= ident->tk_cno))))
 			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
