@@ -178,9 +178,10 @@ static int
 matchpath(const char *str, char *path, size_t pathsiz)
 {
 	regmatch_t rm[2];
+	struct stat sb;
 	const char *buf;
 	size_t len;
-	int i;
+	int n;
 
 	if (regexec(&repath, str, 2, rm, 0))
 		return 0;
@@ -191,27 +192,27 @@ matchpath(const char *str, char *path, size_t pathsiz)
 		/* Trim git prefix. */
 		buf = trimprefix(buf, &len);
 	}
+	n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
+	if (n < 0 || (size_t)n >= pathsiz)
+		goto err;
 
-	for (i = 0; i < 2; i++) {
-		struct stat sb;
-		int n;
+	/* Try to adjust Git repository relative path(s). */
+	if (git_ndirs > 0 && path[0] != '/' &&
+	    stat(path, &sb) == -1 && errno == ENOENT) {
+		int ntrim;
 
+		for (ntrim = git_ndirs; ntrim > 0; ntrim--)
+			buf = trimprefix(buf, &len);
 		n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
 		if (n < 0 || (size_t)n >= pathsiz)
-			errx(1, "%.*s: path too long", (int)len, buf);
-
-		/* Try to adjust Git repository relative path(s). */
-		if (git_ndirs > 0 && path[0] != '/' &&
-		    stat(path, &sb) == -1 && errno == ENOENT) {
-			int ntrim;
-
-			for (ntrim = git_ndirs; ntrim > 0; ntrim--)
-				buf = trimprefix(buf, &len);
-		} else {
-			break;
-		}
+			goto err;
 	}
+
 	return 1;
+
+err:
+	errx(1, "%.*s: path too long", (int)len, buf);
+	return 0;
 }
 
 static int
