@@ -1,6 +1,5 @@
 #include <stddef.h>	/* size_t */
 
-#include "config.h"
 #include "queue-fwd.h"
 
 enum {
