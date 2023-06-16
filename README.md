@@ -18,14 +18,14 @@ It can produce a diff between the original and formatted source code:
 
 	$ knfmt -d knfmt.c
 
-It can given a unified diff only format the changed lines.
-This option is compatible with the options mentioned above:
-
-	$ git diff | knfmt -Dd
-
 It can subjectively try to simplify the source code:
 
 	$ knfmt -s knfmt.c
+
+It can given a unified diff only format the changed lines.
+This option is compatible with the options mentioned above:
+
+	$ git diff | knfmt -Dds
 
 It can interoperate with clang-format if a `.clang-format` file is found in any
 directory along the current working path, see
