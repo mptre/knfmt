@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <err.h>
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -71,6 +72,7 @@ static void	style_set(struct style *, int, unsigned int);
 static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *, const struct options *);
 static int	style_parse_yaml1(struct style *, struct lexer *);
+static void	style_dump(const struct style *);
 
 static struct token			*yaml_read(struct lexer *, void *);
 static struct token			*yaml_read_integer(struct lexer *);
@@ -98,6 +100,7 @@ static int	parse_IncludeCategories(struct style *, struct lexer *,
     const struct style_option *);
 
 static const char	*stryaml(enum yaml_type);
+static const char	*style_keyword_str(enum style_keyword);
 
 static struct style_option *keywords[256];
 
@@ -282,6 +285,8 @@ style_parse(const char *path, const struct options *op)
 	if (error) {
 		style_free(st);
 		st = NULL;
+	} else if (trace(op, 's') >= 2) {
+		style_dump(st);
 	}
 	return st;
 }
@@ -432,6 +437,44 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 	}
 
 	return 0;
+}
+
+static void
+style_dump(const struct style *st)
+{
+	size_t noptions = sizeof(st->st_options) / sizeof(st->st_options[0]);
+	size_t i;
+	int scope = 0;
+
+	for (i = 0; i < noptions; i++) {
+		const struct style_option *so;
+		const char *key;
+
+		if (!st->st_options[i].isset)
+			continue;
+
+		key = style_keyword_str(i);
+		so = yaml_find_keyword(key, strlen(key));
+
+		if (so->so_scope != scope && so->so_scope != 0) {
+			fprintf(stderr, "[s] %s:\n",
+			    style_keyword_str(
+			    (enum style_keyword)so->so_scope));
+		}
+		scope = so->so_scope;
+		fprintf(stderr, "[s] ");
+		if (scope != 0)
+			fprintf(stderr, "  ");
+		fprintf(stderr, "%s: ", key);
+
+		if (so->so_parse == parse_integer) {
+			fprintf(stderr, "%u", st->st_options[i].val);
+		} else {
+			fprintf(stderr, "%s",
+			    style_keyword_str(st->st_options[i].val));
+		}
+		fprintf(stderr, "\n");
+	}
 }
 
 static struct token *
@@ -772,4 +815,17 @@ stryaml(enum yaml_type type)
 	if (type == LEXER_EOF)
 		return "EOF";
 	return NULL;
+}
+
+static const char *
+style_keyword_str(enum style_keyword keyword)
+{
+	switch (keyword) {
+#define DO(style) case style: return #style;
+	FOR_STYLES(DO)
+#undef DO
+	default:
+		break;
+	}
+	return "Unknown";
 }

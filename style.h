@@ -2,79 +2,84 @@ struct options;
 struct style;
 
 /* Supported clang format options and values. */
-enum {
-	After = 1,
-	AfterCaseLabel,
-	AfterClass,
-	AfterControlStatement,
-	AfterEnum,
-	AfterExternBlock,
-	AfterFunction,
-	AfterNamespace,
-	AfterObjCDeclaration,
-	AfterStruct,
-	AfterUnion,
-	Align,
-	AlignAfterOpenBracket,
-	AlignAfterOperator,
-	AlignEscapedNewlines,
-	AlignOperands,
-	AlignWithSpaces,
-	All,
-	AllDefinitions,
-	Allman,
-	Always,
-	AlwaysBreak,
-	AlwaysBreakAfterReturnType,
-	Attach,
-	Before,
-	BeforeCatch,
-	BeforeElse,
-	BeforeLambdaBody,
-	BeforeWhile,
-	BitFieldColonSpacing,
-	BlockIndent,
-	Both,
-	BraceWrapping,
-	BreakBeforeBinaryOperators,
-	BreakBeforeBraces,
-	BreakBeforeTernaryOperators,
-	CaseInsensitive,
-	CaseSensitive,
-	ColumnLimit,
-	ContinuationIndentWidth,
-	Custom,
-	DontAlign,
-	False,
-	ForContinuationAndIndentation,
-	ForIndentation,
-	GNU,
-	IncludeCategories,
-	IndentBraces,
-	IndentWidth,
-	Left,
-	Linux,
-	Mozilla,
-	MultiLine,
-	Never,
-	NonAssignment,
-	None,
-	Priority,
-	Regex,
-	Right,
-	SortIncludes,
-	SortPriority,
-	SplitEmptyFunction,
-	SplitEmptyNamespace,
-	SplitEmptyRecord,
-	Stroustrup,
-	TopLevel,
-	TopLevelDefinitions,
-	True,
-	UseTab,
-	WebKit,
-	Whitesmiths,
+#define FOR_STYLES(OP)							\
+	OP(After)							\
+	OP(AfterCaseLabel)						\
+	OP(AfterClass)							\
+	OP(AfterControlStatement)					\
+	OP(AfterEnum)							\
+	OP(AfterExternBlock)						\
+	OP(AfterFunction)						\
+	OP(AfterNamespace)						\
+	OP(AfterObjCDeclaration)					\
+	OP(AfterStruct)							\
+	OP(AfterUnion)							\
+	OP(Align)							\
+	OP(AlignAfterOpenBracket)					\
+	OP(AlignAfterOperator)						\
+	OP(AlignEscapedNewlines)					\
+	OP(AlignOperands)						\
+	OP(AlignWithSpaces)						\
+	OP(All)								\
+	OP(AllDefinitions)						\
+	OP(Allman)							\
+	OP(Always)							\
+	OP(AlwaysBreak)							\
+	OP(AlwaysBreakAfterReturnType)					\
+	OP(Attach)							\
+	OP(Before)							\
+	OP(BeforeCatch)							\
+	OP(BeforeElse)							\
+	OP(BeforeLambdaBody)						\
+	OP(BeforeWhile)							\
+	OP(BitFieldColonSpacing)					\
+	OP(BlockIndent)							\
+	OP(Both)							\
+	OP(BraceWrapping)						\
+	OP(BreakBeforeBinaryOperators)					\
+	OP(BreakBeforeBraces)						\
+	OP(BreakBeforeTernaryOperators)					\
+	OP(CaseInsensitive)						\
+	OP(CaseSensitive)						\
+	OP(ColumnLimit)							\
+	OP(ContinuationIndentWidth)					\
+	OP(Custom)							\
+	OP(DontAlign)							\
+	OP(False)							\
+	OP(ForContinuationAndIndentation)				\
+	OP(ForIndentation)						\
+	OP(GNU)								\
+	OP(IncludeCategories)						\
+	OP(IndentBraces)						\
+	OP(IndentWidth)							\
+	OP(Left)							\
+	OP(Linux)							\
+	OP(Mozilla)							\
+	OP(MultiLine)							\
+	OP(Never)							\
+	OP(NonAssignment)						\
+	OP(None)							\
+	OP(Priority)							\
+	OP(Regex)							\
+	OP(Right)							\
+	OP(SortIncludes)						\
+	OP(SortPriority)						\
+	OP(SplitEmptyFunction)						\
+	OP(SplitEmptyNamespace)						\
+	OP(SplitEmptyRecord)						\
+	OP(Stroustrup)							\
+	OP(TopLevel)							\
+	OP(TopLevelDefinitions)						\
+	OP(True)							\
+	OP(UseTab)							\
+	OP(WebKit)							\
+	OP(Whitesmiths)
 
+enum style_keyword {
+	First = 1,
+#define DO(style) style,
+	FOR_STYLES(DO)
+#undef DO
 	Last,
 };
 
