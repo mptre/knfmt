@@ -25,39 +25,34 @@ parser_asm(struct parser *pr, struct doc *dc)
 int
 parser_stmt_asm(struct parser *pr, struct doc *dc)
 {
-	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat, *opt;
 	struct token *colon = NULL;
+	struct token *qualifier = NULL;
 	struct token *assembly, *rparen, *tk;
-	int peek = 0;
 	int nops = 0;
 	int error, i;
 
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_ASSEMBLY, &assembly)) {
-		(void)lexer_if(lx, TOKEN_VOLATILE, NULL);
-		if (lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
-		    lexer_if(lx, TOKEN_SEMI, NULL))
-			peek = 1;
-	}
-	lexer_peek_leave(lx, &s);
-	if (!peek)
+	if (!lexer_peek_if(lx, TOKEN_ASSEMBLY, NULL))
 		return parser_none(pr);
-
-	parser_token_trim_before(pr, rparen);
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	if (lexer_expect(lx, TOKEN_ASSEMBLY, &assembly))
 		doc_token(assembly, concat);
-	if (lexer_if(lx, TOKEN_VOLATILE, &tk)) {
+
+	while (lexer_if(lx, TOKEN_VOLATILE, &qualifier) ||
+	    lexer_if(lx, TOKEN_INLINE, &qualifier) ||
+	    lexer_if(lx, TOKEN_GOTO, &qualifier)) {
 		doc_alloc(DOC_LINE, concat);
-		doc_token(tk, concat);
-		if (token_has_spaces(tk))
-			doc_alloc(DOC_LINE, concat);
+		doc_token(qualifier, concat);
 	}
+	if (qualifier != NULL && token_has_spaces(qualifier))
+		doc_alloc(DOC_LINE, concat);
+
 	opt = doc_alloc_indent(style(pr->pr_st, ContinuationIndentWidth),
 	    doc_alloc(DOC_OPTIONAL, dc));
+	if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+		parser_token_trim_before(pr, rparen);
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 		doc_token(tk, opt);
 
@@ -108,6 +103,19 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	}
 
 	/* clobbers */
+	if (lexer_if(lx, TOKEN_COLON, &colon)) {
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
+		doc_token(colon, concat);
+		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
+			doc_alloc(DOC_LINE, concat);
+		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+		    .dc	= concat,
+		});
+		if (error & FAIL)
+			return parser_fail(pr);
+	}
+
+	/* goto labels */
 	if (lexer_if(lx, TOKEN_COLON, &colon)) {
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
 		doc_token(colon, concat);

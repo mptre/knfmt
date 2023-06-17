@@ -1172,6 +1172,7 @@ DISTFILES+=	tests/valid-333.c
 DISTFILES+=	tests/valid-334.c
 DISTFILES+=	tests/valid-335.c
 DISTFILES+=	tests/valid-335.ok
+DISTFILES+=	tests/valid-336.c
 DISTFILES+=	token.c
 DISTFILES+=	token.h
 DISTFILES+=	util.c
