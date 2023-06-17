@@ -43,7 +43,7 @@
 
 /* Continuation of token types used to represent YAML primitives. */
 enum yaml_type {
-#define OP(type, idx) type = Last + idx,
+#define OP(type, idx) type = Last + (idx),
 	FOR_YAML_TYPES(OP)
 #undef OP
 };
