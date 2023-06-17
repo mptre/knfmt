@@ -57,6 +57,9 @@ static struct token	*clang_read_cpp(struct clang *, struct lexer *);
 static struct token	*clang_keyword(struct lexer *);
 static struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
+static struct token	*clang_find_keyword1(const char *, size_t);
+static struct token	*clang_find_alias(const struct lexer *,
+    const struct lexer_state *);
 static struct token	*clang_ellipsis(struct lexer *,
     const struct lexer_state *);
 
@@ -218,9 +221,10 @@ clang_read(struct lexer *lx, void *arg)
 		} while (isalnum(ch) || ch == '_');
 		lexer_ungetc(lx);
 
-		t = clang_find_keyword(lx, &st);
-		if (t != NULL) {
+		if ((t = clang_find_keyword(lx, &st)) != NULL) {
 			tk = lexer_emit(lx, &st, t);
+		} else if ((tk = clang_find_alias(lx, &st)) != NULL) {
+			/* nothing */
 		} else {
 			/* Fallback, treat everything as an identifier. */
 			tk = lexer_emit(lx, &st, &(struct token){
@@ -666,10 +670,18 @@ static struct token *
 clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 {
 	const char *key;
-	size_t i, len;
-	unsigned char slot;
+	size_t len;
 
 	key = lexer_buffer_slice(lx, st, &len);
+	return clang_find_keyword1(key, len);
+}
+
+static struct token *
+clang_find_keyword1(const char *key, size_t len)
+{
+	unsigned char slot;
+	size_t i;
+
 	slot = (unsigned char)key[0];
 	if (table_tokens[slot] == NULL)
 		return NULL;
@@ -680,6 +692,53 @@ clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 			return tk;
 	}
 	return NULL;
+}
+
+/*
+ * Recognize aliased token which is a keyword preceded or succeeded with
+ * underscores.
+ */
+static struct token *
+clang_find_alias(const struct lexer *lx, const struct lexer_state *st)
+{
+	const struct {
+		struct {
+			const char	*str;
+			size_t		 len;
+		} alias, keyword;
+	} aliases[] = {
+#define ALIAS(a, k)	{ { a, sizeof(a) - 1, }, { k, sizeof(k) - 1 } }
+		ALIAS("asm",		"asm"),
+		ALIAS("attribute",	"__attribute__"),
+		ALIAS("inline",		"inline"),
+		ALIAS("restrict",	"restrict"),
+		ALIAS("volatile",	"volatile"),
+#undef ALIAS
+	};
+	size_t naliases = sizeof(aliases) / sizeof(aliases[0]);
+	size_t i, len;
+	struct token *kw;
+	const char *str;
+
+	str = lexer_buffer_slice(lx, st, &len);
+	for (; len > 0 && str[0] == '_'; len--, str++)
+		continue;
+	for (; len > 0 && str[len - 1] == '_'; len--)
+		continue;
+	for (i = 0; i < naliases; i++) {
+		if (aliases[i].alias.len == len &&
+		    strncmp(aliases[i].alias.str, str, len) == 0)
+			break;
+	}
+	if (i == naliases)
+		return NULL;
+
+	kw = clang_find_keyword1(aliases[i].keyword.str,
+	    aliases[i].keyword.len);
+	return lexer_emit(lx, st, &(struct token){
+	    .tk_type	= kw->tk_type,
+	    .tk_flags	= kw->tk_flags,
+	});
 }
 
 static struct token *
