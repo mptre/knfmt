@@ -99,7 +99,7 @@ static int	parse_ColumnLimit(struct style *, struct lexer *,
 static int	parse_IncludeCategories(struct style *, struct lexer *,
     const struct style_option *);
 
-static const char	*stryaml(enum yaml_type);
+static const char	*yaml_type_str(enum yaml_type);
 static const char	*style_keyword_str(enum style_keyword);
 
 static struct style_option *keywords[256];
@@ -612,10 +612,12 @@ yaml_serialize(const struct token *tk)
 	bf = buffer_alloc(128);
 	if (bf == NULL)
 		err(1, NULL);
-	if (tk->tk_type < Last)
+	if (tk->tk_type < Last) {
 		buffer_printf(bf, "Keyword");
-	else
-		buffer_printf(bf, "%s", stryaml((enum yaml_type)tk->tk_type));
+	} else {
+		buffer_printf(bf, "%s",
+		    yaml_type_str((enum yaml_type)tk->tk_type));
+	}
 	buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
 	strnice_buffer(bf, tk->tk_str, tk->tk_len);
 	buffer_printf(bf, "\")");
@@ -805,7 +807,7 @@ parse_IncludeCategories(struct style *st, struct lexer *lx,
 }
 
 static const char *
-stryaml(enum yaml_type type)
+yaml_type_str(enum yaml_type type)
 {
 	switch (type) {
 #define OP(type, ...) case type: return #type;
