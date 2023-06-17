@@ -31,15 +31,20 @@
 #define SKIP	0x00000002
 #define FAIL	0x00000004
 
+#define FOR_YAML_TYPES(OP)						\
+	OP(DocumentBegin,	1)					\
+	OP(DocumentEnd,		2)					\
+	OP(Colon,		3)					\
+	OP(Sequence,		4)					\
+	OP(String,		5)					\
+	OP(Integer,		6)					\
+	OP(Unknown,		7)					\
+
 /* Continuation of token types used to represent YAML primitives. */
 enum yaml_type {
-	DocumentBegin = Last + 1,
-	DocumentEnd,
-	Colon,
-	Sequence,
-	String,
-	Integer,
-	Unknown,
+#define OP(type, idx) type = Last + idx,
+	FOR_YAML_TYPES(OP)
+#undef OP
 };
 
 struct style {
@@ -760,15 +765,9 @@ static const char *
 stryaml(enum yaml_type type)
 {
 	switch (type) {
-#define CASE(t) case t: return #t; break
-	CASE(DocumentBegin);
-	CASE(DocumentEnd);
-	CASE(Colon);
-	CASE(Sequence);
-	CASE(String);
-	CASE(Integer);
-	CASE(Unknown);
-#undef CASE
+#define OP(type, ...) case type: return #type;
+	FOR_YAML_TYPES(OP)
+#undef OP
 	}
 	if (type == LEXER_EOF)
 		return "EOF";

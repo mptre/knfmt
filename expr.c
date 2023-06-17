@@ -50,23 +50,28 @@ enum expr_pc {
 #define PCUNARY		0x80000000u
 #define PC(pc)		((pc) & ~PCUNARY)
 
+#define FOR_EXPR_TYPES(OP)						\
+	OP(EXPR_UNARY)							\
+	OP(EXPR_BINARY)							\
+	OP(EXPR_TERNARY)						\
+	OP(EXPR_PREFIX)							\
+	OP(EXPR_POSTFIX)						\
+	OP(EXPR_PARENS)							\
+	OP(EXPR_SQUARES)						\
+	OP(EXPR_FIELD)							\
+	OP(EXPR_CALL)							\
+	OP(EXPR_ARG)							\
+	OP(EXPR_CAST)							\
+	OP(EXPR_SIZEOF)							\
+	OP(EXPR_CONCAT)							\
+	OP(EXPR_LITERAL)						\
+	OP(EXPR_RECOVER)						\
+	OP(EXPR_ASM)
+
 enum expr_type {
-	EXPR_UNARY,
-	EXPR_BINARY,
-	EXPR_TERNARY,
-	EXPR_PREFIX,
-	EXPR_POSTFIX,
-	EXPR_PARENS,
-	EXPR_SQUARES,
-	EXPR_FIELD,
-	EXPR_CALL,
-	EXPR_ARG,
-	EXPR_CAST,
-	EXPR_SIZEOF,
-	EXPR_CONCAT,
-	EXPR_LITERAL,
-	EXPR_RECOVER,
-	EXPR_ASM,
+#define OP(type) type,
+	FOR_EXPR_TYPES(OP)
+#undef OP
 };
 
 struct expr {
@@ -1311,24 +1316,9 @@ static const char *
 strexpr(enum expr_type type)
 {
 	switch (type) {
-#define CASE(t) case t: return #t
-	CASE(EXPR_UNARY);
-	CASE(EXPR_BINARY);
-	CASE(EXPR_TERNARY);
-	CASE(EXPR_PREFIX);
-	CASE(EXPR_POSTFIX);
-	CASE(EXPR_PARENS);
-	CASE(EXPR_SQUARES);
-	CASE(EXPR_FIELD);
-	CASE(EXPR_CALL);
-	CASE(EXPR_ARG);
-	CASE(EXPR_CAST);
-	CASE(EXPR_SIZEOF);
-	CASE(EXPR_CONCAT);
-	CASE(EXPR_LITERAL);
-	CASE(EXPR_RECOVER);
-	CASE(EXPR_ASM);
-#undef CASE
+#define OP(type) case type: return #type;
+	FOR_EXPR_TYPES(OP)
+#undef OP
 	}
 	return NULL;
 }

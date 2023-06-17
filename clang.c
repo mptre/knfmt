@@ -78,18 +78,20 @@ void
 clang_init(void)
 {
 	static const struct token keywords[] = {
-#define T(t, s, f) {							\
-	.tk_type	= (t),						\
-	.tk_flags	= (f),						\
-	.tk_str		= (s),						\
-	.tk_len		= sizeof((s)) - 1,				\
+#define OP(type, keyword, flags) {					\
+	.tk_type	= (type),					\
+	.tk_flags	= (flags),					\
+	.tk_str		= (keyword),					\
+	.tk_len		= sizeof((keyword)) - 1,			\
 },
-#define A(t, s, f) T(t, s, f)
-#include "token-defs.h"
+		FOR_TOKEN_TYPES(OP)
+		FOR_TOKEN_ALIASES(OP)
+#undef OP
 	};
+	size_t nkeywords = sizeof(keywords) / sizeof(keywords[0]);
 	unsigned int i;
 
-	for (i = 0; keywords[i].tk_type != TOKEN_NONE; i++) {
+	for (i = 0; i < nkeywords; i++) {
 		const struct token *src = &keywords[i];
 		struct token *dst;
 		unsigned char slot;

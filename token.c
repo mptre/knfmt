@@ -588,9 +588,10 @@ static const char *
 strtype(int token_type)
 {
 	switch (token_type) {
-#define T(t, s, f) case t: return &#t[sizeof("TOKEN_") - 1];
-#define S(t, s, f) T(t, s, f)
-#include "token-defs.h"
+#define OP(type, ...) case type: return &#type[sizeof("TOKEN_") - 1];
+	FOR_TOKEN_TYPES(OP)
+	FOR_TOKEN_SENTINELS(OP)
+#undef OP
 	}
 	if (token_type == LEXER_EOF)
 		return "EOF";
