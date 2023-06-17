@@ -42,7 +42,7 @@ simple_enter(struct simple *si, enum simple_pass pass, unsigned int flags,
 {
 	*restore = si->passes[pass].state;
 	if (!si->enable && (flags & SIMPLE_FORCE) == 0) {
-		si->passes[pass].state = SIMPLE_STATE_DISABLE;
+		si->passes[pass].state = SIMPLE_STATE_IGNORE;
 		return 0;
 	}
 
