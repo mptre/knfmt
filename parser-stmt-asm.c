@@ -108,9 +108,9 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	}
 
 	/* clobbers */
-	if (lexer_if(lx, TOKEN_COLON, &tk)) {
+	if (lexer_if(lx, TOKEN_COLON, &colon)) {
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
-		doc_token(tk, concat);
+		doc_token(colon, concat);
 		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 			doc_alloc(DOC_LINE, concat);
 		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
