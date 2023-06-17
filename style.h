@@ -4,16 +4,6 @@ struct style;
 /* Supported clang format options and values. */
 #define FOR_STYLES(OP)							\
 	OP(After)							\
-	OP(AfterCaseLabel)						\
-	OP(AfterClass)							\
-	OP(AfterControlStatement)					\
-	OP(AfterEnum)							\
-	OP(AfterExternBlock)						\
-	OP(AfterFunction)						\
-	OP(AfterNamespace)						\
-	OP(AfterObjCDeclaration)					\
-	OP(AfterStruct)							\
-	OP(AfterUnion)							\
 	OP(Align)							\
 	OP(AlignAfterOpenBracket)					\
 	OP(AlignAfterOperator)						\
@@ -28,14 +18,28 @@ struct style;
 	OP(AlwaysBreakAfterReturnType)					\
 	OP(Attach)							\
 	OP(Before)							\
-	OP(BeforeCatch)							\
-	OP(BeforeElse)							\
-	OP(BeforeLambdaBody)						\
-	OP(BeforeWhile)							\
 	OP(BitFieldColonSpacing)					\
 	OP(BlockIndent)							\
 	OP(Both)							\
 	OP(BraceWrapping)						\
+	  OP(AfterCaseLabel)						\
+	  OP(AfterClass)						\
+	  OP(AfterControlStatement)					\
+	  OP(AfterEnum)							\
+	  OP(AfterExternBlock)						\
+	  OP(AfterFunction)						\
+	  OP(AfterNamespace)						\
+	  OP(AfterObjCDeclaration)					\
+	  OP(AfterStruct)						\
+	  OP(AfterUnion)						\
+	  OP(BeforeCatch)						\
+	  OP(BeforeElse)						\
+	  OP(BeforeLambdaBody)						\
+	  OP(BeforeWhile)						\
+	  OP(IndentBraces)						\
+	  OP(SplitEmptyFunction)					\
+	  OP(SplitEmptyNamespace)					\
+	  OP(SplitEmptyRecord)						\
 	OP(BreakBeforeBinaryOperators)					\
 	OP(BreakBeforeBraces)						\
 	OP(BreakBeforeTernaryOperators)					\
@@ -50,7 +54,6 @@ struct style;
 	OP(ForIndentation)						\
 	OP(GNU)								\
 	OP(IncludeCategories)						\
-	OP(IndentBraces)						\
 	OP(IndentWidth)							\
 	OP(Left)							\
 	OP(Linux)							\
@@ -64,9 +67,6 @@ struct style;
 	OP(Right)							\
 	OP(SortIncludes)						\
 	OP(SortPriority)						\
-	OP(SplitEmptyFunction)						\
-	OP(SplitEmptyNamespace)						\
-	OP(SplitEmptyRecord)						\
 	OP(Stroustrup)							\
 	OP(TopLevel)							\
 	OP(TopLevelDefinitions)						\
