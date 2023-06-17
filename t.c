@@ -37,11 +37,13 @@ static int	test_parser_expr0(struct context *, const char *, const char *,
     int);
 
 #define test_parser_type_peek(a, b) \
-	test(test_parser_type_peek0(cx, (a), (b), 0, __LINE__))
+	test(test_parser_type_peek0(cx, (a), (b), 0, 1, __LINE__))
 #define test_parser_type_peek_flags(a, b, c) \
-	test(test_parser_type_peek0(cx, (b), (c), (a), __LINE__))
+	test(test_parser_type_peek0(cx, (b), (c), (a), 1, __LINE__))
+#define test_parser_type_peek_error(a) \
+	test(test_parser_type_peek0(cx, (a), "", 0, 0, __LINE__))
 static int	test_parser_type_peek0(struct context *, const char *,
-    const char *, unsigned int, int);
+    const char *, unsigned int, int, int);
 
 #define test_lexer_read(a, b) \
 	test(test_lexer_read0(cx, (a), (b), __LINE__))
@@ -242,6 +244,8 @@ main(int argc, char *argv[])
 	test_parser_type_peek_flags(PARSER_TYPE_EXPR,
 	    "const foo_t)", "const foo_t");
 
+	test_parser_type_peek_error("_asm volatile (");
+
 	test_lexer_read("<", "LESS");
 	test_lexer_read("<x", "LESS IDENT");
 	test_lexer_read("<=", "LESSEQUAL");
@@ -334,7 +338,7 @@ out:
 
 static int
 test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
-    unsigned int flags, int lno)
+    unsigned int flags, int peek, int lno)
 {
 	struct buffer *bf = NULL;
 	struct token *end, *tk;
@@ -344,11 +348,14 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 
 	context_init(cx, src);
 
-	if (!parser_type_peek(cx->pr, &end, flags)) {
-		fprintf(stderr, "parser_type_peek:%d: want 1, got 0\n", lno);
+	if (parser_type_peek(cx->pr, &end, flags) != peek) {
+		fprintf(stderr, "parser_type_peek:%d: want %d, got %d\n",
+		    lno, peek, !peek);
 		error = 1;
 		goto out;
 	}
+	if (!peek)
+		goto out;
 
 	bf = buffer_alloc(128);
 	if (bf == NULL)

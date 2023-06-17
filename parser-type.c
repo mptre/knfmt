@@ -55,6 +55,11 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 
 		if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &t)) {
+			if (lexer_if(lx, TOKEN_LPAREN, NULL)) {
+				peek = 0;
+				ntokens = 0;
+				break;
+			}
 			nkeywords++;
 			peek = 1;
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &t)) {
