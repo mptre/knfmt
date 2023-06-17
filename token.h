@@ -91,6 +91,9 @@
 #define FOR_TOKEN_ALIASES(OP)						\
 	OP(TOKEN_ASSEMBLY,	"__asm", 0)				\
 	OP(TOKEN_ASSEMBLY,	"__asm__", 0)				\
+	/* linux */							\
+	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
+	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)			\
 	OP(TOKEN_ATTRIBUTE,	"__attribute", 0)			\
 	OP(TOKEN_RESTRICT,	"__restrict", TOKEN_FLAG_QUALIFIER)	\
 	OP(TOKEN_VOLATILE,	"__volatile", TOKEN_FLAG_QUALIFIER)	\

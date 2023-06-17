@@ -263,6 +263,9 @@ main(int argc, char *argv[])
 	test_lexer_read("__volatile", "VOLATILE");
 	test_lexer_read("__volatile__", "VOLATILE");
 
+	test_lexer_read("asm_inline", "ASSEMBLY");
+	test_lexer_read("asm_volatile_goto", "ASSEMBLY");
+
 	test_token_position_after((&(struct test_token_position_after){
 	    .src	= "\tint a;\n\tchar b;\n",
 	    .after	= TOKEN_SEMI,
