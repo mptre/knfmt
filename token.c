@@ -16,7 +16,7 @@ static struct token	*token_list_find(const struct token_list *, int,
     unsigned int);
 
 static void		 strflags(struct buffer *, unsigned int);
-static const char	*strtype(int);
+static const char	*token_type_str(int);
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
@@ -113,7 +113,7 @@ token_serialize(const struct token *tk)
 	bf = buffer_alloc(128);
 	if (bf == NULL)
 		err(1, NULL);
-	buffer_printf(bf, "%s", strtype(tk->tk_type));
+	buffer_printf(bf, "%s", token_type_str(tk->tk_type));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u", tk->tk_lno, tk->tk_cno);
 		strflags(bf, tk->tk_flags);
@@ -585,7 +585,7 @@ strflags(struct buffer *bf, unsigned int token_flags)
 }
 
 static const char *
-strtype(int token_type)
+token_type_str(int token_type)
 {
 	switch (token_type) {
 #define OP(type, ...) case type: return &#type[sizeof("TOKEN_") - 1];
