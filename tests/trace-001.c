@@ -1,5 +1,15 @@
 /*
- * Exercise traces.
+ * AlignAfterOpenBracket: DontAlign
+ * AlignOperands: DontAlign
+ * AlignConsecutiveAssignments: Consecutive
+ * AlwaysBreakAfterReturnType: AllDefinitions
+ * BitFieldColonSpacing: None
+ * BraceWrapping:
+ *   AfterEnum: false
+ *   AfterFunction: false
+ *   AfterStruct: false
+ * IndentWidth: 8
+ * UseTab: Always
  */
 
 #include <sys/stat.h>
