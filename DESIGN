@@ -14,6 +14,9 @@ This document is an attempt to give an introducing to the knfmt source code and
 is divided into one section per file. The same files are enumerated in order of
 execution. Followed by some noteworthy topics in no particular order.
 
+Design documents are doomed to become outdated and inaccurate, this is no
+exception.
+
 [1] https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf
 [2] http://blog.vjeux.com/2017/javascript/anatomy-of-a-javascript-pretty-printer.html
 
@@ -21,13 +24,13 @@ lexer.c
 =======
 
 The lexer turns source code into a list of tokens and owns the associated
-memory. This has several advantages as all tokens are constant and pointers to
+memory. This has several advantages as all tokens are constant, pointers to
 them can be compared for equality and remains valid until lexer_free() is
 invoked.
 
 In general terms, the lexer API is divided into two categories:
 
-1. Routines that consume one or many tokens, often prefixed if lexer_if.
+1. Routines that consume one or many tokens, often prefixed with lexer_if.
    Such routines returns non-zero if it managed to consume the next token(s)
    given a criteria, such as being of a certain type. Otherwise, zero is
    returned.
@@ -95,7 +98,7 @@ entering a group.
 The document representation and any decision to switch between the two modes can
 be examined by invoking knfmt as follows:
 
-	$ knfmt -vd
+	$ knfmt -td
 
 The following type of documents are available:
 
@@ -176,9 +179,6 @@ calls ruler_exec() which calculates the needed alignment for each line and
 column. The ruler is at this point aware of all columns and can therefore deduce
 the longest one calculate the necessary alignment accordingly.
 
-It can also operate in a fixed width mode which is used while aligning cpp line
-continuations.
-
 error.c
 =======
 
@@ -210,7 +210,7 @@ the ones that expands to a loop construct. Such macros often include the word
 foreach in the identifier. Not being aware that such macros actually expand to
 a loop construct would otherwise make the parser halt as something that looks
 like a function call followed by either a pair of braces or another statement is
-not considered valid C, see parser_exec_stmt(). An example of such macros are
+not considered valid C, see parser_stmt_cpp(). An example of such macros are
 the ones provided by queue(3).
 
 Another problematic type of preprocessor macros are the ones that expands to a
@@ -247,7 +247,7 @@ present anywhere in the source code. Letting the parser cope with this fact
 would make the implementation tedious.
 
 Instead, clang and lexer keeps track of all branches, see clang_read() and
-lexer_cpp(). Upon entering a branch continuation denoted by #else or #elif,
+clang_read_cpp(). Upon entering a branch continuation denoted by #else or #elif,
 lexer_pop() will halt while consuming tokens but move passed the branch
 continuation while peeking. This gives the parser the impression of traversing
 valid grammar and language constructs can still be detected. At some point, the
@@ -301,11 +301,5 @@ closest branch given the position of parser, see lexer_recover().
 Some scenarios[2] are more tedious than others, while taking the branch[3] the
 function implementation is correctly terminated. However, the following token[4]
 is not expected at this point. Calling lexer_recover() as this point would cause
-the branch[3] to be removed effecitvely making the unexpected token[4] be the
+the branch[3] to be removed effectively making the unexpected token[4] be the
 terminating right brace for the function implementation.
-
-comments
-========
-
-Comments are never emitted directly by lexer but are instead represented as
-dangling tokens, see the cpp section above.
