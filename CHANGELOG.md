@@ -1,3 +1,124 @@
+# 4.2.0 - YYYY-MM-DD
+
+## News
+
+- Never break before expression right parenthesis.
+  (27a06b8)
+  (Anton Lindqvist)
+
+- Recognize restrict keyword.
+  (f17f367)
+  (Anton Lindqvist)
+
+- Remove excessive semicolons after statements and declarations.
+  (4528499, 9865f68)
+  (Anton Lindqvist)
+
+- Sense alignment in brace initializers and declarations.
+  Instead of being picky, detect already aligned columns using either spaces or
+  tabs and preserve such alignment.
+  (dbc6d96, 000bcc0, cf7aa5f, 6bbd5af, a61fb35, b3ae100, ee08260, 05021b9,
+   09b9566)
+  (Anton Lindqvist)
+
+- In simple mode, insert braces around cpp loop macro statement(s) spanning
+  multiple lines.
+  (4eb9095)
+  (Anton Lindqvist)
+
+  ```
+  # before
+  TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
+  	if (prefix->tk_flags & TOKEN_FLAG_CPP)
+  		return 1;
+  # after
+  TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+  	if (prefix->tk_flags & TOKEN_FLAG_CPP)
+  		return 1;
+  }
+  ```
+
+- In simple mode, insert braces around while statement(s) spanning multiple
+  lines.
+  (a5892e0)
+  (Anton Lindqvist)
+
+- Honor spaces before right brace in braces initializers.
+  (d74fae5)
+  (Anton Lindqvist)
+
+- Only allow one consecutive new line in expressions.
+  (b6323de)
+  (Anton Lindqvist)
+
+- Remove excessive new line(s) in brace initializers.
+  (8395465)
+  (Anton Lindqvist)
+
+- In simple mode, improve placement of move declarations.
+  (7ab8ead)
+  (Anton Lindqvist)
+
+- In simple mode, detect usage of named and unnamed arguments in function
+  prototypes.
+  If the two conventions are mixed within a declaration, assume it's not
+  intentional and remove all argument names for consistency.
+  (456b2a0)
+  (Anton Lindqvist)
+
+- In simple mode, add missing trailing comma in brace/designated initializers.
+  (1611ddc)
+  (Anton Lindqvist)
+
+- Recognize inline assembler goto labels.
+  (10515e0)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- In simple mode, fix sort includes bug.
+  (62504b0)
+  (Anton Lindqvist)
+
+- Fix indentation for brace initializers spanning multiple lines.
+  (d7cb071)
+  (Anton Lindqvist)
+
+- In diff mode, fix bug related to cpp branches.
+  (510beae)
+  (Anton Lindqvist)
+
+- Multiple bug fixes and improvements to clang-format option
+  AlignAfterOpenBracket.
+  (85de703, 379b7c2)
+  (Anton Lindqvist)
+
+- Multiple bug fixes and improvements to clang-format option
+  BreakBeforeBinaryOperators.
+  (c800ac3)
+  (Anton Lindqvist)
+
+- Make cast expression detection more strict.
+  (34043aa, 7e59383)
+  (Anton Lindqvist)
+
+- Do not confuse binary operators and casts.
+  (57e7a57)
+  (Anton Lindqvist)
+
+- Fix off by one during parenthesis alignment
+  (d8f88e3)
+  (Anton Lindqvist)
+
+- Fix indentation after C99 comment in expression.
+  (11bf235)
+  (Anton Lindqvist)
+
+- Recognize asm, attribute, inline, restrict and volatile preceded or succeeded
+  with any amount of underscores as the corresponding keyword with underscores.
+  (1523fd1)
+  (Anton Lindqvist)
+
 # 4.1.1 - 2023-03-09
 
 ## Bug fixes
