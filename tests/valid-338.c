@@ -1,0 +1,10 @@
+/*
+ * AFL
+ */
+
+int
+main(void)
+{
+
+	HASH_ITER(hh, i_em, aux)
+}

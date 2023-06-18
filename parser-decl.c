@@ -46,15 +46,12 @@ parser_decl_peek(struct parser *pr)
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc;
-	struct ruler rl;
 	int error;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
-	ruler_init(&rl, 0, RULER_ALIGN_SENSE);
 	lexer_peek_enter(lx, &s);
-	error = parser_decl2(pr, dc, &rl, 0);
+	error = parser_decl(pr, dc, 0);
 	lexer_peek_leave(lx, &s);
-	ruler_free(&rl);
 	doc_free(dc);
 	return error & GOOD;
 }
