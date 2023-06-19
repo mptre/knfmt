@@ -29,7 +29,7 @@ static void	usage(void) __attribute__((__noreturn__));
 
 static int	filelist(int, char **, struct files *, const struct options *);
 static int	fileformat(struct file *, const struct style *, struct simple *,
-    const struct options *);
+    struct clang *, const struct options *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const struct file *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -44,6 +44,7 @@ main(int argc, char *argv[])
 {
 	struct files files;
 	struct options op;
+	struct clang *cl = NULL;
 	struct simple *si = NULL;
 	struct style *st = NULL;
 	const char *clang_format = NULL;
@@ -112,6 +113,7 @@ main(int argc, char *argv[])
 		goto out;
 	}
 	si = simple_alloc(&op);
+	cl = clang_alloc(st, si, &op);
 
 	if (filelist(argc, argv, &files, &op)) {
 		error = 1;
@@ -120,15 +122,17 @@ main(int argc, char *argv[])
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
-		if (fileformat(fe, st, si, &op)) {
+		if (fileformat(fe, st, si, cl, &op)) {
 			error = 1;
 			error_flush(fe->fe_error, 1);
 		}
 		file_close(fe);
+		clang_reset(cl);
 	}
 
 out:
 	files_free(&files);
+	clang_free(cl);
 	simple_free(si);
 	style_free(st);
 	style_shutdown();
@@ -167,11 +171,10 @@ filelist(int argc, char **argv, struct files *files,
 
 static int
 fileformat(struct file *fe, const struct style *st, struct simple *si,
-    const struct options *op)
+    struct clang *cl, const struct options *op)
 {
 	struct buffer *dst = NULL;
 	struct buffer *src;
-	struct clang *cl = NULL;
 	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
 	int error = 0;
@@ -181,7 +184,6 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 		error = 1;
 		goto out;
 	}
-	cl = clang_alloc(st, si, op);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= fe->fe_path,
 	    .bf		= src,
@@ -220,7 +222,6 @@ out:
 	buffer_free(dst);
 	parser_free(pr);
 	lexer_free(lx);
-	clang_free(cl);
 	buffer_free(src);
 	return error;
 }
