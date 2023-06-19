@@ -156,6 +156,8 @@ static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_asm(struct expr *, struct expr_state *,
+    struct doc *);
 
 #define expr_doc_align(a, b, c, d) \
 	expr_doc_align0((a), (b), (c), (d), __func__, __LINE__)
@@ -798,18 +800,9 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		concat = expr_doc_recover(ex, es, concat);
 		break;
 
-	case EXPR_ASM: {
-		struct token *lparen = ex->ex_tokens[0];
-		struct token *rparen = ex->ex_tokens[1];
-
-		expr_doc(ex->ex_lhs, es, concat);
-		doc_alloc(DOC_LINE, concat);
-		doc_token(lparen, concat);
-		if (ex->ex_rhs != NULL)
-			expr_doc(ex->ex_rhs, es, concat);
-		doc_token(rparen, concat);
+	case EXPR_ASM:
+		concat = expr_doc_asm(ex, es, concat);
 		break;
-	}
 	}
 
 	/* Testing backdoor, see above. */
@@ -1137,6 +1130,21 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 	 * document.
 	 */
 	ex->ex_dc = NULL;
+	return dc;
+}
+
+static struct doc *
+expr_doc_asm(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	struct token *lparen = ex->ex_tokens[0];
+	struct token *rparen = ex->ex_tokens[1];
+
+	expr_doc(ex->ex_lhs, es, dc);
+	doc_alloc(DOC_LINE, dc);
+	doc_token(lparen, dc);
+	if (ex->ex_rhs != NULL)
+		expr_doc(ex->ex_rhs, es, dc);
+	doc_token(rparen, dc);
 	return dc;
 }
 
