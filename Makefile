@@ -524,6 +524,7 @@ DISTFILES+=	tests/error-055.c
 DISTFILES+=	tests/error-056.c
 DISTFILES+=	tests/error-057.c
 DISTFILES+=	tests/error-058.c
+DISTFILES+=	tests/error-059.c
 DISTFILES+=	tests/git.sh
 DISTFILES+=	tests/inplace-001.c
 DISTFILES+=	tests/knfmt.sh

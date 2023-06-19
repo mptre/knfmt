@@ -1141,10 +1141,12 @@ expr_doc_asm(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	expr_doc(ex->ex_lhs, es, dc);
 	doc_alloc(DOC_LINE, dc);
-	doc_token(lparen, dc);
+	if (lparen != NULL)
+		doc_token(lparen, dc);
 	if (ex->ex_rhs != NULL)
 		expr_doc(ex->ex_rhs, es, dc);
-	doc_token(rparen, dc);
+	if (rparen != NULL)
+		doc_token(rparen, dc);
 	return dc;
 }
 
