@@ -237,11 +237,7 @@ clang_read(struct lexer *lx, void *arg)
 	tk = lexer_emit(lx, &st, &(struct token){
 	    .tk_type	= TOKEN_NONE,
 	});
-	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
-	lexer_error(lx, "unknown token %s", lexer_serialize(lx, tk));
-	token_rele(tk);
-	clang_branch_purge(cl, lx);
-	return NULL;
+	goto out;
 
 eof:
 	tk = lexer_emit(lx, &st, &(struct token){

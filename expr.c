@@ -250,7 +250,7 @@ static const struct expr_rule rules[] = {
 };
 
 /* Table for constant time expr rules lookup. */
-static const struct expr_rule *table_rules[TOKEN_NONE][2];
+static const struct expr_rule *table_rules[TOKEN_NONE + 1][2];
 
 /*
  * Weights for emitted softline(s) through expr_doc_soft(). Several softline(s)

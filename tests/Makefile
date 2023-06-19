@@ -95,6 +95,7 @@ TESTS+=	error-052.c
 TESTS+=	error-053.c
 TESTS+=	error-054.c
 TESTS+=	error-055.c
+TESTS+=	error-056.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c
@@ -434,6 +435,7 @@ TESTS+=	valid-335.c
 TESTS+=	valid-336.c
 TESTS+=	valid-337.c
 TESTS+=	valid-338.c
+TESTS+=	valid-339.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
