@@ -268,6 +268,8 @@ parser_decl_init(struct parser *pr, struct doc **out,
 	struct doc *concat, *dc, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct ruler_indent *cookie = NULL;
+	int error = 0;
+	int ncomma = 0;
 	int ninit = 0;
 
 	indent = ruler_indent(arg->rl, arg->dc, &cookie);
@@ -276,18 +278,8 @@ parser_decl_init(struct parser *pr, struct doc **out,
 
 	for (;;) {
 		struct token *comma, *tk;
-		int error;
 
 		if (lexer_peek(lx, &tk) && tk == arg->semi)
-			break;
-
-		error = parser_decl_init1(pr, concat, out);
-		if (error & NONE)
-			error = parser_decl_init_assign(pr, concat, out, arg);
-		if (error & NONE)
-			break;
-		ninit++;
-		if (error & HALT)
 			break;
 
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
@@ -307,11 +299,21 @@ parser_decl_init(struct parser *pr, struct doc **out,
 			 */
 			*out = concat;
 		}
+		ncomma++;
+
+		error = parser_decl_init1(pr, concat, out);
+		if (error & NONE)
+			error = parser_decl_init_assign(pr, concat, out, arg);
+		if (error & HALT)
+			break;
+		ninit++;
 	}
-	if (ninit == 0) {
+	if ((ninit == 0 || ncomma > ninit) && (error & BRCH) == 0) {
 		ruler_indent_remove(arg->rl, cookie);
 		doc_remove(indent, arg->dc);
 	}
+	if (ncomma > ninit)
+		return parser_fail(pr);
 	return parser_good(pr);
 }
 

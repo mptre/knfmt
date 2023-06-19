@@ -96,6 +96,8 @@ TESTS+=	error-053.c
 TESTS+=	error-054.c
 TESTS+=	error-055.c
 TESTS+=	error-056.c
+TESTS+=	error-057.c
+TESTS+=	error-058.c
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c
@@ -436,6 +438,7 @@ TESTS+=	valid-336.c
 TESTS+=	valid-337.c
 TESTS+=	valid-338.c
 TESTS+=	valid-339.c
+TESTS+=	valid-340.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -473,7 +476,6 @@ TESTS+=	simple-033.c
 TESTS+=	simple-034.c
 TESTS+=	simple-035.c
 TESTS+=	simple-036.c
-TESTS+=	simple-037.c
 TESTS+=	simple-038.c
 TESTS+=	simple-039.c
 TESTS+=	simple-040.c
