@@ -3,3 +3,9 @@
  */
 
 int x;;
+
+int
+main(void)
+{
+	int y;;
+}

@@ -86,7 +86,8 @@ parser_stmt1(struct parser *pr, struct doc *dc)
 	    (parser_stmt_if(pr, dc) & GOOD) ||
 	    (parser_stmt_return(pr, dc) & GOOD) ||
 	    (parser_decl(pr, dc,
-	     PARSER_DECL_BREAK | PARSER_DECL_SIMPLE) & GOOD) ||
+	     PARSER_DECL_BREAK | PARSER_DECL_SIMPLE |
+	     PARSER_DECL_TRIM_SEMI) & GOOD) ||
 	    (parser_stmt_case(pr, dc) & GOOD) ||
 	    (parser_stmt_break(pr, dc) & GOOD) ||
 	    (parser_stmt_goto(pr, dc) & GOOD) ||
@@ -267,7 +268,8 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 	struct doc *expr = NULL;
 	struct doc *space = NULL;
 	struct doc *loop;
-	struct token *semi, *tk;
+	struct token *semi = NULL;
+	struct token *tk;
 	unsigned int expr_flags, w;
 	int error;
 
@@ -320,7 +322,7 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 		return parser_fail(pr);
 	if (error & NONE) {
 		/* Expression empty, remove the space. */
-		if (space != NULL)
+		if (space != NULL && (semi == NULL || !token_has_spaces(semi)))
 			doc_remove(space, expr);
 		expr = loop;
 	}

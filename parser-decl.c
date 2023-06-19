@@ -249,11 +249,15 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 out:
 	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
+		if (flags & PARSER_DECL_TRIM_SEMI) {
+			struct token *nx;
+
+			while (lexer_if(lx, TOKEN_SEMI, &nx))
+				lexer_remove(lx, nx, 1);
+		}
 		doc_token(semi, concat);
 		if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
 			simple_decl_semi(pr->pr_simple.decl, semi);
-		while (lexer_if(lx, TOKEN_SEMI, NULL))
-			continue;
 	}
 	return parser_good(pr);
 }
