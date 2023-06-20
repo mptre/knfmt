@@ -1810,8 +1810,7 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 
 	switch (dc->dc_type) {
 	case DOC_INDENT:
-	case DOC_NOINDENT:
-	case DOC_OPTIONAL: {
+	case DOC_NOINDENT: {
 		struct buffer *bf;
 
 		bf = buffer_alloc(32);
