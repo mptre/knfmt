@@ -14,6 +14,7 @@
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl.h"
+#include "simple-static.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
@@ -140,7 +141,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct doc *concat;
 	struct token *beg, *end, *fun, *semi, *tk;
 	int iscpp = 0;
-	int error;
+	int error, simple;
 
 	if (parser_cpp_cdefs(pr, dc) & GOOD)
 		return parser_good(pr);
@@ -167,6 +168,10 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	}
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+
+	if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
+		end = simple_static(lx, end);
+	simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 
 	if (!lexer_peek(lx, &beg))
 		return parser_fail(pr);

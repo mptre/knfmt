@@ -11,7 +11,6 @@
 #include "parser-func.h"
 #include "parser-priv.h"
 #include "ruler.h"
-#include "simple.h"
 #include "style.h"
 #include "token.h"
 
@@ -147,7 +146,6 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 	const struct token *align = NULL;
 	struct token *beg;
 	unsigned int nspaces = 0;
-	int simple;
 
 	if (!lexer_peek(lx, &beg))
 		return parser_fail(pr);
@@ -182,29 +180,6 @@ parser_type(struct parser *pr, struct doc *dc, const struct token *end,
 				align = NULL;
 		}
 	}
-
-	if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple)) {
-		struct token *tk = beg;
-		int ntokens = 0;
-
-		for (;;) {
-			struct token *nx;
-
-			nx = token_next(tk);
-			if (ntokens > 0 &&
-			    tk->tk_type == TOKEN_STATIC &&
-			    token_is_moveable(tk)) {
-				token_move_prefixes(beg, tk);
-				token_move_suffixes(tk, beg);
-				lexer_move_before(lx, beg, tk);
-			}
-			if (tk == end)
-				break;
-			tk = nx;
-			ntokens++;
-		}
-	}
-	simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 
 	for (;;) {
 		struct doc *concat;

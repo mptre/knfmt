@@ -11,24 +11,24 @@
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl-proto.h"
+#include "simple-static.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
 
 struct parser_func_proto_arg {
-	struct doc		*dc;
-	struct ruler		*rl;
-	const struct token	*type;
-	unsigned int		 flags;
+	struct doc	*dc;
+	struct ruler	*rl;
+	struct token	*type;
+	unsigned int	 flags;
 #define PARSER_FUNC_PROTO_IMPL		0x00000001u
 };
 
 static int	parser_func_decl1(struct parser *, struct doc *,
-    struct ruler *, const struct token *);
-static int	parser_simple_decl_proto_enter(struct parser *,
-    const struct token *);
+    struct ruler *, struct token *);
+static int	parser_simple_decl_proto_enter(struct parser *, struct token *);
 static int	parser_func_impl1(struct parser *, struct doc *,
-    struct ruler *, const struct token *);
+    struct ruler *, struct token *);
 static int	parser_func_proto(struct parser *, struct doc **,
     struct parser_func_proto_arg *);
 
@@ -85,7 +85,7 @@ out:
 
 int
 parser_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *type)
+    struct token *type)
 {
 	int error;
 
@@ -98,7 +98,7 @@ parser_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
 
 static int
 parser_func_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *type)
+    struct token *type)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *out = NULL;
@@ -120,7 +120,7 @@ parser_func_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 }
 
 static int
-parser_simple_decl_proto_enter(struct parser *pr, const struct token *type)
+parser_simple_decl_proto_enter(struct parser *pr, struct token *type)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
@@ -236,7 +236,7 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 
 static int
 parser_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
-    const struct token *type)
+    struct token *type)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *out = NULL;
@@ -282,11 +282,17 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	struct doc *dc = arg->dc;
 	struct doc *attributes, *concat, *group, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
+	struct token *type = arg->type;
 	struct token *lparen, *rparen, *tk;
 	unsigned int s, w;
 	int nkr = 0;
+	int simple;
 
-	if (parser_type(pr, dc, arg->type, arg->rl) & (FAIL | NONE))
+	if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
+		type = simple_static(lx, type);
+	simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
+
+	if (parser_type(pr, dc, type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	s = style(pr->pr_st, AlwaysBreakAfterReturnType);
@@ -302,7 +308,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	group = doc_alloc(DOC_GROUP, dc);
 	concat = doc_alloc(DOC_CONCAT, group);
 
-	if (arg->type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
+	if (type->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning function pointer. */
 		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
 			doc_token(lparen, concat);
