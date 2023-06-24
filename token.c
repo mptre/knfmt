@@ -12,6 +12,8 @@
 #include "lexer.h"
 #include "util.h"
 
+static char	*token_serialize_impl(const struct token *, int);
+
 static struct token	*token_list_find(const struct token_list *, int,
     unsigned int);
 
@@ -107,6 +109,18 @@ token_trim(struct token *tk)
 char *
 token_serialize(const struct token *tk)
 {
+	return token_serialize_impl(tk, 1);
+}
+
+char *
+token_serialize_no_flags(const struct token *tk)
+{
+	return token_serialize_impl(tk, 0);
+}
+
+static char *
+token_serialize_impl(const struct token *tk, int doflags)
+{
 	struct buffer *bf;
 	char *buf;
 
@@ -116,7 +130,8 @@ token_serialize(const struct token *tk)
 	buffer_printf(bf, "%s", token_type_str(tk->tk_type));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u", tk->tk_lno, tk->tk_cno);
-		strflags(bf, tk->tk_flags);
+		if (doflags)
+			strflags(bf, tk->tk_flags);
 		buffer_printf(bf, ">(\"");
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
 		buffer_printf(bf, "\")");
