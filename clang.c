@@ -11,6 +11,7 @@
 
 #include "alloc.h"
 #include "buffer.h"
+#include "cdefs.h"
 #include "comment.h"
 #include "cpp-align.h"
 #include "cpp-include.h"
@@ -147,7 +148,7 @@ clang_free(struct clang *cl)
 }
 
 void
-clang_reset(struct clang *cl)
+clang_reset(struct clang *MAYBE_UNUSED(cl))
 {
 	assert(VECTOR_EMPTY(cl->cl_branches));
 }
