@@ -303,7 +303,7 @@ ruler_column_alignment(struct ruler_column *rc)
 			goto noalign;
 		w = nx->tk_cno - nspaces;
 		end = colwidth(rd->rd_tk->tk_str, rd->rd_tk->tk_len,
-		    rd->rd_tk->tk_cno);
+		    rd->rd_tk->tk_cno, NULL);
 		if (end > w)
 			goto noalign;
 

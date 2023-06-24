@@ -26,12 +26,14 @@ tracef(unsigned char ident, const char *fun, const char *fmt, ...)
 }
 
 unsigned int
-colwidth(const char *str, size_t len, unsigned int cno)
+colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 {
 	for (; len > 0; len--, str++) {
 		switch (str[0]) {
 		case '\n':
 			cno = 1;
+			if (lno != NULL)
+				(*lno)++;
 			break;
 		case '\t':
 			cno = ((cno + 8 - 1) & ~0x7u) + 1;
