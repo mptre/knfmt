@@ -65,6 +65,8 @@ static void	lexer_branch_unmute(struct lexer *, struct token *);
 static struct token	*lexer_recover_branch(struct token *);
 static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
+static void	lexer_reposition_tokens(struct lexer *, struct token *);
+
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (trace((lx)->lx_op, 'l') >= 2)				\
 		tracef('L', __func__, (fmt), __VA_ARGS__);		\
@@ -633,13 +635,23 @@ lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
 }
 
 struct token *
-lexer_move_before(struct lexer *lx, struct token *before, struct token *tk)
+lexer_move_before(struct lexer *lx, struct token *before, struct token *mv)
 {
-	TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
-	tk->tk_lno = before->tk_lno;
-	tk->tk_cno = before->tk_cno;
-	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
-	return tk;
+	unsigned int mv_suffix_flags = 0;
+
+	if (token_is_first(mv))
+		mv_suffix_flags |= TOKEN_FLAG_OPTSPACE;
+
+	TAILQ_REMOVE(&lx->lx_tokens, mv, tk_entry);
+	TAILQ_INSERT_BEFORE(before, mv, tk_entry);
+	mv->tk_lno = before->tk_lno;
+
+	token_list_swap(&before->tk_prefixes, 0, &mv->tk_prefixes, 0);
+	token_list_swap(&before->tk_suffixes, TOKEN_FLAG_OPTLINE,
+	    &mv->tk_suffixes, mv_suffix_flags);
+
+	lexer_reposition_tokens(lx, mv);
+	return mv;
 }
 
 void
@@ -1378,4 +1390,53 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 	}
 
 	return NULL;
+}
+
+/*
+ * Recalculate column and line numbers for all tokens on the given line number
+ * starting from the given token.
+ */
+static void
+lexer_reposition_tokens(struct lexer *UNUSED(lx), struct token *tk)
+{
+	unsigned int cno = 1;
+	unsigned int lno;
+
+	/* Locate the first token on the line. */
+	for (;;) {
+		struct token *pv;
+
+		pv = token_prev(tk);
+		if (pv == NULL || pv->tk_lno != tk->tk_lno)
+			break;
+		tk = pv;
+	}
+	lno = !TAILQ_EMPTY(&tk->tk_prefixes) ?
+	    TAILQ_FIRST(&tk->tk_prefixes)->tk_lno : tk->tk_lno;
+
+	for (;;) {
+		struct token *prefix, *suffix;
+
+		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+			prefix->tk_lno = lno;
+			prefix->tk_cno = cno;
+			cno = colwidth(prefix->tk_str, prefix->tk_len, cno,
+			    &lno);
+		}
+
+		tk->tk_lno = lno;
+		tk->tk_cno = cno;
+		cno = colwidth(tk->tk_str, tk->tk_len, cno, &lno);
+
+		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+			suffix->tk_lno = lno;
+			suffix->tk_cno = cno;
+			cno = colwidth(suffix->tk_str, suffix->tk_len, cno,
+			    &lno);
+		}
+
+		tk = token_next(tk);
+		if (tk == NULL || tk->tk_lno != lno)
+			break;
+	}
 }

@@ -200,6 +200,7 @@ int	token_has_c99_comment(const struct token *);
 int	token_is_branch(const struct token *);
 int	token_is_decl(const struct token *, int);
 int	token_is_moveable(const struct token *);
+int	token_is_first(const struct token *);
 
 struct token	*token_get_branch(struct token *);
 
@@ -212,6 +213,8 @@ void	token_list_append_after(struct token_list *, struct token *,
     struct token *);
 void	token_list_remove(struct token_list *, struct token *);
 void	token_list_copy(const struct token_list *, struct token_list *);
+void	token_list_swap(struct token_list *, unsigned int, struct token_list *,
+    unsigned int);
 
 struct token	*token_find_suffix_spaces(struct token *);
 

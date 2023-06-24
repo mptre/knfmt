@@ -356,6 +356,18 @@ token_is_moveable(const struct token *tk)
 }
 
 /*
+ * Returns non-zero if the given token is the first one on the line it resides.
+ */
+int
+token_is_first(const struct token *tk)
+{
+	const struct token *pv;
+
+	pv = token_prev(tk);
+	return pv == NULL || pv->tk_lno != tk->tk_lno;
+}
+
+/*
  * Returns the branch continuation associated with the given token if present.
  */
 struct token *
@@ -417,6 +429,48 @@ token_list_copy(const struct token_list *src, struct token_list *dst)
 
 		cp = token_alloc(tk);
 		TAILQ_INSERT_TAIL(dst, cp, tk_entry);
+	}
+}
+
+/*
+ * Swap the two lists but preserve tokens with the given flags.
+ */
+void
+token_list_swap(struct token_list *src, unsigned int src_token_flags,
+    struct token_list *dst, unsigned int dst_token_flags)
+{
+	struct token_list tmp;
+	struct token *before = NULL;
+	struct token *safe, *tk;
+
+	TAILQ_INIT(&tmp);
+	TAILQ_FOREACH_SAFE(tk, src, tk_entry, safe) {
+		tk = TAILQ_FIRST(src);
+		if (tk->tk_flags & src_token_flags) {
+			if (before == NULL)
+				before = tk;
+			continue;
+		}
+
+		TAILQ_REMOVE(src, tk, tk_entry);
+		TAILQ_INSERT_TAIL(&tmp, tk, tk_entry);
+	}
+
+	TAILQ_FOREACH_SAFE(tk, dst, tk_entry, safe) {
+		if (tk->tk_flags & dst_token_flags)
+			continue;
+
+		TAILQ_REMOVE(dst, tk, tk_entry);
+		if (before != NULL)
+			TAILQ_INSERT_BEFORE(before, tk, tk_entry);
+		else
+			TAILQ_INSERT_TAIL(src, tk, tk_entry);
+	}
+
+	while (!TAILQ_EMPTY(&tmp)) {
+		tk = TAILQ_FIRST(&tmp);
+		TAILQ_REMOVE(&tmp, tk, tk_entry);
+		TAILQ_INSERT_TAIL(dst, tk, tk_entry);
 	}
 }
 
