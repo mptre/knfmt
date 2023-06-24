@@ -192,7 +192,7 @@ static const struct expr_rule	*expr_find_rule(const struct token *, int);
 static void	token_move_next_line(struct token *);
 static void	token_move_prev_line(struct token *);
 
-static const char	*strexpr(enum expr_type);
+static const char	*expr_type_str(enum expr_type);
 
 static const struct expr_rule rules[] = {
 	{ PC0 | PCUNARY,	0,	TOKEN_IDENT,			expr_exec_literal },
@@ -699,7 +699,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	es->es_depth++;
 
 	group = doc_alloc(DOC_GROUP, dc);
-	doc_annotate(group, strexpr(ex->ex_type));
+	doc_annotate(group, expr_type_str(ex->ex_type));
 	concat = doc_alloc(DOC_CONCAT, group);
 
 	/*
@@ -1323,7 +1323,7 @@ token_move_prev_line(struct token *tk)
 }
 
 static const char *
-strexpr(enum expr_type type)
+expr_type_str(enum expr_type type)
 {
 	switch (type) {
 #define OP(type) case type: return #type;
