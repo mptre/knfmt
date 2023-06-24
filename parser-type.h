@@ -9,6 +9,8 @@ struct token;
 
 struct parser_type {
 	struct token    *end;
+	/* Optional token to insert ruler alignment after. */
+	struct token    *align;
 };
 
 int	parser_type_peek(struct parser *, struct parser_type *, unsigned int);

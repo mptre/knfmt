@@ -25,6 +25,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct lexer_state s;
+	struct token *align = NULL;
 	struct token *beg, *pv, *t;
 	int peek = 0;
 	int nkeywords = 0;
@@ -97,15 +98,8 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			if (!lexer_if(lx, TOKEN_IDENT, &t))
 				break;
 		} else if (ntokens > 0 && lexer_peek_if_func_ptr(lx, &t)) {
-			struct token *align;
-
-			/*
-			 * Instruct parser_exec_type() where to perform ruler
-			 * alignment.
-			 */
 			if (lexer_back(lx, &align))
-				t->tk_token = align;
-			peek = 1;
+				peek = 1;
 			break;
 		} else if (ntokens > 0 && lexer_peek_if_ptr(lx, &t)) {
 			peek = 1;
@@ -137,6 +131,7 @@ out:
 	if (peek && type != NULL) {
 		*type = (struct parser_type){
 		    .end	= t,
+		    .align	= align,
 		};
 	}
 	return peek;
@@ -160,7 +155,7 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 		 * Find the first non pointer token starting from the end, this
 		 * is where the ruler alignment must be performed.
 		 */
-		align = end->tk_token != NULL ? end->tk_token : end;
+		align = type->align != NULL ? type->align : end;
 		for (;;) {
 			if (align->tk_type != TOKEN_STAR)
 				break;
