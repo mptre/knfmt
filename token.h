@@ -167,6 +167,7 @@ struct token {
 	int			 tk_int;
 
 	struct {
+		struct token	*br_parent;
 		struct token	*br_pv;
 		struct token	*br_nx;
 	} tk_branch;

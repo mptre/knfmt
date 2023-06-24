@@ -396,8 +396,8 @@ lexer_recover(struct lexer *lx)
 	if (br == NULL)
 		return 0;
 
-	src = br->tk_token;
-	dst = br->tk_branch.br_nx->tk_token;
+	src = br->tk_branch.br_parent;
+	dst = br->tk_branch.br_nx->tk_branch.br_parent;
 	lexer_trace(lx, "branch from %s to %s covering [%s, %s)",
 	    lexer_serialize(lx, br),
 	    lexer_serialize(lx, br->tk_branch.br_nx),
@@ -458,17 +458,17 @@ lexer_branch(struct lexer *lx)
 	if (br == NULL)
 		return 0;
 
-	dst = br->tk_branch.br_nx->tk_token;
+	dst = br->tk_branch.br_nx->tk_branch.br_parent;
 
 	lexer_trace(lx, "branch from %s to %s, covering [%s, %s)",
 	    lexer_serialize(lx, br),
 	    lexer_serialize(lx, br->tk_branch.br_nx),
-	    lexer_serialize(lx, br->tk_token),
-	    lexer_serialize(lx, br->tk_branch.br_nx->tk_token));
+	    lexer_serialize(lx, br->tk_branch.br_parent),
+	    lexer_serialize(lx, br->tk_branch.br_nx->tk_branch.br_parent));
 
 	token_branch_unlink(br);
 
-	rm = br->tk_token;
+	rm = br->tk_branch.br_parent;
 	for (;;) {
 		struct token *nx;
 
@@ -552,7 +552,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			/* While peeking, act as taking the current branch. */
 			while (br->tk_branch.br_nx != NULL)
 				br = br->tk_branch.br_nx;
-			st->st_tk = br->tk_token;
+			st->st_tk = br->tk_branch.br_parent;
 		}
 	}
 
@@ -1241,12 +1241,13 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	 * Remove all prefixes hanging of the destination covered by the new
 	 * prefix token.
 	 */
-	while (!TAILQ_EMPTY(&dst->tk_token->tk_prefixes)) {
+	while (!TAILQ_EMPTY(&dst->tk_branch.br_parent->tk_prefixes)) {
 		struct token *pr;
 
-		pr = TAILQ_FIRST(&dst->tk_token->tk_prefixes);
+		pr = TAILQ_FIRST(&dst->tk_branch.br_parent->tk_prefixes);
 		lexer_trace(lx, "removing prefix %s", lexer_serialize(lx, pr));
-		TAILQ_REMOVE(&dst->tk_token->tk_prefixes, pr, tk_entry);
+		TAILQ_REMOVE(&dst->tk_branch.br_parent->tk_prefixes, pr,
+		    tk_entry);
 		/* Completely unlink any branch. */
 		while (token_branch_unlink(pr) == 0)
 			continue;
@@ -1257,8 +1258,9 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 
 	lexer_trace(lx, "add prefix %s to %s",
 	    lexer_serialize(lx, prefix),
-	    lexer_serialize(lx, dst->tk_token));
-	TAILQ_INSERT_HEAD(&dst->tk_token->tk_prefixes, prefix, tk_entry);
+	    lexer_serialize(lx, dst->tk_branch.br_parent));
+	TAILQ_INSERT_HEAD(&dst->tk_branch.br_parent->tk_prefixes, prefix,
+	    tk_entry);
 
 	/*
 	 * Keep any existing prefix not covered by the new prefix token
@@ -1273,7 +1275,8 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 
 		lexer_trace(lx, "keeping prefix %s", lexer_serialize(lx, pv));
 		tmp = token_prev(pv);
-		token_move_prefix(pv, src->tk_token, dst->tk_token);
+		token_move_prefix(pv, src->tk_branch.br_parent,
+		    dst->tk_branch.br_parent);
 		pv = tmp;
 	}
 
@@ -1281,11 +1284,11 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	 * Remove all tokens up to the destination covered by the new prefix
 	 * token.
 	 */
-	rm = src->tk_token;
+	rm = src->tk_branch.br_parent;
 	for (;;) {
 		struct token *nx;
 
-		if (rm == dst->tk_token)
+		if (rm == dst->tk_branch.br_parent)
 			break;
 
 		nx = token_next(rm);
@@ -1302,7 +1305,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	 * again.
 	 */
 	if (unmute)
-		lexer_branch_unmute(lx, dst->tk_token);
+		lexer_branch_unmute(lx, dst->tk_branch.br_parent);
 
 	token_rele(dst);
 }
