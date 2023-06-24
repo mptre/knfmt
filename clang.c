@@ -55,6 +55,7 @@ static struct token	*clang_read_comment(struct clang *, struct lexer *,
     int);
 static struct token	*clang_read_cpp(struct clang *, struct lexer *);
 static struct token	*clang_keyword(struct lexer *);
+static void		 clang_insert_keyword(const struct token *);
 static struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
 static struct token	*clang_find_keyword1(const char *, size_t);
@@ -80,34 +81,32 @@ static const struct token tkstr = {
 void
 clang_init(void)
 {
-	static const struct token keywords[] = {
 #define OP(type, keyword, flags) {					\
 	.tk_type	= (type),					\
 	.tk_flags	= (flags),					\
 	.tk_str		= (keyword),					\
 	.tk_len		= sizeof((keyword)) - 1,			\
-},
-		FOR_TOKEN_TYPES(OP)
-		FOR_TOKEN_ALIASES(OP)
+	},
+	const struct token keywords[] = { FOR_TOKEN_TYPES(OP) };
+	struct token aliases[] = { FOR_TOKEN_ALIASES(OP) };
 #undef OP
-	};
-	size_t nkeywords = sizeof(keywords) / sizeof(keywords[0]);
-	unsigned int i;
+	const struct token *token_types[TOKEN_NONE + 1] = {0};
+	size_t i;
 
-	for (i = 0; i < nkeywords; i++) {
+	for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
 		const struct token *src = &keywords[i];
-		struct token *dst;
-		unsigned char slot;
 
-		slot = (unsigned char)src->tk_str[0];
-		if (table_tokens[slot] == NULL) {
-			if (VECTOR_INIT(table_tokens[slot]))
-				err(1, NULL);
-		}
-		dst = VECTOR_ALLOC(table_tokens[slot]);
-		if (dst == NULL)
-			err(1, NULL);
-		*dst = *src;
+		clang_insert_keyword(src);
+		assert(token_types[src->tk_type] == NULL);
+		token_types[src->tk_type] = src;
+	}
+
+	/* Let aliases inherit token flags. */
+	for (i = 0; i < sizeof(aliases) / sizeof(aliases[0]); i++) {
+		struct token *src = &aliases[i];
+
+		src->tk_flags = token_types[src->tk_type]->tk_flags;
+		clang_insert_keyword(src);
 	}
 }
 
@@ -666,6 +665,23 @@ clang_keyword(struct lexer *lx)
 		return NULL;
 	}
 	return lexer_emit(lx, &st, tk);
+}
+
+static void
+clang_insert_keyword(const struct token *tk)
+{
+	struct token *dst;
+	unsigned char slot;
+
+	slot = (unsigned char)tk->tk_str[0];
+	if (table_tokens[slot] == NULL) {
+		if (VECTOR_INIT(table_tokens[slot]))
+			err(1, NULL);
+	}
+	dst = VECTOR_ALLOC(table_tokens[slot]);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = *tk;
 }
 
 static struct token *
