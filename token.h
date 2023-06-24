@@ -6,6 +6,7 @@
 	/* keywords */							\
 	OP(TOKEN_ASSEMBLY,	"asm", 0)				\
 	OP(TOKEN_ATTRIBUTE,	"__attribute__", 0)			\
+	OP(TOKEN_BOOL,		"_Bool", TOKEN_FLAG_TYPE)		\
 	OP(TOKEN_BREAK,		"break", 0)				\
 	OP(TOKEN_CASE,		"case", 0)				\
 	OP(TOKEN_CHAR,		"char", TOKEN_FLAG_TYPE)		\
@@ -91,7 +92,9 @@
 #define FOR_TOKEN_ALIASES(OP)						\
 	/* linux */							\
 	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
-	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)
+	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)			\
+	/* stdbool.h */							\
+	OP(TOKEN_BOOL,		"bool", 0)
 
 #define FOR_TOKEN_SENTINELS(OP)						\
 	OP(TOKEN_COMMENT,	"", 0)					\
