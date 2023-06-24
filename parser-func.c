@@ -24,6 +24,9 @@ struct parser_func_proto_arg {
 #define PARSER_FUNC_PROTO_IMPL		0x00000001u
 };
 
+static enum parser_func_peek	parser_func_peek1(struct parser *,
+    struct token **);
+
 static int	parser_func_decl1(struct parser *, struct doc *,
     struct ruler *, struct token *);
 static int	parser_simple_decl_proto_enter(struct parser *, struct token *);
@@ -34,12 +37,16 @@ static int	parser_func_proto(struct parser *, struct doc **,
 
 static int	want_line_after_func_impl(struct parser *);
 
-/*
- * Returns non-zero if the next tokens denotes a function. The type argument
- * points to the last token of the return type.
- */
 enum parser_func_peek
-parser_func_peek(struct parser *pr, struct token **type)
+parser_func_peek(struct parser *pr)
+{
+	struct token *type;
+
+	return parser_func_peek1(pr, &type);
+}
+
+static enum parser_func_peek
+parser_func_peek1(struct parser *pr, struct token **type)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
@@ -84,10 +91,13 @@ out:
 }
 
 int
-parser_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl,
-    struct token *type)
+parser_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl)
 {
+	struct token *type;
 	int error;
+
+	if (parser_func_peek1(pr, &type) != PARSER_FUNC_PEEK_DECL)
+		return parser_none(pr);
 
 	error = parser_simple_decl_proto_enter(pr, type);
 	if (error & HALT)
@@ -151,7 +161,7 @@ parser_func_impl(struct parser *pr, struct doc *dc)
 	struct token *type;
 	int error;
 
-	if (parser_func_peek(pr, &type) != PARSER_FUNC_PEEK_IMPL)
+	if (parser_func_peek1(pr, &type) != PARSER_FUNC_PEEK_IMPL)
 		return parser_none(pr);
 
 	ruler_init(&rl, 1, RULER_ALIGN_FIXED);

@@ -139,7 +139,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	struct lexer *lx = pr->pr_lx;
 	struct doc *out = NULL;
 	struct doc *concat;
-	struct token *beg, *end, *fun, *semi, *tk;
+	struct token *beg, *end, *semi, *tk;
 	int iscpp = 0;
 	int error, simple;
 
@@ -158,11 +158,11 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	 * Presence of a type does not necessarily imply that this a declaration
 	 * since it could be a function declaration or implementation.
 	 */
-	switch (parser_func_peek(pr, &fun)) {
+	switch (parser_func_peek(pr)) {
 	case PARSER_FUNC_PEEK_NONE:
 		break;
 	case PARSER_FUNC_PEEK_DECL:
-		return parser_func_decl(pr, dc, rl, fun);
+		return parser_func_decl(pr, dc, rl);
 	case PARSER_FUNC_PEEK_IMPL:
 		return parser_none(pr);
 	}
