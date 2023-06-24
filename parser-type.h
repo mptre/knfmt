@@ -1,7 +1,6 @@
 struct doc;
 struct parser;
 struct ruler;
-struct token;
 
 #define PARSER_TYPE_CAST		0x00000001u
 #define PARSER_TYPE_ARG			0x00000002u
