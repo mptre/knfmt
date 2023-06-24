@@ -20,7 +20,8 @@ static int	lexer_peek_if_type_ident(struct lexer *lx);
 static int	peek_type_noident(struct lexer *, struct token **);
 
 int
-parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
+parser_type_peek(struct parser *pr, struct parser_type *type,
+    unsigned int flags)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct lexer_state s;
@@ -133,17 +134,21 @@ parser_type_peek(struct parser *pr, struct token **tk, unsigned int flags)
 	}
 
 out:
-	if (peek && tk != NULL)
-		*tk = t;
+	if (peek && type != NULL) {
+		*type = (struct parser_type){
+		    .end	= t,
+		};
+	}
 	return peek;
 }
 
 int
-parser_type(struct parser *pr, struct doc *dc, const struct token *end,
+parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
     struct ruler *rl)
 {
 	struct lexer *lx = pr->pr_lx;
 	const struct token *align = NULL;
+	const struct token *end = type->end;
 	struct token *beg;
 	unsigned int nspaces = 0;
 

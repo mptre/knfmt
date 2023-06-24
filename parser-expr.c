@@ -71,22 +71,23 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 static int
 expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 {
+	struct parser_type type;
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *tk;
 
-	if (parser_type_peek(pr, &tk, PARSER_TYPE_EXPR)) {
+	if (parser_type_peek(pr, &type, PARSER_TYPE_EXPR)) {
 		struct token *nx, *pv;
 
 		if (lexer_back(lx, &pv) &&
 		    (pv->tk_type == TOKEN_SIZEOF ||
 		     ((pv->tk_type == TOKEN_LPAREN ||
 		       pv->tk_type == TOKEN_COMMA) &&
-		      ((nx = token_next(tk)) != NULL &&
+		      ((nx = token_next(type.end)) != NULL &&
 		       (nx->tk_type == TOKEN_RPAREN ||
 			nx->tk_type == TOKEN_COMMA ||
 			nx->tk_type == LEXER_EOF))))) {
-			if (parser_type(pr, dc, tk, NULL) & GOOD)
+			if (parser_type(pr, dc, &type, NULL) & GOOD)
 				return 1;
 		}
 	} else if (lexer_if_flags(lx, TOKEN_FLAG_BINARY, &tk)) {
@@ -128,15 +129,16 @@ static int
 expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), struct doc *dc,
     void *arg)
 {
+	struct parser_type type;
 	struct lexer_state s;
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
-	struct token *op, *rparens, *tk;
+	struct token *op, *rparens;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (parser_type_peek(pr, &tk, PARSER_TYPE_CAST) &&
-	    lexer_seek(lx, token_next(tk)) &&
+	if (parser_type_peek(pr, &type, PARSER_TYPE_CAST) &&
+	    lexer_seek(lx, token_next(type.end)) &&
 	    lexer_if(lx, TOKEN_RPAREN, &rparens) &&
 	    !lexer_if(lx, TOKEN_COMMA, NULL) &&
 	    !(lexer_peek_if_flags(lx, TOKEN_FLAG_BINARY, &op) &&
@@ -148,5 +150,5 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), struct doc *dc,
 	lexer_peek_leave(lx, &s);
 	if (!peek)
 		return 0;
-	return parser_type(pr, dc, tk, NULL) & GOOD;
+	return parser_type(pr, dc, &type, NULL) & GOOD;
 }

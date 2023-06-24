@@ -12,6 +12,7 @@
 #include "lexer.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
+#include "parser-type.h"
 #include "ruler.h"
 #include "token.h"
 
@@ -50,7 +51,8 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
  * queue(3).
  */
 int
-parser_cpp_peek_decl(struct parser *pr, struct token **end, unsigned int flags)
+parser_cpp_peek_decl(struct parser *pr, struct parser_type *type,
+    unsigned int flags)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
@@ -62,13 +64,13 @@ parser_cpp_peek_decl(struct parser *pr, struct token **end, unsigned int flags)
 	    NULL))
 		continue;
 	if (lexer_if(lx, TOKEN_IDENT, &macro) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, end)) {
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &type->end)) {
 		struct token *ident;
 
 		for (;;) {
 			if (!lexer_if(lx, TOKEN_STAR, &tk))
 				break;
-			*end = tk;
+			type->end = tk;
 		}
 
 		if (lexer_if(lx, TOKEN_EQUAL, NULL)) {

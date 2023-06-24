@@ -342,15 +342,16 @@ static int
 test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
     unsigned int flags, int peek, int lno)
 {
+	struct parser_type type;
 	struct buffer *bf = NULL;
-	struct token *end, *tk;
+	struct token *tk;
 	const char *act;
 	int error = 0;
 	int ntokens = 0;
 
 	context_init(cx, src);
 
-	if (parser_type_peek(cx->pr, &end, flags) != peek) {
+	if (parser_type_peek(cx->pr, &type, flags) != peek) {
 		fprintf(stderr, "parser_type_peek:%d: want %d, got %d\n",
 		    lno, peek, !peek);
 		error = 1;
@@ -370,7 +371,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 			buffer_putc(bf, ' ');
 		buffer_puts(bf, tk->tk_str, tk->tk_len);
 
-		if (tk == end)
+		if (tk == type.end)
 			break;
 	}
 	buffer_putc(bf, '\0');

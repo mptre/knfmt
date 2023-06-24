@@ -136,6 +136,7 @@ static int
 parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
     unsigned int flags)
 {
+	struct parser_type type = {0};
 	struct lexer *lx = pr->pr_lx;
 	struct doc *out = NULL;
 	struct doc *concat;
@@ -147,8 +148,8 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_good(pr);
 	if ((flags & PARSER_DECL_ROOT) && (parser_cpp_decl_root(pr, dc) & GOOD))
 		return parser_good(pr);
-	if (!parser_type_peek(pr, &end, 0)) {
-		iscpp = parser_cpp_peek_decl(pr, &end,
+	if (!parser_type_peek(pr, &type, 0)) {
+		iscpp = parser_cpp_peek_decl(pr, &type,
 		    (flags & PARSER_DECL_ROOT) ? PARSER_CPP_DECL_ROOT : 0);
 		if (!iscpp)
 			return parser_cpp_x(pr, dc);
@@ -170,14 +171,16 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
 	if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
-		end = simple_static(lx, end);
+		type.end = simple_static(lx, type.end);
 	simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 
 	if (!lexer_peek(lx, &beg))
 		return parser_fail(pr);
+	end = type.end;
+
 	if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
 		simple_decl_type(pr->pr_simple.decl, beg, end);
-	if (parser_type(pr, concat, end, rl) & (FAIL | NONE))
+	if (parser_type(pr, concat, &type, rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	/* Presence of semicolon implies that this declaration is done. */
