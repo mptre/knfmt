@@ -443,12 +443,13 @@ test_token_position_after0(struct context *cx,
 	context_init(cx, arg->src);
 
 	if (!find_token(cx->lx, arg->after, &after)) {
-		fprintf(stderr, "%s:%d: could not find after token", fun, lno);
-		return 0;
+		fprintf(stderr, "%s:%d: could not find after token\n",
+		    fun, lno);
+		return 1;
 	}
 	if (!find_token(cx->lx, arg->move, &move)) {
-		fprintf(stderr, "%s:%d: could not find move token", fun, lno);
-		return 0;
+		fprintf(stderr, "%s:%d: could not find move token\n", fun, lno);
+		return 1;
 	}
 
 	token_position_after(after, move);
@@ -472,16 +473,19 @@ find_token(struct lexer *lx, int type, struct token **tk)
 {
 	struct lexer_state s;
 	struct token *discard;
+	int found = 0;
 
 	lexer_peek_enter(lx, &s);
 	while (!lexer_if(lx, LEXER_EOF, NULL)) {
-		if (lexer_if(lx, type, tk))
-			return 1;
+		if (lexer_if(lx, type, tk)) {
+			found = 1;
+			break;
+		}
 		if (!lexer_pop(lx, &discard))
-			return 0;
+			break;
 	}
 	lexer_peek_leave(lx, &s);
-	return 0;
+	return found;
 }
 
 static int
