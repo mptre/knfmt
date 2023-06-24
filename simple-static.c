@@ -18,7 +18,6 @@ simple_static(struct lexer *lx, struct token *end)
 
 	if (tk == end)
 		end = token_prev(end);
-	token_move_prefixes(beg, tk);
 	lexer_move_before(lx, beg, tk);
 	return end;
 }
