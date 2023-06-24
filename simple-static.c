@@ -1,5 +1,7 @@
 #include "simple-static.h"
 
+#include "config.h"
+
 #include "lexer.h"
 #include "token.h"
 
