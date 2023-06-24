@@ -94,11 +94,6 @@ struct doc_state {
 		unsigned int		 muteline;
 	} st_diff;
 
-	struct {
-		int		fits;
-		unsigned int	optline;
-	} st_fits;
-
 	struct doc_state_indent		 st_indent;
 
 	struct {
@@ -152,6 +147,11 @@ struct doc_diff {
 	unsigned int		 dd_first;	/* first token in group */
 	unsigned int		 dd_chunk;	/* first token covered by chunk */
 	int			 dd_covers;	/* doc_diff_covers() return value */
+};
+
+struct doc_fits {
+	int		fits;
+	unsigned int	optline;
 };
 
 /*
@@ -1062,41 +1062,43 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
+	struct doc_state fst;
+	struct doc_fits fits = {
+		.fits		= 1,
+		.optline	= 0,
+	};
 	unsigned int col = 0;
 	unsigned int optline = 0;
 
 	if (st->st_flags & DOC_EXEC_TRACE)
 		st->st_stats.nfits++;
 
-	if (st->st_newline) {
-		/* Pending hard line(s), assume that everything fits. */
-		optline = 1;
-	} else {
-		struct doc_state fst;
-
-		memcpy(&fst, st, sizeof(fst));
-		/* Should not perform any printing. */
-		fst.st_bf = NULL;
-		fst.st_mode = MUNGE;
-		fst.st_fits.fits = 1;
-		fst.st_fits.optline = 0;
-		fst.st_walk = NULL;
-		doc_walk(dc, &fst, doc_fits1, NULL);
-		doc_state_reset(&fst);
-		st->st_fits.fits = fst.st_fits.fits;
-		col = fst.st_col;
-		optline = fst.st_fits.optline;
-	}
+	memcpy(&fst, st, sizeof(fst));
+	/* Should not perform any printing. */
+	fst.st_bf = NULL;
+	fst.st_mode = MUNGE;
+	fst.st_walk = NULL;
+	doc_walk(dc, &fst, doc_fits1, &fits);
+	doc_state_reset(&fst);
+	col = fst.st_col;
+	optline = fits.optline;
 	doc_trace(dc, st, "%s: %u %s %u, optline %u", __func__,
-	    col, st->st_fits.fits ? "<=" : ">", style(st->st_st, ColumnLimit),
+	    col, fits.fits ? "<=" : ">", style(st->st_st, ColumnLimit),
 	    optline);
 
-	return st->st_fits.fits;
+	return fits.fits;
 }
 
 static int
-doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
+doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 {
+	struct doc_fits *fits = arg;
+
+	if (st->st_newline) {
+		fits->fits = st->st_col <= style(st->st_st, ColumnLimit);
+		return 0;
+	}
+
 	switch (dc->dc_type) {
 	case DOC_ALIGN: {
 		unsigned int indent = dc->dc_align.indent;
@@ -1129,7 +1131,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 
 	case DOC_OPTLINE:
 		if (st->st_optline) {
-			st->st_fits.optline = 1;
+			fits->optline = 1;
 			return 0;
 		}
 		break;
@@ -1152,7 +1154,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *UNUSED(arg))
 	}
 
 	if (st->st_col > style(st->st_st, ColumnLimit)) {
-		st->st_fits.fits = 0;
+		fits->fits = 0;
 		return 0;
 	}
 	return 1;
