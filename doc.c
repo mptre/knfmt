@@ -247,10 +247,10 @@ static void		doc_exec_verbatim(const struct doc *,
     struct doc_state *);
 static void		doc_exec_minimize(const struct doc *,
     struct doc_state *);
-static void		doc_exec_minimize1(struct doc *, struct doc_state *,
-    int);
-static ssize_t		doc_exec_minimize_indent(struct doc *,
+static void		doc_exec_minimize_indent(const struct doc *,
     struct doc_state *);
+static void		doc_exec_minimize_indent1(struct doc *,
+    struct doc_state *, int);
 static void		doc_exec_scope(const struct doc *, struct doc_state *);
 static void		doc_exec_maxlines(const struct doc *,
     struct doc_state *);
@@ -879,51 +879,22 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_exec_minimize(const struct doc *cdc, struct doc_state *st)
+doc_exec_minimize(const struct doc *dc, struct doc_state *st)
 {
-	/* Ugly, must be mutable for value mutation. */
-	struct doc *dc = (struct doc *)cdc;
-	ssize_t best = -1;
-
-	if (st->st_minimize.idx != -1) {
-		doc_exec_minimize1(dc, st, st->st_minimize.idx);
-		return;
-	}
-
 	/* All minimizers are expected to be of the same type. */
 	switch (dc->dc_minimizers[0].type) {
 	case DOC_MINIMIZE_INDENT:
-		best = doc_exec_minimize_indent(dc, st);
+		doc_exec_minimize_indent(dc, st);
+		break;
 		break;
 	}
-	assert(best != -1);
-	assert(st->st_minimize.idx == -1);
-	st->st_minimize.idx = best;
-	doc_exec_minimize1(dc, st, best);
-	st->st_minimize.idx = -1;
 }
 
 static void
-doc_exec_minimize1(struct doc *dc, struct doc_state *st, int idx)
+doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 {
-	VECTOR(struct doc_minimize) minimizers = dc->dc_minimizers;
-
-	if (minimizers[idx].flags & DOC_MINIMIZE_FORCE)
-		st->st_minimize.force = idx;
-
-	switch (minimizers[idx].type) {
-	case DOC_MINIMIZE_INDENT:
-		doc_set_indent(dc, minimizers[idx].indent);
-		doc_exec_indent(dc, st);
-		break;
-	}
-
-	dc->dc_minimizers = minimizers;
-}
-
-static ssize_t
-doc_exec_minimize_indent(struct doc *dc, struct doc_state *st)
-{
+	/* Ugly, must be mutable for value mutation. */
+	struct doc *dc = (struct doc *)cdc;
 	VECTOR(struct doc_minimize) minimizers;
 	struct doc_state_snapshot sn;
 	ssize_t best = -1;
@@ -931,6 +902,11 @@ doc_exec_minimize_indent(struct doc *dc, struct doc_state *st)
 	unsigned int nlines = 0;
 	unsigned int nexceeds = 0;
 	double minpenality = DBL_MAX;
+
+	if (st->st_minimize.idx != -1) {
+		doc_exec_minimize_indent1(dc, st, st->st_minimize.idx);
+		return;
+	}
 
 	doc_state_snapshot(&sn, st);
 	minimizers = dc->dc_minimizers;
@@ -940,7 +916,7 @@ doc_exec_minimize_indent(struct doc *dc, struct doc_state *st)
 		st->st_flags &= ~DOC_EXEC_TRACE;
 
 		st->st_minimize.idx = i;
-		doc_exec_minimize1(dc, st, i);
+		doc_exec_minimize_indent1(dc, st, i);
 		st->st_minimize.idx = -1;
 		if (st->st_minimize.force != -1)
 			minimizers[i].flags |= DOC_MINIMIZE_FORCE;
@@ -993,7 +969,24 @@ doc_exec_minimize_indent(struct doc *dc, struct doc_state *st)
 		}
 	}
 
-	return best;
+	assert(best != -1);
+	assert(st->st_minimize.idx == -1);
+	st->st_minimize.idx = best;
+	doc_exec_minimize_indent1(dc, st, best);
+	st->st_minimize.idx = -1;
+}
+
+static void
+doc_exec_minimize_indent1(struct doc *dc, struct doc_state *st, int idx)
+{
+	VECTOR(struct doc_minimize) minimizers = dc->dc_minimizers;
+
+	if (minimizers[idx].flags & DOC_MINIMIZE_FORCE)
+		st->st_minimize.force = idx;
+
+	doc_set_indent(dc, minimizers[idx].indent);
+	doc_exec_indent(dc, st);
+	dc->dc_minimizers = minimizers;
 }
 
 static void
