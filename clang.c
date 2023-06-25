@@ -207,20 +207,14 @@ clang_read(struct lexer *lx, void *arg)
 			pch = ch;
 		}
 		tk = lexer_emit(lx, &st, delim == '"' ? &tkstr : &tklit);
-		goto out;
-	}
-
-	if (isnum(ch, 1)) {
+	} else if (isnum(ch, 1)) {
 		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;
 		} while (isnum(ch, 0));
 		lexer_ungetc(lx);
 		tk = lexer_emit(lx, &st, &tklit);
-		goto out;
-	}
-
-	if (isalpha(ch) || ch == '_') {
+	} else if (isalpha(ch) || ch == '_') {
 		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;
@@ -237,19 +231,17 @@ clang_read(struct lexer *lx, void *arg)
 			    .tk_type	= TOKEN_IDENT,
 			});
 		}
-		goto out;
-	}
-
-	tk = lexer_emit(lx, &st, &(struct token){
-	    .tk_type	= TOKEN_NONE,
-	});
-	goto out;
-
+	} else if (lexer_eof(lx)) {
 eof:
-	tk = lexer_emit(lx, &st, &(struct token){
-	    .tk_type	= LEXER_EOF,
-	    .tk_str	= "",
-	});
+		tk = lexer_emit(lx, &st, &(struct token){
+		    .tk_type	= LEXER_EOF,
+		    .tk_str	= "",
+		});
+	} else {
+		tk = lexer_emit(lx, &st, &(struct token){
+		    .tk_type	= TOKEN_NONE,
+		});
+	}
 
 out:
 	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
