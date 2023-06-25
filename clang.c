@@ -88,8 +88,8 @@ clang_init(void)
 	.tk_str		= (keyword),					\
 	.tk_len		= sizeof((keyword)) - 1,			\
 	},
-	const struct token keywords[] = { FOR_TOKEN_TYPES(OP) };
-	struct token aliases[] = { FOR_TOKEN_ALIASES(OP) };
+	static struct token keywords[] = { FOR_TOKEN_TYPES(OP) };
+	static struct token aliases[] = { FOR_TOKEN_ALIASES(OP) };
 #undef OP
 	const struct token *token_types[TOKEN_NONE + 1] = {0};
 	size_t i;
