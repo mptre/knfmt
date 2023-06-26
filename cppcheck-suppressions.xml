@@ -16,10 +16,4 @@
   <suppress>
     <id>redundantContinue</id>
   </suppress>
-
-  <!-- expr.c -->
-  <suppress>
-    <fileName>expr.c</fileName>
-    <id>badBitmaskCheck</id>
-  </suppress>
 </suppressions>
