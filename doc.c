@@ -886,7 +886,6 @@ doc_exec_minimize(const struct doc *dc, struct doc_state *st)
 	case DOC_MINIMIZE_INDENT:
 		doc_exec_minimize_indent(dc, st);
 		break;
-		break;
 	}
 }
 
