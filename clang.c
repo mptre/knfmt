@@ -141,16 +141,9 @@ clang_free(struct clang *cl)
 	if (cl == NULL)
 		return;
 
-	clang_reset(cl);
 	cpp_include_free(cl->cl_ci);
 	VECTOR_FREE(cl->cl_branches);
 	free(cl);
-}
-
-void
-clang_reset(struct clang *MAYBE_UNUSED(cl))
-{
-	assert(VECTOR_EMPTY(cl->cl_branches));
 }
 
 struct token *
