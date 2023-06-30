@@ -237,6 +237,7 @@ exec 1>config.h
 [ "$HAVE_ERRC" -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
 [ "$HAVE_PLEDGE" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ "$HAVE_QUEUE" -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
+[ "$HAVE_WARNC" -eq 1 ] && printf '#define HAVE_WARNC\t1\n'
 
 if [ "$HAVE_ATTRIBUTE_FALLTHROUGH" -eq 1 ]; then
 	printf '#define FALLTHROUGH __attribute__((__fallthrough__))\n'
