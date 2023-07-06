@@ -56,6 +56,10 @@ parser_func_peek1(struct parser *pr, struct parser_type *type)
 	lexer_peek_enter(lx, &s);
 	if (parser_type_peek(pr, type, 0) &&
 	    lexer_seek(lx, token_next(type->end))) {
+		while (lexer_if(lx, TOKEN_ATTRIBUTE, NULL) &&
+		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
+			continue;
+
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
 			/* nothing */
 		} else if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
@@ -306,6 +310,8 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 
 	if (parser_type(pr, dc, type, arg->rl) & (FAIL | NONE))
+		return parser_fail(pr);
+	if (parser_attributes(pr, dc, NULL, 0) & FAIL)
 		return parser_fail(pr);
 
 	s = style(pr->pr_st, AlwaysBreakAfterReturnType);
