@@ -11,12 +11,14 @@
 #include "token.h"
 
 int
-parser_attributes(struct parser *pr, struct doc *dc, struct doc **out)
+parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
+    unsigned int flags)
 {
 	struct doc *def, *optional;
 	struct lexer *lx = pr->pr_lx;
 	struct token *pv;
 	enum doc_type linetype;
+	int nattributes = 0;
 
 	if (!lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
 		return parser_none(pr);
@@ -35,7 +37,8 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out)
 		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk))
 			break;
 
-		doc_alloc(linetype, optional);
+		if ((flags & PARSER_ATTRIBUTES_LINE) || nattributes > 0)
+			doc_alloc(linetype, optional);
 		linetype = DOC_LINE;
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, optional));
 		*out = concat;
@@ -51,6 +54,7 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
 			doc_token(tk, *out);
+		nattributes++;
 	}
 
 	return parser_good(pr);
