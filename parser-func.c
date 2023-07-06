@@ -303,7 +303,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	struct token *lparen, *rparen, *tk;
 	unsigned int s, w;
 	int nkr = 0;
-	int simple;
+	int error, simple;
 
 	if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
 		type->end = simple_static(lx, type->end);
@@ -311,8 +311,12 @@ parser_func_proto(struct parser *pr, struct doc **out,
 
 	if (parser_type(pr, dc, type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
-	if (parser_attributes(pr, dc, NULL, 0) & FAIL)
+
+	error = parser_attributes(pr, dc, NULL, 0);
+	if (error & FAIL)
 		return parser_fail(pr);
+	if ((error & GOOD) && (arg->flags & PARSER_FUNC_PROTO_IMPL) == 0)
+		doc_alloc(DOC_LINE, dc);
 
 	s = style(pr->pr_st, AlwaysBreakAfterReturnType);
 	if ((s == All || s == TopLevel) ||
