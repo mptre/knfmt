@@ -11,6 +11,8 @@
 #include "parser-func.h"
 #include "parser-priv.h"
 #include "ruler.h"
+#include "simple-static.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 
@@ -26,6 +28,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	struct lexer *lx = pr->pr_lx;
 	struct lexer_state s;
 	struct token *align = NULL;
+	struct token *tkstatic = NULL;
 	struct token *beg, *pv, *t;
 	int peek = 0;
 	int nkeywords = 0;
@@ -61,6 +64,14 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 				ntokens = 0;
 				break;
 			}
+
+			/*
+			 * No point in performing the simple static pass if the
+			 * static keyword comes first.
+			 */
+			if (ntokens > 0 && t->tk_type == TOKEN_STATIC)
+				tkstatic = t;
+
 			nkeywords++;
 			peek = 1;
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &t)) {
@@ -125,6 +136,14 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		 * (i.e. unknown types) therefore treat it as a type.
 		 */
 		peek = 1;
+	}
+
+	if (tkstatic != NULL) {
+		int simple;
+
+		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
+			t = simple_static(lx, beg, t, tkstatic);
+		simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
 	}
 
 out:

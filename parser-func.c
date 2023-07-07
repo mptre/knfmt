@@ -11,7 +11,6 @@
 #include "parser-type.h"
 #include "ruler.h"
 #include "simple-decl-proto.h"
-#include "simple-static.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
@@ -303,11 +302,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	struct token *lparen, *rparen, *tk;
 	unsigned int s, w;
 	int nkr = 0;
-	int error, simple;
-
-	if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
-		type->end = simple_static(lx, type->end);
-	simple_leave(pr->pr_si, SIMPLE_STATIC, simple);
+	int error;
 
 	if (parser_type(pr, dc, type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
