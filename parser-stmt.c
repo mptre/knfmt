@@ -352,8 +352,10 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 			doc_remove(space, expr);
 		expr = loop;
 	}
-	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+	if (lexer_expect(lx, TOKEN_RPAREN, &tk)) {
+		parser_token_trim_after(pr, tk);
 		doc_token(tk, expr);
+	}
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_literal(" ", expr);
