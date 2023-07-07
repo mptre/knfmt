@@ -204,6 +204,10 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		} else if (token_has_spaces(pv)) {
 			/* Previous token already emitted, honor spaces. */
 			doc_token(token_find_suffix_spaces(pv), concat);
+		} else if (pv->tk_type == TOKEN_COMMA &&
+		    token_cmp(pv, nx) == 0) {
+			/* Missing spaces after comma. */
+			doc_alloc(DOC_LINE, indent);
 		} else if (nx == rbrace) {
 			/*
 			 * Put the last hard line outside to get indentation
