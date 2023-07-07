@@ -11,7 +11,6 @@
 
 #include "alloc.h"
 #include "buffer.h"
-#include "cdefs.h"
 #include "comment.h"
 #include "cpp-align.h"
 #include "cpp-include.h"
