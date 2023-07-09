@@ -54,7 +54,7 @@ parser_func_peek1(struct parser *pr, struct parser_type *type)
 
 	lexer_peek_enter(lx, &s);
 	if (parser_type_peek(pr, type, 0) &&
-	    lexer_seek(lx, token_next(type->end))) {
+	    lexer_seek_after(lx, type->end)) {
 		while (lexer_if(lx, TOKEN_ATTRIBUTE, NULL) &&
 		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
 			continue;

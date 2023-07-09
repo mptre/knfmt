@@ -138,7 +138,7 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), struct doc *dc,
 
 	lexer_peek_enter(lx, &s);
 	if (parser_type_peek(pr, &type, PARSER_TYPE_CAST) &&
-	    lexer_seek(lx, token_next(type.end)) &&
+	    lexer_seek_after(lx, type.end) &&
 	    lexer_if(lx, TOKEN_RPAREN, &rparens) &&
 	    !lexer_if(lx, TOKEN_COMMA, NULL) &&
 	    !(lexer_peek_if_flags(lx, TOKEN_FLAG_BINARY, &op) &&

@@ -97,7 +97,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			peek = 1;
 		} else if (parser_cpp_peek_type(pr, &rparen)) {
 			t = rparen;
-			lexer_seek(lx, token_next(rparen));
+			lexer_seek_after(lx, rparen);
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
 			/* Ensure this is not the identifier after the type. */
 			if ((flags & PARSER_TYPE_CAST) == 0 &&

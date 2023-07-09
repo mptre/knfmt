@@ -76,6 +76,7 @@ void	lexer_stamp(struct lexer *);
 int	lexer_recover(struct lexer *);
 int	lexer_branch(struct lexer *);
 int	lexer_seek(struct lexer *, struct token *);
+int	lexer_seek_after(struct lexer *, struct token *);
 
 int	lexer_is_branch(const struct lexer *);
 

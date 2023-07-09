@@ -513,6 +513,15 @@ lexer_seek(struct lexer *lx, struct token *tk)
 	return lx->lx_st.st_tk == NULL ? 0 : 1;
 }
 
+int
+lexer_seek_after(struct lexer *lx, struct token *tk)
+{
+	struct token *nx;
+
+	nx = token_next(tk);
+	return nx != NULL && lexer_seek(lx, nx);
+}
+
 /*
  * Returns non-zero if the current token denotes a branch continuation.
  */
