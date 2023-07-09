@@ -55,9 +55,11 @@ parser_func_peek1(struct parser *pr, struct parser_type *type)
 	lexer_peek_enter(lx, &s);
 	if (parser_type_peek(pr, type, 0) &&
 	    lexer_seek_after(lx, type->end)) {
-		while (lexer_if(lx, TOKEN_ATTRIBUTE, NULL) &&
-		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
-			continue;
+		struct token *attr;
+
+		if (parser_attributes_peek(pr, &attr, PARSER_ATTRIBUTES_FUNC) &&
+		    !lexer_seek_after(lx, attr))
+			goto out;
 
 		if (lexer_if(lx, TOKEN_IDENT, NULL)) {
 			/* nothing */
@@ -78,9 +80,9 @@ parser_func_peek1(struct parser *pr, struct parser_type *type)
 		if (!lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
 			goto out;
 
-		while (lexer_if(lx, TOKEN_ATTRIBUTE, NULL) &&
-		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
-			continue;
+		if (parser_attributes_peek(pr, &attr, 0) &&
+		    !lexer_seek_after(lx, attr))
+			goto out;
 
 		if (lexer_if(lx, TOKEN_SEMI, NULL))
 			peek = PARSER_FUNC_PEEK_DECL;
@@ -307,7 +309,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	if (parser_type(pr, dc, type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
 
-	error = parser_attributes(pr, dc, NULL, 0);
+	error = parser_attributes(pr, dc, NULL, PARSER_ATTRIBUTES_FUNC);
 	if (error & FAIL)
 		return parser_fail(pr);
 	if ((error & GOOD) && (arg->flags & PARSER_FUNC_PROTO_IMPL) == 0)

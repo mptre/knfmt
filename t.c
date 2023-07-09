@@ -14,6 +14,7 @@
 #include "expr.h"
 #include "lexer.h"
 #include "options.h"
+#include "parser-attributes.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
 #include "parser-type.h"
@@ -50,6 +51,15 @@ static int	test_parser_expr0(struct context *, const char *, const char *,
 	test(test_parser_type_peek0(cx, (a), "", 0, 0, __LINE__))
 static int	test_parser_type_peek0(struct context *, const char *,
     const char *, unsigned int, int, int);
+
+#define test_parser_attributes_peek(a, b) \
+	test(test_parser_attributes_peek0(cx, (a), (b), 1, 0, __LINE__))
+#define test_parser_attributes_peek_flags(a, b, c) \
+	test(test_parser_attributes_peek0(cx, (b), (c), 1, (a), __LINE__))
+#define test_parser_attributes_peek_flags_error(a, b) \
+	test(test_parser_attributes_peek0(cx, (b), NULL, 0, (a), __LINE__))
+static int	test_parser_attributes_peek0(struct context *, const char *,
+    const char *, int, unsigned int, int);
 
 #define test_lexer_read(a, b) \
 	test(test_lexer_read0(cx, (a), (b), __LINE__))
@@ -265,6 +275,22 @@ main(int argc, char *argv[])
 
 	test_parser_type_peek_error("_asm volatile (");
 
+	test_parser_attributes_peek(
+	    "__attribute__((one))",
+	    "__attribute__ ( ( one ) )");
+	test_parser_attributes_peek(
+	    "__attribute__((one)) __attribute__((two))",
+	    "__attribute__ ( ( one ) ) __attribute__ ( ( two ) )");
+	test_parser_attributes_peek_flags(PARSER_ATTRIBUTES_FUNC,
+	    "printflike(3, 4) main(void) {}",
+	    "printflike ( 3 , 4 )");
+	test_parser_attributes_peek_flags_error(PARSER_ATTRIBUTES_FUNC,
+	    "main(void) __attribute__((one))");
+	test_parser_attributes_peek_flags_error(PARSER_ATTRIBUTES_FUNC,
+	    "main(void);");
+	test_parser_attributes_peek_flags_error(PARSER_ATTRIBUTES_FUNC,
+	    "main(argc) int argc;");
+
 	test_lexer_read("<", "LESS");
 	test_lexer_read("<x", "LESS IDENT");
 	test_lexer_read("<=", "LESSEQUAL");
@@ -454,6 +480,44 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 
 out:
 	buffer_free(bf);
+	return error;
+}
+
+static int
+test_parser_attributes_peek0(struct context *cx, const char *src,
+    const char *exp, int peek, unsigned int flags, int lno)
+{
+	const char *fun = "parser_attributes_peek";
+	struct token *rparen;
+	char *act = NULL;
+	int error = 0;
+
+	context_init(cx, src);
+
+	if (parser_attributes_peek(cx->pr, &rparen, flags) != peek) {
+		fprintf(stderr, "%s:%d: want %d, got %d\n",
+		    fun, lno, peek, !peek);
+		error = 1;
+		goto out;
+	}
+	if (!peek)
+		goto out;
+
+	act = tokens_concat(cx->lx, rparen);
+	if (act == NULL) {
+		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
+		error = 1;
+		goto out;
+	}
+	if (strcmp(exp, act) != 0) {
+		fprintf(stderr, "%s:%d:\n"
+		    "\texp \"%s\"\n\tgot \"%s\"\n",
+		    fun, lno, exp, act);
+		error = 1;
+	}
+
+out:
+	free(act);
 	return error;
 }
 

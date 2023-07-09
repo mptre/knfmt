@@ -7,8 +7,39 @@
 #include "lexer.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
+#include "parser-type.h"
 #include "style.h"
 #include "token.h"
+
+int
+parser_attributes_peek(struct parser *pr, struct token **rparen,
+    unsigned int flags)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	int nattributes = 0;
+
+	lexer_peek_enter(lx, &s);
+	for (;;) {
+		struct token *tmp;
+
+		if (lexer_if(lx, TOKEN_ATTRIBUTE, NULL) &&
+		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, rparen)) {
+			/* nothing */
+		} else if ((flags & PARSER_ATTRIBUTES_FUNC) &&
+		    lexer_if(lx, TOKEN_IDENT, NULL) &&
+		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &tmp) &&
+		    lexer_if(lx, TOKEN_IDENT, NULL)) {
+			/* Possible attribute hidden behind cpp macro. */
+			*rparen = tmp;
+		} else {
+			break;
+		}
+		nattributes++;
+	}
+	lexer_peek_leave(lx, &s);
+	return nattributes > 0;
+}
 
 int
 parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
@@ -16,11 +47,11 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 {
 	struct doc *def, *optional;
 	struct lexer *lx = pr->pr_lx;
-	struct token *pv;
+	struct token *end, *pv;
 	enum doc_type linetype;
 	int nattributes = 0;
 
-	if (!lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
+	if (!parser_attributes_peek(pr, &end, flags))
 		return parser_none(pr);
 
 	if (out == NULL)
@@ -31,10 +62,11 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 	optional = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, dc));
 	for (;;) {
 		struct doc *concat;
+		struct token *rparen = NULL;
 		struct token *tk;
 		int error;
 
-		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk))
+		if (!lexer_pop(lx, &tk))
 			break;
 
 		if ((flags & PARSER_ATTRIBUTES_LINE) || nattributes > 0)
@@ -52,9 +84,11 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		});
 		if (error & HALT)
 			return parser_fail(pr);
-		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-			doc_token(tk, *out);
+		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
+			doc_token(rparen, *out);
 		nattributes++;
+		if (rparen == end)
+			break;
 	}
 
 	return parser_good(pr);
