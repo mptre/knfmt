@@ -57,7 +57,7 @@ static int	test_parser_type_peek0(struct context *, const char *,
 #define test_parser_attributes_peek_flags(a, b, c) \
 	test(test_parser_attributes_peek0(cx, (b), (c), 1, (a), __LINE__))
 #define test_parser_attributes_peek_flags_error(a, b) \
-	test(test_parser_attributes_peek0(cx, (b), NULL, 0, (a), __LINE__))
+	test(test_parser_attributes_peek0(cx, (b), "", 0, (a), __LINE__))
 static int	test_parser_attributes_peek0(struct context *, const char *,
     const char *, int, unsigned int, int);
 
