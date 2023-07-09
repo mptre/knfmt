@@ -449,9 +449,8 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
     unsigned int flags, int peek, int lno)
 {
 	const char *fun = "parser_type_peek";
-	const char *act;
+	char *act = NULL;
 	struct parser_type type;
-	struct buffer *bf = NULL;
 	int error = 0;
 
 	context_init(cx, src);
@@ -479,7 +478,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	}
 
 out:
-	buffer_free(bf);
+	free(act);
 	return error;
 }
 
