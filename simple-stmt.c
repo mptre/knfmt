@@ -168,7 +168,8 @@ simple_stmt_no_braces_leave(struct simple_stmt *UNUSED(ss),
 static int
 is_stmt_empty(const struct stmt *st)
 {
-	return token_prev(st->st_rbrace) == st->st_lbrace;
+	return token_prev(st->st_rbrace) == st->st_lbrace &&
+	    st->st_lbrace->tk_type != TOKEN_SEMI;
 }
 
 static struct stmt *
