@@ -7,7 +7,6 @@
 #include "lexer.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
-#include "parser-type.h"
 #include "style.h"
 #include "token.h"
 
