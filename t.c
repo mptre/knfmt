@@ -103,6 +103,8 @@ static void		 context_free(struct context *);
 static void		 context_init(struct context *, const char *);
 static void		 context_reset(struct context *);
 
+static char	*tokens_concat(struct lexer *, const struct token *);
+
 int
 main(int argc, char *argv[])
 {
@@ -420,44 +422,33 @@ static int
 test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
     unsigned int flags, int peek, int lno)
 {
+	const char *fun = "parser_type_peek";
+	const char *act;
 	struct parser_type type;
 	struct buffer *bf = NULL;
-	struct token *tk;
-	const char *act;
 	int error = 0;
-	int ntokens = 0;
 
 	context_init(cx, src);
 
 	if (parser_type_peek(cx->pr, &type, flags) != peek) {
-		fprintf(stderr, "parser_type_peek:%d: want %d, got %d\n",
-		    lno, peek, !peek);
+		fprintf(stderr, "%s:%d: want %d, got %d\n",
+		    fun, lno, peek, !peek);
 		error = 1;
 		goto out;
 	}
 	if (!peek)
 		goto out;
 
-	bf = buffer_alloc(128);
-	if (bf == NULL)
-		err(1, NULL);
-	for (;;) {
-		if (!lexer_pop(cx->lx, &tk))
-			errx(1, "parser_type_peek:%d: out of tokens", lno);
-
-		if (ntokens++ > 0)
-			buffer_putc(bf, ' ');
-		buffer_puts(bf, tk->tk_str, tk->tk_len);
-
-		if (tk == type.end)
-			break;
+	act = tokens_concat(cx->lx, type.end);
+	if (act == NULL) {
+		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
+		error = 1;
+		goto out;
 	}
-	buffer_putc(bf, '\0');
-	act = buffer_get_ptr(bf);
 	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "parser_type_peek:%d:\n"
+		fprintf(stderr, "%s:%d:\n"
 		    "\texp \"%s\"\n\tgot \"%s\"\n",
-		    lno, exp, act);
+		    fun, lno, exp, act);
 		error = 1;
 	}
 
@@ -748,4 +739,34 @@ context_reset(struct context *cx)
 
 	parser_free(cx->pr);
 	cx->pr = NULL;
+}
+
+static char *
+tokens_concat(struct lexer *lx, const struct token *end)
+{
+	struct buffer *bf;
+	char *str = NULL;
+
+	bf = buffer_alloc(128);
+	if (bf == NULL)
+		err(1, NULL);
+
+	for (;;) {
+		struct token *tk;
+
+		if (!lexer_pop(lx, &tk))
+			goto out;
+
+		if (buffer_get_len(bf) > 0)
+			buffer_putc(bf, ' ');
+		buffer_puts(bf, tk->tk_str, tk->tk_len);
+
+		if (tk == end)
+			break;
+	}
+	str = buffer_str(bf);
+
+out:
+	buffer_free(bf);
+	return str;
 }
