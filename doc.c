@@ -29,14 +29,14 @@
 #  include "compat-queue.h"
 #endif
 
-#define IS_DOC_INDENT_PARENS(dc) \
-	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_PARENS))
-#define IS_DOC_INDENT_FORCE(dc) \
-	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_FORCE))
-#define IS_DOC_INDENT_NEWLINE(dc) \
-	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_NEWLINE))
-#define IS_DOC_INDENT_WIDTH(dc) \
-	((dc)->dc_int > 0 && ((dc)->dc_int & DOC_INDENT_WIDTH))
+#define IS_DOC_INDENT_PARENS(indent) \
+	((indent) > 0 && ((indent) & DOC_INDENT_PARENS))
+#define IS_DOC_INDENT_FORCE(indent) \
+	((indent) > 0 && ((indent) & DOC_INDENT_FORCE))
+#define IS_DOC_INDENT_NEWLINE(indent) \
+	((indent) > 0 && ((indent) & DOC_INDENT_NEWLINE))
+#define IS_DOC_INDENT_WIDTH(indent) \
+	((indent) > 0 && ((indent) & DOC_INDENT_WIDTH))
 
 TAILQ_HEAD(doc_list, doc);
 
@@ -770,18 +770,18 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 	unsigned int oldparens = 0;
 	int indent = 0;
 
-	if (IS_DOC_INDENT_PARENS(dc)) {
+	if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
 		oldparens = st->st_parens;
 		if (doc_parens_align(st))
 			st->st_parens++;
-	} else if (IS_DOC_INDENT_FORCE(dc)) {
+	} else if (IS_DOC_INDENT_FORCE(dc->dc_int)) {
 		doc_indent(dc, st, st->st_indent.cur);
-	} else if (IS_DOC_INDENT_NEWLINE(dc)) {
+	} else if (IS_DOC_INDENT_NEWLINE(dc->dc_int)) {
 		if (st->st_stats.nlines > 0) {
 			indent = dc->dc_int & ~DOC_INDENT_NEWLINE;
 			st->st_indent.cur += indent;
 		}
-	} else if (IS_DOC_INDENT_WIDTH(dc)) {
+	} else if (IS_DOC_INDENT_WIDTH(dc->dc_int)) {
 		indent = (int)st->st_col - st->st_indent.cur;
 		st->st_indent.cur += indent;
 	} else {
@@ -789,9 +789,9 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 		st->st_indent.cur += indent;
 	}
 	doc_exec1(dc->dc_doc, st);
-	if (IS_DOC_INDENT_PARENS(dc)) {
+	if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
 		st->st_parens = oldparens;
-	} else if (IS_DOC_INDENT_FORCE(dc)) {
+	} else if (IS_DOC_INDENT_FORCE(dc->dc_int)) {
 		/* nothing */
 	} else {
 		st->st_indent.cur -= indent;
@@ -1895,15 +1895,15 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 static void
 indentstr(const struct doc *dc, const struct doc_state *st, struct buffer *bf)
 {
-	if (IS_DOC_INDENT_NEWLINE(dc)) {
+	if (IS_DOC_INDENT_NEWLINE(dc->dc_int)) {
 		buffer_printf(bf, "NEWLINE, %d, %u",
 		    dc->dc_int & ~DOC_INDENT_NEWLINE,
 		    st->st_stats.nlines);
-	} else if (IS_DOC_INDENT_PARENS(dc)) {
+	} else if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
 		buffer_printf(bf, "PARENS");
-	} else if (IS_DOC_INDENT_FORCE(dc)) {
+	} else if (IS_DOC_INDENT_FORCE(dc->dc_int)) {
 		buffer_printf(bf, "FORCE");
-	} else if (IS_DOC_INDENT_WIDTH(dc)) {
+	} else if (IS_DOC_INDENT_WIDTH(dc->dc_int)) {
 		buffer_printf(bf, "WIDTH");
 	} else {
 		buffer_printf(bf, "%d", dc->dc_int);
