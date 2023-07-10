@@ -74,6 +74,19 @@
   (10515e0)
   (Anton Lindqvist)
 
+- Recognize attributes after return type in function prototypes and
+  implementations.
+  (96f0a8e)
+  (Anton Lindqvist)
+
+- Trim right parenthesis in for loops.
+  (9056049)
+  (Anton Lindqvist)
+
+- Detect function attributes hidden behind cpp macros.
+  (43829dd)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - In simple mode, fix sort includes bug.
@@ -117,6 +130,19 @@
 - Recognize asm, attribute, inline, restrict and volatile preceded or succeeded
   with any amount of underscores as the corresponding keyword with underscores.
   (1523fd1)
+  (Anton Lindqvist)
+
+- Do not trim redundant semicolon(s) from declarations in for loops.
+  (3688b9b)
+  (Anton Lindqvist)
+
+- Add missing spaces after elements in brace initializers.
+  (dedad51)
+  (Anton Lindqvist)
+
+- In simple mode, semicolon statement is not considered empty when considering
+  removing/adding braces.
+  (9755ace)
   (Anton Lindqvist)
 
 # 4.1.1 - 2023-03-09
