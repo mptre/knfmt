@@ -66,16 +66,16 @@ static int	test_parser_attributes_peek0(struct context *, const char *,
 static int	test_lexer_read0(struct context *, const char *, const char *,
     int);
 
-struct test_lexer_move_before {
+struct test_token_move {
 	const char	*src;
-	int		 before;
+	int		 target;
 	int		 move;
 	const char	*want[10];
 };
 #define test_lexer_move_before(a) \
 	test(test_lexer_move_before0(cx, (a), __LINE__))
 static int	test_lexer_move_before0(struct context *,
-    struct test_lexer_move_before *, int);
+    struct test_token_move *, int);
 
 struct test_token_position_after {
 	const char	*src;
@@ -318,9 +318,9 @@ main(int argc, char *argv[])
 	    .cno	= 9,
 	}));
 
-	test_lexer_move_before((&(struct test_lexer_move_before){
+	test_lexer_move_before((&(struct test_token_move){
 	    .src	= "int static x;",
-	    .before	= TOKEN_INT,
+	    .target	= TOKEN_INT,
 	    .move	= TOKEN_STATIC,
 	    .want	= {
 		"STATIC<1:1>(\"static\")",
@@ -331,9 +331,9 @@ main(int argc, char *argv[])
 		"SEMI<1:13>(\";\")",
 	    },
 	}));
-	test_lexer_move_before((&(struct test_lexer_move_before){
+	test_lexer_move_before((&(struct test_token_move){
 	    .src	= "int static\tx;",
-	    .before	= TOKEN_INT,
+	    .target	= TOKEN_INT,
 	    .move	= TOKEN_STATIC,
 	    .want	= {
 		"STATIC<1:1>(\"static\")",
@@ -344,9 +344,9 @@ main(int argc, char *argv[])
 		"SEMI<1:18>(\";\")",
 	    },
 	}));
-	test_lexer_move_before((&(struct test_lexer_move_before){
+	test_lexer_move_before((&(struct test_token_move){
 	    .src	= "/* c1 */ int /* c2 */ static",
-	    .before	= TOKEN_INT,
+	    .target	= TOKEN_INT,
 	    .move	= TOKEN_STATIC,
 	    .want	= {
 		"  COMMENT<1:1>(\"/* c1 */ \")",
@@ -355,9 +355,9 @@ main(int argc, char *argv[])
 		"INT<1:25>(\"int\")",
 	    },
 	}));
-	test_lexer_move_before((&(struct test_lexer_move_before){
+	test_lexer_move_before((&(struct test_token_move){
 	    .src	= "/* c1 */\nint\nstatic",
-	    .before	= TOKEN_INT,
+	    .target	= TOKEN_INT,
 	    .move	= TOKEN_STATIC,
 	    .want	= {
 		"  COMMENT<1:1>(\"/* c1 */\\n\")",
@@ -366,9 +366,9 @@ main(int argc, char *argv[])
 		"  SPACE<2:10>(\"\\n\")",
 	    },
 	}));
-	test_lexer_move_before((&(struct test_lexer_move_before){
+	test_lexer_move_before((&(struct test_token_move){
 	    .src	= "int\nstatic void",
-	    .before	= TOKEN_INT,
+	    .target	= TOKEN_INT,
 	    .move	= TOKEN_STATIC,
 	    .want	= {
 		"STATIC<1:1>(\"static\")",
@@ -565,7 +565,7 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 }
 
 static int
-test_lexer_move_before0(struct context *cx, struct test_lexer_move_before *arg,
+test_lexer_move_before0(struct context *cx, struct test_token_move *arg,
     int lno)
 {
 	struct token *before, *move;
@@ -576,7 +576,7 @@ test_lexer_move_before0(struct context *cx, struct test_lexer_move_before *arg,
 
 	context_init(cx, arg->src);
 
-	if (!find_token(cx->lx, arg->before, &before)) {
+	if (!find_token(cx->lx, arg->target, &before)) {
 		fprintf(stderr, "%s:%d: could not find before token\n",
 		    fun, lno);
 		goto out;
