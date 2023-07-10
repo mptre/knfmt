@@ -827,7 +827,7 @@ static struct doc *
 expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	const struct style *st = es->es_st;
-	int doalign = es->es_ncalls == 0 && style(st, AlignOperands) == Align;
+	int doalign = style(st, AlignOperands) == Align;
 
 	if (ex->ex_tk->tk_flags & TOKEN_FLAG_ASSIGN) {
 		struct doc *lhs;

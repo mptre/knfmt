@@ -782,8 +782,10 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 			st->st_indent.cur += indent;
 		}
 	} else if (IS_DOC_INDENT_WIDTH(dc->dc_int)) {
-		indent = (int)st->st_col - st->st_indent.cur;
-		st->st_indent.cur += indent;
+		if (!st->st_newline) {
+			indent = (int)st->st_col - st->st_indent.cur;
+			st->st_indent.cur += indent;
+		}
 	} else {
 		indent = dc->dc_int;
 		st->st_indent.cur += indent;
