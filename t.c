@@ -70,26 +70,17 @@ struct test_token_move {
 	const char	*src;
 	int		 target;
 	int		 move;
-	const char	*want[10];
+	const char	*want[16];
 };
 #define test_lexer_move_before(a) \
 	test(test_lexer_move_before0(cx, (a), __LINE__))
 static int	test_lexer_move_before0(struct context *,
     struct test_token_move *, int);
 
-struct test_token_position_after {
-	const char	*src;
-	int		 after;
-	int		 move;
-	unsigned int	 lno;
-	unsigned int	 cno;
-};
-
 #define test_token_position_after(a) \
 	test(test_token_position_after0(cx, (a), __LINE__))
 static int	test_token_position_after0(struct context *,
-    struct test_token_position_after *, int);
-static int	find_token(struct lexer *, int, struct token **);
+    struct test_token_move *, int);
 
 #define test_strwidth(a, b, c) \
 	test(test_strwidth0((a), (b), (c), __LINE__))
@@ -112,6 +103,10 @@ static struct context	*context_alloc(void);
 static void		 context_free(struct context *);
 static void		 context_init(struct context *, const char *);
 static void		 context_reset(struct context *);
+
+static int	assert_token_move(struct lexer *, const char **, const char *,
+    int);
+static int	find_token(struct lexer *, int, struct token **);
 
 static char	*tokens_concat(struct lexer *, const struct token *);
 
@@ -310,12 +305,22 @@ main(int argc, char *argv[])
 	test_lexer_read("asm_inline", "ASSEMBLY");
 	test_lexer_read("asm_volatile_goto", "ASSEMBLY");
 
-	test_token_position_after((&(struct test_token_position_after){
+	test_token_position_after((&(struct test_token_move){
 	    .src	= "\tint a;\n\tchar b;\n",
-	    .after	= TOKEN_SEMI,
+	    .target	= TOKEN_SEMI,
 	    .move	= TOKEN_CHAR,
-	    .lno	= 1,
-	    .cno	= 9,
+	    .want	= {
+		"INT<1:9>(\"int\")",
+		"  SPACE<1:12>(\" \")",
+		"IDENT<1:13>(\"a\")",
+		"SEMI<1:14>(\";\")",
+		"  SPACE<1:15>(\"\\n\")",
+		"CHAR<1:9>(\"char\")",
+		"  SPACE<1:13>(\" \")",
+		"IDENT<2:14>(\"b\")",
+		"SEMI<2:15>(\";\")",
+		"  SPACE<2:16>(\"\\n\")",
+	    },
 	}));
 
 	test_lexer_move_before((&(struct test_token_move){
@@ -570,93 +575,32 @@ test_lexer_move_before0(struct context *cx, struct test_token_move *arg,
 {
 	struct token *before, *move;
 	const char *fun = "lexer_move_before";
-	char *str = NULL;
-	int error = 1;
-	int i = 0;
+	int error;
 
 	context_init(cx, arg->src);
 
 	if (!find_token(cx->lx, arg->target, &before)) {
 		fprintf(stderr, "%s:%d: could not find before token\n",
 		    fun, lno);
+		error = 1;
 		goto out;
 	}
 	if (!find_token(cx->lx, arg->move, &move)) {
 		fprintf(stderr, "%s:%d: could not find move token\n", fun, lno);
+		error = 1;
 		goto out;
 	}
 
 	lexer_move_before(cx->lx, before, move);
-
-	for (;;) {
-		struct token *prefix, *suffix, *tk;
-
-		if (lexer_if(cx->lx, LEXER_EOF, NULL) ||
-		    !lexer_pop(cx->lx, &tk))
-			break;
-
-		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			if (arg->want[i] == NULL) {
-				fprintf(stderr, "%s:%d: too few wanted "
-				    "tokens\n", fun, lno);
-				goto out;
-			}
-
-			str = token_serialize_no_flags(prefix);
-			if (strcmp(str, &arg->want[i][2]) != 0) {
-				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
-				    fun, lno, i, &arg->want[i][2], str);
-				goto out;
-			}
-			free(str);
-			str = NULL;
-			i++;
-		}
-
-		str = token_serialize_no_flags(tk);
-		if (strcmp(str, arg->want[i]) != 0) {
-			fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
-			    fun, lno, i, arg->want[i], str);
-			goto out;
-		}
-		free(str);
-		str = NULL;
-		i++;
-
-		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-			if (arg->want[i] == NULL) {
-				fprintf(stderr, "%s:%d: too few wanted "
-				    "tokens\n", fun, lno);
-				goto out;
-			}
-
-			str = token_serialize_no_flags(suffix);
-			if (strcmp(str, &arg->want[i][2]) != 0) {
-				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
-				    fun, lno, i, &arg->want[i][2], str);
-				goto out;
-			}
-			free(str);
-			str = NULL;
-			i++;
-		}
-	}
-	if (arg->want[i] != NULL) {
-		fprintf(stderr, "%s:%d: wanted tokens not exhausted\n",
-		    fun, lno);
-		goto out;
-	}
-
-	error = 0;
+	error = assert_token_move(cx->lx, arg->want, fun, lno);
 
 out:
-	free(str);
 	return error;
 }
 
 static int
 test_token_position_after0(struct context *cx,
-    struct test_token_position_after *arg, int lno)
+    struct test_token_move *arg, int lno)
 {
 	const char *fun = "token_position_after";
 	struct token *after, *move;
@@ -664,7 +608,7 @@ test_token_position_after0(struct context *cx,
 
 	context_init(cx, arg->src);
 
-	if (!find_token(cx->lx, arg->after, &after)) {
+	if (!find_token(cx->lx, arg->target, &after)) {
 		fprintf(stderr, "%s:%d: could not find after token\n",
 		    fun, lno);
 		return 1;
@@ -675,17 +619,7 @@ test_token_position_after0(struct context *cx,
 	}
 
 	token_position_after(after, move);
-
-	if (arg->lno != move->tk_lno) {
-		fprintf(stderr, "%s:%d: lno: want %u, got %u\n", fun, lno,
-		    arg->lno, move->tk_lno);
-		error = 1;
-	}
-	if (arg->cno != move->tk_cno) {
-		fprintf(stderr, "%s:%d: cno: want %u, got %u\n", fun, lno,
-		    arg->cno, move->tk_cno);
-		error = 1;
-	}
+	error = assert_token_move(cx->lx, arg->want, fun, lno);
 
 	return error;
 }
@@ -802,6 +736,77 @@ context_reset(struct context *cx)
 
 	parser_free(cx->pr);
 	cx->pr = NULL;
+}
+
+static int
+assert_token_move(struct lexer *lx, const char **want, const char *fun, int lno)
+{
+	char *str = NULL;
+	int i = 0;
+	int error = 1;
+
+	for (;;) {
+		struct token *prefix, *suffix, *tk;
+
+		if (lexer_if(lx, LEXER_EOF, NULL) || !lexer_pop(lx, &tk))
+			break;
+
+		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+			if (want[i] == NULL) {
+				fprintf(stderr, "%s:%d: too few wanted "
+				    "tokens\n", fun, lno);
+				goto out;
+			}
+
+			str = token_serialize_no_flags(prefix);
+			if (strcmp(str, &want[i][2]) != 0) {
+				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
+				    fun, lno, i, &want[i][2], str);
+				goto out;
+			}
+			free(str);
+			str = NULL;
+			i++;
+		}
+
+		str = token_serialize_no_flags(tk);
+		if (strcmp(str, want[i]) != 0) {
+			fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
+			    fun, lno, i, want[i], str);
+			goto out;
+		}
+		free(str);
+		str = NULL;
+		i++;
+
+		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+			if (want[i] == NULL) {
+				fprintf(stderr, "%s:%d: too few wanted "
+				    "tokens\n", fun, lno);
+				goto out;
+			}
+
+			str = token_serialize_no_flags(suffix);
+			if (strcmp(str, &want[i][2]) != 0) {
+				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
+				    fun, lno, i, &want[i][2], str);
+				goto out;
+			}
+			free(str);
+			str = NULL;
+			i++;
+		}
+	}
+	if (want[i] != NULL) {
+		fprintf(stderr, "%s:%d: wanted tokens not exhausted\n",
+		    fun, lno);
+		goto out;
+	}
+	error = 0;
+
+out:
+	free(str);
+	return error;
 }
 
 static char *
