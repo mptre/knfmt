@@ -1825,22 +1825,22 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_LINE:
-		fprintf(stderr, "\"%s\", 1)",
+		fprintf(stderr, "\"%s\", 1",
 		    st->st_mode == BREAK ? "\\n" : " ");
 		break;
 
 	case DOC_SOFTLINE:
-		fprintf(stderr, "\"%s\", %d)",
+		fprintf(stderr, "\"%s\", %d",
 		    st->st_mode == BREAK ? "\\n" : "",
 		    st->st_mode == BREAK ? 1 : 0);
 		break;
 
 	case DOC_HARDLINE:
-		fprintf(stderr, "\"\\n\", 1)");
+		fprintf(stderr, "\"\\n\", 1");
 		break;
 
 	case DOC_OPTLINE:
-		fprintf(stderr, "\"%s\", %d)",
+		fprintf(stderr, "\"%s\", %d",
 		    st->st_optline ? "\\n" : "", st->st_optline ? 1 : 0);
 		break;
 
