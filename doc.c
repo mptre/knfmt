@@ -1803,6 +1803,13 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	}
 
 	switch (dc->dc_type) {
+	case DOC_MINIMIZE:
+		if (st->st_minimize.idx == -1) {
+			fprintf(stderr, "-1");
+			break;
+		}
+		FALLTHROUGH;
+
 	case DOC_INDENT:
 	case DOC_NOINDENT: {
 		struct buffer *bf;
@@ -1835,11 +1842,6 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	case DOC_OPTLINE:
 		fprintf(stderr, "\"%s\", %d)",
 		    st->st_optline ? "\\n" : "", st->st_optline ? 1 : 0);
-		break;
-
-	case DOC_MINIMIZE:
-		fprintf(stderr, "%d", st->st_minimize.idx == -1 ? -1 :
-		    (int)dc->dc_minimizers[st->st_minimize.idx].indent);
 		break;
 
 	default:
@@ -1895,18 +1897,25 @@ docstr(const struct doc *dc, char *buf, size_t bufsiz)
 static void
 indentstr(const struct doc *dc, const struct doc_state *st, struct buffer *bf)
 {
-	if (IS_DOC_INDENT_NEWLINE(dc->dc_int)) {
+	int indent;
+
+	if (dc->dc_type == DOC_MINIMIZE)
+		indent = (int)dc->dc_minimizers[st->st_minimize.idx].indent;
+	else
+		indent = dc->dc_int;
+
+	if (IS_DOC_INDENT_NEWLINE(indent)) {
 		buffer_printf(bf, "NEWLINE, %d, %u",
 		    dc->dc_int & ~DOC_INDENT_NEWLINE,
 		    st->st_stats.nlines);
-	} else if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
+	} else if (IS_DOC_INDENT_PARENS(indent)) {
 		buffer_printf(bf, "PARENS");
-	} else if (IS_DOC_INDENT_FORCE(dc->dc_int)) {
+	} else if (IS_DOC_INDENT_FORCE(indent)) {
 		buffer_printf(bf, "FORCE");
-	} else if (IS_DOC_INDENT_WIDTH(dc->dc_int)) {
+	} else if (IS_DOC_INDENT_WIDTH(indent)) {
 		buffer_printf(bf, "WIDTH");
 	} else {
-		buffer_printf(bf, "%d", dc->dc_int);
+		buffer_printf(bf, "%d", indent);
 	}
 }
 
