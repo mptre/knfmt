@@ -1827,8 +1827,12 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_LINE:
-		fprintf(stderr, "\"%s\", 1",
-		    st->st_mode == BREAK ? "\\n" : " ");
+		if (st->st_mode == BREAK)
+			fprintf(stderr, "\"\\n\", 1");
+		else if (!st->st_newline)
+			fprintf(stderr, "\" \", 1");
+		else
+			fprintf(stderr, "\"\", 0");
 		break;
 
 	case DOC_SOFTLINE:
