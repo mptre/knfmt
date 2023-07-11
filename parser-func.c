@@ -35,6 +35,8 @@ static int	parser_func_impl1(struct parser *, struct doc *,
 static int	parser_func_proto(struct parser *, struct doc **,
     struct parser_func_proto_arg *);
 
+static int	parser_func_arg_peek(struct parser *, struct parser_type *);
+
 static int	want_line_after_func_impl(struct parser *);
 
 enum parser_func_peek
@@ -183,12 +185,12 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
     const struct token *rparen)
 {
 	struct parser_type type;
-	struct doc *concat;
+	struct doc *attr, *concat;
 	struct lexer *lx = pr->pr_lx;
 	struct token *pv = NULL;
 	struct token *tk;
 
-	if (!parser_type_peek(pr, &type, PARSER_TYPE_ARG))
+	if (!parser_func_arg_peek(pr, &type))
 		return parser_none(pr);
 
 	if (is_simple_enabled(pr->pr_si, SIMPLE_DECL_PROTO))
@@ -203,6 +205,8 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 	doc_alloc(DOC_SOFTLINE, concat);
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, concat));
 
+	if (parser_attributes(pr, concat, &attr, 0) & GOOD)
+		doc_alloc(DOC_LINE, attr);
 	if (parser_type(pr, concat, &type, NULL) & HALT)
 		return parser_fail(pr);
 
@@ -403,6 +407,22 @@ parser_func_proto(struct parser *pr, struct doc **out,
 		doc_remove(attributes, dc);
 
 	return parser_good(pr);
+}
+
+static int
+parser_func_arg_peek(struct parser *pr, struct parser_type *type)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *attr;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	peek = (!parser_attributes_peek(pr, &attr, 0) ||
+	    lexer_seek_after(lx, attr)) &&
+	    parser_type_peek(pr, type, PARSER_TYPE_ARG);
+	lexer_peek_leave(lx, &s);
+	return peek;
 }
 
 /*
