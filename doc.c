@@ -311,7 +311,7 @@ static void	doc_diff_leave0(const struct doc *, struct doc_state *,
 #define DOC_PRINT_NEWLINE	0x00000002u
 #define DOC_PRINT_FORCE		0x00000004u
 
-static void	doc_print(const struct doc *, struct doc_state *, const char *,
+static int	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
 
 #define doc_trace(dc, st, fmt, ...) do {				\
@@ -681,10 +681,11 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 			doc_print(dc, st, "\n", 1, DOC_PRINT_INDENT);
 			break;
 		case MUNGE:
-			doc_print(dc, st, " ", 1, DOC_PRINT_INDENT);
-			doc_trace(dc, st, "%s: refit %u -> %d", __func__,
-			    st->st_refit, 1);
-			st->st_refit = 1;
+			if (doc_print(dc, st, " ", 1, DOC_PRINT_INDENT)) {
+				doc_trace(dc, st, "%s: refit %u -> %d",
+				    __func__, st->st_refit, 1);
+				st->st_refit = 1;
+			}
 			break;
 		}
 		break;
@@ -1176,7 +1177,7 @@ doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
 	return st->st_col - oldcol;
 }
 
-static void
+static int
 doc_print(const struct doc *dc, struct doc_state *st, const char *str,
     size_t len, unsigned int flags)
 {
@@ -1192,19 +1193,19 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 
 		/* Redundant if a new line is about to be emitted. */
 		if (isspace)
-			return;
+			return 0;
 
 		/* DOC_OPTLINE has the same semantics as DOC_LINE. */
 		st->st_refit = 1;
 		st->st_newline = 0;
 		doc_print(dc, st, "\n", 1, flags | DOC_PRINT_NEWLINE);
 		if (isnewline)
-			return;
+			return 1;
 	}
 
 	if (isnewline) {
 		if (st->st_nlines >= st->st_maxlines)
-			return;
+			return 1;
 		st->st_nlines++;
 		st->st_stats.nlines++;
 
@@ -1233,6 +1234,8 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 
 	if (isnewline && (flags & DOC_PRINT_INDENT))
 		doc_indent(dc, st, st->st_indent.cur);
+
+	return 1;
 }
 
 static void
