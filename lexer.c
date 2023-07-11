@@ -1069,9 +1069,6 @@ lexer_eat_lines_and_spaces(struct lexer *lx, struct lexer_state *st)
 {
 	int gotspaces = 0;
 
-	if (st != NULL)
-		*st = lx->lx_st;
-
 	for (;;) {
 		if (lexer_eat_lines(lx, 0, NULL)) {
 			if (st != NULL)

@@ -533,7 +533,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	int comment;
 	unsigned char ch;
 
-	oldst = lexer_get_state(lx);
+	oldst = st = lexer_get_state(lx);
 	lexer_eat_lines_and_spaces(lx, &st);
 	if (lexer_getc(lx, &ch) || ch != '#') {
 		lexer_set_state(lx, &oldst);
