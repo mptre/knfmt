@@ -266,11 +266,12 @@ static const struct {
 	int call_args;
 	int ternary;
 } soft_weights = {
-	.arg		= 3,	/* after comma, before argument */
-	.binary		= 2,	/* after binary operator */
-	.call		= 2,	/* before call */
-	.call_args	= 2,	/* after lparen, before call arguments */
-	.ternary	= 2,	/* before ternary true/false expr */
+#define SOFT_MAX 3
+	.arg		= SOFT_MAX,	/* after comma, before argument */
+	.binary		= SOFT_MAX - 1,	/* after binary operator */
+	.call		= SOFT_MAX - 1,	/* before call */
+	.call_args	= SOFT_MAX - 1,	/* after lparen, before call arguments */
+	.ternary	= SOFT_MAX - 1,	/* before ternary true/false expr */
 };
 
 void
@@ -1256,7 +1257,7 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 	 * equal is of importance as we want to maximize column utilisation,
 	 * effectively favoring nested soft line(s).
 	 */
-	if (doc_max(parent) >= weight)
+	if (weight < SOFT_MAX && doc_max(parent) >= weight)
 		doc_remove(softline, dc);
 
 	return concat;
