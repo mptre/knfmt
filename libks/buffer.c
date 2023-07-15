@@ -143,21 +143,17 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 
 	n = vsnprintf(NULL, 0, fmt, ap);
 	if (n < 0 || buffer_reserve(bf, (size_t)n + 1)) {
-		error = 1;
-		goto out;
+		va_end(cp);
+		return 1;
 	}
 
 	len = bf->bf_siz - bf->bf_len;
 	n = vsnprintf(&bf->bf_ptr[bf->bf_len], len, fmt, cp);
 	va_end(cp);
-	if (n < 0 || (size_t)n >= len) {
-		error = 1;
-		goto out;
-	}
+	if (n < 0 || (size_t)n >= len)
+		return 1;
 	bf->bf_len += (size_t)n;
 
-out:
-	va_end(cp);
 	return error;
 }
 
