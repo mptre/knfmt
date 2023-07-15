@@ -87,6 +87,22 @@
   (43829dd)
   (Anton Lindqvist)
 
+- Improve alignment of binary expressions.
+  (01a4399)
+  (Anton Lindqvist)
+
+- Detect leading attributes in function arguments.
+  (5536f4a)
+  (Anton Lindqvist)
+
+- Honor new line(s) after comma in declarations.
+  (b978e5c)
+  (Anton Lindqvist)
+
+- Detect more variations of foreach loops hidden behind cpp macros.
+  (ed94215)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - In simple mode, fix sort includes bug.
