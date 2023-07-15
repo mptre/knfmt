@@ -11,14 +11,34 @@
 #include "style.h"
 #include "token.h"
 
-int
-parser_stmt_expr(struct parser *pr, struct doc *dc)
+static int
+is_loop_stmt(struct parser *pr, const struct token *semi)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
+	struct token *ident, *lparen, *nx, *rparen;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	    lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen)) {
+		if (token_cmp(lparen, rparen) == 0 &&
+		    lexer_pop(lx, &nx) && nx != semi &&
+		    token_cmp(ident, nx) < 0 && token_cmp(nx, semi) <= 0)
+			peek = 1;
+	}
+	lexer_peek_leave(lx, &s);
+
+	return peek;
+}
+
+int
+parser_stmt_expr(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
-	struct token *ident, *lparen, *nx, *rparen, *semi;
-	int peek = 1;
+	struct token *nx, *semi;
 	int error;
 
 	if (parser_type_peek(pr, NULL, 0))
@@ -35,16 +55,7 @@ parser_stmt_expr(struct parser *pr, struct doc *dc)
 	 * 	foreach()
 	 * 		func();
 	 */
-	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
-	    token_cmp(lparen, rparen) == 0 &&
-	    lexer_pop(lx, &nx) && nx != semi &&
-	    token_cmp(ident, nx) < 0 && token_cmp(nx, semi) <= 0)
-		peek = 0;
-	lexer_peek_leave(lx, &s);
-	if (!peek)
+	if (is_loop_stmt(pr, semi))
 		return parser_none(pr);
 
 	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
