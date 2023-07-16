@@ -328,6 +328,7 @@ filewrite(const struct buffer *src, const struct buffer *dst,
 		goto err;
 	}
 
+	close(fd);
 	free(tmppath);
 	return 0;
 
