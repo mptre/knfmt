@@ -23,6 +23,7 @@
 #include "simple.h"
 #include "style.h"
 #include "token.h"
+#include "util.h"
 #include "vector.h"
 
 static void	usage(void) __attribute__((__noreturn__));
@@ -283,27 +284,22 @@ static int
 filewrite(const struct buffer *src, const struct buffer *dst,
     const struct file *fe)
 {
-	char tmppath[PATH_MAX];
 	const char *buf;
-	size_t siz = sizeof(tmppath);
+	char *tmppath;
 	size_t buflen;
 	mode_t old_umask;
-	int fd, n;
+	int fd;
 
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	n = snprintf(tmppath, siz, "%s.XXXXXXXX", fe->fe_path);
-	if (n < 0 || (size_t)n >= siz) {
-		warnc(ENAMETOOLONG, "%s", __func__);
-		return 1;
-	}
+	tmppath = tmptemplate(fe->fe_path);
 	old_umask = umask(0022);
 	fd = mkstemp(tmppath);
 	umask(old_umask);
 	if (fd == -1) {
 		warn("mkstemp: %s", tmppath);
-		return 1;
+		goto err;
 	}
 
 	buf = buffer_get_ptr(dst);
@@ -332,12 +328,15 @@ filewrite(const struct buffer *src, const struct buffer *dst,
 		goto err;
 	}
 
+	free(tmppath);
 	return 0;
 
 err:
-	if (fd != -1)
+	if (fd != -1) {
 		close(fd);
-	(void)unlink(tmppath);
+		(void)unlink(tmppath);
+	}
+	free(tmppath);
 	return 1;
 }
 

@@ -86,6 +86,10 @@ static int	test_token_position_after0(struct context *,
 	test(test_strwidth0((a), (b), (c), __LINE__))
 static int	test_strwidth0(const char *, size_t, size_t, int);
 
+#define test_tmptemplate(a, b) \
+	test(test_tmptemplate0((a), (b), __LINE__))
+static int	test_tmptemplate0(const char *, const char *, int);
+
 struct context {
 	struct options	 op;
 	struct buffer	*bf;
@@ -390,6 +394,10 @@ main(int argc, char *argv[])
 	test_strwidth("int\nx", 0, 1);
 	test_strwidth("int\n", 0, 0);
 
+	test_tmptemplate("file.c", ".file.c.XXXXXXXX");
+	test_tmptemplate("/file.c", "/.file.c.XXXXXXXX");
+	test_tmptemplate("/root/file.c", "/root/.file.c.XXXXXXXX");
+
 out:
 	context_free(cx);
 	expr_shutdown();
@@ -656,6 +664,23 @@ test_strwidth0(const char *str, size_t pos, size_t exp, int lno)
 		return 1;
 	}
 	return 0;
+}
+
+static int
+test_tmptemplate0(const char *path, const char *exp, int lno)
+{
+	const char *fun = "tmptemplate";
+	char *act;
+	int error = 0;
+
+	act = tmptemplate(path);
+	if (strcmp(act, exp) != 0) {
+		fprintf(stderr, "%s:%d:\n\texp %s\n\tgot %s\n",
+		    fun, lno, exp, act);
+		error = 1;
+	}
+	free(act);
+	return error;
 }
 
 static struct context *

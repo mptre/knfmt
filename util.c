@@ -7,8 +7,10 @@
 #include <ctype.h>
 #include <err.h>
 #include <fcntl.h>
+#include <limits.h>	/* PATH_MAX */
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "buffer.h"
@@ -168,4 +170,30 @@ out:
 	if (fd != -1 && nlevels != NULL)
 		*nlevels = i;
 	return fd;
+}
+
+/*
+ * Transform the given path into a mkstemp(3) compatible template.
+ * The temporary file will reside in the same directory as a "hidden" file.
+ */
+char *
+tmptemplate(const char *path)
+{
+	struct buffer *bf;
+	char *template;
+	const char *basename, *p;
+
+	bf = buffer_alloc(PATH_MAX);
+
+	p = strrchr(path, '/');
+	if (p != NULL) {
+		buffer_puts(bf, path, (size_t)(&p[1] - path));
+		basename = &p[1];
+	} else {
+		basename = path;
+	}
+	buffer_printf(bf, ".%s.XXXXXXXX", basename);
+	template = buffer_str(bf);
+	buffer_free(bf);
+	return template;
 }
