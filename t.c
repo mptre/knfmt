@@ -669,12 +669,13 @@ test_strwidth0(const char *str, size_t pos, size_t exp, int lno)
 static int
 test_tmptemplate0(const char *path, const char *exp, int lno)
 {
-	const char *fun = "tmptemplate";
 	char *act;
 	int error = 0;
 
 	act = tmptemplate(path);
 	if (strcmp(act, exp) != 0) {
+		const char *fun = "tmptemplate";
+
 		fprintf(stderr, "%s:%d:\n\texp %s\n\tgot %s\n",
 		    fun, lno, exp, act);
 		error = 1;
