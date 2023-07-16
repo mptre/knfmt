@@ -52,13 +52,15 @@ parser_func_peek1(struct parser *pr, struct parser_type *type)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
+	struct token *attr;
 	enum parser_func_peek peek = PARSER_FUNC_PEEK_NONE;
 
 	lexer_peek_enter(lx, &s);
+	if (parser_attributes_peek(pr, &attr, PARSER_ATTRIBUTES_FUNC) &&
+	    !lexer_seek_after(lx, attr))
+		goto out;
 	if (parser_type_peek(pr, type, 0) &&
 	    lexer_seek_after(lx, type->end)) {
-		struct token *attr;
-
 		if (parser_attributes_peek(pr, &attr, PARSER_ATTRIBUTES_FUNC) &&
 		    !lexer_seek_after(lx, attr))
 			goto out;
@@ -302,13 +304,17 @@ parser_func_proto(struct parser *pr, struct doc **out,
     struct parser_func_proto_arg *arg)
 {
 	struct doc *dc = arg->dc;
-	struct doc *attributes, *concat, *group, *indent, *kr;
+	struct doc *attr, *concat, *group, *indent, *kr;
 	struct lexer *lx = pr->pr_lx;
 	struct parser_type *type = arg->type;
 	struct token *lparen, *rparen, *tk;
 	unsigned int s, w;
 	int nkr = 0;
 	int error;
+
+	error = parser_attributes(pr, dc, &attr, PARSER_ATTRIBUTES_FUNC);
+	if (error & GOOD)
+		doc_alloc(DOC_LINE, attr);
 
 	if (parser_type(pr, dc, type, arg->rl) & (FAIL | NONE))
 		return parser_fail(pr);
@@ -401,10 +407,10 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	if (nkr == 0)
 		doc_remove(kr, dc);
 
-	attributes = doc_alloc(DOC_GROUP, dc);
-	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attributes);
+	attr = doc_alloc(DOC_GROUP, dc);
+	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attr);
 	if (parser_attributes(pr, indent, out, PARSER_ATTRIBUTES_LINE) & HALT)
-		doc_remove(attributes, dc);
+		doc_remove(attr, dc);
 
 	return parser_good(pr);
 }
