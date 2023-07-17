@@ -722,12 +722,15 @@ clang_find_alias(const struct lexer *lx, const struct lexer_state *st)
 	size_t i, len;
 	struct token *kw;
 	const char *str;
+	int nunderscores = 0;
 
 	str = lexer_buffer_slice(lx, st, &len);
 	for (; len > 0 && str[0] == '_'; len--, str++)
-		continue;
+		nunderscores++;
 	for (; len > 0 && str[len - 1] == '_'; len--)
-		continue;
+		nunderscores++;
+	if (nunderscores == 0)
+		return NULL;
 	for (i = 0; i < naliases; i++) {
 		if (aliases[i].alias.len == len &&
 		    strncmp(aliases[i].alias.str, str, len) == 0)

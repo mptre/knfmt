@@ -308,6 +308,7 @@ main(int argc, char *argv[])
 	test_lexer_read("asm__", "ASSEMBLY");
 	test_lexer_read("__asm__", "ASSEMBLY");
 	test_lexer_read("__attribute", "ATTRIBUTE");
+	test_lexer_read("attribute", "IDENT");
 
 	test_lexer_read("asm_inline", "ASSEMBLY");
 	test_lexer_read("asm_volatile_goto", "ASSEMBLY");
