@@ -6,7 +6,6 @@
 	/* keywords */							\
 	OP(TOKEN_ASSEMBLY,	"asm", 0)				\
 	OP(TOKEN_ATTRIBUTE,	"__attribute__", 0)			\
-	OP(TOKEN_BOOL,		"_Bool", TOKEN_FLAG_TYPE)		\
 	OP(TOKEN_BREAK,		"break", 0)				\
 	OP(TOKEN_CASE,		"case", 0)				\
 	OP(TOKEN_CHAR,		"char", TOKEN_FLAG_TYPE)		\
@@ -87,12 +86,35 @@
 	OP(TOKEN_EQUAL,			"=", TOKEN_FLAG_AMBIGUOUS | TOKEN_FLAG_ASSIGN)\
 	OP(TOKEN_EQUALEQUAL,		"==", TOKEN_FLAG_BINARY)	\
 	OP(TOKEN_COMMA,			",", 0)				\
-	OP(TOKEN_BACKSLASH, 		"\\", TOKEN_FLAG_DISCARD)
+	OP(TOKEN_BACKSLASH, 		"\\", TOKEN_FLAG_DISCARD)	\
+	/* types */							\
+	OP(TOKEN_BOOL,		"_Bool", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_INT8,		"int8_t", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_INT16,		"int16_t", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_INT32,		"int32_t", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_INT64,		"int64_t", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_UINT8,		"uint8_t", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_UINT16,	"uint16_t", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_UINT32,	"uint32_t", TOKEN_FLAG_TYPE)		\
+	OP(TOKEN_UINT64,	"uint64_t", TOKEN_FLAG_TYPE)
 
 #define FOR_TOKEN_ALIASES(OP)						\
-	/* linux */							\
+	/* BSD */							\
+	OP(TOKEN_UINT8,		"u_int8_t", 0)				\
+	OP(TOKEN_UINT16,	"u_int16_t", 0)				\
+	OP(TOKEN_UINT32,	"u_int32_t", 0)				\
+	OP(TOKEN_UINT64,	"u_int64_t", 0)				\
+	/* Linux */							\
 	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
 	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)			\
+	OP(TOKEN_INT8,		"i8", 0)				\
+	OP(TOKEN_INT16,		"i16", 0)				\
+	OP(TOKEN_INT32,		"i32", 0)				\
+	OP(TOKEN_INT64,		"i64", 0)				\
+	OP(TOKEN_UINT8,		"u8", 0)				\
+	OP(TOKEN_UINT16,	"u16", 0)				\
+	OP(TOKEN_UINT32,	"u32", 0)				\
+	OP(TOKEN_UINT64,	"u64", 0)				\
 	/* stdbool.h */							\
 	OP(TOKEN_BOOL,		"bool", 0)
 
