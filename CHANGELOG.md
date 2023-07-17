@@ -2,7 +2,7 @@
 
 ## News
 
-- Never break before expression right parenthesis.
+- Never break before right parenthesis in expressions.
   (27a06b8)
   (Anton Lindqvist)
 
@@ -55,14 +55,14 @@
   (8395465)
   (Anton Lindqvist)
 
-- In simple mode, improve placement of move declarations.
+- In simple mode, improve placement of moved declarations.
   (7ab8ead)
   (Anton Lindqvist)
 
 - In simple mode, detect usage of named and unnamed arguments in function
   prototypes.
   If the two conventions are mixed within a declaration, assume it's not
-  intentional and remove all argument names for consistency.
+  intentional and all argument names are removed for consistency.
   (456b2a0)
   (Anton Lindqvist)
 
@@ -70,7 +70,7 @@
   (1611ddc)
   (Anton Lindqvist)
 
-- Recognize inline assembler goto labels.
+- Recognize goto labels in inline assembler.
   (10515e0)
   (Anton Lindqvist)
 
@@ -103,13 +103,18 @@
   (ed94215)
   (Anton Lindqvist)
 
+- Detect leading attributes in function implementations.
+  (8effce9)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
-- In simple mode, fix sort includes bug.
+- In simple mode, fix sort includes bug when includes are grouped with other
+  defines.
   (62504b0)
   (Anton Lindqvist)
 
-- Fix indentation for brace initializers spanning multiple lines.
+- Fix indentation in brace initializers spanning multiple lines.
   (d7cb071)
   (Anton Lindqvist)
 
@@ -127,7 +132,7 @@
   (c800ac3)
   (Anton Lindqvist)
 
-- Make cast expression detection more strict.
+- Make cast expression detection more strict, avoiding false positives.
   (34043aa, 7e59383)
   (Anton Lindqvist)
 
@@ -135,16 +140,16 @@
   (57e7a57)
   (Anton Lindqvist)
 
-- Fix off by one during parenthesis alignment
+- Fix off by one during parenthesis alignment.
   (d8f88e3)
   (Anton Lindqvist)
 
-- Fix indentation after C99 comment in expression.
+- Fix indentation after C99 comments in expression.
   (11bf235)
   (Anton Lindqvist)
 
 - Recognize asm, attribute, inline, restrict and volatile preceded or succeeded
-  with any amount of underscores as the corresponding keyword with underscores.
+  with any amount of underscores as the corresponding keyword without underscores.
   (1523fd1)
   (Anton Lindqvist)
 
@@ -156,9 +161,17 @@
   (dedad51)
   (Anton Lindqvist)
 
-- In simple mode, semicolon statement is not considered empty when considering
+- In simple mode, a semicolon statement is not considered empty when considering
   removing/adding braces.
   (9755ace)
+  (Anton Lindqvist)
+
+- Plug file descriptor leak during inplace edits.
+  (164bb2a)
+  (Anton Lindqvist)
+
+- Better handling of sizeof with parenthesis.
+  (928ecdc)
   (Anton Lindqvist)
 
 # 4.1.1 - 2023-03-09
