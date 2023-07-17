@@ -695,7 +695,12 @@ TESTS+=	../token.h
 TESTS+=	../util.c
 TESTS+=	../util.h
 
-.SUFFIXES: .c .h .cfake .hfake
+TESTS+=	diff.sh
+TESTS+=	enoent.sh
+TESTS+=	git.sh
+TESTS+=	simple.sh
+
+.SUFFIXES: .c .cfake .h .hfake .sh .shfake
 
 .c.cfake:
 	sh ${.CURDIR}/knfmt.sh $< ${T}
@@ -703,9 +708,9 @@ TESTS+=	../util.h
 .h.hfake:
 	sh ${.CURDIR}/knfmt.sh $< ${T}
 
+.sh.shfake:
+	sh ${.CURDIR}/$<
+
 all: ${TESTS:.c=.cfake}
 all: ${TESTS:.h=.hfake}
-	sh ${.CURDIR}/diff.sh
-	sh ${.CURDIR}/enoent.sh
-	sh ${.CURDIR}/git.sh
-	sh ${.CURDIR}/simple.sh
+all: ${TESTS:.sh=.shfake}

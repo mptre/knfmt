@@ -18,4 +18,5 @@ TESTS	trace*.c -- \
 TESTS	bug*.c -- \
 TESTS	style*.c -- \
 TESTS	../!(compat-*).c ../!(compat-*|config).h \
-	../compat-pledge.c ../libks/*.[ch]
+	../compat-pledge.c ../libks/*.[ch] -- \
+TESTS	!(cp|knfmt).sh
