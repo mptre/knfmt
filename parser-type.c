@@ -20,6 +20,7 @@ static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
 static int	peek_type_noident(struct lexer *, struct token **);
+static int	peek_type_unknown_array(struct lexer *, struct token **);
 
 int
 parser_type_peek(struct parser *pr, struct parser_type *type,
@@ -40,14 +41,17 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		return 0;
 	issizeof = lexer_back(lx, &pv) && pv->tk_type == TOKEN_SIZEOF;
 
-	/*
-	 * Recognize function argument consisting of a single type and no
-	 * variable name.
-	 */
-	if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
-	    peek_type_noident(lx, &t)) {
-		peek = 1;
-		goto out;
+	if (flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) {
+		/*
+		 * Recognize function argument consisting of a single
+		 * type and no variable name.
+		 */
+		if (peek_type_noident(lx, &t))
+			peek = 1;
+		else if (peek_type_unknown_array(lx, &t))
+			peek = 1;
+		if (peek)
+			goto out;
 	}
 
 	lexer_peek_enter(lx, &s);
@@ -369,6 +373,20 @@ peek_type_noident(struct lexer *lx, struct token **tk)
 	    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
 	     lexer_if(lx, TOKEN_COMMA, NULL)))
 		peek = 1;
+	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+static int
+peek_type_unknown_array(struct lexer *lx, struct token **tk)
+{
+	struct lexer_state s;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &s);
+	peek = lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_LSQUARE, NULL) &&
+	    lexer_if(lx, TOKEN_RSQUARE, tk);
 	lexer_peek_leave(lx, &s);
 	return peek;
 }

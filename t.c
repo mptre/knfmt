@@ -269,6 +269,8 @@ main(int argc, char *argv[])
 	    "const foo_t)", "const");
 	test_parser_type_peek_flags(PARSER_TYPE_ARG,
 	    "size_t)", "size_t");
+	test_parser_type_peek_flags(PARSER_TYPE_ARG,
+	    "foo_t[]", "foo_t [ ]");
 	test_parser_type_peek_flags(PARSER_TYPE_EXPR,
 	    "const foo_t)", "const foo_t");
 
