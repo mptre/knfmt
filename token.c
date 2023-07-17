@@ -632,6 +632,7 @@ strflags(struct buffer *bf, unsigned int token_flags)
 		unsigned int	 flag;
 	} flags[] = {
 #define F(f, s) { (s), sizeof(s) - 1, (f) }
+		F(TOKEN_FLAG_TYPE,		"TYPE"),
 		F(TOKEN_FLAG_DISCARD,		"DISCARD"),
 		F(TOKEN_FLAG_COMMENT_C99,	"C99"),
 		F(TOKEN_FLAG_OPTLINE,		"OPTLINE"),
@@ -647,10 +648,7 @@ strflags(struct buffer *bf, unsigned int token_flags)
 		if ((token_flags & flags[i].flag) == 0)
 			continue;
 
-		if (npresent++ == 0)
-			buffer_putc(bf, ',');
-		else
-			buffer_putc(bf, '|');
+		buffer_putc(bf, npresent++ == 0 ? ',' : '|');
 		buffer_puts(bf, flags[i].str, flags[i].len);
 	}
 }
