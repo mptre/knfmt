@@ -580,12 +580,12 @@ expr_exec_sizeof(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 	if (lexer_if(es->es_lx, TOKEN_LPAREN, &tk)) {
 		ex->ex_tokens[0] = tk;	/* ( */
 		ex->ex_sizeof = 1;
+		ex->ex_lhs = expr_exec1(es, PC0);
+		if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
+			ex->ex_tokens[1] = tk;	/* ) */
+	} else {
+		ex->ex_lhs = expr_exec1(es, PC(es->es_er->er_pc));
 	}
-
-	ex->ex_lhs = expr_exec1(es, PC(es->es_er->er_pc));
-
-	if (ex->ex_sizeof && lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
-		ex->ex_tokens[1] = tk;	/* ) */
 
 	return ex;
 }

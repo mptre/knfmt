@@ -200,6 +200,7 @@ main(int argc, char *argv[])
 	test_parser_expr("sizeof struct s", "(sizeof (struct s))");
 	test_parser_expr("sizeof(x)", "(sizeof((x)))");
 	test_parser_expr("sizeof(*x)", "(sizeof((*(x))))");
+	test_parser_expr("sizeof(x y)", "(sizeof(((x) (y))))");
 	test_parser_expr("(x)", "((x))");
 	test_parser_expr("x()", "((x)())");
 	test_parser_expr("x(\"x\" X)", "((x)(((\"x\") (X))))");
