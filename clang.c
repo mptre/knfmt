@@ -718,7 +718,7 @@ clang_find_alias(const struct lexer *lx, const struct lexer_state *st)
 		ALIAS("volatile",	"volatile"),
 #undef ALIAS
 	};
-	size_t naliases = sizeof(aliases) / sizeof(aliases[0]);
+	const size_t naliases = sizeof(aliases) / sizeof(aliases[0]);
 	size_t i, len;
 	struct token *kw;
 	const char *str;
