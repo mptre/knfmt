@@ -16,7 +16,8 @@
 #include "style.h"
 #include "token.h"
 
-static int	lexer_peek_if_func_ptr(struct lexer *, struct token **);
+static int	peek_type_func_ptr(struct lexer *, struct token **,
+    struct token **);
 static int	lexer_peek_if_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
 static int	peek_type_noident(struct lexer *, struct token **);
@@ -29,6 +30,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	struct lexer *lx = pr->pr_lx;
 	struct lexer_state s;
 	struct token *align = NULL;
+	struct token *args = NULL;
 	struct token *tkstatic = NULL;
 	struct token *beg, *pv, *t;
 	int peek = 0;
@@ -105,7 +107,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			/* Identifier is part of the type, consume it. */
 			if (!lexer_if(lx, TOKEN_IDENT, &t))
 				break;
-		} else if (ntokens > 0 && lexer_peek_if_func_ptr(lx, &t)) {
+		} else if (ntokens > 0 && peek_type_func_ptr(lx, &args, &t)) {
 			if (lexer_back(lx, &align))
 				peek = 1;
 			break;
@@ -148,6 +150,7 @@ out:
 		*type = (struct parser_type){
 		    .end	= t,
 		    .align	= align,
+		    .args	= args,
 		};
 	}
 	return peek;
@@ -206,7 +209,7 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 			return parser_fail(pr);
 		parser_token_trim_after(pr, tk);
 
-		if (tk->tk_flags & TOKEN_FLAG_TYPE_ARGS) {
+		if (tk == type->args) {
 			struct doc *indent;
 			struct token *lparen = tk;
 			struct token *rparen;
@@ -267,7 +270,7 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 }
 
 static int
-lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
+peek_type_func_ptr(struct lexer *lx, struct token **lhs, struct token **rhs)
 {
 	struct lexer_state s;
 	struct token *lparen, *rparen;
@@ -289,13 +292,9 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 		}
 		if (lexer_if(lx, TOKEN_RPAREN, &rparen)) {
 			if (lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
-			    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, tk)) {
-				/*
-				 * Annotate the left parenthesis, used by
-				 * parser_exec_type().
-				 */
-				lparen->tk_flags |= TOKEN_FLAG_TYPE_ARGS;
-
+			    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
+			    rhs)) {
+				*lhs = lparen;
 				peek = 1;
 			} else if (ident == NULL &&
 			    (lexer_if(lx, TOKEN_RPAREN, NULL) ||
@@ -306,7 +305,7 @@ lexer_peek_if_func_ptr(struct lexer *lx, struct token **tk)
 				 * confuse a function call.
 				 */
 				peek = 1;
-				*tk = rparen;
+				*rhs = rparen;
 			}
 		}
 	}
