@@ -41,17 +41,14 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		return 0;
 	issizeof = lexer_back(lx, &pv) && pv->tk_type == TOKEN_SIZEOF;
 
-	if (flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) {
-		/*
-		 * Recognize function argument consisting of a single
-		 * type and no variable name.
-		 */
-		if (peek_type_noident(lx, &t))
-			peek = 1;
-		else if (peek_type_unknown_array(lx, &t))
-			peek = 1;
-		if (peek)
-			goto out;
+	/*
+	 * Recognize function argument consisting of a single type and no
+	 * variable name.
+	 */
+	if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
+	    (peek_type_noident(lx, &t) || peek_type_unknown_array(lx, &t))) {
+		peek = 1;
+		goto out;
 	}
 
 	lexer_peek_enter(lx, &s);
