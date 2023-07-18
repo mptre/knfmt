@@ -84,16 +84,12 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			(void)lexer_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE,
 			    &t);
 			peek = 1;
-		} else if (lexer_if(lx, TOKEN_STAR, &t)) {
+		} else if (ntokens > 0 && lexer_if(lx, TOKEN_STAR, &t)) {
 			/*
 			 * A pointer is expected to only be followed by another
-			 * pointer or a known type. Otherwise, the following
-			 * identifier cannot be part of the type.
+			 * pointer or a known type.
 			 */
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
-				break;
-			/* A type cannot start with a pointer. */
-			if (ntokens == 0)
 				break;
 			peek = 1;
 		} else if (parser_cpp_peek_type(pr, &rparen)) {
