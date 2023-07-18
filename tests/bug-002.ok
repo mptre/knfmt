@@ -1,1 +1,1 @@
-test.c: expected type RPAREN got STRUCT<4:8,TYPE>("struct")
+test.c: expected type RPAREN got STRUCT<4:8>("struct")
