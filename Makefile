@@ -257,6 +257,7 @@ SHLINT+=	configure
 SHLINT+=	tests/cp.sh
 SHLINT+=	tests/diff.sh
 SHLINT+=	tests/enoent.sh
+SHLINT+=	tests/fd.sh
 SHLINT+=	tests/git.sh
 SHLINT+=	tests/knfmt.sh
 SHLINT+=	tests/simple.sh

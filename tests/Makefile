@@ -698,6 +698,7 @@ TESTS+=	../util.h
 
 TESTS+=	diff.sh
 TESTS+=	enoent.sh
+TESTS+=	fd.sh
 TESTS+=	git.sh
 TESTS+=	simple.sh
 
