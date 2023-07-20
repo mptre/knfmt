@@ -107,14 +107,6 @@
 	/* Linux */							\
 	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
 	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)			\
-	OP(TOKEN_INT8,		"i8", 0)				\
-	OP(TOKEN_INT16,		"i16", 0)				\
-	OP(TOKEN_INT32,		"i32", 0)				\
-	OP(TOKEN_INT64,		"i64", 0)				\
-	OP(TOKEN_UINT8,		"u8", 0)				\
-	OP(TOKEN_UINT16,	"u16", 0)				\
-	OP(TOKEN_UINT32,	"u32", 0)				\
-	OP(TOKEN_UINT64,	"u64", 0)				\
 	/* stdbool.h */							\
 	OP(TOKEN_BOOL,		"bool", 0)
 
