@@ -207,11 +207,13 @@ buffer_pop(struct buffer *bf, size_t n)
 }
 
 int
-buffer_cmp(const struct buffer *b1, const struct buffer *b2)
+buffer_cmp(const struct buffer *a, const struct buffer *b)
 {
-	if (b1->bf_len != b2->bf_len)
+	if (a->bf_len != b->bf_len)
 		return 1;
-	return memcmp(b1->bf_ptr, b2->bf_ptr, b1->bf_len);
+	if (a->bf_len == 0 && b->bf_len == 0)
+		return 0;
+	return memcmp(a->bf_ptr, b->bf_ptr, a->bf_len);
 }
 
 const char *
