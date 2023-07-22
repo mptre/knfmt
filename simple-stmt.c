@@ -26,8 +26,6 @@ struct stmt {
 #define STMT_IGNORE			0x00000002u
 };
 
-static int is_stmt_empty(const struct stmt *);
-
 struct simple_stmt {
 	VECTOR(struct stmt)	 ss_stmts;
 	struct lexer		*ss_lx;
@@ -165,13 +163,6 @@ simple_stmt_no_braces_leave(struct simple_stmt *UNUSED(ss),
 	st->st_rbrace = rbrace;
 }
 
-static int
-is_stmt_empty(const struct stmt *st)
-{
-	return token_prev(st->st_rbrace) == st->st_lbrace &&
-	    st->st_lbrace->tk_type != TOKEN_SEMI;
-}
-
 static struct stmt *
 simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
     unsigned int flags)
@@ -186,6 +177,27 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
 	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;
 	return st;
+}
+
+static int
+is_stmt_empty(const struct stmt *st)
+{
+	const struct token *lbrace = st->st_lbrace;
+	const struct token *rbrace = st->st_rbrace;
+	const struct token *nx = token_next(lbrace);
+
+	if (st->st_flags & STMT_BRACES) {
+		/*
+		 * GCC warning option Wempty-body (implied by Wextra) suggests
+		 * adding braces around statement consisting only of a
+		 * semicolon.
+		 */
+		if (nx == token_prev(rbrace) && nx->tk_type == TOKEN_SEMI)
+			return 1;
+		return nx == rbrace;
+	}
+
+	return nx == rbrace && lbrace->tk_type != TOKEN_SEMI;
 }
 
 static int
