@@ -65,7 +65,8 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		struct token *tk;
 		int error;
 
-		if (!lexer_pop(lx, &tk))
+		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk) &&
+		    !lexer_if(lx, TOKEN_IDENT, &tk))
 			break;
 
 		if ((flags & PARSER_ATTRIBUTES_LINE) || nattributes > 0)
