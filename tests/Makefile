@@ -491,13 +491,13 @@ TESTS+=	simple-035.c
 TESTS+=	simple-036.c
 TESTS+=	simple-037.c
 TESTS+=	simple-038.c
-TESTS+=	simple-039.c
 TESTS+=	simple-040.c
 TESTS+=	simple-041.c
 TESTS+=	simple-042.c
 TESTS+=	simple-043.c
 TESTS+=	simple-044.c
 TESTS+=	simple-045.c
+TESTS+=	simple-decl-proto-001.c
 TESTS+=	simple-expr-parens-001.c
 TESTS+=	simple-expr-parens-002.c
 
