@@ -180,7 +180,7 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
 }
 
 static int
-is_stmt_empty(const struct stmt *st)
+is_stmt_empty(const struct simple_stmt *ss, const struct stmt *st)
 {
 	const struct token *lbrace = st->st_lbrace;
 	const struct token *rbrace = st->st_rbrace;
@@ -192,7 +192,8 @@ is_stmt_empty(const struct stmt *st)
 		 * adding braces around statement consisting only of a
 		 * semicolon.
 		 */
-		if (nx == token_prev(rbrace) && nx->tk_type == TOKEN_SEMI)
+		if (nx == token_prev(rbrace) && nx->tk_type == TOKEN_SEMI &&
+		    VECTOR_LENGTH(ss->ss_stmts) == 1)
 			return 1;
 		return nx == rbrace;
 	}
@@ -206,7 +207,7 @@ need_braces(struct simple_stmt *ss, const struct stmt *st, struct buffer *bf)
 	const char *buf;
 	size_t buflen;
 
-	if (is_stmt_empty(st))
+	if (is_stmt_empty(ss, st))
 		return 1;
 
 	doc_exec(&(struct doc_exec_arg){

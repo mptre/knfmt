@@ -1,7 +1,3 @@
-/*
- * Semicolon statement not considered empty.
- */
-
 int
 main(void)
 {
@@ -9,11 +5,10 @@ main(void)
 		/* nothing */;
 	}
 
-	if (1) {
+	if (1)
 		/* nothing */;
-	} else {
+	else
 		return 0;
-	}
 
 	if (1)
 		/* nothing */;
