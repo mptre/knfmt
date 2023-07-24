@@ -915,7 +915,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	simple_flags = es->es_depth == 1 &&
 	    (es->es_flags & EXPR_EXEC_NOPARENS) ? 0 : SIMPLE_IGNORE;
-	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_NOPARENS, simple_flags,
+	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, simple_flags,
 	    &simple)) {
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
@@ -937,7 +937,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], dc);	/* ) */
 	}
-	simple_leave(es->es_ea.si, SIMPLE_EXPR_NOPARENS, simple);
+	simple_leave(es->es_ea.si, SIMPLE_EXPR_PARENS, simple);
 
 	return dc;
 }
