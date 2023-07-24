@@ -21,8 +21,7 @@ struct expr_exec_arg {
 #define EXPR_EXEC_HARDLINE		0x00000002u
 /* Align arguments using the supplied ruler. */
 #define EXPR_EXEC_ALIGN			0x00000004u
-/* Trim redundant parenthesis around top level expression. */
-#define EXPR_EXEC_NOPARENS		0x00000008u
+/* was EXPR_EXEC_NOPARENS		0x00000008u */
 /* Detect inline assembly operands. */
 #define EXPR_EXEC_ASM			0x00000010u
 /* Disable expr_doc_soft() logic. */

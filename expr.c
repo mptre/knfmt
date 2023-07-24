@@ -910,13 +910,10 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	unsigned int simple_flags;
 	int simple;
 
-	simple_flags = es->es_depth == 1 &&
-	    (es->es_flags & EXPR_EXEC_NOPARENS) ? 0 : SIMPLE_IGNORE;
-	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, simple_flags,
-	    &simple)) {
+	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS,
+	    es->es_depth == 1 ? 0 : SIMPLE_IGNORE, &simple)) {
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
 	} else {

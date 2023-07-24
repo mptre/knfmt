@@ -728,7 +728,6 @@ parser_stmt_return(struct parser *pr, struct doc *dc)
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc		= concat,
 		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
-		    .flags	= EXPR_EXEC_NOPARENS,
 		});
 		if (error & HALT)
 			return parser_fail(pr);

@@ -454,7 +454,6 @@ TESTS+=	valid-350.c
 TESTS+=	valid-351.c
 TESTS+=	valid-352.c
 
-TESTS+=	simple-001.c
 TESTS+=	simple-002.c
 TESTS+=	simple-003.c
 TESTS+=	simple-004.c
@@ -499,6 +498,8 @@ TESTS+=	simple-042.c
 TESTS+=	simple-043.c
 TESTS+=	simple-044.c
 TESTS+=	simple-045.c
+TESTS+=	simple-expr-parens-001.c
+TESTS+=	simple-expr-parens-002.c
 
 TESTS+=	inplace-001.c
 
