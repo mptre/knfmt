@@ -150,6 +150,8 @@ static struct doc	*expr_doc_call(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_arg(struct expr *, struct expr_state *,
     struct doc *);
+static struct doc	*expr_doc_sizeof(struct expr *, struct expr_state *,
+    struct doc *);
 static struct doc	*expr_doc_concat(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
@@ -774,19 +776,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		break;
 
 	case EXPR_SIZEOF:
-		doc_token(ex->ex_tk, concat);
-		if (ex->ex_sizeof) {
-			if (ex->ex_tokens[0] != NULL)
-				doc_token(ex->ex_tokens[0], concat);	/* ( */
-		} else {
-			doc_literal(" ", concat);
-		}
-		if (ex->ex_lhs != NULL)
-			concat = expr_doc(ex->ex_lhs, es, concat);
-		if (ex->ex_sizeof) {
-			if (ex->ex_tokens[1] != NULL)
-				doc_token(ex->ex_tokens[1], concat);	/* ) */
-		}
+		concat = expr_doc_sizeof(ex, es, concat);
 		break;
 
 	case EXPR_CONCAT:
@@ -1022,6 +1012,25 @@ expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 	}
 	if (ex->ex_rhs != NULL)
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.arg);
+	return dc;
+}
+
+static struct doc *
+expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
+{
+	doc_token(ex->ex_tk, dc);
+	if (ex->ex_sizeof) {
+		if (ex->ex_tokens[0] != NULL)
+			doc_token(ex->ex_tokens[0], dc); /* ( */
+	} else {
+		doc_literal(" ", dc);
+	}
+	if (ex->ex_lhs != NULL)
+		dc = expr_doc(ex->ex_lhs, es, dc);
+	if (ex->ex_sizeof) {
+		if (ex->ex_tokens[1] != NULL)
+			doc_token(ex->ex_tokens[1], dc); /* ) */
+	}
 	return dc;
 }
 
