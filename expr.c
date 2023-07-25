@@ -1018,18 +1018,28 @@ expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
+	int simple;
+
 	doc_token(ex->ex_tk, dc);
 	if (ex->ex_sizeof) {
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], dc); /* ( */
 	} else {
-		doc_literal(" ", dc);
+		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple))
+			doc_literal("(", dc);
+		else
+			doc_literal(" ", dc);
+		simple_leave(es->es_ea.si, SIMPLE_EXPR_PARENS, simple);
 	}
 	if (ex->ex_lhs != NULL)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	if (ex->ex_sizeof) {
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], dc); /* ) */
+	} else {
+		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple))
+			doc_literal(")", dc);
+		simple_leave(es->es_ea.si, SIMPLE_EXPR_PARENS, simple);
 	}
 	return dc;
 }
