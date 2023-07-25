@@ -7,6 +7,13 @@
 #include "alloc.h"
 #include "options.h"
 
+enum simple_state {
+	SIMPLE_STATE_NOP	= -1,
+	SIMPLE_STATE_DISABLE	= 0,
+	SIMPLE_STATE_ENABLE	= 1,
+	SIMPLE_STATE_IGNORE	= 2,
+};
+
 struct simple {
 	struct {
 		enum simple_state	state;

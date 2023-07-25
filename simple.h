@@ -18,17 +18,10 @@ enum simple_pass {
 	SIMPLE_LAST, /* sentinel */
 };
 
-enum simple_state {
-	SIMPLE_STATE_NOP	= -1,
-	SIMPLE_STATE_DISABLE	= 0,
-	SIMPLE_STATE_ENABLE	= 1,
-	SIMPLE_STATE_IGNORE	= 2,
-};
-
 struct simple_cookie {
 	struct simple		*si;
 	enum simple_pass	 pass;
-	enum simple_state	 state;
+	int			 state;
 };
 
 #define SIMPLE_COOKIE	__attribute__((cleanup(simple_leave))) \
