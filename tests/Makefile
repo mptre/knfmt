@@ -500,7 +500,7 @@ TESTS+=	simple-045.c
 TESTS+=	simple-decl-proto-001.c
 TESTS+=	simple-expr-parens-001.c
 TESTS+=	simple-expr-parens-002.c
-TESTS+=	simple-expr-parens-003.c
+TESTS+=	simple-expr-sizeof-001.c
 
 TESTS+=	inplace-001.c
 

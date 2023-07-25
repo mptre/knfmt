@@ -1024,7 +1024,7 @@ expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 	} else {
 		SIMPLE_COOKIE simple = {0};
 
-		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple))
+		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
 			doc_literal("(", dc);
 		else
 			doc_literal(" ", dc);
@@ -1037,7 +1037,7 @@ expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 	} else {
 		SIMPLE_COOKIE simple = {0};
 
-		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple))
+		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
 			doc_literal(")", dc);
 	}
 	return dc;
