@@ -259,7 +259,7 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	struct doc *dc = arg->dc;
 	struct token *equal;
 	int nfields = 0;
-	int error, simple;
+	int error;
 
 	for (;;) {
 		error = parser_braces_field1(pr, arg);
@@ -272,9 +272,7 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	if (nfields == 0)
 		return parser_fail(pr);
 
-	if (simple_enter(pr->pr_si, SIMPLE_BRACES, 0, &simple))
-		insert_trailing_comma(pr, arg->rbrace);
-	simple_leave(pr->pr_si, SIMPLE_BRACES, simple);
+	insert_trailing_comma(pr, arg->rbrace);
 
 	if (lexer_if(lx, TOKEN_EQUAL, &equal)) {
 		struct token *stop;
@@ -407,7 +405,11 @@ lbrace_cache_purge(struct parser *pr)
 static void
 insert_trailing_comma(struct parser *pr, const struct token *rbrace)
 {
+	SIMPLE_COOKIE simple = {0};
 	struct token *comma, *pv;
+
+	if (!simple_enter(pr->pr_si, SIMPLE_BRACES, 0, &simple))
+		return;
 
 	pv = token_prev(rbrace);
 	if (pv->tk_type == TOKEN_COMMA ||

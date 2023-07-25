@@ -25,11 +25,21 @@ enum simple_state {
 	SIMPLE_STATE_IGNORE	= 2,
 };
 
+struct simple_cookie {
+	struct simple		*si;
+	enum simple_pass	 pass;
+	enum simple_state	 state;
+};
+
+#define SIMPLE_COOKIE	__attribute__((cleanup(simple_leave))) \
+			struct simple_cookie
+
 struct simple	*simple_alloc(const struct options *);
 void		 simple_free(struct simple *);
 
-int	simple_enter(struct simple *, enum simple_pass, unsigned int, int *);
-void	simple_leave(struct simple *, enum simple_pass, int);
+int	simple_enter(struct simple *, enum simple_pass, unsigned int,
+    struct simple_cookie *);
+void	simple_leave(struct simple_cookie *);
 int	is_simple_enabled(const struct simple *, enum simple_pass);
 
 int	simple_disable(struct simple *);

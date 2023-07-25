@@ -38,7 +38,8 @@ static int	parser_decl_init_assign(struct parser *, struct doc *,
     struct doc **, struct parser_decl_init_arg *);
 static int	parser_decl_bitfield(struct parser *, struct doc *);
 
-static int	parser_simple_decl_enter(struct parser *, unsigned int, int *);
+static int	parser_simple_decl_enter(struct parser *, unsigned int,
+    struct simple_cookie *);
 
 int
 parser_decl_peek(struct parser *pr)
@@ -59,13 +60,13 @@ parser_decl_peek(struct parser *pr)
 int
 parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
-	int error, simple;
+	SIMPLE_COOKIE simple = {0};
+	int error;
 
 	error = parser_simple_decl_enter(pr, flags, &simple);
 	if (error & HALT)
 		return error;
 	error = parser_decl1(pr, dc, flags);
-	simple_leave(pr->pr_si, SIMPLE_DECL, simple);
 	return error;
 }
 
@@ -452,7 +453,8 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 }
 
 static int
-parser_simple_decl_enter(struct parser *pr, unsigned int flags, int *simple)
+parser_simple_decl_enter(struct parser *pr, unsigned int flags,
+    struct simple_cookie *simple)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
@@ -474,8 +476,7 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags, int *simple)
 		simple_decl_leave(pr->pr_simple.decl);
 	simple_decl_free(pr->pr_simple.decl);
 	pr->pr_simple.decl = NULL;
-	simple_leave(pr->pr_si, SIMPLE_DECL, *simple);
-	*simple = SIMPLE_STATE_NOP;
+	simple_leave(simple);
 
 	return error;
 }

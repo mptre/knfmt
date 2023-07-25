@@ -36,7 +36,8 @@ static int	parser_stmt_return(struct parser *, struct doc *);
 static int	parser_stmt_semi(struct parser *, struct doc *);
 static int	parser_stmt_cpp(struct parser *, struct doc *);
 
-static int		 parser_simple_stmt_enter(struct parser *, int *);
+static int		 parser_simple_stmt_enter(struct parser *,
+    struct simple_cookie *);
 static struct doc	*parser_simple_stmt_no_braces_enter(struct parser *,
     struct doc *, void **);
 static void		 parser_simple_stmt_no_braces_leave(struct parser *,
@@ -47,7 +48,7 @@ static int		 peek_simple_stmt(struct parser *);
 static int
 parser_stmt(struct parser *pr, struct doc *dc)
 {
-	int simple = SIMPLE_STATE_NOP;
+	SIMPLE_COOKIE simple = {0};
 	int error;
 
 	if (peek_simple_stmt(pr)) {
@@ -56,7 +57,6 @@ parser_stmt(struct parser *pr, struct doc *dc)
 			return error;
 	}
 	error = parser_stmt1(pr, dc);
-	simple_leave(pr->pr_si, SIMPLE_STMT, simple);
 	return error;
 }
 
@@ -129,11 +129,10 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	 */
 	nx = token_next(rbrace);
 	if (nx != NULL && nx->tk_type == TOKEN_SEMI) {
-		int simple;
+		SIMPLE_COOKIE simple = {0};
 
 		if (simple_enter(pr->pr_si, SIMPLE_STMT_SEMI, 0, &simple))
 			lexer_remove(lx, nx, 1);
-		simple_leave(pr->pr_si, SIMPLE_STMT_SEMI, simple);
 	}
 
 	if (doindent)
@@ -784,7 +783,7 @@ parser_stmt_cpp(struct parser *pr, struct doc *dc)
  * Once this routine returns, parsing continues as usual.
  */
 static int
-parser_simple_stmt_enter(struct parser *pr, int *simple)
+parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 {
 	struct lexer_state s;
 	struct doc *dc;
@@ -804,8 +803,7 @@ parser_simple_stmt_enter(struct parser *pr, int *simple)
 		simple_stmt_leave(pr->pr_simple.stmt);
 	simple_stmt_free(pr->pr_simple.stmt);
 	pr->pr_simple.stmt = NULL;
-	simple_leave(pr->pr_si, SIMPLE_STMT, *simple);
-	*simple = SIMPLE_STATE_NOP;
+	simple_leave(simple);
 
 	return error;
 }

@@ -142,10 +142,11 @@ parser_func_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 static int
 parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 {
+	SIMPLE_COOKIE simple = {0};
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc;
-	int error, simple;
+	int error;
 
 	if (!simple_enter(pr->pr_si, SIMPLE_DECL_PROTO, 0, &simple))
 		return parser_good(pr);
@@ -160,7 +161,6 @@ parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 		simple_decl_proto_leave(pr->pr_simple.decl_proto);
 	simple_decl_proto_free(pr->pr_simple.decl_proto);
 	pr->pr_simple.decl_proto = NULL;
-	simple_leave(pr->pr_si, SIMPLE_DECL_PROTO, simple);
 	return error;
 }
 

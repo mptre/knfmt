@@ -37,9 +37,14 @@ simple_free(struct simple *si)
 
 int
 simple_enter(struct simple *si, enum simple_pass pass, unsigned int flags,
-    int *restore)
+    struct simple_cookie *cookie)
 {
-	*restore = si->passes[pass].state;
+	*cookie = (struct simple_cookie){
+	    .si		= si,
+	    .pass	= pass,
+	    .state	= si->passes[pass].state,
+	};
+
 	if (!si->enable && (flags & SIMPLE_FORCE) == 0) {
 		si->passes[pass].state = SIMPLE_STATE_IGNORE;
 		return 0;
@@ -69,11 +74,19 @@ simple_enter(struct simple *si, enum simple_pass pass, unsigned int flags,
 }
 
 void
-simple_leave(struct simple *si, enum simple_pass pass, int restore)
+simple_leave(struct simple_cookie *cookie)
 {
-	if (restore == SIMPLE_STATE_NOP)
+	struct simple *si = cookie->si;
+	enum simple_pass pass = cookie->pass;
+	enum simple_state state = cookie->state;
+
+	if (si == NULL)
 		return;
-	si->passes[pass].state = restore;
+
+	*cookie = (struct simple_cookie){0};
+	if (state == SIMPLE_STATE_NOP)
+		return;
+	si->passes[pass].state = state;
 }
 
 int

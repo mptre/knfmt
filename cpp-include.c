@@ -21,7 +21,7 @@ struct cpp_include {
 	struct token		*after;
 	const struct style	*st;
 	struct simple		*si;
-	int			 cookie;	/* simple cookie */
+	struct simple_cookie	 cookie;
 };
 
 struct include {
@@ -97,7 +97,7 @@ cpp_include_leave(struct cpp_include *ci)
 	ci->lx = NULL;
 	ci->prefixes = NULL;
 
-	simple_leave(ci->si, SIMPLE_CPP_SORT_INCLUDES, ci->cookie);
+	simple_leave(&ci->cookie);
 }
 
 void
