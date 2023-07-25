@@ -125,7 +125,7 @@ is_pass_mutually_exclusive(enum simple_pass pass)
 	case SIMPLE_BRACES:
 	case SIMPLE_DECL_PROTO:
 	case SIMPLE_STATIC:
-		/* Nested under decl pass and should not interfere. */
+		/* Nested under SIMPLE_DECL and should not interfere. */
 		return 0;
 	default:
 		return 1;
