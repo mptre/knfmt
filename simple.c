@@ -127,6 +127,9 @@ is_pass_mutually_exclusive(enum simple_pass pass)
 	case SIMPLE_STATIC:
 		/* Nested under SIMPLE_DECL and should not interfere. */
 		return 0;
+	case SIMPLE_EXPR_SIZEOF:
+		/* Nested under SIMPLE_EXPR_PARENS and should not interfere. */
+		return 0;
 	default:
 		return 1;
 	}
