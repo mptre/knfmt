@@ -35,7 +35,7 @@ struct lexer {
 	const char		*lx_path;
 
 	/* Line number to buffer offset mapping. */
-	VECTOR(unsigned int)	 lx_lines;
+	VECTOR(size_t)		 lx_lines;
 
 	/* Previous column, used when compensating for tabs. */
 	VECTOR(unsigned int)	 lx_columns;
@@ -1153,7 +1153,7 @@ lexer_eof(const struct lexer *lx)
 static void
 lexer_line_alloc(struct lexer *lx, unsigned int lno)
 {
-	unsigned int *dst;
+	size_t *dst;
 
 	if (lx->lx_diff == NULL)
 		return;
