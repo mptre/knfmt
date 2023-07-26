@@ -48,8 +48,8 @@ trace(const struct options *op, char c)
 static int
 ctotrace(char c)
 {
-	size_t len = sizeof(traces);
-	size_t i;
+	int len = sizeof(traces);
+	int i;
 
 	for (i = 0; i < len; i++) {
 		if (traces[i] == c)
