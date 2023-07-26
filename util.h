@@ -7,7 +7,7 @@ void	tracef(unsigned char, const char *, const char *, ...)
 
 unsigned int	colwidth(const char *, size_t, unsigned int, unsigned int *);
 
-size_t	strindent_buffer(struct buffer *, int, int, size_t);
+size_t	strindent_buffer(struct buffer *, size_t, int, size_t);
 
 char	*strnice(const char *, size_t);
 void	 strnice_buffer(struct buffer *, const char *, size_t);

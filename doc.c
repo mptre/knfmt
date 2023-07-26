@@ -70,8 +70,8 @@ struct doc {
 };
 
 struct doc_state_indent {
-	int	cur;	/* current indent */
-	int	pre;	/* last emitted indent */
+	unsigned int	cur;	/* current indent */
+	unsigned int	pre;	/* last emitted indent */
 };
 
 struct doc_state {
@@ -259,9 +259,10 @@ static void		doc_walk(const struct doc *, struct doc_state *,
 static int		doc_fits(const struct doc *, struct doc_state *);
 static int		doc_fits1(const struct doc *, struct doc_state *,
     void *);
-static unsigned int	doc_indent(const struct doc *, struct doc_state *, int);
+static unsigned int	doc_indent(const struct doc *, struct doc_state *,
+    unsigned int);
 static unsigned int	doc_indent1(const struct doc *, struct doc_state *,
-    int, int);
+    unsigned int, int);
 static void		doc_trim_spaces(const struct doc *, struct doc_state *);
 static void		doc_trim_lines(const struct doc *, struct doc_state *);
 static int		doc_is_mute(const struct doc_state *);
@@ -769,7 +770,7 @@ static void
 doc_exec_indent(const struct doc *dc, struct doc_state *st)
 {
 	unsigned int oldparens = 0;
-	int indent = 0;
+	unsigned int oldindent = st->st_indent.cur;
 
 	if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
 		oldparens = st->st_parens;
@@ -779,17 +780,23 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 		doc_indent(dc, st, st->st_indent.cur);
 	} else if (IS_DOC_INDENT_NEWLINE(dc->dc_int)) {
 		if (st->st_stats.nlines > 0) {
-			indent = dc->dc_int & ~DOC_INDENT_NEWLINE;
-			st->st_indent.cur += indent;
+			st->st_indent.cur += (unsigned int)(dc->dc_int &
+			    ~DOC_INDENT_NEWLINE);
 		}
 	} else if (IS_DOC_INDENT_WIDTH(dc->dc_int)) {
-		if (!st->st_newline) {
-			indent = (int)st->st_col - st->st_indent.cur;
-			st->st_indent.cur += indent;
-		}
+		if (!st->st_newline)
+			st->st_indent.cur += st->st_col - st->st_indent.cur;
 	} else {
-		indent = dc->dc_int;
-		st->st_indent.cur += indent;
+		int sign = dc->dc_int < 0 ? -1 : 1;
+		unsigned int indent = sign < 0 ? (unsigned int)-dc->dc_int :
+		    (unsigned int)dc->dc_int;
+
+		if (sign > 0)
+			st->st_indent.cur += indent;
+		else if (indent < st->st_indent.cur)
+			st->st_indent.cur -= indent;
+		else
+			st->st_indent.cur = 0;
 	}
 	doc_exec1(dc->dc_doc, st);
 	if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
@@ -797,7 +804,7 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 	} else if (IS_DOC_INDENT_FORCE(dc->dc_int)) {
 		/* nothing */
 	} else {
-		st->st_indent.cur -= indent;
+		st->st_indent.cur = oldindent;
 	}
 }
 
@@ -813,10 +820,10 @@ doc_exec_align(const struct doc *dc, struct doc_state *st)
 			n = doc_indent1(dc, st, 8, 1);
 			indent = n < indent ? indent - n : 0;
 		}
-		doc_indent1(dc, st, (int)dc->dc_align.spaces, 0);
+		doc_indent1(dc, st, dc->dc_align.spaces, 0);
 	} else {
 		doc_indent1(dc, st,
-		    (int)(dc->dc_align.indent + dc->dc_align.spaces), 0);
+		    dc->dc_align.indent + dc->dc_align.spaces, 0);
 	}
 }
 
@@ -858,7 +865,7 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 	/* Restore indentation after emitting a verbatim block or new line. */
 	if (isblock || isnewline) {
 		struct doc_state_indent *it = &st->st_indent;
-		int indent;
+		unsigned int indent;
 
 		if (oldcol > 0) {
 			/*
@@ -1156,11 +1163,11 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 }
 
 static unsigned int
-doc_indent(const struct doc *dc, struct doc_state *st, int indent)
+doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
 {
 	if (st->st_parens > 0) {
 		/* Align with the left parenthesis on the previous line. */
-		indent = st->st_indent.pre + (int)st->st_parens;
+		indent = st->st_indent.pre + st->st_parens;
 	} else {
 		st->st_indent.pre = indent;
 	}
@@ -1169,7 +1176,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, int indent)
 
 static unsigned int
 doc_indent1(const struct doc *UNUSED(dc), struct doc_state *st,
-    int indent, int usetabs)
+    unsigned int indent, int usetabs)
 {
 	unsigned int oldcol = st->st_col;
 

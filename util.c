@@ -48,15 +48,17 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 }
 
 size_t
-strindent_buffer(struct buffer *bf, int indent, int usetabs, size_t pos)
+strindent_buffer(struct buffer *bf, size_t indent, int usetabs, size_t pos)
 {
+	size_t i = 0;
+
 	if (usetabs) {
-		for (; indent >= 8; indent -= 8) {
+		for (; i + 8 <= indent; i += 8) {
 			buffer_putc(bf, '\t');
 			pos += 8 - (pos % 8);
 		}
 	}
-	for (; indent > 0; indent--) {
+	for (; i < indent; i++) {
 		buffer_putc(bf, ' ');
 		pos++;
 	}
