@@ -28,7 +28,8 @@ parser_attributes_peek(struct parser *pr, struct token **rparen,
 		} else if ((flags & PARSER_ATTRIBUTES_FUNC) &&
 		    lexer_if(lx, TOKEN_IDENT, NULL) &&
 		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &tmp) &&
-		    lexer_if(lx, TOKEN_IDENT, NULL)) {
+		    lexer_if(lx, TOKEN_IDENT, NULL) &&
+		    lexer_if(lx, TOKEN_LPAREN, NULL)) {
 			/* Possible attribute hidden behind cpp macro. */
 			*rparen = tmp;
 		} else {
