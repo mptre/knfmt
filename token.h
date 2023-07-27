@@ -106,9 +106,7 @@
 	OP(TOKEN_UINT64,	"u_int64_t", 0)				\
 	/* Linux */							\
 	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
-	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)			\
-	/* stdbool.h */							\
-	OP(TOKEN_BOOL,		"bool", 0)
+	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)
 
 #define FOR_TOKEN_SENTINELS(OP)						\
 	OP(TOKEN_COMMENT,	"", 0)					\
