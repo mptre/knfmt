@@ -791,7 +791,7 @@ isnum(unsigned char ch, int prefix)
 	if (prefix)
 		return isdigit(ch);
 
-	ch = tolower(ch);
+	ch = isupper(ch) ? (unsigned char)tolower(ch) : ch;
 	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
 	    ch == 'u' || ch == '.';
 }
