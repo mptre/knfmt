@@ -277,6 +277,7 @@ main(int argc, char *argv[])
 
 	test_parser_type_peek_error("_asm volatile (");
 	test_parser_type_peek_error("*");
+	test_parser_type_peek_error("[");
 
 	test_parser_attributes_peek(
 	    "__attribute__((one))",
