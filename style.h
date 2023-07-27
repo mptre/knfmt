@@ -12,11 +12,9 @@ struct style;
 	OP(AlignWithSpaces)						\
 	OP(All)								\
 	OP(AllDefinitions)						\
-	OP(Allman)							\
 	OP(Always)							\
 	OP(AlwaysBreak)							\
 	OP(AlwaysBreakAfterReturnType)					\
-	OP(Attach)							\
 	OP(Before)							\
 	OP(BitFieldColonSpacing)					\
 	OP(BlockIndent)							\
@@ -41,23 +39,28 @@ struct style;
 	  OP(SplitEmptyNamespace)					\
 	  OP(SplitEmptyRecord)						\
 	OP(BreakBeforeBinaryOperators)					\
+	  OP(Allman)							\
+	  OP(Attach)							\
+	  OP(Custom)							\
+	  OP(GNU)							\
+	  OP(Linux)							\
+	  OP(Mozilla)							\
+	  OP(Stroustrup)						\
+	  OP(WebKit)							\
+	  OP(Whitesmiths)						\
 	OP(BreakBeforeBraces)						\
 	OP(BreakBeforeTernaryOperators)					\
 	OP(CaseInsensitive)						\
 	OP(CaseSensitive)						\
 	OP(ColumnLimit)							\
 	OP(ContinuationIndentWidth)					\
-	OP(Custom)							\
 	OP(DontAlign)							\
 	OP(False)							\
 	OP(ForContinuationAndIndentation)				\
 	OP(ForIndentation)						\
-	OP(GNU)								\
 	OP(IncludeCategories)						\
 	OP(IndentWidth)							\
 	OP(Left)							\
-	OP(Linux)							\
-	OP(Mozilla)							\
 	OP(MultiLine)							\
 	OP(Never)							\
 	OP(NonAssignment)						\
@@ -67,13 +70,10 @@ struct style;
 	OP(Right)							\
 	OP(SortIncludes)						\
 	OP(SortPriority)						\
-	OP(Stroustrup)							\
 	OP(TopLevel)							\
 	OP(TopLevelDefinitions)						\
 	OP(True)							\
-	OP(UseTab)							\
-	OP(WebKit)							\
-	OP(Whitesmiths)
+	OP(UseTab)
 
 enum style_keyword {
 	First = 1,
