@@ -52,6 +52,7 @@ struct style {
 	const struct options	*st_op;
 	int			 st_scope;
 	struct {
+		int		type;
 		unsigned int	isset;
 		unsigned int	val;
 	} st_options[Last];
@@ -68,7 +69,7 @@ struct style_option {
 };
 
 static void	style_defaults(struct style *);
-static void	style_set(struct style *, int, unsigned int);
+static void	style_set(struct style *, int, int, unsigned int);
 static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *, const struct options *);
 static int	style_parse_yaml1(struct style *, struct lexer *);
@@ -349,8 +350,9 @@ style_defaults(struct style *st)
 }
 
 static void
-style_set(struct style *st, int option, unsigned int val)
+style_set(struct style *st, int option, int type, unsigned int val)
 {
+	st->st_options[option].type = type;
 	st->st_options[option].isset = 1;
 	st->st_options[option].val = val;
 }
@@ -467,11 +469,14 @@ style_dump(const struct style *st)
 			fprintf(stderr, "  ");
 		fprintf(stderr, "%s: ", key);
 
-		if (so->so_parse == parse_integer) {
+		switch (st->st_options[i].type) {
+		case Integer:
 			fprintf(stderr, "%u", st->st_options[i].val);
-		} else {
+			break;
+		default:
 			fprintf(stderr, "%s",
 			    style_keyword_str(st->st_options[i].val));
+			break;
 		}
 		fprintf(stderr, "\n");
 	}
@@ -677,7 +682,7 @@ parse_bool(struct style *st, struct lexer *lx, const struct style_option *so)
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
-	style_set(st, key->tk_type, (unsigned int)val->tk_type);
+	style_set(st, key->tk_type, None, (unsigned int)val->tk_type);
 	return GOOD;
 }
 
@@ -694,7 +699,8 @@ parse_enum(struct style *st, struct lexer *lx, const struct style_option *so)
 
 	for (v = so->so_val; *v != 0; v++) {
 		if (lexer_if(lx, *v, &val)) {
-			style_set(st, key->tk_type, (unsigned int)val->tk_type);
+			style_set(st, key->tk_type, None,
+			    (unsigned int)val->tk_type);
 			return GOOD;
 		}
 	}
@@ -720,7 +726,7 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
-	style_set(st, key->tk_type, (unsigned int)val->tk_int);
+	style_set(st, key->tk_type, Integer, (unsigned int)val->tk_int);
 	return GOOD;
 }
 
@@ -767,10 +773,12 @@ parse_AlignOperands(struct style *st, struct lexer *lx,
 
 	error = parse_enum(st, lx, so);
 	if (error & GOOD) {
-		if (st->st_options[AlignOperands].val == True)
-			style_set(st, AlignOperands, (unsigned int)Align);
-		else if (st->st_options[AlignOperands].val == False)
-			style_set(st, AlignOperands, (unsigned int)DontAlign);
+		if (st->st_options[AlignOperands].val == True) {
+			style_set(st, AlignOperands, None, (unsigned int)Align);
+		} else if (st->st_options[AlignOperands].val == False) {
+			style_set(st, AlignOperands, None,
+			    (unsigned int)DontAlign);
+		}
 	}
 	return error;
 }
@@ -783,7 +791,7 @@ parse_ColumnLimit(struct style *st, struct lexer *lx,
 
 	error = parse_integer(st, lx, so);
 	if ((error & GOOD) && st->st_options[ColumnLimit].val == 0)
-		style_set(st, ColumnLimit, UINT_MAX);
+		style_set(st, ColumnLimit, Integer, UINT_MAX);
 	return error;
 }
 
