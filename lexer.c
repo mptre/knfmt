@@ -508,7 +508,8 @@ lexer_branch(struct lexer *lx)
 int
 lexer_seek(struct lexer *lx, struct token *tk)
 {
-	lexer_trace(lx, "seek to %s", lexer_serialize(lx, tk));
+	if (lx->lx_peek == 0)
+		lexer_trace(lx, "seek to %s", lexer_serialize(lx, tk));
 	lx->lx_st.st_tk = token_prev(tk);
 	return lx->lx_st.st_tk == NULL ? 0 : 1;
 }
