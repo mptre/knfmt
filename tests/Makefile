@@ -456,6 +456,7 @@ TESTS+=	valid-352.c
 TESTS+=	valid-353.c
 TESTS+=	valid-354.c
 TESTS+=	valid-355.c
+TESTS+=	valid-356.c
 
 TESTS+=	simple-002.c
 TESTS+=	simple-003.c

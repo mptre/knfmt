@@ -24,7 +24,7 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 	struct buffer *bf;
 	struct doc *dc;
 	const char *nx, *str;
-	char *p;
+	char *p = NULL;
 	size_t len;
 	int nlines = 0;
 	int usetab = style(st, UseTab) != Never;
@@ -93,8 +93,9 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 	}
 
 	/* Alignment only wanted for multiple lines. */
-	if (nlines > 1)
-		ruler_exec(&rl);
+	if (nlines <= 1)
+		goto out;
+	ruler_exec(&rl);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc	= dc,
 	    .bf	= bf,
@@ -103,6 +104,7 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 	});
 
 	p = buffer_str(bf);
+out:
 	ruler_free(&rl);
 	doc_free(dc);
 	buffer_free(bf);
