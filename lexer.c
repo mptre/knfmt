@@ -1132,7 +1132,7 @@ lexer_eat_spaces(struct lexer *lx, struct token **tk)
 	do {
 		if (lexer_getc(lx, &ch))
 			return 0;
-	} while (ch == ' ' || ch == '\t');
+	} while (ch == ' ' || ch == '\f' || ch == '\t');
 	lexer_ungetc(lx);
 
 	if (st.st_off == lx->lx_st.st_off)
