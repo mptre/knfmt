@@ -26,7 +26,24 @@ struct alignment {
 			 skip_first_line:1;
 };
 
-static const char	*nextline(const char *, size_t, const char **);
+/*
+ * Returns a pointer to the end of current line assuming it's a line
+ * continuation.
+ */
+static const char *
+nextline(const char *str, size_t len, const char **nx)
+{
+	const char *p;
+
+	p = memchr(str, '\n', len);
+	if (p == NULL || p == str || p[-1] != '\\')
+		return NULL;
+	*nx = &p[1];
+	p--;	/* consume '\\' */
+	while (p > str && isspace((unsigned char)p[-1]))
+		p--;
+	return p;
+}
 
 static int
 alignment_cmp(const struct alignment *a, const struct alignment *b)
@@ -180,24 +197,5 @@ out:
 	ruler_free(&rl);
 	doc_free(dc);
 	buffer_free(bf);
-	return p;
-}
-
-/*
- * Returns a pointer to the end of current line assuming it's a line
- * continuation.
- */
-static const char *
-nextline(const char *str, size_t len, const char **nx)
-{
-	const char *p;
-
-	p = memchr(str, '\n', len);
-	if (p == NULL || p == str || p[-1] != '\\')
-		return NULL;
-	*nx = &p[1];
-	p--;	/* consume '\\' */
-	while (p > str && isspace((unsigned char)p[-1]))
-		p--;
 	return p;
 }
