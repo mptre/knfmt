@@ -1,6 +1,7 @@
 static const char traces[] = {
 	'a',	/* all */
 	'c',	/* clang */
+	'C',	/* cpp */
 	'd',	/* doc */
 	'D',	/* diff */
 	'l',	/* lexer */
