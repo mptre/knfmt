@@ -67,8 +67,6 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 		if (ep == NULL)
 			break;
 
-		if (nlines > 0)
-			doc_alloc(DOC_HARDLINE, concat);
 		cpplen = (size_t)(ep - sp);
 		if (cpplen > 0)
 			doc_literal_n(sp, cpplen, concat);
@@ -80,17 +78,15 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 		});
 		ruler_insert(&rl, tk, concat, 1, w, 0);
 		doc_literal("\\", concat);
+		doc_alloc(DOC_HARDLINE, concat);
 
 		linelen = (size_t)(nx - str);
 		len -= linelen;
 		str += linelen;
 		nlines++;
 	}
-	if (len > 0) {
-		if (nlines > 0)
-			doc_alloc(DOC_HARDLINE, dc);
+	if (len > 0)
 		doc_literal_n(str, len, dc);
-	}
 
 	/* Alignment only wanted for multiple lines. */
 	if (nlines <= 1)
