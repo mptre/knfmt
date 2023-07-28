@@ -1,3 +1,38 @@
+# 4.3.0 - YYYY-MM-DD
+
+## News
+
+- In simple mode, remove redundant parenthesis around all type of expressions.
+  (964742f)
+  (Anton Lindqvist)
+
+- In simple mode, insert missing parenthesis around sizeof argument.
+  (2796079)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- In simple mode, do not remove braces around semicolon statement as such code
+  can cause GCC to emit a warning.
+  (8c465ec, e6ff77c)
+  (Anton Lindqvist)
+
+- Fix regression introduced while adding bool token aliases.
+  (4da6ae7)
+  (Anton Lindqvist)
+
+- Make detection of types behind cpp macros more stringent.
+  (e4cc1b5)
+  (Anton Lindqvist)
+
+- Make detection of attributes hidden behind cpp more stringent.
+  (70889e0)
+  (Anton Lindqvist)
+
+- Treat form feed as a space.
+  (2d5b76d)
+  (Anton Lindqvist)
+
 # 4.2.0 - 2023-07-21
 
 ## News
