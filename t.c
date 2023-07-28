@@ -263,8 +263,8 @@ main(int argc, char *argv[])
 	    "STACK_OF ( X509_EXTENSION ) *");
 	test_parser_type_peek("const STACK_OF(X509_EXTENSION)*",
 	    "const STACK_OF ( X509_EXTENSION ) *");
-	test_parser_type_peek("static void\nwmain(def)\n\tdefinition *",
-	    "static void");
+	test_parser_type_peek("int\nmain(foo)\n\tfoo_t *",
+	    "int");
 
 	test_parser_type_peek_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");
