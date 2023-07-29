@@ -138,6 +138,7 @@ main(int argc, char *argv[])
 
 	clang_init();
 	expr_init();
+	style_init();
 	cx = context_alloc();
 
 	test_parser_expr("1", "(1)");
@@ -401,6 +402,7 @@ main(int argc, char *argv[])
 	}));
 
 	test_style("UseTab: Never", UseTab, Never);
+	test_style("UseTab: 'Never'", UseTab, Never);
 
 	test_strwidth("int", 0, 3);
 	test_strwidth("int\tx", 0, 9);
@@ -414,6 +416,7 @@ main(int argc, char *argv[])
 
 out:
 	context_free(cx);
+	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();
 	return error;

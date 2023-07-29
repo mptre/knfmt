@@ -544,9 +544,16 @@ again:
 				break;
 		}
 		lexer_ungetc(lx);
-		tk = lexer_emit(lx, &s, NULL);
+		tk = yaml_keyword(lx, &s);
+		if (tk->tk_type == Unknown) {
+			token_rele(tk);
+			tk = NULL;
+		}
+		if (tk == NULL) {
+			tk = lexer_emit(lx, &s,
+			    &(struct token){.tk_type = String});
+		}
 		lexer_getc(lx, &ch); /* discard '\'' */
-		tk->tk_type = String;
 		return tk;
 	}
 
