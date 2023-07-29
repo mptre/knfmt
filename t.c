@@ -82,6 +82,10 @@ static int	test_lexer_move_before0(struct context *,
 static int	test_token_position_after0(struct context *,
     struct test_token_move *, int);
 
+#define test_style(a, b, c) \
+	test(test_style0(cx, (a), (b), (c), __LINE__))
+static int	test_style0(struct context *, const char *, int, int, int);
+
 #define test_strwidth(a, b, c) \
 	test(test_strwidth0((a), (b), (c), __LINE__))
 static int	test_strwidth0(const char *, size_t, size_t, int);
@@ -396,6 +400,8 @@ main(int argc, char *argv[])
 	    },
 	}));
 
+	test_style("UseTab: Never", UseTab, Never);
+
 	test_strwidth("int", 0, 3);
 	test_strwidth("int\tx", 0, 9);
 	test_strwidth("int\tx", 3, 9);
@@ -658,6 +664,26 @@ find_token(struct lexer *lx, int type, struct token **tk)
 	}
 	lexer_peek_leave(lx, &s);
 	return found;
+}
+
+static int
+test_style0(struct context *cx, const char *src, int key, int exp, int lno)
+{
+	const char *fun = "style_parse";
+	struct style *st;
+	int error = 0;
+	int act;
+
+	context_init(cx, src);
+	st = style_parse_buffer(cx->bf, ".clang-format", &cx->op);
+	act = (int)style(st, key);
+	if (exp != act) {
+		fprintf(stderr, "%s:%d:\n\texp %d\n\tgot %d\n",
+		    fun, lno, exp, act);
+		error = 1;
+	}
+	style_free(st);
+	return error;
 }
 
 static int

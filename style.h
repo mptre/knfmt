@@ -1,3 +1,4 @@
+struct buffer;
 struct options;
 struct style;
 
@@ -87,6 +88,8 @@ void	style_init(void);
 void	style_shutdown(void);
 
 struct style	*style_parse(const char *, const struct options *);
+struct style	*style_parse_buffer(const struct buffer *, const char *,
+    const struct options *);
 void		 style_free(struct style *);
 
 unsigned int	style(const struct style *, int);

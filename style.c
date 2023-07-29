@@ -261,11 +261,6 @@ style_parse(const char *path, const struct options *op)
 {
 	struct buffer *bf = NULL;
 	struct style *st;
-	int error = 0;
-
-	st = ecalloc(1, sizeof(*st));
-	st->st_op = op;
-	style_defaults(st);
 
 	if (path != NULL) {
 		bf = buffer_read(path);
@@ -279,14 +274,25 @@ style_parse(const char *path, const struct options *op)
 			close(fd);
 		}
 	}
-	if (bf != NULL)
-		error = style_parse_yaml(st, path, bf, op);
+	st = style_parse_buffer(bf, path, op);
 	buffer_free(bf);
-	if (error) {
-		style_free(st);
-		st = NULL;
-	} else if (trace(op, 's') >= 2) {
+	if (st != NULL && trace(op, 's') >= 2)
 		style_dump(st);
+	return st;
+}
+
+struct style *
+style_parse_buffer(const struct buffer *bf, const char *path,
+    const struct options *op)
+{
+	struct style *st;
+
+	st = ecalloc(1, sizeof(*st));
+	st->st_op = op;
+	style_defaults(st);
+	if (bf != NULL && style_parse_yaml(st, path, bf, op)) {
+		style_free(st);
+		return NULL;
 	}
 	return st;
 }
@@ -512,7 +518,7 @@ again:
 	if (isalpha(ch) || ch == '_') {
 		do {
 			if (lexer_getc(lx, &ch))
-				goto eof;
+				break;
 		} while (!isspace(ch) && ch != ':');
 		lexer_ungetc(lx);
 		return yaml_keyword(lx, &s);
