@@ -21,7 +21,8 @@
 
 struct alignment {
 	const char	*indent;
-	unsigned int	 column;
+	unsigned int	 mode;
+	unsigned int	 width;
 	unsigned int	 tabs:1,
 			 skip_first_line:1;
 };
@@ -48,7 +49,7 @@ nextline(const char *str, size_t len, const char **nx)
 static int
 alignment_cmp(const struct alignment *a, const struct alignment *b)
 {
-	return a->column == b->column && a->tabs == b->tabs ? 0 : 1;
+	return a->width == b->width && a->tabs == b->tabs ? 0 : 1;
 }
 
 static int
@@ -77,7 +78,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 		if (col > maxcol)
 			return 0;
 		lines[i].indent = indent;
-		lines[i].column = col - 2;
+		lines[i].width = col - 2;
 		lines[i].tabs = indent[0] == '\t';
 		/* First line validated below. */
 		if (i > 1 && alignment_cmp(&lines[i - 1], &lines[i]) != 0)
@@ -95,6 +96,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 			return 0;
 		lines[nlines - 1].skip_first_line = 1;
 	}
+	lines[nlines - 1].mode = Right;
 
 	*alignment = lines[nlines - 1];
 	return 1;
@@ -106,15 +108,17 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 char *
 cpp_align(struct token *tk, const struct style *st, const struct options *op)
 {
+	struct alignment alignment = {
+		.mode	= style(st, AlignEscapedNewlines),
+		.width	= style(st, ColumnLimit) - style(st, IndentWidth),
+		.tabs	= style(st, UseTab) != Never,
+	};
 	struct ruler rl;
-	struct alignment alignment = {0};
 	struct buffer *bf;
 	struct doc *dc;
 	const char *nx, *str;
 	char *p = NULL;
 	size_t len;
-	unsigned int align = style(st, AlignEscapedNewlines);
-	unsigned int usetab = style(st, UseTab) != Never;
 	int nlines = 0;
 
 	str = tk->tk_str;
@@ -123,19 +127,25 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 		return NULL;
 
 	if (sense_alignment(str, len, st, &alignment)) {
-		cpp_trace(op, "column %u, tabs %d, skip %d",
-		    alignment.column, alignment.tabs,
+		cpp_trace(op, "sensed alignment: "
+		    "mode %u, width %u, tabs %d, skip %d",
+		    alignment.mode, alignment.width, alignment.tabs,
 		    alignment.skip_first_line);
-		ruler_init(&rl, (unsigned int)alignment.column,
-		    RULER_ALIGN_MAX | (alignment.tabs ? RULER_ALIGN_TABS : 0));
-	} else if (align == DontAlign) {
+	}
+
+	switch (alignment.mode) {
+	case DontAlign:
 		ruler_init(&rl, 1, RULER_ALIGN_FIXED);
-	} else if (align == Left) {
-		ruler_init(&rl, 0, usetab ? RULER_ALIGN_TABS : RULER_ALIGN_MIN);
-	} else if (align == Right) {
-		ruler_init(&rl, style(st, ColumnLimit) - style(st, IndentWidth),
-		    RULER_ALIGN_MAX | (usetab ? RULER_ALIGN_TABS : 0));
-	} else {
+		break;
+	case Left:
+		ruler_init(&rl, 0,
+		    alignment.tabs ? RULER_ALIGN_TABS : RULER_ALIGN_MIN);
+		break;
+	case Right:
+		ruler_init(&rl, alignment.width,
+		    RULER_ALIGN_MAX | (alignment.tabs ? RULER_ALIGN_TABS : 0));
+		break;
+	default:
 		return NULL;
 	}
 
