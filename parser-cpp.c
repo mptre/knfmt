@@ -137,9 +137,10 @@ parser_cpp_x(struct parser *pr, struct doc *dc)
 {
 	struct doc *concat;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *rparen, *tk;
+	int error;
 
-	if (!parser_cpp_peek_x(pr, NULL))
+	if (!parser_cpp_peek_x(pr, &rparen))
 		return parser_none(pr);
 
 	if (pr->pr_cpp.ruler == NULL) {
@@ -153,17 +154,18 @@ parser_cpp_x(struct parser *pr, struct doc *dc)
 		doc_token(tk, concat);
 		doc_alloc(DOC_LINE, concat);
 	}
-	if (lexer_expect(lx, TOKEN_IDENT, &tk))
-		doc_token(tk, concat);
-	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-		doc_token(tk, concat);
-	parser_expr(pr, NULL, &(struct parser_expr_arg){
+	error = parser_expr(pr, NULL, &(struct parser_expr_arg){
 	    .dc		= concat,
 	    .rl		= pr->pr_cpp.ruler,
+	    .stop	= token_next(rparen),
 	    .flags	= EXPR_EXEC_ALIGN,
 	});
-	if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-		doc_token(tk, concat);
+	if (error & HALT)
+		return parser_fail(pr);
+	/* Compensate for the expression parser only honoring one new line. */
+	if (token_has_line(rparen, 2))
+		doc_alloc(DOC_HARDLINE, concat);
+
 	return parser_good(pr);
 }
 
