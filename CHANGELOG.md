@@ -10,6 +10,14 @@
   (2796079)
   (Anton Lindqvist)
 
+- Sense alignment in cpp macro definitions.
+  (e46b3f5)
+  (Anton Lindqvist)
+
+- Detect more sys/cdefs.h like macros.
+  (58911b5)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - In simple mode, do not remove braces around semicolon statement as such code
@@ -31,6 +39,15 @@
 
 - Treat form feed as a space.
   (2d5b76d)
+  (Anton Lindqvist)
+
+- Detect keywords and integers expressed as strings in .clang-format
+  configuration files.
+  (2a35d91, d46137f)
+  (Anton Lindqvist)
+
+- Honor clang-format option AlignAfterOpenBracket in cpp x macros.
+  (deaf10d)
   (Anton Lindqvist)
 
 # 4.2.0 - 2023-07-21
