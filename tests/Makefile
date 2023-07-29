@@ -628,6 +628,7 @@ TESTS+=	style-error-007.c
 TESTS+=	style-error-008.c
 TESTS+=	style-simple-AlignOperands-001.c
 TESTS+=	style-simple-AlignOperands-002.c
+TESTS+=	style-trace-001.c
 
 TESTS+=	../alloc.c
 TESTS+=	../alloc.h

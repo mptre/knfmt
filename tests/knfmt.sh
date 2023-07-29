@@ -23,7 +23,7 @@ hascomm() {
 	fi
 }
 
-# testcase [-b] [-c] [-e] [-i] [-q] file [-- knfmt-options]
+# testcase [-b] [-c] [-e] [-i] [-o] [-q] file [-- knfmt-options]
 #
 # Run test case.
 testcase() {
@@ -35,6 +35,8 @@ testcase() {
 	local _file
 	local _flags="d"
 	local _got=0
+	local _ok=
+	local _ok_required=0
 	local _quiet=0
 
 	while [ $# -gt 0 ]; do
@@ -43,6 +45,7 @@ testcase() {
 		-c)	_clang=1;;
 		-e)	_exp=1; _flags="";;
 		-i)	_flags=""; _quiet=1;;
+		-o)	_ok_required=1;;
 		-q)	_quiet=1;;
 		*)	break;;
 		esac
@@ -61,7 +64,7 @@ testcase() {
 		sed -e '/^$/d' >"${_wrkdir}/.clang-format"
 	fi
 
-	if [ "$_bug" -eq 1 ] && ! [ -e "$_ok" ]; then
+	if [ "$_ok_required" -eq 1 ] && ! [ -e "$_ok" ]; then
 		echo "${_ok}: file not found" 1>&2
 		return 1
 	fi
@@ -147,7 +150,7 @@ _rel="$_path"
 _abs="$(readlink -f "$_rel" 2>/dev/null || echo "${PWD}/${_rel}")"
 case "$_rel" in
 bug-*)
-	testcase -b "$_abs" -- -s "$@"
+	testcase -b -o "$_abs" -- -s "$@"
 	;;
 diff-simple-*)
 	testcase "$_abs" -- -Ds -tl "$@"
@@ -169,13 +172,16 @@ simple-*|../*)
 	testcase "$_abs" -- -s -tl "$@"
 	;;
 style-bug-*)
-	testcase -b -c "$_abs" -- -ts "$@"
+	testcase -b -c -o "$_abs" -- -ts "$@"
 	;;
 style-error-*)
 	testcase -c "$_abs" -- -ts "$@"
 	;;
 style-simple-*)
 	testcase -c "$_abs" -- -s -tls "$@"
+	;;
+style-trace-*)
+	testcase -c -o "$_abs" -- -s -tss "$@"
 	;;
 style-*)
 	testcase -c "$_abs" -- -tls "$@"

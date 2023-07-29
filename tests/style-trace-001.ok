@@ -1,0 +1,38 @@
+.clang-format: unknown option Unknown<4:1>("AlignConsecutiveAssignments")
+.clang-format: unknown option Unknown<5:1>("AlignConsecutiveDeclarations")
+.clang-format: unknown option Unknown<6:1>("AlignConsecutiveMacros")
+.clang-format: unknown option Unknown<8:1>("AlignTrailingComments")
+.clang-format: unknown option Unknown<9:1>("AllowAllArgumentsOnNextLine")
+.clang-format: unknown option Unknown<10:1>("AllowAllParametersOfDeclarationOnNextLine")
+.clang-format: unknown option Unknown<11:1>("AllowShortBlocksOnASingleLine")
+.clang-format: unknown option Unknown<12:1>("AllowShortCaseLabelsOnASingleLine")
+.clang-format: unknown option Unknown<13:1>("AllowShortFunctionsOnASingleLine")
+.clang-format: unknown option Unknown<14:1>("AllowShortIfStatementsOnASingleLine")
+.clang-format: unknown option Unknown<16:1>("BinPackParameters")
+.clang-format: unknown option Unknown<17:1>("BinPackArguments")
+.clang-format: unknown option Unknown<20:1>("DerivePointerAlignment")
+.clang-format: unknown option Unknown<21:1>("IndentCaseLabels")
+.clang-format: unknown option Unknown<23:1>("IncludeBlocks")
+.clang-format: unknown option Unknown<24:1>("KeepEmptyLinesAtTheStartOfBlocks")
+.clang-format: unknown option Unknown<25:1>("MaxEmptyLinesToKeep")
+.clang-format: unknown option Unknown<26:1>("PointerAlignment")
+.clang-format: unknown value Keyword<27:16>("true") for option Keyword<27:1>("SortIncludes")
+.clang-format: unknown option Unknown<28:1>("SpaceAfterCStyleCast")
+.clang-format: unknown option Unknown<29:1>("SpaceBeforeAssignmentOperators")
+.clang-format: unknown option Unknown<30:1>("SpaceBeforeParens")
+.clang-format: unknown option Unknown<31:1>("SpaceInEmptyParentheses")
+.clang-format: unknown option Unknown<32:1>("SpacesInSquareBrackets")
+.clang-format: unknown option Unknown<33:1>("TabWidth")
+.clang-format: unknown option Unknown<35:1>("PenaltyBreakAssignment")
+.clang-format: unknown option Unknown<36:1>("PenaltyBreakBeforeFirstCallParameter")
+.clang-format: unknown option Unknown<38:1>("Language")
+.clang-format: unknown option Unknown<40:1>("Language")
+[s] AlignAfterOpenBracket: Align
+[s] AlignOperands: Align
+[s] AlwaysBreakAfterReturnType: All
+[s] BreakBeforeBraces: Linux
+[s] ColumnLimit: 100
+[s] IndentWidth: 8
+[s] IncludeCategories:
+[s]   Priority: 4
+[s] UseTab: Always
