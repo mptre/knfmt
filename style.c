@@ -579,12 +579,18 @@ yaml_read_integer(struct lexer *lx)
 	int overflow = 0;
 	int peek = 0;
 	int sign = 1;
+	int string = 0;
 	unsigned char ch;
 
 	s = lexer_get_state(lx);
 
 	if (lexer_getc(lx, &ch))
 		return NULL;
+	if (ch == '\'') {
+		if (lexer_getc(lx, &ch))
+			return NULL;
+		string = 1;
+	}
 	if (isdigit(ch)) {
 		peek = 1;
 	} else if (ch == '-' && lexer_getc(lx, &ch) == 0) {
@@ -595,6 +601,8 @@ yaml_read_integer(struct lexer *lx)
 	}
 	if (!peek) {
 		lexer_ungetc(lx);
+		if (string)
+			lexer_ungetc(lx);
 		return NULL;
 	}
 
@@ -608,7 +616,8 @@ yaml_read_integer(struct lexer *lx)
 		if (lexer_getc(lx, &ch))
 			return NULL;
 	}
-	lexer_ungetc(lx);
+	if (!string)
+		lexer_ungetc(lx);
 
 	if (i32_mul_overflow(digit, sign, &digit))
 		overflow = 1;

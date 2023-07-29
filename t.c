@@ -403,6 +403,10 @@ main(int argc, char *argv[])
 
 	test_style("UseTab: Never", UseTab, Never);
 	test_style("UseTab: 'Never'", UseTab, Never);
+	test_style("ColumnLimit: '100'", ColumnLimit, 100);
+	test_style("ColumnLimit: '-100'", ColumnLimit, -100);
+	test_style("ColumnLimit: '100'\nColumnLimit: 200", ColumnLimit, 200);
+	test_style("UseTab: 'Never'\nColumnLimit: '100'", ColumnLimit, 100);
 
 	test_strwidth("int", 0, 3);
 	test_strwidth("int\tx", 0, 9);
@@ -678,6 +682,7 @@ test_style0(struct context *cx, const char *src, int key, int exp, int lno)
 	int act;
 
 	context_init(cx, src);
+	options_trace_parse(&cx->op, "ss");
 	st = style_parse_buffer(cx->bf, ".clang-format", &cx->op);
 	act = (int)style(st, key);
 	if (exp != act) {
@@ -727,11 +732,10 @@ context_alloc(void)
 	struct context *cx;
 
 	cx = ecalloc(1, sizeof(*cx));
-	options_init(&cx->op);
-	cx->op.op_flags.test = 1;
 	cx->bf = buffer_alloc(128);
 	if (cx->bf == NULL)
 		err(1, NULL);
+	context_reset(cx);
 	return cx;
 }
 
@@ -774,6 +778,9 @@ context_init(struct context *cx, const char *src)
 static void
 context_reset(struct context *cx)
 {
+	options_init(&cx->op);
+	cx->op.op_flags.test = 1;
+
 	buffer_reset(cx->bf);
 
 	if (cx->er != NULL) {
