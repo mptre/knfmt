@@ -8,7 +8,7 @@
 .clang-format: unknown value Integer<6:9>("0") for option Keyword<6:1>("UseTab")
 .clang-format: unknown option Unknown<7:1>("Nein")
 .clang-format: unknown option Keyword<8:1>("None")
-.clang-format: unknown value String<9:9>("'string'") for option Keyword<9:1>("UseTab")
+.clang-format: unknown value String<9:10>("string") for option Keyword<9:1>("UseTab")
 .clang-format: unknown option Unknown<10:1>("ForEachMacros")
 .clang-format: unknown value Keyword<13:9>("false") for option Keyword<13:1>("UseTab")
 .clang-format: unknown value Integer<17:24>("0") for option Keyword<17:1>("AlignAfterOpenBracket")

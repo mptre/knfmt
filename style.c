@@ -530,13 +530,16 @@ again:
 	}
 
 	if (ch == '\'') {
+		s = lexer_get_state(lx); /* discard '\'' */
 		for (;;) {
 			if (lexer_getc(lx, &ch))
 				goto eof;
 			if (ch == '\'')
 				break;
 		}
+		lexer_ungetc(lx);
 		tk = lexer_emit(lx, &s, NULL);
+		lexer_getc(lx, &ch); /* discard '\'' */
 		tk->tk_type = String;
 		return tk;
 	}
