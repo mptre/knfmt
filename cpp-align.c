@@ -23,7 +23,7 @@ struct alignment {
 	const char	*indent;
 	unsigned int	 mode;
 	unsigned int	 width;
-	unsigned int	 tabs:1,
+	int		 tabs:1,
 			 skip_first_line:1;
 };
 
@@ -47,9 +47,23 @@ nextline(const char *str, size_t len, const char **nx)
 }
 
 static int
-alignment_cmp(const struct alignment *a, const struct alignment *b)
+is_left_aligned(const struct alignment *a)
 {
-	return a->width == b->width && a->tabs == b->tabs ? 0 : 1;
+	return strncmp(a->indent, " \\", 2) == 0;
+}
+
+static int
+is_alignment_identical(const struct alignment *a, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len - 1; i++) {
+		if (a[i].width == a[i + 1].width &&
+		    a[i].tabs == a[i + 1].tabs)
+			continue;
+		return 0;
+	}
+	return 1;
 }
 
 static int
@@ -80,26 +94,27 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 		lines[i].indent = indent;
 		lines[i].width = col - 2;
 		lines[i].tabs = indent[0] == '\t';
-		/* First line validated below. */
-		if (i > 1 && alignment_cmp(&lines[i - 1], &lines[i]) != 0)
-			return 0;
 
 		len -= linelen;
 		str += linelen;
 	}
-	if (alignment_cmp(&lines[0], &lines[1]) != 0) {
-		/*
-		 * If the first line is not aligned, only allow a single space
-		 * before the line continuation.
-		 */
-		if (strncmp(lines[0].indent, " \\", 2) != 0)
-			return 0;
-		lines[nlines - 1].skip_first_line = 1;
-	}
-	lines[nlines - 1].mode = Right;
 
-	*alignment = lines[nlines - 1];
-	return 1;
+	if (is_alignment_identical(&lines[1], nlines - 1) &&
+	    (is_alignment_identical(lines, 2) || is_left_aligned(&lines[0]))) {
+		/*
+		 * All lines are aligned, ignoring the first line. The first
+		 * line can either also be aligned or make use of a single space
+		 * for alignment.
+		 */
+		*alignment = (struct alignment){
+		    .mode		= Right,
+		    .width		= lines[nlines - 1].width,
+		    .tabs		= lines[nlines - 1].tabs,
+		    .skip_first_line	= is_left_aligned(&lines[0]),
+		};
+		return 1;
+	}
+	return 0;
 }
 
 /*
@@ -129,8 +144,9 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 	if (sense_alignment(str, len, st, &alignment)) {
 		cpp_trace(op, "sensed alignment: "
 		    "mode %u, width %u, tabs %d, skip %d",
-		    alignment.mode, alignment.width, alignment.tabs,
-		    alignment.skip_first_line);
+		    alignment.mode, alignment.width,
+		    alignment.tabs ? 1 : 0,
+		    alignment.skip_first_line ? 1 : 0);
 	}
 
 	switch (alignment.mode) {
