@@ -47,21 +47,32 @@ nextline(const char *str, size_t len, const char **nx)
 }
 
 static int
-is_left_aligned(const struct alignment *a)
+is_not_aligned(const struct alignment *a)
 {
 	return strncmp(a->indent, " \\", 2) == 0;
 }
 
 static int
-is_alignment_identical(const struct alignment *a, size_t len)
+all_identical(const struct alignment *a, size_t len)
 {
 	size_t i;
 
 	for (i = 0; i < len - 1; i++) {
-		if (a[i].width == a[i + 1].width &&
-		    a[i].tabs == a[i + 1].tabs)
-			continue;
-		return 0;
+		if (!(a[i].width == a[i + 1].width &&
+		    a[i].tabs == a[i + 1].tabs))
+			return 0;
+	}
+	return 1;
+}
+
+static int
+all_not_aligned(const struct alignment *a, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (!is_not_aligned(&a[i]))
+			return 0;
 	}
 	return 1;
 }
@@ -71,18 +82,18 @@ sense_alignment(const char *str, size_t len, const struct style *st,
     struct alignment *alignment)
 {
 	struct alignment lines[3] = {0};
-	size_t nlines = sizeof(lines) / sizeof(lines[0]);
+	size_t nlines = 0;
 	size_t i;
 	unsigned int maxcol = style(st, ColumnLimit);
 
-	for (i = 0; i < nlines; i++) {
+	for (i = 0; i < sizeof(lines) / sizeof(lines[0]); i++) {
 		const char *indent, *nx;
 		size_t linelen;
 		unsigned int col;
 
 		indent = nextline(str, len, &nx);
 		if (indent == NULL)
-			return 0;
+			break;
 
 		linelen = (size_t)(nx - str);
 		/* Require trailing '\\' '\n' characters. */
@@ -97,20 +108,23 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 
 		len -= linelen;
 		str += linelen;
+		nlines++;
 	}
 
-	if (is_alignment_identical(&lines[1], nlines - 1) &&
-	    (is_alignment_identical(lines, 2) || is_left_aligned(&lines[0]))) {
-		/*
-		 * All lines are aligned, ignoring the first line. The first
-		 * line can either also be aligned or make use of a single space
-		 * for alignment.
-		 */
+	if (all_not_aligned(lines, nlines)) {
+		*alignment = (struct alignment){.mode = DontAlign};
+		return 1;
+	}
+
+	if (nlines >= 3 &&
+	    all_identical(&lines[1], nlines - 1) &&
+	    (all_identical(lines, 2) || is_not_aligned(&lines[0]))) {
+		/* The first line is allowed to not be aligned. */
 		*alignment = (struct alignment){
 		    .mode		= Right,
 		    .width		= lines[nlines - 1].width,
 		    .tabs		= lines[nlines - 1].tabs,
-		    .skip_first_line	= is_left_aligned(&lines[0]),
+		    .skip_first_line	= is_not_aligned(&lines[0]),
 		};
 		return 1;
 	}
@@ -148,7 +162,6 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 		    alignment.tabs ? 1 : 0,
 		    alignment.skip_first_line ? 1 : 0);
 	}
-
 	switch (alignment.mode) {
 	case DontAlign:
 		ruler_init(&rl, 1, RULER_ALIGN_FIXED);
