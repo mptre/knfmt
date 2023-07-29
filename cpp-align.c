@@ -140,7 +140,7 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 	struct alignment alignment = {
 		.mode	= style(st, AlignEscapedNewlines),
 		.width	= style(st, ColumnLimit) - style(st, IndentWidth),
-		.tabs	= style(st, UseTab) != Never,
+		.tabs	= style_use_tabs(st),
 	};
 	struct ruler rl;
 	struct buffer *bf;

@@ -1171,7 +1171,7 @@ doc_indent(const struct doc *dc, struct doc_state *st, unsigned int indent)
 	} else {
 		st->st_indent.pre = indent;
 	}
-	return doc_indent1(dc, st, indent, style(st->st_st, UseTab) != Never);
+	return doc_indent1(dc, st, indent, style_use_tabs(st->st_st));
 }
 
 static unsigned int

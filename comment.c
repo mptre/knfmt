@@ -40,7 +40,7 @@ comment_trim(const struct token *tk, const struct style *st)
 
 			wslen = (size_t)(ep - sp);
 			strindent_buffer(bf, strwidth(sp, wslen, 0),
-			    style(st, UseTab) != Never, 0);
+			    style_use_tabs(st), 0);
 			len -= wslen;
 			sp += wslen;
 		}

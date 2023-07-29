@@ -93,3 +93,9 @@ unsigned int	style(const struct style *, int);
 int		style_brace_wrapping(const struct style *, int);
 
 const char	*style_keyword_str(enum style_keyword);
+
+static inline int
+style_use_tabs(const struct style *st)
+{
+	return style(st, UseTab) != Never;
+}
