@@ -676,7 +676,6 @@ find_token(struct lexer *lx, int type, struct token **tk)
 static int
 test_style0(struct context *cx, const char *src, int key, int exp, int lno)
 {
-	const char *fun = "style_parse";
 	struct style *st;
 	int error = 0;
 	int act;
@@ -686,8 +685,8 @@ test_style0(struct context *cx, const char *src, int key, int exp, int lno)
 	st = style_parse_buffer(cx->bf, ".clang-format", &cx->op);
 	act = (int)style(st, key);
 	if (exp != act) {
-		fprintf(stderr, "%s:%d:\n\texp %d\n\tgot %d\n",
-		    fun, lno, exp, act);
+		fprintf(stderr, "style_parse:%d:\n\texp %d\n\tgot %d\n",
+		    lno, exp, act);
 		error = 1;
 	}
 	style_free(st);
