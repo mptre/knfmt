@@ -243,7 +243,25 @@ parser_cpp_decl_leave(struct parser *pr, void *cookie)
 static int
 iscdefs(const char *str, size_t len)
 {
+	struct suffix {
+		const char	*str;
+		size_t		 len;
+	} suffixes[] = {
+#define S(s) { s, sizeof(s) - 1 }
+		S("_BEGIN_DECLS"),
+		S("_END_DECLS"),
+#undef S
+	};
+	size_t nsuffixes = sizeof(suffixes) / sizeof(suffixes[0]);
 	size_t i;
+
+	for (i = 0; i < nsuffixes; i++) {
+		const struct suffix *s = &suffixes[i];
+
+		if (len >= s->len &&
+		    strncmp(&str[len - s->len], s->str, s->len) == 0)
+			return 1;
+	}
 
 	if (len < 2 || strncmp(str, "__", 2) != 0)
 		return 0;
