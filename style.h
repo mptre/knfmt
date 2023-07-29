@@ -91,3 +91,5 @@ void		 style_free(struct style *);
 
 unsigned int	style(const struct style *, int);
 int		style_brace_wrapping(const struct style *, int);
+
+const char	*style_keyword_str(enum style_keyword);

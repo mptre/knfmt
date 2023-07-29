@@ -20,11 +20,11 @@
 } while (0)
 
 struct alignment {
-	const char	*indent;
-	unsigned int	 mode;
-	unsigned int	 width;
-	int		 tabs:1,
-			 skip_first_line:1;
+	const char		*indent;
+	enum style_keyword	 mode;
+	unsigned int		 width;
+	int			 tabs:1,
+				 skip_first_line:1;
 };
 
 /*
@@ -156,9 +156,8 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 		return NULL;
 
 	if (sense_alignment(str, len, st, &alignment)) {
-		cpp_trace(op, "sensed alignment: "
-		    "mode %u, width %u, tabs %d, skip %d",
-		    alignment.mode, alignment.width,
+		cpp_trace(op, "mode %s, width %u, tabs %d, skip %d",
+		    style_keyword_str(alignment.mode), alignment.width,
 		    alignment.tabs ? 1 : 0,
 		    alignment.skip_first_line ? 1 : 0);
 	}

@@ -101,7 +101,6 @@ static int	parse_IncludeCategories(struct style *, struct lexer *,
     const struct style_option *);
 
 static const char	*yaml_type_str(enum yaml_type);
-static const char	*style_keyword_str(enum style_keyword);
 
 static struct style_option *keywords[256];
 
@@ -827,7 +826,7 @@ yaml_type_str(enum yaml_type type)
 	return NULL;
 }
 
-static const char *
+const char *
 style_keyword_str(enum style_keyword keyword)
 {
 	switch (keyword) {
