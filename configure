@@ -231,6 +231,7 @@ exec 1>config.h
 
 # Headers needed for function prototypes.
 {
+	:
 } | sort | uniq | headers
 
 [ "$HAVE_ERRC" -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
