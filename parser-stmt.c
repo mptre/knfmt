@@ -526,7 +526,7 @@ parser_stmt_label(struct parser *pr, struct doc *dc)
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
+	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if(lx, TOKEN_COLON, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
