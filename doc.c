@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "alloc.h"
+#include "arithmetic.h"
 #include "buffer.h"
 #include "cdefs.h"
 #include "consistency.h"
@@ -787,15 +788,10 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 		if (!st->st_newline)
 			st->st_indent.cur = st->st_col;
 	} else {
-		int sign = dc->dc_int < 0 ? -1 : 1;
-		unsigned int indent = sign < 0 ? (unsigned int)-dc->dc_int :
-		    (unsigned int)dc->dc_int;
-
-		if (sign > 0)
-			st->st_indent.cur += indent;
-		else if (indent < st->st_indent.cur)
-			st->st_indent.cur -= indent;
-		else
+		if (dc->dc_int > 0)
+			st->st_indent.cur += (unsigned int)dc->dc_int;
+		else if (u32_sub_overflow(st->st_indent.cur,
+		    (unsigned int)-dc->dc_int, &st->st_indent.cur))
 			st->st_indent.cur = 0;
 	}
 	doc_exec1(dc->dc_doc, st);
