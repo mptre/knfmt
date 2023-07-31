@@ -985,13 +985,6 @@ lexer_peek_until_comma(struct lexer *lx, const struct token *stop,
 	return lexer_peek_until_not_nested(lx, TOKEN_COMMA, stop, tk);
 }
 
-int
-lexer_peek_until_semi(struct lexer *lx, const struct token *stop,
-    struct token **tk)
-{
-	return lexer_peek_until_not_nested(lx, TOKEN_SEMI, stop, tk);
-}
-
 /*
  * Consume token(s) until the given token type is encountered. Returns non-zero
  * if such token is found.

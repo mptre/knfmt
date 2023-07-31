@@ -43,12 +43,12 @@ parser_stmt_expr(struct parser *pr, struct doc *dc)
 	struct token *nx, *semi;
 	int error;
 
-	if (parser_type_peek(pr, NULL, 0))
+	if (parser_type_peek(pr, NULL, 0) || !parser_expr_peek(pr, &nx))
 		return parser_none(pr);
-	if (!lexer_peek_until_semi(lx, NULL, &semi))
+	nx = token_next(nx);
+	if (nx->tk_type != TOKEN_SEMI)
 		return parser_none(pr);
-	if (!parser_expr_peek(pr, &nx) || token_next(nx) != semi)
-		return parser_none(pr);
+	semi = nx;
 
 	/*
 	 * Do not confuse a loop construct hidden behind cpp followed by a sole
