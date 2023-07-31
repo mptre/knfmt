@@ -67,6 +67,9 @@ static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
 static void	lexer_reposition_tokens(struct lexer *, struct token *);
 
+static int	lexer_peek_until_not_nested(struct lexer *, int,
+    const struct token *, struct token **);
+
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (trace((lx)->lx_op, 'l') >= 2)				\
 		tracef('L', __func__, (fmt), __VA_ARGS__);		\
@@ -946,8 +949,8 @@ lexer_peek_until(struct lexer *lx, int type, struct token **tk)
  * Assuming tk is not NULL and the stop is reached, tk will point to the stop
  * token.
  */
-int
-lexer_peek_until_freestanding(struct lexer *lx, int type,
+static int
+lexer_peek_until_not_nested(struct lexer *lx, int type,
     const struct token *stop, struct token **tk)
 {
 	struct lexer_state s;
@@ -979,7 +982,14 @@ int
 lexer_peek_until_comma(struct lexer *lx, const struct token *stop,
     struct token **tk)
 {
-	return lexer_peek_until_freestanding(lx, TOKEN_COMMA, stop, tk);
+	return lexer_peek_until_not_nested(lx, TOKEN_COMMA, stop, tk);
+}
+
+int
+lexer_peek_until_semi(struct lexer *lx, const struct token *stop,
+    struct token **tk)
+{
+	return lexer_peek_until_not_nested(lx, TOKEN_SEMI, stop, tk);
 }
 
 /*

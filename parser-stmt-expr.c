@@ -45,7 +45,7 @@ parser_stmt_expr(struct parser *pr, struct doc *dc)
 
 	if (parser_type_peek(pr, NULL, 0))
 		return parser_none(pr);
-	if (!lexer_peek_until_freestanding(lx, TOKEN_SEMI, NULL, &semi))
+	if (!lexer_peek_until_semi(lx, NULL, &semi))
 		return parser_none(pr);
 	if (!parser_expr_peek(pr, &nx) || token_next(nx) != semi)
 		return parser_none(pr);
