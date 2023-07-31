@@ -784,20 +784,8 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 			    ~DOC_INDENT_NEWLINE);
 		}
 	} else if (IS_DOC_INDENT_WIDTH(dc->dc_int)) {
-		if (!st->st_newline) {
-			unsigned int indent;
-
-			if (st->st_col >= st->st_indent.cur) {
-				indent = st->st_col - st->st_indent.cur;
-				st->st_indent.cur += indent;
-			} else {
-				indent = st->st_indent.cur - st->st_col;
-				if (indent < st->st_indent.cur)
-					st->st_indent.cur -= indent;
-				else
-					st->st_indent.cur = 0;
-			}
-		}
+		if (!st->st_newline)
+			st->st_indent.cur = st->st_col;
 	} else {
 		int sign = dc->dc_int < 0 ? -1 : 1;
 		unsigned int indent = sign < 0 ? (unsigned int)-dc->dc_int :
