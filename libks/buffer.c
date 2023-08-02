@@ -211,7 +211,7 @@ buffer_cmp(const struct buffer *a, const struct buffer *b)
 {
 	if (a->bf_len != b->bf_len)
 		return 1;
-	if (a->bf_len == 0 && b->bf_len == 0)
+	if (a->bf_len == 0)
 		return 0;
 	return memcmp(a->bf_ptr, b->bf_ptr, a->bf_len);
 }
