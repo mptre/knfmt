@@ -1003,7 +1003,6 @@ lexer_until(struct lexer *lx, int type, struct token **tk)
 			return 1;
 		}
 	}
-	return 0;
 }
 
 const struct diffchunk *

@@ -212,7 +212,6 @@ matchpath(const char *str, char *path, size_t pathsiz)
 
 err:
 	errx(1, "%.*s: path too long", (int)len, buf);
-	return 0;
 }
 
 static int
