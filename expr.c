@@ -7,10 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/buffer.h"
+#include "libks/consistency.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "cdefs.h"
-#include "consistency.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -18,7 +20,6 @@
 #include "simple.h"
 #include "style.h"
 #include "token.h"
-#include "vector.h"
 
 enum expr_mode {
 	EXPR_MODE_EXEC,

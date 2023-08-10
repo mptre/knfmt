@@ -5,8 +5,9 @@
 #include <err.h>
 #include <stdlib.h>
 
+#include "libks/buffer.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "cdefs.h"
 #include "doc.h"
 #include "error.h"

@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "arithmetic.h"
+#include "libks/arithmetic.h"
 
 #include <limits.h>
 

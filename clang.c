@@ -9,8 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/buffer.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "comment.h"
 #include "cpp-align.h"
 #include "cpp-include.h"
@@ -18,7 +20,6 @@
 #include "options.h"
 #include "token.h"
 #include "util.h"
-#include "vector.h"
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>

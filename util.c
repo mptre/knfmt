@@ -13,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "buffer.h"
+#include "libks/buffer.h"
 
 void
 tracef(unsigned char ident, const char *fun, const char *fmt, ...)

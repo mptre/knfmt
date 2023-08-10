@@ -7,8 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/buffer.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "lexer.h"
 #include "util.h"
 

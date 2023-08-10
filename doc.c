@@ -12,17 +12,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/arithmetic.h"
+#include "libks/buffer.h"
+#include "libks/consistency.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "arithmetic.h"
-#include "buffer.h"
 #include "cdefs.h"
-#include "consistency.h"
 #include "diff.h"
 #include "lexer.h"
 #include "style.h"
 #include "token.h"
 #include "util.h"
-#include "vector.h"
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>

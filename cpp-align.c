@@ -6,7 +6,8 @@
 #include <err.h>
 #include <string.h>
 
-#include "buffer.h"
+#include "libks/buffer.h"
+
 #include "doc.h"
 #include "options.h"
 #include "ruler.h"

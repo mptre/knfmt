@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "buffer.h"
+#include "libks/buffer.h"
 
 #include <errno.h>
 #include <fcntl.h>

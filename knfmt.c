@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "buffer.h"
+#include "libks/buffer.h"
+#include "libks/vector.h"
+
 #include "clang.h"
 #include "diff.h"
 #include "error.h"
@@ -24,7 +26,6 @@
 #include "style.h"
 #include "token.h"
 #include "util.h"
-#include "vector.h"
 
 static void	usage(void) __attribute__((__noreturn__));
 

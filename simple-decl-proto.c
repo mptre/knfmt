@@ -6,10 +6,11 @@
 #include <err.h>
 #include <stdlib.h>
 
+#include "libks/vector.h"
+
 #include "alloc.h"
 #include "lexer.h"
 #include "token.h"
-#include "vector.h"
 
 struct simple_decl_proto {
 	VECTOR(struct argument)	 arguments;

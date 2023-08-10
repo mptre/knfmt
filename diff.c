@@ -14,12 +14,13 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/buffer.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "file.h"
 #include "options.h"
 #include "util.h"
-#include "vector.h"
 
 struct reader {
 	char	*buf;

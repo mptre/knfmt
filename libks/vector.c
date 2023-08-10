@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "vector.h"
+#include "libks/vector.h"
 
 #include <errno.h>
 #include <limits.h>

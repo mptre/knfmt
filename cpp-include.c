@@ -7,12 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/vector.h"
+
 #include "alloc.h"
 #include "lexer.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
-#include "vector.h"
 
 struct cpp_include {
 	VECTOR(struct include)	 includes;

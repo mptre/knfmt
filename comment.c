@@ -6,7 +6,8 @@
 #include <err.h>
 #include <string.h>
 
-#include "buffer.h"
+#include "libks/buffer.h"
+
 #include "style.h"
 #include "token.h"
 #include "util.h"

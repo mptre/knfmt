@@ -8,13 +8,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/buffer.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
 #include "util.h"
-#include "vector.h"
 
 struct token_range {
 	struct token	*tr_beg;

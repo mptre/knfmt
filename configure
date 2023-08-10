@@ -263,7 +263,7 @@ exec 1>config.mk
 cat <<EOF
 CC=		$(echo $CC)
 CFLAGS=		$(rmdup $CFLAGS)
-CPPFLAGS=	$(rmdup $CPPFLAGS -I\${.CURDIR} -I\${.CURDIR}/libks)
+CPPFLAGS=	$(rmdup $CPPFLAGS -I\${.CURDIR})
 DEBUG=		$(rmdup $DEBUG)
 LDFLAGS=	$(rmdup $LDFLAGS)
 

@@ -7,12 +7,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "libks/buffer.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "diff.h"
 #include "error.h"
 #include "options.h"
-#include "vector.h"
 
 struct file *
 files_alloc(struct files *files, const char *path, const struct options *op)

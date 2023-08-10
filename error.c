@@ -6,8 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "libks/buffer.h"
+
 #include "alloc.h"
-#include "buffer.h"
 
 struct error {
 	struct buffer	*er_bf;

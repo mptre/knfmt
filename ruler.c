@@ -7,10 +7,11 @@
 #include <limits.h>	/* UINT_MAX */
 #include <string.h>
 
+#include "libks/vector.h"
+
 #include "doc.h"
 #include "token.h"
 #include "util.h"
-#include "vector.h"
 
 struct ruler_column {
 	VECTOR(struct ruler_datum)	rc_datums;

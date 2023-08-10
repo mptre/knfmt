@@ -7,14 +7,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/buffer.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "cdefs.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
-#include "vector.h"
 
 struct stmt {
 	struct doc	*st_root;

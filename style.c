@@ -11,16 +11,17 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arithmetic.h"
+#include "libks/buffer.h"
+#include "libks/vector.h"
+
 #include "alloc.h"
-#include "arithmetic.h"
-#include "buffer.h"
 #include "cdefs.h"
 #include "error.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
 #include "util.h"
-#include "vector.h"
 
 /*
  * Return values for yaml parser routines. Only one of the following may be

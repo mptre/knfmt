@@ -6,8 +6,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/buffer.h"
+
 #include "alloc.h"
-#include "buffer.h"
 #include "clang.h"
 #include "doc.h"
 #include "error.h"
