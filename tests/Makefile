@@ -507,6 +507,7 @@ TESTS+=	simple-044.c
 TESTS+=	simple-045.c
 TESTS+=	simple-cpp-sort-includes-001.c
 TESTS+=	simple-cpp-sort-includes-002.c
+TESTS+=	simple-cpp-sort-includes-003.c
 TESTS+=	simple-decl-proto-001.c
 TESTS+=	simple-expr-parens-001.c
 TESTS+=	simple-expr-parens-002.c
