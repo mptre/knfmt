@@ -66,8 +66,7 @@ enum expr_pc {
 	OP(EXPR_SIZEOF)							\
 	OP(EXPR_CONCAT)							\
 	OP(EXPR_LITERAL)						\
-	OP(EXPR_RECOVER)						\
-	OP(EXPR_ASM)
+	OP(EXPR_RECOVER)
 
 enum expr_type {
 #define OP(type) type,
@@ -158,8 +157,6 @@ static struct doc	*expr_doc_concat(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
-    struct doc *);
-static struct doc	*expr_doc_asm(struct expr *, struct expr_state *,
     struct doc *);
 
 #define expr_doc_align(a, b, c, d) \
@@ -536,13 +533,6 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 
 		ex = expr_alloc(EXPR_PARENS, es);
 		ex->ex_lhs = expr_exec1(es, PC0);
-	} else if (es->es_flags & EXPR_EXEC_ASM) {
-		ex = expr_alloc(EXPR_ASM, es);
-		ex->ex_lhs = lhs;
-		/* Nested parenthesis must be handled as usual. */
-		es->es_flags &= ~EXPR_EXEC_ASM;
-		ex->ex_rhs = expr_exec1(es, PC0);
-		es->es_flags |= EXPR_EXEC_ASM;
 	} else {
 		ex = expr_alloc(EXPR_CALL, es);
 		ex->ex_lhs = lhs;
@@ -790,10 +780,6 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	case EXPR_RECOVER:
 		concat = expr_doc_recover(ex, es, concat);
-		break;
-
-	case EXPR_ASM:
-		concat = expr_doc_asm(ex, es, concat);
 		break;
 	}
 
@@ -1147,23 +1133,6 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 	 * document.
 	 */
 	ex->ex_dc = NULL;
-	return dc;
-}
-
-static struct doc *
-expr_doc_asm(struct expr *ex, struct expr_state *es, struct doc *dc)
-{
-	struct token *lparen = ex->ex_tokens[0];
-	struct token *rparen = ex->ex_tokens[1];
-
-	expr_doc(ex->ex_lhs, es, dc);
-	doc_alloc(DOC_LINE, dc);
-	if (lparen != NULL)
-		doc_token(lparen, dc);
-	if (ex->ex_rhs != NULL)
-		expr_doc(ex->ex_rhs, es, dc);
-	if (rparen != NULL)
-		doc_token(rparen, dc);
 	return dc;
 }
 

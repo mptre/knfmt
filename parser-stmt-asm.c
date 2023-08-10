@@ -10,6 +10,59 @@
 #include "style.h"
 #include "token.h"
 
+static int
+parser_stmt_asm_operand(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct doc *concat, *expr;
+	struct token *comma, *pv, *tk;
+	int error;
+
+	if (!lexer_back(lx, &pv) ||
+	    (!lexer_peek_if(lx, TOKEN_LSQUARE, NULL) &&
+	     !lexer_peek_if(lx, TOKEN_STRING, NULL)))
+		return parser_none(pr);
+
+	/* Favor break before the operand. */
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	doc_alloc(pv->tk_type == TOKEN_COLON ? DOC_LINE : DOC_SOFTLINE, concat);
+	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
+
+	/* symbolic name */
+	if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
+		doc_token(tk, concat);
+		if (lexer_expect(lx, TOKEN_IDENT, &tk))
+			doc_token(tk, concat);
+		if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
+			doc_token(tk, concat);
+		doc_alloc(DOC_LINE, concat);
+	}
+
+	/* constraint */
+	if (lexer_expect(lx, TOKEN_STRING, &tk)) {
+		doc_token(tk, concat);
+		doc_alloc(DOC_LINE, concat);
+	}
+
+	/* cexpression */
+	if (lexer_expect(lx, TOKEN_LPAREN, &tk)) {
+		doc_token(tk, concat);
+		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+		    .dc	= concat,
+		});
+		if (error & HALT)
+			return parser_fail(pr);
+		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
+			doc_token(tk, expr);
+		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
+			doc_token(comma, expr);
+			doc_alloc(DOC_LINE, expr);
+		}
+	}
+
+	return parser_good(pr);
+}
+
 int
 parser_asm(struct parser *pr, struct doc *dc)
 {
@@ -30,8 +83,8 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	struct token *colon = NULL;
 	struct token *qualifier = NULL;
 	struct token *assembly, *rparen, *tk;
-	int nops = 0;
-	int error, i;
+	int ninputs = 0;
+	int error;
 
 	if (!lexer_peek_if(lx, TOKEN_ASSEMBLY, NULL))
 		return parser_none(pr);
@@ -68,38 +121,23 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	if (error & HALT)
 		return parser_fail(pr);
 
-	/* output and input operands */
-	for (i = 0; i < 2; i++) {
-		struct token *lsquare;
-
-		if (!lexer_if(lx, TOKEN_COLON, &colon))
-			break;
-
+	/* input operands */
+	if (lexer_if(lx, TOKEN_COLON, &colon)) {
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
-		if (i == 0 || nops > 0)
+		doc_alloc(DOC_LINE, concat);
+		doc_token(colon, concat);
+		while (parser_stmt_asm_operand(pr, concat) & GOOD)
+			ninputs++;
+	}
+
+	/* output operands */
+	if (lexer_if(lx, TOKEN_COLON, &colon)) {
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
+		if (ninputs > 0)
 			doc_alloc(DOC_LINE, concat);
 		doc_token(colon, concat);
-		if (!lexer_peek_if(lx, TOKEN_COLON, NULL))
-			doc_alloc(DOC_LINE, concat);
-
-		if (lexer_if(lx, TOKEN_LSQUARE, &lsquare)) {
-			struct token *rsquare, *symbolic;
-
-			doc_token(lsquare, concat);
-			if (lexer_expect(lx, TOKEN_IDENT, &symbolic))
-				doc_token(symbolic, concat);
-			if (lexer_expect(lx, TOKEN_RSQUARE, &rsquare))
-				doc_token(rsquare, concat);
-			doc_alloc(DOC_LINE, concat);
-		}
-
-		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
-		    .dc		= concat,
-		    .flags	= EXPR_EXEC_ASM,
-		});
-		if (error & FAIL)
-			return parser_fail(pr);
-		nops = error & GOOD;
+		while (parser_stmt_asm_operand(pr, concat) & GOOD)
+			continue;
 	}
 
 	/* clobbers */
