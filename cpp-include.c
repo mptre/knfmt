@@ -157,7 +157,8 @@ cpp_include_exec(struct cpp_include *ci)
 			nquotes++;
 		if (memchr(path, '/', len) != NULL)
 			nslashes++;
-		if ((nbrackets > 0 && nquotes > 0) || nslashes > 0)
+		if ((nbrackets > 0 && nquotes > 0) ||
+		    (nbrackets > 0 && nslashes > 0))
 			return;
 	}
 
