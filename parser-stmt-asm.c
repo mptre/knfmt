@@ -16,7 +16,6 @@ parser_stmt_asm_operand(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat, *expr;
 	struct token *comma, *pv, *tk;
-	int error;
 
 	if (!lexer_back(lx, &pv) ||
 	    (!lexer_peek_if(lx, TOKEN_LSQUARE, NULL) &&
@@ -46,6 +45,8 @@ parser_stmt_asm_operand(struct parser *pr, struct doc *dc)
 
 	/* cexpression */
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk)) {
+		int error;
+
 		doc_token(tk, concat);
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc	= concat,
