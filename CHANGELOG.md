@@ -18,6 +18,14 @@
   (58911b5)
   (Anton Lindqvist)
 
+- In simple mode, sort more blocks of includes.
+  (911f0c7)
+  (Anton Lindqvist)
+
+- Indent long lists of inline assembly operands.
+  (92d38a4)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - In simple mode, do not remove braces around semicolon statement as such code
