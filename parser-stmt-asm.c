@@ -126,6 +126,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
 		doc_alloc(DOC_LINE, concat);
 		doc_token(colon, concat);
+		concat = doc_alloc_indent(2, concat);
 		while (parser_stmt_asm_operand(pr, concat) & GOOD)
 			ninputs++;
 	}
@@ -136,6 +137,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		if (ninputs > 0)
 			doc_alloc(DOC_LINE, concat);
 		doc_token(colon, concat);
+		concat = doc_alloc_indent(2, concat);
 		while (parser_stmt_asm_operand(pr, concat) & GOOD)
 			continue;
 	}
