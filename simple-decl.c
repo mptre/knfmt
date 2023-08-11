@@ -560,6 +560,7 @@ classify(const struct token_range *tr, unsigned int *slot)
 	unsigned int nstars = 0;
 	unsigned int nsquares = 0;
 	int error = 0;
+	int before_assign = 1;
 
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
 		switch (tk->tk_type) {
@@ -571,13 +572,24 @@ classify(const struct token_range *tr, unsigned int *slot)
 			break;
 		case TOKEN_LSQUARE:
 			nsquares++;
-			FALLTHROUGH;
+			error = 1;
+			break;
+		case TOKEN_EQUAL:
+			/*
+			 * Token(s) part of the assignment must not influence
+			 * the classification.
+			 */
+			before_assign = 0;
+			error = 1;
+			break;
 		default:
 			error = 1;
 		}
 
 		if (!token_is_moveable(tk))
 			error = 1;
+		if (!before_assign)
+			break;
 	}
 	if (nsquares > 0) {
 		/*
