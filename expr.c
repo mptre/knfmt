@@ -974,15 +974,20 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.call_args);
 	}
-	if (!fold_rparens) {
-		/*
-		 * Must break before closing parens, indentation for the outer
-		 * scope is expected.
-		 */
-		dc = doc_dedent(es->es_ea.indent, dc);
+	if (rparen != NULL) {
+		if (fold_rparens) {
+			doc_token(rparen, dc);
+		} else {
+			struct doc *dedent;
+
+			/*
+			 * Must break before closing parens, indentation for the
+			 * outer scope is expected.
+			 */
+			dedent = doc_dedent(es->es_ea.indent, dc);
+			doc_token(rparen, dedent);
+		}
 	}
-	if (rparen != NULL)
-		doc_token(rparen, dc);
 
 	es->es_ncalls--;
 
