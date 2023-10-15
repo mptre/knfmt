@@ -277,7 +277,7 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 {
 	struct token *t;
 
-	t = token_alloc(tk);
+	t = lx->lx_callbacks.alloc(tk);
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
@@ -645,7 +645,7 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 {
 	struct token *tk;
 
-	tk = token_alloc(src);
+	tk = lx->lx_callbacks.alloc(src);
 	token_list_copy(&src->tk_prefixes, &tk->tk_prefixes);
 	token_list_copy(&src->tk_suffixes, &tk->tk_suffixes);
 	token_position_after(after, tk);
@@ -654,7 +654,7 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 }
 
 struct token *
-lexer_insert_before(struct lexer *UNUSED(lx), struct token *before, int type,
+lexer_insert_before(struct lexer *lx, struct token *before, int type,
     const char *str)
 {
 	const struct token cp = {
@@ -667,7 +667,7 @@ lexer_insert_before(struct lexer *UNUSED(lx), struct token *before, int type,
 	};
 	struct token *tk;
 
-	tk = token_alloc(&cp);
+	tk = lx->lx_callbacks.alloc(&cp);
 	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
 	return tk;
 }
@@ -684,7 +684,7 @@ lexer_insert_after(struct lexer *lx, struct token *after, int type,
 	};
 	struct token *tk;
 
-	tk = token_alloc(&cp);
+	tk = lx->lx_callbacks.alloc(&cp);
 	token_position_after(after, tk);
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
@@ -1286,7 +1286,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	off = src->tk_off;
 	len = (dst->tk_off + dst->tk_len) - off;
 
-	prefix = token_alloc(&(struct token){
+	prefix = lx->lx_callbacks.alloc(&(struct token){
 	    .tk_type	= TOKEN_CPP,
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});

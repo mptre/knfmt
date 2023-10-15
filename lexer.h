@@ -25,6 +25,12 @@ struct lexer_arg {
 		struct token	*(*read)(struct lexer *, void *);
 
 		/*
+		 * Allocate a new token which is expected to be initialized
+		 * using the given token.
+		 */
+		struct token	*(*alloc)(const struct token *);
+
+		/*
 		 * Serialize routine used to turn the given token into something
 		 * human readable. The returned string must be heap allocated
 		 * and is managed by the lexer.

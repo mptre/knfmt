@@ -79,6 +79,7 @@ static void	style_dump(const struct style *);
 
 static struct token			*yaml_read(struct lexer *, void *);
 static struct token			*yaml_read_integer(struct lexer *);
+static struct token			*yaml_alloc(const struct token *);
 static char				*yaml_serialize(const struct token *);
 static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
@@ -381,6 +382,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .op		= st->st_op,
 	    .callbacks	= {
 		.read		= yaml_read,
+		.alloc		= yaml_alloc,
 		.serialize	= yaml_serialize,
 		.arg		= st,
 	    },
@@ -640,6 +642,16 @@ yaml_read_integer(struct lexer *lx)
 		lexer_error(lx, tk, __func__, __LINE__,
 		    "integer %s too large", lexer_serialize(lx, tk));
 	}
+	return tk;
+}
+
+static struct token *
+yaml_alloc(const struct token *def)
+{
+	struct token *tk;
+
+	tk = ecalloc(1, sizeof(*tk));
+	token_init(tk, def);
 	return tk;
 }
 

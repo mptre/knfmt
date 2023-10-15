@@ -191,6 +191,7 @@ struct token {
 };
 
 struct token	*token_alloc(const struct token *);
+void		 token_init(struct token *, const struct token *);
 void		 token_ref(struct token *);
 void		 token_rele(struct token *);
 void		 token_add_optline(struct token *);

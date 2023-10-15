@@ -194,6 +194,7 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 	    .op		= op,
 	    .callbacks	= {
 		.read		= clang_read,
+		.alloc		= token_alloc,
 		.serialize	= token_serialize,
 		.arg		= cl,
 	    },
