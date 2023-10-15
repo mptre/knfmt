@@ -406,10 +406,8 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 		/* Never break before the assignment operator. */
 		if (!is_simple_enabled(pr->pr_si, SIMPLE_DECL) &&
 		    (pv = token_prev(equal)) != NULL &&
-		    token_has_line(pv, 1)) {
-			parser_token_trim_after(pr, pv);
-			token_add_optline(equal);
-		}
+		    token_has_line(pv, 1))
+			token_move_suffixes(pv, equal);
 
 		/*
 		 * Honor hard line after assignment operator, must be emitted

@@ -73,20 +73,6 @@ token_rele(struct token *tk)
 	free(tk);
 }
 
-void
-token_add_optline(struct token *tk)
-{
-	struct token *suffix;
-
-	suffix = token_alloc(&(struct token){
-	    .tk_type	= TOKEN_SPACE,
-	    .tk_str	= "\n",
-	    .tk_len	= 1,
-	});
-	suffix->tk_flags |= TOKEN_FLAG_OPTLINE;
-	TAILQ_INSERT_TAIL(&tk->tk_suffixes, suffix, tk_entry);
-}
-
 /*
  * Remove all space suffixes from the given token. Returns the number of removed
  * suffixes.

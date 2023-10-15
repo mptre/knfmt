@@ -1293,12 +1293,11 @@ token_move_next_line(struct token *tk)
 {
 	struct token *nx, *pv;
 
-	if (token_trim(tk) == 0)
+	if (!token_has_line(tk, 1))
 		return;
 
 	pv = token_prev(tk);
 	token_move_suffixes(tk, pv);
-	token_add_optline(pv);
 
 	nx = token_next(tk);
 	token_move_prefixes(nx, tk);
@@ -1315,10 +1314,8 @@ token_move_prev_line(struct token *tk)
 
 	pv = token_prev(tk);
 	lno = tk->tk_lno - pv->tk_lno;
-	if (token_trim(pv) > 0 && lno == 1) {
+	if (token_has_line(pv, 1) && lno == 1)
 		token_move_suffixes(pv, tk);
-		token_add_optline(tk);
-	}
 }
 
 static const char *
