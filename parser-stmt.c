@@ -269,7 +269,7 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 	struct doc *loop;
 	struct token *semi = NULL;
 	struct token *tk;
-	unsigned int expr_flags, w;
+	unsigned int w;
 	int error;
 
 	if (!lexer_if(lx, TOKEN_FOR, &tk))
@@ -306,16 +306,11 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 	space = lexer_back(lx, &semi) && !token_has_line(semi, 1) ?
 	    doc_literal(" ", expr) : NULL;
 
-	/*
-	 * If the expression does not fit, break after the semicolon if the
-	 * previous expression was not empty.
-	 */
-	expr_flags = expr != loop ? EXPR_EXEC_SOFTLINE : 0;
-	/* Let the semicolon hang of the expression unless empty. */
+	/* If the expression does not fit, break after the semicolon. */
 	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 	    .dc		= loop,
 	    .indent	= w,
-	    .flags	= expr_flags,
+	    .flags	= EXPR_EXEC_SOFTLINE,
 	});
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
@@ -332,16 +327,11 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 			space = doc_literal(" ", expr);
 	}
 
-	/*
-	 * If the expression does not fit, break after the semicolon if
-	 * the previous expression was not empty.
-	 */
-	expr_flags = expr != loop ? EXPR_EXEC_SOFTLINE : 0;
-	/* Let the semicolon hang of the expression unless empty. */
+	/* If the expression does not fit, break after the semicolon. */
 	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 	    .dc		= loop,
 	    .indent	= w,
-	    .flags	= expr_flags,
+	    .flags	= EXPR_EXEC_SOFTLINE,
 	});
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);
