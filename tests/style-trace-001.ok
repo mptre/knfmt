@@ -31,6 +31,7 @@
 [s] AlignOperands: Align
 [s] AlwaysBreakAfterReturnType: All
 [s] BreakBeforeBraces: Linux
+[s] ClangFormat: True
 [s] ColumnLimit: 100
 [s] IndentWidth: 8
 [s] IncludeCategories:

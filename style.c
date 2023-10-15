@@ -196,6 +196,7 @@ style_init(void)
 		{ E(Before) },
 		{ E(BlockIndent) },
 		{ E(Both) },
+		{ E(ClangFormat) },
 		{ E(Custom) },
 		{ E(DontAlign) },
 		{ E(ForContinuationAndIndentation) },
@@ -461,7 +462,7 @@ style_dump(const struct style *st)
 		const struct style_option *so;
 		const char *key;
 
-		if (!st->st_options[i].isset || i == ClangFormat)
+		if (!st->st_options[i].isset)
 			continue;
 
 		key = style_keyword_str(i);
