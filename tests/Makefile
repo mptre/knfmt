@@ -734,6 +734,7 @@ TESTS+=	enoent.sh
 TESTS+=	fd.sh
 TESTS+=	git.sh
 TESTS+=	simple.sh
+TESTS+=	stdin.sh
 
 .SUFFIXES: .c .cfake .h .hfake .sh .shfake
 

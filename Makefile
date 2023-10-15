@@ -265,6 +265,7 @@ SHLINT+=	tests/fd.sh
 SHLINT+=	tests/git.sh
 SHLINT+=	tests/knfmt.sh
 SHLINT+=	tests/simple.sh
+SHLINT+=	tests/stdin.sh
 
 SHELLCHECKFLAGS+=	-f gcc
 SHELLCHECKFLAGS+=	-s ksh

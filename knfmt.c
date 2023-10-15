@@ -86,7 +86,8 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
-	if (op.op_flags.diffparse && argc > 0)
+	if ((op.op_flags.diffparse && argc > 0) ||
+	    (op.op_flags.inplace && argc == 0))
 		usage();
 
 	if (op.op_flags.diff) {
