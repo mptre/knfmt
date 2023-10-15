@@ -439,10 +439,10 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 
 	if (style(pr->pr_st, ClangFormat) == True) {
 		/*
-		* Take note of the width before emitting the left parenthesis
-		* as it could be followed by comments, which must not affect
-		* alignment.
-		*/
+		 * Take note of the width before emitting the left parenthesis
+		 * as it could be followed by comments, which must not affect
+		 * alignment.
+		 */
 		w = parser_width(pr, dc) + 1;
 	}
 
