@@ -343,7 +343,8 @@ ruler_column_length(const struct ruler *rl, struct ruler_column *rc,
 	} else if (rl->rl_flags & RULER_ALIGN_SENSE) {
 		maxlen = ruler_column_alignment(rc);
 		if (maxlen == 0) {
-			if (rc->rc_ntabs > 0)
+			if (rc->rc_ntabs > 0 &&
+			    rc->rc_ntabs >= VECTOR_LENGTH(rc->rc_datums) / 4)
 				goto tabs;
 			return 1;
 		}
