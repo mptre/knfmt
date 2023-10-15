@@ -163,6 +163,36 @@ out:
 	return peek;
 }
 
+static const struct token *
+find_align_token(const struct parser_type *type, unsigned int *nspaces)
+{
+	const struct token *align, *nx;
+	unsigned int nstars = 0;
+
+	/*
+	 * Find the first non pointer token starting from the end, this is where
+	 * the ruler alignment must be performed.
+	 */
+	align = type->align != NULL ? type->align : type->end;
+	while (align->tk_type == TOKEN_STAR) {
+		nstars++;
+		if (align == type->beg)
+			break;
+		align = token_prev(align);
+	}
+
+	/*
+	 * No alignment wanted if the first non-pointer token is followed by a
+	 * semi.
+	 */
+	nx = token_next(align);
+	if (nx != NULL && nx->tk_type == TOKEN_SEMI)
+		return NULL;
+
+	*nspaces = nstars;
+	return align;
+}
+
 int
 parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
     struct ruler *rl)
@@ -172,36 +202,8 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 	const struct token *end = type->end;
 	unsigned int nspaces = 0;
 
-	if (rl != NULL) {
-		/*
-		 * Find the first non pointer token starting from the end, this
-		 * is where the ruler alignment must be performed.
-		 */
-		align = type->align != NULL ? type->align : end;
-		for (;;) {
-			if (align->tk_type != TOKEN_STAR)
-				break;
-
-			nspaces++;
-			if (align == type->beg)
-				break;
-			align = token_prev(align);
-			if (align == NULL)
-				break;
-		}
-
-		/*
-		 * No alignment wanted if the first non-pointer token is
-		 * followed by a semi.
-		 */
-		if (align != NULL) {
-			const struct token *nx;
-
-			nx = token_next(align);
-			if (nx != NULL && nx->tk_type == TOKEN_SEMI)
-				align = NULL;
-		}
-	}
+	if (rl != NULL)
+		align = find_align_token(type, &nspaces);
 
 	for (;;) {
 		struct doc *concat;
