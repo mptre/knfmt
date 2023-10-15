@@ -12,11 +12,11 @@ main(void)
         if (0) {
                 if (aaa->bbbbbbbbbbbbbbbbbbbbbb
                     && ccccccccccccccccccccccccccc(
-                        aaa, dddddddddddddddddddddddddddddddddddddddddd))
+                            aaa, dddddddddddddddddddddddddddddddddddddddddd))
                         return 0;
 
                 if (ccccccccccccccccccccccccccc(
-                    aaa, ddddddddddddddddddddddddddddddddddddddddd))
+                        aaa, ddddddddddddddddddddddddddddddddddddddddd))
                         return 1;
         }
 }

@@ -840,7 +840,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		int dospace;
 
 		if (doalign)
-			dc = expr_doc_align(ex, es, dc, 0);
+			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
 
 		token_move_next_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
@@ -857,6 +857,9 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 	} else {
 		struct doc *lhs;
 		int dospace;
+
+		if (doalign)
+			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
 
 		token_move_prev_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
