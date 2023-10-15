@@ -1,0 +1,1 @@
+void    logv(enum log_func, const char *, int, const char *, va_list);

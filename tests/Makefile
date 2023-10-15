@@ -494,6 +494,7 @@ TESTS+=	simple-decl-017.c
 TESTS+=	simple-decl-018.c
 TESTS+=	simple-decl-019.c
 TESTS+=	simple-decl-proto-001.c
+TESTS+=	simple-decl-proto-002.c
 TESTS+=	simple-expr-parens-001.c
 TESTS+=	simple-expr-parens-002.c
 TESTS+=	simple-expr-sizeof-001.c
