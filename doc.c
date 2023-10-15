@@ -106,7 +106,7 @@ struct doc_state {
 	struct {
 		unsigned int	nfits;		/* # doc_fits() invocations */
 		unsigned int	nlines;		/* # emitted lines */
-		unsigned int	nexceeds;	/* # lines exceeding column limit */
+		unsigned int	nexceeds;	/* # characters exceeding column limit */
 	} st_stats;
 
 	VECTOR(const struct doc *)	 st_walk;	/* stack used by doc_walk() */
@@ -1683,10 +1683,15 @@ static unsigned int
 doc_column(struct doc_state *st, const char *str, size_t len)
 {
 	unsigned int oldcol = st->st_col;
+	unsigned int limit = style(st->st_st, ColumnLimit);
 
 	st->st_col = strwidth(str, len, st->st_col);
-	if (st->st_col > style(st->st_st, ColumnLimit))
-		st->st_stats.nexceeds++;
+	if (st->st_col > limit) {
+		if (oldcol < limit)
+			st->st_stats.nexceeds += st->st_col - limit;
+		else
+			st->st_stats.nexceeds += st->st_col - oldcol;
+	}
 	/* Cope with new line(s). */
 	return st->st_col > oldcol ? st->st_col - oldcol : 0;
 }
