@@ -448,6 +448,22 @@ clang_read_prefix(struct clang *cl, struct lexer *lx,
 	return NULL;
 }
 
+static int
+peek_c99_comment(struct lexer *lx)
+{
+	struct lexer_state st;
+	int peek = 0;
+	unsigned char ch;
+
+	st = lexer_get_state(lx);
+	lexer_eat_spaces(lx, NULL);
+	if (lexer_getc(lx, &ch) == 0 && ch == '/' &&
+	    lexer_getc(lx, &ch) == 0 && ch == '/')
+		peek = 1;
+	lexer_set_state(lx, &st);
+	return peek;
+}
+
 static struct token *
 clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 {
@@ -458,6 +474,7 @@ clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 	unsigned char ch;
 
 	oldst = st = lexer_get_state(lx);
+again:
 	if (block)
 		lexer_eat_lines_and_spaces(lx, &st);
 	else
@@ -478,6 +495,8 @@ clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 			if (lexer_getc(lx, &ch))
 				break;
 			if (ch == '\n') {
+				if (peek_c99_comment(lx))
+					goto again;
 				lexer_ungetc(lx);
 				break;
 			}
