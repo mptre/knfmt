@@ -193,12 +193,12 @@ token_position_after(struct token *after, struct token *tk)
 int
 token_cmp(const struct token *a, const struct token *b)
 {
-	if (a->tk_lno < b->tk_lno)
-		return -1;
-	if (a->tk_lno > b->tk_lno)
-		return 1;
+	int gt, le;
+
+	le = a->tk_lno < b->tk_lno;
+	gt = a->tk_lno > b->tk_lno;
 	/* Intentionally not comparing the column. */
-	return 0;
+	return (le * -1) + (gt * 1);
 }
 
 int
