@@ -1070,7 +1070,6 @@ lexer_dump(struct lexer *lx)
 	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
 		struct token *prefix, *suffix;
 		const char *str;
-		int nfixes = 0;
 
 		i++;
 
@@ -1089,7 +1088,6 @@ lexer_dump(struct lexer *lx)
 				fprintf(stderr, ", nx %s", str);
 			}
 			fprintf(stderr, "\n");
-			nfixes++;
 		}
 
 		str = lexer_serialize(lx, tk);
@@ -1098,11 +1096,7 @@ lexer_dump(struct lexer *lx)
 		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
 			str = lexer_serialize(lx, suffix);
 			fprintf(stderr, "[L] %-6u   suffix %s\n", i, str);
-			nfixes++;
 		}
-
-		if (nfixes > 0)
-			fprintf(stderr, "[L] -\n");
 	}
 }
 
