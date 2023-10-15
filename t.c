@@ -261,8 +261,10 @@ main(int argc, char *argv[])
 	test_parser_type_peek("void (*f[1])(void)",
 	    "void ( * f [ 1 ] ) ( void )");
 	test_parser_type_peek("void (*)", "void ( * )");
-	test_parser_type_peek("char (*v)[1]", "char");
-	test_parser_type_peek("P256_POINT (*table)[16]", "P256_POINT");
+	test_parser_type_peek("char (*v)[1]", "char ( * v ) [ 1 ]");
+	test_parser_type_peek("P256_POINT (*table)[16]",
+	    "P256_POINT ( * table ) [ 16 ]");
+	test_parser_type_peek("char (*)[TP_BSIZE]", "char ( * ) [ TP_BSIZE ]");
 	test_parser_type_peek("STACK_OF(X509_EXTENSION) x",
 	    "STACK_OF ( X509_EXTENSION ) x");
 	test_parser_type_peek("STACK_OF(X509_EXTENSION) *",

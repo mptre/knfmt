@@ -4,8 +4,6 @@
 
 #include <string.h>
 
-#include "libks/compiler.h"
-
 #include "doc.h"
 #include "lexer.h"
 #include "parser-cpp.h"
@@ -19,8 +17,8 @@
 
 static int	peek_type_func_ptr(struct lexer *, struct token **,
     struct token **);
-static int	lexer_peek_if_ptr(struct lexer *, struct token **);
 static int	lexer_peek_if_type_ident(struct lexer *lx);
+static int	peek_type_ptr_array(struct lexer *, struct token **);
 static int	peek_type_noident(struct lexer *, struct token **);
 static int	peek_type_unknown_array(struct lexer *, struct token **);
 
@@ -56,7 +54,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
-		struct token *rparen;
+		struct token *rparen, *rsquare;
 
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			break;
@@ -112,7 +110,9 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			if (lexer_back(lx, &align))
 				peek = 1;
 			break;
-		} else if (ntokens > 0 && lexer_peek_if_ptr(lx, &t)) {
+		} else if (ntokens > 0 && peek_type_ptr_array(lx, &rsquare) &&
+		    lexer_back(lx, &align) && lexer_seek_after(lx, rsquare)) {
+			t = rsquare;
 			peek = 1;
 			break;
 		} else {
@@ -315,7 +315,7 @@ peek_type_func_ptr(struct lexer *lx, struct token **lhs, struct token **rhs)
 }
 
 static int
-lexer_peek_if_ptr(struct lexer *lx, struct token **UNUSED(tk))
+peek_type_ptr_array(struct lexer *lx, struct token **rsquare)
 {
 	struct lexer_state s;
 	int peek = 0;
@@ -323,9 +323,12 @@ lexer_peek_if_ptr(struct lexer *lx, struct token **UNUSED(tk))
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_STAR, NULL) &&
-	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    (lexer_if(lx, TOKEN_IDENT, NULL) || 1) &&
 	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_LSQUARE, NULL))
+	    lexer_if(lx, TOKEN_LSQUARE, NULL) &&
+	    (lexer_if(lx, TOKEN_LITERAL, NULL) ||
+	     lexer_if(lx, TOKEN_IDENT, NULL)) &&
+	    lexer_if(lx, TOKEN_RSQUARE, rsquare))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 	return peek;
