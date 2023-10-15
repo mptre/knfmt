@@ -45,6 +45,18 @@ static void		 parser_simple_stmt_no_braces_leave(struct parser *,
 static int		 is_simple_stmt(const struct token *);
 static int		 peek_simple_stmt(struct parser *);
 
+int
+parser_stmt_peek(struct parser *pr)
+{
+	struct doc *dc;
+	int error;
+
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	error = parser_stmt1(pr, dc);
+	doc_free(dc);
+	return error & GOOD;
+}
+
 static int
 parser_stmt(struct parser *pr, struct doc *dc)
 {

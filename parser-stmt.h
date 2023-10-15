@@ -11,3 +11,4 @@ struct parser_stmt_block_arg {
 };
 
 int	parser_stmt_block(struct parser *, struct parser_stmt_block_arg *);
+int	parser_stmt_peek(struct parser *);
