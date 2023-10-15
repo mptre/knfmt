@@ -370,9 +370,6 @@ doc_width(struct doc_exec_arg *arg)
 
 	buffer_reset(arg->bf);
 	doc_state_init(&st, arg, MUNGE);
-	st.st_op = arg->op;
-	st.st_st = arg->st;
-	st.st_bf = arg->bf;
 	doc_exec1(arg->dc, &st);
 	doc_state_reset(&st);
 	return st.st_col;
