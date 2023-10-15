@@ -11,6 +11,7 @@
 
 #include "alloc.h"
 #include "lexer.h"
+#include "options.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
@@ -23,6 +24,8 @@ struct cpp_include {
 	const struct style	*st;
 	struct simple		*si;
 	struct simple_cookie	 cookie;
+	const struct options	*op;
+	int			 ignore;
 };
 
 struct include {
@@ -46,7 +49,8 @@ static int	token_has_verbatim_line(const struct token *);
 static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
-cpp_include_alloc(const struct style *st, struct simple *si)
+cpp_include_alloc(const struct style *st, struct simple *si,
+    const struct options *op)
 {
 	struct cpp_include *ci;
 
@@ -55,6 +59,7 @@ cpp_include_alloc(const struct style *st, struct simple *si)
 		err(1, NULL);
 	ci->st = st;
 	ci->si = si;
+	ci->op = op;
 	return ci;
 }
 
@@ -110,6 +115,10 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 	if (tk->tk_type == TOKEN_CPP_INCLUDE) {
 		struct include *include;
 
+		if (ci->op->op_flags.diffparse &&
+		    (tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
+			ci->ignore = 1;
+
 		if (VECTOR_EMPTY(ci->includes))
 			ci->after = token_prev(tk);
 		include = VECTOR_ALLOC(ci->includes);
@@ -135,6 +144,9 @@ cpp_include_exec(struct cpp_include *ci)
 	unsigned int nquotes = 0;
 	unsigned int nslashes = 0;
 	int doline;
+
+	if (ci->ignore)
+		return;
 
 	nincludes = VECTOR_LENGTH(ci->includes);
 	if (nincludes < 2)
@@ -196,6 +208,7 @@ cpp_include_reset(struct cpp_include *ci)
 		token_rele(include->tk);
 	}
 	ci->after = NULL;
+	ci->ignore = 0;
 }
 
 static void
