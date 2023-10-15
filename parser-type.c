@@ -31,7 +31,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	struct token *align = NULL;
 	struct token *args = NULL;
 	struct token *tkstatic = NULL;
-	struct token *beg, *pv, *t;
+	struct token *beg, *t;
 	int peek = 0;
 	int nkeywords = 0;
 	int ntokens = 0;
@@ -40,7 +40,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 	if (!lexer_peek(lx, &beg))
 		return 0;
-	issizeof = lexer_back(lx, &pv) && pv->tk_type == TOKEN_SIZEOF;
+	issizeof = lexer_back_if(lx, TOKEN_SIZEOF, NULL);
 
 	/*
 	 * Recognize function argument consisting of a single type and no

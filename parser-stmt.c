@@ -230,7 +230,7 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 	while (lexer_peek_if(lx, TOKEN_ELSE, &tkelse)) {
 		int error;
 
-		if (lexer_back(lx, &tk) && tk->tk_type == TOKEN_RBRACE)
+		if (lexer_back_if(lx, TOKEN_RBRACE, NULL))
 			doc_literal(" ", dc);
 		else
 			doc_alloc(DOC_HARDLINE, dc);

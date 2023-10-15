@@ -82,6 +82,7 @@ int	lexer_is_branch(const struct lexer *);
 
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
+int	lexer_back_if(const struct lexer *, int, struct token **);
 
 struct token	*lexer_copy_after(struct lexer *, struct token *,
     const struct token *);

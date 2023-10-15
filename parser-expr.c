@@ -79,16 +79,15 @@ expr_recover(const struct expr_exec_arg *ea, struct doc *dc, void *arg)
 	struct token *lbrace, *tk;
 
 	if (parser_type_peek(pr, &type, PARSER_TYPE_EXPR)) {
-		struct token *nx, *pv;
+		struct token *nx;
 
-		if (lexer_back(lx, &pv) &&
-		    (pv->tk_type == TOKEN_SIZEOF ||
-		     ((pv->tk_type == TOKEN_LPAREN ||
-		       pv->tk_type == TOKEN_COMMA) &&
-		      ((nx = token_next(type.end)) != NULL &&
-		       (nx->tk_type == TOKEN_RPAREN ||
-			nx->tk_type == TOKEN_COMMA ||
-			nx->tk_type == LEXER_EOF))))) {
+		if (lexer_back_if(lx, TOKEN_SIZEOF, NULL) ||
+		    ((lexer_back_if(lx, TOKEN_LPAREN, NULL) ||
+		      lexer_back_if(lx, TOKEN_COMMA, NULL)) &&
+		     ((nx = token_next(type.end)) != NULL &&
+		      (nx->tk_type == TOKEN_RPAREN ||
+		       nx->tk_type == TOKEN_COMMA ||
+		       nx->tk_type == LEXER_EOF)))) {
 			if (parser_type(pr, dc, &type, NULL) & GOOD)
 				return 1;
 		}

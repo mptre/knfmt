@@ -589,6 +589,18 @@ lexer_back(const struct lexer *lx, struct token **tk)
 	return 1;
 }
 
+int
+lexer_back_if(const struct lexer *lx, int type, struct token **tk)
+{
+	struct token *t;
+
+	if (!lexer_back(lx, &t) || t->tk_type != type)
+		return 0;
+	if (tk != NULL)
+		*tk = t;
+	return 1;
+}
+
 struct token *
 lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 {

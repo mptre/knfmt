@@ -443,7 +443,8 @@ want_line_after_func_impl(struct parser *pr)
 	struct lexer_state s;
 	int annotated = 0;
 
-	if (lexer_peek_if(lx, LEXER_EOF, NULL) || !lexer_back(lx, &rbrace))
+	if (lexer_peek_if(lx, LEXER_EOF, NULL) ||
+	    !lexer_back_if(lx, TOKEN_RBRACE, &rbrace))
 		return 0;
 
 	if (lexer_peek_if_prefix_flags(lx, TOKEN_FLAG_CPP, &cpp))
