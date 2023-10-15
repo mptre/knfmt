@@ -313,6 +313,8 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	int error;
 
 	error = parser_attributes(pr, dc, &attr, PARSER_ATTRIBUTES_FUNC);
+	if (error & FAIL)
+		return parser_fail(pr);
 	if (error & GOOD)
 		doc_alloc(DOC_LINE, attr);
 
