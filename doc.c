@@ -352,9 +352,6 @@ doc_exec(struct doc_exec_arg *arg)
 	const struct doc *dc = arg->dc;
 	struct doc_state st;
 
-	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->lx);
-	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->diff_chunks);
-
 	doc_state_init(&st, arg, BREAK);
 	doc_exec1(dc, &st);
 	if (arg->flags & DOC_EXEC_TRIM)
@@ -1710,6 +1707,9 @@ static void
 doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
     enum doc_mode mode)
 {
+	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->lx);
+	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->diff_chunks);
+
 	memset(st, 0, sizeof(*st));
 	st->st_op = arg->op;
 	st->st_st = arg->st;
