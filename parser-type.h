@@ -7,11 +7,11 @@ struct ruler;
 #define PARSER_TYPE_EXPR		0x00000004u
 
 struct parser_type {
-	struct token    *end;
+	struct token	*end;
 	/* Optional token to insert ruler alignment after. */
-	struct token    *align;
+	struct token	*align;
 	/* Optional token denoting start of arguments for function pointers. */
-	struct token    *args;
+	struct token	*args;
 };
 
 int	parser_type_peek(struct parser *, struct parser_type *, unsigned int);
