@@ -1,4 +1,4 @@
-# 4.3.0 - YYYY-MM-DD
+# 4.3.0 - 2023-10-15
 
 ## News
 
@@ -24,6 +24,22 @@
 
 - Indent long lists of inline assembly operands.
   (92d38a4)
+  (Anton Lindqvist)
+
+- Improve mimicking of clang-format alignment for statement expressions.
+  (d2534fe)
+  (Anton Lindqvist)
+
+- Improve detection of loop statements hidden behind cpp macros.
+  (2ea9d12)
+  (Anton Lindqvist)
+
+- Add line context to error messages.
+  (3d072e1)
+  (Anton Lindqvist)
+
+- Improve handling of cpp macros in inline asm operands.
+  (9aa415d)
   (Anton Lindqvist)
 
 ## Bug fixes
