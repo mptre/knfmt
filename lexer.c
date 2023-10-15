@@ -1382,9 +1382,9 @@ lexer_branch_unmute(struct lexer *lx, struct token *tk)
  * Find the best suited branch to fold relative to the given token while trying
  * to recover after encountering invalid source code. We do not want to fold a
  * partially consumed branch as lexer_branch() already has removed tokens making
- * it impossible to traverse the same source code again since it is no longer
- * intact. However, when reaching EOF we try to fold even partially consumed
- * branches.
+ * it potentially problematic to traverse the same source code again. However,
+ * when reaching EOF we try to fold even partially consumed branches, fingers
+ * crossed.
  */
 static struct token *
 lexer_recover_branch(struct token *tk)
