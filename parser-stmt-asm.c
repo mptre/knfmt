@@ -9,46 +9,68 @@
 #include "style.h"
 #include "token.h"
 
+/*
+ * Returns a document which favors break before the operand.
+ */
+static struct doc *
+doc_asm_operand(struct parser *pr, struct doc *dc)
+{
+	struct lexer *lx = pr->pr_lx;
+
+	dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	doc_alloc(lexer_back_if(lx, TOKEN_COLON, NULL) ?
+	    DOC_LINE : DOC_SOFTLINE, dc);
+	return doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+}
+
+static int
+parser_stmt_asm_operand_cpp(struct parser *pr, struct doc *dc)
+{
+	dc = doc_asm_operand(pr, dc);
+	return parser_expr(pr, NULL, &(struct parser_expr_arg){
+	    .dc	= dc,
+	});
+}
+
 static int
 parser_stmt_asm_operand(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct doc *concat, *expr;
-	struct token *comma, *pv, *tk;
+	struct doc *expr;
+	struct token *comma, *tk;
 
-	if (!lexer_back(lx, &pv) ||
-	    (!lexer_peek_if(lx, TOKEN_LSQUARE, NULL) &&
-	     !lexer_peek_if(lx, TOKEN_STRING, NULL)))
+	if (!lexer_peek_if(lx, TOKEN_LSQUARE, NULL) &&
+	    !lexer_peek_if(lx, TOKEN_STRING, NULL)) {
+		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
+			return parser_stmt_asm_operand_cpp(pr, dc);
 		return parser_none(pr);
+	}
 
-	/* Favor break before the operand. */
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-	doc_alloc(pv->tk_type == TOKEN_COLON ? DOC_LINE : DOC_SOFTLINE, concat);
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, concat));
+	dc = doc_asm_operand(pr, dc);
 
 	/* symbolic name */
 	if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
-		doc_token(tk, concat);
+		doc_token(tk, dc);
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
-			doc_token(tk, concat);
+			doc_token(tk, dc);
 		if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
-			doc_token(tk, concat);
-		doc_alloc(DOC_LINE, concat);
+			doc_token(tk, dc);
+		doc_alloc(DOC_LINE, dc);
 	}
 
 	/* constraint */
 	if (lexer_expect(lx, TOKEN_STRING, &tk)) {
-		doc_token(tk, concat);
-		doc_alloc(DOC_LINE, concat);
+		doc_token(tk, dc);
+		doc_alloc(DOC_LINE, dc);
 	}
 
 	/* cexpression */
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk)) {
 		int error;
 
-		doc_token(tk, concat);
+		doc_token(tk, dc);
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
-		    .dc	= concat,
+		    .dc	= dc,
 		});
 		if (error & HALT)
 			return parser_fail(pr);
