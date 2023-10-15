@@ -1,1 +1,3 @@
 .clang-format:1: unknown option Unknown<1:1>("Standard")
+Standard: c++03
+^^^^^^^^

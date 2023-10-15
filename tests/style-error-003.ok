@@ -1,1 +1,3 @@
 .clang-format:1: expected type Colon got Keyword<1:23>("Align")
+AlignAfterOpenBracket Align
+                      ^^^^^

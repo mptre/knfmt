@@ -1,0 +1,20 @@
+--- diff-034.c
++++ diff-034.c
+@@ -1,11 +1,13 @@
+ int
+ main(void)
+ {
+-	if (!ccc->eeeeeeeeeeeeeeee)
++	if (!AAAAAAAAAAAAAAAAAAAAAA(ccc))
+ 		return;
+ 
+-	if (AAAAAAAAAAAAAAAAAAAAAA(ccc))
++	if (ccc->eeeeeeeeeeeeeeee) {
++		ASSERT_MSG(0
++			"ssssssssssssssssssssssssssssssssssssss"
++			"sssssssssssssssssssssssssssssssssssssssss");
+ 		foo(ccc);
+-	else if (BBBBBBBBBBBBBBBBBB(ccc))
+-		bar(ccc);
++	}
+ }
