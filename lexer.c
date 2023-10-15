@@ -293,6 +293,12 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 	return t;
 }
 
+static int
+has_line(const char *str, size_t len)
+{
+	return memchr(str, '\n', len) != NULL;
+}
+
 void
 lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
     const char *fmt, ...)
@@ -323,7 +329,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	 * verbatim hard lines(s) as the column calculation becomes trickier.
 	 */
 	if (l > 0 && lexer_get_lines(lx, l, l + 1, &line, &linelen) &&
-	    !token_has_verbatim_line(ctx, 1)) {
+	    !has_line(ctx->tk_str, ctx->tk_len)) {
 		unsigned int cno = ctx->tk_cno;
 		unsigned int w;
 
