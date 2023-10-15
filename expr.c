@@ -1044,12 +1044,11 @@ expr_doc_concat(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct token *pv;
 	size_t i, n;
-	int doalign;
 
-	pv = token_prev(ex->ex_concat[0]->ex_tk);
-	doalign = style(es->es_st, AlignOperands) == Align &&
-	    !token_has_line(pv, 1);
-	if (doalign)
+	if (style(es->es_st, AlignOperands) == Align &&
+	    es->es_ncalls == 0 &&
+	    (pv = token_prev(ex->ex_concat[0]->ex_tk)) != NULL &&
+	    !token_has_line(pv, 1))
 		dc = expr_doc_align(ex, es, dc, 0);
 	n = VECTOR_LENGTH(ex->ex_concat);
 	for (i = 0; i < n; i++) {
