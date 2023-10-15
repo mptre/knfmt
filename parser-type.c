@@ -21,6 +21,7 @@ static int	peek_type_ident_after_type(struct lexer *lx);
 static int	peek_type_ptr_array(struct lexer *, struct token **);
 static int	peek_type_noident(struct lexer *, struct token **);
 static int	peek_type_unknown_array(struct lexer *, struct token **);
+static int	peek_type_unknown_bitfield(struct lexer *, struct token **);
 
 int
 parser_type_peek(struct parser *pr, struct parser_type *type,
@@ -48,6 +49,11 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	 */
 	if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
 	    (peek_type_noident(lx, &t) || peek_type_unknown_array(lx, &t))) {
+		peek = 1;
+		goto out;
+	}
+
+	if (peek_type_unknown_bitfield(lx, &t)) {
 		peek = 1;
 		goto out;
 	}
@@ -381,12 +387,26 @@ static int
 peek_type_unknown_array(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state s;
-	int peek = 0;
+	int peek;
 
 	lexer_peek_enter(lx, &s);
 	peek = lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if(lx, TOKEN_LSQUARE, NULL) &&
 	    lexer_if(lx, TOKEN_RSQUARE, tk);
+	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+static int
+peek_type_unknown_bitfield(struct lexer *lx, struct token **tk)
+{
+	struct lexer_state s;
+	int peek;
+
+	lexer_peek_enter(lx, &s);
+	peek = lexer_if(lx, TOKEN_IDENT, tk) &&
+	    lexer_if(lx, TOKEN_COLON, NULL) &&
+	    lexer_if(lx, TOKEN_LITERAL, NULL);
 	lexer_peek_leave(lx, &s);
 	return peek;
 }
