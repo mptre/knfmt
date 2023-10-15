@@ -13,7 +13,6 @@ struct token;
 #define HALT	(FAIL | NONE | BRCH)
 
 struct parser {
-	const char		*pr_path;
 	const struct options	*pr_op;
 	const struct style	*pr_st;
 	struct simple		*pr_si;

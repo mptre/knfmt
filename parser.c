@@ -26,13 +26,12 @@ parser_get_error(const struct parser *pr)
 }
 
 struct parser *
-parser_alloc(const char *path, struct lexer *lx, const struct style *st,
-    struct simple *si, const struct options *op)
+parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
+    const struct options *op)
 {
 	struct parser *pr;
 
 	pr = ecalloc(1, sizeof(*pr));
-	pr->pr_path = path;
 	pr->pr_st = st;
 	pr->pr_si = si;
 	pr->pr_op = op;
