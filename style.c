@@ -73,7 +73,7 @@ struct style_option {
 static void	style_defaults(struct style *);
 static void	style_set(struct style *, int, int, unsigned int);
 static int	style_parse_yaml(struct style *, const char *,
-    const struct buffer *, const struct options *);
+    const struct buffer *);
 static int	style_parse_yaml1(struct style *, struct lexer *);
 static void	style_dump(const struct style *);
 
@@ -295,7 +295,7 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 	style_defaults(st);
 	if (bf != NULL) {
 		/* Errors are not considered fatal. */
-		(void)style_parse_yaml(st, path, bf, op);
+		(void)style_parse_yaml(st, path, bf);
 	}
 	return st;
 }
@@ -367,8 +367,7 @@ style_set(struct style *st, int option, int type, unsigned int val)
 }
 
 static int
-style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
-    const struct options *op)
+style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 {
 	struct error *er;
 	struct lexer *lx;
@@ -379,7 +378,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 	    .path	= path,
 	    .bf		= bf,
 	    .er		= er,
-	    .op		= op,
+	    .op		= st->st_op,
 	    .callbacks	= {
 		.read		= yaml_read,
 		.serialize	= yaml_serialize,
@@ -396,7 +395,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 
 out:
 	lexer_free(lx);
-	error_flush(er, trace(op, 's') > 0);
+	error_flush(er, trace(st->st_op, 's') > 0);
 	error_free(er);
 	return error;
 }
