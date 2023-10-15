@@ -342,6 +342,7 @@ style_defaults(struct style *st)
 		{ BreakBeforeBinaryOperators,	None },
 		{ BreakBeforeBraces,		Linux },
 		{ BreakBeforeTernaryOperators,	False },
+		{ ClangFormat,			False },
 		{ ColumnLimit,			80 },
 		{ ContinuationIndentWidth,	4 },
 		{ IndentWidth,			8 },
@@ -388,6 +389,8 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf,
 		goto out;
 	}
 	error = style_parse_yaml1(st, lx);
+	if (error == 0)
+		style_set(st, ClangFormat, None, True);
 
 out:
 	lexer_free(lx);
@@ -458,7 +461,7 @@ style_dump(const struct style *st)
 		const struct style_option *so;
 		const char *key;
 
-		if (!st->st_options[i].isset)
+		if (!st->st_options[i].isset || i == ClangFormat)
 			continue;
 
 		key = style_keyword_str(i);

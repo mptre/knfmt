@@ -53,6 +53,7 @@ struct style;
 	OP(BreakBeforeTernaryOperators)					\
 	OP(CaseInsensitive)						\
 	OP(CaseSensitive)						\
+	OP(ClangFormat)							\
 	OP(ColumnLimit)							\
 	OP(ContinuationIndentWidth)					\
 	OP(DontAlign)							\
