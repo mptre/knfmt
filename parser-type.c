@@ -292,10 +292,11 @@ peek_type_func_ptr(struct lexer *lx, struct token **lhs, struct token **rhs)
 	    lexer_if(lx, TOKEN_STAR, NULL)) {
 		struct token *ident = NULL;
 
+		lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER, NULL);
 		while (lexer_if(lx, TOKEN_STAR, NULL))
 			continue;
-
 		lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER, NULL);
+
 		lexer_if(lx, TOKEN_IDENT, &ident);
 		if (lexer_if(lx, TOKEN_LSQUARE, NULL)) {
 			lexer_if(lx, TOKEN_LITERAL, NULL);

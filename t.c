@@ -257,6 +257,8 @@ main(int argc, char *argv[])
 	test_parser_type_peek("int (*f[])(void)", "int ( * f [ ] ) ( void )");
 	test_parser_type_peek("int (* volatile f)(void);",
 	    "int ( * volatile f ) ( void )");
+	test_parser_type_peek("void (*const *f)(void);",
+	    "void ( * const * f ) ( void )");
 	test_parser_type_peek("int (**f)(void);", "int ( * * f ) ( void )");
 	test_parser_type_peek("int (*f(void))(void)", "int");
 	test_parser_type_peek("void (*f[1])(void)",
