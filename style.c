@@ -292,9 +292,9 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 	st = ecalloc(1, sizeof(*st));
 	st->st_op = op;
 	style_defaults(st);
-	if (bf != NULL && style_parse_yaml(st, path, bf, op)) {
-		style_free(st);
-		return NULL;
+	if (bf != NULL) {
+		/* Errors are not considered fatal. */
+		(void)style_parse_yaml(st, path, bf, op);
 	}
 	return st;
 }
@@ -403,10 +403,13 @@ out:
 static int
 style_parse_yaml1(struct style *st, struct lexer *lx)
 {
+	int error;
+
 	for (;;) {
 		const struct style_option *so;
 		struct token *key;
-		int error = 0;
+
+		error = 0;
 
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
@@ -418,8 +421,10 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 		if (lexer_if(lx, DocumentEnd, NULL))
 			continue;
 
-		if (!lexer_peek(lx, &key))
+		if (!lexer_peek(lx, &key)) {
+			error = FAIL;
 			break;
+		}
 		so = (struct style_option *)key->tk_token;
 		if (so != NULL && so->so_scope != st->st_scope)
 			break;
@@ -448,7 +453,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 		}
 	}
 
-	return 0;
+	return error;
 }
 
 static void
