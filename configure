@@ -230,6 +230,8 @@ check_warnc && HAVE_WARNC=1
 # Redirect stdout to config.h.
 exec 1>config.h
 
+printf '#ifndef CONFIG_H\n#define CONFIG_H\n'
+
 # Headers needed for function prototypes.
 {
 	:
@@ -254,6 +256,8 @@ fi
 [ "$HAVE_WARNC" -eq 0 ] && {
 	printf 'void warnc(int, const char *, ...)\n'
 	printf '\t__attribute__((__format__ (printf, 2, 3)));\n'; }
+
+printf '#endif\n'
 
 # Redirect stdout to config.mk.
 exec 1>config.mk
