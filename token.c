@@ -273,6 +273,25 @@ token_has_line(const struct token *tk, int nlines)
 }
 
 /*
+ * Returns non-zero if the given token has at least nlines number of trailing
+ * verbatim hard line(s).
+ */
+int
+token_has_verbatim_line(const struct token *tk, int nlines)
+{
+	const char *str = tk->tk_str;
+	size_t len = tk->tk_len;
+
+	for (; len > 0; len--) {
+		if (str[len - 1] != '\n')
+			break;
+		if (--nlines == 0)
+			break;
+	}
+	return nlines == 0;
+}
+
+/*
  * Returns non-zero if the given token has trailing tabs.
  */
 int
