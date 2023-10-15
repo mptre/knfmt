@@ -26,22 +26,39 @@
 #include <unistd.h>
 
 struct buffer {
-	char	*bf_ptr;
-	size_t	 bf_siz;
-	size_t	 bf_len;
+	struct buffer_callbacks	 bf_callbacks;
+	char			*bf_ptr;
+	size_t			 bf_siz;
+	size_t			 bf_len;
 };
 
 static int	buffer_reserve(struct buffer *, size_t);
 
+static void	*callback_alloc(size_t, void *);
+static void	*callback_realloc(void *, size_t, size_t, void *);
+static void	 callback_free(void *, size_t, void *);
+
 struct buffer *
-buffer_alloc(size_t sizhint)
+buffer_alloc(size_t init_size)
+{
+	return buffer_alloc_impl(init_size, &(struct buffer_callbacks){
+	    .alloc	= callback_alloc,
+	    .realloc	= callback_realloc,
+	    .free	= callback_free,
+	});
+}
+
+struct buffer *
+buffer_alloc_impl(size_t init_size, struct buffer_callbacks *callbacks)
 {
 	struct buffer *bf;
 
-	bf = calloc(1, sizeof(*bf));
+	bf = callbacks->alloc(sizeof(*bf), callbacks->arg);
 	if (bf == NULL)
 		return NULL;
-	if (buffer_reserve(bf, sizhint)) {
+	memset(bf, 0, sizeof(*bf));
+	bf->bf_callbacks = *callbacks;
+	if (buffer_reserve(bf, init_size)) {
 		buffer_free(bf);
 		return NULL;
 	}
@@ -52,15 +69,28 @@ struct buffer *
 buffer_read(const char *path)
 {
 	struct buffer *bf;
-	int fd;
+
+	bf = buffer_alloc(1 << 13);
+	if (bf == NULL)
+		return NULL;
+	if (buffer_read_impl(bf, path)) {
+		buffer_free(bf);
+		return NULL;
+	}
+	return bf;
+}
+
+int
+buffer_read_impl(struct buffer *bf, const char *path)
+{
+	int error, fd;
 
 	fd = open(path, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
-		return NULL;
-
-	bf = buffer_read_fd(fd);
+		return 1;
+	error = buffer_read_fd_impl(bf, fd);
 	close(fd);
-	return bf;
+	return error;
 }
 
 struct buffer *
@@ -70,25 +100,31 @@ buffer_read_fd(int fd)
 
 	bf = buffer_alloc(1 << 13);
 	if (bf == NULL)
-		goto err;
+		return NULL;
+	if (buffer_read_fd_impl(bf, fd)) {
+		buffer_free(bf);
+		return NULL;
+	}
+	return bf;
+}
 
+int
+buffer_read_fd_impl(struct buffer *bf, int fd)
+{
 	for (;;) {
 		ssize_t n;
 
 		n = read(fd, &bf->bf_ptr[bf->bf_len], bf->bf_siz - bf->bf_len);
 		if (n == -1)
-			goto err;
+			return 1;
 		if (n == 0)
 			break;
 		bf->bf_len += (size_t)n;
 		if (buffer_reserve(bf, bf->bf_siz / 2))
-			goto err;
+			return 1;
 	}
-	return bf;
 
-err:
-	buffer_free(bf);
-	return NULL;
+	return 0;
 }
 
 void
@@ -96,9 +132,8 @@ buffer_free(struct buffer *bf)
 {
 	if (bf == NULL)
 		return;
-
-	free(bf->bf_ptr);
-	free(bf);
+	bf->bf_callbacks.free(bf->bf_ptr, bf->bf_siz, bf->bf_callbacks.arg);
+	bf->bf_callbacks.free(bf, sizeof(*bf), bf->bf_callbacks.arg);
 }
 
 int
@@ -252,7 +287,8 @@ buffer_reserve(struct buffer *bf, size_t len)
 			goto overflow;
 		newsiz *= 2;
 	}
-	ptr = realloc(bf->bf_ptr, newsiz);
+	ptr = bf->bf_callbacks.realloc(bf->bf_ptr, bf->bf_siz, newsiz,
+	    bf->bf_callbacks.arg);
 	if (ptr == NULL)
 		return 1;
 	bf->bf_ptr = ptr;
@@ -262,4 +298,24 @@ buffer_reserve(struct buffer *bf, size_t len)
 overflow:
 	errno = EOVERFLOW;
 	return 1;
+}
+
+static void *
+callback_alloc(size_t size, void *arg __attribute__((unused)))
+{
+	return malloc(size);
+}
+
+static void *
+callback_realloc(void *ptr, size_t old_size __attribute__((unused)),
+    size_t new_size, void *arg __attribute__((unused)))
+{
+	return realloc(ptr, new_size);
+}
+
+static void
+callback_free(void *ptr, size_t size __attribute__((unused)),
+    void *arg __attribute__((unused)))
+{
+	free(ptr);
 }
