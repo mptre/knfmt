@@ -44,13 +44,11 @@ parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
     unsigned int flags)
 {
 	struct ruler rl;
-	struct doc *concat;
 	int error;
 
 	ruler_init(&rl, 0, RULER_ALIGN_SENSE);
-	concat = doc_alloc(DOC_CONCAT, dc);
 	error = parser_braces1(pr, &(struct braces_arg){
-	    .dc		= concat,
+	    .dc		= dc,
 	    .rl		= &rl,
 	    .indent	= indent,
 	    .col	= 0,
