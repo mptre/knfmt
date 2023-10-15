@@ -19,8 +19,8 @@
 
 #include "alloc.h"
 #include "file.h"
+#include "fs.h"
 #include "options.h"
-#include "util.h"
 
 struct reader {
 	char	*buf;

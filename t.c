@@ -13,6 +13,7 @@
 #include "doc.h"
 #include "error.h"
 #include "expr.h"
+#include "fs.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser-attributes.h"

@@ -18,6 +18,7 @@
 
 #include "alloc.h"
 #include "error.h"
+#include "fs.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"

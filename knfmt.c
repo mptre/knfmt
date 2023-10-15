@@ -19,13 +19,13 @@
 #include "error.h"
 #include "expr.h"
 #include "file.h"
+#include "fs.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
-#include "util.h"
 
 static void	usage(void) __attribute__((__noreturn__));
 

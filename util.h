@@ -13,7 +13,3 @@ char	*strnice(const char *, size_t);
 void	 strnice_buffer(struct buffer *, const char *, size_t);
 
 size_t	strwidth(const char *, size_t, size_t);
-
-int	searchpath(const char *, int *);
-
-char	*tmptemplate(const char *);
