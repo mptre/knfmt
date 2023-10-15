@@ -87,7 +87,7 @@ lexer_alloc(const struct lexer_arg *arg)
 
 	lx = ecalloc(1, sizeof(*lx));
 	lx->lx_callbacks = arg->callbacks;
-	lx->lx_er = arg->er;
+	lx->lx_er = error_alloc(arg->error_flush);
 	lx->lx_op = arg->op;
 	lx->lx_bf = arg->bf;
 	lx->lx_diff = arg->diff;
@@ -159,6 +159,7 @@ lexer_free(struct lexer *lx)
 	if (lx == NULL)
 		return;
 
+	error_free(lx->lx_er);
 	VECTOR_FREE(lx->lx_lines);
 	VECTOR_FREE(lx->lx_columns);
 	if (lx->lx_unmute != NULL)
@@ -336,6 +337,12 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	}
 
 	error_end(lx->lx_er);
+}
+
+void
+lexer_error_flush(struct lexer *lx)
+{
+	error_flush(lx->lx_er, 1);
 }
 
 void

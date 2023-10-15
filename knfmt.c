@@ -16,7 +16,6 @@
 
 #include "clang.h"
 #include "diff.h"
-#include "error.h"
 #include "expr.h"
 #include "file.h"
 #include "fs.h"
@@ -125,10 +124,8 @@ main(int argc, char *argv[])
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
-		if (fileformat(fe, st, si, cl, &op)) {
+		if (fileformat(fe, st, si, cl, &op))
 			error = 1;
-			error_flush(fe->fe_error, 1);
-		}
 		file_close(fe);
 	}
 
@@ -161,12 +158,12 @@ filelist(int argc, char **argv, struct files *files,
 		return diff_parse(files, op);
 
 	if (argc == 0) {
-		files_alloc(files, "/dev/stdin", op);
+		files_alloc(files, "/dev/stdin");
 	} else {
 		int i;
 
 		for (i = 0; i < argc; i++)
-			files_alloc(files, argv[i], op);
+			files_alloc(files, argv[i]);
 	}
 	return 0;
 }
@@ -189,9 +186,9 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= fe->fe_path,
 	    .bf		= src,
-	    .er		= fe->fe_error,
 	    .diff	= fe->fe_diff,
 	    .op		= op,
+	    .error_flush= trace(op, 'l') > 0,
 	    .callbacks	= {
 		.read		= clang_read,
 		.alloc		= token_alloc,
@@ -222,6 +219,8 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 		error = fileprint(dst);
 
 out:
+	if (lx != NULL && error)
+		lexer_error_flush(lx);
 	buffer_free(dst);
 	parser_free(pr);
 	lexer_free(lx);

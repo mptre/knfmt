@@ -107,7 +107,7 @@ diff_parse(struct files *files, const struct options *op)
 		unsigned int el, sl;
 
 		if (matchpath(line, path, sizeof(path))) {
-			fe = files_alloc(files, path, op);
+			fe = files_alloc(files, path);
 		} else if (matchchunk(line, &sl, &el)) {
 			/* Chunks cannot be present before the path. */
 			if (fe == NULL) {

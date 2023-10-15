@@ -18,7 +18,6 @@
 #include "libks/vector.h"
 
 #include "alloc.h"
-#include "error.h"
 #include "fs.h"
 #include "lexer.h"
 #include "options.h"
@@ -379,16 +378,14 @@ style_set(struct style *st, int option, int type, unsigned int val)
 static int
 style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 {
-	struct error *er;
 	struct lexer *lx;
 	int error = 0;
 
-	er = error_alloc(0);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= bf,
-	    .er		= er,
 	    .op		= st->st_op,
+	    .error_flush= trace(st->st_op, 's') > 0,
 	    .callbacks	= {
 		.read		= yaml_read,
 		.alloc		= yaml_alloc,
@@ -406,8 +403,6 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 
 out:
 	lexer_free(lx);
-	error_flush(er, trace(st->st_op, 's') > 0);
-	error_free(er);
 	return error;
 }
 

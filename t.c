@@ -11,7 +11,6 @@
 #include "alloc.h"
 #include "clang.h"
 #include "doc.h"
-#include "error.h"
 #include "expr.h"
 #include "fs.h"
 #include "lexer.h"
@@ -99,7 +98,6 @@ static int	test_tmptemplate0(const char *, const char *, int);
 struct context {
 	struct options	 op;
 	struct buffer	*bf;
-	struct error	*er;
 	struct style	*st;
 	struct simple	*si;
 	struct clang	*cl;
@@ -762,14 +760,12 @@ context_init(struct context *cx, const char *src)
 	static const char *path = "test.c";
 
 	buffer_puts(cx->bf, src, strlen(src));
-	cx->er = error_alloc(0);
 	cx->st = style_parse(NULL, &cx->op);
 	cx->si = simple_alloc(&cx->op);
 	cx->cl = clang_alloc(cx->st, cx->si, &cx->op);
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= cx->bf,
-	    .er		= cx->er,
 	    .op		= &cx->op,
 	    .callbacks	= {
 		.read		= clang_read,
@@ -788,12 +784,6 @@ context_reset(struct context *cx)
 	cx->op.test = 1;
 
 	buffer_reset(cx->bf);
-
-	if (cx->er != NULL) {
-		error_flush(cx->er, 1);
-		error_free(cx->er);
-		cx->er = NULL;
-	}
 
 	style_free(cx->st);
 	cx->st = NULL;

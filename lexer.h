@@ -7,9 +7,14 @@ struct lexer;
 struct lexer_arg {
 	const char		*path;
 	const struct buffer	*bf;
-	struct error		*er;
 	struct diffchunk	*diff;
 	const struct options	*op;
+
+	/*
+	 * Report errors immediately, removing the need to call
+	 * lexer_error_flush() explicitly.
+	 */
+	int			 error_flush;
 
 	struct lexer_callbacks {
 		/*
@@ -69,6 +74,7 @@ int		 lexer_eat_spaces(struct lexer *, struct token **);
 
 void	lexer_error(struct lexer *, const struct token *, const char *, int,
     const char *, ...) __attribute__((__format__(printf, 5, 6)));
+void	lexer_error_flush(struct lexer *);
 void	lexer_error_reset(struct lexer *);
 
 int		 lexer_buffer_streq(const struct lexer *,

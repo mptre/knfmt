@@ -12,11 +12,9 @@
 
 #include "alloc.h"
 #include "diff.h"
-#include "error.h"
-#include "options.h"
 
 struct file *
-files_alloc(struct files *files, const char *path, const struct options *op)
+files_alloc(struct files *files, const char *path)
 {
 	struct file *fe;
 
@@ -26,7 +24,6 @@ files_alloc(struct files *files, const char *path, const struct options *op)
 	fe->fe_path = estrdup(path);
 	if (VECTOR_INIT(fe->fe_diff))
 		err(1, NULL);
-	fe->fe_error = error_alloc(trace(op, 'l') > 0);
 	fe->fe_fd = -1;
 	return fe;
 }
@@ -40,7 +37,6 @@ files_free(struct files *files)
 		fe = VECTOR_POP(files->fs_vc);
 		VECTOR_FREE(fe->fe_diff);
 		free(fe->fe_path);
-		error_free(fe->fe_error);
 		file_close(fe);
 	}
 	VECTOR_FREE(files->fs_vc);
