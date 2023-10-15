@@ -1,7 +1,7 @@
 mkls -s "$@" -- \
 SRCS		!(fuzz-*|knfmt|t).c $(cd libks && ls *.c) -- \
 KNFMT		!(compat-*).c compat-pledge.c !(compat-*|config).h -- \
-CLANGTIDY	!(config|compat-*|token-defs).[ch] -- \
+CLANGTIDY	!(config|compat-*).[ch] -- \
 CPPCHECK	!(compat-*).c -- \
 SHLINT		configure tests/*.sh
 

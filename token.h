@@ -136,15 +136,15 @@ struct token {
 	unsigned int		 tk_lno;
 	unsigned int		 tk_cno;
 	unsigned int		 tk_flags;
-/* Token denotes a type keyword, see token-defs.h. */
+/* Token denotes a type keyword. */
 #define TOKEN_FLAG_TYPE		0x00000001u
-/* Token denotes a qualifier keyword, see token-defs.h. */
+/* Token denotes a qualifier keyword. */
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
-/* Token denotes a storage keyword, see token-defs.h. */
+/* Token denotes a storage keyword. */
 #define TOKEN_FLAG_STORAGE	0x00000004u
 #define TOKEN_FLAG_STAMP	0x00000008u
 /* was TOKEN_FLAG_TRIMMED	0x00000010u */
-/* Token denotes an assignment operator, see token-defs.h. */
+/* Token denotes an assignment operator. */
 #define TOKEN_FLAG_ASSIGN	0x00000020u
 #define TOKEN_FLAG_AMBIGUOUS	0x00000040u
 #define TOKEN_FLAG_BINARY	0x00000080u
