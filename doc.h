@@ -26,6 +26,7 @@ enum doc_type {
 struct doc_exec_arg {
 	const struct doc	*dc;
 	struct lexer		*lx;
+	const struct diffchunk	*diff_chunks;
 	struct buffer		*bf;
 	const struct style	*st;
 	const struct options	*op;

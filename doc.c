@@ -81,6 +81,7 @@ struct doc_state {
 	const struct style		*st_st;
 	struct buffer			*st_bf;
 	struct lexer			*st_lx;
+	const struct diffchunk		*st_diff_chunks;
 
 	enum doc_mode {
 		BREAK,
@@ -352,6 +353,7 @@ doc_exec(struct doc_exec_arg *arg)
 	struct doc_state st;
 
 	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->lx);
+	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->diff_chunks);
 
 	doc_state_init(&st, arg, BREAK);
 	doc_exec1(dc, &st);
@@ -1358,7 +1360,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		return 1;
 	}
 
-	du = lexer_get_diffchunk(st->st_lx, dd.dd_chunk);
+	du = diff_get_chunk(st->st_diff_chunks, dd.dd_chunk);
 	if (du == NULL)
 		return 1;
 	doc_trace(dc, st, "%s: chunk range [%u-%u]", __func__,
@@ -1713,6 +1715,7 @@ doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
 	st->st_st = arg->st;
 	st->st_bf = arg->bf;
 	st->st_lx = arg->lx;
+	st->st_diff_chunks = arg->diff_chunks;
 	st->st_maxlines = 2;
 	st->st_flags = arg->flags;
 	st->st_mode = mode;

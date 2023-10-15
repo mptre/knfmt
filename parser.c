@@ -55,14 +55,14 @@ parser_free(struct parser *pr)
 }
 
 struct buffer *
-parser_exec(struct parser *pr, size_t sizehint)
+parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
+    size_t sizehint)
 {
 	struct buffer *bf = NULL;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
 	unsigned int doc_flags = 0;
 	int error = 0;
-	int dodiff;
 
 	dc = doc_alloc(DOC_CONCAT, NULL);
 
@@ -110,8 +110,7 @@ parser_exec(struct parser *pr, size_t sizehint)
 	if (bf == NULL)
 		err(1, NULL);
 
-	dodiff = pr->pr_op->op_flags.diffparse;
-	if (dodiff)
+	if (pr->pr_op->op_flags.diffparse)
 		doc_flags |= DOC_EXEC_DIFF;
 	else
 		doc_flags |= DOC_EXEC_TRIM;
@@ -119,7 +118,8 @@ parser_exec(struct parser *pr, size_t sizehint)
 		doc_flags |= DOC_EXEC_TRACE;
 	doc_exec(&(struct doc_exec_arg){
 	    .dc		= dc,
-	    .lx		= dodiff ? pr->pr_lx : NULL,
+	    .lx		= pr->pr_op->op_flags.diffparse ? pr->pr_lx : NULL,
+	    .diff_chunks= pr->pr_op->op_flags.diffparse ? diff_chunks : NULL,
 	    .bf		= bf,
 	    .st		= pr->pr_st,
 	    .op		= pr->pr_op,

@@ -126,7 +126,4 @@ int	lexer_peek_until_comma(struct lexer *, const struct token *,
     struct token **);
 int	lexer_until(struct lexer *, int, struct token **);
 
-const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
-    unsigned int);
-
 void	lexer_dump(struct lexer *);

@@ -206,7 +206,7 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 		error = 1;
 		goto out;
 	}
-	dst = parser_exec(pr, buffer_get_len(src));
+	dst = parser_exec(pr, fe->fe_diff, buffer_get_len(src));
 	if (dst == NULL) {
 		error = 1;
 		goto out;

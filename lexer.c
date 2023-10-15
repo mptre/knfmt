@@ -71,6 +71,9 @@ static void	lexer_reposition_tokens(struct lexer *, struct token *);
 static int	lexer_peek_until_not_nested(struct lexer *, int,
     const struct token *, struct token **);
 
+static const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
+    unsigned int);
+
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (trace((lx)->lx_op, 'l'))					\
 		tracef('L', __func__, (fmt), __VA_ARGS__);		\
@@ -1050,7 +1053,7 @@ lexer_until(struct lexer *lx, int type, struct token **tk)
 	}
 }
 
-const struct diffchunk *
+static const struct diffchunk *
 lexer_get_diffchunk(const struct lexer *lx, unsigned int lno)
 {
 	if (lx->lx_diff == NULL)
