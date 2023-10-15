@@ -411,6 +411,7 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	struct doc *stmt;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
+	unsigned int w = 0;
 	int error;
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
@@ -423,6 +424,15 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	doc_token(tk, stmt);
 	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
+
+	if (style(pr->pr_st, ClangFormat) == True) {
+		/*
+		* Take note of the width before emitting the left parenthesis
+		* as it could be followed by comments, which must not affect
+		* alignment.
+		*/
+		w = parser_width(pr, dc) + 1;
+	}
 
 	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
 		struct doc *optional = stmt;
@@ -443,6 +453,7 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	    .dc		= stmt,
 	    .stop	= rparen,
 	    .indent	= style(pr->pr_st, ContinuationIndentWidth),
+	    .align	= w,
 	});
 	if (error & (FAIL | BRCH))
 		return parser_fail(pr);

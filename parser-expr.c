@@ -51,6 +51,7 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 		.dc		= arg->dc,
 		.stop		= arg->stop,
 		.indent		= arg->indent,
+		.align		= arg->align,
 		.flags		= arg->flags,
 		.callbacks	= {
 			.recover	= expr_recover,

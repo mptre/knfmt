@@ -313,7 +313,9 @@ expr_exec(const struct expr_exec_arg *ea)
 	dc = doc_alloc(DOC_SCOPE, dc);
 	dc = doc_alloc(DOC_GROUP, dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
-	if (ea->indent > 0)
+	if (ea->align > 0)
+		indent = doc_indent(ea->align, optional);
+	else if (ea->indent > 0)
 		indent = doc_indent(ea->indent, optional);
 	else
 		indent = doc_alloc(DOC_CONCAT, optional);
@@ -840,7 +842,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		int dospace;
 
 		if (doalign)
-			dc = doc_indent(DOC_INDENT_WIDTH, dc);
+			dc = expr_doc_align(ex, es, dc, 0);
 
 		token_move_next_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
@@ -859,7 +861,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		int dospace;
 
 		if (doalign)
-			dc = doc_indent(DOC_INDENT_WIDTH, dc);
+			dc = expr_doc_align(ex, es, dc, 0);
 
 		token_move_prev_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
@@ -961,7 +963,11 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (style(es->es_st, AlignAfterOpenBracket) == Align) {
 			unsigned int indent;
 
-			indent = es->es_ea.indent | DOC_INDENT_NEWLINE;
+			if (es->es_ncalls == 1 && es->es_ea.align == 0 &&
+			    (es->es_ea.flags & EXPR_EXEC_HARDLINE) == 0)
+				indent = 0;
+			else
+				indent = es->es_ea.indent;
 			dc = token_has_line(lparen, 1) ?
 			    expr_doc_align_disable(ex, es, dc, indent) :
 			    expr_doc_align(ex, es, dc, indent);

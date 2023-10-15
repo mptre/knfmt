@@ -5,6 +5,7 @@ struct parser_expr_arg {
 	struct ruler		*rl;
 	const struct token	*stop;
 	unsigned int		 indent;
+	unsigned int		 align;
 	unsigned int		 flags;     /* expr_exec() flags */
 };
 

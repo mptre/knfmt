@@ -14,6 +14,11 @@ struct expr_exec_arg {
 	const struct token	*stop;
 
 	unsigned int		 indent;
+	/*
+	 * Optional alignment taking higher predence than indent when
+	 * clang-format is enabled.
+	 */
+	unsigned int		 align;
 	unsigned int		 flags;
 /* Emit a soft line before the expression. */
 #define EXPR_EXEC_SOFTLINE		0x00000001u

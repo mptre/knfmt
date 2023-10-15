@@ -16,7 +16,7 @@ main(void)
                         return 0;
 
                 if (ccccccccccccccccccccccccccc(
-                        aaa, ddddddddddddddddddddddddddddddddddddddddd))
+                            aaa, ddddddddddddddddddddddddddddddddddddddddd))
                         return 1;
         }
 }
