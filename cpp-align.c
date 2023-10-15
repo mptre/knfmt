@@ -224,6 +224,7 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 	if (nlines <= 1)
 		goto out;
 	ruler_exec(&rl);
+	buffer_reset(bf);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc	= dc,
 	    .bf	= bf,

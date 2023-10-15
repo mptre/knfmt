@@ -199,6 +199,7 @@ parser_token_trim_after(const struct parser *UNUSED(pr), struct token *tk)
 unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
+	buffer_reset(pr->pr_scratch);
 	return doc_width(&(struct doc_exec_arg){
 	    .dc	= dc,
 	    .bf	= pr->pr_scratch,

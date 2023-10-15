@@ -211,6 +211,7 @@ need_braces(struct simple_stmt *ss, const struct stmt *st, struct buffer *bf)
 	if (is_stmt_empty(ss, st))
 		return 1;
 
+	buffer_reset(bf);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc	= st->st_root,
 	    .bf	= bf,

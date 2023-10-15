@@ -353,7 +353,6 @@ doc_exec(struct doc_exec_arg *arg)
 
 	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->lx);
 
-	buffer_reset(arg->bf);
 	doc_state_init(&st, arg, BREAK);
 	doc_exec1(dc, &st);
 	if (arg->flags & DOC_EXEC_TRIM)
@@ -368,7 +367,6 @@ doc_width(struct doc_exec_arg *arg)
 {
 	struct doc_state st;
 
-	buffer_reset(arg->bf);
 	doc_state_init(&st, arg, MUNGE);
 	doc_exec1(arg->dc, &st);
 	doc_state_reset(&st);
