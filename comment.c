@@ -27,7 +27,7 @@ comment_trim(const struct token *tk, const struct style *st)
 	if (len == 0 || sp[len - 1] != '\n')
 		return NULL;
 
-	iscrlf = len >= 2 && sp[len - 2] == '\r' && sp[len - 1] == '\n';
+	iscrlf = len >= 2 && sp[len - 2] == '\r';
 	bf = buffer_alloc(len);
 	if (bf == NULL)
 		err(1, NULL);
