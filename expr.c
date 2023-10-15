@@ -314,7 +314,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	dc = doc_alloc(DOC_GROUP, dc);
 	optional = doc_alloc(DOC_OPTIONAL, dc);
 	if (ea->indent > 0)
-		indent = doc_alloc_indent(ea->indent, optional);
+		indent = doc_indent(ea->indent, optional);
 	else
 		indent = doc_alloc(DOC_CONCAT, optional);
 	if (ea->flags & EXPR_EXEC_SOFTLINE)
@@ -840,7 +840,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		int dospace;
 
 		if (doalign)
-			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
+			dc = doc_indent(DOC_INDENT_WIDTH, dc);
 
 		token_move_next_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
@@ -859,7 +859,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		int dospace;
 
 		if (doalign)
-			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
+			dc = doc_indent(DOC_INDENT_WIDTH, dc);
 
 		token_move_prev_line(ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
@@ -906,7 +906,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 			token_trim(pv);
 
 		if (style(es->es_st, AlignAfterOpenBracket) == Align)
-			dc = doc_alloc_indent(DOC_INDENT_WIDTH, dc);
+			dc = doc_indent(DOC_INDENT_WIDTH, dc);
 		else
 			dc = expr_doc_indent_parens(es, dc);
 		if (ex->ex_lhs != NULL)
@@ -973,7 +973,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		 * Must break before closing parens, indentation for the outer
 		 * scope is expected.
 		 */
-		dc = doc_alloc_dedent(es->es_ea.indent, dc);
+		dc = doc_dedent(es->es_ea.indent, dc);
 	}
 	if (rparen != NULL)
 		doc_token(rparen, dc);
@@ -1183,7 +1183,7 @@ expr_doc_indent_parens(const struct expr_state *es, struct doc *dc)
 {
 	if (es->es_noparens > 0)
 		return dc;
-	return doc_alloc_indent(DOC_INDENT_PARENS, dc);
+	return doc_indent(DOC_INDENT_PARENS, dc);
 }
 
 static int

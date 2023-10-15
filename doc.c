@@ -495,7 +495,7 @@ doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
 }
 
 struct doc *
-doc_alloc_indent0(unsigned int val, struct doc *dc, const char *fun, int lno)
+doc_indent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *indent;
 
@@ -505,7 +505,7 @@ doc_alloc_indent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 }
 
 struct doc *
-doc_alloc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
+doc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *indent;
 

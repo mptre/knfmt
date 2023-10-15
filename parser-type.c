@@ -219,7 +219,7 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 				w = parser_width(pr, dc);
 			else
 				w = style(pr->pr_st, ContinuationIndentWidth);
-			indent = doc_alloc_indent(w, dc);
+			indent = doc_indent(w, dc);
 			while (parser_func_arg(pr, indent, NULL, end) & GOOD)
 				continue;
 			if (lexer_expect(lx, TOKEN_RPAREN, &rparen))

@@ -163,7 +163,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	if (isswitch)
 		indent = dc;
 	else
-		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
+		indent = doc_indent(style(pr->pr_st, IndentWidth), dc);
 	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0)
 		line = doc_alloc(DOC_HARDLINE, indent);
 	else
@@ -240,8 +240,8 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 			} else {
 				void *simple = NULL;
 
-				dc = doc_alloc_indent(
-				    style(pr->pr_st, IndentWidth), dc);
+				dc = doc_indent(style(pr->pr_st, IndentWidth),
+				    dc);
 				doc_alloc(DOC_HARDLINE, dc);
 
 				dc = parser_simple_stmt_no_braces_enter(pr, dc,
@@ -359,7 +359,7 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_literal(" ", expr);
 	} else {
-		dc = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
+		dc = doc_indent(style(pr->pr_st, IndentWidth), dc);
 		doc_alloc(DOC_HARDLINE, dc);
 	}
 	return parser_stmt(pr, dc);
@@ -394,8 +394,7 @@ parser_stmt_dowhile(struct parser *pr, struct doc *dc)
 	} else {
 		struct doc *indent;
 
-		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth),
-		    concat);
+		indent = doc_indent(style(pr->pr_st, IndentWidth), concat);
 		doc_alloc(DOC_HARDLINE, indent);
 		error = parser_stmt(pr, indent);
 		doc_alloc(DOC_HARDLINE, concat);
@@ -490,7 +489,7 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 		struct doc *indent;
 		void *simple = NULL;
 
-		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
+		indent = doc_indent(style(pr->pr_st, IndentWidth), dc);
 		doc_alloc(DOC_HARDLINE, indent);
 		if (is_simple_stmt(type)) {
 			indent = parser_simple_stmt_no_braces_enter(pr, indent,
@@ -547,7 +546,7 @@ parser_stmt_label(struct parser *pr, struct doc *dc)
 		if (lexer_peek(lx, &nx) && token_cmp(colon, nx) == 0) {
 			struct doc *indent;
 
-			indent = doc_alloc_indent(DOC_INDENT_FORCE, dc);
+			indent = doc_indent(DOC_INDENT_FORCE, dc);
 			return parser_stmt(pr, indent);
 		}
 	}
@@ -590,7 +589,7 @@ parser_stmt_case(struct parser *pr, struct doc *dc)
 			return parser_fail(pr);
 	}
 
-	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), dc);
+	indent = doc_indent(style(pr->pr_st, IndentWidth), dc);
 	for (;;) {
 		struct doc *line;
 		struct token *nx;

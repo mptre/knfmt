@@ -388,7 +388,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 
 		indent = doc_minimize(minimizers, dc);
 	} else {
-		indent = doc_alloc_indent(w, concat);
+		indent = doc_indent(w, concat);
 	}
 	while (parser_func_arg(pr, indent, out, rparen) & GOOD)
 		continue;
@@ -400,7 +400,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);
-	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), kr);
+	indent = doc_indent(style(pr->pr_st, IndentWidth), kr);
 	doc_alloc(DOC_HARDLINE, indent);
 	if (parser_decl(pr, indent, 0) & GOOD)
 		nkr++;
@@ -408,7 +408,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 		doc_remove(kr, dc);
 
 	attr = doc_alloc(DOC_GROUP, dc);
-	indent = doc_alloc_indent(style(pr->pr_st, IndentWidth), attr);
+	indent = doc_indent(style(pr->pr_st, IndentWidth), attr);
 	if (parser_attributes(pr, indent, out, PARSER_ATTRIBUTES_LINE) & HALT)
 		doc_remove(attr, dc);
 

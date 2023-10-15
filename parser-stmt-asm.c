@@ -102,7 +102,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	if (qualifier != NULL && token_has_spaces(qualifier))
 		doc_alloc(DOC_LINE, concat);
 
-	opt = doc_alloc_indent(style(pr->pr_st, ContinuationIndentWidth),
+	opt = doc_indent(style(pr->pr_st, ContinuationIndentWidth),
 	    doc_alloc(DOC_OPTIONAL, dc));
 	if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		parser_token_trim_before(pr, rparen);
@@ -126,7 +126,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
 		doc_alloc(DOC_LINE, concat);
 		doc_token(colon, concat);
-		concat = doc_alloc_indent(2, concat);
+		concat = doc_indent(2, concat);
 		while (parser_stmt_asm_operand(pr, concat) & GOOD)
 			ninputs++;
 	}
@@ -137,7 +137,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		if (ninputs > 0)
 			doc_alloc(DOC_LINE, concat);
 		doc_token(colon, concat);
-		concat = doc_alloc_indent(2, concat);
+		concat = doc_indent(2, concat);
 		while (parser_stmt_asm_operand(pr, concat) & GOOD)
 			continue;
 	}

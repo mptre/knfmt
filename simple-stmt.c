@@ -174,7 +174,7 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
 	if (st == NULL)
 		err(1, NULL);
 	st->st_root = doc_alloc(DOC_CONCAT, NULL);
-	st->st_indent = doc_alloc_indent(indent, st->st_root);
+	st->st_indent = doc_indent(indent, st->st_root);
 	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;
 	return st;

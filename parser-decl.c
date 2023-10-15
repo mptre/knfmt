@@ -202,8 +202,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_token(lbrace, concat);
 		}
 
-		indent = doc_alloc_indent(style(pr->pr_st, IndentWidth),
-		    concat);
+		indent = doc_indent(style(pr->pr_st, IndentWidth), concat);
 		doc_alloc(DOC_HARDLINE, indent);
 		if (parser_decl(pr, indent, 0) & FAIL)
 			return parser_fail(pr);

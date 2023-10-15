@@ -96,14 +96,12 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
  */
 #define DOC_INDENT_WIDTH	0x08000000
 
-#define doc_alloc_indent(a, b) \
-	doc_alloc_indent0((a), (b), __func__, __LINE__)
-struct doc	*doc_alloc_indent0(unsigned int, struct doc *, const char *,
-    int);
-#define doc_alloc_dedent(a, b) \
-	doc_alloc_dedent0((a), (b), __func__, __LINE__)
-struct doc	*doc_alloc_dedent0(unsigned int, struct doc *, const char *,
-    int);
+#define doc_indent(a, b) \
+	doc_indent0((a), (b), __func__, __LINE__)
+struct doc	*doc_indent0(unsigned int, struct doc *, const char *, int);
+#define doc_dedent(a, b) \
+	doc_dedent0((a), (b), __func__, __LINE__)
+struct doc	*doc_dedent0(unsigned int, struct doc *, const char *, int);
 
 #define doc_minimize(a, b) \
     doc_minimize0(a, sizeof(a)/sizeof((a)[0]), b, __func__, __LINE__)

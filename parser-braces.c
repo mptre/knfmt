@@ -101,7 +101,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 
 		if (arg->flags & PARSER_BRACES_INDENT_MAYBE)
 			val |= DOC_INDENT_NEWLINE;
-		indent = doc_alloc_indent(val, braces);
+		indent = doc_indent(val, braces);
 		doc_alloc(DOC_HARDLINE, indent);
 	} else if ((pv = token_prev(lbrace)) != NULL &&
 	    token_cmp(pv, lbrace) == 0) {
@@ -111,7 +111,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		 */
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
-		indent = doc_alloc_indent(arg->indent, braces);
+		indent = doc_indent(arg->indent, braces);
 	} else {
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
@@ -121,7 +121,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		 * while performing alignment.
 		 */
 		w = parser_width(pr, braces);
-		indent = doc_alloc_indent(w, braces);
+		indent = doc_indent(w, braces);
 	}
 
 	for (;;) {
@@ -215,7 +215,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			 */
 			if (token_cmp(pv, rbrace) < 0) {
 				if (arg->flags & PARSER_BRACES_DEDENT) {
-					braces = doc_alloc_dedent(arg->indent,
+					braces = doc_dedent(arg->indent,
 					    braces);
 				}
 				doc_alloc(DOC_HARDLINE, braces);
