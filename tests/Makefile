@@ -467,9 +467,7 @@ TESTS+=	valid-361.c
 TESTS+=	valid-362.c
 
 TESTS+=	simple-002.c
-TESTS+=	simple-003.c
 TESTS+=	simple-004.c
-TESTS+=	simple-005.c
 TESTS+=	simple-006.c
 TESTS+=	simple-007.c
 TESTS+=	simple-008.c
@@ -516,6 +514,8 @@ TESTS+=	simple-expr-sizeof-002.c
 TESTS+=	simple-static-001.c
 TESTS+=	simple-static-002.c
 TESTS+=	simple-static-003.c
+TESTS+=	simple-stmt-semi-001.c
+TESTS+=	simple-stmt-semi-002.c
 
 TESTS+=	inplace-001.c
 
