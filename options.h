@@ -8,6 +8,7 @@ static const char traces[] = {
 	'l',	/* lexer */
 	's',	/* style */
 	'S',	/* simple */
+	't',	/* token */
 };
 
 struct options {

@@ -137,7 +137,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	}
 	VECTOR_FREE(discarded);
 
-	if (trace(lx->lx_op, 'l') >= 3)
+	if (trace(lx->lx_op, 't'))
 		lexer_dump(lx);
 
 	return lx;
