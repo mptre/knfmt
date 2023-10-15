@@ -7,6 +7,7 @@ struct ruler;
 #define PARSER_TYPE_EXPR		0x00000004u
 
 struct parser_type {
+	struct token	*beg;
 	struct token	*end;
 	/* Optional token to insert ruler alignment after. */
 	struct token	*align;

@@ -147,7 +147,14 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 out:
 	if (peek && type != NULL) {
+		/*
+		 * Must be evaluated again as the simple static pass above could
+		 * reorder tokens.
+		 */
+		if (!lexer_peek(lx, &beg))
+			return 0;
 		*type = (struct parser_type){
+		    .beg	= beg,
 		    .end	= t,
 		    .align	= align,
 		    .args	= args,
@@ -163,11 +170,7 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 	struct lexer *lx = pr->pr_lx;
 	const struct token *align = NULL;
 	const struct token *end = type->end;
-	struct token *beg;
 	unsigned int nspaces = 0;
-
-	if (!lexer_peek(lx, &beg))
-		return parser_fail(pr);
 
 	if (rl != NULL) {
 		/*
@@ -180,7 +183,7 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 				break;
 
 			nspaces++;
-			if (align == beg)
+			if (align == type->beg)
 				break;
 			align = token_prev(align);
 			if (align == NULL)
