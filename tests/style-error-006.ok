@@ -1,1 +1,1 @@
-.clang-format: unknown option Integer<2:1>("10")
+.clang-format:2: unknown option Integer<2:1>("10")

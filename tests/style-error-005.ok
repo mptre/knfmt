@@ -1,1 +1,3 @@
-.clang-format: unknown option Unknown<1:1>("ForEachMacros")
+.clang-format:1: unknown option Unknown<1:1>("ForEachMacros")
+ForEachMacros:
+^^^^^^^^^^^^^

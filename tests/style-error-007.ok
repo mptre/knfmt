@@ -1,1 +1,3 @@
-.clang-format: unknown option Unknown<2:1>("AttributeMacros")
+.clang-format:2: unknown option Unknown<2:1>("AttributeMacros")
+AttributeMacros:
+^^^^^^^^^^^^^^^

@@ -1,1 +1,3 @@
-test.c: expected type RPAREN got STRUCT<4:8>("struct")
+test.c:4: expected type RPAREN got STRUCT<4:8>("struct")
+    IN struct _EFI_RNG_PROTOCOL		*This,
+       ^^^^^^

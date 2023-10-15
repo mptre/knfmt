@@ -1,1 +1,1 @@
-.clang-format: expected type Colon<0:0>("") got Keyword<1:23>("Align")
+.clang-format:1: expected type Colon got Keyword<1:23>("Align")

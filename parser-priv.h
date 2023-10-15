@@ -14,7 +14,6 @@ struct token;
 
 struct parser {
 	const char		*pr_path;
-	struct error		*pr_er;
 	const struct options	*pr_op;
 	const struct style	*pr_st;
 	struct simple		*pr_si;

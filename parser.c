@@ -20,17 +20,20 @@
 #include "parser-stmt-asm.h"
 #include "token.h"
 
-static int	parser_get_error(const struct parser *);
+static int
+parser_get_error(const struct parser *pr)
+{
+	return pr->pr_error || lexer_get_error(pr->pr_lx);
+}
 
 struct parser *
-parser_alloc(const char *path, struct lexer *lx, struct error *er,
-    const struct style *st, struct simple *si, const struct options *op)
+parser_alloc(const char *path, struct lexer *lx, const struct style *st,
+    struct simple *si, const struct options *op)
 {
 	struct parser *pr;
 
 	pr = ecalloc(1, sizeof(*pr));
 	pr->pr_path = path;
-	pr->pr_er = er;
 	pr->pr_st = st;
 	pr->pr_si = si;
 	pr->pr_op = op;
@@ -148,23 +151,16 @@ parser_exec1(struct parser *pr, struct doc *dc)
 int
 parser_fail0(struct parser *pr, const char *fun, int lno)
 {
-	struct buffer *bf;
-	struct token *tk;
+	struct lexer *lx = pr->pr_lx;
+	struct token *tk = NULL;
 
 	if (parser_get_error(pr))
 		goto out;
 	pr->pr_error = 1;
 
-	bf = error_begin(pr->pr_er);
-	buffer_printf(bf, "%s: ", pr->pr_path);
-	if (trace(pr->pr_op, 'l'))
-		buffer_printf(bf, "%s:%d: ", fun, lno);
-	buffer_printf(bf, "error at ");
-	if (lexer_back(pr->pr_lx, &tk))
-		buffer_printf(bf, "%s\n", lexer_serialize(pr->pr_lx, tk));
-	else
-		buffer_printf(bf, "(null)\n");
-	error_end(pr->pr_er);
+	(void)lexer_back(lx, &tk);
+	lexer_error(pr->pr_lx, tk, fun, lno,
+	    "error at %s", lexer_serialize(lx, tk));
 
 out:
 	if (lexer_is_branch(pr->pr_lx))
@@ -211,12 +207,6 @@ parser_width(struct parser *pr, const struct doc *dc)
 	});
 }
 
-static int
-parser_get_error(const struct parser *pr)
-{
-	return pr->pr_error || lexer_get_error(pr->pr_lx);
-}
-
 int
 parser_good(const struct parser *pr)
 {
@@ -236,6 +226,6 @@ parser_none(const struct parser *pr)
 void
 parser_reset(struct parser *pr)
 {
-	error_reset(pr->pr_er);
+	lexer_error_reset(pr->pr_lx);
 	pr->pr_error = 0;
 }

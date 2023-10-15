@@ -1,1 +1,1 @@
-.clang-format: expected type Colon<0:0>("") got EOF<2:9>("perf_hpp_InEmptyParentheses: false\n")
+.clang-format:2: expected type Colon got EOF<2:9>("perf_hpp_InEmptyParentheses: false\n")

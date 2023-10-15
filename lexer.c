@@ -290,20 +290,52 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 }
 
 void
-lexer_error(struct lexer *lx, const char *fmt, ...)
+lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
+    const char *fmt, ...)
 {
 	va_list ap;
 	struct buffer *bf;
+	const char *line;
+	size_t linelen;
+	unsigned int l = ctx != NULL ? ctx->tk_lno : 0;
 
 	lx->lx_st.st_err++;
 
-	va_start(ap, fmt);
 	bf = error_begin(lx->lx_er);
-	buffer_printf(bf, "%s: ", lx->lx_path);
+
+	buffer_printf(bf, "%s", lx->lx_path);
+	if (l > 0)
+		buffer_printf(bf, ":%d", l);
+	buffer_printf(bf, ": ");
+	va_start(ap, fmt);
 	buffer_vprintf(bf, fmt, ap);
-	buffer_printf(bf, "\n");
-	error_end(lx->lx_er);
 	va_end(ap);
+	if (trace(lx->lx_op, 'l') >= 2)
+		buffer_printf(bf, " [%s:%d]", fun, lno);
+	buffer_printf(bf, "\n");
+
+	if (l > 0 &&
+	    lexer_get_lines(lx, l, l + 1, &line, &linelen)) {
+		unsigned int cno = ctx->tk_cno;
+		unsigned int w;
+
+		buffer_printf(bf, "%.*s", (int)linelen, line);
+
+		w = colwidth(ctx->tk_str, ctx->tk_len, cno, NULL) - cno;
+		buffer_printf(bf, "%*s", (int)cno - 1, "");
+		for (; w > 0; w--)
+			buffer_putc(bf, '^');
+		buffer_putc(bf, '\n');
+	}
+
+	error_end(lx->lx_er);
+}
+
+void
+lexer_error_reset(struct lexer *lx)
+{
+	error_reset(lx->lx_er);
+	lx->lx_st.st_err = 0;
 }
 
 /*
@@ -1171,9 +1203,6 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 {
 	size_t *dst;
 
-	if (lx->lx_diff == NULL)
-		return;
-
 	/* We could end up here again after lexer_ungetc(). */
 	if (lno - 1 < VECTOR_LENGTH(lx->lx_lines))
 		return;
@@ -1215,7 +1244,6 @@ static void
 lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
     const char *fun, int lno)
 {
-	struct buffer *bf;
 	struct token *t;
 
 	/* Be quiet while about to branch. */
@@ -1233,14 +1261,10 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 	if (lx->lx_peek > 0)
 		return;
 
-	bf = error_begin(lx->lx_er);
-	buffer_printf(bf, "%s: ", lx->lx_path);
-	if (trace(lx->lx_op, 'l'))
-		buffer_printf(bf, "%s:%d: ", fun, lno);
-	buffer_printf(bf, "expected type %s got %s\n",
+	lexer_error(lx, tk, fun, lno,
+	    "expected type %s got %s",
 	    lexer_serialize(lx, &(struct token){.tk_type = type}),
 	    lexer_serialize(lx, tk));
-	error_end(lx->lx_er);
 }
 
 /*

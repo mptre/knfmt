@@ -1,32 +1,90 @@
-.clang-format: unknown option Unknown<4:1>("AlignConsecutiveAssignments")
-.clang-format: unknown option Unknown<5:1>("AlignConsecutiveDeclarations")
-.clang-format: unknown option Unknown<6:1>("AlignConsecutiveMacros")
-.clang-format: unknown option Unknown<8:1>("AlignTrailingComments")
-.clang-format: unknown option Unknown<9:1>("AllowAllArgumentsOnNextLine")
-.clang-format: unknown option Unknown<10:1>("AllowAllParametersOfDeclarationOnNextLine")
-.clang-format: unknown option Unknown<11:1>("AllowShortBlocksOnASingleLine")
-.clang-format: unknown option Unknown<12:1>("AllowShortCaseLabelsOnASingleLine")
-.clang-format: unknown option Unknown<13:1>("AllowShortFunctionsOnASingleLine")
-.clang-format: unknown option Unknown<14:1>("AllowShortIfStatementsOnASingleLine")
-.clang-format: unknown option Unknown<16:1>("BinPackParameters")
-.clang-format: unknown option Unknown<17:1>("BinPackArguments")
-.clang-format: unknown option Unknown<20:1>("DerivePointerAlignment")
-.clang-format: unknown option Unknown<21:1>("IndentCaseLabels")
-.clang-format: unknown option Unknown<23:1>("IncludeBlocks")
-.clang-format: unknown option Unknown<24:1>("KeepEmptyLinesAtTheStartOfBlocks")
-.clang-format: unknown option Unknown<25:1>("MaxEmptyLinesToKeep")
-.clang-format: unknown option Unknown<26:1>("PointerAlignment")
-.clang-format: unknown value Keyword<27:16>("true") for option Keyword<27:1>("SortIncludes")
-.clang-format: unknown option Unknown<28:1>("SpaceAfterCStyleCast")
-.clang-format: unknown option Unknown<29:1>("SpaceBeforeAssignmentOperators")
-.clang-format: unknown option Unknown<30:1>("SpaceBeforeParens")
-.clang-format: unknown option Unknown<31:1>("SpaceInEmptyParentheses")
-.clang-format: unknown option Unknown<32:1>("SpacesInSquareBrackets")
-.clang-format: unknown option Unknown<33:1>("TabWidth")
-.clang-format: unknown option Unknown<35:1>("PenaltyBreakAssignment")
-.clang-format: unknown option Unknown<36:1>("PenaltyBreakBeforeFirstCallParameter")
-.clang-format: unknown option Unknown<38:1>("Language")
-.clang-format: unknown option Unknown<40:1>("Language")
+.clang-format:4: unknown option Unknown<4:1>("AlignConsecutiveAssignments")
+AlignConsecutiveAssignments: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:5: unknown option Unknown<5:1>("AlignConsecutiveDeclarations")
+AlignConsecutiveDeclarations: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:6: unknown option Unknown<6:1>("AlignConsecutiveMacros")
+AlignConsecutiveMacros: 'true'
+^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:8: unknown option Unknown<8:1>("AlignTrailingComments")
+AlignTrailingComments: 'true'
+^^^^^^^^^^^^^^^^^^^^^
+.clang-format:9: unknown option Unknown<9:1>("AllowAllArgumentsOnNextLine")
+AllowAllArgumentsOnNextLine: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:10: unknown option Unknown<10:1>("AllowAllParametersOfDeclarationOnNextLine")
+AllowAllParametersOfDeclarationOnNextLine: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:11: unknown option Unknown<11:1>("AllowShortBlocksOnASingleLine")
+AllowShortBlocksOnASingleLine: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:12: unknown option Unknown<12:1>("AllowShortCaseLabelsOnASingleLine")
+AllowShortCaseLabelsOnASingleLine: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:13: unknown option Unknown<13:1>("AllowShortFunctionsOnASingleLine")
+AllowShortFunctionsOnASingleLine: 'Inline'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:14: unknown option Unknown<14:1>("AllowShortIfStatementsOnASingleLine")
+AllowShortIfStatementsOnASingleLine: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:16: unknown option Unknown<16:1>("BinPackParameters")
+BinPackParameters: 'false'
+^^^^^^^^^^^^^^^^^
+.clang-format:17: unknown option Unknown<17:1>("BinPackArguments")
+BinPackArguments: 'false'
+^^^^^^^^^^^^^^^^
+.clang-format:20: unknown option Unknown<20:1>("DerivePointerAlignment")
+DerivePointerAlignment: 'false'
+^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:21: unknown option Unknown<21:1>("IndentCaseLabels")
+IndentCaseLabels: 'false'
+^^^^^^^^^^^^^^^^
+.clang-format:23: unknown option Unknown<23:1>("IncludeBlocks")
+IncludeBlocks: 'Regroup'
+^^^^^^^^^^^^^
+.clang-format:24: unknown option Unknown<24:1>("KeepEmptyLinesAtTheStartOfBlocks")
+KeepEmptyLinesAtTheStartOfBlocks: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:25: unknown option Unknown<25:1>("MaxEmptyLinesToKeep")
+MaxEmptyLinesToKeep: '1'
+^^^^^^^^^^^^^^^^^^^
+.clang-format:26: unknown option Unknown<26:1>("PointerAlignment")
+PointerAlignment: 'Right'
+^^^^^^^^^^^^^^^^
+.clang-format:27: unknown value Keyword<27:16>("true") for option Keyword<27:1>("SortIncludes")
+SortIncludes: 'true'
+               ^^^^
+.clang-format:28: unknown option Unknown<28:1>("SpaceAfterCStyleCast")
+SpaceAfterCStyleCast: 'false'
+^^^^^^^^^^^^^^^^^^^^
+.clang-format:29: unknown option Unknown<29:1>("SpaceBeforeAssignmentOperators")
+SpaceBeforeAssignmentOperators : 'true'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:30: unknown option Unknown<30:1>("SpaceBeforeParens")
+SpaceBeforeParens: 'ControlStatements'
+^^^^^^^^^^^^^^^^^
+.clang-format:31: unknown option Unknown<31:1>("SpaceInEmptyParentheses")
+SpaceInEmptyParentheses: 'false'
+^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:32: unknown option Unknown<32:1>("SpacesInSquareBrackets")
+SpacesInSquareBrackets: 'false'
+^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:33: unknown option Unknown<33:1>("TabWidth")
+TabWidth: '8'
+^^^^^^^^
+.clang-format:35: unknown option Unknown<35:1>("PenaltyBreakAssignment")
+PenaltyBreakAssignment: '3'
+^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:36: unknown option Unknown<36:1>("PenaltyBreakBeforeFirstCallParameter")
+PenaltyBreakBeforeFirstCallParameter: '15'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.clang-format:38: unknown option Unknown<38:1>("Language")
+Language: 'Proto'
+^^^^^^^^
+.clang-format:40: unknown option Unknown<40:1>("Language")
+Language: 'Cpp'
+^^^^^^^^
 [s] AlignAfterOpenBracket: Align
 [s] AlignOperands: Align
 [s] AlwaysBreakAfterReturnType: All

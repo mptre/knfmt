@@ -448,8 +448,8 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 			} else {
 				(void)lexer_pop(lx, &val);
 			}
-			lexer_error(lx, "unknown option %s",
-			    lexer_serialize(lx, key));
+			lexer_error(lx, key, __func__, __LINE__,
+			    "unknown option %s", lexer_serialize(lx, key));
 		}
 	}
 
@@ -570,7 +570,8 @@ again:
 	tk = lexer_emit(lx, &s, &(struct token){
 	    .tk_type	= Unknown,
 	});
-	lexer_error(lx, "unknown token %s", lexer_serialize(lx, tk));
+	lexer_error(lx, tk, __func__, __LINE__,
+	    "unknown token %s", lexer_serialize(lx, tk));
 	token_rele(tk);
 	return NULL;
 
@@ -636,8 +637,8 @@ yaml_read_integer(struct lexer *lx)
 	tk->tk_type = Integer;
 	tk->tk_int = digit;
 	if (overflow) {
-		lexer_error(lx, "integer %s too large",
-		    lexer_serialize(lx, tk));
+		lexer_error(lx, tk, __func__, __LINE__,
+		    "integer %s too large", lexer_serialize(lx, tk));
 	}
 	return tk;
 }
@@ -657,9 +658,11 @@ yaml_serialize(const struct token *tk)
 		buffer_printf(bf, "%s",
 		    yaml_type_str((enum yaml_type)tk->tk_type));
 	}
-	buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
-	strnice_buffer(bf, tk->tk_str, tk->tk_len);
-	buffer_printf(bf, "\")");
+	if (tk->tk_str != NULL) {
+		buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
+		strnice_buffer(bf, tk->tk_str, tk->tk_len);
+		buffer_printf(bf, "\")");
+	}
 	buf = buffer_str(bf);
 	buffer_free(bf);
 	return buf;
@@ -712,7 +715,8 @@ parse_bool(struct style *st, struct lexer *lx, const struct style_option *so)
 		return FAIL;
 	if (!lexer_if(lx, True, &val) && !lexer_if(lx, False, &val)) {
 		(void)lexer_pop(lx, &val);
-		lexer_error(lx, "unknown value %s for option %s",
+		lexer_error(lx, val, __func__, __LINE__,
+		    "unknown value %s for option %s",
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
@@ -740,7 +744,8 @@ parse_enum(struct style *st, struct lexer *lx, const struct style_option *so)
 	}
 
 	(void)lexer_pop(lx, &val);
-	lexer_error(lx, "unknown value %s for option %s",
+	lexer_error(lx, val, __func__, __LINE__,
+	    "unknown value %s for option %s",
 	    lexer_serialize(lx, val), lexer_serialize(lx, key));
 	return SKIP;
 }
@@ -756,7 +761,8 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 		return FAIL;
 	if (!lexer_expect(lx, Integer, &val)) {
 		(void)lexer_pop(lx, &val);
-		lexer_error(lx, "unknown value %s for option %s",
+		lexer_error(lx, val, __func__, __LINE__,
+		    "unknown value %s for option %s",
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
@@ -776,7 +782,8 @@ parse_string(struct style *UNUSED(st), struct lexer *lx,
 		return FAIL;
 	if (!lexer_expect(lx, String, &val)) {
 		(void)lexer_pop(lx, &val);
-		lexer_error(lx, "unknown value %s for option %s",
+		lexer_error(lx, val, __func__, __LINE__,
+		    "unknown value %s for option %s",
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}

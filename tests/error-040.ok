@@ -1,1 +1,3 @@
-test.c: expected type RBRACE got FOR<4:9>("for")
+test.c:4: expected type RBRACE got FOR<4:9>("for")
+	for ()
+        ^^^

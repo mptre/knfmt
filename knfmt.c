@@ -201,7 +201,7 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(fe->fe_path, lx, fe->fe_error, st, si, op);
+	pr = parser_alloc(fe->fe_path, lx, st, si, op);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
