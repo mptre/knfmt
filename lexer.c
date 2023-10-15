@@ -72,7 +72,7 @@ static int	lexer_peek_until_not_nested(struct lexer *, int,
     const struct token *, struct token **);
 
 #define lexer_trace(lx, fmt, ...) do {					\
-	if (trace((lx)->lx_op, 'l') >= 2)				\
+	if (trace((lx)->lx_op, 'l'))					\
 		tracef('L', __func__, (fmt), __VA_ARGS__);		\
 } while (0)
 

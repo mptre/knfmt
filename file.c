@@ -26,7 +26,7 @@ files_alloc(struct files *files, const char *path, const struct options *op)
 	fe->fe_path = estrdup(path);
 	if (VECTOR_INIT(fe->fe_diff))
 		err(1, NULL);
-	fe->fe_error = error_alloc(trace(op, 'l') >= 2);
+	fe->fe_error = error_alloc(trace(op, 'l') > 0);
 	fe->fe_fd = -1;
 	return fe;
 }

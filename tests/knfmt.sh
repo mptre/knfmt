@@ -153,13 +153,13 @@ bug-*)
 	testcase -b -o "$_abs" -- -s "$@"
 	;;
 diff-simple-*)
-	testcase "$_abs" -- -Ds -tl "$@"
+	testcase "$_abs" -- -Ds "$@"
 	;;
 diff-style-*)
-	testcase -c "$_abs" -- -Ds -tl "$@"
+	testcase -c "$_abs" -- -Ds "$@"
 	;;
 diff-*)
-	testcase "$_abs" -- -D -tl "$@"
+	testcase "$_abs" -- -D "$@"
 	;;
 error-*)
 	testcase -e -q "$_abs" -- -s "$@"
@@ -169,7 +169,7 @@ inplace-*)
 	testcase -i "${_wrkdir}/test.c" -- -i "$@"
 	;;
 simple-*|../*)
-	testcase "$_abs" -- -s -tl "$@"
+	testcase "$_abs" -- -s "$@"
 	;;
 style-bug-*)
 	testcase -b -c -o "$_abs" -- -ts "$@"
@@ -178,18 +178,18 @@ style-error-*)
 	testcase -c "$_abs" -- -ts "$@"
 	;;
 style-simple-*)
-	testcase -c "$_abs" -- -s -tls "$@"
+	testcase -c "$_abs" -- -s -ts "$@"
 	;;
 style-trace-*)
 	testcase -c -o "$_abs" -- -s -tss "$@"
 	;;
 style-*)
-	testcase -c "$_abs" -- -tls "$@"
+	testcase -c "$_abs" -- -ts "$@"
 	;;
 trace-*)
 	testcase -c -q "$_abs" -- -s -ta "$@"
 	;;
 *)
-	testcase "$_abs" -- -tl "$@"
+	testcase "$_abs" -- "$@"
 	;;
 esac
