@@ -305,7 +305,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 
 	buffer_printf(bf, "%s", lx->lx_path);
 	if (l > 0)
-		buffer_printf(bf, ":%d", l);
+		buffer_printf(bf, ":%u", l);
 	buffer_printf(bf, ": ");
 	va_start(ap, fmt);
 	buffer_vprintf(bf, fmt, ap);
