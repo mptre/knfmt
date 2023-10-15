@@ -10,7 +10,6 @@
 
 #include "alloc.h"
 #include "doc.h"
-#include "error.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser-decl.h"
