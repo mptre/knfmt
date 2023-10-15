@@ -321,16 +321,15 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	 * Include best effort line context. However, do not bother with
 	 * verbatim hard lines(s) as the column calculation becomes trickier.
 	 */
-	if (l > 0 &&
-	    lexer_get_lines(lx, l, l + 1, &line, &linelen) &&
+	if (l > 0 && lexer_get_lines(lx, l, l + 1, &line, &linelen) &&
 	    !token_has_verbatim_line(ctx, 1)) {
 		unsigned int cno = ctx->tk_cno;
 		unsigned int w;
 
 		buffer_printf(bf, "%.*s", (int)linelen, line);
 
-		w = colwidth(ctx->tk_str, ctx->tk_len, cno, NULL) - cno;
 		buffer_printf(bf, "%*s", (int)cno - 1, "");
+		w = colwidth(ctx->tk_str, ctx->tk_len, cno, NULL) - cno;
 		for (; w > 0; w--)
 			buffer_putc(bf, '^');
 		buffer_putc(bf, '\n');
