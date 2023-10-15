@@ -1152,7 +1152,7 @@ expr_doc_align0(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc,
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[0].indent = DOC_INDENT_WIDTH;
 	minimizers[1].indent = indent;
-	return doc_minimize0(dc, minimizers, 2, fun, lno);
+	return doc_minimize0(minimizers, 2, dc, fun, lno);
 }
 
 static struct doc *
@@ -1164,7 +1164,7 @@ expr_doc_align_disable0(struct expr *UNUSED(ex), struct expr_state *es,
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[1].indent = indent;
 	minimizers[1].flags |= DOC_MINIMIZE_FORCE;
-	return doc_minimize0(dc, minimizers, 2, fun, lno);
+	return doc_minimize0(minimizers, 2, dc, fun, lno);
 }
 
 static void

@@ -515,8 +515,8 @@ doc_alloc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 }
 
 struct doc *
-doc_minimize0(struct doc *parent, const struct doc_minimize *minimizers,
-    size_t nminimizers, const char *fun, int lno)
+doc_minimize0(const struct doc_minimize *minimizers, size_t nminimizers,
+    struct doc *parent, const char *fun, int lno)
 {
 	struct doc *dc;
 	size_t i;

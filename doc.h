@@ -106,9 +106,9 @@ struct doc	*doc_alloc_dedent0(unsigned int, struct doc *, const char *,
     int);
 
 #define doc_minimize(a, b) \
-    doc_minimize0(a, b, sizeof(b)/sizeof((b)[0]), __func__, __LINE__)
-struct doc	*doc_minimize0(struct doc *, const struct doc_minimize *,
-    size_t, const char *, int);
+    doc_minimize0(a, sizeof(a)/sizeof((a)[0]), b, __func__, __LINE__)
+struct doc	*doc_minimize0(const struct doc_minimize *, size_t,
+    struct doc *, const char *, int);
 
 #define doc_literal(a, b) \
 	doc_literal0((a), 0, (b), __func__, __LINE__)

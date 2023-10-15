@@ -386,7 +386,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 			},
 		};
 
-		indent = doc_minimize(dc, minimizers);
+		indent = doc_minimize(minimizers, dc);
 	} else {
 		indent = doc_alloc_indent(w, concat);
 	}
