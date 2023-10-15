@@ -1211,7 +1211,14 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		if (st->st_nlines >= st->st_maxlines)
 			return 1;
 		st->st_nlines++;
-		st->st_stats.nlines++;
+		/*
+		 * Force printing is only expected to be performed while
+		 * emitting verbatim diff chunks. Such invocations must leave
+		 * the statistics intact in order to not influence
+		 * DOC_INDENT_NEWLINE decisions.
+		 */
+		if ((flags & DOC_PRINT_FORCE) == 0)
+			st->st_stats.nlines++;
 
 		/*
 		 * Suppress optional line(s) while emitting a line. Mixing the

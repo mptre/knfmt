@@ -1,0 +1,14 @@
+--- diff-style-003.c
++++ diff-style-003.c
+@@ -1,9 +1,9 @@
+ int
+ main(void)
+ {
+-        aaaaaaaaaaaaaa(bb, &(struct event){});
++        aaaaaaaaaaaaaa(bb, &(struct new_event){});
+ 
+-        aaaaaaaaaaaaaa(bb, &(struct event){
++        aaaaaaaaaaaaaa(bb, &(struct new_event){
+                 .flags = 0,
+         });
+ }
