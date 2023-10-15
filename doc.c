@@ -1059,10 +1059,7 @@ static int
 doc_fits(const struct doc *dc, struct doc_state *st)
 {
 	struct doc_state fst;
-	struct doc_fits fits = {
-		.fits		= 1,
-		.optline	= 0,
-	};
+	struct doc_fits fits = { .fits = 1 };
 	unsigned int col = 0;
 	unsigned int optline = 0;
 

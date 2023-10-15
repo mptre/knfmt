@@ -51,7 +51,6 @@ parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 	    .dc		= dc,
 	    .rl		= &rl,
 	    .indent	= indent,
-	    .col	= 0,
 	    .flags	= flags,
 	});
 	lbrace_cache_purge(pr);
