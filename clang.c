@@ -68,7 +68,7 @@ static struct token	*clang_ellipsis(struct lexer *,
 static void	token_branch_link(struct token *, struct token *);
 static void	token_prolong(struct token *, struct token *);
 
-static int	isnum(unsigned char, int);
+static int	isnum(unsigned char);
 
 static struct token *table_tokens[256];
 
@@ -200,11 +200,11 @@ clang_read(struct lexer *lx, void *arg)
 			pch = ch;
 		}
 		tk = lexer_emit(lx, &st, delim == '"' ? &tkstr : &tklit);
-	} else if (isnum(ch, 1)) {
+	} else if (isdigit(ch) || ch == '.') {
 		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;
-		} while (isnum(ch, 0));
+		} while (isnum(ch));
 		lexer_ungetc(lx);
 		tk = lexer_emit(lx, &st, &tklit);
 	} else if (isalpha(ch) || ch == '_') {
@@ -648,10 +648,16 @@ clang_keyword(struct lexer *lx)
 			break;
 		}
 
-		/* Hack to detect ellipses since ".." is not a valid token. */
 		if (tmp->tk_type == TOKEN_PERIOD) {
 			struct token *ellipsis;
+			unsigned char peek;
 
+			/* Detect fractional only float literals. */
+			if (lexer_getc(lx, &peek) || isdigit(peek))
+				break;
+			lexer_ungetc(lx);
+
+			/* Hack to detect ellipses since ".." is not valid. */
 			ellipsis = clang_ellipsis(lx, &st);
 			if (ellipsis != NULL) {
 				tk = ellipsis;
@@ -806,11 +812,8 @@ token_prolong(struct token *dst, struct token *src)
 }
 
 static int
-isnum(unsigned char ch, int prefix)
+isnum(unsigned char ch)
 {
-	if (prefix)
-		return isdigit(ch);
-
 	ch = isupper(ch) ? (unsigned char)tolower(ch) : ch;
 	return isdigit(ch) || isxdigit(ch) || ch == 'l' || ch == 'x' ||
 	    ch == 'u' || ch == '.';

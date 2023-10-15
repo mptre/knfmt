@@ -317,6 +317,7 @@ main(int argc, char *argv[])
 	test_lexer_read("..", "PERIOD PERIOD");
 	test_lexer_read("...", "ELLIPSIS");
 	test_lexer_read(".x", "PERIOD IDENT");
+	test_lexer_read(".3", "LITERAL");
 
 	test_lexer_read("__asm", "ASSEMBLY");
 	test_lexer_read("asm__", "ASSEMBLY");
