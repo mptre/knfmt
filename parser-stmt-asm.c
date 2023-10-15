@@ -26,10 +26,29 @@ doc_asm_operand(struct parser *pr, struct doc *dc)
 static int
 parser_stmt_asm_operand_cpp(struct parser *pr, struct doc *dc)
 {
+	struct lexer *lx = pr->pr_lx;
+	struct doc *expr;
+	struct token *stop = NULL;
+	struct token *comma;
+	int error;
+
 	dc = doc_asm_operand(pr, dc);
-	return parser_expr(pr, NULL, &(struct parser_expr_arg){
-	    .dc	= dc,
+
+	if (lexer_peek_until_comma(lx, NULL, &comma)) {
+		parser_token_trim_before(pr, comma);
+		stop = comma;
+	}
+	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
+	    .dc		= dc,
+	    .stop	= stop,
 	});
+	if (error & HALT)
+		return parser_fail(pr);
+	if (lexer_if(lx, TOKEN_COMMA, &comma)) {
+		doc_token(comma, expr);
+		doc_alloc(DOC_LINE, expr);
+	}
+	return parser_good(pr);
 }
 
 static int
