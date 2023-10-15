@@ -664,17 +664,16 @@ struct token *
 lexer_insert_before(struct lexer *lx, struct token *before, int type,
     const char *str)
 {
-	const struct token cp = {
-		.tk_type	= type,
-		.tk_lno		= before->tk_lno,
-		.tk_cno		= before->tk_cno,
-		.tk_flags	= token_flags_inherit(before),
-		.tk_str		= str,
-		.tk_len		= strlen(str),
-	};
 	struct token *tk;
 
-	tk = lx->lx_callbacks.alloc(&cp);
+	tk = lx->lx_callbacks.alloc(&(struct token){
+	    .tk_type	= type,
+	    .tk_lno	= before->tk_lno,
+	    .tk_cno	= before->tk_cno,
+	    .tk_flags	= token_flags_inherit(before),
+	    .tk_str	= str,
+	    .tk_len	= strlen(str),
+	});
 	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
 	return tk;
 }
@@ -683,15 +682,14 @@ struct token *
 lexer_insert_after(struct lexer *lx, struct token *after, int type,
     const char *str)
 {
-	const struct token cp = {
-		.tk_type	= type,
-		.tk_flags	= token_flags_inherit(after),
-		.tk_str		= str,
-		.tk_len		= strlen(str),
-	};
 	struct token *tk;
 
-	tk = lx->lx_callbacks.alloc(&cp);
+	tk = lx->lx_callbacks.alloc(&(struct token){
+	    .tk_type	= type,
+	    .tk_flags	= token_flags_inherit(after),
+	    .tk_str	= str,
+	    .tk_len	= strlen(str),
+	});
 	token_position_after(after, tk);
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
