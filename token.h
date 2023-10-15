@@ -122,6 +122,11 @@
 	OP(TOKEN_STRING,	"", 0)					\
 	OP(TOKEN_NONE,		"", 0)
 
+#define token_priv(tk, type) __extension__ ({				\
+	typeof(tk) _nx = (tk) + 1;					\
+	(type *)_nx;							\
+})
+
 enum {
 #define OP(type, ...) type,
 	FOR_TOKEN_TYPES(OP)
@@ -174,9 +179,6 @@ struct token {
 	const char		*tk_str;
 	size_t			 tk_len;
 	size_t			 tk_off;
-
-	struct token		*tk_token;
-	int			 tk_int;
 
 	struct {
 		struct token	*br_parent;

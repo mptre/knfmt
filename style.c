@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <err.h>
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,6 +69,14 @@ struct style_option {
 	int		 (*so_parse)(struct style *, struct lexer *,
 	    const struct style_option *);
 	int		 so_val[16];
+};
+
+struct yaml_token {
+	const struct style_option	*so;
+	union {
+		int32_t		i32;
+		uint32_t	u32;
+	} integer;
 };
 
 static void	style_defaults(struct style *);
@@ -427,7 +436,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 			error = FAIL;
 			break;
 		}
-		so = (struct style_option *)key->tk_token;
+		so = token_priv(key, struct yaml_token)->so;
 		if (so != NULL && so->so_scope != st->st_scope)
 			break;
 		if (so != NULL)
@@ -588,7 +597,7 @@ yaml_read_integer(struct lexer *lx)
 {
 	struct lexer_state s;
 	struct token *tk;
-	int digit = 0;
+	int32_t integer = 0;
 	int overflow = 0;
 	int peek = 0;
 	int sign = 1;
@@ -622,8 +631,8 @@ yaml_read_integer(struct lexer *lx)
 	while (isdigit(ch)) {
 		int x = ch - '0';
 
-		if (i32_mul_overflow(digit, 10, &digit) ||
-		    i32_add_overflow(digit, x, &digit))
+		if (i32_mul_overflow(integer, 10, &integer) ||
+		    i32_add_overflow(integer, x, &integer))
 			overflow = 1;
 
 		if (lexer_getc(lx, &ch))
@@ -632,12 +641,12 @@ yaml_read_integer(struct lexer *lx)
 	if (!string)
 		lexer_ungetc(lx);
 
-	if (i32_mul_overflow(digit, sign, &digit))
+	if (i32_mul_overflow(integer, sign, &integer))
 		overflow = 1;
 
 	tk = lexer_emit(lx, &s, NULL);
 	tk->tk_type = Integer;
-	tk->tk_int = digit;
+	token_priv(tk, struct yaml_token)->integer.i32 = integer;
 	if (overflow) {
 		lexer_error(lx, tk, __func__, __LINE__,
 		    "integer %s too large", lexer_serialize(lx, tk));
@@ -650,7 +659,7 @@ yaml_alloc(const struct token *def)
 {
 	struct token *tk;
 
-	tk = ecalloc(1, sizeof(*tk));
+	tk = ecalloc(1, sizeof(*tk) + sizeof(struct yaml_token));
 	token_init(tk, def);
 	return tk;
 }
@@ -694,7 +703,7 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 	}
 	tk->tk_type = so->so_type;
 	if (so->so_parse != NULL)
-		tk->tk_token = (void *)so;
+		token_priv(tk, struct yaml_token)->so = so;
 	return tk;
 }
 
@@ -778,7 +787,8 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 		    lexer_serialize(lx, val), lexer_serialize(lx, key));
 		return SKIP;
 	}
-	style_set(st, key->tk_type, Integer, (unsigned int)val->tk_int);
+	style_set(st, key->tk_type, Integer,
+	    token_priv(val, struct yaml_token)->integer.u32);
 	return GOOD;
 }
 
