@@ -784,7 +784,7 @@ static void
 context_reset(struct context *cx)
 {
 	options_init(&cx->op);
-	cx->op.op_flags.test = 1;
+	cx->op.test = 1;
 
 	buffer_reset(cx->bf);
 

@@ -14,13 +14,11 @@ static const char traces[] = {
 struct options {
 	unsigned int	op_trace[sizeof(traces)];
 
-	struct {
-		unsigned int	diff:1;
-		unsigned int	diffparse:1;
-		unsigned int	inplace:1;
-		unsigned int	simple:1;
-		unsigned int	test:1;
-	} op_flags;
+	unsigned int	diff:1,
+			diffparse:1,
+			inplace:1,
+			simple:1,
+			test:1;
 };
 
 void	options_init(struct options *);

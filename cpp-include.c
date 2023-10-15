@@ -114,7 +114,7 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 	if (tk->tk_type == TOKEN_CPP_INCLUDE) {
 		struct include *include;
 
-		if (ci->op->op_flags.diffparse &&
+		if (ci->op->diffparse &&
 		    (tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
 			ci->ignore = 1;
 

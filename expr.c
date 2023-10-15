@@ -702,7 +702,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	 * Testing backdoor wrapping each expression in parenthesis used for
 	 * validation of operator precedence.
 	 */
-	if (es->es_op->op_flags.test && ex->ex_type != EXPR_PARENS)
+	if (es->es_op->test && ex->ex_type != EXPR_PARENS)
 		doc_literal("(", concat);
 
 	switch (ex->ex_type) {
@@ -786,7 +786,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	}
 
 	/* Testing backdoor, see above. */
-	if (es->es_op->op_flags.test && ex->ex_type != EXPR_PARENS)
+	if (es->es_op->test && ex->ex_type != EXPR_PARENS)
 		doc_literal(")", concat);
 
 	es->es_depth--;

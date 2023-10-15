@@ -855,7 +855,7 @@ peek_simple_stmt(struct parser *pr)
 	struct token *tk;
 	int peek = 0;
 
-	if (!pr->pr_op->op_flags.simple)
+	if (!pr->pr_op->simple)
 		return 0;
 
 	lexer_peek_enter(lx, &s);

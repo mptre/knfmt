@@ -30,7 +30,7 @@ simple_alloc(const struct options *op)
 	struct simple *si;
 
 	si = ecalloc(1, sizeof(*si));
-	si->enable = op->op_flags.simple;
+	si->enable = op->simple;
 	return si;
 }
 

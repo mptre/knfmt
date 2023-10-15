@@ -124,7 +124,7 @@ simple_stmt_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 	unsigned int flags = STMT_BRACES;
 
 	/* Make sure both braces are covered by a diff chunk. */
-	if (ss->ss_op->op_flags.diffparse &&
+	if (ss->ss_op->diffparse &&
 	    ((lbrace->tk_flags & TOKEN_FLAG_DIFF) == 0 ||
 	     (rbrace->tk_flags & TOKEN_FLAG_DIFF) == 0))
 		flags |= STMT_IGNORE;

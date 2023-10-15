@@ -109,7 +109,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	if (bf == NULL)
 		err(1, NULL);
 
-	if (pr->pr_op->op_flags.diffparse)
+	if (pr->pr_op->diffparse)
 		doc_flags |= DOC_EXEC_DIFF;
 	else
 		doc_flags |= DOC_EXEC_TRIM;
@@ -117,8 +117,8 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 		doc_flags |= DOC_EXEC_TRACE;
 	doc_exec(&(struct doc_exec_arg){
 	    .dc		= dc,
-	    .lx		= pr->pr_op->op_flags.diffparse ? pr->pr_lx : NULL,
-	    .diff_chunks= pr->pr_op->op_flags.diffparse ? diff_chunks : NULL,
+	    .lx		= pr->pr_op->diffparse ? pr->pr_lx : NULL,
+	    .diff_chunks= pr->pr_op->diffparse ? diff_chunks : NULL,
 	    .bf		= bf,
 	    .st		= pr->pr_st,
 	    .op		= pr->pr_op,
