@@ -4,6 +4,7 @@ static const char traces[] = {
 	'C',	/* cpp */
 	'd',	/* doc */
 	'D',	/* diff */
+	'f',	/* func:line */
 	'l',	/* lexer */
 	's',	/* style */
 	'S',	/* simple */

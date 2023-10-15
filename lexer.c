@@ -310,7 +310,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	va_start(ap, fmt);
 	buffer_vprintf(bf, fmt, ap);
 	va_end(ap);
-	if (trace(lx->lx_op, 'l') >= 2)
+	if (trace(lx->lx_op, 'f'))
 		buffer_printf(bf, " [%s:%d]", fun, lno);
 	buffer_printf(bf, "\n");
 
