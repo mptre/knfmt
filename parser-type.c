@@ -17,7 +17,7 @@
 
 static int	peek_type_func_ptr(struct lexer *, struct token **,
     struct token **);
-static int	lexer_peek_if_type_ident(struct lexer *lx);
+static int	peek_type_ident_after_type(struct lexer *lx);
 static int	peek_type_ptr_array(struct lexer *, struct token **);
 static int	peek_type_noident(struct lexer *, struct token **);
 static int	peek_type_unknown_array(struct lexer *, struct token **);
@@ -100,7 +100,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			/* Ensure this is not the identifier after the type. */
 			if ((flags & PARSER_TYPE_CAST) == 0 &&
 			    (flags & PARSER_TYPE_EXPR) == 0 &&
-			    lexer_peek_if_type_ident(lx))
+			    peek_type_ident_after_type(lx))
 				break;
 
 			/* Identifier is part of the type, consume it. */
@@ -340,7 +340,7 @@ peek_type_ptr_array(struct lexer *lx, struct token **rsquare)
 }
 
 static int
-lexer_peek_if_type_ident(struct lexer *lx)
+peek_type_ident_after_type(struct lexer *lx)
 {
 	struct lexer_state s;
 	int peek = 0;
