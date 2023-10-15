@@ -6,9 +6,9 @@
 #include <stdlib.h>
 
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 
 #include "alloc.h"
-#include "cdefs.h"
 #include "doc.h"
 #include "error.h"
 #include "lexer.h"

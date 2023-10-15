@@ -63,7 +63,6 @@ PROG_fuzz-style=	fuzz-style
 
 KNFMT+=	alloc.c
 KNFMT+=	alloc.h
-KNFMT+=	cdefs.h
 KNFMT+=	clang.c
 KNFMT+=	clang.h
 KNFMT+=	comment.c
@@ -137,7 +136,6 @@ KNFMT+=	util.h
 
 CLANGTIDY+=	alloc.c
 CLANGTIDY+=	alloc.h
-CLANGTIDY+=	cdefs.h
 CLANGTIDY+=	clang.c
 CLANGTIDY+=	clang.h
 CLANGTIDY+=	comment.c

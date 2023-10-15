@@ -13,10 +13,10 @@
 
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/vector.h"
 
 #include "alloc.h"
-#include "cdefs.h"
 #include "error.h"
 #include "lexer.h"
 #include "options.h"

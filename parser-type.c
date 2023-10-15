@@ -4,7 +4,8 @@
 
 #include <string.h>
 
-#include "cdefs.h"
+#include "libks/compiler.h"
+
 #include "doc.h"
 #include "lexer.h"
 #include "parser-cpp.h"

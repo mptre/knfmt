@@ -14,11 +14,11 @@
 
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/consistency.h"
 #include "libks/vector.h"
 
 #include "alloc.h"
-#include "cdefs.h"
 #include "diff.h"
 #include "lexer.h"
 #include "style.h"

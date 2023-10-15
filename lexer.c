@@ -10,10 +10,10 @@
 #include <string.h>
 
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/vector.h"
 
 #include "alloc.h"
-#include "cdefs.h"
 #include "diff.h"
 #include "error.h"
 #include "options.h"

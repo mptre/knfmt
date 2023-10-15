@@ -642,7 +642,6 @@ TESTS+=	style-trace-001.c
 
 TESTS+=	../alloc.c
 TESTS+=	../alloc.h
-TESTS+=	../cdefs.h
 TESTS+=	../clang.c
 TESTS+=	../clang.h
 TESTS+=	../comment.c
@@ -670,6 +669,7 @@ TESTS+=	../libks/arithmetic.c
 TESTS+=	../libks/arithmetic.h
 TESTS+=	../libks/buffer.c
 TESTS+=	../libks/buffer.h
+TESTS+=	../libks/compiler.h
 TESTS+=	../libks/consistency.c
 TESTS+=	../libks/consistency.h
 TESTS+=	../libks/vector.c

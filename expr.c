@@ -8,11 +8,11 @@
 #include <string.h>
 
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/consistency.h"
 #include "libks/vector.h"
 
 #include "alloc.h"
-#include "cdefs.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"

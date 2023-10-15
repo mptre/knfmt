@@ -2,7 +2,8 @@
 
 #include "config.h"
 
-#include "cdefs.h"
+#include "libks/compiler.h"
+
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
