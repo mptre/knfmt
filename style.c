@@ -486,6 +486,7 @@ style_defaults(struct style *st)
 		{ BreakBeforeTernaryOperators,	False },
 		{ ColumnLimit,			80 },
 		{ ContinuationIndentWidth,	4 },
+		{ IncludeBlocks,		Preserve },
 		{ IndentWidth,			8 },
 		{ SortIncludes,			Never },
 		{ UseTab,			Always },
