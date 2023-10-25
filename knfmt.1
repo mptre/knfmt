@@ -325,6 +325,20 @@ Maximum number of allowed columns per line.
 .It Cm ContinuationIndentWidth
 Indentation width for line continuations.
 .Pq default 4
+.It Cm IncludeBlocks
+Treatment of blocks of includes.
+.Bl -tag -width Ds
+.It Cm Merge
+Not supported.
+.It Cm Preserve
+Preserve blocks of includes.
+.Pq default
+.It Cm Regroup
+Regroup blocks of includes according to
+.Ic IncludeCategories .
+.El
+.It Cm IncludeCategories
+Rules used to group includes into blocks.
 .It Cm IndentWidth
 Indentation width.
 .Pq default 8
