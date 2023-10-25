@@ -1,4 +1,4 @@
-# 4.4.0rc1 - YYYY-MM-DD
+# 4.4.0 - YYYY-MM-DD
 
 ## News
 
