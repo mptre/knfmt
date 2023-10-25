@@ -87,6 +87,7 @@ Language: 'Cpp'
 [s] AlwaysBreakAfterReturnType: All
 [s] BreakBeforeBraces: Linux
 [s] ColumnLimit: 100
+[s] IncludeBlocks: Regroup
 [s] IncludeCategories: 
 [s] - Regex: '^"config.h"$'
 [s]   Priority: 0
@@ -98,5 +99,4 @@ Language: 'Cpp'
 [s]   Priority: 4
 [s]   SortPriority: 4
 [s] IndentWidth: 8
-[s] IncludeBlocks: Regroup
 [s] UseTab: Always

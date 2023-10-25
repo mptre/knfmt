@@ -63,12 +63,12 @@ struct style;
 	OP(False)							\
 	OP(ForContinuationAndIndentation)				\
 	OP(ForIndentation)						\
-	OP(IncludeCategories)						\
-	OP(IndentWidth)							\
 	OP(IncludeBlocks)						\
 	  OP(Merge)							\
 	  OP(Preserve)							\
 	  OP(Regroup)							\
+	OP(IncludeCategories)						\
+	OP(IndentWidth)							\
 	OP(Left)							\
 	OP(MultiLine)							\
 	OP(Never)							\
