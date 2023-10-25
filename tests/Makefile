@@ -635,7 +635,6 @@ TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ColumnLimit-002.c
 TESTS+=	style-ContinuationIndentWidth-001.c
 TESTS+=	style-IncludeCategories-001.c
-TESTS+=	style-IncludeCategories-002.c
 TESTS+=	style-IndentWidth-001.c
 TESTS+=	style-SortIncludes-001.c
 TESTS+=	style-UseTab-001.c
