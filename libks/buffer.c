@@ -207,23 +207,11 @@ buffer_release(struct buffer *bf)
 char *
 buffer_str(struct buffer *bf)
 {
-#ifdef __COVERITY__
-	/*
-	 * Coverity cannot deduce that the returned string is always
-	 * NUL-terminated below.
-	 */
-	char *str;
-
-	str = strndup(bf->bf_ptr, bf->bf_len);
-	buffer_reset(bf);
-	return str;
-#else
 	if (bf->bf_len == 0 || bf->bf_ptr[bf->bf_len - 1] != '\0') {
 		if (buffer_putc(bf, '\0'))
 			return NULL;
 	}
 	return buffer_release(bf);
-#endif
 }
 
 void
