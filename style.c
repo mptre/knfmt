@@ -161,6 +161,9 @@ style_init(void)
 		{ S(BitFieldColonSpacing), parse_enum,
 		  { Both, None, Before, After } },
 
+		{ S(BasedOnStyle), parse_enum,
+		  { OpenBSD } },
+
 		{ S(BraceWrapping), parse_nested, {0} },
 		{ N(BraceWrapping, AfterCaseLabel), parse_bool, {0} },
 		{ N(BraceWrapping, AfterClass), parse_bool, {0} },
@@ -227,7 +230,6 @@ style_init(void)
 		{ E(Before) },
 		{ E(BlockIndent) },
 		{ E(Both) },
-		{ E(ClangFormat) },
 		{ E(Custom) },
 		{ E(DontAlign) },
 		{ E(ForContinuationAndIndentation) },
@@ -241,6 +243,7 @@ style_init(void)
 		{ E(Never) },
 		{ E(NonAssignment) },
 		{ E(None) },
+		{ E(OpenBSD) },
 		{ E(Preserve) },
 		{ E(Regroup) },
 		{ E(Right) },
@@ -332,7 +335,13 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 	if (VECTOR_INIT(st->include_categories))
 		err(1, NULL);
 	style_defaults(st);
-	if (bf != NULL) {
+	if (bf == NULL) {
+		 /*
+		  * Only apply default style if no clang-format configuration
+		  * file is present.
+		  */
+		st->options[BasedOnStyle].val = OpenBSD;
+	} else {
 		/* Errors are not considered fatal. */
 		(void)style_parse_yaml(st, path, bf);
 	}
@@ -468,7 +477,6 @@ style_defaults(struct style *st)
 		{ BreakBeforeBinaryOperators,	None },
 		{ BreakBeforeBraces,		Linux },
 		{ BreakBeforeTernaryOperators,	False },
-		{ ClangFormat,			False },
 		{ ColumnLimit,			80 },
 		{ ContinuationIndentWidth,	4 },
 		{ IndentWidth,			8 },
@@ -513,8 +521,6 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 		goto out;
 	}
 	error = style_parse_yaml1(st, lx);
-	if (error == 0)
-		style_set(st, ClangFormat, None, True);
 
 out:
 	lexer_free(lx);

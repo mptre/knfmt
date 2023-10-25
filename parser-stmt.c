@@ -423,7 +423,7 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	struct doc *stmt;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lparen, *rparen, *tk;
-	unsigned int w = 0;
+	unsigned int w;
 	int error;
 
 	if (!lexer_expect(lx, type->tk_type, &tk) ||
@@ -437,11 +437,17 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc,
 	if (type->tk_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
 
-	if (style(pr->pr_st, ClangFormat) == True) {
+	if (style(pr->pr_st, BasedOnStyle) == OpenBSD) {
+		w = 0;
+	} else {
 		/*
-		 * Take note of the width before emitting the left parenthesis
-		 * as it could be followed by comments, which must not affect
-		 * alignment.
+		 * Usage of non-default style in which clang-format indentation
+		 * is assumed causing the statement expression to be aligned
+		 * with the left parenthesis.
+		 *
+		 * Note, must take note of the width before emitting the left
+		 * parenthesis as it could be followed by comments which should
+		 * not affect alignment.
 		 */
 		w = parser_width(pr, dc) + 1;
 	}
