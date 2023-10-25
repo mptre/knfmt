@@ -55,13 +55,13 @@ enum yaml_type {
 struct style {
 	struct arena_scope		*eternal;
 	struct arena			*scratch;
-	const struct options		*st_op;
-	int				 st_scope;
+	const struct options		*op;
+	int				 scope;
 	struct {
 		int		type;
 		unsigned int	isset;
 		unsigned int	val;
-	} st_options[Last];
+	} options[Last];
 	VECTOR(struct include_category)	 include_categories;
 };
 
@@ -328,7 +328,7 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 	st = ecalloc(1, sizeof(*st));
 	st->eternal = eternal;
 	st->scratch = scratch;
-	st->st_op = op;
+	st->op = op;
 	if (VECTOR_INIT(st->include_categories))
 		err(1, NULL);
 	style_defaults(st);
@@ -358,13 +358,13 @@ unsigned int
 style(const struct style *st, int option)
 {
 	assert(option < Last);
-	return st->st_options[option].val;
+	return st->options[option].val;
 }
 
 int
 style_brace_wrapping(const struct style *st, int option)
 {
-	switch (st->st_options[BreakBeforeBraces].val) {
+	switch (st->options[BreakBeforeBraces].val) {
 	case Linux:
 		switch (option) {
 		case AfterFunction:
@@ -372,7 +372,7 @@ style_brace_wrapping(const struct style *st, int option)
 		}
 		break;
 	}
-	return st->st_options[option].val == True;
+	return st->options[option].val == True;
 }
 
 static int
@@ -479,15 +479,15 @@ style_defaults(struct style *st)
 	size_t i;
 
 	for (i = 0; i < ndefaults; i++)
-		st->st_options[defaults[i].key].val = defaults[i].val;
+		st->options[defaults[i].key].val = defaults[i].val;
 }
 
 static void
 style_set(struct style *st, int option, int type, unsigned int val)
 {
-	st->st_options[option].type = type;
-	st->st_options[option].isset = 1;
-	st->st_options[option].val = val;
+	st->options[option].type = type;
+	st->options[option].isset = 1;
+	st->options[option].val = val;
 }
 
 static int
@@ -499,8 +499,8 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= bf,
-	    .op		= st->st_op,
-	    .error_flush= trace(st->st_op, 's') > 0,
+	    .op		= st->op,
+	    .error_flush= trace(st->op, 's') > 0,
 	    .callbacks	= {
 		.read		= yaml_read,
 		.alloc		= yaml_alloc,
@@ -547,7 +547,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 			break;
 		}
 		so = token_priv(key, struct yaml_token)->so;
-		if (so != NULL && so->so_scope != st->st_scope)
+		if (so != NULL && so->so_scope != st->scope)
 			break;
 		if (so != NULL)
 			error = so->so_parse(st, lx, so);
@@ -580,7 +580,7 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 static void
 style_dump(const struct style *st)
 {
-	size_t noptions = sizeof(st->st_options) / sizeof(st->st_options[0]);
+	size_t noptions = sizeof(st->options) / sizeof(st->options[0]);
 	size_t i;
 	int scope = 0;
 
@@ -588,7 +588,7 @@ style_dump(const struct style *st)
 		const struct style_option *so;
 		const char *key;
 
-		if (!st->st_options[i].isset)
+		if (!st->options[i].isset)
 			continue;
 
 		key = style_keyword_str(i);
@@ -608,13 +608,13 @@ style_dump(const struct style *st)
 		if (so->so_type == IncludeCategories) {
 			style_dump_IncludeCategories(st);
 		} else {
-			switch (st->st_options[i].type) {
+			switch (st->options[i].type) {
 			case Integer:
-				fprintf(stderr, "%u", st->st_options[i].val);
+				fprintf(stderr, "%u", st->options[i].val);
 				break;
 			default:
 				fprintf(stderr, "%s",
-				    style_keyword_str(st->st_options[i].val));
+				    style_keyword_str(st->options[i].val));
 				break;
 			}
 			fprintf(stderr, "\n");
@@ -962,10 +962,10 @@ parse_nested(struct style *st, struct lexer *lx, const struct style_option *so)
 		return NONE;
 	if (!lexer_expect(lx, Colon, NULL))
 		return FAIL;
-	scope = st->st_scope;
-	st->st_scope = so->so_type;
+	scope = st->scope;
+	st->scope = so->so_type;
 	style_parse_yaml1(st, lx);
-	st->st_scope = scope;
+	st->scope = scope;
 	return GOOD;
 }
 
@@ -977,9 +977,9 @@ parse_AlignOperands(struct style *st, struct lexer *lx,
 
 	error = parse_enum(st, lx, so);
 	if (error & GOOD) {
-		if (st->st_options[AlignOperands].val == True) {
+		if (st->options[AlignOperands].val == True) {
 			style_set(st, AlignOperands, None, (unsigned int)Align);
-		} else if (st->st_options[AlignOperands].val == False) {
+		} else if (st->options[AlignOperands].val == False) {
 			style_set(st, AlignOperands, None,
 			    (unsigned int)DontAlign);
 		}
@@ -994,7 +994,7 @@ parse_ColumnLimit(struct style *st, struct lexer *lx,
 	int error;
 
 	error = parse_integer(st, lx, so);
-	if ((error & GOOD) && st->st_options[ColumnLimit].val == 0)
+	if ((error & GOOD) && st->options[ColumnLimit].val == 0)
 		style_set(st, ColumnLimit, Integer, UINT_MAX);
 	return error;
 }
@@ -1010,14 +1010,14 @@ parse_IncludeCategories(struct style *st, struct lexer *lx,
 	if (!lexer_expect(lx, Colon, NULL))
 		return FAIL;
 
-	scope = st->st_scope;
-	st->st_scope = so->so_type;
+	scope = st->scope;
+	st->scope = so->so_type;
 	while (lexer_if(lx, Sequence, NULL)) {
 		if (VECTOR_CALLOC(st->include_categories) == NULL)
 			err(1, NULL);
 		style_parse_yaml1(st, lx);
 	}
-	st->st_scope = scope;
+	st->scope = scope;
 	/* Only used by style_dump(). */
 	style_set(st, IncludeCategories, None, None);
 	return GOOD;
