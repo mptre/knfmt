@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
@@ -45,6 +46,7 @@ main(int argc, char *argv[])
 {
 	struct files files;
 	struct options op;
+	struct arena *eternal, *scratch;
 	struct clang *cl = NULL;
 	struct simple *si = NULL;
 	struct style *st = NULL;
@@ -105,17 +107,22 @@ main(int argc, char *argv[])
 	clang_init();
 	expr_init();
 	style_init();
-	if (VECTOR_INIT(files.fs_vc)) {
-		error = 1;
-		goto out;
-	}
-	st = style_parse(clang_format, &op);
+	eternal = arena_alloc(ARENA_FATAL);
+	if (eternal == NULL)
+		err(1, NULL);
+	arena_scope(eternal, eternal_scope);
+	scratch = arena_alloc(ARENA_FATAL);
+	if (scratch == NULL)
+		err(1, NULL);
+	if (VECTOR_INIT(files.fs_vc))
+		err(1, NULL);
+	st = style_parse(clang_format, &eternal_scope, scratch, &op);
 	if (st == NULL) {
 		error = 1;
 		goto out;
 	}
 	si = simple_alloc(&op);
-	cl = clang_alloc(st, si, &op);
+	cl = clang_alloc(st, si, scratch, &op);
 
 	if (filelist(argc, argv, &files, &op)) {
 		error = 1;
@@ -134,6 +141,8 @@ out:
 	clang_free(cl);
 	simple_free(si);
 	style_free(st);
+	arena_free(scratch);
+	arena_free(eternal);
 	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();

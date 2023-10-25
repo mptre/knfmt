@@ -198,6 +198,12 @@ lexer_set_state(struct lexer *lx, const struct lexer_state *st)
 	lx->lx_st = *st;
 }
 
+const char *
+lexer_get_path(const struct lexer *lx)
+{
+	return lx->lx_path;
+}
+
 int
 lexer_getc(struct lexer *lx, unsigned char *ch)
 {

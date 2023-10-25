@@ -3,6 +3,7 @@ include ${.CURDIR}/config.mk
 VERSION=	4.3.0
 
 SRCS+=	alloc.c
+SRCS+=	arena.c
 SRCS+=	arithmetic.c
 SRCS+=	buffer.c
 SRCS+=	clang.c
@@ -20,6 +21,7 @@ SRCS+=	expr.c
 SRCS+=	file.c
 SRCS+=	fs.c
 SRCS+=	lexer.c
+SRCS+=	map.c
 SRCS+=	options.c
 SRCS+=	parser-attributes.c
 SRCS+=	parser-braces.c

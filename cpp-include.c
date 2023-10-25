@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena.h"
+#include "libks/map.h"
 #include "libks/vector.h"
 
 #include "alloc.h"
@@ -17,31 +19,37 @@
 #include "token.h"
 
 struct cpp_include {
-	VECTOR(struct include)	 includes;
-	struct lexer		*lx;
-	struct token_list	*prefixes;
-	struct token		*after;
-	const struct style	*st;
-	struct simple		*si;
-	struct simple_cookie	 cookie;
-	const struct options	*op;
-	int			 ignore;
+	VECTOR(struct include)		 includes;
+	MAP(int,, struct include_group)	 groups;
+	struct lexer			*lx;
+	struct token_list		*prefixes;
+	struct token			*after;
+	const struct style		*st;
+	struct simple			*si;
+	struct simple_cookie		 cookie;
+	struct arena			*scratch;
+	const struct options		*op;
+	int				 ignore;
+	int				 regroup;
 };
 
 struct include {
-	struct token	*tk;
+	struct token		*tk;
 	struct {
 		const char	*str;
 		size_t		 len;
 	} path;
+	struct include_priority	 priority;
+};
+
+struct include_group {
+	VECTOR(struct include *)	includes;
 };
 
 static void	cpp_include_exec(struct cpp_include *);
 static void	cpp_include_reset(struct cpp_include *);
 
-static void	add_line(struct cpp_include *, struct token *);
-
-static int	include_cmp(const struct include *, const struct include *);
+static struct token	*add_line(struct cpp_include *, struct token *);
 
 static const char	*findpath(const char *, size_t, size_t *);
 
@@ -49,27 +57,54 @@ static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
 cpp_include_alloc(const struct style *st, struct simple *si,
-    const struct options *op)
+    struct arena *scratch, const struct options *op)
 {
 	struct cpp_include *ci;
+	VECTOR(int) priorities;
+	size_t i;
 
 	ci = ecalloc(1, sizeof(*ci));
 	if (VECTOR_INIT(ci->includes))
 		err(1, NULL);
+	if (MAP_INIT(ci->groups))
+		err(1, NULL);
 	ci->st = st;
 	ci->si = si;
+	ci->scratch = scratch;
 	ci->op = op;
+	ci->regroup = style(st, IncludeBlocks) == Regroup;
+
+	priorities = style_include_priorities(st);
+	for (i = 0; i < VECTOR_LENGTH(priorities); i++) {
+		struct include_group *group;
+
+		group = MAP_INSERT(ci->groups, priorities[i]);
+		if (group == NULL)
+			err(1, NULL);
+		if (VECTOR_INIT(group->includes))
+			err(1, NULL);
+	}
+	VECTOR_FREE(priorities);
+
 	return ci;
 }
 
 void
 cpp_include_free(struct cpp_include *ci)
 {
+	struct map_iterator it = {0};
+	struct include_group *group;
+
 	if (ci == NULL)
 		return;
 
 	cpp_include_reset(ci);
 	VECTOR_FREE(ci->includes);
+	while ((group = MAP_ITERATE(ci->groups, &it)) != NULL) {
+		VECTOR_FREE(group->includes);
+		MAP_REMOVE(ci->groups, group);
+	}
+	MAP_FREE(ci->groups);
 	free(ci);
 }
 
@@ -125,7 +160,7 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 			err(1, NULL);
 		token_ref(tk);
 		include->tk = tk;
-		if (!token_has_verbatim_line(tk, 2))
+		if (ci->regroup || !token_has_verbatim_line(tk, 2))
 			return;
 	}
 
@@ -134,15 +169,41 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 }
 
 static void
+add_to_include_group(struct cpp_include *ci, struct include *include)
+{
+	struct include_group *group;
+	struct include **dst;
+
+	group = MAP_FIND(ci->groups, include->priority.group);
+	dst = VECTOR_ALLOC(group->includes);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = include;
+}
+
+static int
+include_cmp(struct include *const *aa, struct include *const *bb)
+{
+	const struct include *a = *aa;
+	const struct include *b = *bb;
+	int sort;
+
+	sort = a->priority.sort - b->priority.sort;
+	if (sort != 0)
+		return sort;
+	return token_strcmp(a->tk, b->tk);
+}
+
+static void
 cpp_include_exec(struct cpp_include *ci)
 {
-	struct include *last;
+	struct map_iterator it = {0};
+	struct include_group *group;
 	struct token *after = ci->after;
 	size_t i, nincludes;
 	unsigned int nbrackets = 0;
 	unsigned int nquotes = 0;
 	unsigned int nslashes = 0;
-	int doline;
 
 	if (ci->ignore)
 		return;
@@ -151,7 +212,10 @@ cpp_include_exec(struct cpp_include *ci)
 	if (nincludes < 2)
 		return;
 
+	arena_scope(ci->scratch, s);
+
 	for (i = 0; i < nincludes; i++) {
+		struct include_priority priority = {0};
 		struct include *include = &ci->includes[i];
 		const struct token *tk = include->tk;
 		const char *path;
@@ -163,54 +227,78 @@ cpp_include_exec(struct cpp_include *ci)
 		include->path.str = path;
 		include->path.len = len;
 
-		if (path[0] == '<')
-			nbrackets++;
-		if (path[0] == '"')
-			nquotes++;
-		if (memchr(path, '/', len) != NULL)
-			nslashes++;
-		if ((nbrackets > 0 && nquotes > 0) ||
-		    (nbrackets > 0 && nslashes > 0))
-			return;
-	}
+		if (ci->regroup) {
+			const char *str;
 
-	last = VECTOR_LAST(ci->includes);
-	doline = token_has_verbatim_line(last->tk, 2);
-
-	VECTOR_SORT(ci->includes, include_cmp);
-
-	for (i = 0; i < nincludes; i++) {
-		struct include *include = &ci->includes[i];
-
-		token_trim_verbatim_line(include->tk);
-		token_list_remove(ci->prefixes, include->tk);
-		token_ref(include->tk);
-		if (after != NULL) {
-			token_list_append_after(ci->prefixes, after,
-			    include->tk);
+			str = arena_strndup(&s, path, len);
+			priority = style_include_priority(ci->st, str,
+			    lexer_get_path(ci->lx));
 		} else {
-			token_list_prepend(ci->prefixes, include->tk);
+			if (path[0] == '<')
+				nbrackets++;
+			if (path[0] == '"')
+				nquotes++;
+			if (memchr(path, '/', len) != NULL)
+				nslashes++;
+			if ((nbrackets > 0 && nquotes > 0) ||
+			    (nbrackets > 0 && nslashes > 0))
+				return;
 		}
-		after = include->tk;
+		include->priority = priority;
+		add_to_include_group(ci, include);
 	}
-	if (doline)
-		add_line(ci, after);
+
+	while ((group = MAP_ITERATE(ci->groups, &it)) != NULL) {
+		struct include *last;
+		int doline;
+
+		if (VECTOR_EMPTY(group->includes))
+			continue;
+
+		last = *VECTOR_LAST(group->includes);
+		doline = ci->regroup || token_has_verbatim_line(last->tk, 2);
+
+		VECTOR_SORT(group->includes, include_cmp);
+
+		nincludes = VECTOR_LENGTH(group->includes);
+		for (i = 0; i < nincludes; i++) {
+			struct include *include = group->includes[i];
+
+			token_trim_verbatim_line(include->tk);
+			token_list_remove(ci->prefixes, include->tk);
+			token_ref(include->tk);
+			if (after != NULL) {
+				token_list_append_after(ci->prefixes, after,
+				    include->tk);
+			} else {
+				token_list_prepend(ci->prefixes, include->tk);
+			}
+			after = include->tk;
+		}
+		if (doline)
+			after = add_line(ci, after);
+	}
 }
 
 static void
 cpp_include_reset(struct cpp_include *ci)
 {
+	struct map_iterator it = {0};
+	struct include_group *group;
+
 	while (!VECTOR_EMPTY(ci->includes)) {
 		struct include *include;
 
 		include = VECTOR_POP(ci->includes);
 		token_rele(include->tk);
 	}
+	while ((group = MAP_ITERATE(ci->groups, &it)) != NULL)
+		VECTOR_CLEAR(group->includes);
 	ci->after = NULL;
 	ci->ignore = 0;
 }
 
-static void
+static struct token *
 add_line(struct cpp_include *ci, struct token *after)
 {
 	struct lexer_state st;
@@ -224,12 +312,7 @@ add_line(struct cpp_include *ci, struct token *after)
 	    .tk_len	= 1,
 	});
 	token_list_append_after(ci->prefixes, after, tk);
-}
-
-static int
-include_cmp(const struct include *a, const struct include *b)
-{
-	return token_strcmp(a->tk, b->tk);
+	return tk;
 }
 
 static const char *

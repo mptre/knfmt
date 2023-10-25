@@ -122,14 +122,15 @@ clang_shutdown(void)
 }
 
 struct clang *
-clang_alloc(const struct style *st, struct simple *si, const struct options *op)
+clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
+    const struct options *op)
 {
 	struct clang *cl;
 
 	cl = ecalloc(1, sizeof(*cl));
 	cl->cl_st = st;
 	cl->cl_op = op;
-	cl->cl_ci = cpp_include_alloc(st, si, op);
+	cl->cl_ci = cpp_include_alloc(st, si, scratch, op);
 	if (VECTOR_INIT(cl->cl_branches))
 		err(1, NULL);
 	return cl;

@@ -62,6 +62,8 @@ struct lexer_state	lexer_get_state(const struct lexer *);
 void			lexer_set_state(struct lexer *,
     const struct lexer_state *);
 
+const char	*lexer_get_path(const struct lexer *);
+
 int		 lexer_getc(struct lexer *, unsigned char *);
 void		 lexer_ungetc(struct lexer *);
 void		 lexer_eat_lines_and_spaces(struct lexer *,

@@ -40,9 +40,6 @@ DerivePointerAlignment: 'false'
 .clang-format:21: unknown option Unknown<21:1>("IndentCaseLabels")
 IndentCaseLabels: 'false'
 ^^^^^^^^^^^^^^^^
-.clang-format:23: unknown option Unknown<23:1>("IncludeBlocks")
-IncludeBlocks: 'Regroup'
-^^^^^^^^^^^^^
 .clang-format:24: unknown option Unknown<24:1>("KeepEmptyLinesAtTheStartOfBlocks")
 KeepEmptyLinesAtTheStartOfBlocks: 'false'
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -91,7 +88,16 @@ Language: 'Cpp'
 [s] BreakBeforeBraces: Linux
 [s] ClangFormat: True
 [s] ColumnLimit: 100
-[s] IndentWidth: 8
-[s] IncludeCategories:
+[s] IncludeCategories: 
+[s] - Regex: '^"config.h"$'
+[s]   Priority: 0
+[s]   SortPriority: 0
+[s] - Regex: '^<'
+[s]   Priority: 2
+[s]   SortPriority: 2
+[s] - Regex: '.*'
 [s]   Priority: 4
+[s]   SortPriority: 4
+[s] IndentWidth: 8
+[s] IncludeBlocks: Regroup
 [s] UseTab: Always

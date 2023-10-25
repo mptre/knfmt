@@ -1,3 +1,5 @@
+struct arena;
+struct arena_scope;
 struct buffer;
 struct options;
 struct style;
@@ -62,6 +64,10 @@ struct style;
 	OP(ForIndentation)						\
 	OP(IncludeCategories)						\
 	OP(IndentWidth)							\
+	OP(IncludeBlocks)						\
+	  OP(Merge)							\
+	  OP(Preserve)							\
+	  OP(Regroup)							\
 	OP(Left)							\
 	OP(MultiLine)							\
 	OP(Never)							\
@@ -85,16 +91,26 @@ enum style_keyword {
 	Last,
 };
 
+struct include_priority {
+	int	group;
+	int	sort;
+};
+
 void	style_init(void);
 void	style_shutdown(void);
 
-struct style	*style_parse(const char *, const struct options *);
+struct style	*style_parse(const char *, struct arena_scope *,
+    struct arena *, const struct options *);
 struct style	*style_parse_buffer(const struct buffer *, const char *,
-    const struct options *);
+    struct arena_scope *, struct arena *, const struct options *);
 void		 style_free(struct style *);
 
 unsigned int	style(const struct style *, int);
 int		style_brace_wrapping(const struct style *, int);
+
+int			*style_include_priorities(const struct style *);
+struct include_priority	 style_include_priority(const struct style *,
+    const char *, const char *);
 
 const char	*style_keyword_str(enum style_keyword);
 

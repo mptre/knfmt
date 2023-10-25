@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 
 #include "alloc.h"
@@ -96,13 +97,14 @@ static int	test_strwidth0(const char *, size_t, size_t, int);
 static int	test_tmptemplate0(const char *, const char *, int);
 
 struct context {
-	struct options	 op;
-	struct buffer	*bf;
-	struct style	*st;
-	struct simple	*si;
-	struct clang	*cl;
-	struct lexer	*lx;
-	struct parser	*pr;
+	struct options		 op;
+	struct arena		*scratch;
+	struct buffer		*bf;
+	struct style		*st;
+	struct simple		*si;
+	struct clang		*cl;
+	struct lexer		*lx;
+	struct parser		*pr;
 };
 
 static void	usage(void) __attribute__((__noreturn__));
@@ -688,7 +690,8 @@ test_style0(struct context *cx, const char *src, int key, int exp, int lno)
 
 	context_init(cx, src);
 	options_trace_parse(&cx->op, "ss");
-	st = style_parse_buffer(cx->bf, ".clang-format", &cx->op);
+	st = style_parse_buffer(cx->bf, ".clang-format", NULL, cx->scratch,
+	    &cx->op);
 	act = (int)style(st, key);
 	if (exp != act) {
 		fprintf(stderr, "style_parse:%d:\n\texp %d\n\tgot %d\n",
@@ -737,6 +740,9 @@ context_alloc(void)
 	struct context *cx;
 
 	cx = ecalloc(1, sizeof(*cx));
+	cx->scratch = arena_alloc(ARENA_FATAL);
+	if (cx->scratch == NULL)
+		err(1, NULL);
 	cx->bf = buffer_alloc(128);
 	if (cx->bf == NULL)
 		err(1, NULL);
@@ -752,6 +758,7 @@ context_free(struct context *cx)
 
 	context_reset(cx);
 	buffer_free(cx->bf);
+	arena_free(cx->scratch);
 	free(cx);
 }
 
@@ -761,9 +768,9 @@ context_init(struct context *cx, const char *src)
 	static const char *path = "test.c";
 
 	buffer_puts(cx->bf, src, strlen(src));
-	cx->st = style_parse(NULL, &cx->op);
+	cx->st = style_parse(NULL, NULL, cx->scratch, &cx->op);
 	cx->si = simple_alloc(&cx->op);
-	cx->cl = clang_alloc(cx->st, cx->si, &cx->op);
+	cx->cl = clang_alloc(cx->st, cx->si, cx->scratch, &cx->op);
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path	= path,
 	    .bf		= cx->bf,

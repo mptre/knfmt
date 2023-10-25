@@ -6,12 +6,14 @@
 #include <ctype.h>
 #include <err.h>
 #include <limits.h>
+#include <regex.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arena.h"
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
@@ -51,13 +53,22 @@ enum yaml_type {
 };
 
 struct style {
-	const struct options	*st_op;
-	int			 st_scope;
+	struct arena_scope		*eternal;
+	struct arena			*scratch;
+	const struct options		*st_op;
+	int				 st_scope;
 	struct {
 		int		type;
 		unsigned int	isset;
 		unsigned int	val;
 	} st_options[Last];
+	VECTOR(struct include_category)	 include_categories;
+};
+
+struct include_category {
+	const char		*pattern;
+	regex_t			 regex;
+	struct include_priority	 priority;
 };
 
 struct style_option {
@@ -84,6 +95,7 @@ static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *);
 static int	style_parse_yaml1(struct style *, struct lexer *);
 static void	style_dump(const struct style *);
+static void	style_dump_IncludeCategories(const struct style *);
 
 static struct token			*yaml_read(struct lexer *, void *);
 static struct token			*yaml_read_integer(struct lexer *);
@@ -100,6 +112,8 @@ static int	parse_enum(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_integer(struct style *, struct lexer *,
     const struct style_option *);
+static int	parse_integer_impl(struct style *, struct lexer *,
+    const struct style_option *, struct token **, struct token **);
 static int	parse_string(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_nested(struct style *, struct lexer *,
@@ -109,6 +123,10 @@ static int	parse_AlignOperands(struct style *, struct lexer *,
 static int	parse_ColumnLimit(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_IncludeCategories(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_Priority(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_Regex(struct style *, struct lexer *,
     const struct style_option *);
 
 static const char	*yaml_type_str(enum yaml_type);
@@ -177,11 +195,14 @@ style_init(void)
 
 		{ S(ContinuationIndentWidth), parse_integer, {0} },
 
+		{ S(IncludeBlocks), parse_enum,
+		  { Merge, Preserve, Regroup } },
+
 		{ S(IncludeCategories), parse_IncludeCategories, {0} },
 		{ N(IncludeCategories, CaseSensitive), parse_bool, {0} },
-		{ N(IncludeCategories, Priority), parse_integer, {0} },
-		{ N(IncludeCategories, Regex), parse_string, {0} },
-		{ N(IncludeCategories, SortPriority), parse_integer, {0} },
+		{ N(IncludeCategories, Priority), parse_Priority, {0} },
+		{ N(IncludeCategories, Regex), parse_Regex, {0} },
+		{ N(IncludeCategories, SortPriority), parse_Priority, {0} },
 
 		{ S(IndentWidth), parse_integer, {0} },
 
@@ -214,11 +235,14 @@ style_init(void)
 		{ E(GNU) },
 		{ E(Left) },
 		{ E(Linux) },
+		{ E(Merge) },
 		{ E(Mozilla) },
 		{ E(MultiLine) },
 		{ E(Never) },
 		{ E(NonAssignment) },
 		{ E(None) },
+		{ E(Preserve) },
+		{ E(Regroup) },
 		{ E(Right) },
 		{ E(Stroustrup) },
 		{ E(TopLevel) },
@@ -269,7 +293,8 @@ style_shutdown(void)
 }
 
 struct style *
-style_parse(const char *path, const struct options *op)
+style_parse(const char *path, struct arena_scope *eternal,
+    struct arena *scratch, const struct options *op)
 {
 	struct buffer *bf = NULL;
 	struct style *st;
@@ -286,7 +311,7 @@ style_parse(const char *path, const struct options *op)
 			close(fd);
 		}
 	}
-	st = style_parse_buffer(bf, path, op);
+	st = style_parse_buffer(bf, path, eternal, scratch, op);
 	buffer_free(bf);
 	if (st != NULL && trace(op, 's') >= 2)
 		style_dump(st);
@@ -295,12 +320,17 @@ style_parse(const char *path, const struct options *op)
 
 struct style *
 style_parse_buffer(const struct buffer *bf, const char *path,
+    struct arena_scope *eternal, struct arena *scratch,
     const struct options *op)
 {
 	struct style *st;
 
 	st = ecalloc(1, sizeof(*st));
+	st->eternal = eternal;
+	st->scratch = scratch;
 	st->st_op = op;
+	if (VECTOR_INIT(st->include_categories))
+		err(1, NULL);
 	style_defaults(st);
 	if (bf != NULL) {
 		/* Errors are not considered fatal. */
@@ -314,6 +344,13 @@ style_free(struct style *st)
 {
 	if (st == NULL)
 		return;
+	while (!VECTOR_EMPTY(st->include_categories)) {
+		struct include_category *ic;
+
+		ic = VECTOR_POP(st->include_categories);
+		regfree(&ic->regex);
+	}
+	VECTOR_FREE(st->include_categories);
 	free(st);
 }
 
@@ -336,6 +373,84 @@ style_brace_wrapping(const struct style *st, int option)
 		break;
 	}
 	return st->st_options[option].val == True;
+}
+
+static int
+priority_cmp(const int *a, const int *b)
+{
+	return *a - *b;
+}
+
+int *
+style_include_priorities(const struct style *st)
+{
+	VECTOR(int) priorities;
+	int *dst;
+	size_t i, n;
+
+	if (VECTOR_INIT(priorities))
+		err(1, NULL);
+
+	/* Add default min and max priorities. */
+	dst = VECTOR_ALLOC(priorities);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = 0;
+	dst = VECTOR_ALLOC(priorities);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = INT_MAX;
+
+	n = VECTOR_LENGTH(st->include_categories);
+	for (i = 0; i < n; i++) {
+		const struct include_category *ic = &st->include_categories[i];
+
+		dst = VECTOR_ALLOC(priorities);
+		if (dst == NULL)
+			err(1, NULL);
+		*dst = ic->priority.group;
+	}
+	VECTOR_SORT(priorities, priority_cmp);
+	return priorities;
+}
+
+static int
+is_main_include(const struct style *st, const char *include_path,
+    const char *path)
+{
+	const char *basename, *dot, *filename, *include_main, *slash;
+
+	arena_scope(st->scratch, s);
+
+	slash = strrchr(path, '/');
+	filename = slash != NULL ? arena_strdup(&s, &slash[1]) : path;
+	dot = strrchr(filename, '.');
+	basename = dot != NULL ?
+	    arena_strndup(&s, filename, (size_t)(dot - filename)) : filename;
+	include_main = arena_sprintf(&s, "\"%s.h\"", basename);
+	return strcmp(include_path, include_main) == 0;
+}
+
+struct include_priority
+style_include_priority(const struct style *st, const char *include_path,
+    const char *path)
+{
+	size_t i, n;
+
+	if (is_main_include(st, include_path, path))
+		return (struct include_priority){.group = 0, .sort = 0};
+
+	n = VECTOR_LENGTH(st->include_categories);
+	for (i = 0; i < n; i++) {
+		const struct include_category *ic = &st->include_categories[i];
+		int error;
+
+		error = regexec(&ic->regex, include_path, 0, NULL, 0);
+		if (error == 0)
+			return ic->priority;
+	}
+
+	return (struct include_priority){.group = INT_MAX, .sort = INT_MAX};
 }
 
 static void
@@ -490,16 +605,36 @@ style_dump(const struct style *st)
 			fprintf(stderr, "  ");
 		fprintf(stderr, "%s: ", key);
 
-		switch (st->st_options[i].type) {
-		case Integer:
-			fprintf(stderr, "%u", st->st_options[i].val);
-			break;
-		default:
-			fprintf(stderr, "%s",
-			    style_keyword_str(st->st_options[i].val));
-			break;
+		if (so->so_type == IncludeCategories) {
+			style_dump_IncludeCategories(st);
+		} else {
+			switch (st->st_options[i].type) {
+			case Integer:
+				fprintf(stderr, "%u", st->st_options[i].val);
+				break;
+			default:
+				fprintf(stderr, "%s",
+				    style_keyword_str(st->st_options[i].val));
+				break;
+			}
+			fprintf(stderr, "\n");
 		}
-		fprintf(stderr, "\n");
+	}
+}
+
+static void
+style_dump_IncludeCategories(const struct style *st)
+{
+	size_t i;
+
+	fprintf(stderr, "\n");
+
+	for (i = 0; i < VECTOR_LENGTH(st->include_categories); i++) {
+		const struct include_category *ic = &st->include_categories[i];
+
+		fprintf(stderr, "[s] - Regex: '%s'\n", ic->pattern);
+		fprintf(stderr, "[s]   Priority: %d\n", ic->priority.group);
+		fprintf(stderr, "[s]   SortPriority: %d\n", ic->priority.sort);
 	}
 }
 
@@ -770,20 +905,31 @@ static int
 parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 {
 	struct token *key, *val;
+	int error;
 
-	if (!lexer_if(lx, so->so_type, &key))
+	error = parse_integer_impl(st, lx, so, &key, &val);
+	if ((error & GOOD) == 0)
+		return error;
+	style_set(st, key->tk_type, Integer,
+	    token_priv(val, struct yaml_token)->integer.u32);
+	return GOOD;
+}
+
+static int
+parse_integer_impl(struct style *UNUSED(st), struct lexer *lx,
+    const struct style_option *so, struct token **key, struct token **val)
+{
+	if (!lexer_if(lx, so->so_type, key))
 		return NONE;
 	if (!lexer_expect(lx, Colon, NULL))
 		return FAIL;
-	if (!lexer_expect(lx, Integer, &val)) {
-		(void)lexer_pop(lx, &val);
-		lexer_error(lx, val, __func__, __LINE__,
+	if (!lexer_expect(lx, Integer, val)) {
+		(void)lexer_pop(lx, val);
+		lexer_error(lx, *val, __func__, __LINE__,
 		    "unknown value %s for option %s",
-		    lexer_serialize(lx, val), lexer_serialize(lx, key));
+		    lexer_serialize(lx, *val), lexer_serialize(lx, *key));
 		return SKIP;
 	}
-	style_set(st, key->tk_type, Integer,
-	    token_priv(val, struct yaml_token)->integer.u32);
 	return GOOD;
 }
 
@@ -866,9 +1012,67 @@ parse_IncludeCategories(struct style *st, struct lexer *lx,
 
 	scope = st->st_scope;
 	st->st_scope = so->so_type;
-	while (lexer_if(lx, Sequence, NULL))
+	while (lexer_if(lx, Sequence, NULL)) {
+		if (VECTOR_CALLOC(st->include_categories) == NULL)
+			err(1, NULL);
 		style_parse_yaml1(st, lx);
+	}
 	st->st_scope = scope;
+	/* Only used by style_dump(). */
+	style_set(st, IncludeCategories, None, None);
+	return GOOD;
+}
+
+static int
+parse_Priority(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	struct include_category *ic;
+	struct token *key, *val;
+	int error, priority;
+
+	assert(so->so_type == Priority || so->so_type == SortPriority);
+
+	error = parse_integer_impl(st, lx, so, &key, &val);
+	if ((error & GOOD) == 0)
+		return error;
+
+	ic = VECTOR_LAST(st->include_categories);
+	priority = token_priv(val, struct yaml_token)->integer.i32;
+	if (so->so_type == Priority) {
+		ic->priority.group = priority;
+		ic->priority.sort = priority;
+	} else if (so->so_type == SortPriority) {
+		ic->priority.sort = priority;
+	}
+	return GOOD;
+}
+
+static int
+parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
+{
+	struct include_category *ic;
+	struct token *tk;
+	int error;
+
+	error = parse_string(st, lx, so);
+	if ((error & GOOD) == 0)
+		return error;
+	if (!lexer_back(lx, &tk))
+		return FAIL;
+
+	ic = VECTOR_LAST(st->include_categories);
+	ic->pattern = arena_strndup(st->eternal, tk->tk_str, tk->tk_len);
+	error = regcomp(&ic->regex, ic->pattern, REG_EXTENDED | REG_NOSUB);
+	if (error) {
+		char errbuf[128] = {0};
+
+		regerror(error, &ic->regex, errbuf,
+		    sizeof(errbuf));
+		lexer_error(lx, tk, __func__, __LINE__, "%s",
+		    errbuf);
+		return FAIL;
+	}
 	return GOOD;
 }
 
