@@ -1,0 +1,3 @@
+.clang-format:2: brackets ([ ]) not balanced
+  - Regex: '['
+            ^

@@ -385,9 +385,16 @@ style_brace_wrapping(const struct style *st, int option)
 }
 
 static int
-priority_cmp(const int *a, const int *b)
+priority_cmp(const int *aa, const int *bb)
 {
-	return *a - *b;
+	int a = *aa;
+	int b = *bb;
+
+	if (a < b)
+		return -1;
+	if (a > b)
+		return 1;
+	return 0;
 }
 
 int *
@@ -1069,7 +1076,8 @@ parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 
 	ic = VECTOR_LAST(st->include_categories);
 	ic->pattern = arena_strndup(st->eternal, tk->tk_str, tk->tk_len);
-	error = regcomp(&ic->regex, ic->pattern, REG_EXTENDED | REG_NOSUB);
+	error = regcomp(&ic->regex, ic->pattern,
+	    REG_EXTENDED | REG_NOSUB | REG_ICASE);
 	if (error) {
 		char errbuf[128] = {0};
 

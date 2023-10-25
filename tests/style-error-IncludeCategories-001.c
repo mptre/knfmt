@@ -1,0 +1,4 @@
+/*
+ * IncludeCategories:
+ *   - Regex: '['
+ */

@@ -186,11 +186,11 @@ include_cmp(struct include *const *aa, struct include *const *bb)
 {
 	const struct include *a = *aa;
 	const struct include *b = *bb;
-	int sort;
 
-	sort = a->priority.sort - b->priority.sort;
-	if (sort != 0)
-		return sort;
+	if (a->priority.sort < b->priority.sort)
+		return -1;
+	if (a->priority.sort > b->priority.sort)
+		return 1;
 	return token_strcmp(a->tk, b->tk);
 }
 
