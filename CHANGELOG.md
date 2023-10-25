@@ -1,3 +1,11 @@
+# 4.4.0rc1 - YYYY-MM-DD
+
+## News
+
+- Group blocks of includes.
+  (c22119b)
+  (Anton Lindqvist)
+
 # 4.3.0 - 2023-10-15
 
 ## News
