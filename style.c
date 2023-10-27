@@ -1097,10 +1097,15 @@ parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 	if (error) {
 		char errbuf[128] = {0};
 
-		regerror(error, &ic->regex, errbuf,
-		    sizeof(errbuf));
-		lexer_error(lx, tk, __func__, __LINE__, "%s",
-		    errbuf);
+		if (error == REG_EPAREN) {
+			/* Use platform agnostic error for testing. */
+			(void)snprintf(errbuf, sizeof(errbuf),
+			    "parentheses not balanced");
+		} else {
+			regerror(error, &ic->regex, errbuf,
+			    sizeof(errbuf));
+		}
+		lexer_error(lx, tk, __func__, __LINE__, "%s", errbuf);
 		return FAIL;
 	}
 	return GOOD;

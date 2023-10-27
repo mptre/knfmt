@@ -1,4 +1,4 @@
 /*
  * IncludeCategories:
- *   - Regex: '['
+ *   - Regex: '('
  */
