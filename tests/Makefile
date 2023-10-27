@@ -749,6 +749,7 @@ TESTS+=	diff.sh
 TESTS+=	enoent.sh
 TESTS+=	fd.sh
 TESTS+=	git.sh
+TESTS+=	include-categories.sh
 TESTS+=	simple.sh
 TESTS+=	stdin.sh
 

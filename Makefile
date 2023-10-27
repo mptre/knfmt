@@ -265,6 +265,7 @@ SHLINT+=	tests/diff.sh
 SHLINT+=	tests/enoent.sh
 SHLINT+=	tests/fd.sh
 SHLINT+=	tests/git.sh
+SHLINT+=	tests/include-categories.sh
 SHLINT+=	tests/knfmt.sh
 SHLINT+=	tests/simple.sh
 SHLINT+=	tests/stdin.sh

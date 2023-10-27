@@ -434,17 +434,32 @@ static int
 is_main_include(const struct style *st, const char *include_path,
     const char *path)
 {
-	const char *basename, *dot, *filename, *include_main, *slash;
+	const char *basename, *dot, *filename, *include_main,
+		   *path_without_extension, *slash;
 
 	arena_scope(st->scratch, s);
 
+	/* Transform path "a/b.c" into "a/b.h". */
+	dot = strrchr(path, '.');
+	if (dot == NULL)
+		return 0;
+	path_without_extension = arena_strndup(&s, path, (size_t)(dot - path));
+	include_main = arena_sprintf(&s, "\"%s.h\"", path_without_extension);
+	if (strcmp(include_path, include_main) == 0)
+		return 1;
+
+	/* Transform path "a/b.c" into "b.h". */
 	slash = strrchr(path, '/');
 	filename = slash != NULL ? arena_strdup(&s, &slash[1]) : path;
 	dot = strrchr(filename, '.');
-	basename = dot != NULL ?
-	    arena_strndup(&s, filename, (size_t)(dot - filename)) : filename;
+	if (dot == NULL)
+		return 0;
+	basename = arena_strndup(&s, filename, (size_t)(dot - filename));
 	include_main = arena_sprintf(&s, "\"%s.h\"", basename);
-	return strcmp(include_path, include_main) == 0;
+	if (strcmp(include_path, include_main) == 0)
+		return 1;
+
+	return 0;
 }
 
 struct include_priority
