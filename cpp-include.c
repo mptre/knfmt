@@ -249,13 +249,14 @@ cpp_include_exec(struct cpp_include *ci)
 	}
 
 	while ((group = MAP_ITERATE(ci->groups, &it)) != NULL) {
+		struct include **p;
 		struct include *last;
 		int doline;
 
-		if (VECTOR_EMPTY(group->includes))
+		p = VECTOR_LAST(group->includes);
+		if (p == NULL)
 			continue;
-
-		last = *VECTOR_LAST(group->includes);
+		last = *p;
 		doline = ci->regroup || token_has_verbatim_line(last->tk, 2);
 
 		VECTOR_SORT(group->includes, include_cmp);

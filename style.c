@@ -1067,6 +1067,8 @@ parse_Priority(struct style *st, struct lexer *lx,
 		return error;
 
 	ic = VECTOR_LAST(st->include_categories);
+	if (ic == NULL)
+		return FAIL; /* UNREACHABLE */
 	priority = token_priv(val, struct yaml_token)->integer.i32;
 	if (so->so_type == Priority) {
 		ic->priority.group = priority;
