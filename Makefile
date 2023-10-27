@@ -1,6 +1,6 @@
 include ${.CURDIR}/config.mk
 
-VERSION=	4.4.0rc1
+VERSION=	4.4.0rc2
 
 SRCS+=	alloc.c
 SRCS+=	arena.c
