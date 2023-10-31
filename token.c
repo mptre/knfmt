@@ -40,8 +40,7 @@ token_alloc(size_t priv_size, const struct token *def)
 void
 token_init(struct token *tk, const struct token *def)
 {
-	if (def != NULL)
-		*tk = *def;
+	*tk = *def;
 	tk->tk_refs = 1;
 	TAILQ_INIT(&tk->tk_prefixes);
 	TAILQ_INIT(&tk->tk_suffixes);
