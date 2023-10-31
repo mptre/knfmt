@@ -28,15 +28,15 @@
 #endif
 
 #define clang_trace(cl, fmt, ...) do {					\
-	if (trace((cl)->cl_op, 'c'))					\
+	if (trace((cl)->op, 'c'))					\
 		tracef('C', __func__, (fmt), __VA_ARGS__);		\
 } while (0)
 
 struct clang {
-	const struct style	*cl_st;
-	const struct options	*cl_op;
-	struct cpp_include	*cl_ci;
-	VECTOR(struct token *)	 cl_branches;
+	const struct style	*st;
+	const struct options	*op;
+	struct cpp_include	*ci;
+	VECTOR(struct token *)	 branches;
 };
 
 static void	clang_branch_enter(struct clang *, struct lexer *,
@@ -128,10 +128,10 @@ clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
 	struct clang *cl;
 
 	cl = ecalloc(1, sizeof(*cl));
-	cl->cl_st = st;
-	cl->cl_op = op;
-	cl->cl_ci = cpp_include_alloc(st, si, scratch, op);
-	if (VECTOR_INIT(cl->cl_branches))
+	cl->st = st;
+	cl->op = op;
+	cl->ci = cpp_include_alloc(st, si, scratch, op);
+	if (VECTOR_INIT(cl->branches))
 		err(1, NULL);
 	return cl;
 }
@@ -142,8 +142,8 @@ clang_free(struct clang *cl)
 	if (cl == NULL)
 		return;
 
-	cpp_include_free(cl->cl_ci);
-	VECTOR_FREE(cl->cl_branches);
+	cpp_include_free(cl->ci);
+	VECTOR_FREE(cl->branches);
 	free(cl);
 }
 
@@ -161,14 +161,14 @@ clang_read(struct lexer *lx, void *arg)
 	TAILQ_INIT(&prefixes);
 
 	/* Consume all comments and preprocessor directives. */
-	cpp_include_enter(cl->cl_ci, lx, &prefixes);
+	cpp_include_enter(cl->ci, lx, &prefixes);
 	for (;;) {
 		prefix = clang_read_prefix(cl, lx, &prefixes);
 		if (prefix == NULL)
 			break;
-		cpp_include_add(cl->cl_ci, prefix);
+		cpp_include_add(cl->ci, prefix);
 	}
-	cpp_include_leave(cl->cl_ci);
+	cpp_include_leave(cl->ci);
 
 	tk = clang_keyword(lx);
 	if (tk != NULL)
@@ -302,7 +302,7 @@ clang_branch_enter(struct clang *cl, struct lexer *lx, struct token *cpp,
 
 	clang_trace(cl, "%s", lexer_serialize(lx, cpp));
 	cpp->tk_branch.br_parent = tk;
-	br = VECTOR_ALLOC(cl->cl_branches);
+	br = VECTOR_ALLOC(cl->branches);
 	if (br == NULL)
 		err(1, NULL);
 	*br = cpp;
@@ -316,7 +316,7 @@ clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
 	struct token *br;
 
 	/* Silently ignore broken branch. */
-	last = VECTOR_LAST(cl->cl_branches);
+	last = VECTOR_LAST(cl->branches);
 	if (last == NULL) {
 		token_branch_unlink(cpp);
 		return;
@@ -348,7 +348,7 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 	struct token *br;
 
 	/* Silently ignore broken branch. */
-	last = VECTOR_LAST(cl->cl_branches);
+	last = VECTOR_LAST(cl->branches);
 	if (last == NULL) {
 		token_branch_unlink(cpp);
 		return;
@@ -391,7 +391,7 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 		token_branch_unlink(cpp);
 	}
 
-	VECTOR_POP(cl->cl_branches);
+	VECTOR_POP(cl->branches);
 }
 
 /*
@@ -400,11 +400,11 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 static void
 clang_branch_purge(struct clang *cl, struct lexer *lx)
 {
-	while (!VECTOR_EMPTY(cl->cl_branches)) {
+	while (!VECTOR_EMPTY(cl->branches)) {
 		struct token **tail;
 		struct token *pv, *tk;
 
-		tail = VECTOR_POP(cl->cl_branches);
+		tail = VECTOR_POP(cl->branches);
 		tk = *tail;
 		do {
 			pv = tk->tk_branch.br_pv;
@@ -529,7 +529,7 @@ again:
 	    .tk_flags	= c99 ? TOKEN_FLAG_COMMENT_C99 : 0,
 	});
 
-	bf = comment_trim(tk, cl->cl_st);
+	bf = comment_trim(tk, cl->st);
 	if (bf != NULL) {
 		tk->tk_flags |= TOKEN_FLAG_DIRTY;
 		tk->tk_len = buffer_get_len(bf);
@@ -609,7 +609,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});
 
-	str = cpp_align(tk, cl->cl_st, cl->cl_op);
+	str = cpp_align(tk, cl->st, cl->op);
 	if (str != NULL) {
 		tk->tk_flags |= TOKEN_FLAG_DIRTY;
 		tk->tk_str = str;
