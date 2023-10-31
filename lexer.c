@@ -28,12 +28,11 @@
 
 struct lexer {
 	struct lexer_state	 lx_st;
-	struct lexer_callbacks	 lx_callbacks;
+	struct lexer_arg	 lx_arg;
 	struct error		*lx_er;
 	const struct options	*lx_op;
 	const struct diffchunk	*lx_diff;
 	const struct buffer	*lx_bf;
-	const char		*lx_path;
 
 	/* Line number to buffer offset mapping. */
 	VECTOR(size_t)		 lx_lines;
@@ -86,12 +85,11 @@ lexer_alloc(const struct lexer_arg *arg)
 	struct lexer *lx;
 
 	lx = ecalloc(1, sizeof(*lx));
-	lx->lx_callbacks = arg->callbacks;
+	lx->lx_arg = *arg;
 	lx->lx_er = error_alloc(arg->error_flush);
 	lx->lx_op = arg->op;
 	lx->lx_bf = arg->bf;
 	lx->lx_diff = arg->diff;
-	lx->lx_path = arg->path;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
 	if (VECTOR_INIT(lx->lx_lines))
@@ -111,7 +109,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	for (;;) {
 		struct token *tk;
 
-		tk = lx->lx_callbacks.read(lx, lx->lx_callbacks.arg);
+		tk = lx->lx_arg.callbacks.read(lx, lx->lx_arg.callbacks.arg);
 		if (tk == NULL)
 			goto err;
 		TAILQ_INSERT_TAIL(&lx->lx_tokens, tk, tk_entry);
@@ -201,7 +199,7 @@ lexer_set_state(struct lexer *lx, const struct lexer_state *st)
 const char *
 lexer_get_path(const struct lexer *lx)
 {
-	return lx->lx_path;
+	return lx->lx_arg.path;
 }
 
 int
@@ -284,7 +282,7 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 {
 	struct token *t;
 
-	t = lx->lx_callbacks.alloc(tk);
+	t = lx->lx_arg.callbacks.alloc(tk);
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
@@ -319,7 +317,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 
 	bf = error_begin(lx->lx_er);
 
-	buffer_printf(bf, "%s", lx->lx_path);
+	buffer_printf(bf, "%s", lx->lx_arg.path);
 	if (l > 0)
 		buffer_printf(bf, ":%u", l);
 	buffer_printf(bf, ": ");
@@ -379,7 +377,7 @@ lexer_serialize(struct lexer *lx, const struct token *tk)
 	str = VECTOR_ALLOC(lx->lx_serialized);
 	if (str == NULL)
 		err(1, NULL);
-	*str = lx->lx_callbacks.serialize(tk);
+	*str = lx->lx_arg.callbacks.serialize(tk);
 	if (*str == NULL)
 		err(1, NULL);
 	return *str;
@@ -664,7 +662,7 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 {
 	struct token *tk;
 
-	tk = lx->lx_callbacks.alloc(src);
+	tk = lx->lx_arg.callbacks.alloc(src);
 	token_list_copy(&src->tk_prefixes, &tk->tk_prefixes);
 	token_list_copy(&src->tk_suffixes, &tk->tk_suffixes);
 	token_position_after(after, tk);
@@ -678,7 +676,7 @@ lexer_insert_before(struct lexer *lx, struct token *before, int type,
 {
 	struct token *tk;
 
-	tk = lx->lx_callbacks.alloc(&(struct token){
+	tk = lx->lx_arg.callbacks.alloc(&(struct token){
 	    .tk_type	= type,
 	    .tk_lno	= before->tk_lno,
 	    .tk_cno	= before->tk_cno,
@@ -696,7 +694,7 @@ lexer_insert_after(struct lexer *lx, struct token *after, int type,
 {
 	struct token *tk;
 
-	tk = lx->lx_callbacks.alloc(&(struct token){
+	tk = lx->lx_arg.callbacks.alloc(&(struct token){
 	    .tk_type	= type,
 	    .tk_flags	= token_flags_inherit(after),
 	    .tk_str	= str,
@@ -1303,7 +1301,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	off = src->tk_off;
 	len = (dst->tk_off + dst->tk_len) - off;
 
-	prefix = lx->lx_callbacks.alloc(&(struct token){
+	prefix = lx->lx_arg.callbacks.alloc(&(struct token){
 	    .tk_type	= TOKEN_CPP,
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});
