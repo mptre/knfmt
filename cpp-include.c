@@ -78,6 +78,9 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 	for (i = 0; i < VECTOR_LENGTH(priorities); i++) {
 		struct include_group *group;
 
+		if (MAP_FIND(ci->groups, priorities[i]) != NULL)
+			continue;
+
 		group = MAP_INSERT(ci->groups, priorities[i]);
 		if (group == NULL)
 			err(1, NULL);
