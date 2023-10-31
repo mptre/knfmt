@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 
 void
 tracef(unsigned char ident, const char *fun, const char *fmt, ...)
@@ -24,6 +25,10 @@ tracef(unsigned char ident, const char *fun, const char *fmt, ...)
 unsigned int
 colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 {
+	/* Fast path. */
+	if (likely(len == 1 && str[0] != '\n' && str[0] != '\t'))
+		return cno + 1;
+
 	for (; len > 0; len--, str++) {
 		switch (str[0]) {
 		case '\n':
