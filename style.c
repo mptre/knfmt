@@ -745,9 +745,7 @@ again:
 	return NULL;
 
 eof:
-	tk = lexer_emit(lx, &s, NULL);
-	tk->tk_type = LEXER_EOF;
-	return tk;
+	return lexer_emit(lx, &s, &(struct token){.tk_type = LEXER_EOF});
 }
 
 static struct token *
@@ -802,8 +800,7 @@ yaml_read_integer(struct lexer *lx)
 	if (i32_mul_overflow(integer, sign, &integer))
 		overflow = 1;
 
-	tk = lexer_emit(lx, &s, NULL);
-	tk->tk_type = Integer;
+	tk = lexer_emit(lx, &s, &(struct token){.tk_type = Integer});
 	token_data(tk, struct yaml_token)->integer.i32 = integer;
 	if (overflow) {
 		lexer_error(lx, tk, __func__, __LINE__,
@@ -842,14 +839,15 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 {
 	const struct style_option *so;
 	struct token *tk;
+	const char *buf;
+	size_t buflen;
 
-	tk = lexer_emit(lx, st, NULL);
-	so = yaml_find_keyword(tk->tk_str, tk->tk_len);
-	if (so == NULL) {
-		tk->tk_type = Unknown;
-		return tk;
-	}
-	tk->tk_type = so->so_type;
+	buf = lexer_buffer_slice(lx, st, &buflen);
+	so = yaml_find_keyword(buf, buflen);
+	if (so == NULL)
+		return lexer_emit(lx, st, &(struct token){.tk_type = Unknown});
+
+	tk = lexer_emit(lx, st, &(struct token){.tk_type = so->so_type});
 	if (so->so_parse != NULL)
 		token_data(tk, struct yaml_token)->so = so;
 	return tk;
