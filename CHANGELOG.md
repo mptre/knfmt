@@ -6,6 +6,13 @@
   (c22119b)
   (Anton Lindqvist)
 
+## Bug fixes
+
+- Improve handling of expression arguments in declarations making use of cpp
+  macros.
+  (b72e19a)
+  (Anton Lindqvist)
+
 # 4.3.0 - 2023-10-15
 
 ## News
