@@ -95,17 +95,18 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 void
 cpp_include_free(struct cpp_include *ci)
 {
-	struct map_iterator it = {0};
-	struct include_group *group;
+	MAP_ITERATOR(ci->groups) it = {0};
 
 	if (ci == NULL)
 		return;
 
 	cpp_include_reset(ci);
 	VECTOR_FREE(ci->includes);
-	while ((group = MAP_ITERATE(ci->groups, &it)) != NULL) {
+	while (MAP_ITERATE(ci->groups, &it)) {
+		struct include_group *group = it.val;
+
 		VECTOR_FREE(group->includes);
-		MAP_REMOVE(ci->groups, group);
+		MAP_REMOVE(ci->groups, it.key);
 	}
 	MAP_FREE(ci->groups);
 	free(ci);
@@ -200,8 +201,7 @@ include_cmp(struct include *const *aa, struct include *const *bb)
 static void
 cpp_include_exec(struct cpp_include *ci)
 {
-	struct map_iterator it = {0};
-	struct include_group *group;
+	MAP_ITERATOR(ci->groups) it = {0};
 	struct token *after = ci->after;
 	size_t i, nincludes;
 	unsigned int nbrackets = 0;
@@ -251,7 +251,8 @@ cpp_include_exec(struct cpp_include *ci)
 		add_to_include_group(ci, include);
 	}
 
-	while ((group = MAP_ITERATE(ci->groups, &it)) != NULL) {
+	while (MAP_ITERATE(ci->groups, &it)) {
+		struct include_group *group = it.val;
 		struct include **p;
 		struct include *last;
 		int doline;
@@ -287,8 +288,7 @@ cpp_include_exec(struct cpp_include *ci)
 static void
 cpp_include_reset(struct cpp_include *ci)
 {
-	struct map_iterator it = {0};
-	struct include_group *group;
+	MAP_ITERATOR(ci->groups) it = {0};
 
 	while (!VECTOR_EMPTY(ci->includes)) {
 		struct include *include;
@@ -296,8 +296,11 @@ cpp_include_reset(struct cpp_include *ci)
 		include = VECTOR_POP(ci->includes);
 		token_rele(include->tk);
 	}
-	while ((group = MAP_ITERATE(ci->groups, &it)) != NULL)
+	while (MAP_ITERATE(ci->groups, &it)) {
+		struct include_group *group = it.val;
+
 		VECTOR_CLEAR(group->includes);
+	}
 	ci->after = NULL;
 	ci->ignore = 0;
 }

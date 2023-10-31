@@ -22,15 +22,15 @@
 #include <string.h>
 
 struct vector {
-	size_t	vc_len;
-	size_t	vc_siz;
-	size_t	vc_stride;
+	size_t			vc_siz;
+	size_t			vc_stride;
+	/* Must come last. */
+	struct vector_public	p;
 };
 
 static int vector_reserve1(struct vector **, size_t);
 
 static struct vector		*ptov(void *);
-static const struct vector	*cptov(const void *);
 
 int
 vector_init(void **vv, size_t stride)
@@ -93,11 +93,11 @@ vector_alloc(void **vv, int zero)
 		unsigned char *ptr;
 
 		ptr = (unsigned char *)(&vc[1]);
-		ptr += vc->vc_stride * vc->vc_len;
+		ptr += vc->vc_stride * vc->p.len;
 		memset(ptr, 0, vc->vc_stride);
 	}
 
-	return vc->vc_len++;
+	return vc->p.len++;
 }
 
 size_t
@@ -105,9 +105,9 @@ vector_pop(void *v)
 {
 	struct vector *vc = ptov(v);
 
-	if (vc->vc_len == 0)
+	if (vc->p.len == 0)
 		return ULONG_MAX;
-	return --vc->vc_len;
+	return --vc->p.len;
 }
 
 void
@@ -115,7 +115,7 @@ vector_clear(void *v)
 {
 	struct vector *vc = ptov(v);
 
-	vc->vc_len = 0;
+	vc->p.len = 0;
 }
 
 void
@@ -123,8 +123,8 @@ vector_sort(void *v, int (*cmp)(const void *, const void *))
 {
 	struct vector *vc = ptov(v);
 
-	if (vc->vc_len > 0)
-		qsort(v, vc->vc_len, vc->vc_stride, cmp);
+	if (vc->p.len > 0)
+		qsort(v, vc->p.len, vc->vc_stride, cmp);
 }
 
 size_t
@@ -132,7 +132,7 @@ vector_first(void *v)
 {
 	struct vector *vc = ptov(v);
 
-	if (vc->vc_len == 0)
+	if (vc->p.len == 0)
 		return ULONG_MAX;
 	return 0;
 }
@@ -142,17 +142,9 @@ vector_last(void *v)
 {
 	struct vector *vc = ptov(v);
 
-	if (vc->vc_len == 0)
+	if (vc->p.len == 0)
 		return ULONG_MAX;
-	return vc->vc_len - 1;
-}
-
-size_t
-vector_length(const void *v)
-{
-	const struct vector *vc = cptov(v);
-
-	return vc->vc_len;
+	return vc->p.len - 1;
 }
 
 static int
@@ -162,13 +154,13 @@ vector_reserve1(struct vector **vv, size_t len)
 	struct vector *newvc;
 	size_t newsiz, totlen;
 
-	if (vc->vc_len > ULONG_MAX - len)
+	if (vc->p.len > ULONG_MAX - len)
 		goto overflow;
-	if (vc->vc_len + len < vc->vc_siz)
+	if (vc->p.len + len < vc->vc_siz)
 		return 0;
 
 	newsiz = vc->vc_siz ? vc->vc_siz : 16;
-	while (newsiz < vc->vc_len + len) {
+	while (newsiz < vc->p.len + len) {
 		if (newsiz > ULONG_MAX / 2)
 			goto overflow;
 		newsiz *= 2;
@@ -190,14 +182,6 @@ vector_reserve1(struct vector **vv, size_t len)
 overflow:
 	errno = EOVERFLOW;
 	return -1;
-}
-
-static const struct vector *
-cptov(const void *v)
-{
-	const struct vector *vc = (struct vector *)v;
-
-	return &vc[-1];
 }
 
 static struct vector *

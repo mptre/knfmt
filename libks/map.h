@@ -41,14 +41,14 @@ int	map_init(void **, size_t, size_t, unsigned int);
 void	map_free(void *);
 
 #define MAP_INSERT(m, key) __extension__ ({				\
-        __typeof__((m)->kp) _k = (key);					\
+	__typeof__((m)->kp) _k = (key);					\
 	const void *_kk = &_k;						\
 	(__typeof__((m)->v))map_insert((m), _kk);			\
 })
 void	*map_insert(void *, const void *const *);
 
 #define MAP_INSERT_N(m, key, keysize) __extension__ ({			\
-        __typeof__((m)->kp) _k = (key);					\
+	__typeof__((m)->kp) _k = (key);					\
 	const void *_kk = &_k;						\
 	(__typeof__((m)->v))map_insert_n((m), _kk, (keysize));		\
 })
@@ -63,36 +63,55 @@ void	*map_insert_n(void *, const void *const *, size_t);
 
 #define MAP_KEY(m, val) __extension__ ({				\
 	const __typeof__(*(m)->v) *_v = (val);				\
-	(const __typeof__((m)->kp))map_key((m), _v);			\
+	(const __typeof__((m)->k) *)map_key((m), _v);			\
 })
 void	*map_key(void *, const void *);
 
 #define MAP_FIND(m, key) __extension__ ({				\
-        const __typeof__((m)->kp) _k = (key);				\
+	const __typeof__((m)->kp) _k = (key);				\
 	const void *_kk = &_k;						\
 	(__typeof__((m)->v))map_find((m), _kk);				\
 })
 void	*map_find(void *, const void *const *);
 
 #define MAP_FIND_N(m, key, keysize) __extension__ ({			\
-        const __typeof__((m)->kp) _k = (key);				\
+	const __typeof__((m)->kp) _k = (key);				\
 	const void *_kk = &_k;						\
 	(__typeof__((m)->v))map_find_n((m), _kk, (keysize));		\
 })
 void	*map_find_n(void *, const void *const *, size_t);
 
-#define MAP_REMOVE(m, val) do {						\
-	__typeof__((m)->v) _v = (val);					\
-	map_remove((m), _v);						\
+#define MAP_REMOVE(m, key) do {						\
+	const __typeof__((m)->kp) _k = (key);				\
+	const void *_kk = &_k;						\
+	map_remove((m), _kk);						\
 } while (0)
-void	map_remove(void *, void *);
+void	map_remove(void *, const void *const *);
 
 struct map_iterator {
 	void	*el;
 	void	*nx;
 };
 
-#define MAP_ITERATE(m, it) __extension__ ({				\
-	(__typeof__((m)->v))map_iterate((m), (it));			\
+#define MAP_ITERATOR(m) struct {					\
+	struct map_iterator	it;					\
+	__typeof__((m)->kp)	key;					\
+	__typeof__((m)->v)	val;					\
+}
+
+#define MAP_ITERATE(m, iterator) __extension__ ({			\
+	(iterator)->val = (__typeof__((m)->v))map_iterate(		\
+	    (m), &((iterator)->it));					\
+	if ((iterator)->val != NULL) {					\
+		void *_k = map_key((m), (iterator)->val);		\
+		(iterator)->key = __builtin_choose_expr(		\
+		    sizeof((m)->p) > sizeof(char),			\
+		    _k,							\
+		    *((__typeof__((m)->k) *)_k));			\
+	}								\
+	/* Suppress cppcheck unreadVariable false positives. */		\
+	(void)(iterator)->key;						\
+	(void)(iterator)->val;						\
+	(iterator)->val != NULL ? 1 : 0;				\
 })
 void	*map_iterate(void *, struct map_iterator *);

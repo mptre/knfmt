@@ -200,13 +200,19 @@ map_find_n(void *mp, const void *const *key, size_t keysize)
 }
 
 void
-map_remove(void *mp, void *val)
+map_remove(void *mp, const void *const *key)
 {
 	struct map *m = mp;
-	struct map_element *el = val;
+	struct map_element *el;
+	const void *keyptr;
+	size_t keysize;
 
-	/* coverity[address_free: FALSE] */
-	HASH_DELETE(m, &el[-1]);
+	keyptr = key_get_ptr(m, key);
+	keysize = key_get_size(m, keyptr);
+	el = HASH_FIND(m, keyptr, keysize);
+	if (el == NULL)
+		return;
+	HASH_DELETE(m, el);
 }
 
 void *
