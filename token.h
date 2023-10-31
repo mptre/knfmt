@@ -122,7 +122,7 @@
 	OP(TOKEN_STRING,	"", 0)					\
 	OP(TOKEN_NONE,		"", 0)
 
-#define token_priv(tk, type) __extension__ ({				\
+#define token_data(tk, type) __extension__ ({				\
 	typeof(tk) _nx = (tk) + 1;					\
 	(type *)_nx;							\
 })

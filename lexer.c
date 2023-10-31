@@ -282,7 +282,7 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 {
 	struct token *t;
 
-	t = token_alloc(lx->lx_arg.priv_size, tk);
+	t = token_alloc(lx->lx_arg.token_data_size, tk);
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = st->st_cno;
@@ -662,7 +662,7 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 {
 	struct token *tk;
 
-	tk = token_alloc(lx->lx_arg.priv_size, src);
+	tk = token_alloc(lx->lx_arg.token_data_size, src);
 	token_list_copy(&src->tk_prefixes, &tk->tk_prefixes);
 	token_list_copy(&src->tk_suffixes, &tk->tk_suffixes);
 	token_position_after(after, tk);
@@ -676,7 +676,7 @@ lexer_insert_before(struct lexer *lx, struct token *before, int type,
 {
 	struct token *tk;
 
-	tk = token_alloc(lx->lx_arg.priv_size, &(struct token){
+	tk = token_alloc(lx->lx_arg.token_data_size, &(struct token){
 	    .tk_type	= type,
 	    .tk_lno	= before->tk_lno,
 	    .tk_cno	= before->tk_cno,
@@ -694,7 +694,7 @@ lexer_insert_after(struct lexer *lx, struct token *after, int type,
 {
 	struct token *tk;
 
-	tk = token_alloc(lx->lx_arg.priv_size, &(struct token){
+	tk = token_alloc(lx->lx_arg.token_data_size, &(struct token){
 	    .tk_type	= type,
 	    .tk_flags	= token_flags_inherit(after),
 	    .tk_str	= str,
@@ -1301,7 +1301,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	off = src->tk_off;
 	len = (dst->tk_off + dst->tk_len) - off;
 
-	prefix = token_alloc(lx->lx_arg.priv_size, &(struct token){
+	prefix = token_alloc(lx->lx_arg.token_data_size, &(struct token){
 	    .tk_type	= TOKEN_CPP,
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});

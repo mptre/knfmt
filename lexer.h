@@ -11,7 +11,7 @@ struct lexer_arg {
 	const struct options	*op;
 
 	/* Token private data size. */
-	size_t			 priv_size;
+	size_t			 token_data_size;
 
 	/*
 	 * Report errors immediately, removing the need to call
