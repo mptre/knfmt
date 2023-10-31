@@ -65,6 +65,8 @@ static void	lexer_branch_unmute(struct lexer *, struct token *);
 static struct token	*lexer_recover_branch(struct token *);
 static struct token	*lexer_recover_branch1(struct token *, unsigned int);
 
+static struct token	*lexer_last_stamped(struct lexer *);
+
 static void	lexer_reposition_tokens(struct lexer *, struct token *);
 
 static int	lexer_peek_until_not_nested(struct lexer *, int,
@@ -511,7 +513,6 @@ lexer_recover(struct lexer *lx)
 int
 lexer_branch(struct lexer *lx)
 {
-	struct token **last;
 	struct token *br, *dst, *rm, *seek, *tk;
 
 	if (!lexer_back(lx, &tk))
@@ -556,8 +557,7 @@ lexer_branch(struct lexer *lx)
 	lexer_branch_unmute(lx, dst);
 
 	/* Rewind to last stamped token. */
-	last = VECTOR_LAST(lx->lx_stamps);
-	seek = last == NULL ? NULL : *last;
+	seek = lexer_last_stamped(lx);
 	lexer_trace(lx, "seek to %s",
 	    lexer_serialize(lx, seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
 	lx->lx_st.st_tk = seek;
@@ -1452,6 +1452,15 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 	}
 
 	return NULL;
+}
+
+static struct token *
+lexer_last_stamped(struct lexer *lx)
+{
+	struct token **last;
+
+	last = VECTOR_LAST(lx->lx_stamps);
+	return last != NULL ? *last : NULL;
 }
 
 /*
