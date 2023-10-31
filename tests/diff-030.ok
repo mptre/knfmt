@@ -1,5 +1,5 @@
 #ifdef DWC2_LOG_WRITES
-pr_info("info:: wrote %08x to %p\n", value, hsotg -> regs + offset);
+pr_info("info:: wrote %08x to %p\n", value, hsotg->regs + offset);
 #endif
 
 #if 0

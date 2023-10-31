@@ -1008,7 +1008,11 @@ expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 		w = expr_doc_width(es, es->es_col == 0 ? es->es_dc : lhs);
 		ruler_insert(es->es_ea.rl, ex->ex_tk, lhs, ++es->es_col, w, 0);
 	} else {
-		doc_alloc(DOC_LINE, lhs);
+		struct token *nx;
+
+		nx = token_next(ex->ex_tk);
+		if (nx->tk_type != TOKEN_COMMA)
+			doc_alloc(DOC_LINE, lhs);
 	}
 	if (ex->ex_rhs != NULL)
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.arg);

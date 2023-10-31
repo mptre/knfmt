@@ -7,6 +7,7 @@
 #include "doc.h"
 #include "lexer.h"
 #include "parser-cpp.h"
+#include "parser-expr.h"
 #include "parser-func.h"
 #include "parser-priv.h"
 #include "ruler.h"
@@ -241,6 +242,22 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_token(tk, concat);
+
+		if (tk->tk_type == TOKEN_LPAREN) {
+			unsigned int indent;
+			int error;
+
+			indent = style(pr->pr_st, ContinuationIndentWidth);
+			error = parser_expr(pr, &concat,
+			    &(struct parser_expr_arg){
+				.dc	= concat,
+				.indent	= indent,
+			});
+			if (error & HALT)
+				return error;
+			if (!lexer_back(lx, &tk))
+				return parser_fail(pr);
+		}
 
 		if (tk == align) {
 			if (token_is_decl(tk, TOKEN_ENUM) ||
