@@ -28,11 +28,11 @@ static const char	*token_type_str(int);
 #endif
 
 struct token *
-token_alloc(const struct token *def)
+token_alloc(size_t priv_size, const struct token *def)
 {
 	struct token *tk;
 
-	tk = ecalloc(1, sizeof(*tk));
+	tk = ecalloc(1, sizeof(*tk) + priv_size);
 	token_init(tk, def);
 	return tk;
 }
@@ -439,7 +439,7 @@ token_list_copy(const struct token_list *src, struct token_list *dst)
 	TAILQ_FOREACH(tk, src, tk_entry) {
 		struct token *cp;
 
-		cp = token_alloc(tk);
+		cp = token_alloc(0, tk);
 		TAILQ_INSERT_TAIL(dst, cp, tk_entry);
 	}
 }

@@ -200,7 +200,6 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 	    .error_flush= trace(op, 'l') > 0,
 	    .callbacks	= {
 		.read		= clang_read,
-		.alloc		= token_alloc,
 		.serialize	= token_serialize,
 		.arg		= cl,
 	    },

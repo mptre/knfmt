@@ -777,7 +777,6 @@ context_init(struct context *cx, const char *src)
 	    .op		= &cx->op,
 	    .callbacks	= {
 		.read		= clang_read,
-		.alloc		= token_alloc,
 		.serialize	= token_serialize,
 		.arg		= cx->cl,
 	    },
