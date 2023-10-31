@@ -193,12 +193,12 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 		goto out;
 	}
 	lx = lexer_alloc(&(const struct lexer_arg){
-	    .path	= fe->fe_path,
-	    .bf		= src,
-	    .diff	= fe->fe_diff,
-	    .op		= op,
-	    .error_flush= trace(op, 'l') > 0,
-	    .callbacks	= {
+	    .path		= fe->fe_path,
+	    .bf			= src,
+	    .diff		= fe->fe_diff,
+	    .op			= op,
+	    .error_flush	= trace(op, 'l') > 0,
+	    .callbacks		= {
 		.read		= clang_read,
 		.serialize	= token_serialize,
 		.arg		= cl,
