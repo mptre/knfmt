@@ -251,7 +251,7 @@ lexer_ungetc(struct lexer *lx)
 }
 
 struct token *
-lexer_emit(const struct lexer *lx, const struct lexer_state *st,
+lexer_emit(struct lexer *lx, const struct lexer_state *st,
     const struct token *tk)
 {
 	struct token *t;

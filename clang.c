@@ -60,7 +60,7 @@ static void		 clang_insert_keyword(const struct token *);
 static struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
 static struct token	*clang_find_keyword1(const char *, size_t);
-static struct token	*clang_find_alias(const struct lexer *,
+static struct token	*clang_find_alias(struct lexer *,
     const struct lexer_state *);
 static struct token	*clang_ellipsis(struct lexer *,
     const struct lexer_state *);
@@ -735,7 +735,7 @@ clang_find_keyword1(const char *key, size_t len)
  * underscores.
  */
 static struct token *
-clang_find_alias(const struct lexer *lx, const struct lexer_state *st)
+clang_find_alias(struct lexer *lx, const struct lexer_state *st)
 {
 	const struct {
 		struct {
