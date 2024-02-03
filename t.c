@@ -97,6 +97,10 @@ static int	test_strwidth0(const char *, size_t, size_t, int);
 static int	test_tmptemplate0(struct context *, const char *, const char *,
     int);
 
+#define test_path_slice(a, b, c) \
+	test(test_path_slice0((a), (b), (c), __LINE__))
+static int	test_path_slice0(const char *, unsigned int, const char *, int);
+
 struct context {
 	struct options		 op;
 	struct buffer		*bf;
@@ -444,6 +448,14 @@ main(int argc, char *argv[])
 	test_tmptemplate("/file.c", "/.file.c.XXXXXXXX");
 	test_tmptemplate("/root/file.c", "/root/.file.c.XXXXXXXX");
 
+	test_path_slice("", 1, "");
+	test_path_slice("", 2, "");
+	test_path_slice("file", 1, "file");
+	test_path_slice("file", 2, "file");
+	test_path_slice("dir/file", 2, "dir/file");
+	test_path_slice("/dir/file", 2, "dir/file");
+	test_path_slice("dir/file", 3, "dir/file");
+
 out:
 	context_free(&cx);
 	style_shutdown();
@@ -747,6 +759,23 @@ test_tmptemplate0(struct context *c, const char *path, const char *exp, int lno)
 		error = 1;
 	}
 	return error;
+}
+
+static int
+test_path_slice0(const char *path, unsigned int ncomponents, const char *exp,
+    int lno)
+{
+	const char *act;
+
+	act = path_slice(path, ncomponents);
+	if (strcmp(act, exp) != 0) {
+		const char *fun = "path_slice";
+
+		fprintf(stderr, "%s:%d:\n\texp %s\n\tgot %s\n",
+		    fun, lno, exp, act);
+		return 1;
+	}
+	return 0;
 }
 
 static void

@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <string.h>
 
 #include "libks/arena-buffer.h"
 #include "libks/buffer.h"
@@ -30,6 +31,31 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 		}
 	}
 	return cno;
+}
+
+const char *
+path_slice(const char *path, unsigned int ncomponents)
+{
+	const char *slice = path;
+	size_t len;
+
+	len = strlen(path);
+	for (; ncomponents > 0; ncomponents--) {
+		const char *slash;
+
+		slash = memrchr(path, '/', len);
+		if (slash == NULL) {
+			/*
+			 * Less components present than wanted, return the whole
+			 * path.
+			 */
+			slice = path;
+			break;
+		}
+		len -= (size_t)(&path[len] - slash);
+		slice = &path[len];
+	}
+	return slice[0] == '/' ? &slice[1] : slice;
 }
 
 size_t
