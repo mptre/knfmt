@@ -33,6 +33,16 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 	return cno;
 }
 
+static const char *
+find_last(const char *str, size_t len, char delim)
+{
+	for (; len > 0; len--) {
+		if (str[len - 1] == delim)
+			return &str[len - 1];
+	}
+	return NULL;
+}
+
 const char *
 path_slice(const char *path, unsigned int ncomponents)
 {
@@ -43,7 +53,7 @@ path_slice(const char *path, unsigned int ncomponents)
 	for (; ncomponents > 0; ncomponents--) {
 		const char *slash;
 
-		slash = memrchr(path, '/', len);
+		slash = find_last(path, len, '/');
 		if (slash == NULL) {
 			/*
 			 * Less components present than wanted, return the whole
