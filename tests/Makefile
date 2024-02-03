@@ -643,6 +643,7 @@ TESTS+=	style-IncludeCategories-002.c
 TESTS+=	style-IncludeCategories-003.c
 TESTS+=	style-IncludeCategories-004.c
 TESTS+=	style-IncludeCategories-005.c
+TESTS+=	style-IncludeCategories-006.c
 TESTS+=	style-IndentWidth-001.c
 TESTS+=	style-SortIncludes-001.c
 TESTS+=	style-UseTab-001.c

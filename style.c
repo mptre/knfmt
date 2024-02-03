@@ -1086,6 +1086,8 @@ parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 
 	ic = VECTOR_LAST(st->include_categories);
 	ic->pattern = arena_strndup(st->eternal, tk->tk_str, tk->tk_len);
+	/* Allow the pattern to be redefined. */
+	regfree(&ic->regex);
 	error = regcomp(&ic->regex, ic->pattern,
 	    REG_EXTENDED | REG_NOSUB | REG_ICASE);
 	if (error) {
