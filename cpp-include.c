@@ -3,14 +3,12 @@
 #include "config.h"
 
 #include <err.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "libks/arena.h"
 #include "libks/map.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "lexer.h"
 #include "options.h"
 #include "simple.h"
@@ -56,15 +54,15 @@ static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
 cpp_include_alloc(const struct style *st, struct simple *si,
-    struct token_list *prefixes, struct arena *scratch,
-    const struct options *op)
+    struct token_list *prefixes, struct arena_scope *eternal_scope,
+    struct arena *scratch, const struct options *op)
 {
 	struct cpp_include *ci;
 	VECTOR(int) priorities;
 	size_t i;
 	unsigned int simple_flags;
 
-	ci = ecalloc(1, sizeof(*ci));
+	ci = arena_calloc(eternal_scope, 1, sizeof(*ci));
 	if (VECTOR_INIT(ci->includes))
 		err(1, NULL);
 	if (MAP_INIT(ci->groups))
@@ -116,7 +114,6 @@ cpp_include_free(struct cpp_include *ci)
 	}
 	MAP_FREE(ci->groups);
 	simple_leave(&ci->cookie);
-	free(ci);
 }
 
 void

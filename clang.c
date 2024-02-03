@@ -131,7 +131,8 @@ clang_alloc(const struct style *st, struct simple *si,
 	TAILQ_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
-	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, scratch, op);
+	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, eternal_scope,
+	    scratch, op);
 	if (VECTOR_INIT(cl->branches))
 		err(1, NULL);
 	return cl;
