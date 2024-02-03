@@ -42,11 +42,9 @@ static void
 target(const struct buffer *bf, void *userdata)
 {
 	struct test_context *c = userdata;
-	struct style *st;
 
 	arena_scope(c->eternal, s);
 
-	st = style_parse_buffer(bf, ".clang-format", &s, c->scratch, &c->op);
-	style_free(st);
+	style_parse_buffer(bf, ".clang-format", &s, c->scratch, &c->op);
 }
 FUZZER_TARGET_BUFFER(target);
