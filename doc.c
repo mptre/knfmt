@@ -345,11 +345,11 @@ static void	doc_trace_enter0(const struct doc *, struct doc_state *);
 } while (0)
 static void	doc_trace_leave0(const struct doc *, struct doc_state *);
 
-static char		*docstr(const struct doc *, char *, size_t);
+static const char	*docstr(const struct doc *, struct arena_scope *);
 static void		 indentstr(const struct doc *,
     const struct doc_state *, struct buffer *);
 static const char	*statestr(const struct doc_state *, unsigned int,
-    char *, size_t);
+    struct arena_scope *);
 
 static unsigned int	countlines(const char *, size_t);
 
@@ -1802,11 +1802,12 @@ static void
 doc_trace0(const struct doc *UNUSED(dc), const struct doc_state *st,
     const char *fmt, ...)
 {
-	char buf[128];
 	va_list ap;
 	unsigned int depth, i;
 
-	fprintf(stderr, "%s", statestr(st, st->st_depth, buf, sizeof(buf)));
+	arena_scope(st->st_scratch, s);
+
+	fprintf(stderr, "%s", statestr(st, st->st_depth, &s));
 	depth = st->st_depth * 2 + 1;
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "-");
@@ -1821,19 +1822,20 @@ doc_trace0(const struct doc *UNUSED(dc), const struct doc_state *st,
 static void
 doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 {
-	char buf[128];
 	const struct doc_description *desc = &doc_descriptions[dc->dc_type];
 	unsigned int depth = st->st_depth;
 	unsigned int i;
 
+	arena_scope(st->st_scratch, s);
+
 	st->st_depth++;
 
-	fprintf(stderr, "%s ", statestr(st, st->st_depth, buf, sizeof(buf)));
+	fprintf(stderr, "%s ", statestr(st, st->st_depth, &s));
 
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "  ");
 
-	fprintf(stderr, "%s", docstr(dc, buf, sizeof(buf)));
+	fprintf(stderr, "%s", docstr(dc, &s));
 	fprintf(stderr, "(");
 	if (desc->children.many)
 		fprintf(stderr, "[");
@@ -1904,17 +1906,18 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 static void
 doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 {
-	char buf[128];
 	const struct doc_description *desc = &doc_descriptions[dc->dc_type];
 	unsigned int depth = st->st_depth;
 	unsigned int i;
+
+	arena_scope(st->st_scratch, s);
 
 	st->st_depth--;
 
 	if (!desc->children.many && !desc->children.one)
 		return;
 
-	fprintf(stderr, "%s ", statestr(st, depth, buf, sizeof(buf)));
+	fprintf(stderr, "%s ", statestr(st, depth, &s));
 	for (i = 0; i < st->st_depth; i++)
 		fprintf(stderr, "  ");
 	if (desc->children.many)
@@ -1924,23 +1927,18 @@ doc_trace_leave0(const struct doc *dc, struct doc_state *st)
 	fprintf(stderr, "\n");
 }
 
-static char *
-docstr(const struct doc *dc, char *buf, size_t bufsiz)
+static const char *
+docstr(const struct doc *dc, struct arena_scope *s)
 {
 	const char *name;
 	int suffix = dc->dc_suffix != NULL;
-	int n;
 
 	name = doc_descriptions[dc->dc_type].name;
-	n = snprintf(buf, bufsiz, "%s<%s:%d%s%s%s>",
+	return arena_sprintf(s, "%s<%s:%d%s%s%s>",
 	    name, dc->dc_fun, dc->dc_lno,
 	    suffix ? ", \"" : "",
 	    suffix ? dc->dc_suffix : "",
 	    suffix ? "\"" : "");
-	if (n < 0 || n >= (ssize_t)bufsiz)
-		errc(1, ENAMETOOLONG, "%s", __func__);
-
-	return buf;
 }
 
 static void
@@ -1969,12 +1967,10 @@ indentstr(const struct doc *dc, const struct doc_state *st, struct buffer *bf)
 }
 
 static const char *
-statestr(const struct doc_state *st, unsigned int depth, char *buf,
-    size_t bufsiz)
+statestr(const struct doc_state *st, unsigned int depth, struct arena_scope *s)
 {
-	char mute[16];
+	const char *mute;
 	unsigned char mode = 'U';
-	int n;
 
 	switch (st->st_mode) {
 	case BREAK:
@@ -1986,15 +1982,12 @@ statestr(const struct doc_state *st, unsigned int depth, char *buf,
 	}
 
 	if (doc_diff_is_mute(st))
-		(void)snprintf(mute, sizeof(mute), "D");
+		mute = arena_strdup(s, "D");
 	else
-		(void)snprintf(mute, sizeof(mute), "%d", st->st_mute);
+		mute = arena_sprintf(s, "%d", st->st_mute);
 
-	n = snprintf(buf, bufsiz, "[D] [%c C=%-3u D=%-3u U=%s O=%d]",
+	return arena_sprintf(s, "[D] [%c C=%-3u D=%-3u U=%s O=%d]",
 	    mode, st->st_col, depth, mute, st->st_optline);
-	if (n < 0 || n >= (ssize_t)bufsiz)
-		errc(1, ENAMETOOLONG, "%s", __func__);
-	return buf;
 }
 
 static unsigned int
