@@ -69,10 +69,12 @@ size_t	vector_first(void *);
 })
 size_t	vector_last(void *);
 
-#define VECTOR_LENGTH(vc) __extension__ ({				\
-	const struct vector_public *vp;					\
-	vp = (const struct vector_public *)(vc);			\
-	vp[-1].len;							\
-})
+static inline size_t
+VECTOR_LENGTH(const void *vc)
+{
+	const struct vector_public *vp = vc;
+
+	return vp[-1].len;
+}
 
 #define VECTOR_EMPTY(vc) (VECTOR_LENGTH(vc) == 0)

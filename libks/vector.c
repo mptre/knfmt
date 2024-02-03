@@ -21,6 +21,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+enum vector_error {
+	VECTOR_REALLOCATED = 1,
+	VECTOR_SUCCESS = 0,
+	VECTOR_ERROR = -1,
+};
+
 struct vector {
 	size_t			vc_siz;
 	size_t			vc_stride;
@@ -28,7 +34,7 @@ struct vector {
 	struct vector_public	p;
 };
 
-static int vector_reserve1(struct vector **, size_t);
+static enum vector_error vector_reserve1(struct vector **, size_t);
 
 static struct vector		*ptov(void *);
 
@@ -63,12 +69,12 @@ vector_reserve(void **vv, size_t n)
 	struct vector *vc = ptov(*vv);
 
 	switch (vector_reserve1(&vc, n)) {
-	case 1:
+	case VECTOR_REALLOCATED:
 		*vv = &vc[1];
 		break;
-	case 0:
+	case VECTOR_SUCCESS:
 		break;
-	case -1:
+	case VECTOR_ERROR:
 		return 1;
 	}
 	return 0;
@@ -80,12 +86,12 @@ vector_alloc(void **vv, int zero)
 	struct vector *vc = ptov(*vv);
 
 	switch (vector_reserve1(&vc, 1)) {
-	case 1:
+	case VECTOR_REALLOCATED:
 		*vv = &vc[1];
 		break;
-	case 0:
+	case VECTOR_SUCCESS:
 		break;
-	case -1:
+	case VECTOR_ERROR:
 		return ULONG_MAX;
 	}
 
@@ -147,7 +153,7 @@ vector_last(void *v)
 	return vc->p.len - 1;
 }
 
-static int
+static enum vector_error
 vector_reserve1(struct vector **vv, size_t len)
 {
 	struct vector *vc = *vv;
@@ -157,7 +163,7 @@ vector_reserve1(struct vector **vv, size_t len)
 	if (vc->p.len > ULONG_MAX - len)
 		goto overflow;
 	if (vc->p.len + len < vc->vc_siz)
-		return 0;
+		return VECTOR_SUCCESS;
 
 	newsiz = vc->vc_siz ? vc->vc_siz : 16;
 	while (newsiz < vc->p.len + len) {
@@ -174,14 +180,14 @@ vector_reserve1(struct vector **vv, size_t len)
 	totlen += sizeof(*vc);
 	newvc = realloc(vc, totlen);
 	if (newvc == NULL)
-		return -1;
+		return VECTOR_ERROR;
 	newvc->vc_siz = newsiz;
 	*vv = newvc;
-	return 1;
+	return VECTOR_REALLOCATED;
 
 overflow:
 	errno = EOVERFLOW;
-	return -1;
+	return VECTOR_ERROR;
 }
 
 static struct vector *
