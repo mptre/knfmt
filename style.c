@@ -54,7 +54,7 @@ enum yaml_type {
 };
 
 struct style {
-	struct arena_scope		*eternal;
+	struct arena_scope		*eternal_scope;
 	struct arena			*scratch;
 	const struct options		*op;
 	int				 scope;
@@ -299,7 +299,7 @@ style_shutdown(void)
 }
 
 struct style *
-style_parse(const char *path, struct arena_scope *eternal,
+style_parse(const char *path, struct arena_scope *eternal_scope,
     struct arena *scratch, const struct options *op)
 {
 	struct buffer *bf = NULL;
@@ -317,7 +317,7 @@ style_parse(const char *path, struct arena_scope *eternal,
 			close(fd);
 		}
 	}
-	st = style_parse_buffer(bf, path, eternal, scratch, op);
+	st = style_parse_buffer(bf, path, eternal_scope, scratch, op);
 	buffer_free(bf);
 	if (st != NULL && trace(op, 's') >= 2)
 		style_dump(st);
@@ -326,13 +326,13 @@ style_parse(const char *path, struct arena_scope *eternal,
 
 struct style *
 style_parse_buffer(const struct buffer *bf, const char *path,
-    struct arena_scope *eternal, struct arena *scratch,
+    struct arena_scope *eternal_scope, struct arena *scratch,
     const struct options *op)
 {
 	struct style *st;
 
 	st = ecalloc(1, sizeof(*st));
-	st->eternal = eternal;
+	st->eternal_scope = eternal_scope;
 	st->scratch = scratch;
 	st->op = op;
 	if (VECTOR_INIT(st->include_categories))
@@ -533,7 +533,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= bf,
-	    .eternal_scope	= st->eternal,
+	    .eternal_scope	= st->eternal_scope,
 	    .op			= st->op,
 	    .error_flush	= trace(st->op, 's') > 0,
 	    .callbacks		= {
@@ -1088,7 +1088,7 @@ parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 		return FAIL;
 
 	ic = VECTOR_LAST(st->include_categories);
-	ic->pattern = arena_strndup(st->eternal, tk->tk_str, tk->tk_len);
+	ic->pattern = arena_strndup(st->eternal_scope, tk->tk_str, tk->tk_len);
 	/* Allow the pattern to be redefined. */
 	regfree(&ic->regex);
 	error = regcomp(&ic->regex, ic->pattern,
