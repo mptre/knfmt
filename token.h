@@ -199,8 +199,9 @@ struct token	*token_alloc(struct arena_scope *, size_t,
 void		 token_ref(struct token *);
 void		 token_rele(struct token *);
 int		 token_trim(struct token *);
-char		*token_serialize(const struct token *);
-char		*token_serialize_no_flags(const struct token *);
+const char	*token_serialize(struct arena_scope *, const struct token *);
+const char	*token_serialize_no_flags(struct arena_scope *,
+    const struct token *);
 
 void	token_position_after(struct token *, struct token *);
 

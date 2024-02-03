@@ -56,7 +56,6 @@ struct lexer {
 
 	struct token_list	 lx_tokens;
 	VECTOR(struct token *)	 lx_stamps;
-	VECTOR(char *)		 lx_serialized;
 };
 
 static void		lexer_line_alloc(struct lexer *, unsigned int);
@@ -118,8 +117,6 @@ lexer_alloc(const struct lexer_arg *arg)
 		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
 	if (VECTOR_INIT(lx->lx_stamps))
-		err(1, NULL);
-	if (VECTOR_INIT(lx->lx_serialized))
 		err(1, NULL);
 	lexer_line_alloc(lx, 1);
 
@@ -188,13 +185,6 @@ lexer_free(struct lexer *lx)
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
-	while (!VECTOR_EMPTY(lx->lx_serialized)) {
-		char **tail;
-
-		tail = VECTOR_POP(lx->lx_serialized);
-		free(*tail);
-	}
-	VECTOR_FREE(lx->lx_serialized);
 	arena_scope_leave(&lx->lx_arena.eternal);
 	arena_free(lx->lx_arena.arena);
 	free(lx);
@@ -356,18 +346,9 @@ lexer_error_reset(struct lexer *lx)
 const char *
 lexer_serialize(struct lexer *lx, const struct token *tk)
 {
-	char **str;
-
 	if (tk == NULL)
 		return "(null)";
-
-	str = VECTOR_ALLOC(lx->lx_serialized);
-	if (str == NULL)
-		err(1, NULL);
-	*str = lx->lx_arg.callbacks.serialize(tk);
-	if (*str == NULL)
-		err(1, NULL);
-	return *str;
+	return lx->lx_arg.callbacks.serialize(&lx->lx_arena.eternal, tk);
 }
 
 unsigned int

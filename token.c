@@ -3,17 +3,18 @@
 #include "config.h"
 
 #include <assert.h>
-#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
 
 #include "lexer.h"
 #include "util.h"
 
-static char	*token_serialize_impl(const struct token *, int);
+static const char	*token_serialize_impl(struct arena_scope *,
+    const struct token *, int);
 
 static struct token	*token_list_find(const struct token_list *, int,
     unsigned int);
@@ -91,27 +92,24 @@ token_trim(struct token *tk)
 	return ntrim;
 }
 
-char *
-token_serialize(const struct token *tk)
+const char *
+token_serialize(struct arena_scope *s, const struct token *tk)
 {
-	return token_serialize_impl(tk, 1);
+	return token_serialize_impl(s, tk, 1);
 }
 
-char *
-token_serialize_no_flags(const struct token *tk)
+const char *
+token_serialize_no_flags(struct arena_scope *s, const struct token *tk)
 {
-	return token_serialize_impl(tk, 0);
+	return token_serialize_impl(s, tk, 0);
 }
 
-static char *
-token_serialize_impl(const struct token *tk, int doflags)
+static const char *
+token_serialize_impl(struct arena_scope *s, const struct token *tk, int doflags)
 {
 	struct buffer *bf;
-	char *buf;
 
-	bf = buffer_alloc(128);
-	if (bf == NULL)
-		err(1, NULL);
+	bf = arena_buffer_alloc(s, 128);
 	buffer_printf(bf, "%s", token_type_str(tk->tk_type));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u", tk->tk_lno, tk->tk_cno);
@@ -121,9 +119,7 @@ token_serialize_impl(const struct token *tk, int doflags)
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
 		buffer_printf(bf, "\")");
 	}
-	buf = buffer_str(bf);
-	buffer_free(bf);
-	return buf;
+	return buffer_str(bf);
 }
 
 void

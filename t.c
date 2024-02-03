@@ -114,7 +114,7 @@ static void		 context_free(struct context *);
 static void		 context_init(struct context *, const char *);
 static void		 context_reset(struct context *);
 
-static int	assert_token_move(struct lexer *, const char **, const char *,
+static int	assert_token_move(struct context *, const char **, const char *,
     int);
 static int	find_token(struct lexer *, int, struct token **);
 
@@ -639,7 +639,7 @@ test_lexer_move_before0(struct context *cx, struct test_token_move *arg,
 	}
 
 	lexer_move_before(cx->lx, before, move);
-	error = assert_token_move(cx->lx, arg->want, fun, lno);
+	error = assert_token_move(cx, arg->want, fun, lno);
 
 out:
 	return error;
@@ -666,7 +666,7 @@ test_token_position_after0(struct context *cx,
 	}
 
 	token_position_after(after, move);
-	error = assert_token_move(cx->lx, arg->want, fun, lno);
+	error = assert_token_move(cx, arg->want, fun, lno);
 
 	return error;
 }
@@ -823,11 +823,15 @@ context_reset(struct context *cx)
 }
 
 static int
-assert_token_move(struct lexer *lx, const char **want, const char *fun, int lno)
+assert_token_move(struct context *cx, const char **want, const char *fun,
+    int lno)
 {
-	char *str = NULL;
+	struct lexer *lx = cx->lx;
+	const char *str;
 	int i = 0;
 	int error = 1;
+
+	arena_scope(cx->scratch, s);
 
 	for (;;) {
 		struct token *prefix, *suffix, *tk;
@@ -842,25 +846,21 @@ assert_token_move(struct lexer *lx, const char **want, const char *fun, int lno)
 				goto out;
 			}
 
-			str = token_serialize_no_flags(prefix);
+			str = token_serialize_no_flags(&s, prefix);
 			if (strcmp(str, &want[i][2]) != 0) {
 				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
 				    fun, lno, i, &want[i][2], str);
 				goto out;
 			}
-			free(str);
-			str = NULL;
 			i++;
 		}
 
-		str = token_serialize_no_flags(tk);
+		str = token_serialize_no_flags(&s, tk);
 		if (strcmp(str, want[i]) != 0) {
 			fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
 			    fun, lno, i, want[i], str);
 			goto out;
 		}
-		free(str);
-		str = NULL;
 		i++;
 
 		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
@@ -870,14 +870,12 @@ assert_token_move(struct lexer *lx, const char **want, const char *fun, int lno)
 				goto out;
 			}
 
-			str = token_serialize_no_flags(suffix);
+			str = token_serialize_no_flags(&s, suffix);
 			if (strcmp(str, &want[i][2]) != 0) {
 				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
 				    fun, lno, i, &want[i][2], str);
 				goto out;
 			}
-			free(str);
-			str = NULL;
 			i++;
 		}
 	}
@@ -889,7 +887,6 @@ assert_token_move(struct lexer *lx, const char **want, const char *fun, int lno)
 	error = 0;
 
 out:
-	free(str);
 	return error;
 }
 

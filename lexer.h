@@ -39,10 +39,10 @@ struct lexer_arg {
 
 		/*
 		 * Serialize routine used to turn the given token into something
-		 * human readable. The returned string must be heap allocated
-		 * and is managed by the lexer.
+		 * human readable.
 		 */
-		char		*(*serialize)(const struct token *);
+		const char	*(*serialize)(struct arena_scope *,
+		    const struct token *);
 
 		/* Opaque argument passed to callbacks. */
 		void		*arg;

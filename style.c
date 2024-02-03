@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
@@ -101,7 +102,8 @@ static struct token			*yaml_read(struct lexer *, void *);
 static struct token			*yaml_read_integer(struct lexer *);
 static struct token			*yaml_token_alloc(struct arena_scope *,
     const struct token *);
-static char				*yaml_serialize(const struct token *);
+static const char			*yaml_token_serialize(
+    struct arena_scope *, const struct token *);
 static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
 static const struct style_option	*yaml_find_keyword(const char *,
@@ -536,7 +538,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .callbacks		= {
 		.read		= yaml_read,
 		.alloc		= yaml_token_alloc,
-		.serialize	= yaml_serialize,
+		.serialize	= yaml_token_serialize,
 		.arg		= st,
 	    },
 	});
@@ -817,15 +819,12 @@ yaml_token_alloc(struct arena_scope *s, const struct token *def)
 	return token_alloc(s, sizeof(struct yaml_token), def);
 }
 
-static char *
-yaml_serialize(const struct token *tk)
+static const char *
+yaml_token_serialize(struct arena_scope *s, const struct token *tk)
 {
 	struct buffer *bf;
-	char *buf;
 
-	bf = buffer_alloc(128);
-	if (bf == NULL)
-		err(1, NULL);
+	bf = arena_buffer_alloc(s, 128);
 	if (tk->tk_type < Last) {
 		buffer_printf(bf, "Keyword");
 	} else {
@@ -837,9 +836,7 @@ yaml_serialize(const struct token *tk)
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
 		buffer_printf(bf, "\")");
 	}
-	buf = buffer_str(bf);
-	buffer_free(bf);
-	return buf;
+	return buffer_str(bf);
 }
 
 static struct token *
