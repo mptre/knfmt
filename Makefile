@@ -286,10 +286,10 @@ SHELLCHECKFLAGS+=	-o quote-safe-variables
 all: ${PROG_knfmt}
 
 ${PROG_knfmt}: ${OBJS_knfmt}
-	${CC} ${DEBUG} -o ${PROG_knfmt} ${OBJS_knfmt} ${LDFLAGS}
+	${CC} ${DEBUG} ${NO_SANITIZE_FUZZER} -o ${PROG_knfmt} ${OBJS_knfmt} ${LDFLAGS}
 
 ${PROG_test}: ${OBJS_test}
-	${CC} ${DEBUG} -o ${PROG_test} ${OBJS_test} ${LDFLAGS}
+	${CC} ${DEBUG} ${NO_SANITIZE_FUZZER} -o ${PROG_test} ${OBJS_test} ${LDFLAGS}
 
 clean:
 	rm -f ${DEPS_knfmt} ${OBJS_knfmt} ${PROG_knfmt} \

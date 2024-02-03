@@ -198,6 +198,9 @@ if [ "$_sanitize" -eq 1 ]; then
 		CFLAGS="${_sanitize} ${CFLAGS}"
 		DEBUG="${_sanitize} ${DEBUG}"
 	fi
+	if [ "$_fuzz" = "llvm" ]; then
+		NO_SANITIZE_FUZZER="$(cc_has_option -fno-sanitize=fuzzer)"
+	fi
 fi
 
 check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
@@ -249,6 +252,8 @@ BINDIR?=	$(echo $BINDIR)
 MANDIR?=	$(echo $MANDIR)
 INSTALL?=	$(echo $INSTALL)
 INSTALL_MAN?=	$(echo $INSTALL_MAN)
+
+NO_SANITIZE_FUZZER=	$(echo $NO_SANITIZE_FUZZER)
 
 .PATH:	\${.CURDIR}/libks
 VPATH=	\${.CURDIR}/libks
