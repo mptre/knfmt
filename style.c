@@ -1128,7 +1128,8 @@ clang_format_dump_style(struct style *st, enum style_keyword based_on_style,
 	int pip[2];
 	int status;
 
-	if (pipe(pip) == -1)
+	/* NOLINTNEXTLINE(android-cloexec-pipe2) */
+	if (pipe2(pip, 0) == -1)
 		err(1, "pipe");
 	pid = fork();
 	if (pid == -1)
