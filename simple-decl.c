@@ -15,7 +15,9 @@
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
-#include "util.h"
+#include "trace.h"
+
+#define simple_trace(sd, fmt, ...) trace('S', (sd)->op, (fmt), __VA_ARGS__)
 
 struct token_range {
 	struct token	*tr_beg;
@@ -112,11 +114,6 @@ static struct decl_var	*simple_decl_var_end(struct simple_decl *,
 static void	associate_semi(struct decl *, struct decl_type *,
     struct token *);
 static int	classify(const struct token_range *, unsigned int *);
-
-#define simple_trace(sd, fmt, ...) do {					\
-	if (trace((sd)->op, 'S'))					\
-		tracef('S', __func__, (fmt), __VA_ARGS__);		\
-} while (0)
 
 struct simple_decl *
 simple_decl_enter(struct lexer *lx, struct arena_scope *eternal_scope,

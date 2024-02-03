@@ -10,18 +10,6 @@
 #include "libks/buffer.h"
 #include "libks/compiler.h"
 
-void
-tracef(unsigned char ident, const char *fun, const char *fmt, ...)
-{
-	va_list ap;
-
-	fprintf(stderr, "[%c] %s: ", ident, fun);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
-}
-
 unsigned int
 colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 {

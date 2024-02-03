@@ -14,12 +14,10 @@
 #include "ruler.h"
 #include "style.h"
 #include "token.h"
+#include "trace.h"
 #include "util.h"
 
-#define cpp_trace(op, fmt, ...) do {					\
-	if (trace((op), 'C'))						\
-		tracef('C', __func__, (fmt), __VA_ARGS__);		\
-} while (0)
+#define cpp_trace(op, fmt, ...) trace('C', (op), (fmt), __VA_ARGS__)
 
 struct alignment {
 	const char		*indent;

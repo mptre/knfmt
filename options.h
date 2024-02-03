@@ -1,3 +1,6 @@
+#ifndef OPTIONS_H
+#define OPTIONS_H
+
 static const char traces[] = {
 	'a',	/* all */
 	'c',	/* clang */
@@ -21,7 +24,8 @@ struct options {
 			test:1;
 };
 
-void	options_init(struct options *);
-int	options_trace_parse(struct options *, const char *);
+void		options_init(struct options *);
+int		options_trace_parse(struct options *, const char *);
+unsigned int	options_trace_level(const struct options *, char);
 
-unsigned int	trace(const struct options *, char);
+#endif

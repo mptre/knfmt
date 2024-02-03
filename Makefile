@@ -44,6 +44,7 @@ SRCS+=	string.c
 SRCS+=	style.c
 SRCS+=	tmp.c
 SRCS+=	token.c
+SRCS+=	trace.c
 SRCS+=	util.c
 SRCS+=	vector.c
 
@@ -137,6 +138,8 @@ KNFMT+=	style.h
 KNFMT+=	t.c
 KNFMT+=	token.c
 KNFMT+=	token.h
+KNFMT+=	trace.c
+KNFMT+=	trace.h
 KNFMT+=	util.c
 KNFMT+=	util.h
 
@@ -211,6 +214,8 @@ CLANGTIDY+=	style.h
 CLANGTIDY+=	t.c
 CLANGTIDY+=	token.c
 CLANGTIDY+=	token.h
+CLANGTIDY+=	trace.c
+CLANGTIDY+=	trace.h
 CLANGTIDY+=	util.c
 CLANGTIDY+=	util.h
 
@@ -250,6 +255,7 @@ CPPCHECK+=	simple.c
 CPPCHECK+=	style.c
 CPPCHECK+=	t.c
 CPPCHECK+=	token.c
+CPPCHECK+=	trace.c
 CPPCHECK+=	util.c
 
 CPPCHECKFLAGS+=	--quiet

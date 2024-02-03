@@ -324,7 +324,7 @@ style_parse(const char *path, struct arena_scope *eternal_scope,
 		}
 	}
 	st = style_parse_buffer(bf, path, eternal_scope, scratch, op);
-	if (st != NULL && trace(op, 's') >= 2)
+	if (st != NULL && options_trace_level(op, 's') >= 2)
 		style_dump(st);
 	return st;
 }
@@ -539,7 +539,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .bf			= bf,
 	    .eternal_scope	= st->eternal_scope,
 	    .op			= st->op,
-	    .error_flush	= trace(st->op, 's') > 0,
+	    .error_flush	= options_trace_level(st->op, 's') > 0,
 	    .callbacks		= {
 		.read		= yaml_read,
 		.alloc		= yaml_token_alloc,

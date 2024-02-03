@@ -18,6 +18,7 @@
 #include "error.h"
 #include "options.h"
 #include "token.h"
+#include "trace.h"
 #include "util.h"
 
 #ifdef HAVE_QUEUE
@@ -84,10 +85,7 @@ static const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
 static void	lexer_copy_token_list(struct lexer *,
     const struct token_list *, struct token_list *);
 
-#define lexer_trace(lx, fmt, ...) do {					\
-	if (trace((lx)->lx_op, 'l'))					\
-		tracef('L', __func__, (fmt), __VA_ARGS__);		\
-} while (0)
+#define lexer_trace(lx, fmt, ...) trace('l', (lx)->lx_op, (fmt), __VA_ARGS__)
 
 struct lexer *
 lexer_alloc(const struct lexer_arg *arg)
@@ -142,7 +140,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	}
 	VECTOR_FREE(discarded);
 
-	if (trace(lx->lx_op, 't'))
+	if (options_trace_level(lx->lx_op, 't') > 0)
 		lexer_dump(lx);
 
 	return lx;
@@ -300,7 +298,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	va_start(ap, fmt);
 	buffer_vprintf(bf, fmt, ap);
 	va_end(ap);
-	if (trace(lx->lx_op, 'f'))
+	if (options_trace_level(lx->lx_op, 'f') > 0)
 		buffer_printf(bf, " [%s:%d]", fun, lno);
 	buffer_printf(bf, "\n");
 

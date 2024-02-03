@@ -18,7 +18,7 @@
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
-#include "util.h"
+#include "trace.h"
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
@@ -26,10 +26,7 @@
 #  include "compat-queue.h"
 #endif
 
-#define clang_trace(cl, fmt, ...) do {					\
-	if (trace((cl)->op, 'c'))					\
-		tracef('C', __func__, (fmt), __VA_ARGS__);		\
-} while (0)
+#define clang_trace(cl, fmt, ...) trace('c', (cl)->op, (fmt), __VA_ARGS__)
 
 struct clang {
 	const struct style	*st;

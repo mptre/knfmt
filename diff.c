@@ -20,6 +20,7 @@
 #include "file.h"
 #include "fs.h"
 #include "options.h"
+#include "trace.h"
 
 static void	diff_end(struct diffchunk *, unsigned int);
 
@@ -28,9 +29,6 @@ static int	matchchunk(const char *, unsigned int *, unsigned int *);
 static int	matchline(const char *, unsigned int, struct file *);
 
 static const char	*trimprefix(const char *, size_t *);
-
-static void	diff_trace(const char *, ...)
-	__attribute__((__format__(printf, 1, 2)));
 
 static regex_t	rechunk, repath;
 
@@ -122,18 +120,18 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 		}
 	}
 
-	if (trace(op, 'D')) {
+	if (options_trace_level(op, 'D') > 0) {
 		size_t i;
 
 		for (i = 0; i < VECTOR_LENGTH(files->fs_vc); i++) {
 			size_t j;
 
 			fe = &files->fs_vc[i];
-			diff_trace("%s:", fe->fe_path);
 			for (j = 0; j < VECTOR_LENGTH(fe->fe_diff); j++) {
 				const struct diffchunk *du = &fe->fe_diff[j];
 
-				diff_trace("  %u-%u", du->du_beg, du->du_end);
+				trace('D', op, "%s: %u-%u",
+				    fe->fe_path, du->du_beg, du->du_end);
 			}
 		}
 	}
@@ -268,18 +266,4 @@ trimprefix(const char *str, size_t *len)
 		return str;
 	*len -= (size_t)((p - str) + 1);
 	return &p[1];
-}
-
-static void
-diff_trace(const char *fmt, ...)
-{
-	va_list ap;
-
-	fprintf(stderr, "[I] ");
-
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-
-	fprintf(stderr, "\n");
 }

@@ -37,7 +37,7 @@ options_trace_parse(struct options *op, const char *flags)
 }
 
 unsigned int
-trace(const struct options *op, char c)
+options_trace_level(const struct options *op, char c)
 {
 	int idx;
 

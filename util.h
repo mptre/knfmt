@@ -3,9 +3,6 @@
 struct arena_scope;
 struct buffer;
 
-void	tracef(unsigned char, const char *, const char *, ...)
-	__attribute__((__format__(printf, 3, 4)));
-
 unsigned int	colwidth(const char *, size_t, unsigned int, unsigned int *);
 
 size_t	strindent_buffer(struct buffer *, size_t, int, size_t);

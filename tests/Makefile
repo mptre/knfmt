@@ -766,6 +766,8 @@ TESTS+=	../style.h
 TESTS+=	../t.c
 TESTS+=	../token.c
 TESTS+=	../token.h
+TESTS+=	../trace.c
+TESTS+=	../trace.h
 TESTS+=	../util.c
 TESTS+=	../util.h
 

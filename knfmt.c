@@ -26,6 +26,7 @@
 #include "simple.h"
 #include "style.h"
 #include "token.h"
+#include "trace.h"
 
 struct main_context {
 	struct options	 options;
@@ -215,7 +216,7 @@ fileformat(struct main_context *c, struct file *fe)
 	    .diff		= fe->fe_diff,
 	    .op			= &c->options,
 	    .eternal_scope	= &eternal_scope,
-	    .error_flush	= trace(&c->options, 'l') > 0,
+	    .error_flush	= options_trace_level(&c->options, 'l') > 0,
 	    .callbacks		= {
 		.read		= clang_read,
 		.alloc		= clang_token_alloc,
