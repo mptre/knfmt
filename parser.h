@@ -15,7 +15,6 @@ struct parser_doc_scope_cookie {
 struct parser	*parser_alloc(struct lexer *, const struct style *,
     struct simple *, struct arena_scope *, struct arena *, struct arena *,
     const struct options *);
-void		 parser_free(struct parser *);
 int		 parser_exec(struct parser *, const struct diffchunk *,
     struct buffer *);
 
