@@ -636,6 +636,7 @@ token_branch_unlink(struct token *tk)
 			tk->tk_type = TOKEN_CPP;
 			/* Not allowed to be empty as opposed of else branch. */
 			token_rele(tk->tk_branch.br_parent);
+			tk->tk_branch.br_parent = NULL;
 		}
 		return 1;
 	} else if (tk->tk_type == TOKEN_CPP_ELSE ||
@@ -662,6 +663,7 @@ token_branch_unlink(struct token *tk)
 			 */
 			if (tk->tk_branch.br_parent != NULL) {
 				token_rele(tk->tk_branch.br_parent);
+				tk->tk_branch.br_parent = NULL;
 			}
 			return 1;
 		}
