@@ -44,7 +44,7 @@ struct main_context {
 static void	usage(void) __attribute__((__noreturn__));
 
 static int	filelist(int, char **, struct files *, struct arena_scope *,
-    const struct options *);
+    struct arena *, const struct options *);
 static int	fileformat(struct main_context *, struct file *);
 static int	filediff(struct main_context *, const struct file *);
 static int	filewrite(struct main_context *, const struct file *);
@@ -139,7 +139,8 @@ main(int argc, char *argv[])
 
 	if (VECTOR_INIT(files.fs_vc))
 		err(1, NULL);
-	if (filelist(argc, argv, &files, &eternal_scope, &c.options)) {
+	if (filelist(argc, argv, &files, &eternal_scope, c.arena.scratch,
+	    &c.options)) {
 		error = 1;
 		goto out;
 	}
@@ -178,10 +179,11 @@ usage(void)
 
 static int
 filelist(int argc, char **argv, struct files *files,
-    struct arena_scope *eternal_scope, const struct options *op)
+    struct arena_scope *eternal_scope, struct arena *scratch,
+    const struct options *op)
 {
 	if (op->diffparse)
-		return diff_parse(files, eternal_scope, op);
+		return diff_parse(files, eternal_scope, scratch, op);
 
 	if (argc == 0) {
 		files_alloc(files, "/dev/stdin", eternal_scope);

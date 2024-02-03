@@ -1,3 +1,4 @@
+struct arena;
 struct arena_scope;
 struct files;
 struct options;
@@ -10,5 +11,5 @@ struct diffchunk {
 void			 diff_init(void);
 void			 diff_shutdown(void);
 int			 diff_parse(struct files *, struct arena_scope *,
-    const struct options *);
+    struct arena *, const struct options *);
 const struct diffchunk	*diff_get_chunk(const struct diffchunk *, unsigned int);

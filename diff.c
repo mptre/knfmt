@@ -13,6 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arena-buffer.h"
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
@@ -79,7 +81,7 @@ diff_shutdown(void)
 
 int
 diff_parse(struct files *files, struct arena_scope *eternal_scope,
-    const struct options *op)
+    struct arena *scratch, const struct options *op)
 {
 	struct buffer *bf;
 	struct buffer_getline *it = NULL;
@@ -87,7 +89,9 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 	const char *line;
 	int error = 0;
 
-	bf = buffer_read("/dev/stdin");
+	arena_scope(scratch, s);
+
+	bf = arena_buffer_read(&s, "/dev/stdin");
 	if (bf == NULL)
 		return 1;
 
@@ -137,7 +141,6 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 
 out:
 	buffer_getline_free(it);
-	buffer_free(bf);
 	return error;
 }
 
