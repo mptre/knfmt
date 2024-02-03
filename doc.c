@@ -157,6 +157,11 @@ struct doc_fits {
 	unsigned int	optline;
 };
 
+enum {
+	DOC_WALK_BREAK,
+	DOC_WALK_CONTINUE,
+};
+
 /*
  * Description of per document type specific semantics.
  */
@@ -1030,7 +1035,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		dc = *tail;
 		desc = &doc_descriptions[dc->dc_type];
 
-		if (!cb(dc, st, arg))
+		if (cb(dc, st, arg) == DOC_WALK_BREAK)
 			break;
 
 		if (desc->children.many) {
@@ -1086,7 +1091,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 
 	if (st->st_newline) {
 		fits->fits = st->st_col <= style(st->st_st, ColumnLimit);
-		return 0;
+		return DOC_WALK_BREAK;
 	}
 
 	switch (dc->dc_type) {
@@ -1122,7 +1127,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 	case DOC_OPTLINE:
 		if (st->st_optline) {
 			fits->optline = 1;
-			return 0;
+			return DOC_WALK_BREAK;
 		}
 		break;
 
@@ -1145,9 +1150,9 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 
 	if (st->st_col > style(st->st_st, ColumnLimit)) {
 		fits->fits = 0;
-		return 0;
+		return DOC_WALK_BREAK;
 	}
-	return 1;
+	return DOC_WALK_CONTINUE;
 }
 
 static unsigned int
@@ -1568,27 +1573,27 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 			 * the same source code again after branching.
 			 */
 			if (lno < dd->dd_threshold)
-				return 0;
+				return DOC_WALK_BREAK;
 
 			if (dd->dd_first == 0)
 				dd->dd_first = lno;
 			if (dc->dc_tk->tk_flags & TOKEN_FLAG_DIFF) {
 				dd->dd_chunk = lno;
 				dd->dd_covers = 1;
-				return 0;
+				return DOC_WALK_BREAK;
 			}
 		}
 		break;
 
 	case DOC_HARDLINE:
 		dd->dd_covers = -1;
-		return 0;
+		return DOC_WALK_BREAK;
 
 	default:
 		break;
 	}
 
-	return 1;
+	return DOC_WALK_CONTINUE;
 }
 
 /*
@@ -1700,7 +1705,7 @@ doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 	default:
 		break;
 	}
-	return 1;
+	return DOC_WALK_CONTINUE;
 }
 
 static void
