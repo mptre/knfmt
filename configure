@@ -104,20 +104,6 @@ check_attribute_fallthrough() {
 	EOF
 }
 
-# Check if the given header rooted in /usr/include depends on _GNU_SOURCE.
-check_gnu_source() {
-	local _header
-	local _path
-	local _tmp="${WRKDIR}/gnu"
-
-	_header="$1"; : "${_header:?}"
-	_path="/usr/include/${_header}"
-	# shellcheck disable=SC2086
-	"$CC" $CPPFLAGS -E "$_path" >"$_tmp"
-	# shellcheck disable=SC2086
-	! "$CC" $CPPFLAGS -E -D_GNU_SOURCE "$_path" | cmp -s "$_tmp" -
-}
-
 check_pledge() {
 	compile <<-EOF
 	#include <unistd.h>
@@ -172,7 +158,6 @@ set -u
 set -x
 
 HAVE_ATTRIBUTE_FALLTHROUGH=0
-HAVE_GNU_SOURCE=0
 HAVE_PLEDGE=0
 HAVE_QUEUE=0
 
@@ -219,7 +204,6 @@ if [ "$_sanitize" -eq 1 ]; then
 fi
 
 check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
-check_gnu_source string.h && HAVE_GNU_SOURCE=1
 check_pledge && HAVE_PLEDGE=1
 check_queue && HAVE_QUEUE=1
 
@@ -227,9 +211,6 @@ check_queue && HAVE_QUEUE=1
 exec 1>config.h
 
 printf '#ifndef CONFIG_H\n#define CONFIG_H\n'
-
-# Order is important, must be present before any includes.
-[ "$HAVE_GNU_SOURCE" -eq 1 ] && printf '#define _GNU_SOURCE\n'
 
 # Headers needed for function prototypes.
 {
