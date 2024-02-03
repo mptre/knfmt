@@ -8,7 +8,6 @@ SRCS+=	arithmetic.c
 SRCS+=	buffer.c
 SRCS+=	clang.c
 SRCS+=	comment.c
-SRCS+=	compat-errc.c
 SRCS+=	compat-pledge.c
 SRCS+=	consistency.c
 SRCS+=	cpp-align.c

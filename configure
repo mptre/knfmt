@@ -104,17 +104,6 @@ check_attribute_fallthrough() {
 	EOF
 }
 
-check_errc() {
-	compile <<-EOF
-	#include <err.h>
-
-	int main(void) {
-		errc(1, 0, "");
-		return 0;
-	}
-	EOF
-}
-
 check_pledge() {
 	compile <<-EOF
 	#include <unistd.h>
@@ -169,7 +158,6 @@ set -u
 set -x
 
 HAVE_ATTRIBUTE_FALLTHROUGH=0
-HAVE_ERRC=0
 HAVE_PLEDGE=0
 HAVE_QUEUE=0
 
@@ -213,7 +201,6 @@ if [ "$_sanitize" -eq 1 ]; then
 fi
 
 check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
-check_errc && HAVE_ERRC=1
 check_pledge && HAVE_PLEDGE=1
 check_queue && HAVE_QUEUE=1
 
@@ -227,7 +214,6 @@ printf '#ifndef CONFIG_H\n#define CONFIG_H\n'
 	:
 } | sort | uniq | headers
 
-[ "$HAVE_ERRC" -eq 1 ] && printf '#define HAVE_ERRC\t1\n'
 [ "$HAVE_PLEDGE" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ "$HAVE_QUEUE" -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
 
@@ -242,9 +228,6 @@ else
 	printf '#define FALLTHROUGH do {} while (0) /* FALLTHROUGH */\n'
 fi
 
-[ "$HAVE_ERRC" -eq 0 ] && {
-	printf 'void errc(int, int, const char *, ...)\n';
-	printf '\t__attribute__((__noreturn__, __format__ (printf, 3, 4)));\n'; }
 [ "$HAVE_PLEDGE" -eq 0 ] &&
 	printf 'int pledge(const char *, const char *);\n'
 
