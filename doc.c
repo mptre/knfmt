@@ -317,8 +317,11 @@ static int		doc_diff_is_mute(const struct doc_state *);
 static void	doc_diff_leave0(const struct doc *, struct doc_state *,
     unsigned int, const char *);
 
+/* Emit indentation after new line. */
 #define DOC_PRINT_INDENT	0x00000001u
+/* Internal to doc_print() used to signal that a pending new line is emitted. */
 #define DOC_PRINT_NEWLINE	0x00000002u
+/* Emit even if muted. */
 #define DOC_PRINT_FORCE		0x00000004u
 
 static int	doc_print(const struct doc *, struct doc_state *, const char *,
