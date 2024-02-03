@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
 
@@ -124,7 +125,8 @@ static int	assert_token_move(struct context *, const char **, const char *,
     int);
 static int	find_token(struct lexer *, int, struct token **);
 
-static char	*tokens_concat(struct lexer *, const struct token *);
+static const char	*tokens_concat(struct lexer *, const struct token *,
+    struct arena_scope *);
 
 int
 main(int argc, char *argv[])
@@ -511,37 +513,34 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
     unsigned int flags, int peek, int lno)
 {
 	const char *fun = "parser_type_peek";
-	char *act = NULL;
+	const char *act;
 	struct parser_type type;
-	int error = 0;
+
+	arena_scope(cx->arena.scratch, s);
 
 	context_init(cx, src);
 
 	if (parser_type_peek(cx->pr, &type, flags) != peek) {
 		fprintf(stderr, "%s:%d: want %d, got %d\n",
 		    fun, lno, peek, !peek);
-		error = 1;
-		goto out;
+		return 1;
 	}
 	if (!peek)
-		goto out;
+		return 0;
 
-	act = tokens_concat(cx->lx, type.end);
+	act = tokens_concat(cx->lx, type.end, &s);
 	if (act == NULL) {
 		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
-		error = 1;
-		goto out;
+		return 1;
 	}
 	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n"
 		    "\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
-		error = 1;
+		return 1;
 	}
 
-out:
-	free(act);
-	return error;
+	return 0;
 }
 
 static int
@@ -549,37 +548,34 @@ test_parser_attributes_peek0(struct context *cx, const char *src,
     const char *exp, int peek, unsigned int flags, int lno)
 {
 	const char *fun = "parser_attributes_peek";
+	const char *act;
 	struct token *rparen;
-	char *act = NULL;
-	int error = 0;
+
+	arena_scope(cx->arena.scratch, s);
 
 	context_init(cx, src);
 
 	if (parser_attributes_peek(cx->pr, &rparen, flags) != peek) {
 		fprintf(stderr, "%s:%d: want %d, got %d\n",
 		    fun, lno, peek, !peek);
-		error = 1;
-		goto out;
+		return 1;
 	}
 	if (!peek)
-		goto out;
+		return 0;
 
-	act = tokens_concat(cx->lx, rparen);
+	act = tokens_concat(cx->lx, rparen, &s);
 	if (act == NULL) {
 		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
-		error = 1;
-		goto out;
+		return 1;
 	}
 	if (strcmp(exp, act) != 0) {
 		fprintf(stderr, "%s:%d:\n"
 		    "\texp \"%s\"\n\tgot \"%s\"\n",
 		    fun, lno, exp, act);
-		error = 1;
+		return 1;
 	}
 
-out:
-	free(act);
-	return error;
+	return 0;
 }
 
 static int
@@ -895,21 +891,18 @@ out:
 	return error;
 }
 
-static char *
-tokens_concat(struct lexer *lx, const struct token *end)
+static const char *
+tokens_concat(struct lexer *lx, const struct token *end, struct arena_scope *s)
 {
 	struct buffer *bf;
-	char *str = NULL;
 
-	bf = buffer_alloc(128);
-	if (bf == NULL)
-		err(1, NULL);
+	bf = arena_buffer_alloc(s, 128);
 
 	for (;;) {
 		struct token *tk;
 
 		if (!lexer_pop(lx, &tk))
-			goto out;
+			return NULL;
 
 		if (buffer_get_len(bf) > 0)
 			buffer_putc(bf, ' ');
@@ -918,9 +911,6 @@ tokens_concat(struct lexer *lx, const struct token *end)
 		if (tk == end)
 			break;
 	}
-	str = buffer_str(bf);
 
-out:
-	buffer_free(bf);
-	return str;
+	return buffer_str(bf);
 }
