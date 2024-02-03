@@ -209,11 +209,7 @@ clang_read(struct lexer *lx, void *arg)
 		lexer_ungetc(lx);
 		tk = lexer_emit(lx, &st, &tklit);
 	} else if (isalpha(ch) || ch == '_') {
-		do {
-			if (lexer_getc(lx, &ch))
-				goto eof;
-		} while (isalnum(ch) || ch == '_');
-		lexer_ungetc(lx);
+		lexer_match(lx, "AZaz09__");
 
 		if ((t = clang_find_keyword(lx, &st)) != NULL) {
 			tk = lexer_emit(lx, &st, t);

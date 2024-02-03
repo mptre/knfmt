@@ -255,6 +255,17 @@ lexer_ungetc(struct lexer *lx)
 		st->st_lno--;
 }
 
+size_t
+lexer_match(struct lexer *lx, const char *ranges)
+{
+	size_t len;
+
+	len = KS_str_match(&lx->lx_input.ptr[lx->lx_st.st_off],
+	    lx->lx_input.len - lx->lx_st.st_off, ranges);
+	lx->lx_st.st_off += len;
+	return len;
+}
+
 struct token *
 lexer_emit(struct lexer *lx, const struct lexer_state *st,
     const struct token *tk)

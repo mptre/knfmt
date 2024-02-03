@@ -67,6 +67,7 @@ const char	*lexer_get_path(const struct lexer *);
 
 int		 lexer_getc(struct lexer *, unsigned char *);
 void		 lexer_ungetc(struct lexer *);
+size_t		 lexer_match(struct lexer *, const char *);
 void		 lexer_eat_lines_and_spaces(struct lexer *,
     struct lexer_state *);
 struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
