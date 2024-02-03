@@ -62,6 +62,12 @@ token_rele(struct token *tk)
 	}
 	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
 		token_list_remove(&tk->tk_suffixes, fix);
+
+	/*
+	 * Note that ideally priv_size passed to token_alloc() should be
+	 * included here.
+	 */
+	arena_poison(tk, sizeof(*tk));
 }
 
 /*
