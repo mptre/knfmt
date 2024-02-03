@@ -42,9 +42,6 @@ struct lexer {
 	/* Line number to buffer offset mapping. */
 	VECTOR(size_t)		 lx_lines;
 
-	/* Previous column, used when compensating for tabs. */
-	VECTOR(unsigned int)	 lx_columns;
-
 	int			 lx_eof;
 	int			 lx_peek;
 
@@ -55,7 +52,9 @@ struct lexer {
 	VECTOR(char *)		 lx_serialized;
 };
 
-static void	lexer_line_alloc(struct lexer *, unsigned int);
+static void		lexer_line_alloc(struct lexer *, unsigned int);
+static unsigned int	lexer_column(const struct lexer *,
+    const struct lexer_state *);
 
 static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
@@ -100,10 +99,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_input.len = buffer_get_len(arg->bf);
 	lx->lx_diff = arg->diff;
 	lx->lx_st.st_lno = 1;
-	lx->lx_st.st_cno = 1;
-	if (VECTOR_INIT(lx->lx_lines))
-		err(1, NULL);
-	if (VECTOR_INIT(lx->lx_columns))
+	if (VECTOR_INIT(lx->lx_lines) || VECTOR_RESERVE(lx->lx_lines, 512))
 		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
 	if (VECTOR_INIT(lx->lx_stamps))
@@ -124,11 +120,6 @@ lexer_alloc(const struct lexer_arg *arg)
 		TAILQ_INSERT_TAIL(&lx->lx_tokens, tk, tk_entry);
 		if (tk->tk_flags & TOKEN_FLAG_DISCARD) {
 			struct token **dst;
-
-			/* Discarded tokens must leave the column intact. */
-			lx->lx_st.st_cno -= strwidth(tk->tk_str, tk->tk_len, 0);
-			if (lx->lx_st.st_cno == 0)
-				lx->lx_st.st_cno = 1;
 
 			dst = VECTOR_ALLOC(discarded);
 			if (dst == NULL)
@@ -168,7 +159,6 @@ lexer_free(struct lexer *lx)
 
 	error_free(lx->lx_er);
 	VECTOR_FREE(lx->lx_lines);
-	VECTOR_FREE(lx->lx_columns);
 	if (lx->lx_unmute != NULL)
 		token_rele(lx->lx_unmute);
 	while (!VECTOR_EMPTY(lx->lx_stamps)) {
@@ -217,7 +207,6 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 	struct lexer_state *st = &lx->lx_st;
 	const char *buf;
 	size_t off;
-	unsigned int oldcno;
 	unsigned char c;
 
 	if (unlikely(lexer_eof(lx))) {
@@ -231,28 +220,14 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		return 0;
 	}
 
-	oldcno = st->st_cno;
 	off = st->st_off++;
 	buf = &lx->lx_input.ptr[off];
 	c = (unsigned char)buf[0];
-	if (c == '\n' || c == '\t')
-		st->st_cno = colwidth(buf, 1, st->st_cno, NULL);
-	else
-		st->st_cno++;
 	if (c == '\n') {
 		st->st_lno++;
 		lexer_line_alloc(lx, st->st_lno);
 	}
 	*ch = c;
-
-	if (c == '\n' || c == '\t') {
-		unsigned int *cno;
-
-		cno = VECTOR_ALLOC(lx->lx_columns);
-		if (cno == NULL)
-			err(1, NULL);
-		*cno = oldcno;
-	}
 
 	return 0;
 }
@@ -261,7 +236,6 @@ void
 lexer_ungetc(struct lexer *lx)
 {
 	struct lexer_state *st = &lx->lx_st;
-	unsigned int *tail;
 	unsigned char c;
 
 	if (lx->lx_eof)
@@ -271,19 +245,8 @@ lexer_ungetc(struct lexer *lx)
 	st->st_off--;
 
 	c = (unsigned char)lx->lx_input.ptr[st->st_off];
-	if (c == '\n') {
+	if (c == '\n')
 		st->st_lno--;
-		assert(!VECTOR_EMPTY(lx->lx_columns));
-		tail = VECTOR_POP(lx->lx_columns);
-		st->st_cno = *tail;
-	} else if (c == '\t') {
-		assert(!VECTOR_EMPTY(lx->lx_columns));
-		tail = VECTOR_POP(lx->lx_columns);
-		st->st_cno = *tail;
-	} else {
-		assert(st->st_cno > 1);
-		st->st_cno--;
-	}
 }
 
 struct token *
@@ -295,7 +258,7 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 	t = token_alloc(lx->lx_arg.token_data_size, tk);
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
-	t->tk_cno = st->st_cno;
+	t->tk_cno = lexer_column(lx, st);
 	if (lexer_get_diffchunk(lx, t->tk_lno) != NULL)
 		t->tk_flags |= TOKEN_FLAG_DIFF;
 	if (t->tk_str == NULL) {
@@ -1235,6 +1198,16 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 	if (dst == NULL)
 		err(1, NULL);
 	*dst = lx->lx_st.st_off;
+}
+
+static unsigned int
+lexer_column(const struct lexer *lx, const struct lexer_state *st)
+{
+	size_t line_offset;
+
+	line_offset = lx->lx_lines[st->st_lno - 1];
+	return colwidth(&lx->lx_input.ptr[line_offset],
+	    st->st_off - line_offset, 1, NULL);
 }
 
 int
