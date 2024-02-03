@@ -1,0 +1,2 @@
+struct b;
+struct a;

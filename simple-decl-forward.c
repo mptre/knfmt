@@ -6,10 +6,12 @@
 #include "libks/vector.h"
 
 #include "lexer.h"
+#include "options.h"
 #include "token.h"
 
 struct simple_decl_forward {
 	VECTOR(struct decl_forward)	 decls;
+	const struct options		*op;
 	struct lexer			*lx;
 	struct token			*after;
 };
@@ -21,13 +23,15 @@ struct decl_forward {
 };
 
 struct simple_decl_forward *
-simple_decl_forward_enter(struct lexer *lx, struct arena_scope *s)
+simple_decl_forward_enter(struct lexer *lx, struct arena_scope *s,
+    const struct options *op)
 {
 	struct simple_decl_forward *sd;
 
 	sd = arena_calloc(s, 1, sizeof(*sd));
 	if (VECTOR_INIT(sd->decls))
 		err(1, NULL);
+	sd->op = op;
 	sd->lx = lx;
 	return sd;
 }
@@ -119,6 +123,21 @@ find_ident(struct token *tk)
 	return NULL; /* UNREACHABLE */
 }
 
+static int
+is_covered_by_diff(struct token *beg, struct token *end)
+{
+	struct token *tk = beg;
+
+	for (;;) {
+		if ((tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
+			return 0;
+		if (tk == end)
+			break;
+		tk = token_next(tk);
+	}
+	return 1;
+}
+
 void
 simple_decl_forward(struct simple_decl_forward *sd, struct token *beg,
     struct token *semi)
@@ -129,6 +148,8 @@ simple_decl_forward(struct simple_decl_forward *sd, struct token *beg,
 		simple_decl_forward_leave(sd);
 		return;
 	}
+	if (sd->op->diffparse && !is_covered_by_diff(beg, semi))
+		return;
 
 	df = VECTOR_ALLOC(sd->decls);
 	if (df == NULL)

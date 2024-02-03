@@ -1,0 +1,5 @@
+--- diff-simple-006.c
++++ diff-simple-006.c
+@@ -1 +1,2 @@
+ struct b;
++struct a;
