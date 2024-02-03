@@ -1279,13 +1279,15 @@ doc_trim_spaces(const struct doc *dc, struct doc_state *st)
 	unsigned int oldcol = st->st_col;
 
 	while (buflen > 0) {
+		unsigned int w;
 		char ch;
 
 		ch = buf[buflen - 1];
 		if (ch != ' ' && ch != '\t')
 			break;
 		buflen -= buffer_pop(st->st_bf, 1);
-		st->st_col -= ch == '\t' ? 8 - (st->st_col % 8) : 1;
+		w = ch == '\t' ? 8 - (st->st_col % 8) : 1;
+		st->st_col -= w < st->st_col ? w : st->st_col;
 	}
 	if (oldcol > st->st_col) {
 		doc_trace(dc, st, "%s: trimmed %u character(s)", __func__,
