@@ -3,6 +3,7 @@ include ${.CURDIR}/config.mk
 VERSION=	4.4.0rc3
 
 SRCS+=	alloc.c
+SRCS+=	arena-buffer.c
 SRCS+=	arena.c
 SRCS+=	arithmetic.c
 SRCS+=	buffer.c
