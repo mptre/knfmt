@@ -116,7 +116,7 @@ testcase() {
 		mkdir "${_wrkdir}/tests"
 		_tmp="${_wrkdir}/tests/test${_ext}"
 		commstrip "$_file" >"$_tmp"
-		(cd "${_tmp}/.." && ${EXEC:-} "${KNFMT}" "$@" "test${_ext}") \
+		(cd "${_wrkdir}/tests" && ${EXEC:-} "${KNFMT}" "$@" "test${_ext}") \
 			>"$_diff" 2>&1 || _got="$?"
 		if ! diff -u -L "$_ok" -L "$_file" "$_ok" "$_diff" >"$_out" 2>&1; then
 			cat "$_out" 1>&2
