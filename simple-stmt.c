@@ -8,7 +8,6 @@
 
 #include "libks/arena.h"
 #include "libks/buffer.h"
-#include "libks/compiler.h"
 #include "libks/vector.h"
 
 #include "doc.h"
@@ -47,7 +46,8 @@ static void	add_braces(struct simple_stmt *);
 static void	remove_braces(struct simple_stmt *);
 
 static int		 isoneline(const char *, size_t);
-static int		 is_brace_moveable(const struct token *);
+static int		 is_brace_moveable(struct simple_stmt *,
+    const struct token *);
 static const char	*strtrim(const char *, size_t *);
 
 struct simple_stmt *
@@ -149,7 +149,7 @@ simple_stmt_no_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 	struct stmt *st;
 	unsigned int flags = 0;
 
-	if (!is_brace_moveable(lbrace))
+	if (!is_brace_moveable(ss, lbrace))
 		flags |= STMT_IGNORE;
 	st = simple_stmt_alloc(ss, indent, flags);
 	token_ref(lbrace);
@@ -159,12 +159,12 @@ simple_stmt_no_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 }
 
 void
-simple_stmt_no_braces_leave(struct simple_stmt *UNUSED(ss),
-    struct token *rbrace, void *cookie)
+simple_stmt_no_braces_leave(struct simple_stmt *ss, struct token *rbrace,
+    void *cookie)
 {
 	struct stmt *st = cookie;
 
-	if (!is_brace_moveable(rbrace))
+	if (!is_brace_moveable(ss, rbrace))
 		st->st_flags |= STMT_IGNORE;
 	token_ref(rbrace);
 	st->st_rbrace = rbrace;
@@ -283,8 +283,10 @@ isoneline(const char *str, size_t len)
 }
 
 static int
-is_brace_moveable(const struct token *tk)
+is_brace_moveable(struct simple_stmt *ss, const struct token *tk)
 {
+	if (ss->ss_op->diffparse && (tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
+		return 0;
 	/* Do not require token to be moveable as we can cope with comments. */
 	return !token_has_cpp(tk);
 }
