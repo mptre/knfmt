@@ -10,7 +10,6 @@ SRCS+=	clang.c
 SRCS+=	comment.c
 SRCS+=	compat-errc.c
 SRCS+=	compat-pledge.c
-SRCS+=	compat-warnc.c
 SRCS+=	consistency.c
 SRCS+=	cpp-align.c
 SRCS+=	cpp-include.c
