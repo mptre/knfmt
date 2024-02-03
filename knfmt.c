@@ -376,7 +376,6 @@ err:
 		close(fd);
 		(void)unlink(tmppath);
 	}
-	free(tmppath);
 	return 1;
 }
 
