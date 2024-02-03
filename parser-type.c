@@ -68,12 +68,6 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 		if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &t)) {
-			if (lexer_if(lx, TOKEN_LPAREN, NULL)) {
-				peek = 0;
-				ntokens = 0;
-				break;
-			}
-
 			/*
 			 * No point in performing the simple static pass if the
 			 * static keyword comes first.
