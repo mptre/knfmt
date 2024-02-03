@@ -14,6 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
@@ -81,7 +82,8 @@ diff_shutdown(void)
 }
 
 int
-diff_parse(struct files *files, const struct options *op)
+diff_parse(struct files *files, struct arena_scope *eternal_scope,
+    const struct options *op)
 {
 	struct buffer *bf;
 	struct buffer_getline *it = NULL;
@@ -98,7 +100,7 @@ diff_parse(struct files *files, const struct options *op)
 		unsigned int el, sl;
 
 		if (matchpath(line, path, sizeof(path))) {
-			fe = files_alloc(files, path);
+			fe = files_alloc(files, path, eternal_scope);
 		} else if (matchchunk(line, &sl, &el)) {
 			/* Chunks cannot be present before the path. */
 			if (fe == NULL) {

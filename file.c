@@ -4,24 +4,24 @@
 
 #include <err.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <unistd.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "diff.h"
 
 struct file *
-files_alloc(struct files *files, const char *path)
+files_alloc(struct files *files, const char *path,
+    struct arena_scope *eternal_scope)
 {
 	struct file *fe;
 
 	fe = VECTOR_CALLOC(files->fs_vc);
 	if (fe == NULL)
 		err(1, NULL);
-	fe->fe_path = estrdup(path);
+	fe->fe_path = arena_strdup(eternal_scope, path);
 	if (VECTOR_INIT(fe->fe_diff))
 		err(1, NULL);
 	fe->fe_fd = -1;
@@ -36,7 +36,6 @@ files_free(struct files *files)
 
 		fe = VECTOR_POP(files->fs_vc);
 		VECTOR_FREE(fe->fe_diff);
-		free(fe->fe_path);
 		file_close(fe);
 	}
 	VECTOR_FREE(files->fs_vc);

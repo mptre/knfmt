@@ -40,7 +40,8 @@ struct main_context {
 
 static void	usage(void) __attribute__((__noreturn__));
 
-static int	filelist(int, char **, struct files *, const struct options *);
+static int	filelist(int, char **, struct files *, struct arena_scope *,
+    const struct options *);
 static int	fileformat(struct main_context *, struct file *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const struct file *);
@@ -137,7 +138,7 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	if (filelist(argc, argv, &files, &op)) {
+	if (filelist(argc, argv, &files, &eternal_scope, &op)) {
 		error = 1;
 		goto out;
 	}
@@ -185,18 +186,18 @@ usage(void)
 
 static int
 filelist(int argc, char **argv, struct files *files,
-    const struct options *op)
+    struct arena_scope *eternal_scope, const struct options *op)
 {
 	if (op->diffparse)
-		return diff_parse(files, op);
+		return diff_parse(files, eternal_scope, op);
 
 	if (argc == 0) {
-		files_alloc(files, "/dev/stdin");
+		files_alloc(files, "/dev/stdin", eternal_scope);
 	} else {
 		int i;
 
 		for (i = 0; i < argc; i++)
-			files_alloc(files, argv[i]);
+			files_alloc(files, argv[i], eternal_scope);
 	}
 	return 0;
 }
