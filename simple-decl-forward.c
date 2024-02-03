@@ -101,23 +101,35 @@ simple_decl_forward_free(struct simple_decl_forward *sd)
 static int
 is_forward_decl(const struct token *beg, const struct token *end)
 {
-	if (beg->tk_type != TOKEN_STRUCT)
-		return 0;
+	const int token_types[2][6] = {
+		{ TOKEN_TYPEDEF, TOKEN_STRUCT, TOKEN_IDENT, TOKEN_IDENT,
+		  TOKEN_SEMI, TOKEN_NONE },
+		{ TOKEN_STRUCT, TOKEN_IDENT, TOKEN_SEMI, TOKEN_NONE },
+	};
+	int n = sizeof(token_types) / sizeof(token_types[0]);
+	int i;
 
-	beg = token_next(beg);
-	if (beg->tk_type != TOKEN_IDENT)
-		return 0;
+	for (i = 0; i < n; i++) {
+		const struct token *tk = beg;
+		int j;
 
-	beg = token_next(beg);
-	if (beg != end)
-		return 0;
+		for (j = 0; token_types[i][j] != TOKEN_NONE; j++) {
+			if (tk->tk_type != token_types[i][j])
+				break;
+			if (tk == end)
+				return 1;
+			tk = token_next(tk);
+		}
+	}
 
-	return 1;
+	return 0;
 }
 
 static struct token *
 find_ident(struct token *tk)
 {
+	if (tk->tk_type == TOKEN_TYPEDEF)
+		tk = token_next(tk);
 	if (tk->tk_type == TOKEN_STRUCT)
 		return token_next(tk);
 	return NULL; /* UNREACHABLE */
