@@ -503,17 +503,6 @@ doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
 	dc->dc_scope = parent->dc_scope;
 	doc_init(dc);
 	doc_append(dc, parent);
-
-#ifdef __COVERITY__
-	/*
-	 * Coverity cannot deduce that documents reassembles a tree like
-	 * structure which is always freed. Instead of annotating all call
-	 * sites, favor this dirty hack.
-	 */
-	static struct doc *leaked_storage;
-	leaked_storage = dc;
-#endif
-
 	return dc;
 }
 
