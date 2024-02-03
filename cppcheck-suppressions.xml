@@ -31,6 +31,6 @@
     <!-- False positive, only used in attribute cleanup. -->
     <fileName>parser.c</fileName>
     <id>unusedFunction</id>
-    <symbolName>parser_doc_scope_leave</symbolName>
+    <symbolName>parser_arena_scope_leave</symbolName>
   </suppress>
 </suppressions>
