@@ -159,7 +159,6 @@ clang_read(struct lexer *lx, void *arg)
 	unsigned char ch;
 
 	/* Consume all comments and preprocessor directives. */
-	cpp_include_enter(cl->ci);
 	for (;;) {
 		prefix = clang_read_prefix(cl, lx);
 		if (prefix == NULL)

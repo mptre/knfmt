@@ -32,7 +32,6 @@ struct main_context {
 	const struct options	*options;
 	struct style		*style;
 	struct simple		*simple;
-	struct clang		*clang;
 	struct arena		*scratch;
 	struct buffer		*src;
 	struct buffer		*dst;
@@ -56,7 +55,6 @@ main(int argc, char *argv[])
 	struct arena *eternal, *scratch;
 	struct buffer *src = NULL;
 	struct buffer *dst = NULL;
-	struct clang *cl = NULL;
 	struct simple *si = NULL;
 	struct style *st = NULL;
 	const char *clang_format = NULL;
@@ -127,7 +125,6 @@ main(int argc, char *argv[])
 		goto out;
 	}
 	si = simple_alloc(&op);
-	cl = clang_alloc(st, si, scratch, &op);
 	src = buffer_alloc(1 << 12);
 	if (src == NULL) {
 		error = 1;
@@ -148,7 +145,6 @@ main(int argc, char *argv[])
 		.options	= &op,
 		.style		= st,
 		.simple		= si,
-		.clang		= cl,
 		.scratch	= scratch,
 		.src		= src,
 		.dst		= dst,
@@ -165,7 +161,6 @@ out:
 	files_free(&files);
 	buffer_free(dst);
 	buffer_free(src);
-	clang_free(cl);
 	simple_free(si);
 	style_free(st);
 	arena_free(scratch);
@@ -207,6 +202,7 @@ filelist(int argc, char **argv, struct files *files,
 static int
 fileformat(struct main_context *c, struct file *fe)
 {
+	struct clang *clang;
 	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
 	int error = 0;
@@ -216,6 +212,7 @@ fileformat(struct main_context *c, struct file *fe)
 		error = 1;
 		goto out;
 	}
+	clang = clang_alloc(c->style, c->simple, c->scratch, c->options);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,
@@ -226,9 +223,10 @@ fileformat(struct main_context *c, struct file *fe)
 		.read		= clang_read,
 		.alloc		= clang_token_alloc,
 		.serialize	= token_serialize,
-		.arg		= c->clang,
+		.arg		= clang,
 	    },
 	});
+	clang_free(clang);
 	if (lx == NULL) {
 		error = 1;
 		goto out;

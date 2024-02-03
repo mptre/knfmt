@@ -62,6 +62,7 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 	struct cpp_include *ci;
 	VECTOR(int) priorities;
 	size_t i;
+	unsigned int simple_flags;
 
 	ci = ecalloc(1, sizeof(*ci));
 	if (VECTOR_INIT(ci->includes))
@@ -90,6 +91,10 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 	}
 	VECTOR_FREE(priorities);
 
+	simple_flags = style(st, SortIncludes) == CaseSensitive ?
+	    SIMPLE_FORCE : 0;
+	simple_enter(si, SIMPLE_CPP_SORT_INCLUDES, simple_flags, &ci->cookie);
+
 	return ci;
 }
 
@@ -110,19 +115,8 @@ cpp_include_free(struct cpp_include *ci)
 		MAP_REMOVE(ci->groups, it.key);
 	}
 	MAP_FREE(ci->groups);
+	simple_leave(&ci->cookie);
 	free(ci);
-}
-
-void
-cpp_include_enter(struct cpp_include *ci)
-{
-	unsigned int simple_flags;
-
-	simple_flags = style(ci->st, SortIncludes) == CaseSensitive ?
-	    SIMPLE_FORCE : 0;
-	if (!simple_enter(ci->si, SIMPLE_CPP_SORT_INCLUDES, simple_flags,
-	    &ci->cookie))
-		return;
 }
 
 void
@@ -133,7 +127,6 @@ cpp_include_leave(struct cpp_include *ci, struct lexer *lx)
 
 	cpp_include_exec(ci, lx);
 	cpp_include_reset(ci);
-	simple_leave(&ci->cookie);
 }
 
 void

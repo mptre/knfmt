@@ -803,6 +803,9 @@ context_reset(struct context *cx)
 
 	buffer_reset(cx->bf);
 
+	clang_free(cx->cl);
+	cx->cl = NULL;
+
 	style_free(cx->st);
 	cx->st = NULL;
 
@@ -814,9 +817,6 @@ context_reset(struct context *cx)
 
 	lexer_free(cx->lx);
 	cx->lx = NULL;
-
-	clang_free(cx->cl);
-	cx->cl = NULL;
 
 	parser_free(cx->pr);
 	cx->pr = NULL;
