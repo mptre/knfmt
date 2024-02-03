@@ -54,5 +54,5 @@ The installation prefix defaults to `/usr/local` and can be altered using the
 
 ## License
 
-Copyright (c) 2021-2023 Anton Lindqvist.
+Copyright (c) 2021-2024 Anton Lindqvist.
 Distributed under the ISC license.
