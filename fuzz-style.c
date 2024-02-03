@@ -3,7 +3,6 @@
 #include "libks/arena.h"
 #include "libks/fuzzer.h"
 
-#include "alloc.h"
 #include "options.h"
 #include "style.h"
 

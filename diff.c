@@ -17,7 +17,6 @@
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "file.h"
 #include "fs.h"
 #include "options.h"

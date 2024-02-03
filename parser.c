@@ -2,12 +2,10 @@
 
 #include "config.h"
 
-#include <err.h>
 #include <stdlib.h>
 
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
-#include "libks/buffer.h"
 #include "libks/compiler.h"
 
 #include "alloc.h"
