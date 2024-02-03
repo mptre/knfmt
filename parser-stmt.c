@@ -550,8 +550,10 @@ parser_stmt_label(struct parser *pr, struct doc *dc)
 		 * before the label. Necessary when the label is prefixed with
 		 * comment(s).
 		 */
-		if (token_has_indent(ident))
-			doc_append_before(doc_literal(" ", NULL), label);
+		if (token_has_indent(ident)) {
+			doc_move_before(doc_literal(" ", noindent), label,
+			    noindent);
+		}
 	}
 
 	if (lexer_expect(lx, TOKEN_COLON, &colon)) {

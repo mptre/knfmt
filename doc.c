@@ -459,8 +459,10 @@ doc_append(struct doc *dc, struct doc *parent)
 }
 
 void
-doc_append_before(struct doc *dc, struct doc *before)
+doc_move_before(struct doc *dc, struct doc *before, struct doc *parent)
 {
+	assert(doc_has_list(parent));
+	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
 	TAILQ_INSERT_BEFORE(before, dc, dc_entry);
 }
 
