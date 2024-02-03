@@ -226,7 +226,6 @@ void	token_list_append(struct token_list *, struct token *);
 void	token_list_append_after(struct token_list *, struct token *,
     struct token *);
 void	token_list_remove(struct token_list *, struct token *);
-void	token_list_copy(const struct token_list *, struct token_list *);
 void	token_list_swap(struct token_list *, unsigned int, struct token_list *,
     unsigned int);
 

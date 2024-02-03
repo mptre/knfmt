@@ -424,19 +424,6 @@ token_list_remove(struct token_list *tl, struct token *tk)
 	token_rele(tk);
 }
 
-void
-token_list_copy(const struct token_list *src, struct token_list *dst)
-{
-	const struct token *tk;
-
-	TAILQ_FOREACH(tk, src, tk_entry) {
-		struct token *cp;
-
-		cp = token_alloc(0, tk);
-		TAILQ_INSERT_TAIL(dst, cp, tk_entry);
-	}
-}
-
 /*
  * Swap the two lists but preserve tokens with the given flags.
  */

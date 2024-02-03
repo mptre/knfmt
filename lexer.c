@@ -80,6 +80,9 @@ static int	lexer_peek_until_not_nested(struct lexer *, int,
 static const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
     unsigned int);
 
+static void	lexer_copy_token_list(struct lexer *,
+    const struct token_list *, struct token_list *);
+
 #define lexer_trace(lx, fmt, ...) do {					\
 	if (trace((lx)->lx_op, 'l'))					\
 		tracef('L', __func__, (fmt), __VA_ARGS__);		\
@@ -632,8 +635,8 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 	struct token *tk;
 
 	tk = token_alloc(lx->lx_arg.token_data_size, src);
-	token_list_copy(&src->tk_prefixes, &tk->tk_prefixes);
-	token_list_copy(&src->tk_suffixes, &tk->tk_suffixes);
+	lexer_copy_token_list(lx, &src->tk_prefixes, &tk->tk_prefixes);
+	lexer_copy_token_list(lx, &src->tk_suffixes, &tk->tk_suffixes);
 	token_position_after(after, tk);
 	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
 	return tk;
@@ -1478,5 +1481,19 @@ lexer_reposition_tokens(struct lexer *UNUSED(lx), struct token *tk)
 		tk = token_next(tk);
 		if (tk == NULL || tk->tk_lno != lno)
 			break;
+	}
+}
+
+static void
+lexer_copy_token_list(struct lexer *UNUSED(lx), const struct token_list *src,
+    struct token_list *dst)
+{
+	const struct token *tk;
+
+	TAILQ_FOREACH(tk, src, tk_entry) {
+		struct token *cp;
+
+		cp = token_alloc(0, tk);
+		TAILQ_INSERT_TAIL(dst, cp, tk_entry);
 	}
 }
