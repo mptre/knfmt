@@ -671,8 +671,6 @@ TESTS+=	style-simple-AlignOperands-001.c
 TESTS+=	style-simple-AlignOperands-002.c
 TESTS+=	style-trace-001.c
 
-TESTS+=	../alloc.c
-TESTS+=	../alloc.h
 TESTS+=	../clang.c
 TESTS+=	../clang.h
 TESTS+=	../comment.c

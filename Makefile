@@ -2,7 +2,6 @@ include ${.CURDIR}/config.mk
 
 VERSION=	4.4.0rc3
 
-SRCS+=	alloc.c
 SRCS+=	arena-buffer.c
 SRCS+=	arena.c
 SRCS+=	arithmetic.c
@@ -68,8 +67,6 @@ OBJS_fuzz-style=	${SRCS_fuzz-style:.c=.o}
 DEPS_fuzz-style=	${SRCS_fuzz-style:.c=.d}
 PROG_fuzz-style=	fuzz-style
 
-KNFMT+=	alloc.c
-KNFMT+=	alloc.h
 KNFMT+=	clang.c
 KNFMT+=	clang.h
 KNFMT+=	comment.c
@@ -145,8 +142,6 @@ KNFMT+=	token.h
 KNFMT+=	util.c
 KNFMT+=	util.h
 
-CLANGTIDY+=	alloc.c
-CLANGTIDY+=	alloc.h
 CLANGTIDY+=	clang.c
 CLANGTIDY+=	clang.h
 CLANGTIDY+=	comment.c
@@ -221,7 +216,6 @@ CLANGTIDY+=	token.h
 CLANGTIDY+=	util.c
 CLANGTIDY+=	util.h
 
-CPPCHECK+=	alloc.c
 CPPCHECK+=	clang.c
 CPPCHECK+=	comment.c
 CPPCHECK+=	cpp-align.c
