@@ -49,7 +49,8 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	unsigned int doc_flags = 0;
 	int error = 0;
 
-	parser_doc_scope(pr, cookie, pr->pr_arena.doc, doc_scope);
+	arena_scope(pr->pr_arena.doc, doc_scope);
+	parser_doc_scope(pr, cookie, &doc_scope);
 
 	dc = doc_root(&doc_scope);
 

@@ -19,11 +19,10 @@ void		 parser_free(struct parser *);
 int		 parser_exec(struct parser *, const struct diffchunk *,
     struct buffer *);
 
-#define parser_doc_scope(pr, cookie, arena, scope)			\
+#define parser_doc_scope(pr, cookie, scope)				\
 	__attribute__((cleanup(parser_doc_scope_leave)))		\
 		struct parser_doc_scope_cookie cookie;			\
-	arena_scope(arena, scope);					\
-	parser_doc_scope_enter((pr), &(cookie), &(scope))
+	parser_doc_scope_enter((pr), &(cookie), (scope))
 void	parser_doc_scope_enter(struct parser *,
     struct parser_doc_scope_cookie *, struct arena_scope *);
 
