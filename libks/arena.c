@@ -43,6 +43,13 @@
 #  define POISON_SIZE 0
 #endif
 
+#define MAX_SOURCE_LOCATIONS 8
+
+struct source_location {
+	const char	*fun;
+	int		 lno;
+};
+
 struct arena_frame {
 	char			*ptr;
 	size_t			 size;
@@ -61,6 +68,7 @@ struct arena {
 	} flags;
 	int			 refs;
 	struct arena_stats	 stats;
+	struct source_location	 scope_locations[MAX_SOURCE_LOCATIONS];
 };
 
 union address {
@@ -203,6 +211,10 @@ void
 arena_scope_leave(struct arena_scope *s)
 {
 	struct arena *a = s->arena;
+	int idx = a->refs;
+
+	if (idx < MAX_SOURCE_LOCATIONS)
+		a->scope_locations[idx] = (struct source_location){0};
 
 	/* Do nothing if arena_free() already has been called. */
 	if (a->flags.dying) {
@@ -233,8 +245,17 @@ arena_scope_leave(struct arena_scope *s)
 }
 
 struct arena_scope
-arena_scope_enter(struct arena *a)
+arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 {
+	int idx = a->refs;
+
+	if (idx < MAX_SOURCE_LOCATIONS) {
+		a->scope_locations[idx] = (struct source_location){
+		    .fun = fun,
+		    .lno = lno,
+		};
+	}
+
 	arena_ref(a);
 	return (struct arena_scope){
 	    .arena	= a,
@@ -247,12 +268,31 @@ arena_scope_enter(struct arena *a)
 static void
 arena_scope_validate(struct arena *a, struct arena_scope *s, size_t size)
 {
+	const struct source_location fallback = {
+		.fun = "?",
+		.lno = 0,
+	};
+	const struct source_location *scope_location;
+	int i;
+
 	if (likely(s->id == a->refs))
 		return;
 
-	warnx("arena: Allocating %zu bytes from scope S%d which will be freed "
-	    "by nested scope S%d\n",
-	    size, s->id, a->refs);
+	scope_location = s->id - 1 < MAX_SOURCE_LOCATIONS ?
+	    &a->scope_locations[s->id - 1] :
+	    &fallback;
+
+	fprintf(stderr, "arena: allocating %zu bytes from scope #%d at %s:%d "
+	    "which will be freed by nested scope(s):\n",
+	    size, s->id, scope_location->fun, scope_location->lno);
+	for (i = a->refs; i >= 0 && i > s->id; i--) {
+		scope_location = i - 1 < MAX_SOURCE_LOCATIONS ?
+		    &a->scope_locations[i - 1] :
+		    &fallback;
+		fprintf(stderr, "#%d %s:%d\n",
+		    i, scope_location->fun, scope_location->lno);
+	}
+
 	__builtin_trap();
 }
 

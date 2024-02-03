@@ -55,7 +55,11 @@ struct arena_stats {
 struct arena	*arena_alloc(void);
 void		 arena_free(struct arena *);
 
-struct arena_scope	arena_scope_enter(struct arena *);
+#define arena_scope_enter(a) \
+	arena_scope_enter_impl((a), __func__, __LINE__)
+struct arena_scope	arena_scope_enter_impl(struct arena *, const char *,
+    int);
+
 void			arena_scope_leave(struct arena_scope *);
 
 void	*arena_malloc(struct arena_scope *, size_t)
