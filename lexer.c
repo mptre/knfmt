@@ -213,7 +213,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 	unsigned int oldcno;
 	unsigned char c;
 
-	if (lexer_eof(lx)) {
+	if (unlikely(lexer_eof(lx))) {
 		/*
 		 * Do not immediately report EOF. Instead, return something
 		 * that's not expected while reading a token.
