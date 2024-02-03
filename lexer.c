@@ -32,7 +32,12 @@ struct lexer {
 	struct error		*lx_er;
 	const struct options	*lx_op;
 	const struct diffchunk	*lx_diff;
-	const struct buffer	*lx_bf;
+
+	struct {
+		const struct buffer	*bf;
+		const char		*ptr;
+		size_t			 len;
+	} lx_input;
 
 	/* Line number to buffer offset mapping. */
 	VECTOR(size_t)		 lx_lines;
@@ -90,7 +95,9 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_arg = *arg;
 	lx->lx_er = error_alloc(arg->error_flush);
 	lx->lx_op = arg->op;
-	lx->lx_bf = arg->bf;
+	lx->lx_input.bf = arg->bf;
+	lx->lx_input.ptr = buffer_get_ptr(arg->bf);
+	lx->lx_input.len = buffer_get_len(arg->bf);
 	lx->lx_diff = arg->diff;
 	lx->lx_st.st_lno = 1;
 	lx->lx_st.st_cno = 1;
@@ -226,7 +233,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 
 	oldcno = st->st_cno;
 	off = st->st_off++;
-	buf = buffer_get_ptr(lx->lx_bf) + off;
+	buf = &lx->lx_input.ptr[off];
 	c = (unsigned char)buf[0];
 	st->st_cno = colwidth(buf, 1, st->st_cno, NULL);
 	if (c == '\n') {
@@ -251,7 +258,6 @@ void
 lexer_ungetc(struct lexer *lx)
 {
 	struct lexer_state *st = &lx->lx_st;
-	const char *buf;
 	unsigned int *tail;
 	unsigned char c;
 
@@ -261,8 +267,7 @@ lexer_ungetc(struct lexer *lx)
 	assert(st->st_off > 0);
 	st->st_off--;
 
-	buf = buffer_get_ptr(lx->lx_bf) + st->st_off;
-	c = (unsigned char)buf[0];
+	c = (unsigned char)lx->lx_input.ptr[st->st_off];
 	if (c == '\n') {
 		st->st_lno--;
 		assert(!VECTOR_EMPTY(lx->lx_columns));
@@ -291,7 +296,7 @@ lexer_emit(const struct lexer *lx, const struct lexer_state *st,
 	if (lexer_get_diffchunk(lx, t->tk_lno) != NULL)
 		t->tk_flags |= TOKEN_FLAG_DIFF;
 	if (t->tk_str == NULL) {
-		const char *buf = buffer_get_ptr(lx->lx_bf);
+		const char *buf = lx->lx_input.ptr;
 
 		t->tk_str = &buf[st->st_off];
 		t->tk_len = lx->lx_st.st_off - st->st_off;
@@ -399,7 +404,7 @@ int
 lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
     const char **str, size_t *len)
 {
-	const char *buf = buffer_get_ptr(lx->lx_bf);
+	const char *buf = lx->lx_input.ptr;
 	size_t nlines = VECTOR_LENGTH(lx->lx_lines);
 	size_t bo, eo;
 
@@ -408,7 +413,7 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 
 	bo = lx->lx_lines[beg - 1];
 	if (end == 0)
-		eo = buffer_get_len(lx->lx_bf);
+		eo = lx->lx_input.len;
 	else
 		eo = lx->lx_lines[end - 1];
 	*str = &buf[bo];
@@ -1211,7 +1216,7 @@ lexer_eat_spaces(struct lexer *lx, struct token **tk)
 int
 lexer_eof(const struct lexer *lx)
 {
-	return lx->lx_st.st_off == buffer_get_len(lx->lx_bf);
+	return lx->lx_st.st_off == lx->lx_input.len;
 }
 
 static void
@@ -1233,7 +1238,6 @@ int
 lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
     const char *str)
 {
-	const char *buf;
 	size_t buflen, len;
 
 	buflen = lx->lx_st.st_off - st->st_off;
@@ -1242,18 +1246,15 @@ lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
 	len = strlen(str);
 	if (len > buflen)
 		return 0;
-	buf = buffer_get_ptr(lx->lx_bf);
-	return strncmp(&buf[st->st_off], str, len) == 0;
+	return strncmp(&lx->lx_input.ptr[st->st_off], str, len) == 0;
 }
 
 const char *
 lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
     size_t *len)
 {
-	const char *buf = buffer_get_ptr(lx->lx_bf);
-
 	*len = lx->lx_st.st_off - st->st_off;
-	return &buf[st->st_off];
+	return &lx->lx_input.ptr[st->st_off];
 }
 
 static void
@@ -1290,7 +1291,7 @@ static void
 lexer_branch_fold(struct lexer *lx, struct token *src)
 {
 	struct token *dst, *prefix, *pv, *rm;
-	const char *buf = buffer_get_ptr(lx->lx_bf);
+	const char *buf = lx->lx_input.ptr;
 	size_t len, off;
 	int unmute = 0;
 
