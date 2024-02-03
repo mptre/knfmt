@@ -283,15 +283,12 @@ filediff(struct main_context *c, const struct file *fe)
 		goto out;
 	}
 	if (pid == 0) {
-		char label[PATH_MAX];
 		const char *diff = "/usr/bin/diff";
-		size_t siz = sizeof(label);
-		int n;
+		const char *label;
 
-		n = snprintf(label, siz, "%s.orig", fe->fe_path);
-		if (n < 0 || (size_t)n >= siz)
-			errc(1, ENAMETOOLONG, "%s: label", __func__);
+		arena_scope(c->arena.scratch, s);
 
+		label = arena_sprintf(&s, "%s.orig", fe->fe_path);
 		execl(diff, diff, "-u", "-L", label, "-L", fe->fe_path,
 		    srcpath, dstpath, NULL);
 		_exit(1);
