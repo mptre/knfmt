@@ -20,12 +20,12 @@
 #include "expr.h"
 #include "file.h"
 #include "fs.h"
+#include "lexer-callbacks.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
 #include "simple.h"
 #include "style.h"
-#include "token.h"
 
 struct main_context {
 	struct options	 options;

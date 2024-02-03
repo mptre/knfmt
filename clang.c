@@ -16,8 +16,8 @@
 #include "cpp-align.h"
 #include "cpp-include-guard.h"
 #include "cpp-include.h"
+#include "lexer-callbacks.h"
 #include "lexer.h"
-#include "style.h"
 #include "token.h"
 #include "trace.h"
 

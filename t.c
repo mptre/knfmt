@@ -14,6 +14,7 @@
 #include "doc.h"
 #include "expr.h"
 #include "fs.h"
+#include "lexer-callbacks.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser-attributes.h"

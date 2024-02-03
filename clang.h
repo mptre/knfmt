@@ -1,7 +1,5 @@
 struct arena;
 struct arena_scope;
-struct buffer;
-struct lexer;
 struct options;
 struct simple;
 struct style;

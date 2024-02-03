@@ -1,3 +1,6 @@
+#ifndef LEXER_CALLBACKS_H
+#define LEXER_CALLBACKS_H
+
 struct arena_scope;
 struct lexer;
 
@@ -34,3 +37,5 @@ struct lexer_callbacks {
 	/* Opaque argument passed to callbacks. */
 	void		*arg;
 };
+
+#endif /* !LEXER_CALLBACKS_H */

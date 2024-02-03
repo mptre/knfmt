@@ -4,7 +4,6 @@
 
 #define LEXER_EOF	0x7fffffff
 
-struct arena_scope;
 struct lexer;
 
 struct lexer_arg {
