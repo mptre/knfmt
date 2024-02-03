@@ -1131,7 +1131,7 @@ clang_format_dump_style(struct style *st, enum style_keyword based_on_style,
 	close(pip[0]);
 	if (waitpid(pid, &status, 0) == -1)
 		err(1, "waitpid");
-	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+	if (bf != NULL && (!WIFEXITED(status) || WEXITSTATUS(status) != 0)) {
 		struct buffer_getline it = {0};
 		const char *line;
 
