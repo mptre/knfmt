@@ -9,6 +9,7 @@ struct lexer_arg {
 	const char		*path;
 	const struct buffer	*bf;
 	struct diffchunk	*diff;
+	struct arena_scope	*eternal_scope;
 	const struct options	*op;
 
 	/*

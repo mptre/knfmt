@@ -32,6 +32,7 @@ struct main_context {
 	const struct options	*options;
 	struct style		*style;
 	struct simple		*simple;
+	struct arena		*eternal;
 	struct arena		*scratch;
 	struct buffer		*src;
 	struct buffer		*dst;
@@ -145,6 +146,7 @@ main(int argc, char *argv[])
 		.options	= &op,
 		.style		= st,
 		.simple		= si,
+		.eternal	= eternal,
 		.scratch	= scratch,
 		.src		= src,
 		.dst		= dst,
@@ -207,6 +209,8 @@ fileformat(struct main_context *c, struct file *fe)
 	struct parser *pr = NULL;
 	int error = 0;
 
+	arena_scope(c->eternal, eternal_scope);
+
 	buffer_reset(c->src);
 	if (file_read(fe, c->src)) {
 		error = 1;
@@ -218,6 +222,7 @@ fileformat(struct main_context *c, struct file *fe)
 	    .bf			= c->src,
 	    .diff		= fe->fe_diff,
 	    .op			= c->options,
+	    .eternal_scope	= &eternal_scope,
 	    .error_flush	= trace(c->options, 'l') > 0,
 	    .callbacks		= {
 		.read		= clang_read,

@@ -533,6 +533,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= bf,
+	    .eternal_scope	= st->eternal,
 	    .op			= st->op,
 	    .error_flush	= trace(st->op, 's') > 0,
 	    .callbacks		= {
