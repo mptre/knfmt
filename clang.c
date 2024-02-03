@@ -53,7 +53,7 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
-static void		 clang_free(struct clang *);
+static void		 clang_free(void *);
 static void		 clang_done(struct lexer *, void *);
 static struct token	*clang_read(struct lexer *, void *);
 static struct token	*clang_read_prefix(struct clang *, struct lexer *);
@@ -150,8 +150,10 @@ clang_alloc(const struct style *st, struct simple *si,
 }
 
 static void
-clang_free(struct clang *cl)
+clang_free(void *arg)
 {
+	struct clang *cl = arg;
+
 	VECTOR_FREE(cl->branches);
 }
 

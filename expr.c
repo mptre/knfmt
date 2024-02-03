@@ -171,7 +171,7 @@ static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_token_impl(struct expr_state *,
     struct token *, struct doc *, const char *, int);
 
-static void	expr_free_concat(struct expr *);
+static void	expr_free_concat(void *);
 
 #define expr_doc_align(a, b, c, d) \
 	expr_doc_align0((a), (b), (c), (d), __func__, __LINE__)
@@ -1139,8 +1139,10 @@ expr_doc_token_impl(struct expr_state *es, struct token *tk, struct doc *dc,
 }
 
 static void
-expr_free_concat(struct expr *ex)
+expr_free_concat(void *arg)
 {
+	struct expr *ex = arg;
+
 	VECTOR_FREE(ex->ex_concat);
 }
 

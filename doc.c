@@ -497,8 +497,10 @@ doc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 }
 
 static void
-doc_minimize_free(struct doc *dc)
+doc_minimize_free(void *arg)
 {
+	struct doc *dc = arg;
+
 	VECTOR_FREE(dc->dc_minimizers);
 }
 
@@ -538,6 +540,14 @@ doc_literal0(const char *str, size_t len, struct doc *dc, const char *fun,
 	return literal;
 }
 
+static void
+doc_token_free(void *arg)
+{
+	struct doc *dc = arg;
+
+	token_rele(dc->dc_tk);
+}
+
 struct doc *
 doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
     const char *fun, int lno)
@@ -552,7 +562,7 @@ doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	/* Must be mutable for reference counting. */
 	token->dc_tk = (struct token *)tk;
 	token_ref(token->dc_tk);
-	arena_cleanup(token->dc_scope, token_rele, token->dc_tk);
+	arena_cleanup(token->dc_scope, doc_token_free, token);
 	token->dc_str = tk->tk_str;
 	token->dc_len = tk->tk_len;
 

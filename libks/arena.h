@@ -79,9 +79,7 @@ char	*arena_sprintf(struct arena_scope *, const char *, ...)
 char	*arena_strdup(struct arena_scope *, const char *);
 char	*arena_strndup(struct arena_scope *, const char *, size_t);
 
-#define arena_cleanup(s, fun, ptr) \
-    arena_cleanup_impl((s), (void (*)(void *))(fun), (ptr))
-void    arena_cleanup_impl(struct arena_scope *, void (*)(void *), void *);
+void    arena_cleanup(struct arena_scope *, void (*)(void *), void *);
 
 struct arena_stats	*arena_stats(struct arena *);
 

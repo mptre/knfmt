@@ -476,7 +476,7 @@ arena_strndup(struct arena_scope *s, const char *src, size_t len)
 }
 
 void
-arena_cleanup_impl(struct arena_scope *s, void (*fun)(void *), void *ptr)
+arena_cleanup(struct arena_scope *s, void (*fun)(void *), void *ptr)
 {
 	struct arena_cleanup *ac;
 

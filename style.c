@@ -95,7 +95,7 @@ struct yaml_token {
 	} integer;
 };
 
-static void	style_free(struct style *);
+static void	style_free(void *);
 static void	style_defaults(struct style *);
 static void	style_set(struct style *, int, int, unsigned int);
 static int	style_parse_yaml(struct style *, const char *,
@@ -407,8 +407,10 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 }
 
 static void
-style_free(struct style *st)
+style_free(void *arg)
 {
+	struct style *st = arg;
+
 	while (!VECTOR_EMPTY(st->include_categories)) {
 		struct include_category *ic;
 

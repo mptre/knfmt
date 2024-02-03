@@ -54,7 +54,7 @@ struct lexer {
 	VECTOR(struct token *)	 lx_stamps;
 };
 
-static void	lexer_free(struct lexer *);
+static void	lexer_free(void *);
 
 static void		lexer_line_alloc(struct lexer *, unsigned int);
 static unsigned int	lexer_column(const struct lexer *,
@@ -159,8 +159,9 @@ err:
 }
 
 static void
-lexer_free(struct lexer *lx)
+lexer_free(void *arg)
 {
+	struct lexer *lx = arg;
 	struct token *tk;
 
 	VECTOR_FREE(lx->lx_lines);

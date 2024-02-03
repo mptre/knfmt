@@ -42,7 +42,7 @@ struct include_group {
 	VECTOR(struct include *)	includes;
 };
 
-static void	cpp_include_free(struct cpp_include *);
+static void	cpp_include_free(void *);
 static void	cpp_include_exec(struct cpp_include *, struct lexer *);
 static void	cpp_include_reset(struct cpp_include *);
 
@@ -99,8 +99,9 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 }
 
 static void
-cpp_include_free(struct cpp_include *ci)
+cpp_include_free(void *arg)
 {
+	struct cpp_include *ci = arg;
 	MAP_ITERATOR(ci->groups) it = {0};
 
 	cpp_include_reset(ci);
