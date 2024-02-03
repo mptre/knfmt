@@ -5,6 +5,8 @@
 #include <err.h>
 #include <stdlib.h>
 
+#include "libks/arena-buffer.h"
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
 
@@ -27,7 +29,7 @@ parser_get_error(const struct parser *pr)
 
 struct parser *
 parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
-    const struct options *op)
+    struct arena *scratch, const struct options *op)
 {
 	struct parser *pr;
 
@@ -36,9 +38,7 @@ parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
 	pr->pr_si = si;
 	pr->pr_op = op;
 	pr->pr_lx = lx;
-	pr->pr_scratch = buffer_alloc(1024);
-	if (pr->pr_scratch == NULL)
-		err(1, NULL);
+	pr->pr_scratch = scratch;
 	return pr;
 }
 
@@ -47,8 +47,6 @@ parser_free(struct parser *pr)
 {
 	if (pr == NULL)
 		return;
-
-	buffer_free(pr->pr_scratch);
 	free(pr);
 }
 
@@ -192,10 +190,14 @@ parser_token_trim_after(const struct parser *UNUSED(pr), struct token *tk)
 unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
-	buffer_reset(pr->pr_scratch);
+	struct buffer *bf;
+
+	arena_scope(pr->pr_scratch, s);
+
+	bf = arena_buffer_alloc(&s, 1 << 10);
 	return doc_width(&(struct doc_exec_arg){
 	    .dc	= dc,
-	    .bf	= pr->pr_scratch,
+	    .bf	= bf,
 	    .st	= pr->pr_st,
 	    .op	= pr->pr_op,
 	});

@@ -233,7 +233,7 @@ fileformat(struct main_context *c, struct file *fe)
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(lx, c->style, c->simple, c->options);
+	pr = parser_alloc(lx, c->style, c->simple, c->scratch, c->options);
 	if (pr == NULL) {
 		error = 1;
 		goto out;

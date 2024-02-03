@@ -792,7 +792,7 @@ context_init(struct context *cx, const char *src)
 		.arg		= cx->cl,
 	    },
 	});
-	cx->pr = parser_alloc(cx->lx, cx->st, cx->si, &cx->op);
+	cx->pr = parser_alloc(cx->lx, cx->st, cx->si, cx->scratch, &cx->op);
 }
 
 static void
