@@ -81,7 +81,7 @@ testcase() {
 
 	_name="${_file##*/}"
 	_ext=".${_name##*.}"
-	_base="${_name%${_ext}}"
+	_base="${_name%"${_ext}"}"
 	_ok="${_base}.ok"
 	_patch="${_file%.*}.patch"
 
