@@ -13,4 +13,3 @@
 GNU:2: ignoring nested style
 BasedOnStyle: GNU
               ^^^
-[s] based on InheritParentConfig style

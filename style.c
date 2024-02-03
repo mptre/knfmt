@@ -1189,10 +1189,10 @@ parse_BasedOnStyle(struct style *st, struct lexer *lx,
 	}
 
 	based_on_style = style(st, BasedOnStyle);
-	style_trace(st, "based on %s style", style_keyword_str(based_on_style));
 	if (based_on_style == OpenBSD || based_on_style == InheritParentConfig)
 		return GOOD;
 
+	style_trace(st, "based on %s style", style_keyword_str(based_on_style));
 	bf = clang_format_dump_style(st, based_on_style, &s);
 	if (bf == NULL)
 		return SKIP;
