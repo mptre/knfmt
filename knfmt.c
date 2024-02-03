@@ -157,9 +157,9 @@ out:
 	files_free(&files);
 	buffer_free(c.dst);
 	buffer_free(c.src);
+	arena_free(c.arena.doc);
 	arena_free(c.arena.scratch);
 	arena_free(c.arena.eternal);
-	arena_free(c.arena.doc);
 	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();
