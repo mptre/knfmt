@@ -115,6 +115,7 @@ struct include_priority {
 
 void	style_init(void);
 void	style_shutdown(void);
+void	style_dump_keywords(struct buffer *);
 
 struct style	*style_parse(const char *, struct arena_scope *,
     struct arena *, const struct options *);

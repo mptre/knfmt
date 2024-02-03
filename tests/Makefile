@@ -701,6 +701,7 @@ TESTS+=	../file.c
 TESTS+=	../file.h
 TESTS+=	../fs.c
 TESTS+=	../fs.h
+TESTS+=	../fuzz-dict.c
 TESTS+=	../fuzz-style.c
 TESTS+=	../knfmt.c
 TESTS+=	../lexer.c

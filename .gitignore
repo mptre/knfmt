@@ -1,6 +1,8 @@
+*.dict
 config.h
 config.log
 config.mk
+fuzz-dict
 fuzz-style
 knfmt
 t

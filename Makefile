@@ -60,11 +60,18 @@ OBJS_test=	${SRCS_test:.c=.o}
 DEPS_test=	${SRCS_test:.c=.d}
 PROG_test=	t
 
+SRCS_fuzz-dict+=	${SRCS}
+SRCS_fuzz-dict+=	fuzz-dict.c
+OBJS_fuzz-dict=		${SRCS_fuzz-dict:.c=.o}
+DEPS_fuzz-dict=		${SRCS_fuzz-dict:.c=.d}
+PROG_fuzz-dict=		fuzz-dict
+
 SRCS_fuzz-style+=	${SRCS}
 SRCS_fuzz-style+=	fuzz-style.c
 OBJS_fuzz-style=	${SRCS_fuzz-style:.c=.o}
 DEPS_fuzz-style=	${SRCS_fuzz-style:.c=.d}
 PROG_fuzz-style=	fuzz-style
+DICT_fuzz-style=	style.dict
 
 KNFMT+=	clang.c
 KNFMT+=	clang.h
@@ -87,6 +94,7 @@ KNFMT+=	file.c
 KNFMT+=	file.h
 KNFMT+=	fs.c
 KNFMT+=	fs.h
+KNFMT+=	fuzz-dict.c
 KNFMT+=	fuzz-style.c
 KNFMT+=	knfmt.c
 KNFMT+=	lexer.c
@@ -163,6 +171,7 @@ CLANGTIDY+=	file.c
 CLANGTIDY+=	file.h
 CLANGTIDY+=	fs.c
 CLANGTIDY+=	fs.h
+CLANGTIDY+=	fuzz-dict.c
 CLANGTIDY+=	fuzz-style.c
 CLANGTIDY+=	knfmt.c
 CLANGTIDY+=	lexer.c
@@ -229,6 +238,7 @@ CPPCHECK+=	error.c
 CPPCHECK+=	expr.c
 CPPCHECK+=	file.c
 CPPCHECK+=	fs.c
+CPPCHECK+=	fuzz-dict.c
 CPPCHECK+=	fuzz-style.c
 CPPCHECK+=	knfmt.c
 CPPCHECK+=	lexer.c
@@ -294,7 +304,8 @@ ${PROG_test}: ${OBJS_test}
 clean:
 	rm -f ${DEPS_knfmt} ${OBJS_knfmt} ${PROG_knfmt} \
 		${DEPS_test} ${OBJS_test} ${PROG_test} \
-		${DEPS_fuzz-style} ${OBJS_fuzz-style} ${PROG_fuzz-style}
+		${DEPS_fuzz-dict} ${OBJS_fuzz-dict} ${PROG_fuzz-dict} \
+		${DEPS_fuzz-style} ${OBJS_fuzz-style} ${PROG_fuzz-style} ${DICT_fuzz-style}
 .PHONY: clean
 
 cleandir: clean
@@ -313,7 +324,13 @@ format: ${PROG_knfmt}
 
 fuzz: ${PROG_fuzz-style}
 
-${PROG_fuzz-style}: ${OBJS_fuzz-style}
+${PROG_fuzz-dict}: ${OBJS_fuzz-dict}
+	${CC} ${DEBUG} ${NO_SANITIZE_FUZZER} -o ${PROG_fuzz-dict} ${OBJS_fuzz-dict} ${LDFLAGS}
+
+${DICT_fuzz-style}: ${PROG_fuzz-dict}
+	./${PROG_fuzz-dict} style >$@
+
+${PROG_fuzz-style}: ${OBJS_fuzz-style} ${DICT_fuzz-style}
 	${CC} ${DEBUG} -o ${PROG_fuzz-style} ${OBJS_fuzz-style} ${LDFLAGS}
 
 install: all
@@ -356,4 +373,5 @@ test-${PROG_test}: ${PROG_test}
 
 -include ${DEPS_knfmt}
 -include ${DEPS_test}
+-include ${DEPS_fuzz-dict}
 -include ${DEPS_fuzz-style}

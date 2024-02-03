@@ -325,6 +325,27 @@ style_shutdown(void)
 		VECTOR_FREE(keywords[i]);
 }
 
+void
+style_dump_keywords(struct buffer *bf)
+{
+	size_t nslots = sizeof(keywords) / sizeof(keywords[0]);
+	size_t i;
+
+	for (i = 0; i < nslots; i++) {
+		VECTOR(struct style_option) options = keywords[i];
+		size_t j;
+
+		if (options == NULL)
+			continue;
+		for (j = 0; j < VECTOR_LENGTH(options); j++) {
+			const struct style_option *so = &options[j];
+
+			buffer_printf(bf, "\"%.*s\"\n",
+			    (int)so->so_len, so->so_key);
+		}
+	}
+}
+
 struct style *
 style_parse(const char *path, struct arena_scope *eternal_scope,
     struct arena *scratch, const struct options *op)
