@@ -57,7 +57,7 @@ parser_decl_peek(struct parser *pr)
 	int error;
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
-	parser_arena_scope(cookie, &pr->pr_arena.doc_scope, &doc_scope);
+	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope);
 
 	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
@@ -73,7 +73,7 @@ parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	int error;
 
 	arena_scope(pr->pr_arena.scratch, scratch_scope);
-	parser_arena_scope(cookie, &pr->pr_arena.scratch_scope, &scratch_scope);
+	parser_arena_scope(&pr->pr_arena.scratch_scope, &scratch_scope);
 
 	simple_cookie(simple_decl_cookie);
 	error = parser_simple_decl_enter(pr, flags, &simple_decl_cookie);
@@ -491,7 +491,7 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags,
 		return parser_good(pr);
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
-	parser_arena_scope(cookie, &pr->pr_arena.doc_scope, &doc_scope);
+	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope);
 
 	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_arena.scratch_scope,
 	    pr->pr_op);
@@ -524,7 +524,7 @@ parser_simple_decl_forward_enter(struct parser *pr, unsigned int flags,
 		return parser_good(pr);
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
-	parser_arena_scope(cookie, &pr->pr_arena.doc_scope, &doc_scope);
+	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope);
 
 	pr->pr_simple.decl_forward = simple_decl_forward_enter(lx,
 	    pr->pr_arena.scratch_scope, pr->pr_op);
