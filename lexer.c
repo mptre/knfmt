@@ -165,6 +165,7 @@ lexer_free(void *arg)
 	struct token *tk;
 
 	VECTOR_FREE(lx->lx_lines);
+
 	while (!VECTOR_EMPTY(lx->lx_stamps)) {
 		struct token **tail;
 
@@ -172,6 +173,10 @@ lexer_free(void *arg)
 		token_rele(*tail);
 	}
 	VECTOR_FREE(lx->lx_stamps);
+
+	/* Must exhaust all branches to drop references to parent tokens. */
+	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry)
+		token_clear_prefixes(tk);
 	while ((tk = TAILQ_FIRST(&lx->lx_tokens)) != NULL) {
 		TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
 		assert(tk->tk_refs == 1);
@@ -713,10 +718,7 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 			pv = nx;
 		token_move_suffixes(tk, pv);
 	} else {
-		struct token *fix;
-
-		TAILQ_FOREACH(fix, &tk->tk_prefixes, tk_entry)
-			token_branch_unlink(fix);
+		token_clear_prefixes(tk);
 	}
 
 	if (lx->lx_st.st_tk == tk)

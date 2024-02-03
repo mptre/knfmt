@@ -12,11 +12,18 @@
 #include "lexer.h"
 #include "util.h"
 
+#define TOKEN_SERIALIZE_FLAGS		0x00000001u
+#define TOKEN_SERIALIZE_REFS		0x00000002u
+#define TOKEN_SERIALIZE_ADDRESS		0x00000004u
+
 static const char	*token_serialize_impl(struct arena_scope *,
-    const struct token *, int);
+    const struct token *, unsigned int);
 
 static void		 strflags(struct buffer *, unsigned int);
 static const char	*token_type_str(int);
+
+static int	token_is_cpp_if(const struct token *);
+static int	token_is_cpp_branch(const struct token *);
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
@@ -95,7 +102,7 @@ token_trim(struct token *tk)
 const char *
 token_serialize(struct arena_scope *s, const struct token *tk)
 {
-	return token_serialize_impl(s, tk, 1);
+	return token_serialize_impl(s, tk, TOKEN_SERIALIZE_FLAGS);
 }
 
 const char *
@@ -105,7 +112,8 @@ token_serialize_no_flags(struct arena_scope *s, const struct token *tk)
 }
 
 static const char *
-token_serialize_impl(struct arena_scope *s, const struct token *tk, int doflags)
+token_serialize_impl(struct arena_scope *s, const struct token *tk,
+    unsigned int flags)
 {
 	struct buffer *bf;
 
@@ -113,8 +121,12 @@ token_serialize_impl(struct arena_scope *s, const struct token *tk, int doflags)
 	buffer_printf(bf, "%s", token_type_str(tk->tk_type));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u", tk->tk_lno, tk->tk_cno);
-		if (doflags)
+		if (flags & TOKEN_SERIALIZE_FLAGS)
 			strflags(bf, tk->tk_flags);
+		if (flags & TOKEN_SERIALIZE_REFS)
+			buffer_printf(bf, ",%d", tk->tk_refs);
+		if (flags & TOKEN_SERIALIZE_ADDRESS)
+			buffer_printf(bf, ",%p", (void *)tk);
 		buffer_printf(bf, ">(\"");
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
 		buffer_printf(bf, "\")");
@@ -537,10 +549,7 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	TAILQ_REMOVE(&src->tk_prefixes, prefix, tk_entry);
 	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
 
-	switch (prefix->tk_type) {
-	case TOKEN_CPP_IF:
-	case TOKEN_CPP_ELSE:
-	case TOKEN_CPP_ENDIF: {
+	if (token_is_cpp_branch(prefix)) {
 		struct token *nx = prefix->tk_branch.br_nx;
 
 		assert(prefix->tk_branch.br_parent == src);
@@ -550,13 +559,8 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 			while (token_branch_unlink(prefix) == 0)
 				continue;
 		} else {
-			prefix->tk_branch.br_parent = dst;
+			token_branch_parent(prefix, dst);
 		}
-		break;
-	}
-
-	default:
-		break;
 	}
 }
 
@@ -573,6 +577,17 @@ token_move_suffixes(struct token *src, struct token *dst)
 }
 
 void
+token_clear_prefixes(struct token *tk)
+{
+	struct token *prefix;
+
+	while ((prefix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL) {
+		token_branch_unlink(prefix);
+		token_list_remove(&tk->tk_prefixes, prefix);
+	}
+}
+
+void
 token_move_suffixes_if(struct token *src, struct token *dst, int type)
 {
 	struct token *suffix, *tmp;
@@ -584,6 +599,15 @@ token_move_suffixes_if(struct token *src, struct token *dst, int type)
 		TAILQ_REMOVE(&src->tk_suffixes, suffix, tk_entry);
 		TAILQ_INSERT_TAIL(&dst->tk_suffixes, suffix, tk_entry);
 	}
+}
+
+void
+token_branch_parent(struct token *cpp, struct token *parent)
+{
+	if (cpp->tk_branch.br_parent != NULL)
+		token_rele(cpp->tk_branch.br_parent);
+	token_ref(parent);
+	cpp->tk_branch.br_parent = parent;
 }
 
 /*
@@ -602,19 +626,24 @@ token_branch_unlink(struct token *tk)
 	pv = tk->tk_branch.br_pv;
 	nx = tk->tk_branch.br_nx;
 
-	if (tk->tk_type == TOKEN_CPP_IF ||
-	    tk->tk_type == TOKEN_CPP_IFNDEF) {
-		if (nx != NULL)
+	if (token_is_cpp_if(tk)) {
+		if (nx != NULL) {
+			/* Recursive invocation must exhaust branch. */
 			token_branch_unlink(nx);
-		/* Branch exhausted. */
-		tk->tk_type = TOKEN_CPP;
+			assert(tk->tk_type == TOKEN_CPP);
+		} else {
+			/* Branch exhausted. */
+			tk->tk_type = TOKEN_CPP;
+			/* Not allowed to be empty as opposed of else branch. */
+			token_rele(tk->tk_branch.br_parent);
+		}
 		return 1;
 	} else if (tk->tk_type == TOKEN_CPP_ELSE ||
 	    tk->tk_type == TOKEN_CPP_ENDIF) {
 		if (pv != NULL) {
 			pv->tk_branch.br_nx = NULL;
 			tk->tk_branch.br_pv = NULL;
-			if (pv->tk_type == TOKEN_CPP_IF)
+			if (token_is_cpp_if(pv))
 				token_branch_unlink(pv);
 			pv = NULL;
 		} else if (nx != NULL) {
@@ -627,6 +656,13 @@ token_branch_unlink(struct token *tk)
 		if (pv == NULL && nx == NULL) {
 			/* Branch exhausted. */
 			tk->tk_type = TOKEN_CPP;
+			/*
+			 * Allowed to be empty while discarding an empty or
+			 * broken branch.
+			 */
+			if (tk->tk_branch.br_parent != NULL) {
+				token_rele(tk->tk_branch.br_parent);
+			}
 			return 1;
 		}
 		return 0;
@@ -705,4 +741,21 @@ token_type_str(int token_type)
 	if (token_type == LEXER_EOF)
 		return "EOF";
 	return NULL;
+}
+
+static int
+token_is_cpp_if(const struct token *tk)
+{
+	return tk->tk_type == TOKEN_CPP_IF || tk->tk_type == TOKEN_CPP_IFNDEF;
+}
+
+static int
+token_is_cpp_branch(const struct token *tk)
+{
+	switch (tk->tk_type) {
+#define OP(type, branch) case type: return branch;
+	FOR_TOKEN_SENTINELS(OP)
+#undef OP
+	}
+	return 0;
 }

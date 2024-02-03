@@ -234,8 +234,10 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 	 * Intentionally not creating a cpp branch as recovering from it won't
 	 * make a difference.
 	 */
-	if (c.ifndef.tk != NULL)
+	if (c.ifndef.tk != NULL) {
+		token_branch_unlink(c.ifndef.tk);
 		token_list_remove(&c.ifndef.parent->tk_prefixes, c.ifndef.tk);
+	}
 	ifndef = emit_ifndef(lx, c.ifndef.parent, cpp_ifndef);
 
 	if (c.define.tk != NULL)
@@ -246,8 +248,10 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 
 	ensure_line(lx, c.endif.parent);
 
-	if (c.endif.tk != NULL)
+	if (c.endif.tk != NULL) {
+		token_branch_unlink(c.endif.tk);
 		token_list_remove(&c.endif.parent->tk_prefixes, c.endif.tk);
+	}
 	endif = emit_cpp(lx, TOKEN_CPP, cpp_endif);
 	token_list_append(&c.endif.parent->tk_prefixes, endif);
 }

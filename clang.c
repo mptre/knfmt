@@ -331,7 +331,7 @@ clang_branch_enter(struct clang *cl, struct lexer *lx, struct token *cpp,
 	struct token **br;
 
 	clang_trace(cl, "%s", lexer_serialize(lx, cpp));
-	cpp->tk_branch.br_parent = tk;
+	token_branch_parent(cpp, tk);
 	br = VECTOR_ALLOC(cl->branches);
 	if (br == NULL)
 		err(1, NULL);
@@ -365,7 +365,7 @@ clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
 	clang_trace(cl, "%s -> %s",
 	    lexer_serialize(lx, br), lexer_serialize(lx, cpp));
 
-	cpp->tk_branch.br_parent = tk;
+	token_branch_parent(cpp, tk);
 	token_branch_link(br, cpp);
 	*last = cpp;
 }
@@ -412,7 +412,7 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 	}
 
 	if (br != NULL) {
-		cpp->tk_branch.br_parent = tk;
+		token_branch_parent(cpp, tk);
 		token_branch_link(br, cpp);
 		clang_trace(cl, "%s -> %s",
 		    lexer_serialize(lx, br),

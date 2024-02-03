@@ -112,19 +112,20 @@ struct arena_scope;
 	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)
 
 #define FOR_TOKEN_SENTINELS(OP)						\
-	OP(TOKEN_COMMENT,	"", 0)					\
-	OP(TOKEN_CPP,		"", 0)					\
-	OP(TOKEN_CPP_DEFINE,	"", 0)					\
-	OP(TOKEN_CPP_ELSE,	"", 0)					\
-	OP(TOKEN_CPP_ENDIF,	"", 0)					\
-	OP(TOKEN_CPP_IF,	"", 0)					\
-	OP(TOKEN_CPP_IFNDEF,	"", 0)					\
-	OP(TOKEN_CPP_INCLUDE,	"", 0)					\
-	OP(TOKEN_IDENT,		"", 0)					\
-	OP(TOKEN_LITERAL,	"", 0)					\
-	OP(TOKEN_SPACE,		"", 0)					\
-	OP(TOKEN_STRING,	"", 0)					\
-	OP(TOKEN_NONE,		"", 0)
+	/* type			branch */				\
+	OP(TOKEN_COMMENT,	0)					\
+	OP(TOKEN_CPP,		0)					\
+	OP(TOKEN_CPP_IF,	1)					\
+	OP(TOKEN_CPP_IFNDEF,	1)					\
+	OP(TOKEN_CPP_ELSE,	1)					\
+	OP(TOKEN_CPP_ENDIF,	1)					\
+	OP(TOKEN_CPP_DEFINE,	0)					\
+	OP(TOKEN_CPP_INCLUDE,	0)					\
+	OP(TOKEN_IDENT,		0)					\
+	OP(TOKEN_LITERAL,	0)					\
+	OP(TOKEN_SPACE,		0)					\
+	OP(TOKEN_STRING,	0)					\
+	OP(TOKEN_NONE,		0)
 
 #define token_data(tk, type) __extension__ ({				\
 	typeof(tk) _nx = (tk) + 1;					\
@@ -238,8 +239,7 @@ void		 token_list_append_after(struct token_list *, struct token *,
     struct token *);
 void		 token_list_remove(struct token_list *, struct token *);
 void		 token_list_swap(struct token_list *, unsigned int,
-    struct token_list *,
-    unsigned int);
+    struct token_list *, unsigned int);
 struct token	*token_list_first(struct token_list *);
 struct token	*token_list_last(struct token_list *);
 struct token	*token_list_find(const struct token_list *, int, unsigned int);
@@ -251,6 +251,9 @@ void	token_move_prefix(struct token *, struct token *, struct token *);
 void	token_move_suffixes(struct token *, struct token *);
 void	token_move_suffixes_if(struct token *, struct token *, int);
 
+void	token_clear_prefixes(struct token *);
+
+void	token_branch_parent(struct token *, struct token *);
 int	token_branch_unlink(struct token *);
 
 unsigned int	token_flags_inherit(const struct token *);
