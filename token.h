@@ -160,7 +160,7 @@ struct token {
 #define TOKEN_FLAG_UNMUTE	0x00000200u
 #define TOKEN_FLAG_COMMENT_C99	0x00000400u
 #define TOKEN_FLAG_CPP		0x00000800u
-#define TOKEN_FLAG_DIRTY	0x00001000u
+/* was TOKEN_FLAG_DIRTY		0x00001000u */
 /*
  * Token followed by exactly one new line. Dangling suffix and only emitted
  * in certain contexts.

@@ -1,7 +1,8 @@
 struct arena;
+struct arena_scope;
 struct options;
 struct style;
 struct token;
 
-char	*cpp_align(struct token *, const struct style *, struct arena *,
-    const struct options *);
+struct buffer	*cpp_align(struct token *, const struct style *,
+    struct arena_scope *, struct arena *, const struct options *);

@@ -6,6 +6,7 @@
 #include <err.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/buffer.h"
 
 #include "style.h"
@@ -17,7 +18,8 @@ static const char	*skipws(const char *, size_t);
 static size_t		 rskipws(const char *, size_t);
 
 struct buffer *
-comment_trim(const struct token *tk, const struct style *st)
+comment_trim(const struct token *tk, const struct style *st,
+    struct arena_scope *s)
 {
 	struct buffer *bf;
 	const char *sp = tk->tk_str;
@@ -28,9 +30,7 @@ comment_trim(const struct token *tk, const struct style *st)
 		return NULL;
 
 	iscrlf = len >= 2 && sp[len - 2] == '\r';
-	bf = buffer_alloc(len);
-	if (bf == NULL)
-		err(1, NULL);
+	bf = arena_buffer_alloc(s, len);
 	for (;;) {
 		const char *ep;
 		size_t commlen;

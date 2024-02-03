@@ -39,7 +39,8 @@ struct clang {
 	VECTOR(struct token *)	 branches;
 
 	struct {
-		struct arena	*scratch;
+		struct arena_scope	*eternal_scope;
+		struct arena		*scratch;
 	} arena;
 };
 
@@ -135,6 +136,7 @@ clang_alloc(const struct style *st, struct simple *si,
 	TAILQ_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
+	cl->arena.eternal_scope = eternal_scope;
 	cl->arena.scratch = scratch;
 	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, eternal_scope,
 	    scratch, op);
@@ -532,16 +534,9 @@ again:
 	    .tk_flags	= c99 ? TOKEN_FLAG_COMMENT_C99 : 0,
 	});
 
-	bf = comment_trim(tk, cl->st);
-	if (bf != NULL) {
-		const char *str;
-		size_t len;
-
-		len = buffer_get_len(bf);
-		str = buffer_release(bf);
-		token_set_str(tk, str, len);
-	}
-	buffer_free(bf);
+	bf = comment_trim(tk, cl->st, cl->arena.eternal_scope);
+	if (bf != NULL)
+		token_set_str(tk, buffer_get_ptr(bf), buffer_get_len(bf));
 
 	/* Discard any remaining hard line(s). */
 	if (block)
@@ -554,8 +549,8 @@ static struct token *
 clang_read_cpp(struct clang *cl, struct lexer *lx)
 {
 	struct lexer_state cmpst, oldst, st;
+	struct buffer *bf;
 	struct token *tk;
-	char *str;
 	int type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
@@ -615,9 +610,10 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});
 
-	str = cpp_align(tk, cl->st, cl->arena.scratch, cl->op);
-	if (str != NULL)
-		token_set_str(tk, str, strlen(str));
+	bf = cpp_align(tk, cl->st, cl->arena.eternal_scope, cl->arena.scratch,
+	    cl->op);
+	if (bf != NULL)
+		token_set_str(tk, buffer_get_ptr(bf), buffer_get_len(bf));
 
 	/* Discard any remaining hard line(s). */
 	lexer_eat_lines(lx, 0, NULL);

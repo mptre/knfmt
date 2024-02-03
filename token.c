@@ -62,8 +62,6 @@ token_rele(struct token *tk)
 	}
 	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
 		token_list_remove(&tk->tk_suffixes, fix);
-	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
-		free((void *)tk->tk_str);
 }
 
 /*
@@ -396,7 +394,6 @@ token_prev(const struct token *tk)
 void
 token_set_str(struct token *tk, const char *str, size_t len)
 {
-	tk->tk_flags |= TOKEN_FLAG_DIRTY;
 	tk->tk_str = str;
 	tk->tk_len = len;
 }
