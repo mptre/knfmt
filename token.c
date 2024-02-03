@@ -394,6 +394,14 @@ token_prev(const struct token *tk)
 }
 
 void
+token_set_str(struct token *tk, const char *str, size_t len)
+{
+	tk->tk_flags |= TOKEN_FLAG_DIRTY;
+	tk->tk_str = str;
+	tk->tk_len = len;
+}
+
+void
 token_list_prepend(struct token_list *tl, struct token *tk)
 {
 	TAILQ_INSERT_HEAD(tl, tk, tk_entry);

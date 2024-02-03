@@ -533,9 +533,12 @@ again:
 
 	bf = comment_trim(tk, cl->st);
 	if (bf != NULL) {
-		tk->tk_flags |= TOKEN_FLAG_DIRTY;
-		tk->tk_len = buffer_get_len(bf);
-		tk->tk_str = buffer_release(bf);
+		const char *str;
+		size_t len;
+
+		len = buffer_get_len(bf);
+		str = buffer_release(bf);
+		token_set_str(tk, str, len);
 	}
 	buffer_free(bf);
 
@@ -612,11 +615,8 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	});
 
 	str = cpp_align(tk, cl->st, cl->op);
-	if (str != NULL) {
-		tk->tk_flags |= TOKEN_FLAG_DIRTY;
-		tk->tk_str = str;
-		tk->tk_len = strlen(str);
-	}
+	if (str != NULL)
+		token_set_str(tk, str, strlen(str));
 
 	/* Discard any remaining hard line(s). */
 	lexer_eat_lines(lx, 0, NULL);
