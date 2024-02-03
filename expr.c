@@ -892,8 +892,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	SIMPLE_COOKIE simple = {0};
-
+	simple_cookie(simple);
 	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS,
 	    es->es_depth == 1 ? 0 : SIMPLE_IGNORE, &simple)) {
 		if (ex->ex_lhs != NULL)
@@ -1027,8 +1026,7 @@ expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[0] != NULL)
 			doc_token(ex->ex_tokens[0], dc); /* ( */
 	} else {
-		SIMPLE_COOKIE simple = {0};
-
+		simple_cookie(simple);
 		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
 			doc_literal("(", dc);
 		else
@@ -1040,8 +1038,7 @@ expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[1] != NULL)
 			doc_token(ex->ex_tokens[1], dc); /* ) */
 	} else {
-		SIMPLE_COOKIE simple = {0};
-
+		simple_cookie(simple);
 		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
 			doc_literal(")", dc);
 	}

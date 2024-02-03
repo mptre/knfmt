@@ -140,8 +140,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	}
 
 	if (tkstatic != NULL) {
-		SIMPLE_COOKIE simple = {0};
-
+		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
 			t = simple_static(lx, beg, t, tkstatic);
 	}

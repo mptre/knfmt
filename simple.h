@@ -25,8 +25,9 @@ struct simple_cookie {
 	int			 state;
 };
 
-#define SIMPLE_COOKIE	__attribute__((cleanup(simple_leave))) \
-			struct simple_cookie
+#define simple_cookie(varname)						\
+	__attribute__((cleanup(simple_leave)))				\
+	struct simple_cookie varname = {0}
 
 struct simple	*simple_alloc(const struct options *);
 void		 simple_free(struct simple *);

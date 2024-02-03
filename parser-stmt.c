@@ -60,9 +60,9 @@ parser_stmt_peek(struct parser *pr)
 static int
 parser_stmt(struct parser *pr, struct doc *dc)
 {
-	SIMPLE_COOKIE simple = {0};
 	int error;
 
+	simple_cookie(simple);
 	if (peek_simple_stmt(pr)) {
 		error = parser_simple_stmt_enter(pr, &simple);
 		if (error & HALT)
@@ -141,8 +141,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	 */
 	nx = token_next(rbrace);
 	if (nx != NULL && nx->tk_type == TOKEN_SEMI) {
-		SIMPLE_COOKIE simple = {0};
-
+		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_STMT_SEMI, 0, &simple))
 			lexer_remove(lx, nx, 1);
 	}

@@ -402,9 +402,9 @@ lbrace_cache_purge(struct parser *pr)
 static void
 insert_trailing_comma(struct parser *pr, const struct token *rbrace)
 {
-	SIMPLE_COOKIE simple = {0};
 	struct token *comma, *pv;
 
+	simple_cookie(simple);
 	if (!simple_enter(pr->pr_si, SIMPLE_BRACES, 0, &simple))
 		return;
 

@@ -60,9 +60,9 @@ parser_decl_peek(struct parser *pr)
 int
 parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
-	SIMPLE_COOKIE simple = {0};
 	int error;
 
+	simple_cookie(simple);
 	error = parser_simple_decl_enter(pr, flags, &simple);
 	if (error & HALT)
 		return error;
