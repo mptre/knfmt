@@ -21,7 +21,8 @@ struct simple {
 	int			 enable;
 };
 
-static int	is_pass_mutually_exclusive(enum simple_pass);
+static int	is_pass_mutually_exclusive(const struct simple *,
+    enum simple_pass);
 
 struct simple *
 simple_alloc(struct arena_scope *eternal_scope, const struct options *op)
@@ -48,7 +49,7 @@ simple_enter(struct simple *si, enum simple_pass pass, unsigned int flags,
 		return 0;
 	}
 
-	if (is_pass_mutually_exclusive(pass)) {
+	if (is_pass_mutually_exclusive(si, pass)) {
 		unsigned int i;
 
 		for (i = 0; i < SIMPLE_LAST; i++) {
@@ -109,26 +110,41 @@ simple_enable(struct simple *si, int restore)
 	si->enable = restore;
 }
 
+/*
+ * All passes are mutually exclusive by default. However, some combinations are
+ * explicitly allowed as they do not interfere with each other.
+ */
 static int
-is_pass_mutually_exclusive(enum simple_pass pass)
+is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 {
-	switch (pass) {
-	case SIMPLE_BRACES:
-	case SIMPLE_DECL_PROTO:
-	case SIMPLE_STATIC:
-		/* Nested under SIMPLE_DECL and should not interfere. */
-		return 0;
-	case SIMPLE_DECL_FORWARD:
+	static const enum simple_pass exceptions[][2] = {
+		{ SIMPLE_DECL, SIMPLE_BRACES },
+		{ SIMPLE_DECL, SIMPLE_DECL_PROTO },
+		{ SIMPLE_DECL, SIMPLE_STATIC },
 		/*
-		 * Nested under SIMPLE_DECL but only operates on root level
-		 * declarations as opposed to SIMPLE_DECL which only operates on
-		 * nested levels. They should therefore not interfere.
+		 * SIMPLE_DECL_FORWARD only operates on root level declarations
+		 * as opposed to SIMPLE_DECL which only operates on nested
+		 * levels. They should therefore not interfere.
 		 */
-		return 0;
-	case SIMPLE_EXPR_SIZEOF:
-		/* Nested under SIMPLE_EXPR_PARENS and should not interfere. */
-		return 0;
-	default:
-		return 1;
+		{ SIMPLE_DECL, SIMPLE_DECL_FORWARD },
+
+		{ SIMPLE_EXPR_PARENS, SIMPLE_EXPR_SIZEOF },
+	};
+	unsigned int nexceptions = sizeof(exceptions) / sizeof(exceptions[0]);
+	unsigned int i;
+
+	for (i = 0; i < SIMPLE_LAST; i++) {
+		unsigned int j;
+
+		if (si->passes[i].state != SIMPLE_STATE_ENABLE &&
+		    si->passes[i].state != SIMPLE_STATE_IGNORE)
+			continue;
+
+		for (j = 0; j < nexceptions; j++) {
+			if (exceptions[j][0] == i && exceptions[j][1] == pass)
+				return 0;
+		}
 	}
+
+	return 1;
 }
