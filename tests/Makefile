@@ -622,6 +622,7 @@ TESTS+=	style-AlignOperands-011.c
 TESTS+=	style-AlignOperands-012.c
 TESTS+=	style-AlwaysBreakAfterReturnType-001.c
 TESTS+=	style-AlwaysBreakAfterReturnType-002.c
+TESTS+=	style-BasedOnStyle-001.c
 TESTS+=	style-BitFieldColonSpacing-001.c
 TESTS+=	style-BitFieldColonSpacing-002.c
 TESTS+=	style-BitFieldColonSpacing-003.c

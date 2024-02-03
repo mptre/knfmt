@@ -19,6 +19,11 @@ struct style;
 	OP(AlwaysBreak)							\
 	OP(AlwaysBreakAfterReturnType)					\
 	OP(BasedOnStyle)						\
+	  OP(Chromium)							\
+	  OP(Google)							\
+	  OP(InheritParentConfig)					\
+	  OP(LLVM)							\
+	  OP(Microsoft)							\
 	  OP(OpenBSD)							\
 	OP(Before)							\
 	OP(BitFieldColonSpacing)					\
