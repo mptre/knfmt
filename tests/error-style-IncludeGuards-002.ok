@@ -1,0 +1,3 @@
+test.h:7: error at IDENT<7:10>("YES")
+ */efine YES	
+         ^^^

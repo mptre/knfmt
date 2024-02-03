@@ -190,28 +190,19 @@ emit_ifndef(struct lexer *lx, struct token *tk, const char *cpp)
 static void
 ensure_line(struct lexer *lx, struct token *eof)
 {
-	struct token *line, *pv;
-
-	pv = token_prev(eof);
-	if (pv != NULL && token_has_suffix(pv, TOKEN_SPACE) &&
-	    !token_has_prefixes(eof)) {
-		if (token_has_line(pv, 2)) {
-			/* nothing */
-		} else if (token_has_line(pv, 1)) {
-			line = token_list_find(&pv->tk_suffixes, TOKEN_SPACE,
-			    0);
-			line->tk_flags &= ~TOKEN_FLAG_OPTLINE;
-		} else {
-			assert(0 && "Impossible token_has_line() state");
-		}
-	} else {
+	if (token_has_prefixes(eof)) {
 		struct token *last;
 
 		last = token_list_last(&eof->tk_prefixes);
-		if (last != NULL && !token_has_verbatim_line(last, 2)) {
-			line = emit_line(lx);
-			token_list_append(&eof->tk_prefixes, line);
-		}
+		if (last != NULL && !token_has_verbatim_line(last, 2))
+			token_list_append(&eof->tk_prefixes, emit_line(lx));
+	} else {
+		struct token *pv;
+
+		pv = token_prev(eof);
+		if (pv != NULL)
+			token_trim(pv);
+		token_list_append(&eof->tk_prefixes, emit_line(lx));
 	}
 }
 

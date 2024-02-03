@@ -110,6 +110,7 @@ TESTS+=	error-062.c
 TESTS+=	error-063.c
 TESTS+=	error-064.c
 TESTS+=	error-style-IncludeGuards-001.h
+TESTS+=	error-style-IncludeGuards-002.h
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c
