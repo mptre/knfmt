@@ -22,6 +22,7 @@ struct parser {
 
 	struct {
 		struct arena		*scratch;
+		struct arena_scope	*scratch_scope;
 		struct arena		*doc;
 		struct arena_scope	*doc_scope;
 	} pr_arena;

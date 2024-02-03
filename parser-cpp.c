@@ -2,12 +2,11 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/string.h"
 
-#include "alloc.h"
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
@@ -145,7 +144,8 @@ parser_cpp_x(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	if (pr->pr_cpp.ruler == NULL) {
-		pr->pr_cpp.ruler = emalloc(sizeof(*pr->pr_cpp.ruler));
+		pr->pr_cpp.ruler = arena_malloc(pr->pr_arena.scratch_scope,
+		    sizeof(*pr->pr_cpp.ruler));
 		ruler_init(pr->pr_cpp.ruler, 0, RULER_ALIGN_SENSE);
 	}
 
@@ -240,7 +240,6 @@ parser_cpp_decl_leave(struct parser *pr, void *cookie)
 
 	ruler_exec(rl);
 	ruler_free(rl);
-	free(rl);
 }
 
 static int
