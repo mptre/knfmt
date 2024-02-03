@@ -4,14 +4,13 @@
 
 #include <ctype.h>
 #include <err.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -48,11 +47,11 @@ static const char	*strtrim(const char *, size_t *);
 
 struct simple_stmt *
 simple_stmt_enter(struct lexer *lx, const struct style *st,
-    const struct options *op)
+    struct arena_scope *eternal_scope, const struct options *op)
 {
 	struct simple_stmt *ss;
 
-	ss = ecalloc(1, sizeof(*ss));
+	ss = arena_calloc(eternal_scope, 1, sizeof(*ss));
 	if (VECTOR_INIT(ss->ss_stmts))
 		err(1, NULL);
 	ss->ss_lx = lx;
@@ -113,7 +112,6 @@ simple_stmt_free(struct simple_stmt *ss)
 			token_rele(st->st_rbrace);
 	}
 	VECTOR_FREE(ss->ss_stmts);
-	free(ss);
 }
 
 struct doc *

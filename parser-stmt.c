@@ -2,6 +2,8 @@
 
 #include "config.h"
 
+#include "libks/arena.h"
+
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
@@ -798,7 +800,10 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 	if (!simple_enter(pr->pr_si, SIMPLE_STMT, 0, simple))
 		return parser_good(pr);
 
-	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, pr->pr_op);
+	arena_scope(pr->pr_scratch, scratch_scope);
+
+	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, &scratch_scope,
+	    pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_stmt1(pr, dc);
