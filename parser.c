@@ -219,7 +219,7 @@ parser_reset(struct parser *pr)
 }
 
 void
-parser_arena_scope_enter(struct parser_doc_scope_cookie *cookie,
+parser_arena_scope_enter(struct parser_arena_scope_cookie *cookie,
     struct arena_scope **old_scope, struct arena_scope *new_scope)
 {
 	cookie->restore_scope = old_scope;
@@ -228,7 +228,7 @@ parser_arena_scope_enter(struct parser_doc_scope_cookie *cookie,
 }
 
 void
-parser_arena_scope_leave(struct parser_doc_scope_cookie *cookie)
+parser_arena_scope_leave(struct parser_arena_scope_cookie *cookie)
 {
 	*cookie->restore_scope = cookie->old_scope;
 }
