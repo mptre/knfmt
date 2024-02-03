@@ -6,11 +6,33 @@
   (c22119b)
   (Anton Lindqvist)
 
+- Rework memory allocations.
+  Speed up of 50% while formatting $obsd-src/sys/kern/*.[ch].
+  (bbfc385)
+  (Anton Lindqvist)
+
+- In simple mode, sort forward declarations.
+  (c1b96d2)
+  (Anton Lindqvist)
+
+- Honor clang-format option BasedOnStyle.
+  (8548ad1)
+  (Anton Lindqvist)
+
+- Honor clang-format option IncludeGuards.
+  Note, this is a knfmt exclusive extension.
+  (16c9f11)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Improve handling of expression arguments in declarations making use of cpp
   macros.
   (b72e19a)
+  (Anton Lindqvist)
+
+- Honor optional semicolon after extern blocks.
+  (bb044a6)
   (Anton Lindqvist)
 
 # 4.3.0 - 2023-10-15
