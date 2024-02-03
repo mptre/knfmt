@@ -50,7 +50,7 @@ hascomm() {
 # Run test case.
 testcase() {
 	local _base
-	local _based_on_style
+	local _based_on_style=0
 	local _bug=0
 	local _clang=0
 	local _diff="${_wrkdir}/diff"
