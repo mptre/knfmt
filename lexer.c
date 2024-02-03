@@ -29,7 +29,8 @@
 
 struct lexer {
 	struct lexer_state	 lx_st;
-	struct lexer_arg	 lx_arg;
+	struct lexer_callbacks	 lx_callbacks;
+	const char		*lx_path;
 	struct error		*lx_er;
 	const struct options	*lx_op;
 	const struct diffchunk	*lx_diff;
@@ -95,7 +96,8 @@ lexer_alloc(const struct lexer_arg *arg)
 
 	lx = arena_calloc(arg->eternal_scope, 1, sizeof(*lx));
 	arena_cleanup(arg->eternal_scope, lexer_free, lx);
-	lx->lx_arg = *arg;
+	lx->lx_callbacks = arg->callbacks;
+	lx->lx_path = arg->path;
 	lx->lx_er = error_alloc(arg->eternal_scope, arg->error_flush);
 	lx->lx_op = arg->op;
 	lx->lx_arena.eternal_scope = arg->eternal_scope;
@@ -117,7 +119,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	for (;;) {
 		struct token *tk;
 
-		tk = lx->lx_arg.callbacks.read(lx, lx->lx_arg.callbacks.arg);
+		tk = lx->lx_callbacks.read(lx, lx->lx_callbacks.arg);
 		if (tk == NULL)
 			goto err;
 		TAILQ_INSERT_TAIL(&lx->lx_tokens, tk, tk_entry);
@@ -141,10 +143,8 @@ lexer_alloc(const struct lexer_arg *arg)
 	}
 	VECTOR_FREE(discarded);
 
-	if (lx->lx_arg.callbacks.read_all_tokens != NULL) {
-		lx->lx_arg.callbacks.read_all_tokens(lx,
-		    lx->lx_arg.callbacks.arg);
-	}
+	if (lx->lx_callbacks.read_all_tokens != NULL)
+		lx->lx_callbacks.read_all_tokens(lx, lx->lx_callbacks.arg);
 
 	if (options_trace_level(lx->lx_op, 't') > 0)
 		lexer_dump(lx);
@@ -152,10 +152,8 @@ lexer_alloc(const struct lexer_arg *arg)
 	return lx;
 
 err:
-	if (lx->lx_arg.callbacks.read_all_tokens != NULL) {
-		lx->lx_arg.callbacks.read_all_tokens(lx,
-		    lx->lx_arg.callbacks.arg);
-	}
+	if (lx->lx_callbacks.read_all_tokens != NULL)
+		lx->lx_callbacks.read_all_tokens(lx, lx->lx_callbacks.arg);
 	VECTOR_FREE(discarded);
 	return NULL;
 }
@@ -195,7 +193,7 @@ lexer_set_state(struct lexer *lx, const struct lexer_state *st)
 const char *
 lexer_get_path(const struct lexer *lx)
 {
-	return lx->lx_arg.path;
+	return lx->lx_path;
 }
 
 int
@@ -260,7 +258,7 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 {
 	struct token *t;
 
-	t = lx->lx_arg.callbacks.alloc(lx->lx_arena.eternal_scope, tk);
+	t = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, tk);
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = lexer_column(lx, st);
@@ -295,7 +293,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 
 	bf = error_begin(lx->lx_er);
 
-	buffer_printf(bf, "%s", lx->lx_arg.path);
+	buffer_printf(bf, "%s", lx->lx_path);
 	if (l > 0)
 		buffer_printf(bf, ":%u", l);
 	buffer_printf(bf, ": ");
@@ -349,7 +347,7 @@ lexer_serialize(struct lexer *lx, const struct token *tk)
 {
 	if (tk == NULL)
 		return "(null)";
-	return lx->lx_arg.callbacks.serialize(lx->lx_arena.eternal_scope, tk);
+	return lx->lx_callbacks.serialize(lx->lx_arena.eternal_scope, tk);
 }
 
 unsigned int
@@ -618,7 +616,7 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 {
 	struct token *tk;
 
-	tk = lx->lx_arg.callbacks.alloc(lx->lx_arena.eternal_scope, src);
+	tk = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, src);
 	lexer_copy_token_list(lx, &src->tk_prefixes, &tk->tk_prefixes);
 	lexer_copy_token_list(lx, &src->tk_suffixes, &tk->tk_suffixes);
 	token_position_after(after, tk);
@@ -632,7 +630,7 @@ lexer_insert_before(struct lexer *lx, struct token *before, int type,
 {
 	struct token *tk;
 
-	tk = lx->lx_arg.callbacks.alloc(lx->lx_arena.eternal_scope,
+	tk = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope,
 	    &(struct token){
 		.tk_type	= type,
 		.tk_lno		= before->tk_lno,
@@ -651,7 +649,7 @@ lexer_insert_after(struct lexer *lx, struct token *after, int type,
 {
 	struct token *tk;
 
-	tk = lx->lx_arg.callbacks.alloc(lx->lx_arena.eternal_scope,
+	tk = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope,
 	    &(struct token){
 		.tk_type	= type,
 		.tk_flags	= token_flags_inherit(after),
@@ -1033,7 +1031,7 @@ lexer_dump(struct lexer *lx)
 	struct token *tk;
 	unsigned int i = 0;
 
-	fprintf(stderr, "[L] %s:\n", lx->lx_arg.path);
+	fprintf(stderr, "[L] %s:\n", lx->lx_path);
 
 	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
 		struct token *prefix, *suffix;
@@ -1249,7 +1247,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src, struct token **unmute)
 	off = src->tk_off;
 	len = (dst->tk_off + dst->tk_len) - off;
 
-	prefix = lx->lx_arg.callbacks.alloc(lx->lx_arena.eternal_scope,
+	prefix = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope,
 	    &(struct token){.tk_type = TOKEN_CPP, .tk_flags = TOKEN_FLAG_CPP});
 	prefix->tk_lno = src->tk_lno;
 	prefix->tk_cno = src->tk_cno;
@@ -1459,7 +1457,7 @@ lexer_copy_token_list(struct lexer *lx, const struct token_list *src,
 	TAILQ_FOREACH(tk, src, tk_entry) {
 		struct token *cp;
 
-		cp = lx->lx_arg.callbacks.alloc(lx->lx_arena.eternal_scope, tk);
+		cp = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, tk);
 		TAILQ_INSERT_TAIL(dst, cp, tk_entry);
 	}
 }
