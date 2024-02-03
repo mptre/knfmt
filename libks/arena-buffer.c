@@ -18,6 +18,7 @@
 
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 
 static void	*callback_alloc(size_t, void *);
 static void	*callback_realloc(void *, size_t, size_t, void *);
@@ -60,6 +61,16 @@ arena_buffer_read_fd(struct arena_scope *s, int fd)
 	return bf;
 }
 
+const char *
+arena_buffer_getline(struct arena_scope *s, const struct buffer *bf,
+    struct buffer_getline *getline)
+{
+	if (getline->bf == NULL)
+		getline->bf = arena_buffer_alloc(s, 1 << 10);
+
+	return buffer_getline_impl(bf, getline);
+}
+
 static void *
 callback_alloc(size_t size, void *arg)
 {
@@ -77,7 +88,7 @@ callback_realloc(void *ptr, size_t old_size, size_t new_size, void *arg)
 }
 
 static void
-callback_free(void *ptr, size_t size, void *arg __attribute__((unused)))
+callback_free(void *ptr, size_t size, void *UNUSED(arg))
 {
 	arena_poison(ptr, size);
 }

@@ -84,7 +84,7 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
     struct arena *scratch, const struct options *op)
 {
 	struct buffer *bf;
-	struct buffer_getline *it = NULL;
+	struct buffer_getline it = {0};
 	struct file *fe = NULL;
 	const char *line;
 	int error = 0;
@@ -140,7 +140,7 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 	}
 
 out:
-	buffer_getline_free(it);
+	buffer_getline_free(&it);
 	return error;
 }
 

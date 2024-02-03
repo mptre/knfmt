@@ -25,16 +25,13 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/compiler.h"
+
 struct buffer {
 	struct buffer_callbacks	 bf_callbacks;
 	char			*bf_ptr;
 	size_t			 bf_siz;
 	size_t			 bf_len;
-};
-
-struct buffer_getline {
-	struct buffer	*bf;
-	size_t		 off;
 };
 
 static int	buffer_reserve(struct buffer *, size_t);
@@ -263,32 +260,30 @@ buffer_get_size(const struct buffer *bf)
 }
 
 const char *
-buffer_getline(const struct buffer *bf, struct buffer_getline **out)
+buffer_getline(const struct buffer *bf, struct buffer_getline *getline)
 {
-	struct buffer_getline *getline;
+	if (getline->bf == NULL) {
+		getline->bf = buffer_alloc(1 << 10);
+		if (bf == NULL)
+			return NULL;
+	}
+
+	return buffer_getline_impl(bf, getline);
+}
+
+const char *
+buffer_getline_impl(const struct buffer *bf, struct buffer_getline *getline)
+{
 	const char *line, *newline;
 	size_t linelen;
 
-	if (*out == NULL) {
-		getline = calloc(1, sizeof(*getline));
-		if (getline == NULL)
-			return NULL;
-		getline->bf = buffer_alloc(1 << 10);
-		if (bf == NULL) {
-			buffer_getline_free(getline);
-			return NULL;
-		}
-		*out = getline;
-	}
-	getline = *out;
-
-	if (getline->off == bf->bf_len)
+	if (getline->off >= bf->bf_len)
 		goto done;
 
 	line = &bf->bf_ptr[getline->off];
 	newline = memchr(line, '\n', bf->bf_len - getline->off);
 	if (newline == NULL)
-		goto done;
+		newline = &bf->bf_ptr[bf->bf_len];
 	linelen = (size_t)(newline - line);
 	buffer_reset(getline->bf);
 	buffer_puts(getline->bf, line, linelen);
@@ -298,7 +293,6 @@ buffer_getline(const struct buffer *bf, struct buffer_getline **out)
 
 done:
 	buffer_getline_free(getline);
-	*out = NULL;
 	return NULL;
 }
 
@@ -308,7 +302,7 @@ buffer_getline_free(struct buffer_getline *getline)
 	if (getline == NULL)
 		return;
 	buffer_free(getline->bf);
-	free(getline);
+	memset(getline, 0, sizeof(*getline));
 }
 
 static int
@@ -343,21 +337,20 @@ overflow:
 }
 
 static void *
-callback_alloc(size_t size, void *arg __attribute__((unused)))
+callback_alloc(size_t size, void *UNUSED(arg))
 {
 	return malloc(size);
 }
 
 static void *
-callback_realloc(void *ptr, size_t old_size __attribute__((unused)),
-    size_t new_size, void *arg __attribute__((unused)))
+callback_realloc(void *ptr, size_t UNUSED(old_size), size_t new_size,
+    void *UNUSED(arg))
 {
 	return realloc(ptr, new_size);
 }
 
 static void
-callback_free(void *ptr, size_t size __attribute__((unused)),
-    void *arg __attribute__((unused)))
+callback_free(void *ptr, size_t UNUSED(size), void *UNUSED(arg))
 {
 	free(ptr);
 }

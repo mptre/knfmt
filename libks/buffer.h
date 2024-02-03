@@ -21,13 +21,17 @@
 #include <stddef.h>	/* size_t */
 
 struct buffer;
-struct buffer_getline;
 
 struct buffer_callbacks {
 	void	*(*alloc)(size_t, void *);
 	void	*(*realloc)(void *, size_t, size_t, void *);
 	void	 (*free)(void *, size_t, void *);
 	void	*arg;
+};
+
+struct buffer_getline {
+	struct buffer	*bf;
+	size_t		 off;
 };
 
 struct buffer	*buffer_alloc(size_t);
@@ -54,7 +58,9 @@ int	buffer_printf(struct buffer *, const char *, ...)
 int	buffer_vprintf(struct buffer *, const char *, va_list);
 
 const char	*buffer_getline(const struct buffer *,
-    struct buffer_getline **);
+    struct buffer_getline *);
+const char	*buffer_getline_impl(const struct buffer *,
+    struct buffer_getline *);
 void		 buffer_getline_free(struct buffer_getline *);
 
 const char	*buffer_get_ptr(const struct buffer *);
