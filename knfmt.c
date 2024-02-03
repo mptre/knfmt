@@ -31,7 +31,7 @@ static void	usage(void) __attribute__((__noreturn__));
 
 static int	filelist(int, char **, struct files *, const struct options *);
 static int	fileformat(struct file *, const struct style *, struct simple *,
-    struct clang *, const struct options *);
+    struct clang *, struct buffer *, struct buffer *, const struct options *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const struct file *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -47,6 +47,8 @@ main(int argc, char *argv[])
 	struct files files;
 	struct options op;
 	struct arena *eternal, *scratch;
+	struct buffer *src = NULL;
+	struct buffer *dst = NULL;
 	struct clang *cl = NULL;
 	struct simple *si = NULL;
 	struct style *st = NULL;
@@ -123,6 +125,16 @@ main(int argc, char *argv[])
 	}
 	si = simple_alloc(&op);
 	cl = clang_alloc(st, si, scratch, &op);
+	src = buffer_alloc(1 << 12);
+	if (src == NULL) {
+		error = 1;
+		goto out;
+	}
+	dst = buffer_alloc(1 << 12);
+	if (dst == NULL) {
+		error = 1;
+		goto out;
+	}
 
 	if (filelist(argc, argv, &files, &op)) {
 		error = 1;
@@ -131,13 +143,15 @@ main(int argc, char *argv[])
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
-		if (fileformat(fe, st, si, cl, &op))
+		if (fileformat(fe, st, si, cl, src, dst, &op))
 			error = 1;
 		file_close(fe);
 	}
 
 out:
 	files_free(&files);
+	buffer_free(dst);
+	buffer_free(src);
 	clang_free(cl);
 	simple_free(si);
 	style_free(st);
@@ -179,16 +193,15 @@ filelist(int argc, char **argv, struct files *files,
 
 static int
 fileformat(struct file *fe, const struct style *st, struct simple *si,
-    struct clang *cl, const struct options *op)
+    struct clang *cl, struct buffer *src, struct buffer *dst,
+    const struct options *op)
 {
-	struct buffer *dst = NULL;
-	struct buffer *src;
 	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
 	int error = 0;
 
-	src = file_read(fe);
-	if (src == NULL) {
+	buffer_reset(src);
+	if (file_read(fe, src)) {
 		error = 1;
 		goto out;
 	}
@@ -213,8 +226,8 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 		error = 1;
 		goto out;
 	}
-	dst = parser_exec(pr, fe->fe_diff, buffer_get_len(src));
-	if (dst == NULL) {
+	buffer_reset(dst);
+	if (parser_exec(pr, fe->fe_diff, dst)) {
 		error = 1;
 		goto out;
 	}
@@ -229,10 +242,8 @@ fileformat(struct file *fe, const struct style *st, struct simple *si,
 out:
 	if (lx != NULL && error)
 		lexer_error_flush(lx);
-	buffer_free(dst);
 	parser_free(pr);
 	lexer_free(lx);
-	buffer_free(src);
 	return error;
 }
 

@@ -52,11 +52,10 @@ parser_free(struct parser *pr)
 	free(pr);
 }
 
-struct buffer *
+int
 parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
-    size_t sizehint)
+    struct buffer *bf)
 {
-	struct buffer *bf = NULL;
 	struct doc *dc;
 	struct lexer *lx = pr->pr_lx;
 	unsigned int doc_flags = 0;
@@ -101,12 +100,9 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	}
 	if (error) {
 		parser_fail(pr);
-		goto out;
+		doc_free(dc);
+		return 1;
 	}
-
-	bf = buffer_alloc(sizehint);
-	if (bf == NULL)
-		err(1, NULL);
 
 	if (pr->pr_op->diffparse)
 		doc_flags |= DOC_EXEC_DIFF;
@@ -124,9 +120,8 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	    .flags	= doc_flags,
 	});
 
-out:
 	doc_free(dc);
-	return bf;
+	return 0;
 }
 
 int

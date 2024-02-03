@@ -42,26 +42,24 @@ files_free(struct files *files)
 	VECTOR_FREE(files->fs_vc);
 }
 
-struct buffer *
-file_read(struct file *fe)
+int
+file_read(struct file *fe, struct buffer *bf)
 {
-	struct buffer *bf;
 	int fd;
 
 	fd = open(fe->fe_path, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		goto err;
-	bf = buffer_read_fd(fd);
-	if (bf == NULL)
+	if (buffer_read_fd_impl(bf, fd))
 		goto err;
 	fe->fe_fd = fd;
-	return bf;
+	return 0;
 
 err:
 	warn("%s", fe->fe_path);
 	if (fd != -1)
 		close(fd);
-	return NULL;
+	return 1;
 }
 
 void
