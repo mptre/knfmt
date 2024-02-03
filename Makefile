@@ -351,3 +351,4 @@ test-${PROG_test}: ${PROG_test}
 
 -include ${DEPS_knfmt}
 -include ${DEPS_test}
+-include ${DEPS_fuzz-style}

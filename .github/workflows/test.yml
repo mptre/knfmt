@@ -110,7 +110,7 @@ jobs:
         env:
           CC: afl-gcc
         run: |
-          ./configure --pedantic
+          ./configure --pedantic --fuzz afl
           make -j`nproc` fuzz
 
   clang-tidy:

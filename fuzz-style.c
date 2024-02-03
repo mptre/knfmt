@@ -1,28 +1,53 @@
 #include "config.h"
 
 #include "libks/arena.h"
+#include "libks/fuzzer.h"
 
+#include "alloc.h"
 #include "options.h"
 #include "style.h"
 
-int
-main(void)
+struct test_context {
+	struct options	 op;
+	struct arena	*eternal;
+	struct arena	*scratch;
+};
+
+static void *
+init(void)
 {
-	struct arena *eternal, *scratch;
-	struct options op;
-	struct style *st;
+	static struct test_context c;
 
-	options_init(&op);
 	style_init();
-	eternal = arena_alloc(ARENA_FATAL);
-	scratch = arena_alloc(ARENA_FATAL);
-	arena_scope(eternal, eternal_scope);
 
-	st = style_parse("/dev/stdin", &eternal_scope, scratch, &op);
-	style_free(st);
+	options_init(&c.op);
+	c.eternal = arena_alloc(ARENA_FATAL);
+	c.scratch = arena_alloc(ARENA_FATAL);
+	return &c;
+}
+FUZZER_INIT(init);
+
+static void
+teardown(void *userdata)
+{
+	struct test_context *c = userdata;
+
+	arena_free(c->scratch);
+	arena_free(c->eternal);
 
 	style_shutdown();
-	arena_free(scratch);
-	arena_free(eternal);
-	return 0;
 }
+FUZZER_TEARDOWN(teardown);
+
+static void
+target(const struct buffer *bf, void *userdata)
+{
+	struct test_context *c = userdata;
+	struct style *st;
+
+	arena_scope(c->eternal, s);
+
+	st = style_parse_buffer(bf, ".clang-format", &s, c->scratch, &c->op);
+	style_free(st);
+}
+FUZZER_TARGET_BUFFER(target);
