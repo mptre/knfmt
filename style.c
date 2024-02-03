@@ -348,7 +348,7 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 		  * Only apply default style if no clang-format configuration
 		  * file is present.
 		  */
-		st->options[BasedOnStyle].val = OpenBSD;
+		style_set(st, BasedOnStyle, None, OpenBSD);
 	} else {
 		/* Errors are not considered fatal. */
 		(void)style_parse_yaml(st, path, bf);
