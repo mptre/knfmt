@@ -28,11 +28,19 @@
 #include "style.h"
 #include "token.h"
 
+struct main_context {
+	const struct options	*options;
+	struct style		*style;
+	struct simple		*simple;
+	struct clang		*clang;
+	struct buffer		*src;
+	struct buffer		*dst;
+};
+
 static void	usage(void) __attribute__((__noreturn__));
 
 static int	filelist(int, char **, struct files *, const struct options *);
-static int	fileformat(struct file *, const struct style *, struct simple *,
-    struct clang *, struct buffer *, struct buffer *, const struct options *);
+static int	fileformat(struct main_context *, struct file *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const struct file *);
 static int	filewrite(const struct buffer *, const struct buffer *,
@@ -139,10 +147,19 @@ main(int argc, char *argv[])
 		error = 1;
 		goto out;
 	}
+
+	struct main_context c = {
+		.options	= &op,
+		.style		= st,
+		.simple		= si,
+		.clang		= cl,
+		.src		= src,
+		.dst		= dst,
+	};
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
-		if (fileformat(fe, st, si, cl, src, dst, &op))
+		if (fileformat(&c, fe))
 			error = 1;
 		file_close(fe);
 	}
@@ -191,53 +208,51 @@ filelist(int argc, char **argv, struct files *files,
 }
 
 static int
-fileformat(struct file *fe, const struct style *st, struct simple *si,
-    struct clang *cl, struct buffer *src, struct buffer *dst,
-    const struct options *op)
+fileformat(struct main_context *c, struct file *fe)
 {
 	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
 	int error = 0;
 
-	buffer_reset(src);
-	if (file_read(fe, src)) {
+	buffer_reset(c->src);
+	if (file_read(fe, c->src)) {
 		error = 1;
 		goto out;
 	}
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
-	    .bf			= src,
+	    .bf			= c->src,
 	    .diff		= fe->fe_diff,
-	    .op			= op,
-	    .error_flush	= trace(op, 'l') > 0,
+	    .op			= c->options,
+	    .error_flush	= trace(c->options, 'l') > 0,
 	    .callbacks		= {
 		.read		= clang_read,
 		.alloc		= clang_token_alloc,
 		.serialize	= token_serialize,
-		.arg		= cl,
+		.arg		= c->clang,
 	    },
 	});
 	if (lx == NULL) {
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(lx, st, si, op);
+	pr = parser_alloc(lx, c->style, c->simple, c->options);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
 	}
-	buffer_reset(dst);
-	if (parser_exec(pr, fe->fe_diff, dst)) {
+	buffer_reset(c->dst);
+	if (parser_exec(pr, fe->fe_diff, c->dst)) {
 		error = 1;
 		goto out;
 	}
 
-	if (op->diff)
-		error = filediff(src, dst, fe);
-	else if (op->inplace)
-		error = filewrite(src, dst, fe);
+	if (c->options->diff)
+		error = filediff(c->src, c->dst, fe);
+	else if (c->options->inplace)
+		error = filewrite(c->src, c->dst, fe);
 	else
-		error = fileprint(dst);
+		error = fileprint(c->dst);
 
 out:
 	if (lx != NULL && error)
