@@ -22,7 +22,7 @@ struct alignment {
 	const char		*indent;
 	enum style_keyword	 mode;
 	unsigned int		 width;
-	int			 tabs:1,
+	unsigned int		 tabs:1,
 				 skip_first_line:1;
 };
 
