@@ -161,7 +161,6 @@ lexer_free(struct lexer *lx)
 	if (lx == NULL)
 		return;
 
-	error_free(lx->lx_er);
 	VECTOR_FREE(lx->lx_lines);
 	if (lx->lx_unmute != NULL)
 		token_rele(lx->lx_unmute);
