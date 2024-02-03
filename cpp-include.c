@@ -2,7 +2,6 @@
 
 #include "config.h"
 
-#include <assert.h>
 #include <err.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +20,6 @@
 struct cpp_include {
 	VECTOR(struct include)		 includes;
 	MAP(int,, struct include_group)	 groups;
-	struct lexer			*lx;
 	struct token_list		*prefixes;
 	struct token			*after;
 	const struct style		*st;
@@ -46,10 +44,11 @@ struct include_group {
 	VECTOR(struct include *)	includes;
 };
 
-static void	cpp_include_exec(struct cpp_include *);
+static void	cpp_include_exec(struct cpp_include *, struct lexer *);
 static void	cpp_include_reset(struct cpp_include *);
 
-static struct token	*add_line(struct cpp_include *, struct token *);
+static struct token	*add_line(struct cpp_include *, struct lexer *,
+    struct token *);
 
 static const char	*findpath(const char *, size_t, size_t *);
 
@@ -115,7 +114,7 @@ cpp_include_free(struct cpp_include *ci)
 }
 
 void
-cpp_include_enter(struct cpp_include *ci, struct lexer *lx)
+cpp_include_enter(struct cpp_include *ci)
 {
 	unsigned int simple_flags;
 
@@ -124,26 +123,21 @@ cpp_include_enter(struct cpp_include *ci, struct lexer *lx)
 	if (!simple_enter(ci->si, SIMPLE_CPP_SORT_INCLUDES, simple_flags,
 	    &ci->cookie))
 		return;
-
-	assert(ci->lx == NULL);
-	ci->lx = lx;
 }
 
 void
-cpp_include_leave(struct cpp_include *ci)
+cpp_include_leave(struct cpp_include *ci, struct lexer *lx)
 {
 	if (!is_simple_enabled(ci->si, SIMPLE_CPP_SORT_INCLUDES))
 		return;
 
-	cpp_include_exec(ci);
+	cpp_include_exec(ci, lx);
 	cpp_include_reset(ci);
-	ci->lx = NULL;
-
 	simple_leave(&ci->cookie);
 }
 
 void
-cpp_include_add(struct cpp_include *ci, struct token *tk)
+cpp_include_add(struct cpp_include *ci, struct lexer *lx, struct token *tk)
 {
 	if (!is_simple_enabled(ci->si, SIMPLE_CPP_SORT_INCLUDES))
 		return;
@@ -166,7 +160,7 @@ cpp_include_add(struct cpp_include *ci, struct token *tk)
 			return;
 	}
 
-	cpp_include_exec(ci);
+	cpp_include_exec(ci, lx);
 	cpp_include_reset(ci);
 }
 
@@ -197,7 +191,7 @@ include_cmp(struct include *const *aa, struct include *const *bb)
 }
 
 static void
-cpp_include_exec(struct cpp_include *ci)
+cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 {
 	MAP_ITERATOR(ci->groups) it = {0};
 	struct token *after = ci->after;
@@ -233,7 +227,7 @@ cpp_include_exec(struct cpp_include *ci)
 
 			str = arena_strndup(&s, path, len);
 			priority = style_include_priority(ci->st, str,
-			    lexer_get_path(ci->lx));
+			    lexer_get_path(lx));
 		} else {
 			if (path[0] == '<')
 				nbrackets++;
@@ -279,7 +273,7 @@ cpp_include_exec(struct cpp_include *ci)
 			after = include->tk;
 		}
 		if (doline)
-			after = add_line(ci, after);
+			after = add_line(ci, lx, after);
 	}
 }
 
@@ -304,10 +298,9 @@ cpp_include_reset(struct cpp_include *ci)
 }
 
 static struct token *
-add_line(struct cpp_include *ci, struct token *after)
+add_line(struct cpp_include *ci, struct lexer *lx, struct token *after)
 {
 	struct lexer_state st;
-	struct lexer *lx = ci->lx;
 	struct token *tk;
 
 	st = lexer_get_state(lx);
