@@ -34,6 +34,7 @@ parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
 	pr->pr_si = si;
 	pr->pr_op = op;
 	pr->pr_lx = lx;
+	pr->pr_bf = arena_buffer_alloc(eternal_scope, 1 << 10);
 	pr->pr_arena.scratch = scratch;
 	pr->pr_arena.doc = doc;
 
@@ -185,15 +186,10 @@ parser_token_trim_after(const struct parser *UNUSED(pr), struct token *tk)
 unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
-	struct buffer *bf;
-
-	arena_scope(pr->pr_arena.scratch, s);
-
-	bf = arena_buffer_alloc(&s, 1 << 10);
 	return doc_width(&(struct doc_exec_arg){
 	    .dc		= dc,
 	    .scratch	= pr->pr_arena.scratch,
-	    .bf		= bf,
+	    .bf		= pr->pr_bf,
 	    .st		= pr->pr_st,
 	    .op		= pr->pr_op,
 	});
