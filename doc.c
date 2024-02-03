@@ -9,7 +9,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "libks/arena.h"
@@ -1562,11 +1561,10 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 		return;
 
 	if (st->st_flags & DOC_EXEC_TRACE) {
-		char *s;
+		arena_scope(st->st_scratch, s);
 
-		s = strnice(str, len);
-		doc_trace(dc, st, "%s: verbatim \"%s\"", __func__, s);
-		free(s);
+		doc_trace(dc, st, "%s: verbatim \"%s\"",
+		    __func__, strnice(str, len, &s));
 	}
 
 	doc_state_reset_lines(st);
@@ -1842,11 +1840,8 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 	if (desc->value.integer)
 		fprintf(stderr, "%d", dc->dc_int);
 	if (desc->value.string) {
-		char *str;
-
-		str = strnice(dc->dc_str, dc->dc_len);
-		fprintf(stderr, "\"%s\", %zu", str, dc->dc_len);
-		free(str);
+		fprintf(stderr, "\"%s\", %zu",
+		    strnice(dc->dc_str, dc->dc_len, &s), dc->dc_len);
 	}
 
 	switch (dc->dc_type) {

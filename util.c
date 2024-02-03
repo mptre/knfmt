@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
 
@@ -64,21 +65,14 @@ strindent_buffer(struct buffer *bf, size_t indent, int usetabs, size_t pos)
 	return pos;
 }
 
-char *
-strnice(const char *str, size_t len)
+const char *
+strnice(const char *str, size_t len, struct arena_scope *s)
 {
 	struct buffer *bf;
-	char *buf;
 
-	bf = buffer_alloc(2 * len + 1);
-	if (bf == NULL)
-		err(1, NULL);
+	bf = arena_buffer_alloc(s, 2 * len + 1);
 	strnice_buffer(bf, str, len);
-	buf = buffer_str(bf);
-	if (buf == NULL)
-		err(1, NULL);
-	buffer_free(bf);
-	return buf;
+	return buffer_str(bf);
 }
 
 void
