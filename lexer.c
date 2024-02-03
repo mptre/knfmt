@@ -11,6 +11,7 @@
 
 #include "libks/buffer.h"
 #include "libks/compiler.h"
+#include "libks/string.h"
 #include "libks/vector.h"
 
 #include "alloc.h"
@@ -1158,23 +1159,17 @@ lexer_eat_lines(struct lexer *lx, int threshold, struct token **tk)
 int
 lexer_eat_spaces(struct lexer *lx, struct token **tk)
 {
-	struct lexer_state st;
-	unsigned char ch;
+	struct lexer_state st = lx->lx_st;
+	size_t nspaces;
 
-	st = lx->lx_st;
-
-	do {
-		if (lexer_getc(lx, &ch))
-			return 0;
-	} while (ch == ' ' || ch == '\f' || ch == '\t');
-	lexer_ungetc(lx);
-
-	if (st.st_off == lx->lx_st.st_off)
+	nspaces = KS_str_match(&lx->lx_input.ptr[lx->lx_st.st_off],
+	    lx->lx_input.len - lx->lx_st.st_off, "  \f\f\t\t");
+	if (nspaces == 0)
 		return 0;
+	lx->lx_st.st_off += nspaces;
 	if (tk != NULL) {
-		*tk = lexer_emit(lx, &st, &(struct token){
-		    .tk_type	= TOKEN_SPACE,
-		});
+		*tk = lexer_emit(lx, &st,
+		    &(struct token){.tk_type = TOKEN_SPACE});
 	}
 	return 1;
 }
