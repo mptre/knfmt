@@ -1,5 +1,6 @@
 #include <stddef.h>	/* size_t */
 
+struct arena_scope;
 struct doc;
 struct token;
 
@@ -72,6 +73,10 @@ int		doc_remove_tail(struct doc *);
 void		doc_set_indent(struct doc *, unsigned int);
 void		doc_set_dedent(struct doc *, unsigned int);
 void		doc_set_align(struct doc *, const struct doc_align *);
+
+#define doc_root(a) \
+	doc_root0((a), __func__, __LINE__)
+struct doc	*doc_root0(struct arena_scope *, const char *, int);
 
 #define doc_alloc(a, b) \
 	doc_alloc0((a), (b), 0, __func__, __LINE__)

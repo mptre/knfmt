@@ -464,7 +464,7 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
 
 	context_init(cx, src);
 
-	concat = doc_alloc(DOC_CONCAT, NULL);
+	concat = doc_root(NULL);
 	error = parser_expr(cx->pr, &expr, &(struct parser_expr_arg){
 	    .dc	= concat,
 	});

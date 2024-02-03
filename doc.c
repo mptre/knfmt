@@ -465,6 +465,12 @@ doc_append_before(struct doc *dc, struct doc *before)
 }
 
 struct doc *
+doc_root0(struct arena_scope *UNUSED(s), const char *fun, int lno)
+{
+	return doc_alloc0(DOC_CONCAT, NULL, 0, fun, lno);
+}
+
+struct doc *
 doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
     int lno)
 {

@@ -53,7 +53,7 @@ parser_stmt_peek(struct parser *pr)
 	struct doc *dc;
 	int error;
 
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 	error = parser_stmt1(pr, dc);
 	doc_free(dc);
 	return error & GOOD;
@@ -804,7 +804,7 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 
 	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, &scratch_scope,
 	    pr->pr_op);
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_stmt1(pr, dc);
 	lexer_peek_leave(lx, &s);

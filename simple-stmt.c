@@ -171,7 +171,7 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
 	st = VECTOR_CALLOC(ss->ss_stmts);
 	if (st == NULL)
 		err(1, NULL);
-	st->st_root = doc_alloc(DOC_CONCAT, NULL);
+	st->st_root = doc_root(NULL);
 	st->st_indent = doc_indent(indent, st->st_root);
 	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;

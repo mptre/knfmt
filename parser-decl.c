@@ -55,7 +55,7 @@ parser_decl_peek(struct parser *pr)
 	struct doc *dc;
 	int error;
 
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl(pr, dc, 0);
 	lexer_peek_leave(lx, &s);
@@ -486,7 +486,7 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags,
 	arena_scope(pr->pr_scratch, scratch_scope);
 
 	pr->pr_simple.decl = simple_decl_enter(lx, &scratch_scope, pr->pr_op);
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
 	lexer_peek_leave(lx, &s);
@@ -518,7 +518,7 @@ parser_simple_decl_forward_enter(struct parser *pr, unsigned int flags,
 
 	pr->pr_simple.decl_forward = simple_decl_forward_enter(lx,
 	    &scratch_scope, pr->pr_op);
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
 	lexer_peek_leave(lx, &s);

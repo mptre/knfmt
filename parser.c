@@ -47,7 +47,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	unsigned int doc_flags = 0;
 	int error = 0;
 
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 
 	for (;;) {
 		struct doc *concat;

@@ -157,7 +157,7 @@ parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 
 	pr->pr_simple.decl_proto = simple_decl_proto_enter(pr->pr_lx,
 	    &scratch_scope);
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_func_decl1(pr, dc, NULL, type);
 	lexer_peek_leave(lx, &s);

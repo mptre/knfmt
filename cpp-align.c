@@ -179,7 +179,7 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 	bf = buffer_alloc(len);
 	if (bf == NULL)
 		err(1, NULL);
-	dc = doc_alloc(DOC_CONCAT, NULL);
+	dc = doc_root(NULL);
 
 	for (;;) {
 		struct doc *concat;
