@@ -4,11 +4,10 @@
 
 #include <assert.h>
 #include <err.h>
-#include <stdlib.h>
 
+#include "libks/arena.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "lexer.h"
 #include "token.h"
 
@@ -25,11 +24,11 @@ struct argument {
 };
 
 struct simple_decl_proto *
-simple_decl_proto_enter(struct lexer *lx)
+simple_decl_proto_enter(struct lexer *lx, struct arena_scope *s)
 {
 	struct simple_decl_proto *sp;
 
-	sp = ecalloc(1, sizeof(*sp));
+	sp = arena_calloc(s, 1, sizeof(*sp));
 	if (VECTOR_INIT(sp->arguments))
 		err(1, NULL);
 	sp->lx = lx;
@@ -69,7 +68,6 @@ simple_decl_proto_free(struct simple_decl_proto *sp)
 	if (sp == NULL)
 		return;
 	VECTOR_FREE(sp->arguments);
-	free(sp);
 }
 
 void

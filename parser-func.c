@@ -2,6 +2,8 @@
 
 #include "config.h"
 
+#include "libks/arena.h"
+
 #include "doc.h"
 #include "lexer.h"
 #include "parser-attributes.h"
@@ -151,7 +153,10 @@ parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 	if (!simple_enter(pr->pr_si, SIMPLE_DECL_PROTO, 0, &simple))
 		return parser_good(pr);
 
-	pr->pr_simple.decl_proto = simple_decl_proto_enter(pr->pr_lx);
+	arena_scope(pr->pr_scratch, scratch_scope);
+
+	pr->pr_simple.decl_proto = simple_decl_proto_enter(pr->pr_lx,
+	    &scratch_scope);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_func_decl1(pr, dc, NULL, type);
