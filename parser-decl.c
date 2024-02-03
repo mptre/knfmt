@@ -512,10 +512,10 @@ parser_simple_decl_forward_enter(struct parser *pr, unsigned int flags,
 	if (!simple_enter(pr->pr_si, SIMPLE_DECL_FORWARD, simple_flags, simple))
 		return parser_good(pr);
 
-	arena_scope(pr->pr_scratch, scratch);
+	arena_scope(pr->pr_scratch, scratch_scope);
 
-	pr->pr_simple.decl_forward = simple_decl_forward_enter(lx, &scratch,
-	    pr->pr_op);
+	pr->pr_simple.decl_forward = simple_decl_forward_enter(lx,
+	    &scratch_scope, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
