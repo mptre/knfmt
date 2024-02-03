@@ -3,6 +3,7 @@ struct expr_exec_arg {
 	struct simple		*si;
 	const struct options	*op;
 	struct lexer		*lx;
+	struct arena		*scratch;
 	struct ruler		*rl;
 	struct doc		*dc;
 

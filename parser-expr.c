@@ -25,6 +25,7 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 		.st		= pr->pr_st,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
+		.scratch	= pr->pr_scratch,
 		.callbacks	= {
 			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,
@@ -47,6 +48,7 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 		.si		= pr->pr_si,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
+		.scratch	= pr->pr_scratch,
 		.rl		= arg->rl,
 		.dc		= arg->dc,
 		.stop		= arg->stop,

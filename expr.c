@@ -4,15 +4,14 @@
 
 #include <assert.h>
 #include <err.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
 #include "libks/consistency.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -110,6 +109,7 @@ struct expr_state {
 #define es_dc		es_ea.dc
 #define es_flags	es_ea.flags
 
+	struct arena_scope	*es_scratch_scope;
 	const struct expr_rule	*es_er;
 	struct token		*es_tk;
 	struct buffer		*es_bf;
@@ -188,7 +188,7 @@ static struct doc	*expr_doc_soft0(struct expr *, struct expr_state *,
     struct doc *, int, const char *, int);
 
 static void	expr_state_init(struct expr_state *,
-    const struct expr_exec_arg *, enum expr_mode);
+    const struct expr_exec_arg *, enum expr_mode, struct arena_scope *);
 static void	expr_state_reset(struct expr_state *);
 
 static const struct expr_rule	*expr_find_rule(const struct token *, int);
@@ -303,7 +303,9 @@ expr_exec(const struct expr_exec_arg *ea)
 	struct doc *dc, *expr, *indent, *optional;
 	struct expr *ex;
 
-	expr_state_init(&es, ea, EXPR_MODE_EXEC);
+	arena_scope(ea->scratch, scratch_scope);
+
+	expr_state_init(&es, ea, EXPR_MODE_EXEC, &scratch_scope);
 
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
@@ -345,7 +347,9 @@ expr_peek(const struct expr_exec_arg *ea, struct token **tk)
 	struct lexer *lx = ea->lx;
 	int peek = 0;
 
-	expr_state_init(&es, ea, EXPR_MODE_PEEK);
+	arena_scope(ea->scratch, scratch_scope);
+
+	expr_state_init(&es, ea, EXPR_MODE_PEEK, &scratch_scope);
 
 	lexer_peek_enter(lx, &s);
 	ex = expr_exec1(&es, PC0);
@@ -656,7 +660,7 @@ expr_alloc(enum expr_type type, const struct expr_state *es)
 {
 	struct expr *ex;
 
-	ex = ecalloc(1, sizeof(*ex));
+	ex = arena_calloc(es->es_scratch_scope, 1, sizeof(*ex));
 	ex->ex_type = type;
 	ex->ex_tk = es->es_tk;
 	return ex;
@@ -683,7 +687,6 @@ expr_free(struct expr *ex)
 	} else if (ex->ex_type == EXPR_RECOVER) {
 		doc_free(ex->ex_dc);
 	}
-	free(ex);
 }
 
 static struct doc *
@@ -1261,7 +1264,7 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 
 static void
 expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
-    enum expr_mode MAYBE_UNUSED(mode))
+    enum expr_mode MAYBE_UNUSED(mode), struct arena_scope *scratch_scope)
 {
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->si);
 	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
@@ -1269,6 +1272,7 @@ expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
 
 	memset(es, 0, sizeof(*es));
 	es->es_ea = *ea;
+	es->es_scratch_scope = scratch_scope;
 }
 
 static void
