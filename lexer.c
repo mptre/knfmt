@@ -205,8 +205,6 @@ lexer_get_path(const struct lexer *lx)
 int
 lexer_getc(struct lexer *lx, unsigned char *ch)
 {
-	struct lexer_state *st = &lx->lx_st;
-	const char *buf;
 	size_t off;
 	unsigned char c;
 
@@ -221,12 +219,11 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		return 0;
 	}
 
-	off = st->st_off++;
-	buf = &lx->lx_input.ptr[off];
-	c = (unsigned char)buf[0];
+	off = lx->lx_st.st_off++;
+	c = (unsigned char)lx->lx_input.ptr[off];
 	if (unlikely(c == '\n')) {
-		st->st_lno++;
-		lexer_line_alloc(lx, st->st_lno);
+		lx->lx_st.st_lno++;
+		lexer_line_alloc(lx, lx->lx_st.st_lno);
 	}
 	*ch = c;
 
