@@ -309,20 +309,21 @@ style_parse(const char *path, struct arena_scope *eternal_scope,
 	struct buffer *bf = NULL;
 	struct style *st;
 
+	arena_scope(scratch, s);
+
 	if (path != NULL) {
-		bf = buffer_read(path);
+		bf = arena_buffer_read(&s, path);
 	} else {
 		int fd;
 
 		path = ".clang-format";
 		fd = searchpath(path, NULL);
 		if (fd != -1) {
-			bf = buffer_read_fd(fd);
+			bf = arena_buffer_read_fd(&s, fd);
 			close(fd);
 		}
 	}
 	st = style_parse_buffer(bf, path, eternal_scope, scratch, op);
-	buffer_free(bf);
 	if (st != NULL && trace(op, 's') >= 2)
 		style_dump(st);
 	return st;
