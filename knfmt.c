@@ -238,7 +238,8 @@ fileformat(struct main_context *c, struct file *fe)
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(lx, c->style, c->simple, c->scratch, c->options);
+	pr = parser_alloc(lx, c->style, c->simple, &eternal_scope, c->scratch,
+	    c->options);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
@@ -259,7 +260,6 @@ fileformat(struct main_context *c, struct file *fe)
 out:
 	if (lx != NULL && error)
 		lexer_error_flush(lx);
-	parser_free(pr);
 	lexer_free(lx);
 	return error;
 }

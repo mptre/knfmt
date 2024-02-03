@@ -801,7 +801,8 @@ context_init(struct context *cx, const char *src)
 		.arg		= cx->cl,
 	    },
 	});
-	cx->pr = parser_alloc(cx->lx, cx->st, cx->si, cx->scratch, &cx->op);
+	cx->pr = parser_alloc(cx->lx, cx->st, cx->si, &cx->eternal_scope,
+	    cx->scratch, &cx->op);
 }
 
 static void
@@ -821,14 +822,8 @@ context_reset(struct context *cx)
 	simple_free(cx->si);
 	cx->si = NULL;
 
-	parser_free(cx->pr);
-	cx->pr = NULL;
-
 	lexer_free(cx->lx);
 	cx->lx = NULL;
-
-	parser_free(cx->pr);
-	cx->pr = NULL;
 }
 
 static int

@@ -2,13 +2,10 @@
 
 #include "config.h"
 
-#include <stdlib.h>
-
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/compiler.h"
 
-#include "alloc.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -27,25 +24,18 @@ parser_get_error(const struct parser *pr)
 
 struct parser *
 parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
-    struct arena *scratch, const struct options *op)
+    struct arena_scope *eternal_scope, struct arena *scratch,
+    const struct options *op)
 {
 	struct parser *pr;
 
-	pr = ecalloc(1, sizeof(*pr));
+	pr = arena_calloc(eternal_scope, 1, sizeof(*pr));
 	pr->pr_st = st;
 	pr->pr_si = si;
 	pr->pr_op = op;
 	pr->pr_lx = lx;
 	pr->pr_scratch = scratch;
 	return pr;
-}
-
-void
-parser_free(struct parser *pr)
-{
-	if (pr == NULL)
-		return;
-	free(pr);
 }
 
 int
