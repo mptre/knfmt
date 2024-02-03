@@ -814,9 +814,6 @@ context_reset(struct context *cx)
 	cx->op.test = 1;
 
 	buffer_reset(cx->bf);
-
-	clang_free(cx->cl);
-	cx->cl = NULL;
 }
 
 static int

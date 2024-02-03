@@ -51,6 +51,7 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
+static void		 clang_free(struct clang *);
 static void		 clang_done(struct lexer *, void *);
 static struct token	*clang_read(struct lexer *, void *);
 static struct token	*clang_read_prefix(struct clang *, struct lexer *);
@@ -133,6 +134,7 @@ clang_alloc(const struct style *st, struct simple *si,
 	struct clang *cl;
 
 	cl = arena_calloc(eternal_scope, 1, sizeof(*cl));
+	arena_cleanup(eternal_scope, clang_free, cl);
 	TAILQ_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
@@ -145,12 +147,9 @@ clang_alloc(const struct style *st, struct simple *si,
 	return cl;
 }
 
-void
+static void
 clang_free(struct clang *cl)
 {
-	if (cl == NULL)
-		return;
-
 	VECTOR_FREE(cl->branches);
 }
 

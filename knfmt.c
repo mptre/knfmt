@@ -221,7 +221,6 @@ fileformat(struct main_context *c, struct file *fe)
 	    .error_flush	= options_trace_level(&c->options, 'l') > 0,
 	    .callbacks		= clang_lexer_callbacks(clang),
 	});
-	clang_free(clang);
 	if (lx == NULL) {
 		error = 1;
 		goto out;
