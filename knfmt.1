@@ -41,6 +41,9 @@ is also interoperable with clang-format.
 A subset of the available style options found in a
 .Pa .clang-format
 file located in any directory along the current working directory is honored.
+Some style options are exclusive to
+.Nm
+and not supported by clang-format, annotated as extensions.
 The supported style options and corresponding values are as follows:
 .Bl -tag -width Ds
 .It Cm AlignAfterOpenBracket
@@ -339,6 +342,21 @@ Regroup blocks of includes according to
 .El
 .It Cm IncludeCategories
 Rules used to group includes into blocks.
+.It Cm IncludeGuards Pq extension
+Number of path components used to construct header include guards.
+.Bl -tag -width Ds
+.It Cm >0
+Example using two path components.
+.Bd -literal
+$ cat libks/vector.h
+#ifndef LIBKS_VECTOR_H
+#define LIBKS_VECTOR_H
+#endif /* !LIBKS_VECTOR_H */
+.Ed
+.It Cm 0
+Disable include guards.
+.Pq default
+.El
 .It Cm IndentWidth
 Indentation width.
 .Pq default 8

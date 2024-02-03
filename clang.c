@@ -14,8 +14,10 @@
 
 #include "comment.h"
 #include "cpp-align.h"
+#include "cpp-include-guard.h"
 #include "cpp-include.h"
 #include "lexer.h"
+#include "style.h"
 #include "token.h"
 #include "trace.h"
 
@@ -172,6 +174,8 @@ clang_done(struct lexer *lx, void *arg)
 
 	clang_branch_purge(cl, lx);
 	cpp_include_done(cl->ci);
+	cpp_include_guard(cl->st, lx, cl->arena.eternal_scope,
+	    cl->arena.scratch);
 }
 
 static struct token *
@@ -297,6 +301,7 @@ out:
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		switch (prefix->tk_type) {
 		case TOKEN_CPP_IF:
+		case TOKEN_CPP_IFNDEF:
 			clang_branch_enter(cl, lx, prefix, tk);
 			break;
 		case TOKEN_CPP_ELSE:
@@ -606,13 +611,17 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		ch = peek;
 	}
 
-	if (lexer_buffer_streq(lx, &cmpst, "if"))
+	if (lexer_buffer_streq(lx, &cmpst, "ifndef"))
+		type = TOKEN_CPP_IFNDEF;
+	else if (lexer_buffer_streq(lx, &cmpst, "if"))
 		type = TOKEN_CPP_IF;
 	else if (lexer_buffer_streq(lx, &cmpst, "else") ||
 	    lexer_buffer_streq(lx, &cmpst, "elif"))
 		type = TOKEN_CPP_ELSE;
 	else if (lexer_buffer_streq(lx, &cmpst, "endif"))
 		type = TOKEN_CPP_ENDIF;
+	else if (lexer_buffer_streq(lx, &cmpst, "define"))
+		type = TOKEN_CPP_DEFINE;
 	else if (lexer_buffer_streq(lx, &cmpst, "include"))
 		type = TOKEN_CPP_INCLUDE;
 

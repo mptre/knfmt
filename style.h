@@ -73,6 +73,7 @@ struct style;
 	  OP(Preserve)							\
 	  OP(Regroup)							\
 	OP(IncludeCategories)						\
+	OP(IncludeGuards)						\
 	OP(IndentWidth)							\
 	OP(Language)							\
 	  OP(Cpp)							\

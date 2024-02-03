@@ -55,6 +55,7 @@ testcase() {
 	local _clang=0
 	local _diff="${_wrkdir}/diff"
 	local _exp=0
+	local _ext
 	local _file
 	local _flags="d"
 	local _got=0
@@ -79,9 +80,10 @@ testcase() {
 	[ "${1:-}" = "--" ] && shift
 
 	_name="${_file##*/}"
-	_base="${_name%.c}"
-	_ok="${_file%.c}.ok"
-	_patch="${_file%.c}.patch"
+	_ext=".${_name##*.}"
+	_base="${_name%${_ext}}"
+	_ok="${_base}.ok"
+	_patch="${_file%.*}.patch"
 
 	if [ "$_clang" -eq 1 ]; then
 		sed -n -e '/^[\/ ]\* /s/^[\/ ]\* //p' -e '/^$/q' "$_file" |
@@ -111,9 +113,10 @@ testcase() {
 			return 1
 		fi
 	elif [ -e "$_ok" ]; then
-		_tmp="${_wrkdir}/test.c"
+		mkdir "${_wrkdir}/tests"
+		_tmp="${_wrkdir}/tests/test${_ext}"
 		commstrip "$_file" >"$_tmp"
-		(cd "$_wrkdir" && ${EXEC:-} "${KNFMT}" "$@" test.c) \
+		(cd "${_tmp}/.." && ${EXEC:-} "${KNFMT}" "$@" "test${_ext}") \
 			>"$_diff" 2>&1 || _got="$?"
 		if ! diff -u -L "$_ok" -L "$_file" "$_ok" "$_diff" >"$_out" 2>&1; then
 			cat "$_out" 1>&2

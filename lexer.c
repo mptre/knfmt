@@ -1041,6 +1041,13 @@ lexer_until(struct lexer *lx, int type, struct token **tk)
 	}
 }
 
+int
+lexer_peek_last(struct lexer *lx, struct token **tk)
+{
+	*tk = TAILQ_LAST(&lx->lx_tokens, token_list);
+	return 1;
+}
+
 static const struct diffchunk *
 lexer_get_diffchunk(const struct lexer *lx, unsigned int lno)
 {

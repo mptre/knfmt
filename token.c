@@ -15,9 +15,6 @@
 static const char	*token_serialize_impl(struct arena_scope *,
     const struct token *, int);
 
-static struct token	*token_list_find(const struct token_list *, int,
-    unsigned int);
-
 static void		 strflags(struct buffer *, unsigned int);
 static const char	*token_type_str(int);
 
@@ -281,6 +278,15 @@ token_has_verbatim_line(const struct token *tk, int nlines)
 }
 
 /*
+ * Returns non-zero if the given token has any prefix.
+ */
+int
+token_has_prefixes(const struct token *tk)
+{
+	return !TAILQ_EMPTY(&tk->tk_prefixes);
+}
+
+/*
  * Returns non-zero if the given token has trailing tabs.
  */
 int
@@ -478,6 +484,18 @@ token_list_swap(struct token_list *src, unsigned int src_token_flags,
 }
 
 struct token *
+token_list_first(struct token_list *tl)
+{
+	return TAILQ_FIRST(tl);
+}
+
+struct token *
+token_list_last(struct token_list *tl)
+{
+	return TAILQ_LAST(tl, token_list);
+}
+
+struct token *
 token_find_suffix_spaces(struct token *tk)
 {
 	return token_list_find(&tk->tk_suffixes, TOKEN_SPACE,
@@ -569,7 +587,8 @@ token_branch_unlink(struct token *tk)
 	pv = tk->tk_branch.br_pv;
 	nx = tk->tk_branch.br_nx;
 
-	if (tk->tk_type == TOKEN_CPP_IF) {
+	if (tk->tk_type == TOKEN_CPP_IF ||
+	    tk->tk_type == TOKEN_CPP_IFNDEF) {
 		if (nx != NULL)
 			token_branch_unlink(nx);
 		/* Branch exhausted. */
@@ -606,7 +625,7 @@ token_flags_inherit(const struct token *tk)
 	return tk->tk_flags & TOKEN_FLAG_DIFF;
 }
 
-static struct token *
+struct token *
 token_list_find(const struct token_list *tokens, int type, unsigned int flags)
 {
 	struct token *tk;

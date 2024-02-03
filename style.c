@@ -135,6 +135,8 @@ static int	parse_ColumnLimit(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_IncludeCategories(struct style *, struct lexer *,
     const struct style_option *);
+static int	parse_IncludeGuards(struct style *, struct lexer *,
+    const struct style_option *);
 static int	parse_Priority(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_Regex(struct style *, struct lexer *,
@@ -218,6 +220,8 @@ style_init(void)
 		{ N(IncludeCategories, Priority), parse_Priority, {0} },
 		{ N(IncludeCategories, Regex), parse_Regex, {0} },
 		{ N(IncludeCategories, SortPriority), parse_Priority, {0} },
+
+		{ S(IncludeGuards), parse_IncludeGuards, {0} },
 
 		{ S(IndentWidth), parse_integer, {0} },
 
@@ -1235,6 +1239,26 @@ parse_IncludeCategories(struct style *st, struct lexer *lx,
 	st->scope = scope;
 	/* Only used by style_dump(). */
 	style_set(st, IncludeCategories, None, None);
+	return GOOD;
+}
+
+static int
+parse_IncludeGuards(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	struct token *val;
+	int error;
+
+	error = parse_integer(st, lx, so);
+	if ((error & GOOD) == 0)
+		return error;
+	if (lexer_back(lx, &val) &&
+	    token_data(val, struct yaml_token)->integer.i32 <= 0) {
+		style_set(st, IncludeGuards, Integer, 0);
+		lexer_error(lx, val, __func__, __LINE__,
+		    "integer %s too small", lexer_serialize(lx, val));
+		return FAIL;
+	}
 	return GOOD;
 }
 

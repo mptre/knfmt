@@ -1,0 +1,14 @@
+#ifndef TEST_H
+#define TEST_H
+
+#ifndef NDEBUG
+
+#define FOO 1
+
+#else
+
+#define FOO 0
+
+#endif
+
+#endif /* !TEST_H */

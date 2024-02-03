@@ -114,9 +114,11 @@ struct arena_scope;
 #define FOR_TOKEN_SENTINELS(OP)						\
 	OP(TOKEN_COMMENT,	"", 0)					\
 	OP(TOKEN_CPP,		"", 0)					\
+	OP(TOKEN_CPP_DEFINE,	"", 0)					\
 	OP(TOKEN_CPP_ELSE,	"", 0)					\
 	OP(TOKEN_CPP_ENDIF,	"", 0)					\
 	OP(TOKEN_CPP_IF,	"", 0)					\
+	OP(TOKEN_CPP_IFNDEF,	"", 0)					\
 	OP(TOKEN_CPP_INCLUDE,	"", 0)					\
 	OP(TOKEN_IDENT,		"", 0)					\
 	OP(TOKEN_LITERAL,	"", 0)					\
@@ -212,6 +214,7 @@ int	token_has_cpp(const struct token *);
 int	token_has_indent(const struct token *);
 int	token_has_line(const struct token *, int);
 int	token_has_verbatim_line(const struct token *, int);
+int	token_has_prefixes(const struct token *);
 int	token_has_suffix(const struct token *, int);
 int	token_has_tabs(const struct token *);
 int	token_has_spaces(const struct token *);
@@ -228,13 +231,17 @@ struct token	*token_prev(const struct token *);
 
 void    token_set_str(struct token *, const char *, size_t);
 
-void	token_list_prepend(struct token_list *, struct token *);
-void	token_list_append(struct token_list *, struct token *);
-void	token_list_append_after(struct token_list *, struct token *,
+void		 token_list_prepend(struct token_list *, struct token *);
+void		 token_list_append(struct token_list *, struct token *);
+void		 token_list_append_after(struct token_list *, struct token *,
     struct token *);
-void	token_list_remove(struct token_list *, struct token *);
-void	token_list_swap(struct token_list *, unsigned int, struct token_list *,
+void		 token_list_remove(struct token_list *, struct token *);
+void		 token_list_swap(struct token_list *, unsigned int,
+    struct token_list *,
     unsigned int);
+struct token	*token_list_first(struct token_list *);
+struct token	*token_list_last(struct token_list *);
+struct token	*token_list_find(const struct token_list *, int, unsigned int);
 
 struct token	*token_find_suffix_spaces(struct token *);
 
