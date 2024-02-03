@@ -228,7 +228,8 @@ main(int argc, char *argv[])
 	test_parser_type_peek("static void foo", "static void foo");
 	test_parser_type_peek("void foo f(void)", "void foo");
 	test_parser_type_peek("char[]", "char [ ]");
-	test_parser_type_peek("struct wsmouse_param[]",
+	test_parser_type_peek(
+	    "struct wsmouse_param[]",
 	    "struct wsmouse_param [ ]");
 	test_parser_type_peek("void)", "void");
 	test_parser_type_peek("void,", "void");
@@ -250,31 +251,40 @@ main(int argc, char *argv[])
 	    "const struct filterops * const");
 	test_parser_type_peek("long __guard_local __attribute__", "long");
 	test_parser_type_peek("unsigned int f:1", "unsigned int");
-	test_parser_type_peek("usbd_status (*v)(void)",
+	test_parser_type_peek(
+	    "usbd_status (*v)(void)",
 	    "usbd_status ( * v ) ( void )");
 	test_parser_type_peek("register char", "register char");
 	test_parser_type_peek("...", "...");
 	test_parser_type_peek("int (*f[])(void)", "int ( * f [ ] ) ( void )");
-	test_parser_type_peek("int (* volatile f)(void);",
+	test_parser_type_peek(
+	    "int (* volatile f)(void);",
 	    "int ( * volatile f ) ( void )");
-	test_parser_type_peek("void (*const *f)(void);",
+	test_parser_type_peek(
+	    "void (*const *f)(void);",
 	    "void ( * const * f ) ( void )");
 	test_parser_type_peek("int (**f)(void);", "int ( * * f ) ( void )");
 	test_parser_type_peek("int (*f(void))(void)", "int");
-	test_parser_type_peek("void (*f[1])(void)",
+	test_parser_type_peek(
+	    "void (*f[1])(void)",
 	    "void ( * f [ 1 ] ) ( void )");
 	test_parser_type_peek("void (*)", "void ( * )");
 	test_parser_type_peek("char (*v)[1]", "char ( * v ) [ 1 ]");
-	test_parser_type_peek("P256_POINT (*table)[16]",
+	test_parser_type_peek(
+	    "P256_POINT (*table)[16]",
 	    "P256_POINT ( * table ) [ 16 ]");
 	test_parser_type_peek("char (*)[TP_BSIZE]", "char ( * ) [ TP_BSIZE ]");
-	test_parser_type_peek("STACK_OF(X509_EXTENSION) x",
+	test_parser_type_peek(
+	    "STACK_OF(X509_EXTENSION) x",
 	    "STACK_OF ( X509_EXTENSION ) x");
-	test_parser_type_peek("STACK_OF(X509_EXTENSION) *",
+	test_parser_type_peek(
+	    "STACK_OF(X509_EXTENSION) *",
 	    "STACK_OF ( X509_EXTENSION ) *");
-	test_parser_type_peek("const STACK_OF(X509_EXTENSION)*",
+	test_parser_type_peek(
+	    "const STACK_OF(X509_EXTENSION)*",
 	    "const STACK_OF ( X509_EXTENSION ) *");
-	test_parser_type_peek("int\nmain(foo)\n\tfoo_t *",
+	test_parser_type_peek(
+	    "int\nmain(foo)\n\tfoo_t *",
 	    "int");
 	test_parser_type_peek("u_int:4", "u_int");
 
