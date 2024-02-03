@@ -9,7 +9,6 @@
 #include "libks/arena.h"
 #include "libks/buffer.h"
 
-#include "alloc.h"
 #include "clang.h"
 #include "doc.h"
 #include "expr.h"
@@ -37,34 +36,34 @@ struct context;
 #define test(e) do {							\
 	error |= (e);							\
 	if (xflag && error) goto out;					\
-	context_reset(cx);						\
+	context_reset(&cx);						\
 } while (0)
 
 #define test_parser_expr(a, b) \
-	test(test_parser_expr0(cx, (a), (b), __LINE__))
+	test(test_parser_expr0(&cx, (a), (b), __LINE__))
 static int	test_parser_expr0(struct context *, const char *, const char *,
     int);
 
 #define test_parser_type_peek(a, b) \
-	test(test_parser_type_peek0(cx, (a), (b), 0, 1, __LINE__))
+	test(test_parser_type_peek0(&cx, (a), (b), 0, 1, __LINE__))
 #define test_parser_type_peek_flags(a, b, c) \
-	test(test_parser_type_peek0(cx, (b), (c), (a), 1, __LINE__))
+	test(test_parser_type_peek0(&cx, (b), (c), (a), 1, __LINE__))
 #define test_parser_type_peek_error(a) \
-	test(test_parser_type_peek0(cx, (a), "", 0, 0, __LINE__))
+	test(test_parser_type_peek0(&cx, (a), "", 0, 0, __LINE__))
 static int	test_parser_type_peek0(struct context *, const char *,
     const char *, unsigned int, int, int);
 
 #define test_parser_attributes_peek(a, b) \
-	test(test_parser_attributes_peek0(cx, (a), (b), 1, 0, __LINE__))
+	test(test_parser_attributes_peek0(&cx, (a), (b), 1, 0, __LINE__))
 #define test_parser_attributes_peek_flags(a, b, c) \
-	test(test_parser_attributes_peek0(cx, (b), (c), 1, (a), __LINE__))
+	test(test_parser_attributes_peek0(&cx, (b), (c), 1, (a), __LINE__))
 #define test_parser_attributes_peek_flags_error(a, b) \
-	test(test_parser_attributes_peek0(cx, (b), "", 0, (a), __LINE__))
+	test(test_parser_attributes_peek0(&cx, (b), "", 0, (a), __LINE__))
 static int	test_parser_attributes_peek0(struct context *, const char *,
     const char *, int, unsigned int, int);
 
 #define test_lexer_read(a, b) \
-	test(test_lexer_read0(cx, (a), (b), __LINE__))
+	test(test_lexer_read0(&cx, (a), (b), __LINE__))
 static int	test_lexer_read0(struct context *, const char *, const char *,
     int);
 
@@ -75,17 +74,17 @@ struct test_token_move {
 	const char	*want[16];
 };
 #define test_lexer_move_before(a) \
-	test(test_lexer_move_before0(cx, (a), __LINE__))
+	test(test_lexer_move_before0(&cx, (a), __LINE__))
 static int	test_lexer_move_before0(struct context *,
     struct test_token_move *, int);
 
 #define test_token_position_after(a) \
-	test(test_token_position_after0(cx, (a), __LINE__))
+	test(test_token_position_after0(&cx, (a), __LINE__))
 static int	test_token_position_after0(struct context *,
     struct test_token_move *, int);
 
 #define test_style(a, b, c) \
-	test(test_style0(cx, (a), (b), (c), __LINE__))
+	test(test_style0(&cx, (a), (b), (c), __LINE__))
 static int	test_style0(struct context *, const char *, int, int, int);
 
 #define test_strwidth(a, b, c) \
@@ -93,7 +92,7 @@ static int	test_style0(struct context *, const char *, int, int, int);
 static int	test_strwidth0(const char *, size_t, size_t, int);
 
 #define test_tmptemplate(a, b) \
-	test(test_tmptemplate0(cx, (a), (b), __LINE__))
+	test(test_tmptemplate0(&cx, (a), (b), __LINE__))
 static int	test_tmptemplate0(struct context *, const char *, const char *,
     int);
 
@@ -116,10 +115,10 @@ struct context {
 
 static void	usage(void) __attribute__((__noreturn__));
 
-static struct context	*context_alloc(void);
-static void		 context_free(struct context *);
-static void		 context_init(struct context *, const char *);
-static void		 context_reset(struct context *);
+static void	context_alloc(struct context *);
+static void	context_free(struct context *);
+static void	context_init(struct context *, const char *);
+static void	context_reset(struct context *);
 
 static int	assert_token_move(struct context *, const char **, const char *,
     int);
@@ -130,7 +129,7 @@ static char	*tokens_concat(struct lexer *, const struct token *);
 int
 main(int argc, char *argv[])
 {
-	struct context *cx;
+	struct context cx = {0};
 	int error = 0;
 	int xflag = 0;
 	int ch;
@@ -148,7 +147,7 @@ main(int argc, char *argv[])
 	clang_init();
 	expr_init();
 	style_init();
-	cx = context_alloc();
+	context_alloc(&cx);
 
 	test_parser_expr("1", "(1)");
 	test_parser_expr("x", "(x)");
@@ -444,7 +443,7 @@ main(int argc, char *argv[])
 	test_tmptemplate("/root/file.c", "/root/.file.c.XXXXXXXX");
 
 out:
-	context_free(cx);
+	context_free(&cx);
 	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();
@@ -756,12 +755,9 @@ test_tmptemplate0(struct context *c, const char *path, const char *exp, int lno)
 	return error;
 }
 
-static struct context *
-context_alloc(void)
+static void
+context_alloc(struct context *cx)
 {
-	struct context *cx;
-
-	cx = ecalloc(1, sizeof(*cx));
 	cx->arena.scratch = arena_alloc();
 	cx->arena.eternal = arena_alloc();
 	cx->arena.eternal_scope = arena_scope_enter(cx->arena.eternal);
@@ -770,7 +766,6 @@ context_alloc(void)
 	if (cx->bf == NULL)
 		err(1, NULL);
 	context_reset(cx);
-	return cx;
 }
 
 static void
@@ -785,7 +780,6 @@ context_free(struct context *cx)
 	arena_free(cx->arena.eternal);
 	arena_free(cx->arena.scratch);
 	arena_free(cx->arena.doc);
-	free(cx);
 }
 
 static void
