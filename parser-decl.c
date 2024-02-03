@@ -2,6 +2,8 @@
 
 #include "config.h"
 
+#include "libks/arena.h"
+
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
@@ -13,6 +15,7 @@
 #include "parser-priv.h"
 #include "parser-type.h"
 #include "ruler.h"
+#include "simple-decl-forward.h"
 #include "simple-decl.h"
 #include "simple.h"
 #include "style.h"
@@ -41,6 +44,9 @@ static int	parser_decl_bitfield(struct parser *, struct doc *);
 static int	parser_simple_decl_enter(struct parser *, unsigned int,
     struct simple_cookie *);
 
+static int	parser_simple_decl_forward_enter(struct parser *, unsigned int,
+    struct simple_cookie *);
+
 int
 parser_decl_peek(struct parser *pr)
 {
@@ -62,12 +68,18 @@ parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	int error;
 
-	simple_cookie(simple);
-	error = parser_simple_decl_enter(pr, flags, &simple);
+	simple_cookie(simple_decl);
+	error = parser_simple_decl_enter(pr, flags, &simple_decl);
 	if (error & HALT)
 		return error;
-	error = parser_decl1(pr, dc, flags);
-	return error;
+
+	simple_cookie(simple_decl_forward);
+	error = parser_simple_decl_forward_enter(pr, flags,
+	    &simple_decl_forward);
+	if (error & HALT)
+		return error;
+
+	return parser_decl1(pr, dc, flags);
 }
 
 static int
@@ -258,10 +270,18 @@ out:
 			while (lexer_if(lx, TOKEN_SEMI, &nx))
 				lexer_remove(lx, nx, 1);
 		}
+
 		doc_token(semi, concat);
+
 		if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
 			simple_decl_semi(pr->pr_simple.decl, semi);
+
+		if (is_simple_enabled(pr->pr_si, SIMPLE_DECL_FORWARD)) {
+			simple_decl_forward(pr->pr_simple.decl_forward, beg,
+			    semi);
+		}
 	}
+
 	return parser_good(pr);
 }
 
@@ -476,4 +496,35 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags,
 	simple_leave(simple);
 
 	return error;
+}
+
+static int
+parser_simple_decl_forward_enter(struct parser *pr, unsigned int flags,
+    struct simple_cookie *simple)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct doc *dc;
+	unsigned int simple_flags;
+	int error;
+
+	simple_flags = (flags & PARSER_DECL_SIMPLE_FORWARD) ? 0 : SIMPLE_IGNORE;
+	if (!simple_enter(pr->pr_si, SIMPLE_DECL_FORWARD, simple_flags, simple))
+		return parser_good(pr);
+
+	arena_scope(pr->pr_scratch, scratch);
+
+	pr->pr_simple.decl_forward = simple_decl_forward_enter(lx, &scratch);
+	dc = doc_alloc(DOC_CONCAT, NULL);
+	lexer_peek_enter(lx, &s);
+	error = parser_decl1(pr, dc, flags);
+	lexer_peek_leave(lx, &s);
+	doc_free(dc);
+	if (error & GOOD)
+		simple_decl_forward_leave(pr->pr_simple.decl_forward);
+	simple_decl_forward_free(pr->pr_simple.decl_forward);
+	pr->pr_simple.decl_forward = NULL;
+	simple_leave(simple);
+
+	return parser_good(pr);
 }

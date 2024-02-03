@@ -11,6 +11,8 @@ struct parser;
 #define PARSER_DECL_SIMPLE			0x00000008u
 /* Trim redundant semicolon(s) after declaration. */
 #define PARSER_DECL_TRIM_SEMI			0x00000010u
+/* Simplify forward declarations. */
+#define PARSER_DECL_SIMPLE_FORWARD		0x00000020u
 
 int	parser_decl_peek(struct parser *);
 int	parser_decl(struct parser *, struct doc *, unsigned int);

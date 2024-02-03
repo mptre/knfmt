@@ -127,6 +127,13 @@ is_pass_mutually_exclusive(enum simple_pass pass)
 	case SIMPLE_STATIC:
 		/* Nested under SIMPLE_DECL and should not interfere. */
 		return 0;
+	case SIMPLE_DECL_FORWARD:
+		/*
+		 * Nested under SIMPLE_DECL but only operates on root level
+		 * declarations as opposed to SIMPLE_DECL which only operates on
+		 * nested levels. They should therefore not interfere.
+		 */
+		return 0;
 	case SIMPLE_EXPR_SIZEOF:
 		/* Nested under SIMPLE_EXPR_PARENS and should not interfere. */
 		return 0;

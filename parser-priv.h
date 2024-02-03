@@ -24,6 +24,7 @@ struct parser {
 	struct {
 		struct simple_stmt		*stmt;
 		struct simple_decl		*decl;
+		struct simple_decl_forward	*decl_forward;
 		struct simple_decl_proto	*decl_proto;
 	} pr_simple;
 

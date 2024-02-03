@@ -1,0 +1,5 @@
+struct a;
+struct b;
+int x;
+struct a;
+struct b;

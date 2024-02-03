@@ -129,7 +129,8 @@ parser_exec1(struct parser *pr, struct doc *dc)
 
 	error = parser_decl(pr, dc,
 	    PARSER_DECL_BREAK | PARSER_DECL_LINE |
-	    PARSER_DECL_ROOT | PARSER_DECL_TRIM_SEMI);
+	    PARSER_DECL_ROOT | PARSER_DECL_TRIM_SEMI |
+	    PARSER_DECL_SIMPLE_FORWARD);
 	if (error & NONE)
 		error = parser_func_impl(pr, dc);
 	if (error & NONE)
