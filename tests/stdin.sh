@@ -11,3 +11,6 @@ if ! grep -q 'usage' "${_wrkdir}/out"; then
 	cat "${_wrkdir}/out"
 	exit 1
 fi
+
+# Inplace edit in diff mode is considered valid.
+${EXEC:-} "$KNFMT" -Di </dev/null

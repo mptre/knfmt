@@ -90,7 +90,7 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 	if ((op.diffparse && argc > 0) ||
-	    (op.inplace && argc == 0))
+	    (!op.diffparse && op.inplace && argc == 0))
 		usage();
 
 	if (op.diff) {
