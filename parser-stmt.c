@@ -52,12 +52,16 @@ int
 parser_stmt_peek(struct parser *pr)
 {
 	struct doc *dc;
+	int error, simple;
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
 	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope);
 
 	dc = doc_root(&doc_scope);
-	return parser_stmt1(pr, dc) & GOOD;
+	simple = simple_disable(pr->pr_si);
+	error = parser_stmt1(pr, dc);
+	simple_enable(pr->pr_si, simple);
+	return error & GOOD;
 }
 
 static int

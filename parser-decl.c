@@ -54,14 +54,16 @@ parser_decl_peek(struct parser *pr)
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc;
-	int error;
+	int error, simple;
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
 	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope);
 
 	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
+	simple = simple_disable(pr->pr_si);
 	error = parser_decl(pr, dc, 0);
+	simple_enable(pr->pr_si, simple);
 	lexer_peek_leave(lx, &s);
 	return error & GOOD;
 }
