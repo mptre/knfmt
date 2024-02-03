@@ -34,22 +34,21 @@ struct expr_exec_arg {
 	struct {
 		/*
 		 * Invoked when an invalid expression is encountered.
-		 * Returning non-zero implies that the expression parser can
-		 * continue.
+		 * Returning anything other than NULL implies that the
+		 * expression parser can continue.
 		 */
-		int	 (*recover)(const struct expr_exec_arg *, struct doc *,
-		    void *);
+		struct doc	*(*recover)(const struct expr_exec_arg *, void *);
 
 		/*
 		 * Expected to consume a type as part of a cast expression.
-		 * Returning non-zero implies that the expression parser can
-		 * continue.
+		 * Returning anything other than NULL implies that the
+		 * expression parser can continue.
 		 */
-		int	 (*recover_cast)(const struct expr_exec_arg *,
-		    struct doc *, void *);
+		struct doc	*(*recover_cast)(const struct expr_exec_arg *,
+		    void *);
 
 		/* Opaque argument passed to recover routines. */
-		void	*arg;
+		void		*arg;
 	} callbacks;
 };
 

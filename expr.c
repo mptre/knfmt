@@ -425,11 +425,9 @@ expr_exec_recover(struct expr_state *es)
 	struct doc *dc;
 	struct expr *ex;
 
-	dc = doc_alloc(DOC_CONCAT, NULL);
-	if (!ea->callbacks.recover(ea, dc, ea->callbacks.arg)) {
-		doc_free(dc);
+	dc = ea->callbacks.recover(ea, ea->callbacks.arg);
+	if (dc == NULL)
 		return NULL;
-	}
 	ex = expr_alloc(EXPR_RECOVER, es);
 	ex->ex_dc = dc;
 	return ex;
@@ -442,11 +440,9 @@ expr_exec_recover_cast(struct expr_state *es)
 	struct doc *dc;
 	struct expr *ex;
 
-	dc = doc_alloc(DOC_CONCAT, NULL);
-	if (!ea->callbacks.recover_cast(ea, dc, ea->callbacks.arg)) {
-		doc_free(dc);
+	dc = ea->callbacks.recover_cast(ea, ea->callbacks.arg);
+	if (dc == NULL)
 		return NULL;
-	}
 	ex = expr_alloc(EXPR_RECOVER, es);
 	ex->ex_dc = dc;
 	return ex;
