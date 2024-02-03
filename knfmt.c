@@ -157,7 +157,6 @@ out:
 	files_free(&files);
 	buffer_free(c.dst);
 	buffer_free(c.src);
-	style_free(c.style);
 	arena_free(c.arena.scratch);
 	arena_free(c.arena.eternal);
 	arena_free(c.arena.doc);

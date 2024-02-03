@@ -121,7 +121,6 @@ struct style	*style_parse(const char *, struct arena_scope *,
     struct arena *, const struct options *);
 struct style	*style_parse_buffer(const struct buffer *, const char *,
     struct arena_scope *, struct arena *, const struct options *);
-void		 style_free(struct style *);
 
 unsigned int	style(const struct style *, int);
 int		style_brace_wrapping(const struct style *, int);

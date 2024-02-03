@@ -95,6 +95,7 @@ struct yaml_token {
 	} integer;
 };
 
+static void	style_free(struct style *);
 static void	style_defaults(struct style *);
 static void	style_set(struct style *, int, int, unsigned int);
 static int	style_parse_yaml(struct style *, const char *,
@@ -381,6 +382,7 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 	struct style *st;
 
 	st = arena_calloc(eternal_scope, 1, sizeof(*st));
+	arena_cleanup(eternal_scope, style_free, st);
 	st->eternal_scope = eternal_scope;
 	st->scratch = scratch;
 	st->op = op;
@@ -400,11 +402,9 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 	return st;
 }
 
-void
+static void
 style_free(struct style *st)
 {
-	if (st == NULL)
-		return;
 	while (!VECTOR_EMPTY(st->include_categories)) {
 		struct include_category *ic;
 

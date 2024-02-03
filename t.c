@@ -714,7 +714,6 @@ test_style0(struct context *cx, const char *src, int key, int exp, int lno)
 		    lno, exp, act);
 		error = 1;
 	}
-	style_free(st);
 	return error;
 }
 
@@ -824,9 +823,6 @@ context_reset(struct context *cx)
 
 	clang_free(cx->cl);
 	cx->cl = NULL;
-
-	style_free(cx->st);
-	cx->st = NULL;
 }
 
 static int
