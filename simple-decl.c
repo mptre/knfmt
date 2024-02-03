@@ -300,8 +300,6 @@ token_range_str(const struct token_range *tr, struct arena_scope *s)
 	int ntokens = 0;
 
 	bf = arena_buffer_alloc(s, 64);
-	if (bf == NULL)
-		err(1, NULL);
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
 		if (tk->tk_type == TOKEN_STAR)
 			continue;

@@ -4,7 +4,6 @@
 
 #include <sys/stat.h>
 
-#include <err.h>
 #include <fcntl.h>
 #include <limits.h>	/* PATH_MAX */
 #include <string.h>
@@ -76,9 +75,6 @@ tmptemplate(const char *path, struct arena_scope *s)
 	const char *basename, *p;
 
 	bf = arena_buffer_alloc(s, PATH_MAX);
-	if (bf == NULL)
-		err(1, NULL);
-
 	p = strrchr(path, '/');
 	if (p != NULL) {
 		buffer_puts(bf, path, (size_t)(&p[1] - path));
