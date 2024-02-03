@@ -4,7 +4,6 @@
 
 #include <assert.h>
 #include <err.h>
-#include <errno.h>
 #include <float.h>
 #include <stdarg.h>
 #include <stdint.h>

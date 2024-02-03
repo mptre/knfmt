@@ -1,11 +1,6 @@
-struct arena;
 struct arena_scope;
 struct buffer;
 struct diffchunk;
-struct lexer;
-struct options;
-struct simple;
-struct style;
 
 #define CONCAT(x, y) CONCAT2(x, y)
 #define CONCAT2(x, y) x ## y

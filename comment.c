@@ -3,7 +3,6 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <err.h>
 #include <string.h>
 
 #include "libks/arena-buffer.h"
