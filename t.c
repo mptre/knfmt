@@ -99,15 +99,19 @@ static int	test_tmptemplate0(struct context *, const char *, const char *,
 
 struct context {
 	struct options		 op;
-	struct arena		*eternal;
-	struct arena_scope	 eternal_scope;
-	struct arena		*scratch;
 	struct buffer		*bf;
 	struct style		*st;
 	struct simple		*si;
 	struct clang		*cl;
 	struct lexer		*lx;
 	struct parser		*pr;
+
+	struct {
+		struct arena		*eternal;
+		struct arena_scope	 eternal_scope;
+		struct arena		*scratch;
+		struct arena		*doc;
+	} arena;
 };
 
 static void	usage(void) __attribute__((__noreturn__));
@@ -464,7 +468,9 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
 
 	context_init(cx, src);
 
-	concat = doc_root(NULL);
+	parser_doc_scope(cx->pr, cookie, cx->arena.doc, doc_scope);
+
+	concat = doc_root(&doc_scope);
 	error = parser_expr(cx->pr, &expr, &(struct parser_expr_arg){
 	    .dc	= concat,
 	});
@@ -703,8 +709,8 @@ test_style0(struct context *cx, const char *src, int key, int exp, int lno)
 
 	context_init(cx, src);
 	options_trace_parse(&cx->op, "ss");
-	st = style_parse_buffer(cx->bf, ".clang-format", &cx->eternal_scope,
-	    cx->scratch, &cx->op);
+	st = style_parse_buffer(cx->bf, ".clang-format",
+	    &cx->arena.eternal_scope, cx->arena.scratch, &cx->op);
 	act = (int)style(st, key);
 	if (exp != act) {
 		fprintf(stderr, "style_parse:%d:\n\texp %d\n\tgot %d\n",
@@ -735,7 +741,7 @@ test_tmptemplate0(struct context *c, const char *path, const char *exp, int lno)
 	char *act;
 	int error = 0;
 
-	arena_scope(c->scratch, s);
+	arena_scope(c->arena.scratch, s);
 
 	act = tmptemplate(path, &s);
 	if (strcmp(act, exp) != 0) {
@@ -754,9 +760,10 @@ context_alloc(void)
 	struct context *cx;
 
 	cx = ecalloc(1, sizeof(*cx));
-	cx->scratch = arena_alloc();
-	cx->eternal = arena_alloc();
-	cx->eternal_scope = arena_scope_enter(cx->eternal);
+	cx->arena.scratch = arena_alloc();
+	cx->arena.eternal = arena_alloc();
+	cx->arena.eternal_scope = arena_scope_enter(cx->arena.eternal);
+	cx->arena.doc = arena_alloc();
 	cx->bf = buffer_alloc(128);
 	if (cx->bf == NULL)
 		err(1, NULL);
@@ -772,9 +779,10 @@ context_free(struct context *cx)
 
 	context_reset(cx);
 	buffer_free(cx->bf);
-	arena_scope_leave(&cx->eternal_scope);
-	arena_free(cx->eternal);
-	arena_free(cx->scratch);
+	arena_scope_leave(&cx->arena.eternal_scope);
+	arena_free(cx->arena.eternal);
+	arena_free(cx->arena.scratch);
+	arena_free(cx->arena.doc);
 	free(cx);
 }
 
@@ -784,15 +792,15 @@ context_init(struct context *cx, const char *src)
 	static const char *path = "test.c";
 
 	buffer_puts(cx->bf, src, strlen(src));
-	cx->st = style_parse("/dev/null", &cx->eternal_scope, cx->scratch,
-	    &cx->op);
-	cx->si = simple_alloc(&cx->eternal_scope, &cx->op);
-	cx->cl = clang_alloc(cx->st, cx->si, &cx->eternal_scope, cx->scratch,
-	    &cx->op);
+	cx->st = style_parse("/dev/null", &cx->arena.eternal_scope,
+	    cx->arena.scratch, &cx->op);
+	cx->si = simple_alloc(&cx->arena.eternal_scope, &cx->op);
+	cx->cl = clang_alloc(cx->st, cx->si, &cx->arena.eternal_scope,
+	    cx->arena.scratch, &cx->op);
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= cx->bf,
-	    .eternal_scope	= &cx->eternal_scope,
+	    .eternal_scope	= &cx->arena.eternal_scope,
 	    .op			= &cx->op,
 	    .callbacks		= {
 		.read		= clang_read,
@@ -801,8 +809,8 @@ context_init(struct context *cx, const char *src)
 		.arg		= cx->cl,
 	    },
 	});
-	cx->pr = parser_alloc(cx->lx, cx->st, cx->si, &cx->eternal_scope,
-	    cx->scratch, &cx->op);
+	cx->pr = parser_alloc(cx->lx, cx->st, cx->si, &cx->arena.eternal_scope,
+	    cx->arena.scratch, cx->arena.doc, &cx->op);
 }
 
 static void
@@ -832,7 +840,7 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 	int i = 0;
 	int error = 1;
 
-	arena_scope(cx->scratch, s);
+	arena_scope(cx->arena.scratch, s);
 
 	for (;;) {
 		struct token *prefix, *suffix, *tk;

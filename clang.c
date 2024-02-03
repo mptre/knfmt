@@ -34,6 +34,7 @@
 struct clang {
 	const struct style	*st;
 	const struct options	*op;
+	struct arena		*scratch;
 	struct cpp_include	*ci;
 	struct token_list	 prefixes;
 	VECTOR(struct token *)	 branches;
@@ -131,6 +132,7 @@ clang_alloc(const struct style *st, struct simple *si,
 	TAILQ_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
+	cl->scratch = scratch;
 	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, eternal_scope,
 	    scratch, op);
 	if (VECTOR_INIT(cl->branches))
@@ -610,7 +612,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});
 
-	str = cpp_align(tk, cl->st, cl->op);
+	str = cpp_align(tk, cl->st, cl->scratch, cl->op);
 	if (str != NULL)
 		token_set_str(tk, str, strlen(str));
 

@@ -25,7 +25,7 @@ parser_get_error(const struct parser *pr)
 struct parser *
 parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
     struct arena_scope *eternal_scope, struct arena *scratch,
-    const struct options *op)
+    struct arena *doc, const struct options *op)
 {
 	struct parser *pr;
 
@@ -34,7 +34,9 @@ parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
 	pr->pr_si = si;
 	pr->pr_op = op;
 	pr->pr_lx = lx;
-	pr->pr_scratch = scratch;
+	pr->pr_arena.scratch = scratch;
+	pr->pr_arena.doc = doc;
+
 	return pr;
 }
 
@@ -47,7 +49,9 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	unsigned int doc_flags = 0;
 	int error = 0;
 
-	dc = doc_root(NULL);
+	parser_doc_scope(pr, cookie, pr->pr_arena.doc, doc_scope);
+
+	dc = doc_root(&doc_scope);
 
 	for (;;) {
 		struct doc *concat;
@@ -181,7 +185,7 @@ parser_width(struct parser *pr, const struct doc *dc)
 {
 	struct buffer *bf;
 
-	arena_scope(pr->pr_scratch, s);
+	arena_scope(pr->pr_arena.scratch, s);
 
 	bf = arena_buffer_alloc(&s, 1 << 10);
 	return doc_width(&(struct doc_exec_arg){
@@ -213,4 +217,21 @@ parser_reset(struct parser *pr)
 {
 	lexer_error_reset(pr->pr_lx);
 	pr->pr_error = 0;
+}
+
+void
+parser_doc_scope_enter(struct parser *pr,
+    struct parser_doc_scope_cookie *cookie, struct arena_scope *doc_scope)
+{
+	cookie->parser = pr;
+	cookie->doc_scope = pr->pr_arena.doc_scope;
+	pr->pr_arena.doc_scope = doc_scope;
+}
+
+void
+parser_doc_scope_leave(struct parser_doc_scope_cookie *cookie)
+{
+	struct parser *pr = cookie->parser;
+
+	pr->pr_arena.doc_scope = cookie->doc_scope;
 }

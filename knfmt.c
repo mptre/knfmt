@@ -29,13 +29,17 @@
 #include "token.h"
 
 struct main_context {
-	const struct options	*options;
-	struct style		*style;
-	struct simple		*simple;
-	struct arena		*eternal;
-	struct arena		*scratch;
-	struct buffer		*src;
-	struct buffer		*dst;
+	struct options	 options;
+	struct style	*style;
+	struct simple	*simple;
+	struct buffer	*src;
+	struct buffer	*dst;
+
+	struct {
+		struct arena		*eternal;
+		struct arena		*scratch;
+		struct arena		*doc;
+	} arena;
 };
 
 static void	usage(void) __attribute__((__noreturn__));
@@ -52,13 +56,8 @@ static int	fileattr(const char *, int, const char *, int);
 int
 main(int argc, char *argv[])
 {
+	struct main_context c = {0};
 	struct files files;
-	struct options op;
-	struct arena *eternal, *scratch;
-	struct buffer *src = NULL;
-	struct buffer *dst = NULL;
-	struct simple *si = NULL;
-	struct style *st = NULL;
 	const char *clang_format = NULL;
 	size_t i;
 	int error = 0;
@@ -67,7 +66,7 @@ main(int argc, char *argv[])
 	if (pledge("stdio rpath wpath cpath fattr chown proc exec", NULL) == -1)
 		err(1, "pledge");
 
-	options_init(&op);
+	options_init(&c.options);
 
 	while ((ch = getopt(argc, argv, "c:Ddist:")) != -1) {
 		switch (ch) {
@@ -75,19 +74,19 @@ main(int argc, char *argv[])
 			clang_format = optarg;
 			break;
 		case 'D':
-			op.diffparse = 1;
+			c.options.diffparse = 1;
 			break;
 		case 'd':
-			op.diff = 1;
+			c.options.diff = 1;
 			break;
 		case 'i':
-			op.inplace = 1;
+			c.options.inplace = 1;
 			break;
 		case 's':
-			op.simple = 1;
+			c.options.simple = 1;
 			break;
 		case 't':
-			if (options_trace_parse(&op, optarg))
+			if (options_trace_parse(&c.options, optarg))
 				return 1;
 			break;
 		default:
@@ -96,14 +95,14 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
-	if ((op.diffparse && argc > 0) ||
-	    (!op.diffparse && op.inplace && argc == 0))
+	if ((c.options.diffparse && argc > 0) ||
+	    (!c.options.diffparse && c.options.inplace && argc == 0))
 		usage();
 
-	if (op.diff) {
+	if (c.options.diff) {
 		if (pledge("stdio rpath wpath cpath proc exec", NULL) == -1)
 			err(1, "pledge");
-	} else if (op.inplace) {
+	} else if (c.options.inplace) {
 		if (pledge("stdio rpath wpath cpath fattr chown", NULL) == -1)
 			err(1, "pledge");
 	} else {
@@ -111,47 +110,40 @@ main(int argc, char *argv[])
 			err(1, "pledge");
 	}
 
-	if (op.diffparse)
+	if (c.options.diffparse)
 		diff_init();
 	clang_init();
 	expr_init();
 	style_init();
-	eternal = arena_alloc();
-	arena_scope(eternal, eternal_scope);
-	scratch = arena_alloc();
+	c.arena.eternal = arena_alloc();
+	arena_scope(c.arena.eternal, eternal_scope);
+	c.arena.scratch = arena_alloc();
+	c.arena.doc = arena_alloc();
 	if (VECTOR_INIT(files.fs_vc))
 		err(1, NULL);
-	st = style_parse(clang_format, &eternal_scope, scratch, &op);
-	if (st == NULL) {
+	c.style = style_parse(clang_format, &eternal_scope, c.arena.scratch,
+	    &c.options);
+	if (c.style == NULL) {
 		error = 1;
 		goto out;
 	}
-	si = simple_alloc(&eternal_scope, &op);
-	src = buffer_alloc(1 << 12);
-	if (src == NULL) {
+	c.simple = simple_alloc(&eternal_scope, &c.options);
+	c.src = buffer_alloc(1 << 12);
+	if (c.src == NULL) {
 		error = 1;
 		goto out;
 	}
-	dst = buffer_alloc(1 << 12);
-	if (dst == NULL) {
-		error = 1;
-		goto out;
-	}
-
-	if (filelist(argc, argv, &files, &eternal_scope, &op)) {
+	c.dst = buffer_alloc(1 << 12);
+	if (c.dst == NULL) {
 		error = 1;
 		goto out;
 	}
 
-	struct main_context c = {
-		.options	= &op,
-		.style		= st,
-		.simple		= si,
-		.eternal	= eternal,
-		.scratch	= scratch,
-		.src		= src,
-		.dst		= dst,
-	};
+	if (filelist(argc, argv, &files, &eternal_scope, &c.options)) {
+		error = 1;
+		goto out;
+	}
+
 	for (i = 0; i < VECTOR_LENGTH(files.fs_vc); i++) {
 		struct file *fe = &files.fs_vc[i];
 
@@ -162,15 +154,16 @@ main(int argc, char *argv[])
 
 out:
 	files_free(&files);
-	buffer_free(dst);
-	buffer_free(src);
-	style_free(st);
-	arena_free(scratch);
-	arena_free(eternal);
+	buffer_free(c.dst);
+	buffer_free(c.src);
+	style_free(c.style);
+	arena_free(c.arena.scratch);
+	arena_free(c.arena.eternal);
+	arena_free(c.arena.doc);
 	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();
-	if (op.diffparse)
+	if (c.options.diffparse)
 		diff_shutdown();
 
 	return error;
@@ -209,22 +202,22 @@ fileformat(struct main_context *c, struct file *fe)
 	struct parser *pr = NULL;
 	int error = 0;
 
-	arena_scope(c->eternal, eternal_scope);
+	arena_scope(c->arena.eternal, eternal_scope);
 
 	buffer_reset(c->src);
 	if (file_read(fe, c->src)) {
 		error = 1;
 		goto out;
 	}
-	clang = clang_alloc(c->style, c->simple, &eternal_scope, c->scratch,
-	    c->options);
+	clang = clang_alloc(c->style, c->simple, &eternal_scope,
+	    c->arena.scratch, &c->options);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,
 	    .diff		= fe->fe_diff,
-	    .op			= c->options,
+	    .op			= &c->options,
 	    .eternal_scope	= &eternal_scope,
-	    .error_flush	= trace(c->options, 'l') > 0,
+	    .error_flush	= trace(&c->options, 'l') > 0,
 	    .callbacks		= {
 		.read		= clang_read,
 		.alloc		= clang_token_alloc,
@@ -237,8 +230,8 @@ fileformat(struct main_context *c, struct file *fe)
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(lx, c->style, c->simple, &eternal_scope, c->scratch,
-	    c->options);
+	pr = parser_alloc(lx, c->style, c->simple, &eternal_scope,
+	    c->arena.scratch, c->arena.doc, &c->options);
 	if (pr == NULL) {
 		error = 1;
 		goto out;
@@ -249,9 +242,9 @@ fileformat(struct main_context *c, struct file *fe)
 		goto out;
 	}
 
-	if (c->options->diff)
+	if (c->options.diff)
 		error = filediff(c->src, c->dst, fe);
-	else if (c->options->inplace)
+	else if (c->options.inplace)
 		error = filewrite(c, fe);
 	else
 		error = fileprint(c->dst);
@@ -331,7 +324,7 @@ filewrite(struct main_context *c, const struct file *fe)
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	arena_scope(c->scratch, s);
+	arena_scope(c->arena.scratch, s);
 
 	tmppath = tmptemplate(fe->fe_path, &s);
 	old_umask = umask(0022);

@@ -25,7 +25,7 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 		.st		= pr->pr_st,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
-		.scratch	= pr->pr_scratch,
+		.scratch	= pr->pr_arena.scratch,
 		.callbacks	= {
 			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,
@@ -48,7 +48,7 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 		.si		= pr->pr_si,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
-		.scratch	= pr->pr_scratch,
+		.scratch	= pr->pr_arena.scratch,
 		.rl		= arg->rl,
 		.dc		= arg->dc,
 		.stop		= arg->stop,
@@ -90,7 +90,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		      (nx->tk_type == TOKEN_RPAREN ||
 		       nx->tk_type == TOKEN_COMMA ||
 		       nx->tk_type == LEXER_EOF)))) {
-			dc = doc_root(NULL);
+			dc = doc_root(pr->pr_arena.doc_scope);
 			if (parser_type(pr, dc, &type, NULL) & GOOD)
 				return dc;
 		}
@@ -101,14 +101,14 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		if (pv != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
-			dc = doc_root(NULL);
+			dc = doc_root(pr->pr_arena.doc_scope);
 			doc_token(tk, dc);
 			return dc;
 		}
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace)) {
 		int error;
 
-		dc = doc_root(NULL);
+		dc = doc_root(pr->pr_arena.doc_scope);
 		error = parser_braces(pr, dc, ea->indent,
 		    PARSER_BRACES_DEDENT | PARSER_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
@@ -116,7 +116,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		if (error & FAIL) {
 			/* Try again, could be a GNU statement expression. */
 			doc_free(dc);
-			dc = doc_root(NULL);
+			dc = doc_root(pr->pr_arena.doc_scope);
 			parser_reset(pr);
 			lexer_seek(lx, lbrace);
 			if (parser_stmt_expr_gnu(pr, dc) & GOOD)
@@ -124,7 +124,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		}
 	} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 		/* Some macros allow empty arguments such as queue(3). */
-		dc = doc_root(NULL);
+		dc = doc_root(pr->pr_arena.doc_scope);
 		doc_token(tk, dc);
 		return dc;
 	}
@@ -159,7 +159,7 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 	if (!peek)
 		return NULL;
 
-	dc = doc_root(NULL);
+	dc = doc_root(pr->pr_arena.doc_scope);
 	if (parser_type(pr, dc, &type, NULL) & GOOD)
 		return dc;
 	doc_free(dc);

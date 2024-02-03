@@ -28,6 +28,7 @@ struct stmt {
 
 struct simple_stmt {
 	VECTOR(struct stmt)	 ss_stmts;
+	struct arena_scope	*ss_doc_scope;
 	struct lexer		*ss_lx;
 	const struct options	*ss_op;
 	const struct style	*ss_st;
@@ -47,13 +48,15 @@ static const char	*strtrim(const char *, size_t *);
 
 struct simple_stmt *
 simple_stmt_enter(struct lexer *lx, const struct style *st,
-    struct arena_scope *eternal_scope, const struct options *op)
+    struct arena_scope *eternal_scope, struct arena_scope *doc_scope,
+    const struct options *op)
 {
 	struct simple_stmt *ss;
 
 	ss = arena_calloc(eternal_scope, 1, sizeof(*ss));
 	if (VECTOR_INIT(ss->ss_stmts))
 		err(1, NULL);
+	ss->ss_doc_scope = doc_scope;
 	ss->ss_lx = lx;
 	ss->ss_op = op;
 	ss->ss_st = st;
@@ -171,7 +174,7 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
 	st = VECTOR_CALLOC(ss->ss_stmts);
 	if (st == NULL)
 		err(1, NULL);
-	st->st_root = doc_root(NULL);
+	st->st_root = doc_root(ss->ss_doc_scope);
 	st->st_indent = doc_indent(indent, st->st_root);
 	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;

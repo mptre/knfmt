@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
@@ -43,12 +44,12 @@
 TAILQ_HEAD(doc_list, doc);
 
 struct doc {
-	enum doc_type	 dc_type;
+	enum doc_type		 dc_type;
 
 	/* allocation trace */
-	int		 dc_lno;
-	const char	*dc_fun;
-	const char	*dc_suffix;
+	int			 dc_lno;
+	const char		*dc_fun;
+	const char		*dc_suffix;
 
 	/* children */
 	union {
@@ -68,7 +69,9 @@ struct doc {
 		int				dc_int;
 	};
 
-	TAILQ_ENTRY(doc) dc_entry;
+	struct arena_scope	*dc_scope;
+
+	TAILQ_ENTRY(doc)	 dc_entry;
 };
 
 struct doc_state_indent {
@@ -403,8 +406,6 @@ doc_free(struct doc *dc)
 	} else if (desc->value.minimizers) {
 		VECTOR_FREE(dc->dc_minimizers);
 	}
-
-	free(dc);
 }
 
 void
@@ -466,10 +467,25 @@ doc_move_before(struct doc *dc, struct doc *before, struct doc *parent)
 	TAILQ_INSERT_BEFORE(before, dc, dc_entry);
 }
 
-struct doc *
-doc_root0(struct arena_scope *UNUSED(s), const char *fun, int lno)
+static void
+doc_init(struct doc *dc)
 {
-	return doc_alloc0(DOC_CONCAT, NULL, 0, fun, lno);
+	if (doc_has_list(dc))
+		TAILQ_INIT(&dc->dc_list);
+}
+
+struct doc *
+doc_root0(struct arena_scope *s, const char *fun, int lno)
+{
+	struct doc *dc;
+
+	dc = arena_calloc(s, 1, sizeof(*dc));
+	dc->dc_type = DOC_CONCAT;
+	dc->dc_fun = fun;
+	dc->dc_lno = lno;
+	dc->dc_scope = s;
+	doc_init(dc);
+	return dc;
 }
 
 struct doc *
@@ -478,15 +494,14 @@ doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
 {
 	struct doc *dc;
 
-	dc = ecalloc(1, sizeof(*dc));
+	dc = arena_calloc(parent->dc_scope, 1, sizeof(*dc));
 	dc->dc_type = type;
 	dc->dc_fun = fun;
 	dc->dc_lno = lno;
 	dc->dc_int = val;
-	if (doc_has_list(dc))
-		TAILQ_INIT(&dc->dc_list);
-	if (parent != NULL)
-		doc_append(dc, parent);
+	dc->dc_scope = parent->dc_scope;
+	doc_init(dc);
+	doc_append(dc, parent);
 
 #ifdef __COVERITY__
 	/*

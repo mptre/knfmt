@@ -6,6 +6,7 @@
 #include <err.h>
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 
 #include "doc.h"
@@ -134,7 +135,8 @@ sense_alignment(const char *str, size_t len, const struct style *st,
  * Align line continuations.
  */
 char *
-cpp_align(struct token *tk, const struct style *st, const struct options *op)
+cpp_align(struct token *tk, const struct style *st, struct arena *scratch,
+    const struct options *op)
 {
 	struct alignment alignment = {
 		.mode	= style(st, AlignEscapedNewlines),
@@ -176,10 +178,12 @@ cpp_align(struct token *tk, const struct style *st, const struct options *op)
 		return NULL;
 	}
 
+	arena_scope(scratch, doc_scope);
+
 	bf = buffer_alloc(len);
 	if (bf == NULL)
 		err(1, NULL);
-	dc = doc_root(NULL);
+	dc = doc_root(&doc_scope);
 
 	for (;;) {
 		struct doc *concat;

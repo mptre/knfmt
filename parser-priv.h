@@ -17,9 +17,14 @@ struct parser {
 	const struct style	*pr_st;
 	struct simple		*pr_si;
 	struct lexer		*pr_lx;
-	struct arena		*pr_scratch;
 	unsigned int		 pr_error;
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
+
+	struct {
+		struct arena		*scratch;
+		struct arena		*doc;
+		struct arena_scope	*doc_scope;
+	} pr_arena;
 
 	struct {
 		struct simple_stmt		*stmt;

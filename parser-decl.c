@@ -14,6 +14,7 @@
 #include "parser-func.h"
 #include "parser-priv.h"
 #include "parser-type.h"
+#include "parser.h"
 #include "ruler.h"
 #include "simple-decl-forward.h"
 #include "simple-decl.h"
@@ -55,7 +56,9 @@ parser_decl_peek(struct parser *pr)
 	struct doc *dc;
 	int error;
 
-	dc = doc_root(NULL);
+	parser_doc_scope(pr, cookie, pr->pr_arena.doc, doc_scope);
+
+	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl(pr, dc, 0);
 	lexer_peek_leave(lx, &s);
@@ -483,10 +486,11 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags,
 	if (!simple_enter(pr->pr_si, SIMPLE_DECL, simple_flags, simple))
 		return parser_good(pr);
 
-	arena_scope(pr->pr_scratch, scratch_scope);
+	parser_doc_scope(pr, cookie, pr->pr_arena.doc, doc_scope);
+	arena_scope(pr->pr_arena.scratch, scratch_scope);
 
 	pr->pr_simple.decl = simple_decl_enter(lx, &scratch_scope, pr->pr_op);
-	dc = doc_root(NULL);
+	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
 	lexer_peek_leave(lx, &s);
@@ -514,11 +518,12 @@ parser_simple_decl_forward_enter(struct parser *pr, unsigned int flags,
 	if (!simple_enter(pr->pr_si, SIMPLE_DECL_FORWARD, simple_flags, simple))
 		return parser_good(pr);
 
-	arena_scope(pr->pr_scratch, scratch_scope);
+	parser_doc_scope(pr, cookie, pr->pr_arena.doc, doc_scope);
+	arena_scope(pr->pr_arena.scratch, scratch_scope);
 
 	pr->pr_simple.decl_forward = simple_decl_forward_enter(lx,
 	    &scratch_scope, pr->pr_op);
-	dc = doc_root(NULL);
+	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
 	lexer_peek_leave(lx, &s);

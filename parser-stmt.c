@@ -13,6 +13,7 @@
 #include "parser-priv.h"
 #include "parser-stmt-asm.h"
 #include "parser-stmt-expr.h"
+#include "parser.h"
 #include "simple-stmt.h"
 #include "simple.h"
 #include "style.h"
@@ -53,7 +54,9 @@ parser_stmt_peek(struct parser *pr)
 	struct doc *dc;
 	int error;
 
-	dc = doc_root(NULL);
+	parser_doc_scope(pr, cookie, pr->pr_arena.doc, doc_scope);
+
+	dc = doc_root(&doc_scope);
 	error = parser_stmt1(pr, dc);
 	doc_free(dc);
 	return error & GOOD;
@@ -802,11 +805,12 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 	if (!simple_enter(pr->pr_si, SIMPLE_STMT, 0, simple))
 		return parser_good(pr);
 
-	arena_scope(pr->pr_scratch, scratch_scope);
+	parser_doc_scope(pr, cookie, pr->pr_arena.doc, doc_scope);
+	arena_scope(pr->pr_arena.scratch, scratch_scope);
 
 	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st, &scratch_scope,
-	    pr->pr_op);
-	dc = doc_root(NULL);
+	    &doc_scope, pr->pr_op);
+	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
 	error = parser_stmt1(pr, dc);
 	lexer_peek_leave(lx, &s);
