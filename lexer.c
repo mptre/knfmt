@@ -1272,6 +1272,7 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	struct token *dst, *prefix, *pv, *rm;
 	const char *buf = lx->lx_input.ptr;
 	size_t len, off;
+	int dangling = 0;
 	int unmute = 0;
 
 	/* Grab a reference since the branch is about to be removed. */
@@ -1334,15 +1335,17 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 
 	/*
 	 * Remove all tokens up to the destination covered by the new prefix
-	 * token.
+	 * token. Some tokens might already have been removed by an overlapping
+	 * branch, therefore abort while encountering a dangling token.
 	 */
 	rm = src->tk_branch.br_parent;
-	for (;;) {
+	while (!dangling) {
 		struct token *nx;
 
 		if (rm == dst->tk_branch.br_parent)
 			break;
 
+		dangling = token_is_dangling(rm);
 		nx = token_next(rm);
 		lexer_trace(lx, "removing %s", lexer_serialize(lx, rm));
 		if (rm->tk_flags & TOKEN_FLAG_UNMUTE)
