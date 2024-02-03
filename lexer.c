@@ -1297,14 +1297,12 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 	while (!TAILQ_EMPTY(&dst->tk_branch.br_parent->tk_prefixes)) {
 		struct token *pr;
 
-		pr = TAILQ_FIRST(&dst->tk_branch.br_parent->tk_prefixes);
+		pr = token_list_first(&dst->tk_branch.br_parent->tk_prefixes);
 		lexer_trace(lx, "removing prefix %s", lexer_serialize(lx, pr));
-		TAILQ_REMOVE(&dst->tk_branch.br_parent->tk_prefixes, pr,
-		    tk_entry);
 		/* Completely unlink any branch. */
 		while (token_branch_unlink(pr) == 0)
 			continue;
-		token_rele(pr);
+		token_list_remove(&dst->tk_branch.br_parent->tk_prefixes, pr);
 		if (pr == dst)
 			break;
 	}
