@@ -100,7 +100,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_input.len = buffer_get_len(arg->bf);
 	lx->lx_diff = arg->diff;
 	lx->lx_st.st_lno = 1;
-	if (VECTOR_INIT(lx->lx_lines) || VECTOR_RESERVE(lx->lx_lines, 512))
+	if (VECTOR_INIT(lx->lx_lines))
 		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
 	if (VECTOR_INIT(lx->lx_stamps))
