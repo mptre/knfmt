@@ -8,8 +8,8 @@ struct simple;
 struct style;
 
 struct parser_doc_scope_cookie {
-	struct parser		*parser;
-	struct arena_scope	*doc_scope;
+	struct arena_scope	**restore_scope;
+	struct arena_scope	 *old_scope;
 };
 
 struct parser	*parser_alloc(struct lexer *, const struct style *,
@@ -19,11 +19,11 @@ void		 parser_free(struct parser *);
 int		 parser_exec(struct parser *, const struct diffchunk *,
     struct buffer *);
 
-#define parser_doc_scope(pr, cookie, scope)				\
-	__attribute__((cleanup(parser_doc_scope_leave)))		\
+#define parser_arena_scope(cookie, old_scope, new_scope)		\
+	__attribute__((cleanup(parser_arena_scope_leave)))		\
 		struct parser_doc_scope_cookie cookie;			\
-	parser_doc_scope_enter((pr), &(cookie), (scope))
-void	parser_doc_scope_enter(struct parser *,
-    struct parser_doc_scope_cookie *, struct arena_scope *);
+	parser_arena_scope_enter(&(cookie), (old_scope), (new_scope))
+void	parser_arena_scope_enter(struct parser_doc_scope_cookie *,
+    struct arena_scope **, struct arena_scope *);
 
-void	parser_doc_scope_leave(struct parser_doc_scope_cookie *);
+void	parser_arena_scope_leave(struct parser_doc_scope_cookie *);

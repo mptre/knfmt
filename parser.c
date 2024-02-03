@@ -50,7 +50,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	int error = 0;
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
-	parser_doc_scope(pr, cookie, &doc_scope);
+	parser_arena_scope(cookie, &pr->pr_arena.doc_scope, &doc_scope);
 
 	dc = doc_root(&doc_scope);
 
@@ -223,18 +223,16 @@ parser_reset(struct parser *pr)
 }
 
 void
-parser_doc_scope_enter(struct parser *pr,
-    struct parser_doc_scope_cookie *cookie, struct arena_scope *doc_scope)
+parser_arena_scope_enter(struct parser_doc_scope_cookie *cookie,
+    struct arena_scope **old_scope, struct arena_scope *new_scope)
 {
-	cookie->parser = pr;
-	cookie->doc_scope = pr->pr_arena.doc_scope;
-	pr->pr_arena.doc_scope = doc_scope;
+	cookie->restore_scope = old_scope;
+	cookie->old_scope = *old_scope;
+	*old_scope = new_scope;
 }
 
 void
-parser_doc_scope_leave(struct parser_doc_scope_cookie *cookie)
+parser_arena_scope_leave(struct parser_doc_scope_cookie *cookie)
 {
-	struct parser *pr = cookie->parser;
-
-	pr->pr_arena.doc_scope = cookie->doc_scope;
+	*cookie->restore_scope = cookie->old_scope;
 }
