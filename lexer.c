@@ -1058,6 +1058,8 @@ lexer_dump(struct lexer *lx)
 	struct token *tk;
 	unsigned int i = 0;
 
+	fprintf(stderr, "[L] %s:\n", lx->lx_arg.path);
+
 	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
 		struct token *prefix, *suffix;
 		const char *str;
