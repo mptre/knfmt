@@ -140,7 +140,7 @@ parser_func_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 		return parser_fail(pr);
 
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, out);
+		parser_doc_token(pr, tk, out);
 
 	return parser_good(pr);
 }
@@ -242,7 +242,7 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 			return parser_fail(pr);
 
 		if (lexer_if(lx, TOKEN_COMMA, &tk)) {
-			doc_token(tk, concat);
+			parser_doc_token(pr, tk, concat);
 			doc_alloc(DOC_LINE, concat);
 			break;
 		}
@@ -255,7 +255,7 @@ parser_func_arg(struct parser *pr, struct doc *dc, struct doc **out,
 		if (pv != NULL && pv->tk_type == TOKEN_IDENT &&
 		    tk->tk_type == TOKEN_IDENT)
 			doc_alloc(DOC_LINE, concat);
-		doc_token(tk, concat);
+		parser_doc_token(pr, tk, concat);
 		pv = tk;
 		if (tk->tk_type == TOKEN_IDENT &&
 		    is_simple_enabled(pr->pr_si, SIMPLE_DECL_PROTO)) {
@@ -352,25 +352,25 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	if (type->end->tk_flags & TOKEN_FLAG_TYPE_FUNC) {
 		/* Function returning function pointer. */
 		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
-			doc_token(lparen, concat);
+			parser_doc_token(pr, lparen, concat);
 		if (lexer_expect(lx, TOKEN_STAR, &tk))
-			doc_token(tk, concat);
+			parser_doc_token(pr, tk, concat);
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
-			doc_token(tk, concat);
+			parser_doc_token(pr, tk, concat);
 		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
 		    &rparen))
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
-			doc_token(lparen, concat);
+			parser_doc_token(pr, lparen, concat);
 		while (parser_func_arg(pr, concat, NULL, rparen) & GOOD)
 			continue;
 		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-			doc_token(rparen, concat);
+			parser_doc_token(pr, rparen, concat);
 		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-			doc_token(rparen, concat);
+			parser_doc_token(pr, rparen, concat);
 	} else if (lexer_expect(lx, TOKEN_IDENT, &tk)) {
 		parser_token_trim_after(pr, tk);
-		doc_token(tk, concat);
+		parser_doc_token(pr, tk, concat);
 	} else {
 		doc_remove(group, dc);
 		return parser_fail(pr);
@@ -382,7 +382,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 		parser_token_trim_after(pr, lparen);
 		parser_token_trim_before(pr, rparen);
 		parser_token_trim_after(pr, rparen);
-		doc_token(lparen, concat);
+		parser_doc_token(pr, lparen, concat);
 	}
 	w = style(pr->pr_st, ContinuationIndentWidth);
 	if (style(pr->pr_st, AlignAfterOpenBracket) == Align) {
@@ -407,7 +407,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	if (*out == NULL)
 		*out = concat;
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-		doc_token(rparen, *out);
+		parser_doc_token(pr, rparen, *out);
 
 	/* Recognize K&R argument declarations. */
 	kr = doc_alloc(DOC_GROUP, dc);

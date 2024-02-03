@@ -17,6 +17,8 @@
 static struct doc	*expr_recover(const struct expr_exec_arg *, void *);
 static struct doc	*expr_recover_cast(const struct expr_exec_arg *,
     void *);
+static struct doc	*expr_doc_token(struct token *, struct doc *,
+    const char *, int, void *);
 
 int
 parser_expr_peek(struct parser *pr, struct token **tk)
@@ -29,6 +31,7 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 		.callbacks	= {
 			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,
+			.doc_token	= expr_doc_token,
 			.arg		= pr,
 		},
 	};
@@ -58,6 +61,7 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 		.callbacks	= {
 			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,
+			.doc_token	= expr_doc_token,
 			.arg		= pr,
 		},
 	};
@@ -102,7 +106,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
 			dc = doc_root(pr->pr_arena.doc_scope);
-			doc_token(tk, dc);
+			parser_doc_token(pr, tk, dc);
 			return dc;
 		}
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace)) {
@@ -124,7 +128,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 	} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 		/* Some macros allow empty arguments such as queue(3). */
 		dc = doc_root(pr->pr_arena.doc_scope);
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		return dc;
 	}
 
@@ -161,4 +165,13 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 	if (parser_type(pr, dc, &type, NULL) & GOOD)
 		return dc;
 	return NULL;
+}
+
+static struct doc *
+expr_doc_token(struct token *tk, struct doc *dc, const char *fun, int lno,
+    void *arg)
+{
+	struct parser *pr = arg;
+
+	return parser_doc_token_impl(pr, tk, dc, fun, lno);
 }

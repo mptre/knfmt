@@ -539,7 +539,7 @@ doc_literal0(const char *str, size_t len, struct doc *dc, const char *fun,
 }
 
 struct doc *
-doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
+doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
     const char *fun, int lno)
 {
 	struct doc *token;
@@ -549,7 +549,7 @@ doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
 		doc_alloc0(DOC_MUTE, dc, -1, fun, lno);
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
-		doc_token0(prefix, dc, DOC_VERBATIM, __func__, __LINE__);
+		doc_token(prefix, dc, DOC_VERBATIM, __func__, __LINE__);
 
 	token = doc_alloc0(type, dc, 0, fun, lno);
 	/* Must be mutable for reference counting. */
@@ -565,7 +565,7 @@ doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
 		if (suffix->tk_flags & TOKEN_FLAG_OPTLINE) {
 			doc_alloc(DOC_OPTLINE, dc);
 		} else {
-			doc_token0(suffix, dc, DOC_VERBATIM, __func__,
+			doc_token(suffix, dc, DOC_VERBATIM, __func__,
 			    __LINE__);
 		}
 	}

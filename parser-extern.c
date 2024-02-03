@@ -25,13 +25,13 @@ parser_extern(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	if (lexer_expect(lx, TOKEN_EXTERN, &tk))
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 	doc_literal(" ", dc);
 	if (lexer_expect(lx, TOKEN_STRING, &tk))
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 	doc_literal(" ", dc);
 	if (lexer_expect(lx, TOKEN_LBRACE, &tk))
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 	doc_alloc(DOC_HARDLINE, dc);
 	for (;;) {
 		int error;
@@ -43,9 +43,9 @@ parser_extern(struct parser *pr, struct doc *dc)
 			return error;
 	}
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 	if (lexer_if(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 	doc_alloc(DOC_HARDLINE, dc);
 	return parser_good(pr);
 }

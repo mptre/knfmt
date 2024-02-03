@@ -84,7 +84,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	align = token_cmp(lbrace, rbrace) == 0;
 	if (arg->flags & PARSER_BRACES_TRIM)
 		parser_token_trim_after(pr, lbrace);
-	doc_token(lbrace, braces);
+	parser_doc_token(pr, lbrace, braces);
 
 	if (lexer_peek_if(lx, TOKEN_RBRACE, NULL)) {
 		/* Honor spaces in empty braces. */
@@ -184,7 +184,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			if (lexer_peek_if(lx, TOKEN_RBRACE, &nx) &&
 			    token_is_moveable(nx))
 				token_trim(comma);
-			doc_token(comma, expr);
+			parser_doc_token(pr, comma, expr);
 
 			if (align) {
 				arg->col++;
@@ -200,7 +200,8 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			return parser_fail(pr);
 		} else if (token_has_spaces(pv)) {
 			/* Previous token already emitted, honor spaces. */
-			doc_token(token_find_suffix_spaces(pv), concat);
+			parser_doc_token(pr, token_find_suffix_spaces(pv),
+			    concat);
 		} else if (pv->tk_type == TOKEN_COMMA &&
 		    token_cmp(pv, nx) == 0) {
 			/* Missing spaces after comma. */
@@ -236,7 +237,7 @@ next:
 out:
 	if (lexer_expect(lx, TOKEN_RBRACE, &rbrace)) {
 		parser_token_trim_after(pr, rbrace);
-		doc_token(rbrace, braces);
+		parser_doc_token(pr, rbrace, braces);
 	}
 	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
@@ -277,7 +278,7 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 		ruler_insert(arg->rl, token_prev(equal), dc, 1,
 		    parser_width(pr, dc), 0);
 
-		doc_token(equal, dc);
+		parser_doc_token(pr, equal, dc);
 		doc_literal(" ", dc);
 
 		lexer_peek_until_comma(lx, arg->rbrace, &stop);
@@ -306,21 +307,21 @@ parser_braces_field1(struct parser *pr, struct braces_field_arg *arg)
 	if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
 		struct doc *expr = NULL;
 
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc	= dc,
 		});
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
-			doc_token(tk, expr);
+			parser_doc_token(pr, tk, expr);
 		return parser_good(pr);
 	} else if (lexer_if(lx, TOKEN_PERIOD, &tk)) {
 		struct token *equal;
 
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
-			doc_token(tk, dc);
+			parser_doc_token(pr, tk, dc);
 
 		/* Correct alignment, must occur after the ident. */
 		if (lexer_peek_if(lx, TOKEN_EQUAL, &equal) &&
@@ -329,14 +330,14 @@ parser_braces_field1(struct parser *pr, struct braces_field_arg *arg)
 
 		return parser_good(pr);
 	} else if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 
 		/* Enum making use of preprocessor directives. */
 		if ((arg->flags & PARSER_BRACES_ENUM) &&
 		    lexer_if(lx, TOKEN_LPAREN, &tk)) {
 			struct doc *expr = NULL;
 
-			doc_token(tk, dc);
+			parser_doc_token(pr, tk, dc);
 			error = parser_expr(pr, &expr,
 			    &(struct parser_expr_arg){
 				.dc	= dc,
@@ -346,7 +347,7 @@ parser_braces_field1(struct parser *pr, struct braces_field_arg *arg)
 			if (error & HALT)
 				expr = dc;
 			if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-				doc_token(tk, expr);
+				parser_doc_token(pr, tk, expr);
 		}
 
 		return parser_good(pr);

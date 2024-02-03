@@ -75,9 +75,9 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		linetype = DOC_LINE;
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, optional));
 		*out = concat;
-		doc_token(tk, concat);
+		parser_doc_token(pr, tk, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-			doc_token(tk, concat);
+			parser_doc_token(pr, tk, concat);
 		error = parser_expr(pr, out, &(struct parser_expr_arg){
 		    .dc		= concat,
 		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
@@ -86,7 +86,7 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-			doc_token(rparen, *out);
+			parser_doc_token(pr, rparen, *out);
 		nattributes++;
 		if (rparen == end)
 			break;

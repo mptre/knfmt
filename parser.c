@@ -65,7 +65,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 
 			eof = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			doc_token(tk, eof);
+			parser_doc_token(pr, tk, eof);
 			error = 0;
 			break;
 		}
@@ -212,6 +212,13 @@ parser_reset(struct parser *pr)
 {
 	lexer_error_reset(pr->pr_lx);
 	pr->pr_error = 0;
+}
+
+struct doc *
+parser_doc_token_impl(struct parser *UNUSED(pr), struct token *tk,
+    struct doc *dc, const char *fun, int lno)
+{
+	return doc_token(tk, dc, DOC_LITERAL, fun, lno);
 }
 
 void

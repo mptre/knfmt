@@ -152,7 +152,7 @@ parser_cpp_x(struct parser *pr, struct doc *dc)
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
 	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, &tk)) {
-		doc_token(tk, concat);
+		parser_doc_token(pr, tk, concat);
 		doc_alloc(DOC_LINE, concat);
 	}
 	error = parser_expr(pr, NULL, &(struct parser_expr_arg){
@@ -192,7 +192,7 @@ parser_cpp_cdefs(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	if (lexer_expect(lx, TOKEN_IDENT, &ident))
-		doc_token(ident, dc);
+		parser_doc_token(pr, ident, dc);
 	return parser_good(pr);
 }
 
@@ -213,9 +213,9 @@ parser_cpp_decl_root(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	if (lexer_expect(lx, TOKEN_IDENT, &ident))
-		doc_token(ident, dc);
+		parser_doc_token(pr, ident, dc);
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
-		doc_token(semi, dc);
+		parser_doc_token(pr, semi, dc);
 	return parser_good(pr);
 }
 

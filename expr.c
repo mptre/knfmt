@@ -166,6 +166,11 @@ static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
     struct doc *);
 
+#define expr_doc_token(a, b, c) \
+	expr_doc_token_impl((a), (b), (c), __func__, __LINE__)
+static struct doc	*expr_doc_token_impl(struct expr_state *,
+    struct token *, struct doc *, const char *, int);
+
 static void	expr_free_concat(struct expr *);
 
 #define expr_doc_align(a, b, c, d) \
@@ -696,7 +701,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		break;
 
 	case EXPR_PREFIX:
-		doc_token(ex->ex_tk, concat);
+		expr_doc_token(es, ex->ex_tk, concat);
 		if (ex->ex_lhs != NULL)
 			expr_doc(ex->ex_lhs, es, concat);
 		break;
@@ -704,7 +709,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 	case EXPR_POSTFIX:
 		if (ex->ex_lhs != NULL)
 			expr_doc(ex->ex_lhs, es, concat);
-		doc_token(ex->ex_tk, concat);
+		expr_doc_token(es, ex->ex_tk, concat);
 		break;
 
 	case EXPR_PARENS:
@@ -715,11 +720,11 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_lhs != NULL)
 			concat = expr_doc(ex->ex_lhs, es, concat);
 		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], concat);	/* [ */
+			expr_doc_token(es, ex->ex_tokens[0], concat);	/* [ */
 		if (ex->ex_rhs != NULL)
 			concat = expr_doc(ex->ex_rhs, es, concat);
 		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], concat);	/* ] */
+			expr_doc_token(es, ex->ex_tokens[1], concat);	/* ] */
 		break;
 
 	case EXPR_FIELD:
@@ -736,11 +741,11 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	case EXPR_CAST:
 		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], concat);	/* ( */
+			expr_doc_token(es, ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_lhs != NULL)
 			expr_doc(ex->ex_lhs, es, concat);
 		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], concat);	/* ) */
+			expr_doc_token(es, ex->ex_tokens[1], concat);	/* ) */
 		if (ex->ex_rhs != NULL)
 			expr_doc(ex->ex_rhs, es, concat);
 		break;
@@ -754,7 +759,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		break;
 
 	case EXPR_LITERAL:
-		doc_token(ex->ex_tk, concat);
+		expr_doc_token(es, ex->ex_tk, concat);
 		break;
 
 	case EXPR_RECOVER:
@@ -774,7 +779,7 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_unary(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	doc_token(ex->ex_tk, dc);
+	expr_doc_token(es, ex->ex_tk, dc);
 	if (ex->ex_lhs != NULL)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	return dc;
@@ -792,7 +797,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		es->es_nassign++;
 		lhs = expr_doc(ex->ex_lhs, es, dc);
 		doc_literal(" ", lhs);
-		doc_token(ex->ex_tk, lhs);
+		expr_doc_token(es, ex->ex_tk, lhs);
 		doc_literal(" ", lhs);
 		if (ex->ex_rhs != NULL) {
 			if (doalign) {
@@ -828,7 +833,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 			doc_alloc(DOC_LINE, lhs);
 		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_alloc(DOC_SOFTLINE, dc);
-		doc_token(ex->ex_tk, dc);
+		expr_doc_token(es, ex->ex_tk, dc);
 		if (dospace)
 			doc_literal(" ", dc);
 		if (ex->ex_rhs != NULL)
@@ -845,7 +850,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dospace = expr_doc_has_spaces(ex);
 		if (dospace)
 			doc_literal(" ", lhs);
-		doc_token(ex->ex_tk, lhs);
+		expr_doc_token(es, ex->ex_tk, lhs);
 		dc = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		/*
 		 * If the operator is followed by a trailing comment and a new
@@ -878,7 +883,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		struct token *pv;
 
 		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], dc);	/* ( */
+			expr_doc_token(es, ex->ex_tokens[0], dc);	/* ( */
 		if (ex->ex_tokens[1] != NULL &&
 		    (pv = token_prev(ex->ex_tokens[1])) != NULL)
 			token_trim(pv);
@@ -890,7 +895,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
 		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], dc);	/* ) */
+			expr_doc_token(es, ex->ex_tokens[1], dc);	/* ) */
 	}
 
 	return dc;
@@ -901,7 +906,7 @@ expr_doc_field(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	dc = expr_doc(ex->ex_lhs, es, dc);
 	token_trim(ex->ex_tk);
-	doc_token(ex->ex_tk, dc);
+	expr_doc_token(es, ex->ex_tk, dc);
 	if (ex->ex_rhs != NULL)
 		dc = expr_doc(ex->ex_rhs, es, dc);
 	return dc;
@@ -923,7 +928,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	es->es_noparens--;
 
-	doc_token(lparen, dc);
+	expr_doc_token(es, lparen, dc);
 	if (ex->ex_rhs != NULL) {
 		if (rparen != NULL) {
 			struct token *pv;
@@ -952,7 +957,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	}
 	if (rparen != NULL) {
 		if (fold_rparens) {
-			doc_token(rparen, dc);
+			expr_doc_token(es, rparen, dc);
 		} else {
 			struct doc *dedent;
 
@@ -961,7 +966,7 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 			 * outer scope is expected.
 			 */
 			dedent = doc_dedent(es->es_ea.indent, dc);
-			doc_token(rparen, dedent);
+			expr_doc_token(es, rparen, dedent);
 		}
 	}
 
@@ -977,7 +982,7 @@ expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	if (ex->ex_lhs != NULL)
 		lhs = expr_doc(ex->ex_lhs, es, dc);
-	doc_token(ex->ex_tk, lhs);
+	expr_doc_token(es, ex->ex_tk, lhs);
 	if (es->es_flags & EXPR_EXEC_ALIGN) {
 		unsigned int w;
 
@@ -998,9 +1003,9 @@ expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 static struct doc *
 expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
-	doc_token(ex->ex_tk, dc);
+	expr_doc_token(es, ex->ex_tk, dc);
 	if (ex->ex_sizeof.lparen != NULL) {
-		doc_token(ex->ex_sizeof.lparen, dc);
+		expr_doc_token(es, ex->ex_sizeof.lparen, dc);
 	} else {
 		simple_cookie(simple);
 		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
@@ -1011,7 +1016,7 @@ expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 	if (ex->ex_lhs != NULL)
 		dc = expr_doc(ex->ex_lhs, es, dc);
 	if (ex->ex_sizeof.rparen != NULL) {
-		doc_token(ex->ex_sizeof.rparen, dc);
+		expr_doc_token(es, ex->ex_sizeof.rparen, dc);
 	} else {
 		simple_cookie(simple);
 		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
@@ -1064,7 +1069,7 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		lhs = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_alloc(DOC_SOFTLINE, lhs);
 		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], lhs);	/* ? */
+			expr_doc_token(es, ex->ex_tokens[0], lhs);	/* ? */
 		/* The lhs expression can be empty, GNU extension. */
 		if (ex->ex_rhs != NULL) {
 			doc_literal(" ", lhs);
@@ -1076,7 +1081,7 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		rhs = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 		doc_alloc(DOC_SOFTLINE, rhs);
 		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], rhs);	/* : */
+			expr_doc_token(es, ex->ex_tokens[1], rhs);	/* : */
 		doc_literal(" ", rhs);
 		return expr_doc(ex->ex_ternary, es, rhs);
 	} else {
@@ -1089,7 +1094,7 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		ternary = expr_doc(ex->ex_lhs, es, dc);
 		doc_alloc(DOC_LINE, ternary);
 		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], ternary);	/* ? */
+			expr_doc_token(es, ex->ex_tokens[0], ternary);	/* ? */
 
 		/* The true expression can be empty, GNU extension. */
 		if (ex->ex_rhs != NULL) {
@@ -1102,7 +1107,7 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		}
 
 		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], ternary);	/* : */
+			expr_doc_token(es, ex->ex_tokens[1], ternary);	/* : */
 		doc_alloc(DOC_LINE, ternary);
 
 		return expr_doc_soft(ex->ex_ternary, es, dc,
@@ -1123,6 +1128,14 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 	 */
 	ex->ex_dc = NULL;
 	return dc;
+}
+
+static struct doc *
+expr_doc_token_impl(struct expr_state *es, struct token *tk, struct doc *dc,
+    const char *fun, int lno)
+{
+	return es->es_ea.callbacks.doc_token(tk, dc, fun, lno,
+	    es->es_ea.callbacks.arg);
 }
 
 static void

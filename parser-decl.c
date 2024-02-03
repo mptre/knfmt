@@ -217,7 +217,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			    (style_brace_wrapping(pr->pr_st, AfterUnion) &&
 			     token_is_decl(end, TOKEN_UNION)))
 				doc_alloc(DOC_HARDLINE, concat);
-			doc_token(lbrace, concat);
+			parser_doc_token(pr, lbrace, concat);
 		}
 
 		indent = doc_indent(style(pr->pr_st, IndentWidth), concat);
@@ -227,7 +227,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		doc_alloc(DOC_HARDLINE, concat);
 
 		if (lexer_expect(lx, TOKEN_RBRACE, &tk))
-			doc_token(tk, concat);
+			parser_doc_token(pr, tk, concat);
 
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
 		    !lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
@@ -277,7 +277,7 @@ out:
 				lexer_remove(lx, nx, 1);
 		}
 
-		doc_token(semi, concat);
+		parser_doc_token(pr, semi, concat);
 
 		if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
 			simple_decl_semi(pr->pr_simple.decl, semi);
@@ -316,7 +316,7 @@ parser_decl_init(struct parser *pr, struct doc **out,
 			break;
 
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
-			doc_token(comma, concat);
+			parser_doc_token(pr, comma, concat);
 			doc_alloc(token_has_line(comma, 1) ? DOC_HARDLINE : DOC_LINE,
 			    concat);
 			if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
@@ -358,7 +358,7 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 	struct token *tk;
 
 	if (lexer_if(lx, TOKEN_IDENT, &tk)) {
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 			doc_literal(" ", dc);
 		return parser_good(pr);
@@ -369,7 +369,7 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 		    TOKEN_RSQUARE : TOKEN_RPAREN;
 		int error;
 
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		/* Let the remaning tokens hang of the expression. */
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc	= dc,
@@ -377,7 +377,7 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 		if (error & HALT)
 			expr = dc;
 		if (lexer_expect(lx, rhs, &tk))
-			doc_token(tk, expr);
+			parser_doc_token(pr, tk, expr);
 		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 			doc_literal(" ", dc);
 		return parser_good(pr);
@@ -385,11 +385,11 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 		return parser_good(pr);
 	} else if (lexer_if_flags(lx,
 	    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &tk)) {
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		doc_literal(" ", dc);
 		return parser_good(pr);
 	} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		return parser_good(pr);
 	} else if (parser_attributes(pr, dc, out,
 	    PARSER_ATTRIBUTES_LINE) & GOOD) {
@@ -417,7 +417,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 
 	if (arg->flags & PARSER_DECL_INIT_SPACE_BEFORE_EQUAL)
 		doc_literal(" ", dc);
-	doc_token(equal, dc);
+	parser_doc_token(pr, equal, dc);
 	doc_literal(" ", dc);
 
 	dedent = doc_alloc(DOC_CONCAT, ruler_dedent(arg->rl, dc, NULL));
@@ -467,11 +467,11 @@ parser_decl_bitfield(struct parser *pr, struct doc *dc)
 
 	if (dospace == Both || dospace == Before)
 		doc_literal(" ", dc);
-	doc_token(colon, dc);
+	parser_doc_token(pr, colon, dc);
 	if (dospace == Both || dospace == After)
 		doc_literal(" ", dc);
 	if (lexer_expect(lx, TOKEN_LITERAL, &size))
-		doc_token(size, dc);
+		parser_doc_token(pr, size, dc);
 	return parser_good(pr);
 }
 

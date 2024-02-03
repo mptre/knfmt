@@ -54,6 +54,11 @@ int	parser_fail0(struct parser *, const char *, int);
 
 void	parser_reset(struct parser *);
 
+#define parser_doc_token(a, b, c) \
+	parser_doc_token_impl((a), (b), (c), __func__, __LINE__)
+struct doc	*parser_doc_token_impl(struct parser *, struct token *,
+    struct doc *, const char *, int);
+
 void	parser_token_trim_after(const struct parser *, struct token *);
 void	parser_token_trim_before(const struct parser *, struct token *);
 

@@ -48,6 +48,10 @@ struct expr_exec_arg {
 		struct doc	*(*recover_cast)(const struct expr_exec_arg *,
 		    void *);
 
+		/* Invoked while emitting a document token. */
+		struct doc	*(*doc_token)(struct token *, struct doc *,
+		    const char *, int, void *);
+
 		/* Opaque argument passed to recover routines. */
 		void		*arg;
 	} callbacks;

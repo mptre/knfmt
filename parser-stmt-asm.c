@@ -45,7 +45,7 @@ parser_stmt_asm_operand_cpp(struct parser *pr, struct doc *dc)
 	if (error & HALT)
 		return parser_fail(pr);
 	if (lexer_if(lx, TOKEN_COMMA, &comma)) {
-		doc_token(comma, expr);
+		parser_doc_token(pr, comma, expr);
 		doc_alloc(DOC_LINE, expr);
 	}
 	return parser_good(pr);
@@ -69,17 +69,17 @@ parser_stmt_asm_operand(struct parser *pr, struct doc *dc)
 
 	/* symbolic name */
 	if (lexer_if(lx, TOKEN_LSQUARE, &tk)) {
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
-			doc_token(tk, dc);
+			parser_doc_token(pr, tk, dc);
 		if (lexer_expect(lx, TOKEN_RSQUARE, &tk))
-			doc_token(tk, dc);
+			parser_doc_token(pr, tk, dc);
 		doc_alloc(DOC_LINE, dc);
 	}
 
 	/* constraint */
 	if (lexer_expect(lx, TOKEN_STRING, &tk)) {
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		doc_alloc(DOC_LINE, dc);
 	}
 
@@ -87,16 +87,16 @@ parser_stmt_asm_operand(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk)) {
 		int error;
 
-		doc_token(tk, dc);
+		parser_doc_token(pr, tk, dc);
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc	= dc,
 		});
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &tk))
-			doc_token(tk, expr);
+			parser_doc_token(pr, tk, expr);
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
-			doc_token(comma, expr);
+			parser_doc_token(pr, comma, expr);
 			doc_alloc(DOC_LINE, expr);
 		}
 	}
@@ -132,13 +132,13 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 	if (lexer_expect(lx, TOKEN_ASSEMBLY, &assembly))
-		doc_token(assembly, concat);
+		parser_doc_token(pr, assembly, concat);
 
 	while (lexer_if(lx, TOKEN_VOLATILE, &qualifier) ||
 	    lexer_if(lx, TOKEN_INLINE, &qualifier) ||
 	    lexer_if(lx, TOKEN_GOTO, &qualifier)) {
 		doc_alloc(DOC_LINE, concat);
-		doc_token(qualifier, concat);
+		parser_doc_token(pr, qualifier, concat);
 	}
 	if (qualifier != NULL && token_has_spaces(qualifier))
 		doc_alloc(DOC_LINE, concat);
@@ -148,7 +148,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
 		parser_token_trim_before(pr, rparen);
 	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-		doc_token(tk, opt);
+		parser_doc_token(pr, tk, opt);
 
 	/* instructions */
 	if (!lexer_peek_until(lx, TOKEN_COLON, &colon)) {
@@ -166,7 +166,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	if (lexer_if(lx, TOKEN_COLON, &colon)) {
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
 		doc_alloc(DOC_LINE, concat);
-		doc_token(colon, concat);
+		parser_doc_token(pr, colon, concat);
 		concat = doc_indent(2, concat);
 		while (parser_stmt_asm_operand(pr, concat) & GOOD)
 			ninputs++;
@@ -177,7 +177,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
 		if (ninputs > 0)
 			doc_alloc(DOC_LINE, concat);
-		doc_token(colon, concat);
+		parser_doc_token(pr, colon, concat);
 		concat = doc_indent(2, concat);
 		while (parser_stmt_asm_operand(pr, concat) & GOOD)
 			continue;
@@ -186,7 +186,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	/* clobbers */
 	if (lexer_if(lx, TOKEN_COLON, &colon)) {
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
-		doc_token(colon, concat);
+		parser_doc_token(pr, colon, concat);
 		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 			doc_alloc(DOC_LINE, concat);
 		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
@@ -199,7 +199,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	/* goto labels */
 	if (lexer_if(lx, TOKEN_COLON, &colon)) {
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
-		doc_token(colon, concat);
+		parser_doc_token(pr, colon, concat);
 		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 			doc_alloc(DOC_LINE, concat);
 		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
@@ -210,9 +210,9 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	}
 
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-		doc_token(rparen, concat);
+		parser_doc_token(pr, rparen, concat);
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		doc_token(tk, concat);
+		parser_doc_token(pr, tk, concat);
 
 	return parser_good(pr);
 }

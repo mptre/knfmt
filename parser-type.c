@@ -220,7 +220,7 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 			struct token *rparen;
 			unsigned int w;
 
-			doc_token(lparen, dc);
+			parser_doc_token(pr, lparen, dc);
 			if (style(pr->pr_st, AlignAfterOpenBracket) == Align)
 				w = parser_width(pr, dc);
 			else
@@ -229,12 +229,12 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 			while (parser_func_arg(pr, indent, NULL, end) & GOOD)
 				continue;
 			if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
-				doc_token(rparen, dc);
+				parser_doc_token(pr, rparen, dc);
 			break;
 		}
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
-		doc_token(tk, concat);
+		parser_doc_token(pr, tk, concat);
 
 		if (tk->tk_type == TOKEN_LPAREN) {
 			unsigned int indent;
