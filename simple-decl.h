@@ -1,9 +1,10 @@
+struct arena_scope;
 struct lexer;
 struct options;
 struct token;
 
 struct simple_decl	*simple_decl_enter(struct lexer *,
-    const struct options *);
+    struct arena_scope *, const struct options *);
 void			 simple_decl_leave(struct simple_decl *);
 void			 simple_decl_free(struct simple_decl *);
 

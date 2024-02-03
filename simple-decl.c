@@ -5,13 +5,13 @@
 #include <assert.h>
 #include <err.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
@@ -28,7 +28,8 @@ struct token_range {
 	    (var) = (var) == (tr)->tr_end ? NULL : (tvar),		\
 	    (tvar) = (var) ? token_next((var)) : NULL)
 
-static char	*token_range_str(const struct token_range *);
+static const char	*token_range_str(const struct token_range *,
+    struct arena_scope *);
 
 /*
  * Represents a single declaration from the source code.
@@ -56,10 +57,9 @@ static int	decl_var_is_empty(const struct decl_var *);
 struct decl_type {
 	struct token_range		 dt_tr;
 	VECTOR(struct decl_type_vars)	 dt_slots;
-	char				*dt_str;
+	const char			*dt_str;
 };
 
-static void			 decl_type_free(struct decl_type *);
 static struct decl_type_vars	*decl_type_slot(struct decl_type *,
     unsigned int);
 
@@ -86,6 +86,8 @@ struct simple_decl {
 
 	/* All seen type declarations. */
 	VECTOR(struct decl_type) types;
+
+	struct arena_scope	*eternal_scope;
 
 	/* Current type declaration. */
 	struct decl_type	*dt;
@@ -117,15 +119,17 @@ static int	classify(const struct token_range *, unsigned int *);
 } while (0)
 
 struct simple_decl *
-simple_decl_enter(struct lexer *lx, const struct options *op)
+simple_decl_enter(struct lexer *lx, struct arena_scope *eternal_scope,
+    const struct options *op)
 {
 	struct simple_decl *sd;
 
-	sd = ecalloc(1, sizeof(*sd));
+	sd = arena_calloc(eternal_scope, 1, sizeof(*sd));
 	if (VECTOR_INIT(sd->empty_decls))
 		err(1, NULL);
 	if (VECTOR_INIT(sd->types))
 		err(1, NULL);
+	sd->eternal_scope = eternal_scope;
 	sd->lx = lx;
 	sd->op = op;
 	return sd;
@@ -197,11 +201,8 @@ simple_decl_free(struct simple_decl *sd)
 			VECTOR_FREE(ds->vars);
 		}
 		VECTOR_FREE(dt->dt_slots);
-		decl_type_free(dt);
 	}
 	VECTOR_FREE(sd->types);
-
-	free(sd);
 }
 
 void
@@ -214,7 +215,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	struct decl *dc;
 	struct decl_var *dv;
 	struct token *tk, *tmp;
-	char *type;
+	const char *type;
 
 	TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
 		if (!token_is_moveable(tk))
@@ -228,9 +229,8 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 		}
 	}
 
-	type = token_range_str(&tr);
+	type = token_range_str(&tr, sd->eternal_scope);
 	sd->dt = simple_decl_type_create(sd, type, &tr);
-	free(type);
 
 	dv = simple_decl_var_init(sd);
 	/* Pointer(s) are part of the variable. */
@@ -296,15 +296,14 @@ simple_decl_comma(struct simple_decl *sd, struct token *comma)
 	dv->dv_delim = delim;
 }
 
-static char *
-token_range_str(const struct token_range *tr)
+static const char *
+token_range_str(const struct token_range *tr, struct arena_scope *s)
 {
 	struct buffer *bf;
 	struct token *tk, *tmp;
-	char *str;
 	int ntokens = 0;
 
-	bf = buffer_alloc(64);
+	bf = arena_buffer_alloc(s, 64);
 	if (bf == NULL)
 		err(1, NULL);
 	TOKEN_RANGE_FOREACH(tk, tr, tmp) {
@@ -315,11 +314,7 @@ token_range_str(const struct token_range *tr)
 			buffer_putc(bf, ' ');
 		buffer_puts(bf, tk->tk_str, tk->tk_len);
 	}
-	str = buffer_str(bf);
-	if (str == NULL)
-		err(1, NULL);
-	buffer_free(bf);
-	return str;
+	return buffer_str(bf);
 }
 
 static void
@@ -340,14 +335,6 @@ static int
 decl_var_is_empty(const struct decl_var *dv)
 {
 	return dv->dv_ident.tr_beg == NULL;
-}
-
-static void
-decl_type_free(struct decl_type *dt)
-{
-	if (dt == NULL)
-		return;
-	free(dt->dt_str);
 }
 
 static struct decl_type_vars *
@@ -394,7 +381,7 @@ simple_decl_type_create(struct simple_decl *sd, const char *type,
 
 	if (VECTOR_INIT(dt->dt_slots))
 		err(1, NULL);
-	dt->dt_str = estrdup(type);
+	dt->dt_str = type;
 	simple_trace(sd, "new type \"%s\"", dt->dt_str);
 	return dt;
 }

@@ -483,7 +483,9 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags,
 	if (!simple_enter(pr->pr_si, SIMPLE_DECL, simple_flags, simple))
 		return parser_good(pr);
 
-	pr->pr_simple.decl = simple_decl_enter(lx, pr->pr_op);
+	arena_scope(pr->pr_scratch, scratch_scope);
+
+	pr->pr_simple.decl = simple_decl_enter(lx, &scratch_scope, pr->pr_op);
 	dc = doc_alloc(DOC_CONCAT, NULL);
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
