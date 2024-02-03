@@ -151,7 +151,6 @@ clang_free(struct clang *cl)
 	if (cl == NULL)
 		return;
 
-	cpp_include_free(cl->ci);
 	VECTOR_FREE(cl->branches);
 }
 
@@ -173,6 +172,7 @@ clang_done(struct lexer *lx, void *arg)
 	struct clang *cl = arg;
 
 	clang_branch_purge(cl, lx);
+	cpp_include_done(cl->ci);
 }
 
 static struct token *

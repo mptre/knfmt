@@ -42,6 +42,7 @@ struct include_group {
 	VECTOR(struct include *)	includes;
 };
 
+static void	cpp_include_free(struct cpp_include *);
 static void	cpp_include_exec(struct cpp_include *, struct lexer *);
 static void	cpp_include_reset(struct cpp_include *);
 
@@ -63,6 +64,7 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 	unsigned int simple_flags;
 
 	ci = arena_calloc(eternal_scope, 1, sizeof(*ci));
+	arena_cleanup(eternal_scope, cpp_include_free, ci);
 	if (VECTOR_INIT(ci->includes))
 		err(1, NULL);
 	if (MAP_INIT(ci->groups))
@@ -96,13 +98,10 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 	return ci;
 }
 
-void
+static void
 cpp_include_free(struct cpp_include *ci)
 {
 	MAP_ITERATOR(ci->groups) it = {0};
-
-	if (ci == NULL)
-		return;
 
 	cpp_include_reset(ci);
 	VECTOR_FREE(ci->includes);
@@ -113,6 +112,11 @@ cpp_include_free(struct cpp_include *ci)
 		MAP_REMOVE(ci->groups, it.key);
 	}
 	MAP_FREE(ci->groups);
+}
+
+void
+cpp_include_done(struct cpp_include *ci)
+{
 	simple_leave(&ci->cookie);
 }
 
