@@ -1148,6 +1148,10 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 		st->st_col++;
 		break;
 
+	case DOC_HARDLINE:
+		doc_column(st, dc->dc_str, dc->dc_len);
+		break;
+
 	case DOC_OPTLINE:
 		if (st->st_optline) {
 			fits->optline = 1;
@@ -1164,7 +1168,6 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 	case DOC_INDENT:
 	case DOC_NOINDENT:
 	case DOC_SOFTLINE:
-	case DOC_HARDLINE:
 	case DOC_MUTE:
 	case DOC_MINIMIZE:
 	case DOC_SCOPE:
