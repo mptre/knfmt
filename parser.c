@@ -23,20 +23,18 @@ parser_get_error(const struct parser *pr)
 }
 
 struct parser *
-parser_alloc(struct lexer *lx, const struct style *st, struct simple *si,
-    struct arena_scope *eternal_scope, struct arena *scratch,
-    struct arena *doc, const struct options *op)
+parser_alloc(const struct parser_arg *arg)
 {
 	struct parser *pr;
 
-	pr = arena_calloc(eternal_scope, 1, sizeof(*pr));
-	pr->pr_st = st;
-	pr->pr_si = si;
-	pr->pr_op = op;
-	pr->pr_lx = lx;
-	pr->pr_bf = arena_buffer_alloc(eternal_scope, 1 << 10);
-	pr->pr_arena.scratch = scratch;
-	pr->pr_arena.doc = doc;
+	pr = arena_calloc(arg->arena.eternal_scope, 1, sizeof(*pr));
+	pr->pr_op = arg->options;
+	pr->pr_st = arg->style;
+	pr->pr_si = arg->simple;
+	pr->pr_lx = arg->lexer;
+	pr->pr_arena.scratch = arg->arena.scratch;
+	pr->pr_arena.doc = arg->arena.doc;
+	pr->pr_bf = arena_buffer_alloc(arg->arena.eternal_scope, 1 << 10);
 
 	return pr;
 }

@@ -10,14 +10,25 @@ struct style;
 #define CONCAT(x, y) CONCAT2(x, y)
 #define CONCAT2(x, y) x ## y
 
+struct parser_arg {
+	const struct options	*options;
+	const struct style	*style;
+	struct simple		*simple;
+	struct lexer		*lexer;
+
+	struct {
+		struct arena_scope	*eternal_scope;
+		struct arena		*scratch;
+		struct arena		*doc;
+	} arena;
+};
+
 struct parser_arena_scope_cookie {
 	struct arena_scope	**restore_scope;
 	struct arena_scope	 *old_scope;
 };
 
-struct parser	*parser_alloc(struct lexer *, const struct style *,
-    struct simple *, struct arena_scope *, struct arena *, struct arena *,
-    const struct options *);
+struct parser	*parser_alloc(const struct parser_arg *);
 int		 parser_exec(struct parser *, const struct diffchunk *,
     struct buffer *);
 

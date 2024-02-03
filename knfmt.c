@@ -229,8 +229,17 @@ fileformat(struct main_context *c, struct file *fe)
 		error = 1;
 		goto out;
 	}
-	pr = parser_alloc(lx, c->style, c->simple, &eternal_scope,
-	    c->arena.scratch, c->arena.doc, &c->options);
+	pr = parser_alloc(&(struct parser_arg){
+	    .options	= &c->options,
+	    .style	= c->style,
+	    .simple	= c->simple,
+	    .lexer	= lx,
+	    .arena	= {
+		.eternal_scope	= &eternal_scope,
+		.scratch	= c->arena.scratch,
+		.doc		= c->arena.doc,
+	    },
+	});
 	if (pr == NULL) {
 		error = 1;
 		goto out;

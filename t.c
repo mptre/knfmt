@@ -801,8 +801,17 @@ context_init(struct context *cx, const char *src)
 		.arg		= cx->cl,
 	    },
 	});
-	cx->pr = parser_alloc(cx->lx, cx->st, cx->si, &cx->arena.eternal_scope,
-	    cx->arena.scratch, cx->arena.doc, &cx->op);
+	cx->pr = parser_alloc(&(struct parser_arg){
+	    .options	= &cx->op,
+	    .style	= cx->st,
+	    .simple	= cx->si,
+	    .lexer	= cx->lx,
+	    .arena	= {
+		.eternal_scope	= &cx->arena.eternal_scope,
+		.scratch	= cx->arena.scratch,
+		.doc		= cx->arena.doc,
+	    },
+	});
 }
 
 static void
