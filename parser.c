@@ -74,13 +74,13 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 		if (error & GOOD) {
 			lexer_stamp(lx);
 		} else if (error & BRCH) {
-			if (!lexer_branch(lx))
+			if (!lexer_branch(lx, &pr->pr_branch.unmute))
 				break;
 			parser_reset(pr);
 		} else if (error & (FAIL | NONE)) {
 			int r;
 
-			r = lexer_recover(lx);
+			r = lexer_recover(lx, &pr->pr_branch.unmute);
 			if (r == 0)
 				break;
 			while (r-- > 0)
@@ -215,9 +215,12 @@ parser_reset(struct parser *pr)
 }
 
 struct doc *
-parser_doc_token_impl(struct parser *UNUSED(pr), struct token *tk,
-    struct doc *dc, const char *fun, int lno)
+parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
+    const char *fun, int lno)
 {
+	if (tk == pr->pr_branch.unmute)
+		doc_alloc0(DOC_MUTE, dc, -1, fun, lno);
+
 	return doc_token(tk, dc, DOC_LITERAL, fun, lno);
 }
 

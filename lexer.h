@@ -65,8 +65,8 @@ int		lexer_get_lines(const struct lexer *, unsigned int,
     unsigned int, const char **, size_t *);
 
 void	lexer_stamp(struct lexer *);
-int	lexer_recover(struct lexer *);
-int	lexer_branch(struct lexer *);
+int	lexer_recover(struct lexer *, struct token **);
+int	lexer_branch(struct lexer *, struct token **);
 int	lexer_seek(struct lexer *, struct token *);
 int	lexer_seek_after(struct lexer *, struct token *);
 

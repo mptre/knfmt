@@ -49,8 +49,6 @@ struct lexer {
 
 	int			 lx_peek;
 
-	struct token		*lx_unmute;
-
 	struct token_list	 lx_tokens;
 	VECTOR(struct token *)	 lx_stamps;
 };
@@ -64,8 +62,8 @@ static unsigned int	lexer_column(const struct lexer *,
 static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
 
-static void	lexer_branch_fold(struct lexer *, struct token *);
-static void	lexer_branch_unmute(struct lexer *, struct token *);
+static void	lexer_branch_fold(struct lexer *, struct token *,
+    struct token **);
 
 #define LEXER_BRANCH_BACKWARD		0x00000001u
 #define LEXER_BRANCH_FORWARD		0x00000002u
@@ -164,8 +162,6 @@ lexer_free(struct lexer *lx)
 	struct token *tk;
 
 	VECTOR_FREE(lx->lx_lines);
-	if (lx->lx_unmute != NULL)
-		token_rele(lx->lx_unmute);
 	while (!VECTOR_EMPTY(lx->lx_stamps)) {
 		struct token **tail;
 
@@ -413,7 +409,7 @@ lexer_stamp(struct lexer *lx)
  * to parse them again.
  */
 int
-lexer_recover(struct lexer *lx)
+lexer_recover(struct lexer *lx, struct token **unmute)
 {
 	struct token *seek = NULL;
 	struct token *back, *br, *dst, *src;
@@ -453,7 +449,7 @@ lexer_recover(struct lexer *lx)
 	 * removed, grab a reference since it's needed below.
 	 */
 	token_ref(br);
-	lexer_branch_fold(lx, br);
+	lexer_branch_fold(lx, br, unmute);
 
 	/* Find first stamped token before the branch. */
 	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
@@ -478,7 +474,7 @@ lexer_recover(struct lexer *lx)
  * Returns non-zero if the lexer took the next branch.
  */
 int
-lexer_branch(struct lexer *lx)
+lexer_branch(struct lexer *lx, struct token **unmute)
 {
 	struct token *br, *dst, *rm, *seek, *tk;
 
@@ -512,16 +508,10 @@ lexer_branch(struct lexer *lx)
 	}
 
 	/*
-	 * Tell doc_token() that crossing this token must cause tokens to be
-	 * emitted again. While here, disarm any previous unmute token as it
-	 * might be crossed again.
+	 * Instruct caller that crossing this token must cause tokens to be
+	 * emitted again.
 	 */
-	if (lx->lx_unmute != NULL) {
-		lx->lx_unmute->tk_flags &= ~TOKEN_FLAG_UNMUTE;
-		token_rele(lx->lx_unmute);
-		lx->lx_unmute = NULL;
-	}
-	lexer_branch_unmute(lx, dst);
+	*unmute = dst;
 
 	/* Rewind to last stamped token. */
 	seek = lexer_last_stamped(lx);
@@ -743,13 +733,6 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 		for (i++; i < VECTOR_LENGTH(lx->lx_stamps); i++)
 			lx->lx_stamps[i - 1] = lx->lx_stamps[i];
 		VECTOR_POP(lx->lx_stamps);
-	}
-
-	if (tk->tk_flags & TOKEN_FLAG_UNMUTE) {
-		assert(tk == lx->lx_unmute);
-		tk->tk_flags &= ~TOKEN_FLAG_UNMUTE;
-		token_rele(tk);
-		lx->lx_unmute = NULL;
 	}
 
 	if (lx->lx_st.st_tk == tk)
@@ -1267,13 +1250,12 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
  * Fold tokens covered by the branch into a prefix.
  */
 static void
-lexer_branch_fold(struct lexer *lx, struct token *src)
+lexer_branch_fold(struct lexer *lx, struct token *src, struct token **unmute)
 {
 	struct token *dst, *prefix, *pv, *rm;
 	const char *buf = lx->lx_input.ptr;
 	size_t len, off;
 	int dangling = 0;
-	int unmute = 0;
 
 	/* Grab a reference since the branch is about to be removed. */
 	dst = src->tk_branch.br_nx;
@@ -1346,30 +1328,17 @@ lexer_branch_fold(struct lexer *lx, struct token *src)
 		dangling = token_is_dangling(rm);
 		nx = token_next(rm);
 		lexer_trace(lx, "removing %s", lexer_serialize(lx, rm));
-		if (rm->tk_flags & TOKEN_FLAG_UNMUTE)
-			unmute = 1;
 		lexer_remove(lx, rm, 0);
 		rm = nx;
 	}
 
 	/*
-	 * If the unmute token ended up being deleted, tell doc_token() that
-	 * crossing the end of this branch must cause tokens to be emitted
-	 * again.
+	 * Instruct caller that crossing this token must cause tokens to be
+	 * emitted again.
 	 */
-	if (unmute)
-		lexer_branch_unmute(lx, dst->tk_branch.br_parent);
+	*unmute = dst->tk_branch.br_parent;
 
 	token_rele(dst);
-}
-
-static void
-lexer_branch_unmute(struct lexer *lx, struct token *tk)
-{
-	assert(lx->lx_unmute == NULL);
-	tk->tk_flags |= TOKEN_FLAG_UNMUTE;
-	token_ref(tk);
-	lx->lx_unmute = tk;
 }
 
 /*

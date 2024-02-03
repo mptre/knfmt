@@ -545,9 +545,6 @@ doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 	struct doc *token;
 	struct token *nx, *prefix, *suffix;
 
-	if (tk->tk_flags & TOKEN_FLAG_UNMUTE)
-		doc_alloc0(DOC_MUTE, dc, -1, fun, lno);
-
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
 		doc_token(prefix, dc, DOC_VERBATIM, __func__, __LINE__);
 

@@ -43,6 +43,10 @@ struct parser {
 	struct {
 		struct ruler	*ruler;		/* align X macros */
 	} pr_cpp;
+
+	struct {
+		struct token	*unmute;
+	} pr_branch;
 };
 
 int	parser_good(const struct parser *);
