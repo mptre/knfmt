@@ -25,6 +25,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/compiler.h"
+
 #if defined(__has_feature)
 #  if  __has_feature(address_sanitizer)
 #    define HAVE_ASAN 1	/* clang */
@@ -55,8 +57,7 @@ struct arena {
 	/* Number of ASAN poison bytes between allocations. */
 	size_t			 poison_size;
 	struct {
-		unsigned int	fatal:1,
-				dying:1;
+		unsigned int	dying:1;
 	} flags;
 	int			 refs;
 	struct arena_stats	 stats;
@@ -112,13 +113,12 @@ arena_rele(struct arena *a)
 }
 
 static void *
-arena_push(struct arena *a, struct arena_frame *frame, size_t size)
+arena_push(const struct arena *a, struct arena_frame *frame, size_t size)
 {
 	void *ptr;
 	uint64_t newlen;
 
 	if (size > INT64_MAX - frame->len) {
-		a->stats.overflow |= 1;
 		errno = EOVERFLOW;
 		return NULL;
 	}
@@ -168,34 +168,23 @@ arena_frame_alloc(struct arena *a, size_t frame_size)
 }
 
 struct arena *
-arena_alloc(unsigned int flags)
+arena_alloc(void)
 {
 	struct arena *a;
 	long page_size;
 
 	page_size = sysconf(_SC_PAGESIZE);
-	if (page_size == -1) {
-		if (flags & ARENA_FATAL)
-			err(1, "sysconf");
-		return NULL;
-	}
+	if (page_size == -1)
+		err(1, "sysconf");
 
 	a = calloc(1, sizeof(*a));
-	if (a == NULL) {
-		if (flags & ARENA_FATAL)
-			err(1, "%s", __func__);
-		return NULL;
-	}
+	if (a == NULL)
+		err(1, "%s", __func__);
 	a->frame_size = 16 * (size_t)page_size;
 	a->poison_size = POISON_SIZE;
-	a->flags.fatal = (flags & ARENA_FATAL) ? 1u : 0;
 	arena_ref(a);
-	if (!arena_frame_alloc(a, a->frame_size)) {
-		arena_free(a);
-		if (flags & ARENA_FATAL)
-			err(1, "%s", __func__);
-		return NULL;
-	}
+	if (!arena_frame_alloc(a, a->frame_size))
+		err(1, "%s", __func__);
 
 	return a;
 }
@@ -251,7 +240,20 @@ arena_scope_enter(struct arena *a)
 	    .arena	= a,
 	    .frame	= a->frame,
 	    .frame_len	= a->frame->len,
+	    .id		= a->refs,
 	};
+}
+
+static void
+arena_scope_validate(struct arena *a, struct arena_scope *s, size_t size)
+{
+	if (likely(s->id == a->refs))
+		return;
+
+	warnx("arena: Allocating %zu bytes from scope S%d which will be freed "
+	    "by nested scope S%d\n",
+	    size, s->id, a->refs);
+	__builtin_trap();
 }
 
 void *
@@ -262,41 +264,31 @@ arena_malloc(struct arena_scope *s, size_t size)
 	void *ptr;
 	uint64_t frame_size, total_size;
 
+	arena_scope_validate(a, s, size);
+
 	ptr = arena_push(a, a->frame, size);
 	if (ptr != NULL)
 		return ptr;
 
-	if (sizeof(*frame) > INT64_MAX - size) {
-		a->stats.overflow |= 2;
-		errno = EOVERFLOW;
-		if (a->flags.fatal)
-			err(1, "%s", __func__);
-		return NULL;
-	}
+	if (sizeof(*frame) > INT64_MAX - size)
+		errx(1, "%s: Requested allocation too large", __func__);
 	total_size = size + sizeof(*frame);
 
 	frame_size = a->frame_size;
 	while (frame_size < total_size) {
 		if (frame_size > INT64_MAX / frame_size) {
-			a->stats.overflow |= 4;
-			errno = EOVERFLOW;
-			if (a->flags.fatal)
-				err(1, "%s", __func__);
-			return NULL;
+			errx(1, "%s: Requested allocation exceeds frame size",
+			    __func__);
 		}
 		frame_size <<= 1;
 	}
 
-	if (!arena_frame_alloc(a, frame_size)) {
-		if (a->flags.fatal)
-			err(1, "%s", __func__);
-		return NULL;
-	}
+	if (!arena_frame_alloc(a, frame_size))
+		err(1, "%s", __func__);
 
 	ptr = arena_push(a, a->frame, size);
 	if (ptr == NULL) {
-		if (a->flags.fatal)
-			err(1, "%s", __func__);
+		err(1, "%s", __func__);
 		return NULL;
 	}
 	return ptr;
@@ -305,16 +297,11 @@ arena_malloc(struct arena_scope *s, size_t size)
 void *
 arena_calloc(struct arena_scope *s, size_t nmemb, size_t size)
 {
-	struct arena *a = s->arena;
 	void *ptr;
 	uint64_t total_size;
 
-	if (nmemb > INT64_MAX / size) {
-		errno = EOVERFLOW;
-		if (a->flags.fatal)
-			err(1, "%s", __func__);
-		return NULL;
-	}
+	if (nmemb > INT64_MAX / size)
+		errx(1, "%s: Requested allocation too large", __func__);
 	total_size = nmemb * size;
 
 	ptr = arena_malloc(s, total_size);
@@ -406,7 +393,7 @@ arena_sprintf(struct arena_scope *s, const char *fmt, ...)
 
 	len = (size_t)n + 1;
 	rollback = arena_scope_enter(a);
-	str = arena_malloc(s, len);
+	str = arena_malloc(&rollback, len);
 	n = vsnprintf(str, len, fmt, ap);
 	if (n < 0 || (size_t)n >= len) {
 		arena_scope_leave(&rollback);
@@ -429,16 +416,11 @@ arena_strdup(struct arena_scope *s, const char *src)
 char *
 arena_strndup(struct arena_scope *s, const char *src, size_t len)
 {
-	struct arena *a = s->arena;
 	char *dst;
 	uint64_t total_size;
 
-	if (len > INT64_MAX - 1) {
-		errno = EOVERFLOW;
-		if (a->flags.fatal)
-			err(1, "%s", __func__);
-		return NULL;
-	}
+	if (len > INT64_MAX - 1)
+		errx(1, "%s: Requested allocation too large", __func__);
 	total_size = len + 1;
 
 	dst = arena_malloc(s, total_size);

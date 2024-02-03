@@ -16,8 +16,6 @@
 
 #include <stddef.h>	/* size_t */
 
-#define ARENA_FATAL		0x00000001u
-
 #define arena_scope(arena, varname) \
 	__attribute__((cleanup(arena_scope_leave))) \
 	struct arena_scope varname = arena_scope_enter((arena))
@@ -26,6 +24,7 @@ struct arena_scope {
 	struct arena		*arena;
 	struct arena_frame	*frame;
 	size_t			 frame_len;
+	int			 id;
 };
 
 struct arena_stats {
@@ -51,12 +50,9 @@ struct arena_stats {
 		/* Number of bytes spilled while moving allocations. */
 		unsigned long	spill;
 	} realloc;
-
-	/* Overflow scenario(s) hit during frame size calculation. */
-	unsigned long	overflow;
 };
 
-struct arena	*arena_alloc(unsigned int);
+struct arena	*arena_alloc(void);
 void		 arena_free(struct arena *);
 
 struct arena_scope	arena_scope_enter(struct arena *);

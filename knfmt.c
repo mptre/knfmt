@@ -116,13 +116,9 @@ main(int argc, char *argv[])
 	clang_init();
 	expr_init();
 	style_init();
-	eternal = arena_alloc(ARENA_FATAL);
-	if (eternal == NULL)
-		err(1, NULL);
+	eternal = arena_alloc();
 	arena_scope(eternal, eternal_scope);
-	scratch = arena_alloc(ARENA_FATAL);
-	if (scratch == NULL)
-		err(1, NULL);
+	scratch = arena_alloc();
 	if (VECTOR_INIT(files.fs_vc))
 		err(1, NULL);
 	st = style_parse(clang_format, &eternal_scope, scratch, &op);

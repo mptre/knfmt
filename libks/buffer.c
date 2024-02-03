@@ -32,6 +32,11 @@ struct buffer {
 	size_t			 bf_len;
 };
 
+struct buffer_getline {
+	struct buffer	*bf;
+	size_t		 off;
+};
+
 static int	buffer_reserve(struct buffer *, size_t);
 
 static void	*callback_alloc(size_t, void *);
@@ -257,6 +262,55 @@ buffer_get_size(const struct buffer *bf)
 	return bf->bf_siz;
 }
 
+const char *
+buffer_getline(const struct buffer *bf, struct buffer_getline **out)
+{
+	struct buffer_getline *getline;
+	const char *line, *newline;
+	size_t linelen;
+
+	if (*out == NULL) {
+		getline = calloc(1, sizeof(*getline));
+		if (getline == NULL)
+			return NULL;
+		getline->bf = buffer_alloc(1 << 10);
+		if (bf == NULL) {
+			buffer_getline_free(getline);
+			return NULL;
+		}
+		*out = getline;
+	}
+	getline = *out;
+
+	if (getline->off == bf->bf_len)
+		goto done;
+
+	line = &bf->bf_ptr[getline->off];
+	newline = memchr(line, '\n', bf->bf_len - getline->off);
+	if (newline == NULL)
+		goto done;
+	linelen = (size_t)(newline - line);
+	buffer_reset(getline->bf);
+	buffer_puts(getline->bf, line, linelen);
+	buffer_putc(getline->bf, '\0');
+	getline->off += linelen + 1;
+	return buffer_get_ptr(getline->bf);
+
+done:
+	buffer_getline_free(getline);
+	*out = NULL;
+	return NULL;
+}
+
+void
+buffer_getline_free(struct buffer_getline *getline)
+{
+	if (getline == NULL)
+		return;
+	buffer_free(getline->bf);
+	free(getline);
+}
+
 static int
 buffer_reserve(struct buffer *bf, size_t len)
 {
@@ -266,7 +320,7 @@ buffer_reserve(struct buffer *bf, size_t len)
 	if (len > ULONG_MAX - bf->bf_len)
 		goto overflow;
 	newlen = bf->bf_len + len;
-	if (bf->bf_siz >= newlen)
+	if (bf->bf_siz > 0 && bf->bf_siz >= newlen)
 		return 0;
 
 	newsiz = bf->bf_siz ? bf->bf_siz : 16;

@@ -99,7 +99,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	struct arena_scope eternal_scope;
 	struct lexer *lx;
 
-	arena = arena_alloc(ARENA_FATAL);
+	arena = arena_alloc();
 	eternal_scope = arena_scope_enter(arena);
 
 	lx = arena_calloc(&eternal_scope, 1, sizeof(*lx));

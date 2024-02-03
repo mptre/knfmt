@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define UNUSED(x) ((void)(x))
+#include "libks/compiler.h"
 
 #define CTRL_SOURCE_SHIFT		0
 #define  CTRL_SOURCE_U8			0x00
@@ -47,6 +47,14 @@ struct cpuid {
 	uint32_t a, b, d, c;
 };
 
+enum sse_version {
+	SSE1_0 = 1,
+	SSE2_0,
+	SSE3_0,
+	SSE4_1,
+	SSE4_2,
+};
+
 unsigned int KS_features = 0;
 
 static void KS_str_init(void) __attribute__((constructor));
@@ -58,7 +66,7 @@ static void KS_str_init(void) __attribute__((constructor));
 #endif
 
 static int
-is_intel(uint32_t *max_leaf)
+is_intel(uint32_t *MAYBE_UNUSED(max_leaf))
 {
 #if defined(__x86_64__)
 	struct cpuid leaf;
@@ -71,13 +79,12 @@ is_intel(uint32_t *max_leaf)
 	*max_leaf = leaf.a;
 	return 1;
 #else
-	UNUSED(max_leaf);
 	return 0;
 #endif
 }
 
-static int
-has_sse(uint32_t max_leaf)
+static enum sse_version
+sse_version(uint32_t MAYBE_UNUSED(max_leaf))
 {
 #if defined(__x86_64__)
 #define CPUID_01_C_SSE3_0_MASK		(1 << 9)
@@ -87,23 +94,34 @@ has_sse(uint32_t max_leaf)
 #define CPUID_01_D_SSE2_0_MASK		(1 << 26)
 
 	struct cpuid leaf;
+	enum sse_version version = 0;
 
 	if (max_leaf < 1)
 		return 0;
+
 	asm("cpuid" : "=c" (leaf.c), "=d" (leaf.d) : "a" (1), "c" (0));
-	return (leaf.d & CPUID_01_D_SSE1_0_MASK) &&
-	    (leaf.d & CPUID_01_D_SSE2_0_MASK) &&
-	    (leaf.c & CPUID_01_C_SSE3_0_MASK) &&
-	    (leaf.c & CPUID_01_C_SSE4_1_MASK) &&
-	    (leaf.c & CPUID_01_C_SSE4_2_MASK);
+	if (leaf.d & CPUID_01_D_SSE1_0_MASK)
+		version = SSE1_0;
+	if (version == SSE1_0 &&
+	    (leaf.d & CPUID_01_D_SSE2_0_MASK))
+		version = SSE2_0;
+	if (version == SSE2_0 &&
+	    (leaf.c & CPUID_01_C_SSE3_0_MASK))
+		version = SSE3_0;
+	if (version == SSE3_0 &&
+	    (leaf.c & CPUID_01_C_SSE4_1_MASK))
+		version = SSE4_1;
+	if (version == SSE4_1 &&
+	    (leaf.c & CPUID_01_C_SSE4_2_MASK))
+		version = SSE4_2;
+	return version;
 #else
-	UNUSED(max_leaf);
 	return 0;
 #endif
 }
 
 static int
-has_bm1(uint32_t max_leaf)
+has_bmi1(uint32_t MAYBE_UNUSED(max_leaf))
 {
 #if defined(__x86_64__)
 #define CPUID_07_B_BMI1		(1 << 3)
@@ -115,7 +133,6 @@ has_bm1(uint32_t max_leaf)
 	asm("cpuid" : "=b" (leaf.b) : "a" (7), "c" (0));
 	return (int)(leaf.b & CPUID_07_B_BMI1);
 #else
-	UNUSED(max_leaf);
 	return 0;
 #endif
 }
@@ -126,8 +143,8 @@ KS_str_init(void)
 	uint32_t max_leaf = 0;
 
 	if (is_intel(&max_leaf) &&
-	    has_sse(max_leaf) /* PCMPISTRM */ &&
-	    has_bm1(max_leaf) /* TZCNT */)
+	    sse_version(max_leaf) >= SSE4_2 /* PCMPISTRM */ &&
+	    has_bmi1(max_leaf) /* TZCNT */)
 		KS_features |= KS_FEATURE_STR_NATIVE;
 }
 
@@ -154,7 +171,8 @@ KS_str_match_default(const char *str, size_t len, const char *ranges)
 }
 
 size_t
-KS_str_match_native(const char *str, size_t len, const char *ranges)
+KS_str_match_native(const char *MAYBE_UNUSED(str), size_t MAYBE_UNUSED(len),
+    const char *MAYBE_UNUSED(ranges))
 {
 #if defined(__x86_64__)
 	char tail[16] = {0};
@@ -166,11 +184,11 @@ KS_str_match_native(const char *str, size_t len, const char *ranges)
 	    (CTRL_OUTPUT_MASK_BITMASK << CTRL_OUTPUT_MASK_SHIFT);
 
 	asm(
-	    "   movdqu (%[ranges]), %%xmm2\n"
+	    "   movdqu (%[ranges]), %%xmm1\n"
 	    ".align 16\n"
 	    "1: cmp $16, %[len]\n"
 	    "   jb 3f\n"
-	    "   pcmpistrm %[ctrl], (%[str],%[i]), %%xmm2\n"
+	    "   pcmpistrm %[ctrl], (%[str],%[i]), %%xmm1\n"
 	    /* As the polarity is negative, all zeros means that all 16
 	     * bytes matched the ranges. */
 	    "   jna 2f\n"
@@ -188,19 +206,16 @@ KS_str_match_native(const char *str, size_t len, const char *ranges)
 	    "3: lea (%[str],%[i]), %%rsi\n"
 	    "   lea %[tail], %%rdi\n"
 	    "   rep movsb\n"
-	    "   pcmpistrm %[ctrl], %[tail], %%xmm2\n"
+	    "   pcmpistrm %[ctrl], %[tail], %%xmm1\n"
 	    "   jmp 2b\n"
 	    "4:\n"
 	    : [i] "+a" (i), [len] "+c" (len), [mask] "+r" (mask),
 	      [tail] "+m" (tail)
 	    : [ctrl] "i" (ctrl), [ranges] "r" (ranges), [str] "r" (str)
-	    : "cc", "xmm0", "xmm2", "rdi", "rsi");
+	    : "xmm0", "xmm1", "rdi", "rsi");
 
 	return i;
 #else
-	UNUSED(str);
-	UNUSED(len);
-	UNUSED(ranges);
 	return 0;
 #endif
 }

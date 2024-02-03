@@ -752,9 +752,7 @@ context_alloc(void)
 	struct context *cx;
 
 	cx = ecalloc(1, sizeof(*cx));
-	cx->scratch = arena_alloc(ARENA_FATAL);
-	if (cx->scratch == NULL)
-		err(1, NULL);
+	cx->scratch = arena_alloc();
 	cx->bf = buffer_alloc(128);
 	if (cx->bf == NULL)
 		err(1, NULL);

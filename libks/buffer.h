@@ -14,10 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_BUFFER_H
+#define LIBKS_BUFFER_H
+
 #include <stdarg.h>	/* va_list */
 #include <stddef.h>	/* size_t */
 
 struct buffer;
+struct buffer_getline;
 
 struct buffer_callbacks {
 	void	*(*alloc)(size_t, void *);
@@ -49,6 +53,12 @@ int	buffer_printf(struct buffer *, const char *, ...)
 	__attribute__((__format__(printf, 2, 3)));
 int	buffer_vprintf(struct buffer *, const char *, va_list);
 
+const char	*buffer_getline(const struct buffer *,
+    struct buffer_getline **);
+void		 buffer_getline_free(struct buffer_getline *);
+
 const char	*buffer_get_ptr(const struct buffer *);
 size_t		 buffer_get_len(const struct buffer *);
 size_t		 buffer_get_size(const struct buffer *);
+
+#endif

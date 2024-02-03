@@ -21,8 +21,8 @@ init(void)
 	style_init();
 
 	options_init(&c.op);
-	c.eternal = arena_alloc(ARENA_FATAL);
-	c.scratch = arena_alloc(ARENA_FATAL);
+	c.eternal = arena_alloc();
+	c.scratch = arena_alloc();
 	return &c;
 }
 FUZZER_INIT(init);

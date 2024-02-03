@@ -22,20 +22,11 @@
 #include "fs.h"
 #include "options.h"
 
-struct reader {
-	char	*buf;
-	size_t	 off;
-};
-
 static void	diff_end(struct diffchunk *, unsigned int);
 
 static int	matchpath(const char *, char *, size_t);
 static int	matchchunk(const char *, unsigned int *, unsigned int *);
 static int	matchline(const char *, unsigned int, struct file *);
-
-static struct reader	*reader_open(const char *);
-static const char	*reader_getline(struct reader *);
-static void		 reader_close(struct reader *);
 
 static const char	*trimprefix(const char *, size_t *);
 
@@ -93,16 +84,17 @@ diff_shutdown(void)
 int
 diff_parse(struct files *files, const struct options *op)
 {
+	struct buffer *bf;
+	struct buffer_getline *it = NULL;
 	struct file *fe = NULL;
-	struct reader *rd;
 	const char *line;
 	int error = 0;
 
-	rd = reader_open("/dev/stdin");
-	if (rd == NULL)
+	bf = buffer_read("/dev/stdin");
+	if (bf == NULL)
 		return 1;
 
-	while ((line = reader_getline(rd)) != NULL) {
+	while ((line = buffer_getline(bf, &it)) != NULL) {
 		char path[PATH_MAX];
 		unsigned int el, sl;
 
@@ -116,7 +108,7 @@ diff_parse(struct files *files, const struct options *op)
 			}
 
 			while (sl <= el) {
-				line = reader_getline(rd);
+				line = buffer_getline(bf, &it);
 				if (line == NULL) {
 					error = 1;
 					goto out;
@@ -147,7 +139,8 @@ diff_parse(struct files *files, const struct options *op)
 	}
 
 out:
-	reader_close(rd);
+	buffer_getline_free(it);
+	buffer_free(bf);
 	return error;
 }
 
@@ -263,57 +256,6 @@ matchline(const char *str, unsigned int lno, struct file *fe)
 		diff_end(fe->fe_diff, lno - 1);
 	}
 	return 1;
-}
-
-static struct reader *
-reader_open(const char *path)
-{
-	struct buffer *bf = NULL;
-	struct reader *rd = NULL;
-
-	bf = buffer_read(path);
-	if (bf == NULL) {
-		warn("%s", path);
-		goto err;
-	}
-
-	rd = ecalloc(1, sizeof(*rd));
-	rd->buf = buffer_str(bf);
-	if (rd->buf == NULL)
-		goto err;
-	buffer_free(bf);
-	return rd;
-
-err:
-	reader_close(rd);
-	buffer_free(bf);
-	return NULL;
-}
-
-static const char *
-reader_getline(struct reader *rd)
-{
-	const char *line;
-	char *p;
-	size_t len;
-
-	line = &rd->buf[rd->off];
-	p = strchr(line, '\n');
-	if (p == NULL)
-		return NULL;
-	*p = '\0';
-	len = (size_t)(p - line) + 1;
-	rd->off += len;
-	return line;
-}
-
-static void
-reader_close(struct reader *rd)
-{
-	if (rd == NULL)
-		return;
-	free(rd->buf);
-	free(rd);
 }
 
 static const char *
