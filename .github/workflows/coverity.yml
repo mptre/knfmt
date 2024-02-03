@@ -8,9 +8,14 @@ jobs:
   coverity:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - run: ./configure
-    - uses: vapier/coverity-scan-action@v1
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: configure
+      env:
+        CFLAGS: -O2
+      run: ./configure
+    - name: coverity
+      uses: vapier/coverity-scan-action@v1
       with:
         email: ${{ secrets.COVERITY_SCAN_EMAIL }}
         token: ${{ secrets.COVERITY_SCAN_TOKEN }}

@@ -26,7 +26,7 @@ jobs:
       - name: test
         env:
           CC: gcc
-          CFLAGS: -Werror
+          CFLAGS: -O2 -Werror
         run: |
           # Skip pedantic due to compiler being ancient.
           ./configure
