@@ -1,5 +1,7 @@
 #include "simple-decl-forward.h"
 
+#include "config.h"
+
 #include <err.h>
 
 #include "libks/arena.h"
