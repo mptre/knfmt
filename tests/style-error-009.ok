@@ -1,0 +1,6 @@
+.clang-format:1: unknown option Unknown<1:1>("MacroBlockBegin")
+MacroBlockBegin: ''
+^^^^^^^^^^^^^^^
+.clang-format:2: unknown option Unknown<2:1>("MacroBlockEnd")
+MacroBlockEnd: ''
+^^^^^^^^^^^^^

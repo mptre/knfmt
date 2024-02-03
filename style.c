@@ -847,15 +847,18 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 
 	buf = lexer_buffer_slice(lx, st, &buflen);
 	if (buf == NULL)
-		return NULL;
+		goto unknown;
 	so = yaml_find_keyword(buf, buflen);
 	if (so == NULL)
-		return lexer_emit(lx, st, &(struct token){.tk_type = Unknown});
+		goto unknown;
 
 	tk = lexer_emit(lx, st, &(struct token){.tk_type = so->so_type});
 	if (so->so_parse != NULL)
 		token_data(tk, struct yaml_token)->so = so;
 	return tk;
+
+unknown:
+	return lexer_emit(lx, st, &(struct token){.tk_type = Unknown});
 }
 
 static const struct style_option *
