@@ -223,7 +223,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 	off = st->st_off++;
 	buf = &lx->lx_input.ptr[off];
 	c = (unsigned char)buf[0];
-	if (c == '\n') {
+	if (unlikely(c == '\n')) {
 		st->st_lno++;
 		lexer_line_alloc(lx, st->st_lno);
 	}
