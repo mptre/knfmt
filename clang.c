@@ -16,7 +16,6 @@
 #include "cpp-align.h"
 #include "cpp-include.h"
 #include "lexer.h"
-#include "options.h"
 #include "token.h"
 #include "trace.h"
 

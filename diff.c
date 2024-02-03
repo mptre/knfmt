@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <limits.h>	/* PATH_MAX */
 #include <regex.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

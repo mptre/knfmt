@@ -1,4 +1,4 @@
-#include "options.h"	/* is_trace_enabled() */
+#include "options.h"	/* options_trace_level() */
 
 #define trace(trace, op, fmt, ...) do {					\
 	if (options_trace_level((op), (trace)) > 0)			\
