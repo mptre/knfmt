@@ -84,8 +84,12 @@ struct expr {
 	union {
 		struct expr		*ex_ternary;
 		struct doc		*ex_dc;
-		int			 ex_sizeof;
 		VECTOR(struct expr *)	 ex_concat;
+
+		struct {
+			struct token	*lparen;
+			struct token	*rparen;
+		} ex_sizeof;
 	};
 };
 
@@ -573,11 +577,10 @@ expr_exec_sizeof(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
 
 	ex = expr_alloc(EXPR_SIZEOF, es);
 	if (lexer_if(es->es_lx, TOKEN_LPAREN, &tk)) {
-		ex->ex_tokens[0] = tk;	/* ( */
-		ex->ex_sizeof = 1;
+		ex->ex_sizeof.lparen = tk;
 		ex->ex_lhs = expr_exec1(es, PC0);
 		if (lexer_expect(es->es_lx, TOKEN_RPAREN, &tk))
-			ex->ex_tokens[1] = tk;	/* ) */
+			ex->ex_sizeof.rparen = tk;
 	} else {
 		ex->ex_lhs = expr_exec1(es, PC(es->es_er->er_pc));
 	}
@@ -1022,9 +1025,8 @@ static struct doc *
 expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	doc_token(ex->ex_tk, dc);
-	if (ex->ex_sizeof) {
-		if (ex->ex_tokens[0] != NULL)
-			doc_token(ex->ex_tokens[0], dc); /* ( */
+	if (ex->ex_sizeof.lparen != NULL) {
+		doc_token(ex->ex_sizeof.lparen, dc);
 	} else {
 		simple_cookie(simple);
 		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
@@ -1034,9 +1036,8 @@ expr_doc_sizeof(struct expr *ex, struct expr_state *es, struct doc *dc)
 	}
 	if (ex->ex_lhs != NULL)
 		dc = expr_doc(ex->ex_lhs, es, dc);
-	if (ex->ex_sizeof) {
-		if (ex->ex_tokens[1] != NULL)
-			doc_token(ex->ex_tokens[1], dc); /* ) */
+	if (ex->ex_sizeof.rparen != NULL) {
+		doc_token(ex->ex_sizeof.rparen, dc);
 	} else {
 		simple_cookie(simple);
 		if (simple_enter(es->es_ea.si, SIMPLE_EXPR_SIZEOF, 0, &simple))
