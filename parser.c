@@ -111,13 +111,13 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	if (trace(pr->pr_op, 'd'))
 		doc_flags |= DOC_EXEC_TRACE;
 	doc_exec(&(struct doc_exec_arg){
-	    .dc		= dc,
-	    .lx		= pr->pr_op->diffparse ? pr->pr_lx : NULL,
-	    .diff_chunks= pr->pr_op->diffparse ? diff_chunks : NULL,
-	    .bf		= bf,
-	    .st		= pr->pr_st,
-	    .op		= pr->pr_op,
-	    .flags	= doc_flags,
+	    .dc			= dc,
+	    .lx			= pr->pr_op->diffparse ? pr->pr_lx : NULL,
+	    .diff_chunks	= pr->pr_op->diffparse ? diff_chunks : NULL,
+	    .bf			= bf,
+	    .st			= pr->pr_st,
+	    .op			= pr->pr_op,
+	    .flags		= doc_flags,
 	});
 
 	doc_free(dc);
