@@ -503,7 +503,6 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
 	}
 
 out:
-	doc_free(concat);
 	buffer_free(bf);
 	return error;
 }

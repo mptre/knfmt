@@ -113,7 +113,6 @@ simple_stmt_free(struct simple_stmt *ss)
 		struct stmt *st;
 
 		st = VECTOR_POP(ss->ss_stmts);
-		doc_free(st->st_root);
 		if (st->st_lbrace != NULL)
 			token_rele(st->st_lbrace);
 		if (st->st_rbrace != NULL)

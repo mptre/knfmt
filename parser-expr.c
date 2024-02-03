@@ -115,7 +115,6 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 			return dc;
 		if (error & FAIL) {
 			/* Try again, could be a GNU statement expression. */
-			doc_free(dc);
 			dc = doc_root(pr->pr_arena.doc_scope);
 			parser_reset(pr);
 			lexer_seek(lx, lbrace);
@@ -129,7 +128,6 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		return dc;
 	}
 
-	doc_free(dc);
 	return NULL;
 }
 
@@ -162,6 +160,5 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 	dc = doc_root(pr->pr_arena.doc_scope);
 	if (parser_type(pr, dc, &type, NULL) & GOOD)
 		return dc;
-	doc_free(dc);
 	return NULL;
 }

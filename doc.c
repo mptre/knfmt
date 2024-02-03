@@ -382,39 +382,10 @@ doc_width(struct doc_exec_arg *arg)
 }
 
 void
-doc_free(struct doc *dc)
-{
-	const struct doc_description *desc;
-
-	if (dc == NULL)
-		return;
-	desc = &doc_descriptions[dc->dc_type];
-
-	if (desc->children.many) {
-		struct doc *concat;
-
-		while ((concat = TAILQ_FIRST(&dc->dc_list)) != NULL) {
-			TAILQ_REMOVE(&dc->dc_list, concat, dc_entry);
-			doc_free(concat);
-		}
-	} else if (desc->children.one) {
-		doc_free(dc->dc_doc);
-	}
-
-	if (desc->children.token) {
-		if (dc->dc_tk != NULL)
-			token_rele(dc->dc_tk);
-	} else if (desc->value.minimizers) {
-		VECTOR_FREE(dc->dc_minimizers);
-	}
-}
-
-void
 doc_remove(struct doc *dc, struct doc *parent)
 {
 	assert(doc_has_list(parent));
 	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
-	doc_free(dc);
 }
 
 int
@@ -427,7 +398,6 @@ doc_remove_tail(struct doc *parent)
 	if (dc == NULL)
 		return 0;
 	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
-	doc_free(dc);
 	return 1;
 }
 
@@ -526,6 +496,12 @@ doc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
 	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
 }
 
+static void
+doc_minimize_free(struct doc *dc)
+{
+	VECTOR_FREE(dc->dc_minimizers);
+}
+
 struct doc *
 doc_minimize0(const struct doc_minimize *minimizers, size_t nminimizers,
     struct doc *parent, const char *fun, int lno)
@@ -534,6 +510,7 @@ doc_minimize0(const struct doc_minimize *minimizers, size_t nminimizers,
 	size_t i;
 
 	dc = doc_alloc0(DOC_MINIMIZE, parent, 0, fun, lno);
+	arena_cleanup(dc->dc_scope, doc_minimize_free, dc);
 	if (VECTOR_INIT(dc->dc_minimizers))
 		err(1, NULL);
 	if (VECTOR_RESERVE(dc->dc_minimizers, nminimizers))
@@ -578,6 +555,7 @@ doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
 	/* Must be mutable for reference counting. */
 	token->dc_tk = (struct token *)tk;
 	token_ref(token->dc_tk);
+	arena_cleanup(token->dc_scope, token_rele, token->dc_tk);
 	token->dc_str = tk->tk_str;
 	token->dc_len = tk->tk_len;
 

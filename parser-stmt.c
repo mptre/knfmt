@@ -52,15 +52,12 @@ int
 parser_stmt_peek(struct parser *pr)
 {
 	struct doc *dc;
-	int error;
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
 	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope);
 
 	dc = doc_root(&doc_scope);
-	error = parser_stmt1(pr, dc);
-	doc_free(dc);
-	return error & GOOD;
+	return parser_stmt1(pr, dc) & GOOD;
 }
 
 static int
@@ -817,7 +814,6 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 	lexer_peek_enter(lx, &s);
 	error = parser_stmt1(pr, dc);
 	lexer_peek_leave(lx, &s);
-	doc_free(dc);
 	if (error & GOOD)
 		simple_stmt_leave(pr->pr_simple.stmt);
 	simple_stmt_free(pr->pr_simple.stmt);

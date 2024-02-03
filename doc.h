@@ -66,7 +66,6 @@ struct doc_align {
 
 void		doc_exec(struct doc_exec_arg *);
 unsigned int	doc_width(struct doc_exec_arg *);
-void		doc_free(struct doc *);
 void		doc_append(struct doc *, struct doc *);
 void		doc_move_before(struct doc *, struct doc *, struct doc *);
 void		doc_remove(struct doc *, struct doc *);

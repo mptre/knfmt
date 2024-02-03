@@ -166,7 +166,6 @@ parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 	lexer_peek_enter(lx, &s);
 	error = parser_func_decl1(pr, dc, NULL, type);
 	lexer_peek_leave(lx, &s);
-	doc_free(dc);
 	if (error & GOOD)
 		simple_decl_proto_leave(pr->pr_simple.decl_proto);
 	simple_decl_proto_free(pr->pr_simple.decl_proto);

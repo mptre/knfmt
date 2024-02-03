@@ -689,7 +689,6 @@ expr_free(struct expr *ex)
 		}
 		VECTOR_FREE(ex->ex_concat);
 	} else if (ex->ex_type == EXPR_RECOVER) {
-		doc_free(ex->ex_dc);
 	}
 }
 

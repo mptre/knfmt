@@ -63,7 +63,6 @@ parser_decl_peek(struct parser *pr)
 	lexer_peek_enter(lx, &s);
 	error = parser_decl(pr, dc, 0);
 	lexer_peek_leave(lx, &s);
-	doc_free(dc);
 	return error & GOOD;
 }
 
@@ -499,7 +498,6 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags,
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
 	lexer_peek_leave(lx, &s);
-	doc_free(dc);
 	if (error & GOOD)
 		simple_decl_leave(pr->pr_simple.decl);
 	simple_decl_free(pr->pr_simple.decl);
@@ -532,7 +530,6 @@ parser_simple_decl_forward_enter(struct parser *pr, unsigned int flags,
 	lexer_peek_enter(lx, &s);
 	error = parser_decl1(pr, dc, flags);
 	lexer_peek_leave(lx, &s);
-	doc_free(dc);
 	if (error & GOOD)
 		simple_decl_forward_leave(pr->pr_simple.decl_forward);
 	simple_decl_forward_free(pr->pr_simple.decl_forward);

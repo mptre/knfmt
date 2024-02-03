@@ -90,7 +90,6 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	}
 	if (error) {
 		parser_fail(pr);
-		doc_free(dc);
 		return 1;
 	}
 
@@ -111,7 +110,6 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	    .flags		= doc_flags,
 	});
 
-	doc_free(dc);
 	return 0;
 }
 

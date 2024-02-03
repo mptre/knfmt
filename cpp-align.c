@@ -234,6 +234,5 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 
 out:
 	ruler_free(&rl);
-	doc_free(dc);
 	return out;
 }
