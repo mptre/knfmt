@@ -486,10 +486,11 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
 	if (bf == NULL)
 		err(1, NULL);
 	doc_exec(&(struct doc_exec_arg){
-	    .dc	= concat,
-	    .bf	= bf,
-	    .st	= cx->st,
-	    .op	= &cx->op,
+	    .dc		= concat,
+	    .scratch	= cx->arena.scratch,
+	    .bf		= bf,
+	    .st		= cx->st,
+	    .op		= &cx->op,
 	});
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);

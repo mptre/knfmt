@@ -202,10 +202,11 @@ cpp_align(struct token *tk, const struct style *st, struct arena *scratch,
 		if (cpplen > 0)
 			doc_literal_n(sp, cpplen, concat);
 		w = doc_width(&(struct doc_exec_arg){
-		    .dc	= concat,
-		    .bf	= bf,
-		    .st	= st,
-		    .op	= op,
+		    .dc		= concat,
+		    .scratch	= scratch,
+		    .bf		= bf,
+		    .st		= st,
+		    .op		= op,
 		});
 		if (nlines == 0 && alignment.skip_first_line)
 			doc_literal(" ", concat);
@@ -228,10 +229,11 @@ cpp_align(struct token *tk, const struct style *st, struct arena *scratch,
 	ruler_exec(&rl);
 	buffer_reset(bf);
 	doc_exec(&(struct doc_exec_arg){
-	    .dc	= dc,
-	    .bf	= bf,
-	    .st	= st,
-	    .op	= op,
+	    .dc		= dc,
+	    .scratch	= scratch,
+	    .bf		= bf,
+	    .st		= st,
+	    .op		= op,
 	});
 
 	p = buffer_str(bf);

@@ -19,7 +19,6 @@
 #include "libks/consistency.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "diff.h"
 #include "lexer.h"
 #include "style.h"
@@ -84,6 +83,7 @@ struct doc_state {
 	const struct style		*st_st;
 	struct buffer			*st_bf;
 	struct lexer			*st_lx;
+	struct arena			*st_scratch;
 	const struct diffchunk		*st_diff_chunks;
 
 	enum doc_mode {
@@ -288,10 +288,9 @@ static void	doc_state_init(struct doc_state *, struct doc_exec_arg *,
 static void	doc_state_reset(struct doc_state *);
 static void	doc_state_reset_lines(struct doc_state *);
 static void	doc_state_snapshot(struct doc_state_snapshot *,
-    const struct doc_state *);
+    const struct doc_state *, struct arena_scope *);
 static void	doc_state_snapshot_restore(const struct doc_state_snapshot *,
     struct doc_state *);
-static void	doc_state_snapshot_reset(struct doc_state_snapshot *);
 
 #define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_DIFF))
 
@@ -614,10 +613,12 @@ doc_token0(const struct token *tk, struct doc *dc, enum doc_type type,
  * Returns the maximum value associated with the given document.
  */
 int
-doc_max(const struct doc *dc)
+doc_max(const struct doc *dc, struct arena *scratch)
 {
 	struct doc_state st;
-	struct doc_exec_arg arg = {0};
+	struct doc_exec_arg arg = {
+		.scratch = scratch,
+	};
 	int max = 0;
 
 	doc_state_init(&st, &arg, BREAK);
@@ -936,7 +937,9 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 		return;
 	}
 
-	doc_state_snapshot(&sn, st);
+	arena_scope(st->st_scratch, s);
+
+	doc_state_snapshot(&sn, st, &s);
 	minimizers = dc->dc_minimizers;
 	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
 		memset(&st->st_stats, 0, sizeof(st->st_stats));
@@ -957,7 +960,6 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 		doc_state_snapshot_restore(&sn, st);
 	}
 	dc->dc_minimizers = minimizers;
-	doc_state_snapshot_reset(&sn);
 
 	for (i = 0; i < VECTOR_LENGTH(dc->dc_minimizers); i++) {
 		struct doc_minimize *mi = &dc->dc_minimizers[i];
@@ -1743,6 +1745,7 @@ doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
 	st->st_st = arg->st;
 	st->st_bf = arg->bf;
 	st->st_lx = arg->lx;
+	st->st_scratch = arg->scratch;
 	st->st_diff_chunks = arg->diff_chunks;
 	st->st_maxlines = 2;
 	st->st_flags = arg->flags;
@@ -1770,13 +1773,14 @@ doc_state_reset_lines(struct doc_state *st)
 }
 
 static void
-doc_state_snapshot(struct doc_state_snapshot *sn, const struct doc_state *st)
+doc_state_snapshot(struct doc_state_snapshot *sn, const struct doc_state *st,
+    struct arena_scope *s)
 {
 	const char *buf = buffer_get_ptr(st->st_bf);
 	size_t buflen = buffer_get_len(st->st_bf);
 
 	sn->sn_st = *st;
-	sn->sn_bf.ptr = emalloc(buflen);
+	sn->sn_bf.ptr = arena_malloc(s, buflen);
 	sn->sn_bf.len = buflen;
 	memcpy(sn->sn_bf.ptr, buf, buflen);
 }
@@ -1790,12 +1794,6 @@ doc_state_snapshot_restore(const struct doc_state_snapshot *sn,
 	*st = sn->sn_st;
 	buffer_reset(bf);
 	buffer_puts(bf, sn->sn_bf.ptr, sn->sn_bf.len);
-}
-
-static void
-doc_state_snapshot_reset(struct doc_state_snapshot *sn)
-{
-	free(sn->sn_bf.ptr);
 }
 
 static void

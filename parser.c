@@ -103,6 +103,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	doc_exec(&(struct doc_exec_arg){
 	    .dc			= dc,
 	    .lx			= pr->pr_op->diffparse ? pr->pr_lx : NULL,
+	    .scratch		= pr->pr_arena.scratch,
 	    .diff_chunks	= pr->pr_op->diffparse ? diff_chunks : NULL,
 	    .bf			= bf,
 	    .st			= pr->pr_st,
@@ -189,10 +190,11 @@ parser_width(struct parser *pr, const struct doc *dc)
 
 	bf = arena_buffer_alloc(&s, 1 << 10);
 	return doc_width(&(struct doc_exec_arg){
-	    .dc	= dc,
-	    .bf	= bf,
-	    .st	= pr->pr_st,
-	    .op	= pr->pr_op,
+	    .dc		= dc,
+	    .scratch	= pr->pr_arena.scratch,
+	    .bf		= bf,
+	    .st		= pr->pr_st,
+	    .op		= pr->pr_op,
 	});
 }
 

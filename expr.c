@@ -109,7 +109,11 @@ struct expr_state {
 #define es_dc		es_ea.dc
 #define es_flags	es_ea.flags
 
-	struct arena_scope	*es_scratch_scope;
+	struct {
+		struct arena		*scratch;
+		struct arena_scope	*scratch_scope;
+	} es_arena;
+
 	const struct expr_rule	*es_er;
 	struct token		*es_tk;
 	struct buffer		*es_bf;
@@ -660,7 +664,7 @@ expr_alloc(enum expr_type type, const struct expr_state *es)
 {
 	struct expr *ex;
 
-	ex = arena_calloc(es->es_scratch_scope, 1, sizeof(*ex));
+	ex = arena_calloc(es->es_arena.scratch_scope, 1, sizeof(*ex));
 	ex->ex_type = type;
 	ex->ex_tk = es->es_tk;
 	return ex;
@@ -1226,10 +1230,11 @@ expr_doc_width(struct expr_state *es, const struct doc *dc)
 			err(1, NULL);
 	}
 	return doc_width(&(struct doc_exec_arg){
-	    .dc	= dc,
-	    .bf	= es->es_bf,
-	    .st	= es->es_st,
-	    .op	= es->es_op,
+	    .dc		= dc,
+	    .scratch	= es->es_arena.scratch,
+	    .bf		= es->es_bf,
+	    .st		= es->es_st,
+	    .op		= es->es_op,
 	});
 }
 
@@ -1241,6 +1246,7 @@ static struct doc *
 expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
     int weight, const char *fun, int lno)
 {
+	struct arena *scratch = es->es_arena.scratch;
 	struct doc *concat, *parent, *softline;
 
 	if (es->es_flags & EXPR_EXEC_NOSOFT)
@@ -1256,7 +1262,7 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 	 * equal is of importance as we want to maximize column utilisation,
 	 * effectively favoring nested soft line(s).
 	 */
-	if (weight < SOFT_MAX && doc_max(parent) >= weight)
+	if (weight < SOFT_MAX && doc_max(parent, scratch) >= weight)
 		doc_remove(softline, dc);
 
 	return concat;
@@ -1272,7 +1278,8 @@ expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
 
 	memset(es, 0, sizeof(*es));
 	es->es_ea = *ea;
-	es->es_scratch_scope = scratch_scope;
+	es->es_arena.scratch = ea->scratch;
+	es->es_arena.scratch_scope = scratch_scope;
 }
 
 static void

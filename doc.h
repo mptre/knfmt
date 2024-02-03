@@ -27,6 +27,7 @@ enum doc_type {
 struct doc_exec_arg {
 	const struct doc	*dc;
 	struct lexer		*lx;
+	struct arena		*scratch;
 	const struct diffchunk	*diff_chunks;
 	struct buffer		*bf;
 	const struct style	*st;
@@ -129,6 +130,6 @@ struct doc	*doc_token0(const struct token *, struct doc *, enum doc_type,
 #define doc_max_lines(a, b) \
 	doc_alloc0(DOC_MAXLINES, (b), (a), __func__, __LINE__)
 
-int	doc_max(const struct doc *);
+int	doc_max(const struct doc *, struct arena *);
 
 void	doc_annotate(struct doc *, const char *);
