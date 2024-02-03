@@ -4,11 +4,9 @@
 
 #include <err.h>
 #include <stdio.h>
-#include <stdlib.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
-
-#include "alloc.h"
 
 struct error {
 	struct buffer	*er_bf;
@@ -16,11 +14,11 @@ struct error {
 };
 
 struct error *
-error_alloc(int flush)
+error_alloc(struct arena_scope *eternal_scope, int flush)
 {
 	struct error *er;
 
-	er = ecalloc(1, sizeof(*er));
+	er = arena_calloc(eternal_scope, 1, sizeof(*er));
 	er->er_bf = NULL;
 	er->er_flush = flush;
 	return er;
@@ -31,9 +29,7 @@ error_free(struct error *er)
 {
 	if (er == NULL)
 		return;
-
 	buffer_free(er->er_bf);
-	free(er);
 }
 
 struct buffer *

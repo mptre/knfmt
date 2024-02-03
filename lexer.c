@@ -95,7 +95,7 @@ lexer_alloc(const struct lexer_arg *arg)
 
 	lx = arena_calloc(arg->eternal_scope, 1, sizeof(*lx));
 	lx->lx_arg = *arg;
-	lx->lx_er = error_alloc(arg->error_flush);
+	lx->lx_er = error_alloc(arg->eternal_scope, arg->error_flush);
 	lx->lx_op = arg->op;
 	lx->lx_eternal_scope = arg->eternal_scope;
 	lx->lx_input.bf = arg->bf;
