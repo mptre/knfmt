@@ -93,8 +93,9 @@ static int	test_style0(struct context *, const char *, int, int, int);
 static int	test_strwidth0(const char *, size_t, size_t, int);
 
 #define test_tmptemplate(a, b) \
-	test(test_tmptemplate0((a), (b), __LINE__))
-static int	test_tmptemplate0(const char *, const char *, int);
+	test(test_tmptemplate0(cx, (a), (b), __LINE__))
+static int	test_tmptemplate0(struct context *, const char *, const char *,
+    int);
 
 struct context {
 	struct options		 op;
@@ -727,12 +728,14 @@ test_strwidth0(const char *str, size_t pos, size_t exp, int lno)
 }
 
 static int
-test_tmptemplate0(const char *path, const char *exp, int lno)
+test_tmptemplate0(struct context *c, const char *path, const char *exp, int lno)
 {
 	char *act;
 	int error = 0;
 
-	act = tmptemplate(path);
+	arena_scope(c->scratch, s);
+
+	act = tmptemplate(path, &s);
 	if (strcmp(act, exp) != 0) {
 		const char *fun = "tmptemplate";
 
@@ -740,7 +743,6 @@ test_tmptemplate0(const char *path, const char *exp, int lno)
 		    fun, lno, exp, act);
 		error = 1;
 	}
-	free(act);
 	return error;
 }
 

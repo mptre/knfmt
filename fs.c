@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/buffer.h"
 
 /*
@@ -69,13 +70,13 @@ out:
  * The temporary file will reside in the same directory as a "hidden" file.
  */
 char *
-tmptemplate(const char *path)
+tmptemplate(const char *path, struct arena_scope *s)
 {
 	struct buffer *bf;
 	char *template;
 	const char *basename, *p;
 
-	bf = buffer_alloc(PATH_MAX);
+	bf = arena_buffer_alloc(s, PATH_MAX);
 	if (bf == NULL)
 		err(1, NULL);
 
@@ -87,7 +88,5 @@ tmptemplate(const char *path)
 		basename = path;
 	}
 	buffer_printf(bf, ".%s.XXXXXXXX", basename);
-	template = buffer_str(bf);
-	buffer_free(bf);
-	return template;
+	return buffer_str(bf);
 }

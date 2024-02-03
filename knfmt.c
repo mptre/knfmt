@@ -33,6 +33,7 @@ struct main_context {
 	struct style		*style;
 	struct simple		*simple;
 	struct clang		*clang;
+	struct arena		*scratch;
 	struct buffer		*src;
 	struct buffer		*dst;
 };
@@ -43,8 +44,7 @@ static int	filelist(int, char **, struct files *, const struct options *);
 static int	fileformat(struct main_context *, struct file *);
 static int	filediff(const struct buffer *, const struct buffer *,
     const struct file *);
-static int	filewrite(const struct buffer *, const struct buffer *,
-    const struct file *);
+static int	filewrite(struct main_context *, const struct file *);
 static int	fileprint(const struct buffer *);
 static int	fileattr(const char *, int, const char *, int);
 
@@ -153,6 +153,7 @@ main(int argc, char *argv[])
 		.style		= st,
 		.simple		= si,
 		.clang		= cl,
+		.scratch	= scratch,
 		.src		= src,
 		.dst		= dst,
 	};
@@ -250,7 +251,7 @@ fileformat(struct main_context *c, struct file *fe)
 	if (c->options->diff)
 		error = filediff(c->src, c->dst, fe);
 	else if (c->options->inplace)
-		error = filewrite(c->src, c->dst, fe);
+		error = filewrite(c, fe);
 	else
 		error = fileprint(c->dst);
 
@@ -317,9 +318,10 @@ out:
 }
 
 static int
-filewrite(const struct buffer *src, const struct buffer *dst,
-    const struct file *fe)
+filewrite(struct main_context *c, const struct file *fe)
 {
+	const struct buffer *src = c->src;
+	const struct buffer *dst = c->dst;
 	const char *buf;
 	char *tmppath;
 	size_t buflen;
@@ -329,7 +331,9 @@ filewrite(const struct buffer *src, const struct buffer *dst,
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	tmppath = tmptemplate(fe->fe_path);
+	arena_scope(c->scratch, s);
+
+	tmppath = tmptemplate(fe->fe_path, &s);
 	old_umask = umask(0022);
 	fd = mkstemp(tmppath);
 	umask(old_umask);
@@ -365,7 +369,6 @@ filewrite(const struct buffer *src, const struct buffer *dst,
 	}
 
 	close(fd);
-	free(tmppath);
 	return 0;
 
 err:
