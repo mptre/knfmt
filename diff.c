@@ -14,7 +14,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
