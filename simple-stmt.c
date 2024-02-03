@@ -130,9 +130,7 @@ simple_stmt_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 	unsigned int flags = STMT_BRACES;
 
 	/* Make sure both braces are covered by a diff chunk. */
-	if (ss->ss_op->diffparse &&
-	    ((lbrace->tk_flags & TOKEN_FLAG_DIFF) == 0 ||
-	     (rbrace->tk_flags & TOKEN_FLAG_DIFF) == 0))
+	if (!is_brace_moveable(ss, lbrace) || !is_brace_moveable(ss, rbrace))
 		flags |= STMT_IGNORE;
 	st = simple_stmt_alloc(ss, indent, flags);
 	token_ref(lbrace);
