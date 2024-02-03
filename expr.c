@@ -142,7 +142,6 @@ static struct expr	*expr_exec_unary(struct expr_state *, struct expr *);
 static int	expr_exec_peek(struct expr_state *, struct token **);
 
 static struct expr	*expr_alloc(enum expr_type, const struct expr_state *);
-static void		 expr_free(struct expr *);
 
 static struct doc	*expr_doc(struct expr *, struct expr_state *,
     struct doc *);
@@ -166,6 +165,8 @@ static struct doc	*expr_doc_ternary(struct expr *, struct expr_state *,
     struct doc *);
 static struct doc	*expr_doc_recover(struct expr *, struct expr_state *,
     struct doc *);
+
+static void	expr_free_concat(struct expr *);
 
 #define expr_doc_align(a, b, c, d) \
 	expr_doc_align0((a), (b), (c), (d), __func__, __LINE__)
@@ -314,10 +315,8 @@ expr_exec(const struct expr_exec_arg *ea)
 	ex = expr_exec1(&es, PC0);
 	if (ex == NULL)
 		return NULL;
-	if (lexer_get_error(ea->lx)) {
-		expr_free(ex);
+	if (lexer_get_error(ea->lx))
 		return NULL;
-	}
 
 	dc = doc_max_lines(1, ea->dc);
 	dc = doc_alloc(DOC_SCOPE, dc);
@@ -337,7 +336,6 @@ expr_exec(const struct expr_exec_arg *ea)
 		indent = doc_alloc(DOC_OPTIONAL, indent);
 	}
 	expr = expr_doc(ex, &es, indent);
-	expr_free(ex);
 	expr_state_reset(&es);
 	return expr;
 }
@@ -360,7 +358,6 @@ expr_peek(const struct expr_exec_arg *ea, struct token **tk)
 	if (ex != NULL && lexer_get_error(lx) == 0 && lexer_back(lx, tk))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
-	expr_free(ex);
 	expr_state_reset(&es);
 	return peek;
 }
@@ -416,10 +413,8 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 		tmp = er->er_func(es, ex);
 		if (tmp == NULL)
 			return NULL;
-		if (lexer_get_error(es->es_lx)) {
-			expr_free(tmp);
+		if (lexer_get_error(es->es_lx))
 			return NULL;
-		}
 		ex = tmp;
 	}
 
@@ -485,6 +480,7 @@ expr_exec_concat(struct expr_state *es, struct expr *lhs)
 		ex = lhs;
 	} else {
 		ex = expr_alloc(EXPR_CONCAT, es);
+		arena_cleanup(es->es_arena.scratch_scope, expr_free_concat, ex);
 		if (VECTOR_INIT(ex->ex_concat))
 			err(1, NULL);
 		dst = VECTOR_ALLOC(ex->ex_concat);
@@ -624,10 +620,8 @@ expr_exec_ternary(struct expr_state *es, struct expr *lhs)
 	if (lexer_expect(es->es_lx, TOKEN_COLON, &tk))
 		ex->ex_tokens[1] = tk;	/* : */
 	ex->ex_ternary = expr_exec1(es, PC0);
-	if (ex->ex_ternary == NULL) {
-		expr_free(ex);
+	if (ex->ex_ternary == NULL)
 		return NULL;
-	}
 	return ex;
 }
 
@@ -668,28 +662,6 @@ expr_alloc(enum expr_type type, const struct expr_state *es)
 	ex->ex_type = type;
 	ex->ex_tk = es->es_tk;
 	return ex;
-}
-
-static void
-expr_free(struct expr *ex)
-{
-	if (ex == NULL)
-		return;
-
-	expr_free(ex->ex_lhs);
-	expr_free(ex->ex_rhs);
-	if (ex->ex_type == EXPR_TERNARY) {
-		expr_free(ex->ex_ternary);
-	} else if (ex->ex_type == EXPR_CONCAT) {
-		while (!VECTOR_EMPTY(ex->ex_concat)) {
-			struct expr **tail;
-
-			tail = VECTOR_POP(ex->ex_concat);
-			expr_free(*tail);
-		}
-		VECTOR_FREE(ex->ex_concat);
-	} else if (ex->ex_type == EXPR_RECOVER) {
-	}
 }
 
 static struct doc *
@@ -1151,6 +1123,12 @@ expr_doc_recover(struct expr *ex, struct expr_state *es, struct doc *dc)
 	 */
 	ex->ex_dc = NULL;
 	return dc;
+}
+
+static void
+expr_free_concat(struct expr *ex)
+{
+	VECTOR_FREE(ex->ex_concat);
 }
 
 /*
