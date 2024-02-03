@@ -98,6 +98,23 @@ main(int argc, char *argv[])
 	    (!c.options.diffparse && c.options.inplace && argc == 0))
 		usage();
 
+	clang_init();
+	expr_init();
+	style_init();
+	if (c.options.diffparse)
+		diff_init();
+
+	c.arena.eternal = arena_alloc();
+	arena_scope(c.arena.eternal, eternal_scope);
+	c.arena.scratch = arena_alloc();
+	c.arena.doc = arena_alloc();
+	c.style = style_parse(clang_format, &eternal_scope, c.arena.scratch,
+	    &c.options);
+	if (c.style == NULL) {
+		error = 1;
+		goto out;
+	}
+
 	if (c.options.diff) {
 		if (pledge("stdio rpath wpath cpath proc exec", NULL) == -1)
 			err(1, "pledge");
@@ -109,23 +126,6 @@ main(int argc, char *argv[])
 			err(1, "pledge");
 	}
 
-	if (c.options.diffparse)
-		diff_init();
-	clang_init();
-	expr_init();
-	style_init();
-	c.arena.eternal = arena_alloc();
-	arena_scope(c.arena.eternal, eternal_scope);
-	c.arena.scratch = arena_alloc();
-	c.arena.doc = arena_alloc();
-	if (VECTOR_INIT(files.fs_vc))
-		err(1, NULL);
-	c.style = style_parse(clang_format, &eternal_scope, c.arena.scratch,
-	    &c.options);
-	if (c.style == NULL) {
-		error = 1;
-		goto out;
-	}
 	c.simple = simple_alloc(&eternal_scope, &c.options);
 	c.src = buffer_alloc(1 << 12);
 	if (c.src == NULL) {
@@ -138,6 +138,8 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
+	if (VECTOR_INIT(files.fs_vc))
+		err(1, NULL);
 	if (filelist(argc, argv, &files, &eternal_scope, &c.options)) {
 		error = 1;
 		goto out;

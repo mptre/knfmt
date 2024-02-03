@@ -1,0 +1,4 @@
+[s] based on GNU style
+GNU:2: ignoring nested style
+BasedOnStyle: GNU
+              ^^^

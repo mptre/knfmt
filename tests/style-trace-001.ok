@@ -76,12 +76,6 @@ PenaltyBreakAssignment: '3'
 .clang-format:36: unknown option Unknown<36:1>("PenaltyBreakBeforeFirstCallParameter")
 PenaltyBreakBeforeFirstCallParameter: '15'
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.clang-format:38: unknown option Unknown<38:1>("Language")
-Language: 'Proto'
-^^^^^^^^
-.clang-format:40: unknown option Unknown<40:1>("Language")
-Language: 'Cpp'
-^^^^^^^^
 [s] AlignAfterOpenBracket: Align
 [s] AlignOperands: Align
 [s] AlwaysBreakAfterReturnType: All
@@ -99,4 +93,5 @@ Language: 'Cpp'
 [s]   Priority: 4
 [s]   SortPriority: 4
 [s] IndentWidth: 8
+[s] Language: Cpp
 [s] UseTab: Always

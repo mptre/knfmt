@@ -1,0 +1,6 @@
+[s] based on LLVM style
+int
+main(void)
+{
+    return 0;
+}

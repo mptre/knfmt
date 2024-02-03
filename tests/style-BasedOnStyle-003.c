@@ -1,0 +1,4 @@
+/*
+ * # Recursive style.
+ * BasedOnStyle: GNU
+ */

@@ -9,6 +9,28 @@ commstrip() {
 	{ while read -r _l; do [ -n "$_l" ] || break; done; cat; } <"$1"
 }
 
+# clang_format_stub
+clang_format_stub() {
+	local _bindir="${_wrkdir}/bin"
+
+	mkdir -p "$_bindir"
+	cat <<-EOF >"${_bindir}/clang-format"
+	#!/bin/sh
+
+	_style=""
+	for _a; do
+		case "\$_a" in
+		-style=*)	_style=\${_a#*=};;
+		esac
+	done
+	cd ${PWD}
+	cat styles/\${_style}
+	EOF
+	chmod u+x "${_bindir}/clang-format"
+
+	PATH="${_bindir}:${PATH}"; export PATH
+}
+
 # hascomm file
 #
 # Returns zero if the given file has a comment.
@@ -23,11 +45,12 @@ hascomm() {
 	fi
 }
 
-# testcase [-b] [-c] [-e] [-i] [-o] [-q] file [-- knfmt-options]
+# testcase [-B] [-b] [-c] [-e] [-i] [-o] [-q] file [-- knfmt-options]
 #
 # Run test case.
 testcase() {
 	local _base
+	local _based_on_style
 	local _bug=0
 	local _clang=0
 	local _diff="${_wrkdir}/diff"
@@ -41,6 +64,7 @@ testcase() {
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
+		-B)	_based_on_style=1;;
 		-b)	_bug=1; _quiet=1;;
 		-c)	_clang=1;;
 		-e)	_exp=1; _flags="";;
@@ -62,6 +86,10 @@ testcase() {
 	if [ "$_clang" -eq 1 ]; then
 		sed -n -e '/^[\/ ]\* /s/^[\/ ]\* //p' -e '/^$/q' "$_file" |
 		sed -e '/^$/d' >"${_wrkdir}/.clang-format"
+	fi
+
+	if [ "$_based_on_style" -eq 1 ]; then
+		clang_format_stub
 	fi
 
 	if [ "$_ok_required" -eq 1 ] && ! [ -e "$_ok" ]; then
@@ -170,6 +198,9 @@ inplace-*)
 	;;
 simple-*|../*)
 	testcase "$_abs" -- -s "$@"
+	;;
+style-BasedOnStyle-*)
+	testcase -B -c "$_abs" -- -ts "$@"
 	;;
 style-bug-*)
 	testcase -b -c -o "$_abs" -- -ts "$@"

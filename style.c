@@ -2,6 +2,8 @@
 
 #include "config.h"
 
+#include <sys/wait.h>
+
 #include <assert.h>
 #include <ctype.h>
 #include <err.h>
@@ -23,7 +25,11 @@
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
+#include "trace.h"
 #include "util.h"
+
+#define style_trace(st, fmt, ...) \
+	trace_no_func('s', (st)->op, (fmt), __VA_ARGS__)
 
 /*
  * Return values for yaml parser routines. Only one of the following may be
@@ -56,6 +62,7 @@ struct style {
 	struct arena			*scratch;
 	const struct options		*op;
 	int				 scope;
+	int				 depth;
 	struct {
 		int		type;
 		unsigned int	isset;
@@ -121,6 +128,8 @@ static int	parse_nested(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_AlignOperands(struct style *, struct lexer *,
     const struct style_option *);
+static int	parse_BasedOnStyle(struct style *, struct lexer *,
+    const struct style_option *);
 static int	parse_ColumnLimit(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_IncludeCategories(struct style *, struct lexer *,
@@ -162,7 +171,7 @@ style_init(void)
 		{ S(BitFieldColonSpacing), parse_enum,
 		  { Both, None, Before, After } },
 
-		{ S(BasedOnStyle), parse_enum,
+		{ S(BasedOnStyle), parse_BasedOnStyle,
 		  { LLVM, Google, Chromium, Mozilla, WebKit, Microsoft, GNU,
 		    InheritParentConfig, OpenBSD } },
 
@@ -1084,6 +1093,90 @@ parse_AlignOperands(struct style *st, struct lexer *lx,
 		}
 	}
 	return error;
+}
+
+static struct buffer *
+clang_format_dump_style(struct style *st, enum style_keyword based_on_style,
+    struct arena_scope *s)
+{
+	struct buffer *bf;
+	pid_t pid;
+	int pip[2];
+	int status;
+
+	if (pipe(pip) == -1)
+		err(1, "pipe");
+	pid = fork();
+	if (pid == -1)
+		err(1, "fork");
+	if (pid == 0) {
+		const char *clang_format_style;
+
+		close(0);
+		close(pip[0]);
+		if (dup2(pip[1], 1) == -1)
+			err(1, "dup2");
+		if (dup2(pip[1], 2) == -1)
+			err(1, "dup2");
+
+		clang_format_style = arena_sprintf(s, "-style=%s",
+		    style_keyword_str(based_on_style));
+		execlp("clang-format", "clang-format", "-dump-config",
+		    clang_format_style, NULL);
+		_exit(1);
+	}
+
+	close(pip[1]);
+	bf = arena_buffer_read_fd(s, pip[0]);
+	close(pip[0]);
+	if (waitpid(pid, &status, 0) == -1)
+		err(1, "waitpid");
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		struct buffer_getline *it = NULL;
+		const char *line;
+
+		while ((line = buffer_getline(bf, &it)) != NULL)
+			style_trace(st, "clang-format: %s", line);
+		return NULL;
+	}
+	return bf;
+}
+
+static int
+parse_BasedOnStyle(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	struct buffer *bf;
+	enum style_keyword based_on_style;
+	int error;
+
+	arena_scope(st->scratch, s);
+
+	error = parse_enum(st, lx, so);
+	if ((error & GOOD) == 0)
+		return error;
+
+	if (st->depth > 0) {
+		struct token *ctx = NULL;
+
+		(void)lexer_back(lx, &ctx);
+		lexer_error(lx, ctx, __func__, __LINE__,
+		    "ignoring nested style");
+		return SKIP;
+	}
+
+	based_on_style = style(st, BasedOnStyle);
+	style_trace(st, "based on %s style", style_keyword_str(based_on_style));
+	if (based_on_style == OpenBSD || based_on_style == InheritParentConfig)
+		return GOOD;
+
+	bf = clang_format_dump_style(st, based_on_style, &s);
+	if (bf == NULL)
+		return SKIP;
+	st->depth++;
+	error = style_parse_yaml(st, style_keyword_str(based_on_style), bf);
+	st->depth--;
+	return error ? FAIL : GOOD;
 }
 
 static int

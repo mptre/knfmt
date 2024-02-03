@@ -1,0 +1,16 @@
+[s] based on LLVM style
+[s] based on Google style
+[s] clang-format: cat: styles/Google: No such file or directory
+[s] based on Chromium style
+[s] clang-format: cat: styles/Chromium: No such file or directory
+[s] based on Mozilla style
+[s] clang-format: cat: styles/Mozilla: No such file or directory
+[s] based on WebKit style
+[s] clang-format: cat: styles/WebKit: No such file or directory
+[s] based on Microsoft style
+[s] clang-format: cat: styles/Microsoft: No such file or directory
+[s] based on GNU style
+GNU:2: ignoring nested style
+BasedOnStyle: GNU
+              ^^^
+[s] based on InheritParentConfig style
