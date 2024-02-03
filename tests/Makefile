@@ -109,6 +109,7 @@ TESTS+=	error-061.c
 TESTS+=	error-062.c
 TESTS+=	error-063.c
 TESTS+=	error-064.c
+TESTS+=	error-style-IncludeGuards-001.h
 
 TESTS+=	valid-001.c
 TESTS+=	valid-002.c

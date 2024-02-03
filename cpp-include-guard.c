@@ -208,7 +208,7 @@ ensure_line(struct lexer *lx, struct token *eof)
 		struct token *last;
 
 		last = token_list_last(&eof->tk_prefixes);
-		if (!token_has_verbatim_line(last, 2)) {
+		if (last != NULL && !token_has_verbatim_line(last, 2)) {
 			line = emit_line(lx);
 			token_list_append(&eof->tk_prefixes, line);
 		}

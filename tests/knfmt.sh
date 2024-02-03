@@ -192,6 +192,9 @@ diff-style-*)
 diff-*)
 	testcase "$_abs" -- -D "$@"
 	;;
+error-style-*)
+	testcase -c -e "$_abs" -- -s -ts "$@"
+	;;
 error-*)
 	testcase -e -q "$_abs" -- -s "$@"
 	;;

@@ -10,7 +10,7 @@ mkls -s "$@" -- \
 TESTS	diff-[0-9]*.c -- \
 TESTS	diff-simple-[0-9]*.c -- \
 TESTS	diff-style-[0-9]*.c -- \
-TESTS	error*.c -- \
+TESTS	error*.[ch] -- \
 TESTS	valid*.c -- \
 TESTS	simple*.c -- \
 TESTS	inplace*.c -- \
