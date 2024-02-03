@@ -44,6 +44,8 @@ parser_extern(struct parser *pr, struct doc *dc)
 	}
 	if (lexer_expect(lx, TOKEN_RBRACE, &tk))
 		doc_token(tk, dc);
+	if (lexer_if(lx, TOKEN_SEMI, &tk))
+		doc_token(tk, dc);
 	doc_alloc(DOC_HARDLINE, dc);
 	return parser_good(pr);
 }
