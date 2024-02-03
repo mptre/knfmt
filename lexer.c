@@ -6,7 +6,6 @@
 #include <err.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "libks/arena.h"
@@ -15,7 +14,6 @@
 #include "libks/string.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "diff.h"
 #include "error.h"
 #include "options.h"
@@ -98,16 +96,18 @@ lexer_alloc(const struct lexer_arg *arg)
 {
 	VECTOR(struct token *) discarded;
 	struct arena *arena;
+	struct arena_scope eternal_scope;
 	struct lexer *lx;
 
 	arena = arena_alloc(ARENA_FATAL);
+	eternal_scope = arena_scope_enter(arena);
 
-	lx = ecalloc(1, sizeof(*lx));
+	lx = arena_calloc(&eternal_scope, 1, sizeof(*lx));
 	lx->lx_arg = *arg;
 	lx->lx_er = error_alloc(arg->error_flush);
 	lx->lx_op = arg->op;
 	lx->lx_arena.arena = arena;
-	lx->lx_arena.eternal = arena_scope_enter(arena);
+	lx->lx_arena.eternal = eternal_scope;
 	lx->lx_input.bf = arg->bf;
 	lx->lx_input.ptr = buffer_get_ptr(arg->bf);
 	lx->lx_input.len = buffer_get_len(arg->bf);
@@ -164,6 +164,7 @@ err:
 void
 lexer_free(struct lexer *lx)
 {
+	struct arena *arena;
 	struct token *tk;
 
 	if (lx == NULL)
@@ -185,9 +186,10 @@ lexer_free(struct lexer *lx)
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
+
+	arena = lx->lx_arena.arena;
 	arena_scope_leave(&lx->lx_arena.eternal);
-	arena_free(lx->lx_arena.arena);
-	free(lx);
+	arena_free(arena);
 }
 
 struct lexer_state
