@@ -65,7 +65,7 @@ simple_decl_forward_leave(struct simple_decl_forward *sd)
 	if (first_unsorted != first_sorted)
 		token_move_prefixes(first_unsorted, first_sorted);
 	if (last_unsorted != last_sorted)
-		token_move_suffixes(last_unsorted, last_sorted);
+		token_move_suffixes_if(last_unsorted, last_sorted, TOKEN_SPACE);
 
 	for (i = 0; i < VECTOR_LENGTH(sd->decls); i++) {
 		struct decl_forward *df = &sd->decls[i];
