@@ -543,7 +543,7 @@ doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
     const char *fun, int lno)
 {
 	struct doc *token;
-	struct token *nx, *prefix, *suffix;
+	struct token *prefix, *suffix;
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
 		doc_token(prefix, dc, DOC_VERBATIM, __func__, __LINE__);
@@ -566,11 +566,6 @@ doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 			    __LINE__);
 		}
 	}
-
-	/* Mute if we're about to branch. */
-	nx = token_next(tk);
-	if (nx != NULL && token_is_branch(nx))
-		doc_alloc0(DOC_MUTE, dc, 1, fun, lno);
 
 	return token;
 }

@@ -218,10 +218,20 @@ struct doc *
 parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
     const char *fun, int lno)
 {
+	struct doc *out;
+	struct token *nx;
+
 	if (tk == pr->pr_branch.unmute)
 		doc_alloc0(DOC_MUTE, dc, -1, fun, lno);
 
-	return doc_token(tk, dc, DOC_LITERAL, fun, lno);
+	out = doc_token(tk, dc, DOC_LITERAL, fun, lno);
+
+	/* Mute if we're about to branch. */
+	nx = token_next(tk);
+	if (nx != NULL && token_is_branch(nx))
+		doc_alloc0(DOC_MUTE, dc, 1, fun, lno);
+
+	return out;
 }
 
 void
