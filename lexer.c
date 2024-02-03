@@ -1231,6 +1231,8 @@ lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
     size_t *len)
 {
 	*len = lx->lx_st.st_off - st->st_off;
+	if (*len == 0)
+		return NULL;
 	return &lx->lx_input.ptr[st->st_off];
 }
 

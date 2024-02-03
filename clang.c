@@ -701,6 +701,8 @@ clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 	size_t len;
 
 	key = lexer_buffer_slice(lx, st, &len);
+	if (key == NULL)
+		return NULL;
 	return clang_find_keyword1(key, len);
 }
 
@@ -750,6 +752,8 @@ clang_find_alias(struct lexer *lx, const struct lexer_state *st)
 	int nunderscores = 0;
 
 	str = lexer_buffer_slice(lx, st, &len);
+	if (str == NULL)
+		return NULL;
 	for (; len > 0 && str[0] == '_'; len--, str++)
 		nunderscores++;
 	for (; len > 0 && str[len - 1] == '_'; len--)

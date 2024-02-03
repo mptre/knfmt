@@ -848,6 +848,8 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 	size_t buflen;
 
 	buf = lexer_buffer_slice(lx, st, &buflen);
+	if (buf == NULL)
+		return NULL;
 	so = yaml_find_keyword(buf, buflen);
 	if (so == NULL)
 		return lexer_emit(lx, st, &(struct token){.tk_type = Unknown});
