@@ -390,11 +390,7 @@ lexer_stamp(struct lexer *lx)
 	struct token *tk;
 
 	tk = lx->lx_st.st_tk;
-	if (tk->tk_flags & TOKEN_FLAG_STAMP)
-		return;
-
 	lexer_trace(lx, "stamp %s", lexer_serialize(lx, tk));
-	tk->tk_flags |= TOKEN_FLAG_STAMP;
 	token_ref(tk);
 	dst = VECTOR_ALLOC(lx->lx_stamps);
 	if (dst == NULL)
@@ -439,7 +435,7 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
 		struct token *stamp = lx->lx_stamps[i - 1];
 
-		if (token_cmp(stamp, br) < 0)
+		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0)
 			break;
 		ndocs++;
 	}
@@ -455,7 +451,7 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
 		struct token *stamp = lx->lx_stamps[i - 1];
 
-		if (token_cmp(stamp, br) < 0) {
+		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0) {
 			seek = stamp;
 			break;
 		}
@@ -719,20 +715,6 @@ lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
 
 		TAILQ_FOREACH(fix, &tk->tk_prefixes, tk_entry)
 			token_branch_unlink(fix);
-	}
-
-	if (tk->tk_flags & TOKEN_FLAG_STAMP) {
-		size_t i;
-
-		tk->tk_flags &= ~TOKEN_FLAG_STAMP;
-		token_rele(tk);
-		for (i = 0; i < VECTOR_LENGTH(lx->lx_stamps); i++) {
-			if (lx->lx_stamps[i] == tk)
-				break;
-		}
-		for (i++; i < VECTOR_LENGTH(lx->lx_stamps); i++)
-			lx->lx_stamps[i - 1] = lx->lx_stamps[i];
-		VECTOR_POP(lx->lx_stamps);
 	}
 
 	if (lx->lx_st.st_tk == tk)
@@ -1405,10 +1387,15 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 static struct token *
 lexer_last_stamped(struct lexer *lx)
 {
-	struct token **last;
+	size_t i;
 
-	last = VECTOR_LAST(lx->lx_stamps);
-	return last != NULL ? *last : NULL;
+	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
+		struct token *stamp = lx->lx_stamps[i - 1];
+
+		if (!token_is_dangling(stamp))
+			return stamp;
+	}
+	return NULL;
 }
 
 /*

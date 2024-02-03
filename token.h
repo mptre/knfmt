@@ -152,7 +152,7 @@ struct token {
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
 /* Token denotes a storage keyword. */
 #define TOKEN_FLAG_STORAGE	0x00000004u
-#define TOKEN_FLAG_STAMP	0x00000008u
+/* was TOKEN_FLAG_STAMP		0x00000008u */
 /* was TOKEN_FLAG_TRIMMED	0x00000010u */
 /* Token denotes an assignment operator. */
 #define TOKEN_FLAG_ASSIGN	0x00000020u
