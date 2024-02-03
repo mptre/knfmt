@@ -25,4 +25,12 @@
     <fileName>libks/arithmetic.h</fileName>
     <id>unusedFunction</id>
   </suppress>
+
+  <!-- parser.c -->
+  <suppress>
+    <!-- False positive, only used in attribute cleanup. -->
+    <fileName>parser.c</fileName>
+    <id>unusedFunction</id>
+    <symbolName>parser_doc_scope_leave</symbolName>
+  </suppress>
 </suppressions>
