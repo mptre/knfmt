@@ -1,4 +1,5 @@
 struct arena;
+struct arena_scope;
 struct lexer;
 struct options;
 struct simple;
@@ -12,4 +13,4 @@ struct clang	*clang_alloc(const struct style *, struct simple *,
 void		 clang_free(struct clang *);
 
 struct token	*clang_read(struct lexer *, void *);
-struct token	*clang_token_alloc(const struct token *);
+struct token	*clang_token_alloc(struct arena_scope *, const struct token *);

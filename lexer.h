@@ -2,6 +2,7 @@
 
 #define LEXER_EOF	0x7fffffff
 
+struct arena_scope;
 struct lexer;
 
 struct lexer_arg {
@@ -30,10 +31,11 @@ struct lexer_arg {
 		struct token	*(*read)(struct lexer *, void *);
 
 		/*
-		 * Allocate a new token. Expected to be initialized to the given
-		 * token.
+		 * Allocate a new token from the given arena scope.
+		 * Expected to be initialized using the given token.
 		 */
-		struct token	*(*alloc)(const struct token *);
+		struct token	*(*alloc)(struct arena_scope *,
+		    const struct token *);
 
 		/*
 		 * Serialize routine used to turn the given token into something

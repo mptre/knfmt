@@ -99,7 +99,8 @@ static void	style_dump_IncludeCategories(const struct style *);
 
 static struct token			*yaml_read(struct lexer *, void *);
 static struct token			*yaml_read_integer(struct lexer *);
-static struct token			*yaml_token_alloc(const struct token *);
+static struct token			*yaml_token_alloc(struct arena_scope *,
+    const struct token *);
 static char				*yaml_serialize(const struct token *);
 static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
@@ -811,9 +812,9 @@ yaml_read_integer(struct lexer *lx)
 }
 
 static struct token *
-yaml_token_alloc(const struct token *def)
+yaml_token_alloc(struct arena_scope *s, const struct token *def)
 {
-	return token_alloc(sizeof(struct yaml_token), def);
+	return token_alloc(s, sizeof(struct yaml_token), def);
 }
 
 static char *

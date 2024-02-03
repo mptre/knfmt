@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 
-#include "alloc.h"
 #include "lexer.h"
 #include "util.h"
 
@@ -28,11 +28,11 @@ static const char	*token_type_str(int);
 #endif
 
 struct token *
-token_alloc(size_t priv_size, const struct token *def)
+token_alloc(struct arena_scope *s, size_t priv_size, const struct token *def)
 {
 	struct token *tk;
 
-	tk = ecalloc(1, sizeof(*tk) + priv_size);
+	tk = arena_calloc(s, 1, sizeof(*tk) + priv_size);
 	*tk = *def;
 	tk->tk_refs = 1;
 	TAILQ_INIT(&tk->tk_prefixes);
@@ -63,7 +63,6 @@ token_rele(struct token *tk)
 		token_list_remove(&tk->tk_suffixes, fix);
 	if (tk->tk_flags & TOKEN_FLAG_DIRTY)
 		free((void *)tk->tk_str);
-	free(tk);
 }
 
 /*

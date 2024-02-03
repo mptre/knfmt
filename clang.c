@@ -295,9 +295,9 @@ out:
 }
 
 struct token *
-clang_token_alloc(const struct token *def)
+clang_token_alloc(struct arena_scope *s, const struct token *def)
 {
-	return token_alloc(0, def);
+	return token_alloc(s, 0, def);
 }
 
 static void

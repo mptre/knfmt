@@ -2,6 +2,8 @@
 
 #include "queue-fwd.h"
 
+struct arena_scope;
+
 #define FOR_TOKEN_TYPES(OP)						\
 	/* keywords */							\
 	OP(TOKEN_ASSEMBLY,	"asm", 0)				\
@@ -192,7 +194,8 @@ struct token {
 	TAILQ_ENTRY(token)	 tk_entry;
 };
 
-struct token	*token_alloc(size_t, const struct token *);
+struct token	*token_alloc(struct arena_scope *, size_t,
+    const struct token *);
 void		 token_ref(struct token *);
 void		 token_rele(struct token *);
 int		 token_trim(struct token *);
