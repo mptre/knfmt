@@ -462,7 +462,6 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 	    lexer_serialize(lx, seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
 	    ndocs);
 	lx->lx_st.st_tk = seek;
-	lx->lx_st.st_err = 0;
 	return ndocs;
 }
 
