@@ -51,6 +51,7 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
+static struct token	*clang_read(struct lexer *, void *);
 static struct token	*clang_read_prefix(struct clang *, struct lexer *);
 static struct token	*clang_read_comment(struct clang *, struct lexer *,
     int);
@@ -64,6 +65,8 @@ static struct token	*clang_find_alias(struct lexer *,
     const struct lexer_state *);
 static struct token	*clang_ellipsis(struct lexer *,
     const struct lexer_state *);
+static struct token	*clang_token_alloc(struct arena_scope *,
+    const struct token *);
 
 static void	token_branch_link(struct token *, struct token *);
 static void	token_prolong(struct token *, struct token *);
@@ -151,7 +154,18 @@ clang_free(struct clang *cl)
 	VECTOR_FREE(cl->branches);
 }
 
-struct token *
+struct lexer_callbacks
+clang_lexer_callbacks(struct clang *cl)
+{
+	return (struct lexer_callbacks){
+	    .read	= clang_read,
+	    .alloc	= clang_token_alloc,
+	    .serialize	= token_serialize,
+	    .arg	= cl,
+	};
+}
+
+static struct token *
 clang_read(struct lexer *lx, void *arg)
 {
 	struct clang *cl = arg;
@@ -290,7 +304,7 @@ out:
 	return tk;
 }
 
-struct token *
+static struct token *
 clang_token_alloc(struct arena_scope *s, const struct token *def)
 {
 	return token_alloc(s, 0, def);

@@ -13,5 +13,4 @@ struct clang	*clang_alloc(const struct style *, struct simple *,
     struct arena_scope *, struct arena *, const struct options *);
 void		 clang_free(struct clang *);
 
-struct token	*clang_read(struct lexer *, void *);
-struct token	*clang_token_alloc(struct arena_scope *, const struct token *);
+struct lexer_callbacks	clang_lexer_callbacks(struct clang *);

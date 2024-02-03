@@ -704,6 +704,7 @@ TESTS+=	../fs.h
 TESTS+=	../fuzz-dict.c
 TESTS+=	../fuzz-style.c
 TESTS+=	../knfmt.c
+TESTS+=	../lexer-callbacks.h
 TESTS+=	../lexer.c
 TESTS+=	../lexer.h
 TESTS+=	../libks/arena-buffer.c

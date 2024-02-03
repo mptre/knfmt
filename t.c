@@ -792,12 +792,7 @@ context_init(struct context *cx, const char *src)
 	    .bf			= cx->bf,
 	    .eternal_scope	= &cx->arena.eternal_scope,
 	    .op			= &cx->op,
-	    .callbacks		= {
-		.read		= clang_read,
-		.alloc		= clang_token_alloc,
-		.serialize	= token_serialize,
-		.arg		= cx->cl,
-	    },
+	    .callbacks		= clang_lexer_callbacks(cx->cl),
 	});
 	cx->pr = parser_alloc(&(struct parser_arg){
 	    .options	= &cx->op,

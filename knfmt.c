@@ -219,12 +219,7 @@ fileformat(struct main_context *c, struct file *fe)
 	    .op			= &c->options,
 	    .eternal_scope	= &eternal_scope,
 	    .error_flush	= options_trace_level(&c->options, 'l') > 0,
-	    .callbacks		= {
-		.read		= clang_read,
-		.alloc		= clang_token_alloc,
-		.serialize	= token_serialize,
-		.arg		= clang,
-	    },
+	    .callbacks		= clang_lexer_callbacks(clang),
 	});
 	clang_free(clang);
 	if (lx == NULL) {
