@@ -47,8 +47,7 @@ static void	usage(void) __attribute__((__noreturn__));
 static int	filelist(int, char **, struct files *, struct arena_scope *,
     const struct options *);
 static int	fileformat(struct main_context *, struct file *);
-static int	filediff(const struct buffer *, const struct buffer *,
-    const struct file *);
+static int	filediff(struct main_context *, const struct file *);
 static int	filewrite(struct main_context *, const struct file *);
 static int	fileprint(const struct buffer *);
 static int	fileattr(const char *, int, const char *, int);
@@ -243,7 +242,7 @@ fileformat(struct main_context *c, struct file *fe)
 	}
 
 	if (c->options.diff)
-		error = filediff(c->src, c->dst, fe);
+		error = filediff(c, fe);
 	else if (c->options.inplace)
 		error = filewrite(c, fe);
 	else
@@ -257,10 +256,11 @@ out:
 }
 
 static int
-filediff(const struct buffer *src, const struct buffer *dst,
-    const struct file *fe)
+filediff(struct main_context *c, const struct file *fe)
 {
 	char dstpath[PATH_MAX], srcpath[PATH_MAX];
+	const struct buffer *dst = c->dst;
+	const struct buffer *src = c->src;
 	pid_t pid;
 	int dstfd = -1;
 	int srcfd = -1;
