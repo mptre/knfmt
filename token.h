@@ -223,6 +223,7 @@ int	token_is_branch(const struct token *);
 int	token_is_decl(const struct token *, int);
 int	token_is_moveable(const struct token *);
 int	token_is_first(const struct token *);
+int	token_is_dangling(const struct token *);
 
 struct token	*token_get_branch(struct token *);
 

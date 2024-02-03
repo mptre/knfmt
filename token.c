@@ -383,6 +383,18 @@ token_is_first(const struct token *tk)
 }
 
 /*
+ * Returns non-zero if the given token is not part of a token_list.
+ */
+int
+token_is_dangling(const struct token *tk)
+{
+	static char zero[sizeof(tk->tk_entry)];
+
+	/* Try to not rely on TAILQ_ENTRY() implementation details. */
+	return memcmp(&tk->tk_entry, zero, sizeof(zero)) == 0;
+}
+
+/*
  * Returns the branch continuation associated with the given token if present.
  */
 struct token *
@@ -437,7 +449,10 @@ token_list_append_after(struct token_list *tl, struct token *after,
 void
 token_list_remove(struct token_list *tl, struct token *tk)
 {
-	TAILQ_REMOVE(tl, tk, tk_entry);
+	if (!token_is_dangling(tk)) {
+		TAILQ_REMOVE(tl, tk, tk_entry);
+		memset(&tk->tk_entry, 0, sizeof(tk->tk_entry));
+	}
 	token_rele(tk);
 }
 
