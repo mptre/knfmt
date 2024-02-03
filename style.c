@@ -9,7 +9,6 @@
 #include <regex.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -20,7 +19,6 @@
 #include "libks/compiler.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "fs.h"
 #include "lexer.h"
 #include "options.h"
@@ -331,7 +329,7 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 {
 	struct style *st;
 
-	st = ecalloc(1, sizeof(*st));
+	st = arena_calloc(eternal_scope, 1, sizeof(*st));
 	st->eternal_scope = eternal_scope;
 	st->scratch = scratch;
 	st->op = op;
@@ -363,7 +361,6 @@ style_free(struct style *st)
 		regfree(&ic->regex);
 	}
 	VECTOR_FREE(st->include_categories);
-	free(st);
 }
 
 unsigned int
