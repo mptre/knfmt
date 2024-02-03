@@ -736,7 +736,7 @@ clang_find_keyword1(const char *key, size_t len)
 	for (i = 0; i < VECTOR_LENGTH(table_tokens[slot]); i++) {
 		struct token *tk = &table_tokens[slot][i];
 
-		if (len == tk->tk_len && strncmp(tk->tk_str, key, len) == 0)
+		if (token_rawcmp(tk, key, len) == 0)
 			return tk;
 	}
 	return NULL;
