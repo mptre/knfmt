@@ -6,13 +6,12 @@
 #include <ctype.h>
 #include <err.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
-#include "alloc.h"
 #include "comment.h"
 #include "cpp-align.h"
 #include "cpp-include.h"
@@ -122,12 +121,13 @@ clang_shutdown(void)
 }
 
 struct clang *
-clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
+clang_alloc(const struct style *st, struct simple *si,
+    struct arena_scope *eternal_scope, struct arena *scratch,
     const struct options *op)
 {
 	struct clang *cl;
 
-	cl = ecalloc(1, sizeof(*cl));
+	cl = arena_calloc(eternal_scope, 1, sizeof(*cl));
 	TAILQ_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
@@ -145,7 +145,6 @@ clang_free(struct clang *cl)
 
 	cpp_include_free(cl->ci);
 	VECTOR_FREE(cl->branches);
-	free(cl);
 }
 
 struct token *

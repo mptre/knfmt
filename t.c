@@ -787,7 +787,8 @@ context_init(struct context *cx, const char *src)
 	cx->st = style_parse("/dev/null", &cx->eternal_scope, cx->scratch,
 	    &cx->op);
 	cx->si = simple_alloc(&cx->op);
-	cx->cl = clang_alloc(cx->st, cx->si, cx->scratch, &cx->op);
+	cx->cl = clang_alloc(cx->st, cx->si, &cx->eternal_scope, cx->scratch,
+	    &cx->op);
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= cx->bf,

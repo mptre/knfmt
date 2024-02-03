@@ -216,7 +216,8 @@ fileformat(struct main_context *c, struct file *fe)
 		error = 1;
 		goto out;
 	}
-	clang = clang_alloc(c->style, c->simple, c->scratch, c->options);
+	clang = clang_alloc(c->style, c->simple, &eternal_scope, c->scratch,
+	    c->options);
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,

@@ -9,7 +9,7 @@ void	clang_init(void);
 void	clang_shutdown(void);
 
 struct clang	*clang_alloc(const struct style *, struct simple *,
-    struct arena *, const struct options *);
+    struct arena_scope *, struct arena *, const struct options *);
 void		 clang_free(struct clang *);
 
 struct token	*clang_read(struct lexer *, void *);
