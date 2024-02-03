@@ -786,7 +786,7 @@ context_init(struct context *cx, const char *src)
 	buffer_puts(cx->bf, src, strlen(src));
 	cx->st = style_parse("/dev/null", &cx->eternal_scope, cx->scratch,
 	    &cx->op);
-	cx->si = simple_alloc(&cx->op);
+	cx->si = simple_alloc(&cx->eternal_scope, &cx->op);
 	cx->cl = clang_alloc(cx->st, cx->si, &cx->eternal_scope, cx->scratch,
 	    &cx->op);
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
@@ -818,9 +818,6 @@ context_reset(struct context *cx)
 
 	style_free(cx->st);
 	cx->st = NULL;
-
-	simple_free(cx->si);
-	cx->si = NULL;
 
 	lexer_free(cx->lx);
 	cx->lx = NULL;

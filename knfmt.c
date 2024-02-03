@@ -126,7 +126,7 @@ main(int argc, char *argv[])
 		error = 1;
 		goto out;
 	}
-	si = simple_alloc(&op);
+	si = simple_alloc(&eternal_scope, &op);
 	src = buffer_alloc(1 << 12);
 	if (src == NULL) {
 		error = 1;
@@ -164,7 +164,6 @@ out:
 	files_free(&files);
 	buffer_free(dst);
 	buffer_free(src);
-	simple_free(si);
 	style_free(st);
 	arena_free(scratch);
 	arena_free(eternal);

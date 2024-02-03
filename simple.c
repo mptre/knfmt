@@ -2,9 +2,8 @@
 
 #include "config.h"
 
-#include <stdlib.h>
+#include "libks/arena.h"
 
-#include "alloc.h"
 #include "options.h"
 
 enum simple_state {
@@ -25,21 +24,13 @@ struct simple {
 static int	is_pass_mutually_exclusive(enum simple_pass);
 
 struct simple *
-simple_alloc(const struct options *op)
+simple_alloc(struct arena_scope *eternal_scope, const struct options *op)
 {
 	struct simple *si;
 
-	si = ecalloc(1, sizeof(*si));
+	si = arena_calloc(eternal_scope, 1, sizeof(*si));
 	si->enable = op->simple;
 	return si;
-}
-
-void
-simple_free(struct simple *si)
-{
-	if (si == NULL)
-		return;
-	free(si);
 }
 
 int

@@ -1,3 +1,4 @@
+struct arena_scope;
 struct options;
 
 /* Force enable pass even if simple mode is not enabled. */
@@ -30,8 +31,7 @@ struct simple_cookie {
 	__attribute__((cleanup(simple_leave)))				\
 	struct simple_cookie varname = {0}
 
-struct simple	*simple_alloc(const struct options *);
-void		 simple_free(struct simple *);
+struct simple	*simple_alloc(struct arena_scope *, const struct options *);
 
 int	simple_enter(struct simple *, enum simple_pass, unsigned int,
     struct simple_cookie *);
