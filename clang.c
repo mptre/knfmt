@@ -51,6 +51,7 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
+static void		 clang_done(struct lexer *, void *);
 static struct token	*clang_read(struct lexer *, void *);
 static struct token	*clang_read_prefix(struct clang *, struct lexer *);
 static struct token	*clang_read_comment(struct clang *, struct lexer *,
@@ -159,10 +160,19 @@ clang_lexer_callbacks(struct clang *cl)
 {
 	return (struct lexer_callbacks){
 	    .read	= clang_read,
+	    .done	= clang_done,
 	    .alloc	= clang_token_alloc,
 	    .serialize	= token_serialize,
 	    .arg	= cl,
 	};
+}
+
+static void
+clang_done(struct lexer *lx, void *arg)
+{
+	struct clang *cl = arg;
+
+	clang_branch_purge(cl, lx);
 }
 
 static struct token *
@@ -298,8 +308,6 @@ out:
 			break;
 		}
 	}
-	if (tk->tk_type == LEXER_EOF)
-		clang_branch_purge(cl, lx);
 
 	return tk;
 }

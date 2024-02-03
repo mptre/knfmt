@@ -14,6 +14,9 @@ struct lexer_callbacks {
 	 */
 	struct token	*(*read)(struct lexer *, void *);
 
+	/* Optional callback invoked once all tokens are read. */
+	void		 (*done)(struct lexer *, void *);
+
 	/*
 	 * Allocate a new token from the given arena scope.
 	 * Expected to be initialized using the given token.
