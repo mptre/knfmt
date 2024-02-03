@@ -50,6 +50,12 @@ struct source_location {
 	int		 lno;
 };
 
+struct arena_cleanup {
+	void			*ptr;
+	void			 (*fun)(void *);
+	struct arena_cleanup	*next;
+};
+
 struct arena_frame {
 	char			*ptr;
 	size_t			 size;
@@ -63,9 +69,6 @@ struct arena {
 	size_t			 frame_size;
 	/* Number of ASAN poison bytes between allocations. */
 	size_t			 poison_size;
-	struct {
-		unsigned int	dying:1;
-	} flags;
 	int			 refs;
 	struct arena_stats	 stats;
 	struct source_location	 scope_locations[MAX_SOURCE_LOCATIONS];
@@ -79,15 +82,15 @@ union address {
 static const size_t maxalign = sizeof(void *);
 
 static void
-frame_poison(struct arena_frame *frame __attribute__((unused)))
+frame_poison(struct arena_frame *MAYBE_UNUSED(frame))
 {
 	ASAN_POISON_MEMORY_REGION(&frame->ptr[frame->len],
 	    frame->size - frame->len);
 }
 
 static void
-frame_unpoison(struct arena_frame *frame __attribute__((unused)),
-    size_t size __attribute__((unused)))
+frame_unpoison(struct arena_frame *MAYBE_UNUSED(frame),
+    size_t MAYBE_UNUSED(size))
 {
 	ASAN_UNPOISON_MEMORY_REGION(&frame->ptr[frame->len], size);
 }
@@ -200,29 +203,34 @@ arena_alloc(void)
 void
 arena_free(struct arena *a)
 {
-	arena_ref(a);
-	arena_scope_leave(&(struct arena_scope){.arena = a});
-	/* Signal to any scope(s) still alive that the arena is gone. */
-	a->flags.dying = 1;
-	arena_rele(a);
+	if (a->refs > 1) {
+		/* Scope(s) still alive. */
+		arena_rele(a);
+	} else {
+		arena_scope_leave(&(struct arena_scope){.arena = a});
+	}
 }
 
 void
 arena_scope_leave(struct arena_scope *s)
 {
 	struct arena *a = s->arena;
+	struct arena_frame *last_frame = s->frame;
+	struct arena_cleanup *ac;
 	int idx = a->refs;
 
 	if (idx < MAX_SOURCE_LOCATIONS)
 		a->scope_locations[idx] = (struct source_location){0};
 
-	/* Do nothing if arena_free() already has been called. */
-	if (a->flags.dying) {
-		arena_rele(a);
-		return;
-	}
+	for (ac = s->cleanup; ac != NULL; ac = ac->next)
+		ac->fun(ac->ptr);
+	s->cleanup = NULL;
 
-	while (a->frame != NULL && a->frame != s->frame) {
+	/* Free all frames if the arena is already freed. */
+	if (a->refs == 1)
+		last_frame = NULL;
+
+	while (a->frame != NULL && a->frame != last_frame) {
 		struct arena_frame *frame = a->frame;
 
 		if (frame->size <= a->stats.bytes.now)
@@ -266,7 +274,7 @@ arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 }
 
 static void
-arena_scope_validate(struct arena *a, struct arena_scope *s, size_t size)
+arena_scope_validate(struct arena *a, const struct arena_scope *s, size_t size)
 {
 	const struct source_location fallback = {
 		.fun = "?",
@@ -416,10 +424,8 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 char *
 arena_sprintf(struct arena_scope *s, const char *fmt, ...)
 {
-	struct arena_scope rollback;
 	va_list ap, cp;
-	struct arena *a = s->arena;
-	char *str = NULL;
+	char *str;
 	size_t len;
 	int n;
 
@@ -428,21 +434,19 @@ arena_sprintf(struct arena_scope *s, const char *fmt, ...)
 	va_copy(cp, ap);
 	n = vsnprintf(NULL, 0, fmt, cp);
 	va_end(cp);
-	if (n < 0)
-		goto out;
-
-	len = (size_t)n + 1;
-	rollback = arena_scope_enter(a);
-	str = arena_malloc(&rollback, len);
-	n = vsnprintf(str, len, fmt, ap);
-	if (n < 0 || (size_t)n >= len) {
-		arena_scope_leave(&rollback);
-		str = NULL;
-	} else {
-		arena_rele(a);
+	if (n < 0) {
+		errno = ENAMETOOLONG;
+		err(1, "%s", __func__);
 	}
 
-out:
+	len = (size_t)n + 1;
+	str = arena_malloc(s, len);
+	n = vsnprintf(str, len, fmt, ap);
+	if (n < 0 || (size_t)n >= len) {
+		errno = ENAMETOOLONG;
+		err(1, "%s", __func__);
+	}
+
 	va_end(ap);
 	return str;
 }
@@ -471,6 +475,18 @@ arena_strndup(struct arena_scope *s, const char *src, size_t len)
 	return dst;
 }
 
+void
+arena_cleanup_impl(struct arena_scope *s, void (*fun)(void *), void *ptr)
+{
+	struct arena_cleanup *ac;
+
+	ac = arena_malloc(s, sizeof(*ac));
+	ac->ptr = ptr;
+	ac->fun = fun;
+	ac->next = s->cleanup;
+	s->cleanup = ac;
+}
+
 struct arena_stats *
 arena_stats(struct arena *a)
 {
@@ -478,8 +494,7 @@ arena_stats(struct arena *a)
 }
 
 void
-arena_poison(void *ptr __attribute__((unused)),
-    size_t size __attribute__((unused)))
+arena_poison(void *MAYBE_UNUSED(ptr), size_t MAYBE_UNUSED(size))
 {
 	ASAN_POISON_MEMORY_REGION(ptr, size);
 }

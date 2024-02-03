@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIKBS_ARENA_H
+#define LIKBS_ARENA_H
+
 #include <stddef.h>	/* size_t */
 
 #define arena_scope(arena, varname) \
@@ -23,6 +26,7 @@
 struct arena_scope {
 	struct arena		*arena;
 	struct arena_frame	*frame;
+	struct arena_cleanup	*cleanup;
 	size_t			 frame_len;
 	int			 id;
 };
@@ -75,6 +79,12 @@ char	*arena_sprintf(struct arena_scope *, const char *, ...)
 char	*arena_strdup(struct arena_scope *, const char *);
 char	*arena_strndup(struct arena_scope *, const char *, size_t);
 
+#define arena_cleanup(s, fun, ptr) \
+    arena_cleanup_impl((s), (void (*)(void *))(fun), (ptr))
+void    arena_cleanup_impl(struct arena_scope *, void (*)(void *), void *);
+
 struct arena_stats	*arena_stats(struct arena *);
 
 void    arena_poison(void *, size_t);
+
+#endif
