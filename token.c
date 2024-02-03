@@ -32,7 +32,7 @@ token_alloc(size_t priv_size, const struct token *def)
 {
 	struct token *tk;
 
-	tk = calloc(1, sizeof(*tk) + priv_size);
+	tk = ecalloc(1, sizeof(*tk) + priv_size);
 	*tk = *def;
 	tk->tk_refs = 1;
 	TAILQ_INIT(&tk->tk_prefixes);
