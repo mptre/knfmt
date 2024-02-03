@@ -23,12 +23,12 @@ struct decl_forward {
 };
 
 struct simple_decl_forward *
-simple_decl_forward_enter(struct lexer *lx, struct arena_scope *s,
+simple_decl_forward_enter(struct lexer *lx, struct arena_scope *eternal_scope,
     const struct options *op)
 {
 	struct simple_decl_forward *sd;
 
-	sd = arena_calloc(s, 1, sizeof(*sd));
+	sd = arena_calloc(eternal_scope, 1, sizeof(*sd));
 	if (VECTOR_INIT(sd->decls))
 		err(1, NULL);
 	sd->op = op;
