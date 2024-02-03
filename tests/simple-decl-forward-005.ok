@@ -1,0 +1,6 @@
+struct d;
+#if 0
+struct c;
+#endif
+struct a;
+struct b;
