@@ -49,6 +49,26 @@ simple_decl_forward_reset(struct simple_decl_forward *sd)
 	sd->after = NULL;
 }
 
+static struct token *
+first_token(struct simple_decl_forward *sd)
+{
+	static struct token fallback;
+	struct decl_forward *df;
+
+	df = VECTOR_FIRST(sd->decls);
+	return df != NULL ? df->beg : &fallback;
+}
+
+static struct token *
+last_token(struct simple_decl_forward *sd)
+{
+	static struct token fallback;
+	struct decl_forward *df;
+
+	df = VECTOR_LAST(sd->decls);
+	return df != NULL ? df->semi : &fallback;
+}
+
 void
 simple_decl_forward_leave(struct simple_decl_forward *sd)
 {
@@ -61,11 +81,11 @@ simple_decl_forward_leave(struct simple_decl_forward *sd)
 		goto out;
 
 	/* Preserve prefixes/suffixes. */
-	first_unsorted = VECTOR_FIRST(sd->decls)->beg;
-	last_unsorted = VECTOR_LAST(sd->decls)->semi;
+	first_unsorted = first_token(sd);
+	last_unsorted = last_token(sd);
 	VECTOR_SORT(sd->decls, decl_forward_cmp);
-	first_sorted = VECTOR_FIRST(sd->decls)->beg;
-	last_sorted = VECTOR_LAST(sd->decls)->semi;
+	first_sorted = first_token(sd);
+	last_sorted = last_token(sd);
 	if (first_unsorted != first_sorted)
 		token_move_prefixes(first_unsorted, first_sorted);
 	if (last_unsorted != last_sorted)
