@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
@@ -348,8 +349,8 @@ static void	doc_trace_enter0(const struct doc *, struct doc_state *);
 static void	doc_trace_leave0(const struct doc *, struct doc_state *);
 
 static const char	*docstr(const struct doc *, struct arena_scope *);
-static void		 indentstr(const struct doc *,
-    const struct doc_state *, struct buffer *);
+static const char	*indentstr(const struct doc *,
+    const struct doc_state *, struct arena_scope *);
 static const char	*statestr(const struct doc_state *, unsigned int,
     struct arena_scope *);
 
@@ -1860,15 +1861,7 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 
 	case DOC_INDENT:
 	case DOC_NOINDENT: {
-		struct buffer *bf;
-
-		bf = buffer_alloc(32);
-		if (bf == NULL)
-			err(1, NULL);
-		indentstr(dc, st, bf);
-		buffer_putc(bf, '\0');
-		fprintf(stderr, "%s", buffer_get_ptr(bf));
-		buffer_free(bf);
+		fprintf(stderr, "%s", indentstr(dc, st, &s));
 		break;
 	}
 
@@ -1942,10 +1935,14 @@ docstr(const struct doc *dc, struct arena_scope *s)
 	    suffix ? "\"" : "");
 }
 
-static void
-indentstr(const struct doc *dc, const struct doc_state *st, struct buffer *bf)
+static const char *
+indentstr(const struct doc *dc, const struct doc_state *st,
+    struct arena_scope *s)
 {
+	struct buffer *bf;
 	int indent;
+
+	bf = arena_buffer_alloc(s, 1 << 5);
 
 	if (dc->dc_type == DOC_MINIMIZE)
 		indent = (int)dc->dc_minimizers[st->st_minimize.idx].indent;
@@ -1965,6 +1962,7 @@ indentstr(const struct doc *dc, const struct doc_state *st, struct buffer *bf)
 	} else {
 		buffer_printf(bf, "%d", indent);
 	}
+	return buffer_str(bf);
 }
 
 static const char *
