@@ -95,7 +95,7 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 	if (bf == NULL)
 		return 1;
 
-	while ((line = buffer_getline(bf, &it)) != NULL) {
+	while ((line = arena_buffer_getline(&s, bf, &it)) != NULL) {
 		char path[PATH_MAX];
 		unsigned int el, sl;
 
@@ -109,7 +109,7 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 			}
 
 			while (sl <= el) {
-				line = buffer_getline(bf, &it);
+				line = arena_buffer_getline(&s, bf, &it);
 				if (line == NULL) {
 					error = 1;
 					goto out;
@@ -140,7 +140,6 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 	}
 
 out:
-	buffer_getline_free(&it);
 	return error;
 }
 

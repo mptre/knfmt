@@ -1135,7 +1135,10 @@ clang_format_dump_style(struct style *st, enum style_keyword based_on_style,
 		struct buffer_getline it = {0};
 		const char *line;
 
-		while ((line = buffer_getline(bf, &it)) != NULL)
+		arena_scope(st->scratch, scratch_scope);
+
+		while ((line = arena_buffer_getline(&scratch_scope, bf, &it)) !=
+		    NULL)
 			style_trace(st, "clang-format: %s", line);
 		return NULL;
 	}
