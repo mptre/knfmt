@@ -2,6 +2,9 @@
 <suppressions>
   <!-- nofile -->
   <suppress>
+    <id>checkersReport</id>
+  </suppress>
+  <suppress>
     <id>constParameterPointer</id>
   </suppress>
   <suppress>
@@ -15,5 +18,11 @@
   </suppress>
   <suppress>
     <id>redundantContinue</id>
+  </suppress>
+
+  <!-- libks/arithmetic.h -->
+  <suppress>
+    <fileName>libks/arithmetic.h</fileName>
+    <id>unusedFunction</id>
   </suppress>
 </suppressions>
