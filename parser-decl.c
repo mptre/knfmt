@@ -68,14 +68,14 @@ parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 {
 	int error;
 
-	simple_cookie(simple_decl);
-	error = parser_simple_decl_enter(pr, flags, &simple_decl);
+	simple_cookie(simple_decl_cookie);
+	error = parser_simple_decl_enter(pr, flags, &simple_decl_cookie);
 	if (error & HALT)
 		return error;
 
-	simple_cookie(simple_decl_forward);
+	simple_cookie(simple_decl_forward_cookie);
 	error = parser_simple_decl_forward_enter(pr, flags,
-	    &simple_decl_forward);
+	    &simple_decl_forward_cookie);
 	if (error & HALT)
 		return error;
 
