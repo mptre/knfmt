@@ -294,6 +294,12 @@ out:
 	return tk;
 }
 
+struct token *
+clang_token_alloc(const struct token *def)
+{
+	return token_alloc(0, def);
+}
+
 static void
 clang_branch_enter(struct clang *cl, struct lexer *lx, struct token *cpp,
     struct token *tk)

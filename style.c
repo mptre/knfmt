@@ -99,6 +99,7 @@ static void	style_dump_IncludeCategories(const struct style *);
 
 static struct token			*yaml_read(struct lexer *, void *);
 static struct token			*yaml_read_integer(struct lexer *);
+static struct token			*yaml_token_alloc(const struct token *);
 static char				*yaml_serialize(const struct token *);
 static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
@@ -530,10 +531,10 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .path		= path,
 	    .bf			= bf,
 	    .op			= st->op,
-	    .token_data_size	= sizeof(struct yaml_token),
 	    .error_flush	= trace(st->op, 's') > 0,
 	    .callbacks		= {
 		.read		= yaml_read,
+		.alloc		= yaml_token_alloc,
 		.serialize	= yaml_serialize,
 		.arg		= st,
 	    },
@@ -807,6 +808,12 @@ yaml_read_integer(struct lexer *lx)
 		    "integer %s too large", lexer_serialize(lx, tk));
 	}
 	return tk;
+}
+
+static struct token *
+yaml_token_alloc(const struct token *def)
+{
+	return token_alloc(sizeof(struct yaml_token), def);
 }
 
 static char *

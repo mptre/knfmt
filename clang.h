@@ -12,3 +12,4 @@ struct clang	*clang_alloc(const struct style *, struct simple *,
 void		 clang_free(struct clang *);
 
 struct token	*clang_read(struct lexer *, void *);
+struct token	*clang_token_alloc(const struct token *);

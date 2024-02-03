@@ -10,9 +10,6 @@ struct lexer_arg {
 	struct diffchunk	*diff;
 	const struct options	*op;
 
-	/* Token private data size. */
-	size_t			 token_data_size;
-
 	/*
 	 * Report errors immediately, removing the need to call
 	 * lexer_error_flush() explicitly.
@@ -31,6 +28,12 @@ struct lexer_arg {
 		 *        is assumed to be returned.
 		 */
 		struct token	*(*read)(struct lexer *, void *);
+
+		/*
+		 * Allocate a new token. Expected to be initialized to the given
+		 * token.
+		 */
+		struct token	*(*alloc)(const struct token *);
 
 		/*
 		 * Serialize routine used to turn the given token into something
