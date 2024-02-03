@@ -17,9 +17,6 @@ struct lexer_callbacks {
 	 */
 	struct token	*(*read)(struct lexer *, void *);
 
-	/* Optional callback invoked once all tokens are read. */
-	void		 (*done)(struct lexer *, void *);
-
 	/*
 	 * Allocate a new token from the given arena scope.
 	 * Expected to be initialized using the given token.
@@ -33,6 +30,12 @@ struct lexer_callbacks {
 	 */
 	const char	*(*serialize)(struct arena_scope *,
 	    const struct token *);
+
+	/*
+	 * Informative callback invoked once all tokens are read.
+	 * May be omitted.
+	 */
+	void		 (*read_all_tokens)(struct lexer *, void *);
 
 	/* Opaque argument passed to callbacks. */
 	void		*arg;

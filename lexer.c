@@ -141,8 +141,10 @@ lexer_alloc(const struct lexer_arg *arg)
 	}
 	VECTOR_FREE(discarded);
 
-	if (lx->lx_arg.callbacks.done != NULL)
-		lx->lx_arg.callbacks.done(lx, lx->lx_arg.callbacks.arg);
+	if (lx->lx_arg.callbacks.read_all_tokens != NULL) {
+		lx->lx_arg.callbacks.read_all_tokens(lx,
+		    lx->lx_arg.callbacks.arg);
+	}
 
 	if (options_trace_level(lx->lx_op, 't') > 0)
 		lexer_dump(lx);
@@ -150,8 +152,10 @@ lexer_alloc(const struct lexer_arg *arg)
 	return lx;
 
 err:
-	if (lx->lx_arg.callbacks.done != NULL)
-		lx->lx_arg.callbacks.done(lx, lx->lx_arg.callbacks.arg);
+	if (lx->lx_arg.callbacks.read_all_tokens != NULL) {
+		lx->lx_arg.callbacks.read_all_tokens(lx,
+		    lx->lx_arg.callbacks.arg);
+	}
 	VECTOR_FREE(discarded);
 	return NULL;
 }

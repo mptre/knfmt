@@ -159,11 +159,11 @@ struct lexer_callbacks
 clang_lexer_callbacks(struct clang *cl)
 {
 	return (struct lexer_callbacks){
-	    .read	= clang_read,
-	    .done	= clang_done,
-	    .alloc	= clang_token_alloc,
-	    .serialize	= token_serialize,
-	    .arg	= cl,
+	    .read		= clang_read,
+	    .alloc		= clang_token_alloc,
+	    .serialize		= token_serialize,
+	    .read_all_tokens	= clang_done,
+	    .arg		= cl,
 	};
 }
 
