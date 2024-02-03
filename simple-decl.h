@@ -1,5 +1,5 @@
-struct options;
 struct lexer;
+struct options;
 struct token;
 
 struct simple_decl	*simple_decl_enter(struct lexer *,

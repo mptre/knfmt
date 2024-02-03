@@ -1,5 +1,5 @@
-struct options;
 struct lexer;
+struct options;
 struct style;
 struct token;
 
