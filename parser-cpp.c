@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/string.h"
+
 #include "alloc.h"
 #include "doc.h"
 #include "expr.h"
@@ -267,11 +269,5 @@ iscdefs(const char *str, size_t len)
 
 	if (len < 2 || strncmp(str, "__", 2) != 0)
 		return 0;
-	for (i = 2; i < len; i++) {
-		unsigned char c = (unsigned char)str[i];
-
-		if (!isupper(c) && !isdigit(c) && c != '_')
-			return 0;
-	}
-	return 1;
+	return KS_str_match(&str[2], len - 2, "AZ09__") == len - 2;
 }
