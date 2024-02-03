@@ -299,8 +299,6 @@ done:
 void
 buffer_getline_free(struct buffer_getline *getline)
 {
-	if (getline == NULL)
-		return;
 	buffer_free(getline->bf);
 	memset(getline, 0, sizeof(*getline));
 }

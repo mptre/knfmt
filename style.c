@@ -899,8 +899,8 @@ yaml_read_integer(struct lexer *lx)
 	while (isdigit(ch)) {
 		int x = ch - '0';
 
-		if (i32_mul_overflow(integer, 10, &integer) ||
-		    i32_add_overflow(integer, x, &integer))
+		if (KS_i32_mul_overflow(integer, 10, &integer) ||
+		    KS_i32_add_overflow(integer, x, &integer))
 			overflow = 1;
 
 		if (lexer_getc(lx, &ch))
@@ -909,7 +909,7 @@ yaml_read_integer(struct lexer *lx)
 	if (!string)
 		lexer_ungetc(lx);
 
-	if (i32_mul_overflow(integer, sign, &integer))
+	if (KS_i32_mul_overflow(integer, sign, &integer))
 		overflow = 1;
 
 	tk = lexer_emit(lx, &s, &(struct token){.tk_type = Integer});

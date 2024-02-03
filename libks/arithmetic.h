@@ -16,21 +16,21 @@
 
 #include <stdint.h>
 
-int	i32_add_overflow0(int32_t, int32_t, int32_t *);
-int	i32_sub_overflow0(int32_t, int32_t, int32_t *);
-int	i32_mul_overflow0(int32_t, int32_t, int32_t *);
+int	KS_i32_add_overflow0(int32_t, int32_t, int32_t *);
+int	KS_i32_sub_overflow0(int32_t, int32_t, int32_t *);
+int	KS_i32_mul_overflow0(int32_t, int32_t, int32_t *);
 
-int	i64_add_overflow0(int64_t, int64_t, int64_t *);
-int	i64_sub_overflow0(int64_t, int64_t, int64_t *);
-int	i64_mul_overflow0(int64_t, int64_t, int64_t *);
+int	KS_i64_add_overflow0(int64_t, int64_t, int64_t *);
+int	KS_i64_sub_overflow0(int64_t, int64_t, int64_t *);
+int	KS_i64_mul_overflow0(int64_t, int64_t, int64_t *);
 
-int	u32_add_overflow0(uint32_t, uint32_t, uint32_t *);
-int	u32_sub_overflow0(uint32_t, uint32_t, uint32_t *);
-int	u32_mul_overflow0(uint32_t, uint32_t, uint32_t *);
+int	KS_u32_add_overflow0(uint32_t, uint32_t, uint32_t *);
+int	KS_u32_sub_overflow0(uint32_t, uint32_t, uint32_t *);
+int	KS_u32_mul_overflow0(uint32_t, uint32_t, uint32_t *);
 
-int	u64_add_overflow0(uint64_t, uint64_t, uint64_t *);
-int	u64_sub_overflow0(uint64_t, uint64_t, uint64_t *);
-int	u64_mul_overflow0(uint64_t, uint64_t, uint64_t *);
+int	KS_u64_add_overflow0(uint64_t, uint64_t, uint64_t *);
+int	KS_u64_sub_overflow0(uint64_t, uint64_t, uint64_t *);
+int	KS_u64_mul_overflow0(uint64_t, uint64_t, uint64_t *);
 
 #if defined(__has_builtin)
 #define has_builtin(x) __has_builtin(x)
@@ -39,122 +39,122 @@ int	u64_mul_overflow0(uint64_t, uint64_t, uint64_t *);
 #endif
 
 static inline int
-i32_add_overflow(int32_t a, int32_t b, int32_t *c)
+KS_i32_add_overflow(int32_t a, int32_t b, int32_t *c)
 {
 #if has_builtin(__builtin_add_overflow)
 	return __builtin_add_overflow(a, b, c) ? 1 : 0;
 #else
-	return i32_add_overflow0(a, b, c);
+	return KS_i32_add_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-i32_sub_overflow(int32_t a, int32_t b, int32_t *c)
+KS_i32_sub_overflow(int32_t a, int32_t b, int32_t *c)
 {
 #if has_builtin(__builtin_sub_overflow)
 	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
 #else
-	return i32_sub_overflow0(a, b, c);
+	return KS_i32_sub_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-i32_mul_overflow(int32_t a, int32_t b, int32_t *c)
+KS_i32_mul_overflow(int32_t a, int32_t b, int32_t *c)
 {
 #if has_builtin(__builtin_mul_overflow)
 	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
 #else
-	return i32_mul_overflow0(a, b, c);
+	return KS_i32_mul_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-i64_add_overflow(int64_t a, int64_t b, int64_t *c)
+KS_i64_add_overflow(int64_t a, int64_t b, int64_t *c)
 {
 #if has_builtin(__builtin_add_overflow)
 	return __builtin_add_overflow(a, b, c) ? 1 : 0;
 #else
-	return i64_add_overflow0(a, b, c);
+	return KS_i64_add_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-i64_sub_overflow(int64_t a, int64_t b, int64_t *c)
+KS_i64_sub_overflow(int64_t a, int64_t b, int64_t *c)
 {
 #if has_builtin(__builtin_sub_overflow)
 	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
 #else
-	return i64_sub_overflow0(a, b, c);
+	return KS_i64_sub_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-i64_mul_overflow(int64_t a, int64_t b, int64_t *c)
+KS_i64_mul_overflow(int64_t a, int64_t b, int64_t *c)
 {
 #if has_builtin(__builtin_mul_overflow)
 	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
 #else
-	return i64_mul_overflow0(a, b, c);
+	return KS_i64_mul_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-u32_add_overflow(uint32_t a, uint32_t b, uint32_t *c)
+KS_u32_add_overflow(uint32_t a, uint32_t b, uint32_t *c)
 {
 #if has_builtin(__builtin_add_overflow)
 	return __builtin_add_overflow(a, b, c) ? 1 : 0;
 #else
-	return u32_add_overflow0(a, b, c);
+	return KS_u32_add_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-u32_sub_overflow(uint32_t a, uint32_t b, uint32_t *c)
+KS_u32_sub_overflow(uint32_t a, uint32_t b, uint32_t *c)
 {
 #if has_builtin(__builtin_sub_overflow)
 	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
 #else
-	return u32_sub_overflow0(a, b, c);
+	return KS_u32_sub_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-u32_mul_overflow(uint32_t a, uint32_t b, uint32_t *c)
+KS_u32_mul_overflow(uint32_t a, uint32_t b, uint32_t *c)
 {
 #if has_builtin(__builtin_mul_overflow)
 	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
 #else
-	return u32_mul_overflow0(a, b, c);
+	return KS_u32_mul_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-u64_add_overflow(uint64_t a, uint64_t b, uint64_t *c)
+KS_u64_add_overflow(uint64_t a, uint64_t b, uint64_t *c)
 {
 #if has_builtin(__builtin_add_overflow)
 	return __builtin_add_overflow(a, b, c) ? 1 : 0;
 #else
-	return u64_add_overflow0(a, b, c);
+	return KS_u64_add_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-u64_sub_overflow(uint64_t a, uint64_t b, uint64_t *c)
+KS_u64_sub_overflow(uint64_t a, uint64_t b, uint64_t *c)
 {
 #if has_builtin(__builtin_sub_overflow)
 	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
 #else
-	return u64_sub_overflow0(a, b, c);
+	return KS_u64_sub_overflow0(a, b, c);
 #endif
 }
 
 static inline int
-u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *c)
+KS_u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *c)
 {
 #if has_builtin(__builtin_mul_overflow)
 	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
 #else
-	return u64_mul_overflow0(a, b, c);
+	return KS_u64_mul_overflow0(a, b, c);
 #endif
 }
 

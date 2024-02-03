@@ -785,7 +785,7 @@ doc_exec_indent(const struct doc *dc, struct doc_state *st)
 	} else {
 		if (dc->dc_int > 0)
 			st->st_indent.cur += (unsigned int)dc->dc_int;
-		else if (u32_sub_overflow(st->st_indent.cur,
+		else if (KS_u32_sub_overflow(st->st_indent.cur,
 		    (unsigned int)-dc->dc_int, &st->st_indent.cur))
 			st->st_indent.cur = 0;
 	}

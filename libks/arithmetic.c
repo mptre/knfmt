@@ -71,73 +71,73 @@
 } while (0)
 
 int
-i32_add_overflow0(int32_t a, int32_t b, int32_t *c)
+KS_i32_add_overflow0(int32_t a, int32_t b, int32_t *c)
 {
 	SIGNED_ADD_OVERFLOW(32, a, b, c);
 }
 
 int
-i32_sub_overflow0(int32_t a, int32_t b, int32_t *c)
+KS_i32_sub_overflow0(int32_t a, int32_t b, int32_t *c)
 {
 	SIGNED_SUB_OVERFLOW(32, a, b, c);
 }
 
 int
-i32_mul_overflow0(int32_t a, int32_t b, int32_t *c)
+KS_i32_mul_overflow0(int32_t a, int32_t b, int32_t *c)
 {
 	SIGNED_MUL_OVERFLOW(32, a, b, c);
 }
 
 int
-i64_add_overflow0(int64_t a, int64_t b, int64_t *c)
+KS_i64_add_overflow0(int64_t a, int64_t b, int64_t *c)
 {
 	SIGNED_ADD_OVERFLOW(64, a, b, c);
 }
 
 int
-i64_sub_overflow0(int64_t a, int64_t b, int64_t *c)
+KS_i64_sub_overflow0(int64_t a, int64_t b, int64_t *c)
 {
 	SIGNED_SUB_OVERFLOW(64, a, b, c);
 }
 
 int
-i64_mul_overflow0(int64_t a, int64_t b, int64_t *c)
+KS_i64_mul_overflow0(int64_t a, int64_t b, int64_t *c)
 {
 	SIGNED_MUL_OVERFLOW(64, a, b, c);
 }
 
 int
-u32_add_overflow0(uint32_t a, uint32_t b, uint32_t *c)
+KS_u32_add_overflow0(uint32_t a, uint32_t b, uint32_t *c)
 {
 	UNSIGNED_ADD_OVERFLOW(32, a, b, c);
 }
 
 int
-u32_sub_overflow0(uint32_t a, uint32_t b, uint32_t *c)
+KS_u32_sub_overflow0(uint32_t a, uint32_t b, uint32_t *c)
 {
 	UNSIGNED_SUB_OVERFLOW(32, a, b, c);
 }
 
 int
-u32_mul_overflow0(uint32_t a, uint32_t b, uint32_t *c)
+KS_u32_mul_overflow0(uint32_t a, uint32_t b, uint32_t *c)
 {
 	UNSIGNED_MUL_OVERFLOW(32, a, b, c);
 }
 
 int
-u64_add_overflow0(uint64_t a, uint64_t b, uint64_t *c)
+KS_u64_add_overflow0(uint64_t a, uint64_t b, uint64_t *c)
 {
 	UNSIGNED_ADD_OVERFLOW(64, a, b, c);
 }
 
 int
-u64_sub_overflow0(uint64_t a, uint64_t b, uint64_t *c)
+KS_u64_sub_overflow0(uint64_t a, uint64_t b, uint64_t *c)
 {
 	UNSIGNED_SUB_OVERFLOW(64, a, b, c);
 }
 
 int
-u64_mul_overflow0(uint64_t a, uint64_t b, uint64_t *c)
+KS_u64_mul_overflow0(uint64_t a, uint64_t b, uint64_t *c)
 {
 	UNSIGNED_MUL_OVERFLOW(64, a, b, c);
 }

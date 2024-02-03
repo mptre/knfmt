@@ -90,7 +90,7 @@ static struct map_element	*HASH_FIND(struct map *, const void *,
 static struct UT_hash_table	*HASH_MAKE_TABLE(struct map_element *);
 static unsigned			 HASH_TO_BKT(unsigned, unsigned);
 static unsigned			 HASH_JEN(const void *, size_t)
-	__attribute((NO_SANITIZE_UNSIGNED_INT_OVERFLOW));
+	__attribute__((NO_SANITIZE_UNSIGNED_INT_OVERFLOW));
 
 int
 map_init(void **mp, size_t keysize, size_t valsize, unsigned int flags)
@@ -100,11 +100,11 @@ map_init(void **mp, size_t keysize, size_t valsize, unsigned int flags)
 
 	if (pointer_align(valsize, &valsize_aligned))
 		goto overflow;
-	if (u64_add_overflow(valsize_aligned, sizeof(struct map_element),
+	if (KS_u64_add_overflow(valsize_aligned, sizeof(struct map_element),
 	    &elementsize))
 		goto overflow;
 	if ((flags & MAP_KEY_STR) == 0 &&
-	    u64_add_overflow(keysize, elementsize, &elementsize))
+	    KS_u64_add_overflow(keysize, elementsize, &elementsize))
 		goto overflow;
 
 	m = calloc(1, sizeof(*m));
@@ -248,8 +248,8 @@ map_alloc_element(struct map *m, size_t keysize)
 
 		/* Add one byte to ensure NUL-terminator. */
 		if (pointer_align(keysize, &keysize_aligned) ||
-		    u64_add_overflow(keysize_aligned, totsize, &totsize) ||
-		    u64_add_overflow(1, totsize, &totsize)) {
+		    KS_u64_add_overflow(keysize_aligned, totsize, &totsize) ||
+		    KS_u64_add_overflow(1, totsize, &totsize)) {
 			errno = EOVERFLOW;
 			return NULL;
 		}
@@ -292,7 +292,7 @@ pointer_align(uint64_t size, uint64_t *out)
 	uint64_t pointer_size = sizeof(void *);
 	uint64_t sum;
 
-	if (u64_add_overflow(size, pointer_size - 1, &sum))
+	if (KS_u64_add_overflow(size, pointer_size - 1, &sum))
 		return 1;
 	*out = sum & ~(pointer_size - 1);
 	return 0;
@@ -515,7 +515,7 @@ HASH_EXPAND_BUCKETS(struct map *m)
 	struct map_element *_he_hh_nxt, *_he_thh;
 	unsigned bkt_idx, i, nbuckets;
 
-	if (u32_mul_overflow(tbl->num_buckets, 2, &nbuckets))
+	if (KS_u32_mul_overflow(tbl->num_buckets, 2, &nbuckets))
 		return 1;
 	newbuckets = calloc(nbuckets, sizeof(struct UT_hash_bucket));
 	if (newbuckets == NULL)

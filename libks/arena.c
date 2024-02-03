@@ -203,6 +203,9 @@ arena_alloc(void)
 void
 arena_free(struct arena *a)
 {
+	if (a == NULL)
+		return;
+
 	if (a->refs > 1) {
 		/* Scope(s) still alive. */
 		arena_rele(a);
