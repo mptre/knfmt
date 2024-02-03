@@ -73,7 +73,6 @@ char *
 tmptemplate(const char *path, struct arena_scope *s)
 {
 	struct buffer *bf;
-	char *template;
 	const char *basename, *p;
 
 	bf = arena_buffer_alloc(s, PATH_MAX);
