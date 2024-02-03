@@ -53,6 +53,7 @@ struct lexer_state {
 	struct token	*st_tk;
 	unsigned int	 st_lno;
 	unsigned int	 st_err;
+	unsigned int	 st_eof;
 	size_t		 st_off;
 };
 

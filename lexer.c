@@ -47,7 +47,6 @@ struct lexer {
 	/* Line number to buffer offset mapping. */
 	VECTOR(size_t)		 lx_lines;
 
-	int			 lx_eof;
 	int			 lx_peek;
 
 	struct token		*lx_unmute;
@@ -221,7 +220,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		 * Do not immediately report EOF. Instead, return something
 		 * that's not expected while reading a token.
 		 */
-		if (lx->lx_eof++ > 0)
+		if (lx->lx_st.st_eof++ > 0)
 			return 1;
 		*ch = '\0';
 		return 0;
@@ -244,7 +243,7 @@ lexer_ungetc(struct lexer *lx)
 	struct lexer_state *st = &lx->lx_st;
 	unsigned char c;
 
-	if (lx->lx_eof)
+	if (st->st_eof)
 		return;
 
 	assert(st->st_off > 0);
