@@ -55,6 +55,8 @@ struct lexer {
 	VECTOR(struct token *)	 lx_stamps;
 };
 
+static void	lexer_free(struct lexer *);
+
 static void		lexer_line_alloc(struct lexer *, unsigned int);
 static unsigned int	lexer_column(const struct lexer *,
     const struct lexer_state *);
@@ -94,6 +96,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	struct lexer *lx;
 
 	lx = arena_calloc(arg->eternal_scope, 1, sizeof(*lx));
+	arena_cleanup(arg->eternal_scope, lexer_free, lx);
 	lx->lx_arg = *arg;
 	lx->lx_er = error_alloc(arg->eternal_scope, arg->error_flush);
 	lx->lx_op = arg->op;
@@ -147,17 +150,13 @@ lexer_alloc(const struct lexer_arg *arg)
 
 err:
 	VECTOR_FREE(discarded);
-	lexer_free(lx);
 	return NULL;
 }
 
-void
+static void
 lexer_free(struct lexer *lx)
 {
 	struct token *tk;
-
-	if (lx == NULL)
-		return;
 
 	VECTOR_FREE(lx->lx_lines);
 	if (lx->lx_unmute != NULL)

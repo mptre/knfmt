@@ -827,9 +827,6 @@ context_reset(struct context *cx)
 
 	style_free(cx->st);
 	cx->st = NULL;
-
-	lexer_free(cx->lx);
-	cx->lx = NULL;
 }
 
 static int

@@ -263,7 +263,6 @@ fileformat(struct main_context *c, struct file *fe)
 out:
 	if (lx != NULL && error)
 		lexer_error_flush(lx);
-	lexer_free(lx);
 	return error;
 }
 

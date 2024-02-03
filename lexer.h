@@ -59,7 +59,6 @@ struct lexer_state {
 };
 
 struct lexer	*lexer_alloc(const struct lexer_arg *);
-void		 lexer_free(struct lexer *);
 
 struct lexer_state	lexer_get_state(const struct lexer *);
 void			lexer_set_state(struct lexer *,

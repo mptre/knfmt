@@ -598,7 +598,6 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	error = style_parse_yaml_documents(st, lx, 0);
 
 out:
-	lexer_free(lx);
 	return error;
 }
 
