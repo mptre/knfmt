@@ -92,7 +92,7 @@ static void	style_defaults(struct style *);
 static void	style_set(struct style *, int, int, unsigned int);
 static int	style_parse_yaml(struct style *, const char *,
     const struct buffer *);
-static int	style_parse_yaml1(struct style *, struct lexer *);
+static int	style_parse_yaml_documents(struct style *, struct lexer *, int);
 static void	style_dump(const struct style *);
 static void	style_dump_IncludeCategories(const struct style *);
 
@@ -211,6 +211,10 @@ style_init(void)
 
 		{ S(IndentWidth), parse_integer, {0} },
 
+		{ S(Language), parse_enum,
+		  { Cpp, CSharp, Java, JavaScript, Json, ObjC, Proto, TableGen,
+		    TextProto, Verilog} },
+
 		{ S(SortIncludes), parse_enum,
 		  { Never, CaseSensitive, CaseInsensitive } },
 
@@ -232,7 +236,9 @@ style_init(void)
 		{ E(Before) },
 		{ E(BlockIndent) },
 		{ E(Both) },
+		{ E(CSharp) },
 		{ E(Chromium) },
+		{ E(Cpp) },
 		{ E(Custom) },
 		{ E(DontAlign) },
 		{ E(ForContinuationAndIndentation) },
@@ -240,6 +246,9 @@ style_init(void)
 		{ E(GNU) },
 		{ E(Google) },
 		{ E(InheritParentConfig) },
+		{ E(Java) },
+		{ E(JavaScript) },
+		{ E(Json) },
 		{ E(LLVM) },
 		{ E(Left) },
 		{ E(Linux) },
@@ -250,13 +259,18 @@ style_init(void)
 		{ E(Never) },
 		{ E(NonAssignment) },
 		{ E(None) },
+		{ E(ObjC) },
 		{ E(OpenBSD) },
 		{ E(Preserve) },
+		{ E(Proto) },
 		{ E(Regroup) },
 		{ E(Right) },
 		{ E(Stroustrup) },
+		{ E(TableGen) },
+		{ E(TextProto) },
 		{ E(TopLevel) },
 		{ E(TopLevelDefinitions) },
+		{ E(Verilog) },
 		{ E(WebKit) },
 		{ E(Whitesmiths) },
 
@@ -551,15 +565,53 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 		error = 1;
 		goto out;
 	}
-	error = style_parse_yaml1(st, lx);
+	error = style_parse_yaml_documents(st, lx, 0);
 
 out:
 	lexer_free(lx);
 	return error;
 }
 
+static enum style_keyword
+yaml_document_language(struct lexer *lx)
+{
+	struct lexer_state s;
+	struct token *tk;
+	enum style_keyword language = None;
+
+	lexer_peek_enter(lx, &s);
+	do {
+		if (lexer_if(lx, LEXER_EOF, NULL))
+			break;
+		if (lexer_if(lx, DocumentBegin, NULL))
+			break;
+
+		if (lexer_if(lx, Language, NULL) &&
+		    lexer_if(lx, Colon, NULL) &&
+		    lexer_pop(lx, &tk)) {
+			language = (enum style_keyword)tk->tk_type;
+			break;
+		}
+	} while (lexer_pop(lx, &tk));
+	lexer_peek_leave(lx, &s);
+
+	return language;
+}
+
+static void
+skip_document(struct lexer *lx)
+{
+	struct token *tk;
+
+	do {
+		if (lexer_if(lx, LEXER_EOF, NULL) ||
+		    lexer_if(lx, DocumentBegin, NULL))
+			break;
+	} while (lexer_pop(lx, &tk));
+}
+
 static int
-style_parse_yaml1(struct style *st, struct lexer *lx)
+style_parse_yaml_documents(struct style *st, struct lexer *lx, int nested)
 {
 	int error;
 
@@ -571,6 +623,22 @@ style_parse_yaml1(struct style *st, struct lexer *lx)
 
 		if (lexer_if(lx, LEXER_EOF, NULL))
 			break;
+
+		if (!nested) {
+			enum style_keyword language;
+
+			/*
+			 * Only honor documents applicable to all languages or
+			 * C++ which is applicable to C as well according to
+			 * clang-format.
+			 */
+			language = yaml_document_language(lx);
+			if (language != None && language != Cpp) {
+				skip_document(lx);
+				continue;
+			}
+		}
+
 		if (lexer_peek_if(lx, Sequence, NULL))
 			break;
 
@@ -995,7 +1063,7 @@ parse_nested(struct style *st, struct lexer *lx, const struct style_option *so)
 		return FAIL;
 	scope = st->scope;
 	st->scope = so->so_type;
-	style_parse_yaml1(st, lx);
+	style_parse_yaml_documents(st, lx, 1);
 	st->scope = scope;
 	return GOOD;
 }
@@ -1046,7 +1114,7 @@ parse_IncludeCategories(struct style *st, struct lexer *lx,
 	while (lexer_if(lx, Sequence, NULL)) {
 		if (VECTOR_CALLOC(st->include_categories) == NULL)
 			err(1, NULL);
-		style_parse_yaml1(st, lx);
+		style_parse_yaml_documents(st, lx, 1);
 	}
 	st->scope = scope;
 	/* Only used by style_dump(). */

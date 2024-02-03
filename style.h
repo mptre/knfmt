@@ -74,6 +74,17 @@ struct style;
 	  OP(Regroup)							\
 	OP(IncludeCategories)						\
 	OP(IndentWidth)							\
+	OP(Language)							\
+	  OP(Cpp)							\
+	  OP(CSharp)							\
+	  OP(Java)							\
+	  OP(JavaScript)						\
+	  OP(Json)							\
+	  OP(ObjC)							\
+	  OP(Proto)							\
+	  OP(TableGen)							\
+	  OP(TextProto)							\
+	  OP(Verilog)							\
 	OP(Left)							\
 	OP(MultiLine)							\
 	OP(Never)							\
