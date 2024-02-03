@@ -13,6 +13,7 @@
 
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/tmp.h"
 #include "libks/vector.h"
 
 #include "clang.h"
@@ -38,8 +39,6 @@ static int	filewrite(const struct buffer *, const struct buffer *,
     const struct file *);
 static int	fileprint(const struct buffer *);
 static int	fileattr(const char *, int, const char *, int);
-
-static int	tmpfd(const char *, size_t, char *, size_t);
 
 int
 main(int argc, char *argv[])
@@ -260,11 +259,11 @@ filediff(const struct buffer *src, const struct buffer *dst,
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	srcfd = tmpfd(buffer_get_ptr(src), buffer_get_len(src),
+	srcfd = KS_tmpfd(buffer_get_ptr(src), buffer_get_len(src),
 	    srcpath, sizeof(srcpath));
 	if (srcfd == -1)
 		goto out;
-	dstfd = tmpfd(buffer_get_ptr(dst), buffer_get_len(dst),
+	dstfd = KS_tmpfd(buffer_get_ptr(dst), buffer_get_len(dst),
 	    dstpath, sizeof(dstpath));
 	if (dstfd == -1)
 		goto out;
@@ -409,65 +408,4 @@ fileattr(const char *srcpath, int srcfd, const char *dstpath, int dstfd)
 	}
 
 	return 0;
-}
-
-/*
- * Get a read/write file descriptor by creating a temporary file and write out
- * the given buffer. The file is immediately removed in the hopes of returning
- * the last reference to the file.
- */
-static int
-tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
-{
-	char tmppath[PATH_MAX];
-	size_t siz = sizeof(tmppath);
-	mode_t old_umask;
-	int fd = -1;
-	int n;
-
-	n = snprintf(tmppath, siz, "/tmp/knfmt.XXXXXXXX");
-	if (n < 0 || (size_t)n >= siz) {
-		warnc(ENAMETOOLONG, "%s: tmp", __func__);
-		return -1;
-	}
-	old_umask = umask(0022);
-	fd = mkstemp(tmppath);
-	umask(old_umask);
-	if (fd == -1) {
-		warn("mkstemp: %s", tmppath);
-		return -1;
-	}
-	if (unlink(tmppath) == -1) {
-		warn("unlink: %s", tmppath);
-		goto err;
-	}
-
-	while (buflen > 0) {
-		ssize_t nw;
-
-		nw = write(fd, buf, buflen);
-		if (nw == -1) {
-			warn("write");
-			goto err;
-		}
-		buf += nw;
-		buflen -= (size_t)nw;
-	}
-	if (lseek(fd, 0, SEEK_SET) == -1) {
-		warn("lseek");
-		goto err;
-	}
-
-	siz = pathsiz;
-	n = snprintf(path, siz, "/dev/fd/%d", fd);
-	if (n < 0 || (size_t)n >= siz) {
-		warnc(ENAMETOOLONG, "%s: path", __func__);
-		goto err;
-	}
-
-	return fd;
-
-err:
-	close(fd);
-	return -1;
 }

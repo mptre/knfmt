@@ -44,6 +44,7 @@ SRCS+=	simple-stmt.c
 SRCS+=	simple.c
 SRCS+=	string.c
 SRCS+=	style.c
+SRCS+=	tmp.c
 SRCS+=	token.c
 SRCS+=	util.c
 SRCS+=	vector.c
