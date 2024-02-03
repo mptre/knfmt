@@ -36,6 +36,7 @@ struct clang {
 	const struct style	*st;
 	const struct options	*op;
 	struct cpp_include	*ci;
+	struct token_list	 prefixes;
 	VECTOR(struct token *)	 branches;
 };
 
@@ -50,8 +51,7 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
-static struct token	*clang_read_prefix(struct clang *, struct lexer *,
-    struct token_list *);
+static struct token	*clang_read_prefix(struct clang *, struct lexer *);
 static struct token	*clang_read_comment(struct clang *, struct lexer *,
     int);
 static struct token	*clang_read_cpp(struct clang *, struct lexer *);
@@ -128,9 +128,10 @@ clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
 	struct clang *cl;
 
 	cl = ecalloc(1, sizeof(*cl));
+	TAILQ_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
-	cl->ci = cpp_include_alloc(st, si, scratch, op);
+	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, scratch, op);
 	if (VECTOR_INIT(cl->branches))
 		err(1, NULL);
 	return cl;
@@ -153,17 +154,14 @@ clang_read(struct lexer *lx, void *arg)
 	struct clang *cl = arg;
 	struct token *prefix, *t, *tk, *tmp;
 	struct lexer_state st;
-	struct token_list prefixes;
 	int ncomments = 0;
 	int nlines;
 	unsigned char ch;
 
-	TAILQ_INIT(&prefixes);
-
 	/* Consume all comments and preprocessor directives. */
-	cpp_include_enter(cl->ci, lx, &prefixes);
+	cpp_include_enter(cl->ci, lx);
 	for (;;) {
-		prefix = clang_read_prefix(cl, lx, &prefixes);
+		prefix = clang_read_prefix(cl, lx);
 		if (prefix == NULL)
 			break;
 		cpp_include_add(cl->ci, prefix);
@@ -234,7 +232,7 @@ eof:
 	}
 
 out:
-	TAILQ_CONCAT(&tk->tk_prefixes, &prefixes, tk_entry);
+	TAILQ_CONCAT(&tk->tk_prefixes, &cl->prefixes, tk_entry);
 
 	/*
 	 * Consume trailing/interwined comments. If the token is about to be
@@ -422,8 +420,7 @@ clang_branch_purge(struct clang *cl, struct lexer *lx)
 }
 
 static struct token *
-clang_read_prefix(struct clang *cl, struct lexer *lx,
-    struct token_list *prefixes)
+clang_read_prefix(struct clang *cl, struct lexer *lx)
 {
 	struct token *comment, *cpp;
 
@@ -431,20 +428,20 @@ clang_read_prefix(struct clang *cl, struct lexer *lx,
 	if (comment != NULL) {
 		struct token *pv;
 
-		pv = TAILQ_LAST(prefixes, token_list);
+		pv = TAILQ_LAST(&cl->prefixes, token_list);
 		if (pv != NULL &&
 		    pv->tk_type == TOKEN_COMMENT &&
 		    token_cmp(comment, pv) == 0) {
 			token_prolong(pv, comment);
 			return pv;
 		}
-		token_list_append(prefixes, comment);
+		token_list_append(&cl->prefixes, comment);
 		return comment;
 	}
 
 	cpp = clang_read_cpp(cl, lx);
 	if (cpp != NULL) {
-		token_list_append(prefixes, cpp);
+		token_list_append(&cl->prefixes, cpp);
 		return cpp;
 	}
 

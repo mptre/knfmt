@@ -57,7 +57,8 @@ static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
 cpp_include_alloc(const struct style *st, struct simple *si,
-    struct arena *scratch, const struct options *op)
+    struct token_list *prefixes, struct arena *scratch,
+    const struct options *op)
 {
 	struct cpp_include *ci;
 	VECTOR(int) priorities;
@@ -68,6 +69,7 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 		err(1, NULL);
 	if (MAP_INIT(ci->groups))
 		err(1, NULL);
+	ci->prefixes = prefixes;
 	ci->st = st;
 	ci->si = si;
 	ci->scratch = scratch;
@@ -113,8 +115,7 @@ cpp_include_free(struct cpp_include *ci)
 }
 
 void
-cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
-    struct token_list *prefixes)
+cpp_include_enter(struct cpp_include *ci, struct lexer *lx)
 {
 	unsigned int simple_flags;
 
@@ -126,8 +127,6 @@ cpp_include_enter(struct cpp_include *ci, struct lexer *lx,
 
 	assert(ci->lx == NULL);
 	ci->lx = lx;
-	assert(ci->prefixes == NULL);
-	ci->prefixes = prefixes;
 }
 
 void
@@ -139,7 +138,6 @@ cpp_include_leave(struct cpp_include *ci)
 	cpp_include_exec(ci);
 	cpp_include_reset(ci);
 	ci->lx = NULL;
-	ci->prefixes = NULL;
 
 	simple_leave(&ci->cookie);
 }
