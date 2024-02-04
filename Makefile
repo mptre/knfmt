@@ -1,6 +1,6 @@
 include ${.CURDIR}/config.mk
 
-VERSION=	4.4.0rc4
+VERSION=	4.4.0rc5
 
 SRCS+=	arena-buffer.c
 SRCS+=	arena.c
