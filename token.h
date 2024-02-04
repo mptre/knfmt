@@ -112,13 +112,13 @@ struct arena_scope;
 	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)
 
 #define FOR_TOKEN_SENTINELS(OP)						\
-	/* type			branch */				\
+	/* type			normalized */				\
 	OP(TOKEN_COMMENT,	0)					\
 	OP(TOKEN_CPP,		0)					\
-	OP(TOKEN_CPP_IF,	1)					\
-	OP(TOKEN_CPP_IFNDEF,	1)					\
-	OP(TOKEN_CPP_ELSE,	1)					\
-	OP(TOKEN_CPP_ENDIF,	1)					\
+	OP(TOKEN_CPP_IF,	TOKEN_CPP_IF)				\
+	OP(TOKEN_CPP_IFNDEF,	TOKEN_CPP_IF)				\
+	OP(TOKEN_CPP_ELSE,	TOKEN_CPP_ELSE)				\
+	OP(TOKEN_CPP_ENDIF,	TOKEN_CPP_ENDIF)			\
 	OP(TOKEN_CPP_DEFINE,	0)					\
 	OP(TOKEN_CPP_INCLUDE,	0)					\
 	OP(TOKEN_IDENT,		0)					\
@@ -212,6 +212,7 @@ int	token_cmp(const struct token *, const struct token *);
 int	token_strcmp(const struct token *, const struct token *);
 int	token_rawcmp(const struct token *, const char *, size_t);
 int	token_has_cpp(const struct token *);
+int	token_type_normalize(const struct token *);
 int	token_has_indent(const struct token *);
 int	token_has_line(const struct token *, int);
 int	token_has_verbatim_line(const struct token *, int);

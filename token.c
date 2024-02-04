@@ -23,7 +23,6 @@ static void		 strflags(struct buffer *, unsigned int);
 static const char	*token_type_str(int);
 
 static int	token_is_cpp_if(const struct token *);
-static int	token_is_cpp_branch(const struct token *);
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
@@ -227,6 +226,17 @@ token_has_cpp(const struct token *tk)
 			return 1;
 	}
 	return 0;
+}
+
+int
+token_type_normalize(const struct token *tk)
+{
+	switch (tk->tk_type) {
+#define OP(type, normalized) case type: if (normalized) return normalized; break;
+	FOR_TOKEN_SENTINELS(OP)
+#undef OP
+	}
+	return tk->tk_type;
 }
 
 /*
@@ -555,10 +565,15 @@ token_move_prefixes(struct token *src, struct token *dst)
 void
 token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 {
+	int token_type;
+
 	TAILQ_REMOVE(&src->tk_prefixes, prefix, tk_entry);
 	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
 
-	if (token_is_cpp_branch(prefix)) {
+	token_type = token_type_normalize(prefix);
+	if (token_type == TOKEN_CPP_IF ||
+	    token_type == TOKEN_CPP_ELSE ||
+	    token_type == TOKEN_CPP_ENDIF) {
 		struct token *nx = prefix->tk_branch.br_nx;
 
 		assert(prefix->tk_branch.br_parent == src);
@@ -758,15 +773,4 @@ static int
 token_is_cpp_if(const struct token *tk)
 {
 	return tk->tk_type == TOKEN_CPP_IF || tk->tk_type == TOKEN_CPP_IFNDEF;
-}
-
-static int
-token_is_cpp_branch(const struct token *tk)
-{
-	switch (tk->tk_type) {
-#define OP(type, branch) case type: return branch;
-	FOR_TOKEN_SENTINELS(OP)
-#undef OP
-	}
-	return 0;
 }

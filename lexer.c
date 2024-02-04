@@ -66,12 +66,8 @@ static void	lexer_expect_error(struct lexer *, int, const struct token *,
 static void	lexer_branch_fold(struct lexer *, struct token *,
     struct token **);
 
-#define LEXER_BRANCH_BACKWARD		0x00000001u
-#define LEXER_BRANCH_FORWARD		0x00000002u
-#define LEXER_BRANCH_INTACT		0x00000004u
-
-static struct token	*lexer_recover_branch(struct token *);
-static struct token	*lexer_recover_branch1(struct token *, unsigned int);
+static struct token	*lexer_recover_find_branch(struct token *,
+    struct token *, int);
 
 static struct token	*lexer_last_stamped(struct lexer *);
 
@@ -416,14 +412,18 @@ int
 lexer_recover(struct lexer *lx, struct token **unmute)
 {
 	struct token *seek = NULL;
-	struct token *back, *br, *dst, *src;
+	struct token *back, *br, *dst, *src, *stamp;
 	size_t i;
 	int ndocs = 1;
 
 	if (!lexer_back(lx, &back))
 		back = TAILQ_FIRST(&lx->lx_tokens);
-	lexer_trace(lx, "back %s", lexer_serialize(lx, back));
-	br = lexer_recover_branch(back);
+	stamp = lexer_last_stamped(lx);
+	lexer_trace(lx, "back %s, stamp %s",
+	    lexer_serialize(lx, back), lexer_serialize(lx, stamp));
+	br = lexer_recover_find_branch(back, stamp, 0);
+	if (br == NULL)
+		br = lexer_recover_find_branch(back, stamp, 1);
 	if (br == NULL)
 		return 0;
 
@@ -441,8 +441,7 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 	 * be removed.
 	 */
 	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
-		struct token *stamp = lx->lx_stamps[i - 1];
-
+		stamp = lx->lx_stamps[i - 1];
 		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0)
 			break;
 		ndocs++;
@@ -457,8 +456,7 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 
 	/* Find first stamped token before the branch. */
 	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
-		struct token *stamp = lx->lx_stamps[i - 1];
-
+		stamp = lx->lx_stamps[i - 1];
 		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0) {
 			seek = stamp;
 			break;
@@ -1344,76 +1342,41 @@ lexer_branch_fold(struct lexer *lx, struct token *cpp_src,
 
 /*
  * Find the best suited branch to fold relative to the given token while trying
- * to recover after encountering invalid source code. We do not want to fold a
- * partially consumed branch as lexer_branch() already has removed tokens making
- * it potentially problematic to traverse the same source code again. However,
- * when reaching EOF we try to fold even partially consumed branches, fingers
- * crossed.
+ * to recover after encountering invalid source code.
  */
 static struct token *
-lexer_recover_branch(struct token *tk)
-{
-	unsigned int flags[] = {
-		LEXER_BRANCH_BACKWARD | LEXER_BRANCH_INTACT,
-		LEXER_BRANCH_FORWARD | LEXER_BRANCH_INTACT,
-		LEXER_BRANCH_BACKWARD,
-		LEXER_BRANCH_FORWARD,
-	};
-	size_t nflags = sizeof(flags) / sizeof(flags[0]);
-	size_t i;
-
-	for (i = 0; i < nflags; i++) {
-		struct token *br;
-
-		br = lexer_recover_branch1(tk, flags[i]);
-		if (br != NULL)
-			return br;
-	}
-	return NULL;
-}
-
-static struct token *
-lexer_recover_branch1(struct token *tk, unsigned int flags)
+lexer_recover_find_branch(struct token *tk, struct token *threshold,
+    int forward)
 {
 	for (;;) {
 		struct token *prefix;
 
-		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			if (prefix->tk_type == TOKEN_CPP_IF) {
-				struct token *nx = prefix->tk_branch.br_nx;
+		TAILQ_FOREACH_REVERSE(prefix, &tk->tk_prefixes, token_list,
+		    tk_entry) {
+			struct token *br, *nx;
+			int token_type;
 
-				if (nx->tk_branch.br_parent ==
-				    prefix->tk_branch.br_parent)
-					continue;
-				return prefix;
-			}
+			token_type = token_type_normalize(prefix);
+			if (token_type == TOKEN_CPP_IF)
+				br = prefix;
+			else if (token_type == TOKEN_CPP_ELSE)
+				br = prefix;
+			else if (token_type == TOKEN_CPP_ENDIF)
+				br = prefix->tk_branch.br_pv;
+			else
+				continue;
 
-			if (prefix->tk_type == TOKEN_CPP_ELSE ||
-			    prefix->tk_type == TOKEN_CPP_ENDIF) {
-				struct token *pv = prefix->tk_branch.br_pv;
-
-				if (pv != NULL &&
-				    pv->tk_branch.br_parent ==
-				    prefix->tk_branch.br_parent)
-					continue;
-			}
-
-			if (prefix->tk_type == TOKEN_CPP_ENDIF) {
-				struct token *pv = prefix->tk_branch.br_pv;
-
-				if ((flags & LEXER_BRANCH_INTACT) &&
-				    pv->tk_type == TOKEN_CPP_ELSE &&
-				    pv->tk_branch.br_pv == NULL)
-					return NULL;
-				return pv;
-			}
+			nx = br->tk_branch.br_nx;
+			if (br->tk_branch.br_parent == nx->tk_branch.br_parent)
+				continue;
+			return br;
 		}
 
-		if (flags & LEXER_BRANCH_FORWARD)
+		if (forward)
 			tk = token_next(tk);
-		else if (flags & LEXER_BRANCH_BACKWARD)
+		else
 			tk = token_prev(tk);
-		if (tk == NULL)
+		if (tk == NULL || tk == threshold)
 			break;
 	}
 
