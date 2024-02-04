@@ -412,12 +412,21 @@ token_is_dangling(const struct token *tk)
 struct token *
 token_get_branch(struct token *tk)
 {
-	struct token *br;
+	struct token *prefix;
 
-	br = token_list_find(&tk->tk_prefixes, TOKEN_CPP_ELSE, 0);
-	if (br == NULL)
-		return NULL;
-	return br->tk_branch.br_pv;
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		struct token *pv;
+
+		if (prefix->tk_type != TOKEN_CPP_ELSE ||
+		    prefix->tk_branch.br_pv == NULL)
+			continue;
+
+		pv = prefix->tk_branch.br_pv;
+		if (prefix->tk_branch.br_parent != pv->tk_branch.br_parent)
+			return pv;
+	}
+
+	return NULL;
 }
 
 struct token *

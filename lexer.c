@@ -1379,8 +1379,25 @@ lexer_recover_branch1(struct token *tk, unsigned int flags)
 		struct token *prefix;
 
 		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			if (prefix->tk_type == TOKEN_CPP_IF)
+			if (prefix->tk_type == TOKEN_CPP_IF) {
+				struct token *nx = prefix->tk_branch.br_nx;
+
+				if (nx->tk_branch.br_parent ==
+				    prefix->tk_branch.br_parent)
+					continue;
 				return prefix;
+			}
+
+			if (prefix->tk_type == TOKEN_CPP_ELSE ||
+			    prefix->tk_type == TOKEN_CPP_ENDIF) {
+				struct token *pv = prefix->tk_branch.br_pv;
+
+				if (pv != NULL &&
+				    pv->tk_branch.br_parent ==
+				    prefix->tk_branch.br_parent)
+					continue;
+			}
+
 			if (prefix->tk_type == TOKEN_CPP_ENDIF) {
 				struct token *pv = prefix->tk_branch.br_pv;
 
