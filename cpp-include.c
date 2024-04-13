@@ -187,18 +187,28 @@ is_main_include(const char *include_path, const char *path,
     struct arena *scratch)
 {
 	const char *basename, *filename, *include_main;
+	char **str;
 
 	arena_scope(scratch, s);
 
 	/* Transform path "a/b.c" into "a/b.h". */
-	basename = *VECTOR_FIRST(KS_str_split(path, '.', &s));
+	str = VECTOR_FIRST(KS_str_split(path, '.', &s));
+	if (str == NULL)
+		return 0; /* UNREACHABLE */
+	basename = *str;
 	include_main = arena_sprintf(&s, "\"%s.h\"", basename);
 	if (strcmp(include_path, include_main) == 0)
 		return 1;
 
 	/* Transform path "a/b.c" into "b.h". */
-	filename = *VECTOR_LAST(KS_str_split(path, '/', &s));
-	basename = *VECTOR_FIRST(KS_str_split(filename, '.', &s));
+	str = VECTOR_LAST(KS_str_split(path, '/', &s));
+	if (str == NULL)
+		return 0; /* UNREACHABLE */
+	filename = *str;
+	str = VECTOR_FIRST(KS_str_split(filename, '.', &s));
+	if (str == NULL)
+		return 0; /* UNREACHABLE */
+	basename = *str;
 	include_main = arena_sprintf(&s, "\"%s.h\"", basename);
 	if (strcmp(include_path, include_main) == 0)
 		return 1;
