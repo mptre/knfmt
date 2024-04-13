@@ -237,11 +237,11 @@ clang_branch(struct clang *cl, struct lexer *lx, struct token **unmute)
 		return 0;
 	token_ref(cpp_src);
 
-	src = cpp_src->tk_branch.br_parent;
+	src = cpp_src->tk_branch.parent;
 	token_ref(src);
-	cpp_dst = cpp_src->tk_branch.br_nx;
+	cpp_dst = cpp_src->tk_branch.nx;
 	token_ref(cpp_dst);
-	dst = cpp_dst->tk_branch.br_parent;
+	dst = cpp_dst->tk_branch.parent;
 	token_ref(dst);
 
 	clang_trace(cl, "branch from %s to %s, covering [%s, %s)",
@@ -312,11 +312,11 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	if (br == NULL)
 		return 0;
 
-	src = br->tk_branch.br_parent;
-	dst = br->tk_branch.br_nx->tk_branch.br_parent;
+	src = br->tk_branch.parent;
+	dst = br->tk_branch.nx->tk_branch.parent;
 	clang_trace(cl, "branch from %s to %s covering [%s, %s)",
 	    lexer_serialize(lx, br),
-	    lexer_serialize(lx, br->tk_branch.br_nx),
+	    lexer_serialize(lx, br->tk_branch.nx),
 	    lexer_serialize(lx, src),
 	    lexer_serialize(lx, dst));
 
@@ -374,13 +374,13 @@ clang_token_move_prefixes(struct token *src, struct token *dst)
 struct token *
 clang_token_branch_next(struct token *tk)
 {
-	return tk->tk_branch.br_nx;
+	return tk->tk_branch.nx;
 }
 
 struct token *
 clang_token_branch_parent(struct token *tk)
 {
-	return tk->tk_branch.br_parent;
+	return tk->tk_branch.parent;
 }
 
 void
@@ -389,8 +389,8 @@ clang_token_branch_unlink(struct token *tk)
 	struct token *nx, *pv;
 	int token_type;
 
-	pv = tk->tk_branch.br_pv;
-	nx = tk->tk_branch.br_nx;
+	pv = tk->tk_branch.pv;
+	nx = tk->tk_branch.nx;
 
 	token_type = token_type_normalize(tk);
 	if (token_type == TOKEN_CPP_IF) {
@@ -398,29 +398,29 @@ clang_token_branch_unlink(struct token *tk)
 		if (token_type_normalize(nx) == TOKEN_CPP_ENDIF) {
 			token_branch_exhaust(nx);
 		} else if (token_type_normalize(nx) == TOKEN_CPP_ELSE) {
-			nx->tk_branch.br_pv = NULL;
+			nx->tk_branch.pv = NULL;
 			nx->tk_type = TOKEN_CPP_IF;
 			token_branch_parent_update_flags(
-			    nx->tk_branch.br_parent);
+			    nx->tk_branch.parent);
 		} else {
 			assert(0 && "Invalid #if previous token");
 		}
 		token_branch_exhaust(tk);
 	} else if (token_type == TOKEN_CPP_ELSE) {
-		pv->tk_branch.br_nx = nx;
-		nx->tk_branch.br_pv = pv;
-		token_branch_parent_update_flags(pv->tk_branch.br_parent);
-		token_branch_parent_update_flags(nx->tk_branch.br_parent);
+		pv->tk_branch.nx = nx;
+		nx->tk_branch.pv = pv;
+		token_branch_parent_update_flags(pv->tk_branch.parent);
+		token_branch_parent_update_flags(nx->tk_branch.parent);
 		token_branch_exhaust(tk);
 	} else if (token_type == TOKEN_CPP_ENDIF) {
 		assert(nx == NULL);
 		if (token_type_normalize(pv) == TOKEN_CPP_IF) {
 			token_branch_exhaust(pv);
 		} else if (token_type_normalize(pv) == TOKEN_CPP_ELSE) {
-			pv->tk_branch.br_nx = NULL;
+			pv->tk_branch.nx = NULL;
 			pv->tk_type = TOKEN_CPP_ENDIF;
 			token_branch_parent_update_flags(
-			    pv->tk_branch.br_parent);
+			    pv->tk_branch.parent);
 		} else {
 			assert(0 && "Invalid #endif previous token");
 		}
@@ -621,13 +621,13 @@ clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
 
 	bf = arena_buffer_alloc(s, 1 << 8);
 	buffer_printf(bf, "%s", clang_token_serialize(prefix, s));
-	if (prefix->tk_branch.br_pv != NULL) {
+	if (prefix->tk_branch.pv != NULL) {
 		buffer_printf(bf, ", pv %s",
-		    clang_token_serialize(prefix->tk_branch.br_pv, s));
+		    clang_token_serialize(prefix->tk_branch.pv, s));
 	}
-	if (prefix->tk_branch.br_nx != NULL) {
+	if (prefix->tk_branch.nx != NULL) {
 		buffer_printf(bf, ", nx %s",
-		    clang_token_serialize(prefix->tk_branch.br_nx, s));
+		    clang_token_serialize(prefix->tk_branch.nx, s));
 	}
 	return buffer_str(bf);
 }
@@ -637,10 +637,10 @@ clang_end_of_branch(struct token *tk)
 {
 	struct token *br;
 
-	for (br = token_branch_find(tk); br->tk_branch.br_nx != NULL;
-	    br = br->tk_branch.br_nx)
+	for (br = token_branch_find(tk); br->tk_branch.nx != NULL;
+	    br = br->tk_branch.nx)
 		continue;
-	return br->tk_branch.br_parent;
+	return br->tk_branch.parent;
 }
 
 static struct token *
@@ -679,12 +679,12 @@ clang_recover_find_branch(struct token *tk, struct token *threshold,
 			else if (token_type == TOKEN_CPP_ELSE)
 				br = prefix;
 			else if (token_type == TOKEN_CPP_ENDIF)
-				br = prefix->tk_branch.br_pv;
+				br = prefix->tk_branch.pv;
 			else
 				continue;
 
-			nx = br->tk_branch.br_nx;
-			if (br->tk_branch.br_parent == nx->tk_branch.br_parent)
+			nx = br->tk_branch.nx;
+			if (br->tk_branch.parent == nx->tk_branch.parent)
 				continue;
 			return br;
 		}
@@ -715,12 +715,12 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 	size_t len;
 	int dangling = 0;
 
-	src = cpp_src->tk_branch.br_parent;
+	src = cpp_src->tk_branch.parent;
 	token_ref(src);
 
-	cpp_dst = cpp_src->tk_branch.br_nx;
+	cpp_dst = cpp_src->tk_branch.nx;
 	token_ref(cpp_dst);
-	dst = cpp_dst->tk_branch.br_parent;
+	dst = cpp_dst->tk_branch.parent;
 	token_ref(dst);
 
 	len = (cpp_dst->tk_off + cpp_dst->tk_len) - cpp_src->tk_off;
@@ -866,8 +866,8 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 	if (last != NULL) {
 		struct token *br;
 
-		for (br = *last; br != NULL; br = br->tk_branch.br_pv) {
-			struct token *p = br->tk_branch.br_parent;
+		for (br = *last; br != NULL; br = br->tk_branch.pv) {
+			struct token *p = br->tk_branch.parent;
 
 			if (token_branch_find(p) != NULL)
 				p->tk_flags |= TOKEN_FLAG_BRANCH;
@@ -890,7 +890,7 @@ clang_branch_purge(struct clang *cl, struct lexer *lx)
 		tail = VECTOR_POP(cl->branches);
 		tk = *tail;
 		do {
-			pv = tk->tk_branch.br_pv;
+			pv = tk->tk_branch.pv;
 			clang_trace(cl, "broken branch: %s%s%s",
 			    lexer_serialize(lx, tk),
 			    pv ? " -> " : "",
@@ -1287,7 +1287,7 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	if (token_type == TOKEN_CPP_IF ||
 	    token_type == TOKEN_CPP_ELSE ||
 	    token_type == TOKEN_CPP_ENDIF) {
-		assert(prefix->tk_branch.br_parent == src);
+		assert(prefix->tk_branch.parent == src);
 		token_branch_parent(prefix, dst);
 		token_branch_parent_update_flags(dst);
 	}
@@ -1297,12 +1297,12 @@ static void
 token_branch_exhaust(struct token *tk)
 {
 	tk->tk_type = TOKEN_CPP;
-	tk->tk_branch.br_pv = NULL;
-	tk->tk_branch.br_nx = NULL;
+	tk->tk_branch.pv = NULL;
+	tk->tk_branch.nx = NULL;
 
-	token_branch_parent_update_flags(tk->tk_branch.br_parent);
-	token_rele(tk->tk_branch.br_parent);
-	tk->tk_branch.br_parent = NULL;
+	token_branch_parent_update_flags(tk->tk_branch.parent);
+	token_rele(tk->tk_branch.parent);
+	tk->tk_branch.parent = NULL;
 }
 
 struct token *
@@ -1316,11 +1316,11 @@ token_branch_find(struct token *tk)
 		if (prefix->tk_type != TOKEN_CPP_ELSE)
 			continue;
 
-		pv = prefix->tk_branch.br_pv;
+		pv = prefix->tk_branch.pv;
 		/* Unlinked branches could be present during lexer read phase. */
 		if (pv == NULL)
 			continue;
-		if (prefix->tk_branch.br_parent != pv->tk_branch.br_parent)
+		if (prefix->tk_branch.parent != pv->tk_branch.parent)
 			return pv;
 	}
 
@@ -1330,17 +1330,17 @@ token_branch_find(struct token *tk)
 static void
 token_branch_link(struct token *src, struct token *dst)
 {
-	src->tk_branch.br_nx = dst;
-	dst->tk_branch.br_pv = src;
+	src->tk_branch.nx = dst;
+	dst->tk_branch.pv = src;
 }
 
 void
 token_branch_parent(struct token *cpp, struct token *parent)
 {
-	if (cpp->tk_branch.br_parent != NULL)
-		token_rele(cpp->tk_branch.br_parent);
+	if (cpp->tk_branch.parent != NULL)
+		token_rele(cpp->tk_branch.parent);
 	token_ref(parent);
-	cpp->tk_branch.br_parent = parent;
+	cpp->tk_branch.parent = parent;
 }
 
 void
@@ -1353,7 +1353,7 @@ token_branch_parent_update_flags(struct token *parent)
 static void
 token_branch_revert(struct token *tk)
 {
-	struct token *parent = tk->tk_branch.br_parent;
+	struct token *parent = tk->tk_branch.parent;
 
 	memset(&tk->tk_branch, 0, sizeof(tk->tk_branch));
 	tk->tk_type = TOKEN_CPP;

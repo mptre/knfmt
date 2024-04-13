@@ -191,9 +191,9 @@ struct token {
 	size_t			 tk_off;
 
 	struct {
-		struct token	*br_parent;
-		struct token	*br_pv;
-		struct token	*br_nx;
+		struct token	*parent;
+		struct token	*pv;
+		struct token	*nx;
 	} tk_branch;
 
 	struct token_list	 tk_prefixes;
