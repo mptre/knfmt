@@ -1053,7 +1053,6 @@ static struct token *
 clang_read_cpp(struct clang *cl, struct lexer *lx)
 {
 	struct lexer_state cmpst, oldst, st;
-	struct buffer *bf;
 	struct token *tk;
 	int type = TOKEN_CPP;
 	int comment;
@@ -1118,10 +1117,16 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});
 
-	bf = cpp_align(tk, cl->st, cl->arena.eternal_scope, cl->arena.scratch,
-	    cl->op);
-	if (bf != NULL)
-		token_set_str(tk, buffer_get_ptr(bf), buffer_get_len(bf));
+	if (tk->tk_type == TOKEN_CPP_DEFINE) {
+		struct buffer *bf;
+
+		bf = cpp_align(tk, cl->st, cl->arena.eternal_scope,
+		    cl->arena.scratch, cl->op);
+		if (bf != NULL) {
+			token_set_str(tk, buffer_get_ptr(bf),
+			    buffer_get_len(bf));
+		}
+	}
 
 	/* Discard any remaining hard line(s). */
 	lexer_eat_lines(lx, 0, NULL);
