@@ -77,9 +77,9 @@ struct test_token_move {
 	const char	*want[16];
 };
 #define test_lexer_move_before(a) \
-	test(test_lexer_move_before0(&cx, (a), __LINE__))
-static int	test_lexer_move_before0(struct context *,
-    struct test_token_move *, int);
+	test(test_lexer_move(&cx, (a), lexer_move_before, __LINE__))
+static int	test_lexer_move(struct context *, struct test_token_move *,
+    struct token *(*)(struct lexer *, struct token *, struct token *), int);
 
 #define test_token_position_after(a) \
 	test(test_token_position_after0(&cx, (a), __LINE__))
@@ -652,7 +652,8 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 }
 
 static int
-test_lexer_move_before0(struct context *cx, struct test_token_move *arg,
+test_lexer_move(struct context *cx, struct test_token_move *arg,
+    struct token *(*impl)(struct lexer *, struct token *, struct token *),
     int lno)
 {
 	struct token *before, *move;
@@ -673,7 +674,7 @@ test_lexer_move_before0(struct context *cx, struct test_token_move *arg,
 		goto out;
 	}
 
-	lexer_move_before(cx->lx, before, move);
+	impl(cx->lx, before, move);
 	error = assert_token_move(cx, arg->want, fun, lno);
 
 out:
@@ -972,7 +973,7 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 	for (;;) {
 		struct token *prefix, *suffix, *tk;
 
-		if (lexer_if(lx, LEXER_EOF, NULL) || !lexer_pop(lx, &tk))
+		if (!lexer_pop(lx, &tk))
 			break;
 
 		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
@@ -990,6 +991,9 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 			}
 			i++;
 		}
+
+		if (tk->tk_type == LEXER_EOF)
+			break;
 
 		str = token_serialize_position(&s, tk);
 		if (strcmp(str, want[i]) != 0) {
