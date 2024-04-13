@@ -35,7 +35,7 @@ struct lexer_callbacks {
 	 * Informative callback invoked once all tokens are read.
 	 * May be omitted.
 	 */
-	void		 (*read_all_tokens)(struct lexer *, void *);
+	void		 (*after_read)(struct lexer *, void *);
 
 	/* Opaque argument passed to callbacks. */
 	void		*arg;
