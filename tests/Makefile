@@ -520,6 +520,7 @@ TESTS+=	simple-decl-016.c
 TESTS+=	simple-decl-017.c
 TESTS+=	simple-decl-018.c
 TESTS+=	simple-decl-019.c
+TESTS+=	simple-decl-020.c
 TESTS+=	simple-decl-forward-001.c
 TESTS+=	simple-decl-forward-002.c
 TESTS+=	simple-decl-forward-003.c

@@ -144,7 +144,7 @@ token_position_after(struct token *after, struct token *tk)
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		prefix->tk_cno = cno;
-		prefix->tk_lno = lno;
+		prefix->tk_lno = lno - (tk->tk_lno - prefix->tk_lno);
 		cno = colwidth(prefix->tk_str, prefix->tk_len, prefix->tk_cno,
 		    NULL);
 	}
