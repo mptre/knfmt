@@ -353,24 +353,37 @@ parser_decl_init(struct parser *pr, struct doc **out,
 }
 
 static int
+parser_decl_peek_parens_or_squares(struct parser *pr, struct token **lhs)
+{
+	struct lexer *lx = pr->pr_lx;
+
+	if (lexer_peek_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE, lhs, NULL))
+		return 1;
+	if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, lhs, NULL))
+		return 1;
+	return 0;
+}
+
+static int
 parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *lhs, *tk;
 
 	if (lexer_if(lx, TOKEN_IDENT, &tk)) {
 		parser_doc_token(pr, tk, dc);
 		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 			doc_literal(" ", dc);
 		return parser_good(pr);
-	} else if (lexer_if(lx, TOKEN_LSQUARE, &tk) ||
-	    lexer_if(lx, TOKEN_LPAREN, &tk)) {
+	} else if (parser_decl_peek_parens_or_squares(pr, &lhs)) {
 		struct doc *expr = NULL;
-		int rhs = tk->tk_type == TOKEN_LSQUARE ?
+		int rhs = lhs->tk_type == TOKEN_LSQUARE ?
 		    TOKEN_RSQUARE : TOKEN_RPAREN;
 		int error;
 
-		parser_doc_token(pr, tk, dc);
+		if (lexer_expect(lx, lhs->tk_type, &lhs))
+			parser_doc_token(pr, lhs, dc);
+
 		/* Let the remaning tokens hang of the expression. */
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc	= dc,
