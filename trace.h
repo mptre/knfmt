@@ -1,3 +1,6 @@
+#ifndef TRACE_H
+#define TRACE_H
+
 #include "options.h"	/* options_trace_level() */
 
 #define trace(trace, op, fmt, ...) do {					\
@@ -12,3 +15,5 @@
 
 void	trace_impl(char, const char *, const char *, ...)
 	__attribute__((__format__(printf, 3, 4)));
+
+#endif

@@ -1,3 +1,5 @@
+#include "trace.h"
+
 struct doc;
 struct token;
 
@@ -11,6 +13,8 @@ struct token;
 #define NONE	0x00000004
 #define BRCH	0x00000008
 #define HALT	(FAIL | NONE | BRCH)
+
+#define parser_trace(pr, fmt, ...) trace('p', (pr)->pr_op, (fmt), __VA_ARGS__)
 
 struct parser {
 	const struct options	*pr_op;

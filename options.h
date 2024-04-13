@@ -9,6 +9,7 @@ static const char traces[] = {
 	'D',	/* diff */
 	'f',	/* func:line */
 	'l',	/* lexer */
+	'p',	/* parser */
 	's',	/* style */
 	'S',	/* simple */
 	't',	/* token */
