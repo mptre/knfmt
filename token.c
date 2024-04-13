@@ -22,8 +22,6 @@ static const char	*token_serialize_impl(struct arena_scope *,
 static void		 strflags(struct buffer *, unsigned int);
 static const char	*token_type_str(int);
 
-static int	token_is_cpp_if(const struct token *);
-
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
 #else
@@ -646,11 +644,13 @@ int
 token_branch_unlink(struct token *tk)
 {
 	struct token *nx, *pv;
+	int token_type;
 
 	pv = tk->tk_branch.br_pv;
 	nx = tk->tk_branch.br_nx;
 
-	if (token_is_cpp_if(tk)) {
+	token_type = token_type_normalize(tk);
+	if (token_type == TOKEN_CPP_IF) {
 		if (nx != NULL) {
 			/* Recursive invocation must exhaust branch. */
 			token_branch_unlink(nx);
@@ -663,18 +663,18 @@ token_branch_unlink(struct token *tk)
 			tk->tk_branch.br_parent = NULL;
 		}
 		return 1;
-	} else if (tk->tk_type == TOKEN_CPP_ELSE ||
-	    tk->tk_type == TOKEN_CPP_ENDIF) {
+	} else if (token_type == TOKEN_CPP_ELSE ||
+	    token_type == TOKEN_CPP_ENDIF) {
 		if (pv != NULL) {
 			pv->tk_branch.br_nx = NULL;
 			tk->tk_branch.br_pv = NULL;
-			if (token_is_cpp_if(pv))
+			if (token_type_normalize(pv) == TOKEN_CPP_IF)
 				token_branch_unlink(pv);
 			pv = NULL;
 		} else if (nx != NULL) {
 			nx->tk_branch.br_pv = NULL;
 			tk->tk_branch.br_nx = NULL;
-			if (nx->tk_type == TOKEN_CPP_ENDIF)
+			if (token_type_normalize(nx) == TOKEN_CPP_ENDIF)
 				token_branch_unlink(nx);
 			nx = NULL;
 		}
@@ -767,10 +767,4 @@ token_type_str(int token_type)
 	if (token_type == LEXER_EOF)
 		return "EOF";
 	return NULL;
-}
-
-static int
-token_is_cpp_if(const struct token *tk)
-{
-	return tk->tk_type == TOKEN_CPP_IF || tk->tk_type == TOKEN_CPP_IFNDEF;
 }
