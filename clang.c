@@ -651,13 +651,20 @@ clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
 static struct token *
 clang_end_of_branch(struct token *tk)
 {
-	struct token *br;
+	struct token *prefix;
 
-	for (br = token_branch_find(tk);
-	    token_priv(br, struct clang_token)->branch.nx != NULL;
-	    br = token_priv(br, struct clang_token)->branch.nx)
-		continue;
-	return token_priv(br, struct clang_token)->branch.parent;
+	assert(tk->tk_flags & TOKEN_FLAG_BRANCH);
+
+	prefix = token_branch_find(tk);
+	while (prefix != NULL) {
+		struct clang_token *ct = token_priv(prefix, struct clang_token);
+
+		if (ct->branch.nx == NULL)
+			return ct->branch.parent;
+		prefix = ct->branch.nx;
+	}
+
+	return NULL;
 }
 
 static struct token *
