@@ -991,8 +991,7 @@ peek_c99_comment(struct lexer *lx)
 static unsigned int
 sense_clang_format_comment(const struct token *tk)
 {
-	const char comment_needle[] = "//";
-	size_t comment_needle_len = sizeof(comment_needle) - 1;
+	size_t comment_needle_len = sizeof("//") - 1;
 	const char clang_format_needle[] = " clang-format ";
 	size_t clang_format_needle_len = sizeof(clang_format_needle) - 1;
 	const char *str = tk->tk_str;
