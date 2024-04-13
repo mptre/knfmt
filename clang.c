@@ -336,12 +336,12 @@ clang_token_serialize(struct arena_scope *s, const struct token *tk)
 
 static void
 clang_branch_enter(struct clang *cl, struct lexer *lx, struct token *cpp,
-    struct token *tk)
+    struct token *parent)
 {
 	struct token **br;
 
 	clang_trace(cl, "%s", lexer_serialize(lx, cpp));
-	token_branch_parent(cpp, tk);
+	token_branch_parent(cpp, parent);
 	br = VECTOR_ALLOC(cl->branches);
 	if (br == NULL)
 		err(1, NULL);
@@ -350,7 +350,7 @@ clang_branch_enter(struct clang *cl, struct lexer *lx, struct token *cpp,
 
 static void
 clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
-    struct token *tk)
+    struct token *parent)
 {
 	struct token **last;
 	struct token *br;
@@ -366,16 +366,16 @@ clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
 	clang_trace(cl, "%s -> %s",
 	    lexer_serialize(lx, br), lexer_serialize(lx, cpp));
 
-	token_branch_parent(cpp, tk);
+	token_branch_parent(cpp, parent);
 	token_branch_link(br, cpp);
 	*last = cpp;
 }
 
 static void
 clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
-    struct token *tk)
+    struct token *parent)
 {
-	clang_branch_link(cl, lx, cpp, tk);
+	clang_branch_link(cl, lx, cpp, parent);
 	VECTOR_POP(cl->branches);
 }
 
