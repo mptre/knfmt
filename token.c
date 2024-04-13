@@ -56,10 +56,8 @@ token_rele(struct token *tk)
 	if (--tk->tk_refs > 0)
 		return;
 
-	while ((fix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL) {
-		token_branch_unlink(fix);
+	while ((fix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL)
 		token_list_remove(&tk->tk_prefixes, fix);
-	}
 	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
 		token_list_remove(&tk->tk_suffixes, fix);
 
