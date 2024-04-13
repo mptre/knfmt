@@ -127,6 +127,11 @@ struct arena_scope;
 	OP(TOKEN_STRING,	0)					\
 	OP(TOKEN_NONE,		0)
 
+#define TOKEN_SERIALIZE_POSITION	0x00000001u
+#define TOKEN_SERIALIZE_FLAGS		0x00000002u
+#define TOKEN_SERIALIZE_REFS		0x00000004u
+#define TOKEN_SERIALIZE_ADDRESS		0x00000008u
+
 #define token_data(tk, type) __extension__ ({				\
 	typeof(tk) _nx = (tk) + 1;					\
 	(type *)_nx;							\
@@ -202,9 +207,8 @@ struct token	*token_alloc(struct arena_scope *, size_t,
 void		 token_ref(struct token *);
 void		 token_rele(struct token *);
 int		 token_trim(struct token *);
-const char	*token_serialize(struct arena_scope *, const struct token *);
-const char	*token_serialize_no_flags(struct arena_scope *,
-    const struct token *);
+const char	*token_serialize(struct arena_scope *, const struct token *,
+    unsigned int);
 
 void	token_position_after(struct token *, struct token *);
 

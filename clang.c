@@ -71,6 +71,8 @@ static struct token	*clang_ellipsis(struct lexer *,
     const struct lexer_state *);
 static struct token	*clang_token_alloc(struct arena_scope *,
     const struct token *);
+static const char	*clang_token_serialize(struct arena_scope *,
+    const struct token *);
 
 static void	token_branch_link(struct token *, struct token *);
 static void	token_prolong(struct token *, struct token *);
@@ -163,7 +165,7 @@ clang_lexer_callbacks(struct clang *cl)
 	return (struct lexer_callbacks){
 	    .read		= clang_read,
 	    .alloc		= clang_token_alloc,
-	    .serialize		= token_serialize,
+	    .serialize		= clang_token_serialize,
 	    .after_read		= clang_after_read,
 	    .arg		= cl,
 	};
@@ -322,6 +324,13 @@ static struct token *
 clang_token_alloc(struct arena_scope *s, const struct token *def)
 {
 	return token_alloc(s, 0, def);
+}
+
+static const char *
+clang_token_serialize(struct arena_scope *s, const struct token *tk)
+{
+	return token_serialize(s, tk,
+	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS);
 }
 
 static void

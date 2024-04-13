@@ -130,8 +130,13 @@ static int	assert_token_move(struct context *, const char **, const char *,
     int);
 static int	find_token(struct lexer *, int, struct token **);
 
-static const char	*tokens_concat(struct lexer *, const struct token *,
-    struct arena_scope *);
+static const char	*tokens_concat(
+    const char *(*)(struct arena_scope *, const struct token *),
+    const struct token *, const struct token *, struct arena_scope *);
+static const char	*token_serialize_literal(struct arena_scope *,
+    const struct token *);
+static const char	*token_serialize_position(struct arena_scope *,
+    const struct token *);
 
 int
 main(int argc, char *argv[])
@@ -527,6 +532,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	const char *fun = "parser_type_peek";
 	const char *act;
 	struct parser_type type;
+	struct token *beg;
 
 	arena_scope(cx->arena.scratch, s);
 
@@ -540,7 +546,8 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	if (!peek)
 		return 0;
 
-	act = tokens_concat(cx->lx, type.end, &s);
+	(void)lexer_peek(cx->lx, &beg);
+	act = tokens_concat(token_serialize_literal, beg, type.end, &s);
 	if (act == NULL) {
 		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
 		return 1;
@@ -561,7 +568,7 @@ test_parser_attributes_peek0(struct context *cx, const char *src,
 {
 	const char *fun = "parser_attributes_peek";
 	const char *act;
-	struct token *rparen;
+	struct token *beg, *rparen;
 
 	arena_scope(cx->arena.scratch, s);
 
@@ -575,7 +582,8 @@ test_parser_attributes_peek0(struct context *cx, const char *src,
 	if (!peek)
 		return 0;
 
-	act = tokens_concat(cx->lx, rparen, &s);
+	(void)lexer_peek(cx->lx, &beg);
+	act = tokens_concat(token_serialize_literal, beg, rparen, &s);
 	if (act == NULL) {
 		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
 		return 1;
@@ -870,7 +878,7 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 				goto out;
 			}
 
-			str = token_serialize_no_flags(&s, prefix);
+			str = token_serialize_position(&s, prefix);
 			if (strcmp(str, &want[i][2]) != 0) {
 				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
 				    fun, lno, i, &want[i][2], str);
@@ -879,7 +887,7 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 			i++;
 		}
 
-		str = token_serialize_no_flags(&s, tk);
+		str = token_serialize_position(&s, tk);
 		if (strcmp(str, want[i]) != 0) {
 			fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
 			    fun, lno, i, want[i], str);
@@ -894,7 +902,7 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 				goto out;
 			}
 
-			str = token_serialize_no_flags(&s, suffix);
+			str = token_serialize_position(&s, suffix);
 			if (strcmp(str, &want[i][2]) != 0) {
 				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
 				    fun, lno, i, &want[i][2], str);
@@ -915,25 +923,41 @@ out:
 }
 
 static const char *
-tokens_concat(struct lexer *lx, const struct token *end, struct arena_scope *s)
+tokens_concat(
+    const char *(*serialize)(struct arena_scope *, const struct token *),
+    const struct token *beg, const struct token *end, struct arena_scope *s)
 {
 	struct buffer *bf;
+	const struct token *tk = beg;
 
 	bf = arena_buffer_alloc(s, 128);
 
 	for (;;) {
-		struct token *tk;
-
-		if (!lexer_pop(lx, &tk))
-			return NULL;
+		const char *str;
 
 		if (buffer_get_len(bf) > 0)
 			buffer_putc(bf, ' ');
-		buffer_puts(bf, tk->tk_str, tk->tk_len);
+		str = serialize(s, tk);
+		buffer_puts(bf, str, strlen(str));
 
 		if (tk == end)
+			break;
+		tk = token_next(tk);
+		if (tk == NULL)
 			break;
 	}
 
 	return buffer_str(bf);
+}
+
+static const char *
+token_serialize_literal(struct arena_scope *s, const struct token *tk)
+{
+	return arena_strndup(s, tk->tk_str, tk->tk_len);
+}
+
+static const char *
+token_serialize_position(struct arena_scope *s, const struct token *tk)
+{
+	return token_serialize(s, tk, TOKEN_SERIALIZE_POSITION);
 }
