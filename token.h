@@ -225,13 +225,10 @@ int	token_has_suffix(const struct token *, int);
 int	token_has_tabs(const struct token *);
 int	token_has_spaces(const struct token *);
 int	token_has_c99_comment(const struct token *);
-int	token_is_branch(const struct token *);
 int	token_is_decl(const struct token *, int);
 int	token_is_moveable(const struct token *);
 int	token_is_first(const struct token *);
 int	token_is_dangling(const struct token *);
-
-struct token	*token_get_branch(struct token *);
 
 struct token	*token_next(const struct token *);
 struct token	*token_prev(const struct token *);

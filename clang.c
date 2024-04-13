@@ -92,6 +92,7 @@ static void		 remove_token(struct lexer *, struct token *);
 static void	token_move_prefix(struct token *, struct token *,
     struct token *);
 static void	token_branch_exhaust(struct token *);
+static struct token	*token_branch_find(struct token *);
 static void	token_branch_link(struct token *, struct token *);
 static void	token_branch_parent(struct token *, struct token *);
 static void	token_branch_parent_update_flags(struct token *);
@@ -231,7 +232,7 @@ clang_branch(struct clang *cl, struct lexer *lx, struct token **unmute)
 	if (!lexer_back(lx, &back))
 		return 0;
 	clang_trace(cl, "back %s", lexer_serialize(lx, back));
-	cpp_src = token_get_branch(back);
+	cpp_src = token_branch_find(back);
 	if (cpp_src == NULL)
 		return 0;
 	token_ref(cpp_src);
@@ -624,7 +625,7 @@ clang_end_of_branch(struct token *tk)
 {
 	struct token *br;
 
-	for (br = token_get_branch(tk); br->tk_branch.br_nx != NULL;
+	for (br = token_branch_find(tk); br->tk_branch.br_nx != NULL;
 	    br = br->tk_branch.br_nx)
 		continue;
 	return br->tk_branch.br_parent;
@@ -856,7 +857,7 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 		for (br = *last; br != NULL; br = br->tk_branch.br_pv) {
 			struct token *p = br->tk_branch.br_parent;
 
-			if (token_is_branch(p))
+			if (token_branch_find(p) != NULL)
 				p->tk_flags |= TOKEN_FLAG_BRANCH;
 		}
 	}
@@ -1292,6 +1293,28 @@ token_branch_exhaust(struct token *tk)
 	tk->tk_branch.br_parent = NULL;
 }
 
+struct token *
+token_branch_find(struct token *tk)
+{
+	struct token *prefix;
+
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		struct token *pv;
+
+		if (prefix->tk_type != TOKEN_CPP_ELSE)
+			continue;
+
+		pv = prefix->tk_branch.br_pv;
+		/* Unlinked branches could be present during lexer read phase. */
+		if (pv == NULL)
+			continue;
+		if (prefix->tk_branch.br_parent != pv->tk_branch.br_parent)
+			return pv;
+	}
+
+	return NULL;
+}
+
 static void
 token_branch_link(struct token *src, struct token *dst)
 {
@@ -1311,7 +1334,7 @@ token_branch_parent(struct token *cpp, struct token *parent)
 void
 token_branch_parent_update_flags(struct token *parent)
 {
-	if (!token_is_branch(parent))
+	if (token_branch_find(parent) == NULL)
 		parent->tk_flags &= ~TOKEN_FLAG_BRANCH;
 }
 

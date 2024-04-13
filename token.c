@@ -325,15 +325,6 @@ token_has_c99_comment(const struct token *tk)
 }
 
 /*
- * Returns non-zero if given token has a branch continuation associated with it.
- */
-int
-token_is_branch(const struct token *tk)
-{
-	return token_get_branch((struct token *)tk) != NULL;
-}
-
-/*
  * Returns non-zero if the given token represents a declaration of the given
  * type.
  */
@@ -396,31 +387,6 @@ token_is_dangling(const struct token *tk)
 
 	/* Try to not rely on TAILQ_ENTRY() implementation details. */
 	return memcmp(&tk->tk_entry, zero, sizeof(zero)) == 0;
-}
-
-/*
- * Returns the branch continuation associated with the given token if present.
- */
-struct token *
-token_get_branch(struct token *tk)
-{
-	struct token *prefix;
-
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-		struct token *pv;
-
-		if (prefix->tk_type != TOKEN_CPP_ELSE)
-			continue;
-
-		pv = prefix->tk_branch.br_pv;
-		/* Unlinked branches could be present during lexer read phase. */
-		if (pv == NULL)
-			continue;
-		if (prefix->tk_branch.br_parent != pv->tk_branch.br_parent)
-			return pv;
-	}
-
-	return NULL;
 }
 
 struct token *
