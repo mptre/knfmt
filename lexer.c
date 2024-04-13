@@ -513,7 +513,7 @@ lexer_move_before(struct lexer *lx, struct token *before, struct token *mv)
 	TAILQ_INSERT_BEFORE(before, mv, tk_entry);
 	mv->tk_lno = before->tk_lno;
 
-	token_list_swap(&before->tk_prefixes, 0, &mv->tk_prefixes, 0);
+	lx->lx_callbacks.move_prefixes(before, mv);
 	token_list_swap(&before->tk_suffixes, TOKEN_FLAG_OPTLINE,
 	    &mv->tk_suffixes, mv_suffix_flags);
 
