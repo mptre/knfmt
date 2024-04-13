@@ -558,6 +558,7 @@ TESTS+=	simple-stmt-009.c
 TESTS+=	simple-stmt-010.c
 TESTS+=	simple-stmt-011.c
 TESTS+=	simple-stmt-012.c
+TESTS+=	simple-stmt-013.c
 TESTS+=	simple-stmt-semi-001.c
 TESTS+=	simple-stmt-semi-002.c
 TESTS+=	simple-unsigned-001.c

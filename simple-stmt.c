@@ -85,8 +85,13 @@ simple_stmt_leave(struct simple_stmt *ss)
 	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 		const struct stmt *st = &ss->ss_stmts[i];
 
-		if (st->st_flags & STMT_IGNORE)
+		if (st->st_flags & STMT_IGNORE) {
+			if (st->st_flags & STMT_BRACES) {
+				dobraces = 1;
+				break;
+			}
 			continue;
+		}
 		if (need_braces(ss, st, bf)) {
 			/*
 			 * No point in continuing as at least one statement
