@@ -202,6 +202,30 @@ simple_decl_free(struct simple_decl *sd)
 	VECTOR_FREE(sd->types);
 }
 
+static int
+is_type_valid(struct token *beg, struct token *end)
+{
+	struct token_range tr = {
+		.tr_beg	= beg,
+		.tr_end	= end,
+	};
+	struct token *tk, *tmp;
+
+	TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
+		if (!token_is_moveable(tk))
+			return 0;
+
+		/* Ignore type declarations making use of cpp macros. */
+		switch (tk->tk_type) {
+		case TOKEN_LPAREN:
+		case TOKEN_LBRACE:
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 void
 simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 {
@@ -211,20 +235,10 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	};
 	struct decl *dc;
 	struct decl_var *dv;
-	struct token *tk, *tmp;
 	const char *type;
 
-	TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
-		if (!token_is_moveable(tk))
-			return;
-
-		/* Ignore type declarations making use of cpp macros. */
-		switch (tk->tk_type) {
-		case TOKEN_LPAREN:
-		case TOKEN_LBRACE:
-			return;
-		}
-	}
+	if (!is_type_valid(beg, end))
+		return;
 
 	type = token_range_str(&tr, sd->eternal_scope);
 	sd->dt = simple_decl_type_create(sd, type, &tr);
