@@ -230,6 +230,10 @@ static const struct doc_description {
 		.name		= "MUTE",
 		.value		= { .integer = 1 },
 	},
+	[DOC_UNMUTE] = {
+		.name		= "UNMUTE",
+		.value		= { .integer = 1 },
+	},
 	[DOC_OPTIONAL] = {
 		.name		= "OPTIONAL",
 		.children	= { .one = 1 },
@@ -696,6 +700,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
+	case DOC_UNMUTE:
 		doc_exec_mute(dc, st);
 		break;
 
@@ -977,7 +982,8 @@ doc_exec_mute(const struct doc *dc, struct doc_state *st)
 		doc_diff_mute_leave(dc, st);
 		muteline = st->st_muteline;
 		doc_state_reset_lines(st);
-		st->st_newline = muteline;
+		if (dc->dc_type == DOC_MUTE)
+			st->st_newline = muteline;
 	}
 }
 
@@ -1132,6 +1138,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 	case DOC_NOINDENT:
 	case DOC_SOFTLINE:
 	case DOC_MUTE:
+	case DOC_UNMUTE:
 	case DOC_MINIMIZE:
 	case DOC_SCOPE:
 	case DOC_MAXLINES:

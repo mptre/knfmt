@@ -500,6 +500,11 @@ TESTS+=	valid-375.c
 TESTS+=	valid-376.c
 TESTS+=	valid-377.c
 TESTS+=	valid-378.c
+TESTS+=	valid-379.c
+TESTS+=	valid-380.c
+TESTS+=	valid-381.c
+TESTS+=	valid-382.c
+TESTS+=	valid-383.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c

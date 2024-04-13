@@ -48,6 +48,11 @@ struct parser {
 	struct {
 		struct token	*unmute;
 	} pr_branch;
+
+	struct {
+		/* First line that must not be formatted. */
+		unsigned int	lno;
+	} pr_clang_format;
 };
 
 int	parser_good(const struct parser *);

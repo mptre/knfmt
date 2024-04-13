@@ -988,12 +988,44 @@ peek_c99_comment(struct lexer *lx)
 	return peek;
 }
 
+static unsigned int
+sense_clang_format_comment(const struct token *tk)
+{
+	const char comment_needle[] = "//";
+	size_t comment_needle_len = sizeof(comment_needle) - 1;
+	const char clang_format_needle[] = " clang-format ";
+	size_t clang_format_needle_len = sizeof(clang_format_needle) - 1;
+	const char *str = tk->tk_str;
+	size_t len = tk->tk_len;
+
+	for (; len > 0 && isspace((unsigned char)str[0]); len--, str++)
+		continue;
+
+	if (len < comment_needle_len)
+		return 0;
+	len -= comment_needle_len;
+	str += comment_needle_len;
+
+	if (len < clang_format_needle_len ||
+	    strncmp(str, clang_format_needle, clang_format_needle_len) != 0)
+		return 0;
+	len -= clang_format_needle_len;
+	str += clang_format_needle_len;
+
+	if (len >= 3 && strncmp(str, "off", 3) == 0)
+		return TOKEN_FLAG_COMMENT_CLANG_FORMAT_OFF;
+	else if (len >= 2 && strncmp(str, "on", 2) == 0)
+		return TOKEN_FLAG_COMMENT_CLANG_FORMAT_ON;
+	return 0;
+}
+
 static struct token *
 clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 {
 	struct lexer_state oldst, st;
 	struct buffer *bf;
 	struct token *tk;
+	int oneline = 1;
 	int c99;
 	unsigned char ch;
 
@@ -1019,8 +1051,10 @@ again:
 			if (lexer_getc(lx, &ch))
 				break;
 			if (ch == '\n') {
-				if (peek_c99_comment(lx))
+				if (peek_c99_comment(lx)) {
+					oneline = 0;
 					goto again;
+				}
 				lexer_ungetc(lx);
 				break;
 			}
@@ -1034,6 +1068,8 @@ again:
 				break;
 			if (ch == '*' && peek == '/')
 				break;
+			if (ch == '\n')
+				oneline = 0;
 			ch = peek;
 		}
 	}
@@ -1051,6 +1087,8 @@ again:
 	    .tk_type	= TOKEN_COMMENT,
 	    .tk_flags	= c99 ? TOKEN_FLAG_COMMENT_C99 : 0,
 	});
+	if (oneline)
+		tk->tk_flags |= sense_clang_format_comment(tk);
 
 	bf = comment_trim(tk, cl->st, cl->arena.eternal_scope);
 	if (bf != NULL)

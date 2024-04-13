@@ -178,6 +178,12 @@ lexer_get_path(const struct lexer *lx)
 }
 
 int
+lexer_get_peek(const struct lexer *lx)
+{
+	return lx->lx_peek;
+}
+
+int
 lexer_getc(struct lexer *lx, unsigned char *ch)
 {
 	size_t off;

@@ -149,6 +149,10 @@ The following type of documents are available:
   Mute informs doc_print() to not emit anything expect DOC_HARDLINE. Used while
   traversing cpp branches.
 
+* DOC_UNMUTE
+  Variation of DOC_UNMUTE only used while handling clang-format off/on comments.
+  Any missed new line(s) while being muted is not honored while going unmute.
+
 * DOC_OPTIONAL
   Allow DOC_OPTLINE to be emitted.
 

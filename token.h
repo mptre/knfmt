@@ -184,6 +184,8 @@ struct token {
 /* Token covered by diff chunk. */
 #define TOKEN_FLAG_DIFF						0x00002000u
 #define TOKEN_FLAG_TYPE_FUNC					0x00004000u
+#define TOKEN_FLAG_COMMENT_CLANG_FORMAT_OFF			0x00008000u
+#define TOKEN_FLAG_COMMENT_CLANG_FORMAT_ON			0x00010000u
 
 	const char		*tk_str;
 	size_t			 tk_len;

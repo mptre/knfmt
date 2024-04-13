@@ -16,12 +16,63 @@
 #include "parser-priv.h"
 #include "parser-stmt-asm.h"
 #include "token.h"
+#include "util.h"
 
 #ifdef HAVE_QUEUE
 #  include <sys/queue.h>
 #else
 #  include "compat-queue.h"
 #endif
+
+static void
+clang_format_on(struct parser *pr, struct token *comment, struct doc *dc)
+{
+	struct lexer_state st;
+	struct token *verbatim;
+	const char *str;
+	size_t len;
+	unsigned int beg, end;
+
+	/* Ignore while branching. */
+	if (pr->pr_branch.unmute != NULL)
+		return;
+
+	beg = pr->pr_clang_format.lno;
+	if (beg == 0)
+		return;
+	pr->pr_clang_format.lno = 0;
+	end = comment->tk_lno;
+
+	doc_alloc0(DOC_UNMUTE, dc, -1, __func__, __LINE__);
+	if (lexer_get_lines(pr->pr_lx, beg, end, &str, &len) == 0)
+		return;
+
+	st = lexer_get_state(pr->pr_lx);
+	verbatim = lexer_emit(pr->pr_lx, &st, &(struct token){
+	    .tk_type	= TOKEN_LITERAL,
+	    .tk_str	= str,
+	    .tk_len	= len,
+	});
+	doc_token(verbatim, dc, DOC_VERBATIM, __func__, __LINE__);
+	token_rele(verbatim);
+}
+
+static void
+clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
+{
+	unsigned int lno;
+
+	/* Ignore while branching. */
+	if (pr->pr_branch.unmute != NULL)
+		return;
+
+	doc_alloc0(DOC_MUTE, dc, 1, __func__, __LINE__);
+
+	/* Must account for more than one trailing hard line(s). */
+	lno = comment->tk_lno;
+	colwidth(comment->tk_str, comment->tk_len, comment->tk_cno, &lno);
+	pr->pr_clang_format.lno = lno;
+}
 
 static int
 parser_get_error(const struct parser *pr)
@@ -238,11 +289,21 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 	struct doc *out;
 	struct token *nx, *prefix, *suffix;
 
-	if (tk == pr->pr_branch.unmute)
+	if (tk == pr->pr_branch.unmute) {
+		if (!lexer_get_peek(pr->pr_lx))
+			pr->pr_branch.unmute = NULL;
 		doc_alloc0(DOC_MUTE, dc, -1, __func__, __LINE__);
+	}
 
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		if (prefix->tk_flags & TOKEN_FLAG_COMMENT_CLANG_FORMAT_ON)
+			clang_format_on(pr, prefix, dc);
+
 		doc_token(prefix, dc, DOC_VERBATIM, __func__, __LINE__);
+
+		if (prefix->tk_flags & TOKEN_FLAG_COMMENT_CLANG_FORMAT_OFF)
+			clang_format_off(pr, prefix, dc);
+	}
 
 	out = doc_token(tk, dc, DOC_LITERAL, fun, lno);
 
