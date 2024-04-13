@@ -650,13 +650,14 @@ lexer_if_flags(struct lexer *lx, unsigned int flags, struct token **tk)
  * Returns non-zero if such tokens was found.
  */
 int
-lexer_peek_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
+lexer_peek_if_pair(struct lexer *lx, int lhs_type, int rhs_type,
+    struct token **lhs, struct token **rhs)
 {
 	struct lexer_state s;
 	struct token *t = NULL;
 	int pair = 0;
 
-	if (!lexer_peek_if(lx, lhs, NULL))
+	if (!lexer_peek_if(lx, lhs_type, lhs))
 		return 0;
 
 	lexer_peek_enter(lx, &s);
@@ -665,9 +666,9 @@ lexer_peek_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
 			break;
 		if (t->tk_type == LEXER_EOF)
 			break;
-		if (t->tk_type == lhs)
+		if (t->tk_type == lhs_type)
 			pair++;
-		if (t->tk_type == rhs)
+		if (t->tk_type == rhs_type)
 			pair--;
 		if (pair == 0)
 			break;
@@ -675,8 +676,8 @@ lexer_peek_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
 	lexer_peek_leave(lx, &s);
 	if (pair > 0)
 		return 0;
-	if (tk != NULL)
-		*tk = t;
+	if (rhs != NULL)
+		*rhs = t;
 	return 1;
 }
 
@@ -685,16 +686,17 @@ lexer_peek_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
  * Returns non-zero if such tokens was found.
  */
 int
-lexer_if_pair(struct lexer *lx, int lhs, int rhs, struct token **tk)
+lexer_if_pair(struct lexer *lx, int lhs_type, int rhs_type, struct token **lhs,
+    struct token **rhs)
 {
 	struct token *end;
 
-	if (!lexer_peek_if_pair(lx, lhs, rhs, &end))
+	if (!lexer_peek_if_pair(lx, lhs_type, rhs_type, lhs, &end))
 		return 0;
 
 	lx->lx_st.st_tk = end;
-	if (tk != NULL)
-		*tk = end;
+	if (rhs != NULL)
+		*rhs = end;
 	return 1;
 }
 

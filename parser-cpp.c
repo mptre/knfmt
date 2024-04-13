@@ -64,7 +64,7 @@ parser_cpp_peek_decl(struct parser *pr, struct parser_type *type,
 	    NULL))
 		continue;
 	if (lexer_if(lx, TOKEN_IDENT, &macro) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &type->end)) {
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, &type->end)) {
 		struct token *ident;
 
 		for (;;) {
@@ -109,7 +109,7 @@ parser_cpp_peek_x(struct parser *pr, struct token **tk)
 	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, NULL))
 		continue;
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen)) {
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, &rparen)) {
 		const struct token *nx;
 
 		/*

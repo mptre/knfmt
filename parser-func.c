@@ -73,7 +73,7 @@ parser_func_peek1(struct parser *pr, struct parser_type *type)
 		} else if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
 		    lexer_if(lx, TOKEN_STAR, NULL) &&
 		    lexer_if(lx, TOKEN_IDENT, NULL) &&
-		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+		    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, NULL) &&
 		    lexer_if(lx, TOKEN_RPAREN, NULL)) {
 			/*
 			 * Function returning a function pointer, used by
@@ -84,7 +84,7 @@ parser_func_peek1(struct parser *pr, struct parser_type *type)
 			goto out;
 		}
 
-		if (!lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL))
+		if (!lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, NULL))
 			goto out;
 
 		if (parser_attributes_peek(pr, &attr, 0) &&
@@ -358,9 +358,9 @@ parser_func_proto(struct parser *pr, struct doc **out,
 		if (lexer_expect(lx, TOKEN_IDENT, &tk))
 			parser_doc_token(pr, tk, concat);
 		if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
-		    &rparen))
+		    &lparen, &rparen))
 			return parser_fail(pr);
-		if (lexer_expect(lx, TOKEN_LPAREN, &lparen))
+		if (lexer_expect(lx, TOKEN_LPAREN, NULL))
 			parser_doc_token(pr, lparen, concat);
 		while (parser_func_arg(pr, concat, NULL, rparen) & GOOD)
 			continue;
@@ -376,9 +376,10 @@ parser_func_proto(struct parser *pr, struct doc **out,
 		return parser_fail(pr);
 	}
 
-	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &lparen,
+	    &rparen))
 		return parser_fail(pr);
-	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
+	if (lexer_expect(lx, TOKEN_LPAREN, NULL)) {
 		parser_token_trim_after(pr, lparen);
 		parser_token_trim_before(pr, rparen);
 		parser_token_trim_after(pr, rparen);
@@ -464,7 +465,7 @@ want_line_after_func_impl(struct parser *pr)
 	lexer_peek_enter(lx, &s);
 	if ((lexer_if(lx, TOKEN_IDENT, &ident) ||
 	    lexer_if(lx, TOKEN_ASSEMBLY, &ident)) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen)) {
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, &rparen)) {
 		struct token *nx;
 
 		if (lexer_if(lx, TOKEN_SEMI, NULL) &&

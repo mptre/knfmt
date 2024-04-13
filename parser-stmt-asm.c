@@ -123,7 +123,7 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 	struct doc *concat, *opt;
 	struct token *colon = NULL;
 	struct token *qualifier = NULL;
-	struct token *assembly, *rparen, *tk;
+	struct token *assembly, *lparen, *rparen, *tk;
 	int ninputs = 0;
 	int error;
 
@@ -145,10 +145,11 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 
 	opt = doc_indent(style(pr->pr_st, ContinuationIndentWidth),
 	    doc_alloc(DOC_OPTIONAL, dc));
-	if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+	if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &lparen,
+	    &rparen))
 		parser_token_trim_before(pr, rparen);
-	if (lexer_expect(lx, TOKEN_LPAREN, &tk))
-		parser_doc_token(pr, tk, opt);
+	if (lexer_expect(lx, TOKEN_LPAREN, NULL))
+		parser_doc_token(pr, lparen, opt);
 
 	/* instructions */
 	if (!lexer_peek_until(lx, TOKEN_COLON, &colon)) {

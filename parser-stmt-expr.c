@@ -20,8 +20,7 @@ is_loop_stmt(struct parser *pr, const struct token *semi)
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &lparen, &rparen) &&
 	    lexer_peek(lx, &nx) && nx != semi && token_cmp(rparen, nx) < 0 &&
 	    parser_stmt_peek(pr))
 		peek = 1;

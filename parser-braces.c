@@ -69,14 +69,15 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	unsigned int w = 0;
 	int align, error;
 
-	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &lbrace,
+	    &rbrace))
 		return parser_fail(pr);
 
 	lbrace_cache_purge(pr);
 
 	braces = doc_alloc(DOC_CONCAT, arg->dc);
 
-	if (!lexer_expect(lx, TOKEN_LBRACE, &lbrace))
+	if (!lexer_expect(lx, TOKEN_LBRACE, NULL))
 		return parser_fail(pr);
 	/*
 	 * If any column is followed by a hard line, do not align but

@@ -85,7 +85,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 				(void)lexer_if(lx, TOKEN_IDENT, &t);
 			/* Recognize constructs like `struct s[]'. */
 			(void)lexer_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE,
-			    &t);
+			    NULL, &t);
 			peek = 1;
 		} else if (ntokens > 0 && lexer_if(lx, TOKEN_STAR, &t)) {
 			/*
@@ -320,9 +320,8 @@ peek_type_func_ptr(struct lexer *lx, struct token **lhs, struct token **rhs)
 			lexer_if(lx, TOKEN_RSQUARE, NULL);
 		}
 		if (lexer_if(lx, TOKEN_RPAREN, &rparen)) {
-			if (lexer_peek_if(lx, TOKEN_LPAREN, &lparen) &&
-			    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
-			    rhs)) {
+			if (lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
+			    &lparen, rhs)) {
 				*lhs = lparen;
 				peek = 1;
 			} else if (ident == NULL &&

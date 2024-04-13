@@ -141,8 +141,8 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	int nstmt = 0;
 	int error;
 
-	if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
-	    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &rbrace))
+	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &lbrace,
+	    &rbrace))
 		return parser_none(pr);
 
 	/*
@@ -446,7 +446,8 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc, int token_type,
 	int error;
 
 	if (!lexer_expect(lx, token_type, &kw) ||
-	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &rparen))
+	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &lparen,
+	    &rparen))
 		return parser_fail(pr);
 	parser_token_trim_before(pr, rparen);
 	parser_token_trim_after(pr, rparen);
@@ -471,7 +472,7 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc, int token_type,
 		w = parser_width(pr, dc) + 1;
 	}
 
-	if (lexer_expect(lx, TOKEN_LPAREN, &lparen)) {
+	if (lexer_expect(lx, TOKEN_LPAREN, NULL)) {
 		struct doc *optional = stmt;
 
 		if (token_has_suffix(lparen, TOKEN_COMMENT)) {
@@ -790,7 +791,7 @@ parser_stmt_cpp(struct parser *pr, struct doc *dc)
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, NULL) &&
 	    !lexer_if(lx, TOKEN_SEMI, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);

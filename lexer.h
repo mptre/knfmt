@@ -97,8 +97,10 @@ int	lexer_if(struct lexer *, int, struct token **);
 int	lexer_peek_if_flags(struct lexer *, unsigned int, struct token **);
 int	lexer_if_flags(struct lexer *, unsigned int, struct token **);
 
-int	lexer_peek_if_pair(struct lexer *, int, int, struct token **);
-int	lexer_if_pair(struct lexer *, int, int, struct token **);
+int	lexer_peek_if_pair(struct lexer *, int, int, struct token **,
+    struct token **);
+int	lexer_if_pair(struct lexer *, int, int, struct token **,
+    struct token **);
 
 int	lexer_peek_if_prefix_flags(struct lexer *, unsigned int,
     struct token **);

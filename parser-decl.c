@@ -209,10 +209,10 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		struct token *lbrace, *rbrace;
 
 		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
-		    &rbrace))
+		    &lbrace, &rbrace))
 			return parser_fail(pr);
 		parser_token_trim_before(pr, rbrace);
-		if (lexer_expect(lx, TOKEN_LBRACE, &lbrace)) {
+		if (lexer_expect(lx, TOKEN_LBRACE, NULL)) {
 			parser_token_trim_after(pr, lbrace);
 			if ((style_brace_wrapping(pr->pr_st, AfterStruct) &&
 			    token_is_decl(end, TOKEN_STRUCT)) ||
@@ -238,9 +238,8 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 		struct token *lbrace, *rbrace;
 		unsigned int w;
 
-		if (!lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) ||
-		    !lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
-		    &rbrace))
+		if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE,
+		    &lbrace, &rbrace))
 			return parser_fail(pr);
 		parser_token_trim_before(pr, rbrace);
 		if (style_brace_wrapping(pr->pr_st, AfterEnum))
