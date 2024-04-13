@@ -524,7 +524,6 @@ lexer_branch(struct lexer *lx, struct token **unmute)
 	lexer_trace(lx, "seek to %s",
 	    lexer_serialize(lx, seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
 	lx->lx_st.st_tk = seek;
-	lx->lx_st.st_err = 0;
 
 	token_rele(dst);
 	token_rele(cpp_dst);
