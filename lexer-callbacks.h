@@ -38,6 +38,11 @@ struct lexer_callbacks {
 	    struct arena_scope *);
 
 	/*
+	 * Returns the end of the branch associated with the given token.
+	 */
+	struct token	*(*end_of_branch)(struct token *);
+
+	/*
 	 * Informative callback invoked once all tokens are read.
 	 * May be omitted.
 	 */

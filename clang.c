@@ -77,6 +77,8 @@ static const char	*clang_token_serialize(const struct token *,
 static const char	*clang_token_serialize_prefix(const struct token *,
     struct arena_scope *);
 
+static struct token	*clang_end_of_branch(struct token *);
+
 static void	token_branch_link(struct token *, struct token *);
 static void	token_branch_revert(struct token *);
 static void	token_prolong(struct token *, struct token *);
@@ -171,6 +173,7 @@ clang_lexer_callbacks(struct clang *cl)
 	    .alloc		= clang_token_alloc,
 	    .serialize		= clang_token_serialize,
 	    .serialize_prefix	= clang_token_serialize_prefix,
+	    .end_of_branch	= clang_end_of_branch,
 	    .after_read		= clang_after_read,
 	    .arg		= cl,
 	};
@@ -354,6 +357,17 @@ clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
 		    clang_token_serialize(prefix->tk_branch.br_nx, s));
 	}
 	return buffer_str(bf);
+}
+
+static struct token *
+clang_end_of_branch(struct token *tk)
+{
+	struct token *br;
+
+	for (br = token_get_branch(tk); br->tk_branch.br_nx != NULL;
+	    br = br->tk_branch.br_nx)
+		continue;
+	return br->tk_branch.br_parent;
 }
 
 static void

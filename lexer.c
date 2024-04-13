@@ -576,13 +576,8 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			    lexer_serialize(lx, st->st_tk));
 			return 0;
 		} else {
-			struct token *br;
-
 			/* While peeking, act as taking the current branch. */
-			br = token_get_branch(st->st_tk);
-			while (br->tk_branch.br_nx != NULL)
-				br = br->tk_branch.br_nx;
-			st->st_tk = br->tk_branch.br_parent;
+			st->st_tk = lx->lx_callbacks.end_of_branch(st->st_tk);
 		}
 	}
 
