@@ -246,8 +246,8 @@ add_braces(struct simple_stmt *ss)
 			continue;
 
 		pv = token_prev(st->st_lbrace);
-		lbrace = lexer_insert_before(lx, st->st_lbrace,
-		    TOKEN_LBRACE, "{");
+		lbrace = lexer_insert_after(lx, pv,
+		    clang_keyword_token(TOKEN_LBRACE));
 		token_move_suffixes(pv, lbrace);
 
 		pv = token_prev(st->st_rbrace);

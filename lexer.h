@@ -73,8 +73,6 @@ int	lexer_back_if(const struct lexer *, int, struct token **);
 
 struct token	*lexer_copy_after(struct lexer *, struct token *,
     const struct token *);
-struct token	*lexer_insert_before(struct lexer *, struct token *, int,
-    const char *);
 struct token	*lexer_insert_after(struct lexer *, struct token *,
     const struct token *);
 struct token	*lexer_move_after(struct lexer *, struct token *,

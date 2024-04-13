@@ -457,25 +457,6 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 }
 
 struct token *
-lexer_insert_before(struct lexer *lx, struct token *before, int type,
-    const char *str)
-{
-	struct token *tk;
-
-	tk = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope,
-	    &(struct token){
-		.tk_type	= type,
-		.tk_lno		= before->tk_lno,
-		.tk_cno		= before->tk_cno,
-		.tk_flags	= token_flags_inherit(before),
-		.tk_str		= str,
-		.tk_len		= strlen(str),
-	});
-	TAILQ_INSERT_BEFORE(before, tk, tk_entry);
-	return tk;
-}
-
-struct token *
 lexer_insert_after(struct lexer *lx, struct token *after,
     const struct token *def)
 {
