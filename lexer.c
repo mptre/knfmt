@@ -388,17 +388,21 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	struct lexer_state *st = &lx->lx_st;
 
 	if (st->st_tk == NULL) {
-		st->st_tk = TAILQ_FIRST(&lx->lx_tokens);
-	} else if (st->st_tk->tk_type != LEXER_EOF) {
-		/* Do not move passed a branch. */
-		if (lx->lx_peek == 0 &&
-		    (st->st_tk->tk_flags & TOKEN_FLAG_BRANCH))
-			return 0;
+		*tk = st->st_tk = TAILQ_FIRST(&lx->lx_tokens);
+		return 1;
+	}
 
-		st->st_tk = token_next(st->st_tk);
-		if (likely((st->st_tk->tk_flags & TOKEN_FLAG_BRANCH) == 0))
-			goto out;
+	if (st->st_tk->tk_type == LEXER_EOF) {
+		*tk = st->st_tk;
+		return 1;
+	}
 
+	/* Do not move passed a branch. */
+	if (lx->lx_peek == 0 && (st->st_tk->tk_flags & TOKEN_FLAG_BRANCH))
+		return 0;
+
+	st->st_tk = token_next(st->st_tk);
+	if (unlikely(st->st_tk->tk_flags & TOKEN_FLAG_BRANCH)) {
 		if (lx->lx_peek == 0) {
 			/* While not peeking, instruct the parser to halt. */
 			lexer_trace(lx, "halt %s",
@@ -410,7 +414,6 @@ lexer_pop(struct lexer *lx, struct token **tk)
 		}
 	}
 
-out:
 	*tk = st->st_tk;
 	return 1;
 }
