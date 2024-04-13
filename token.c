@@ -22,13 +22,15 @@ static const char	*token_type_str(int);
 #endif
 
 struct token *
-token_alloc(struct arena_scope *s, size_t priv_size, const struct token *def)
+token_alloc(struct arena_scope *s, unsigned int priv_size,
+    const struct token *def)
 {
 	struct token *tk;
 
 	tk = arena_calloc(s, 1, sizeof(*tk) + priv_size);
 	*tk = *def;
 	tk->tk_refs = 1;
+	tk->tk_priv_size = priv_size;
 	TAILQ_INIT(&tk->tk_prefixes);
 	TAILQ_INIT(&tk->tk_suffixes);
 	return tk;
@@ -54,11 +56,7 @@ token_rele(struct token *tk)
 	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
 		token_list_remove(&tk->tk_suffixes, fix);
 
-	/*
-	 * Note that ideally priv_size passed to token_alloc() should be
-	 * included here.
-	 */
-	arena_poison(tk, sizeof(*tk));
+	arena_poison(tk, sizeof(*tk) + tk->tk_priv_size);
 }
 
 /*

@@ -149,6 +149,7 @@ TAILQ_HEAD(token_list, token);
 struct token {
 	int			 tk_type;
 	int			 tk_refs;
+	unsigned int		 tk_priv_size;
 	unsigned int		 tk_lno;
 	unsigned int		 tk_cno;
 	unsigned int		 tk_flags;
@@ -196,7 +197,7 @@ struct token {
 	TAILQ_ENTRY(token)	 tk_entry;
 };
 
-struct token	*token_alloc(struct arena_scope *, size_t,
+struct token	*token_alloc(struct arena_scope *, unsigned int,
     const struct token *);
 void		 token_ref(struct token *);
 void		 token_rele(struct token *);
