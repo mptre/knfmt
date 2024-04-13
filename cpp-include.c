@@ -31,10 +31,6 @@ struct cpp_include {
 
 struct include {
 	struct token		*tk;
-	struct {
-		const char	*str;
-		size_t		 len;
-	} path;
 	struct include_priority	 priority;
 };
 
@@ -49,7 +45,7 @@ static void	cpp_include_reset(struct cpp_include *);
 static struct token	*add_line(struct cpp_include *, struct lexer *,
     struct token *);
 
-static const char	*findpath(const char *, size_t, size_t *);
+static const char	*findpath(const char *, size_t, struct arena_scope *);
 
 static void	token_trim_verbatim_line(struct token *);
 
@@ -185,11 +181,44 @@ include_cmp(struct include *const *aa, struct include *const *bb)
 	return token_strcmp(a->tk, b->tk);
 }
 
+static int
+is_main_include(const char *include_path, const char *path,
+    struct arena *scratch)
+{
+	const char *basename, *dot, *filename, *include_main,
+		   *path_without_extension, *slash;
+
+	arena_scope(scratch, s);
+
+	/* Transform path "a/b.c" into "a/b.h". */
+	dot = strrchr(path, '.');
+	if (dot == NULL)
+		return 0;
+	path_without_extension = arena_strndup(&s, path, (size_t)(dot - path));
+	include_main = arena_sprintf(&s, "\"%s.h\"", path_without_extension);
+	if (strcmp(include_path, include_main) == 0)
+		return 1;
+
+	/* Transform path "a/b.c" into "b.h". */
+	slash = strrchr(path, '/');
+	filename = slash != NULL ? arena_strdup(&s, &slash[1]) : path;
+	dot = strrchr(filename, '.');
+	if (dot == NULL)
+		return 0;
+	basename = arena_strndup(&s, filename, (size_t)(dot - filename));
+	include_main = arena_sprintf(&s, "\"%s.h\"", basename);
+	if (strcmp(include_path, include_main) == 0)
+		return 1;
+
+	return 0;
+}
+
 static void
 cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 {
 	MAP_ITERATOR(ci->groups) it = {0};
 	struct token *after = ci->after;
+	const char *path = lexer_get_path(lx);
 	size_t i, nincludes;
 	unsigned int nbrackets = 0;
 	unsigned int nquotes = 0;
@@ -208,27 +237,23 @@ cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 		struct include_priority priority = {0};
 		struct include *include = &ci->includes[i];
 		const struct token *tk = include->tk;
-		const char *path;
-		size_t len;
+		const char *include_path;
 
-		path = findpath(tk->tk_str, tk->tk_len, &len);
-		if (path == NULL)
+		include_path = findpath(tk->tk_str, tk->tk_len, &s);
+		if (include_path == NULL)
 			return;
-		include->path.str = path;
-		include->path.len = len;
 
 		if (ci->regroup) {
-			const char *str;
-
-			str = arena_strndup(&s, path, len);
-			priority = style_include_priority(ci->st, str,
-			    lexer_get_path(lx));
+			if (!is_main_include(include_path, path, ci->scratch)) {
+				priority = style_include_priority(ci->st,
+				    include_path);
+			}
 		} else {
-			if (path[0] == '<')
+			if (include_path[0] == '<')
 				nbrackets++;
-			if (path[0] == '"')
+			if (include_path[0] == '"')
 				nquotes++;
-			if (memchr(path, '/', len) != NULL)
+			if (strchr(include_path, '/') != NULL)
 				nslashes++;
 			if ((nbrackets > 0 && nquotes > 0) ||
 			    (nbrackets > 0 && nslashes > 0))
@@ -309,7 +334,7 @@ add_line(struct cpp_include *ci, struct lexer *lx, struct token *after)
 }
 
 static const char *
-findpath(const char *str, size_t len, size_t *pathlen)
+findpath(const char *str, size_t len, struct arena_scope *s)
 {
 	const char *eo, *so;
 	char c;
@@ -324,8 +349,7 @@ findpath(const char *str, size_t len, size_t *pathlen)
 	eo = memchr(&so[1], c, len);
 	if (eo == NULL)
 		return NULL;
-	*pathlen = (size_t)(eo - so) + 1;
-	return so;
+	return arena_strndup(s, so, (size_t)(eo - so) + 1);
 }
 
 static void

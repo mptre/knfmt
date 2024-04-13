@@ -128,7 +128,7 @@ int		style_brace_wrapping(const struct style *, int);
 
 int			*style_include_priorities(const struct style *);
 struct include_priority	 style_include_priority(const struct style *,
-    const char *, const char *);
+    const char *);
 
 const char	*style_keyword_str(enum style_keyword);
 
