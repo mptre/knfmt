@@ -24,10 +24,18 @@ struct vector_public {
 	size_t	len;
 };
 
+struct vector_callbacks {
+	void	*(*calloc)(size_t, size_t, void *);
+	void	*(*realloc)(void *, size_t, size_t, void *);
+	void	 (*free)(void *, size_t, void *);
+	void	*arg;
+};
+
 #define VECTOR(type) type *
 
 #define VECTOR_INIT(vc) vector_init((void **)&(vc), sizeof(*(vc)))
 int	vector_init(void **, size_t);
+int	vector_init_impl(void **, size_t, const struct vector_callbacks *);
 
 #define VECTOR_FREE(vc) vector_free((void **)&(vc))
 void	vector_free(void **);

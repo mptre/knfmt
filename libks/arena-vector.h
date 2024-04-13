@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Anton Lindqvist <anton@basename.se>
+ * Copyright (c) 2024 Anton Lindqvist <anton@basename.se>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,31 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIBKS_STRING_H
-#define LIBKS_STRING_H
+#ifndef LIBKS_ARENA_VECTOR_H
+#define LIBKS_ARENA_VECTOR_H
 
 #include <stddef.h>	/* size_t */
 
 struct arena_scope;
 
-#define KS_FEATURE_STR_NATIVE		0x00000001u
+#define ARENA_VECTOR_INIT(s, vc, n) arena_vector_init(s, (void **)&(vc), sizeof(*(vc)), n)
+void	arena_vector_init(struct arena_scope *, void **, size_t, size_t);
 
-extern unsigned int KS_features;
-
-#define KS_str_match(str, len, ranges) __extension__ ({			\
-	char _static_assert[sizeof(ranges) - 1 > 16 ? -1 : 0]		\
-		__attribute__((unused));				\
-	size_t _rv;							\
-	if (KS_features & KS_FEATURE_STR_NATIVE)			\
-		_rv = KS_str_match_native((str), (len),	(ranges));	\
-	else								\
-		_rv = KS_str_match_default((str), (len), (ranges));	\
-	_rv;								\
-})
-
-size_t	KS_str_match_default(const char *, size_t, const char *);
-size_t	KS_str_match_native(const char *, size_t, const char *);
-
-char	**KS_str_split(const char *, char, struct arena_scope *);
-
-#endif /* !LIBKS_STRING_H */
+#endif /* !LIBKS_ARENA_VECTOR_H */

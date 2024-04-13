@@ -28,6 +28,8 @@ struct arena_scope {
 	struct arena_frame	*frame;
 	struct arena_cleanup	*cleanup;
 	size_t			 frame_len;
+	unsigned long		 bytes;
+	unsigned long		 frames;
 	int			 id;
 };
 
@@ -37,6 +39,8 @@ struct arena_stats {
 		unsigned long	now;
 		/* Total amount of allocated bytes. */
 		unsigned long	total;
+		/* Peek amount of effective allocated bytes. */
+		unsigned long	max;
 	} bytes;
 
 	struct {
@@ -44,6 +48,8 @@ struct arena_stats {
 		unsigned long	now;
 		/* Total amount of allocated frames. */
 		unsigned long	total;
+		/* Peek amount of effective allocated frames. */
+		unsigned long	max;
 	} frames;
 
 	struct {

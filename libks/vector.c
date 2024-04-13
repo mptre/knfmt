@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libks/compiler.h"
+
 enum vector_error {
 	VECTOR_REALLOCATED = 1,
 	VECTOR_SUCCESS = 0,
@@ -28,6 +30,7 @@ enum vector_error {
 };
 
 struct vector {
+	struct vector_callbacks	vc_callbacks;
 	size_t			vc_siz;
 	size_t			vc_stride;
 	/* Must come last. */
@@ -38,14 +41,45 @@ static enum vector_error vector_reserve1(struct vector **, size_t);
 
 static struct vector		*ptov(void *);
 
+static void *
+callback_calloc(size_t nmemb, size_t size, void *UNUSED(arg))
+{
+	return calloc(nmemb, size);
+}
+
+static void *
+callback_realloc(void *ptr, size_t UNUSED(oldsize), size_t newsize,
+    void *UNUSED(arg))
+{
+	return realloc(ptr, newsize);
+}
+
+static void
+callback_free(void *ptr, size_t UNUSED(size), void *UNUSED(arg))
+{
+	free(ptr);
+}
+
 int
 vector_init(void **vv, size_t stride)
 {
+	return vector_init_impl(vv, stride, &(struct vector_callbacks){
+	    .calloc	= callback_calloc,
+	    .realloc	= callback_realloc,
+	    .free	= callback_free,
+	});
+}
+
+int
+vector_init_impl(void **vv, size_t stride,
+    const struct vector_callbacks *callbacks)
+{
 	struct vector *vc;
 
-	vc = calloc(1, sizeof(*vc));
+	vc = callbacks->calloc(1, sizeof(*vc), callbacks->arg);
 	if (vc == NULL)
 		return 1;
+	vc->vc_callbacks = *callbacks;
 	vc->vc_stride = stride;
 	*vv = &vc[1];
 	return 0;
@@ -59,7 +93,8 @@ vector_free(void **vv)
 	if (*vv == NULL)
 		return;
 	vc = ptov(*vv);
-	free(vc);
+	vc->vc_callbacks.free(vc, sizeof(*vc) + vc->p.len * vc->vc_stride,
+	    vc->vc_callbacks.arg);
 	*vv = NULL;
 }
 
@@ -158,12 +193,14 @@ vector_reserve1(struct vector **vv, size_t len)
 {
 	struct vector *vc = *vv;
 	struct vector *newvc;
-	size_t newsiz, totlen;
+	size_t newsiz, oldlen, totlen;
 
 	if (vc->p.len > ULONG_MAX - len)
 		goto overflow;
 	if (vc->p.len + len < vc->vc_siz)
 		return VECTOR_SUCCESS;
+
+	oldlen = sizeof(*vc) + vc->p.len * vc->vc_stride;
 
 	newsiz = vc->vc_siz ? vc->vc_siz : 16;
 	while (newsiz < vc->p.len + len) {
@@ -178,7 +215,9 @@ vector_reserve1(struct vector **vv, size_t len)
 	if (totlen > ULONG_MAX - sizeof(*vc))
 		goto overflow;
 	totlen += sizeof(*vc);
-	newvc = realloc(vc, totlen);
+
+	newvc = vc->vc_callbacks.realloc(vc, oldlen, totlen,
+	    vc->vc_callbacks.arg);
 	if (newvc == NULL)
 		return VECTOR_ERROR;
 	newvc->vc_siz = newsiz;

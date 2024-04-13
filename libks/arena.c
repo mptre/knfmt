@@ -123,6 +123,24 @@ arena_rele(struct arena *a)
 	free(a);
 }
 
+static void
+arena_stats_bytes(struct arena *a, size_t bytes)
+{
+	a->stats.bytes.now += bytes;
+	a->stats.bytes.total += bytes;
+	if (a->stats.bytes.now > a->stats.bytes.max)
+		a->stats.bytes.max = a->stats.bytes.now;
+}
+
+static void
+arena_stats_frames(struct arena *a, size_t frames)
+{
+	a->stats.frames.now += frames;
+	a->stats.frames.total += frames;
+	if (a->stats.frames.now > a->stats.frames.max)
+		a->stats.frames.max = a->stats.frames.now;
+}
+
 static void *
 arena_push(const struct arena *a, struct arena_frame *frame, size_t size)
 {
@@ -170,10 +188,7 @@ arena_frame_alloc(struct arena *a, size_t frame_size)
 	a->frame = frame;
 	frame_poison(a->frame);
 
-	a->stats.bytes.now += frame_size;
-	a->stats.bytes.total += frame_size;
-	a->stats.frames.now++;
-	a->stats.frames.total++;
+	arena_stats_frames(a, 1);
 
 	return 1;
 }
@@ -252,6 +267,9 @@ arena_scope_leave(struct arena_scope *s)
 		frame_poison(a->frame);
 	}
 
+	a->stats.bytes.now = s->bytes;
+	a->stats.frames.now = s->frames;
+
 	arena_rele(a);
 }
 
@@ -272,6 +290,8 @@ arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 	    .arena	= a,
 	    .frame	= a->frame,
 	    .frame_len	= a->frame->len,
+	    .bytes	= a->stats.bytes.now,
+	    .frames	= a->stats.frames.now,
 	    .id		= a->refs,
 	};
 }
@@ -318,8 +338,10 @@ arena_malloc(struct arena_scope *s, size_t size)
 	arena_scope_validate(a, s, size);
 
 	ptr = arena_push(a, a->frame, size);
-	if (ptr != NULL)
+	if (ptr != NULL) {
+		arena_stats_bytes(a, size);
 		return ptr;
+	}
 
 	if (sizeof(*frame) > INT64_MAX - size)
 		errx(1, "%s: Requested allocation too large", __func__);
@@ -342,6 +364,7 @@ arena_malloc(struct arena_scope *s, size_t size)
 		err(1, "%s", __func__);
 		return NULL;
 	}
+	arena_stats_bytes(a, size);
 	return ptr;
 }
 
@@ -388,7 +411,7 @@ arena_realloc_fast(struct arena_scope *s, char *ptr, size_t old_size,
 	frame.len = (size_t)(ptr - frame.ptr);
 	if (arena_push(a, &frame, new_size) == NULL)
 		return 0;
-
+	arena_stats_bytes(a, new_size - old_size);
 	*a->frame = frame;
 	return 1;
 }

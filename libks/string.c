@@ -19,7 +19,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "libks/arena-vector.h"
+#include "libks/arena.h"
 #include "libks/compiler.h"
+#include "libks/vector.h"
 
 #define CTRL_SOURCE_SHIFT		0
 #define  CTRL_SOURCE_U8			0x00
@@ -226,3 +229,28 @@ KS_str_match_native(const char *MAYBE_UNUSED(str), size_t MAYBE_UNUSED(len),
 #if defined(__clang__)
 #  pragma GCC diagnostic pop
 #endif
+
+char **
+KS_str_split(const char *str, char delim, struct arena_scope *s)
+{
+	VECTOR(char *) parts;
+
+	ARENA_VECTOR_INIT(s, parts, 2);
+
+	for (;;) {
+		const char *p;
+		char **dst;
+
+		dst = VECTOR_ALLOC(parts);
+		p = strchr(str, delim);
+		if (p != NULL) {
+			*dst = arena_strndup(s, str, (size_t)(p - str));
+			str = &p[1];
+		} else {
+			*dst = arena_strdup(s, str);
+			break;
+		}
+	}
+
+	return parts;
+}
