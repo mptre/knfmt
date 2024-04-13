@@ -246,11 +246,11 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 	token_list_append_after(&c.define.parent->tk_prefixes, ifndef,
 	    define);
 
-	ensure_line(lx, c.endif.parent);
-
 	if (c.endif.tk != NULL) {
 		clang_token_branch_unlink(c.endif.tk);
 		token_list_remove(&c.endif.parent->tk_prefixes, c.endif.tk);
+	} else {
+		ensure_line(lx, c.endif.parent);
 	}
 	endif = emit_cpp(lx, TOKEN_CPP, cpp_endif);
 	token_list_append(&c.endif.parent->tk_prefixes, endif);

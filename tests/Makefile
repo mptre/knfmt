@@ -679,6 +679,7 @@ TESTS+=	style-IncludeGuards-007.h
 TESTS+=	style-IncludeGuards-008.h
 TESTS+=	style-IncludeGuards-009.h
 TESTS+=	style-IncludeGuards-010.h
+TESTS+=	style-IncludeGuards-011.h
 TESTS+=	style-IndentWidth-001.c
 TESTS+=	style-Language-001.c
 TESTS+=	style-Language-002.c
