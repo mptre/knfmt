@@ -55,7 +55,7 @@ int
 main(int argc, char *argv[])
 {
 	struct main_context c = {0};
-	struct files files;
+	struct files files = {0};
 	const char *clang_format = NULL;
 	size_t i;
 	int error = 0;
@@ -103,6 +103,9 @@ main(int argc, char *argv[])
 	if (c.options.diffparse)
 		diff_init();
 
+	if (VECTOR_INIT(files.fs_vc))
+		err(1, NULL);
+
 	c.arena.eternal = arena_alloc();
 	arena_scope(c.arena.eternal, eternal_scope);
 	c.arena.scratch = arena_alloc();
@@ -137,8 +140,6 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	if (VECTOR_INIT(files.fs_vc))
-		err(1, NULL);
 	if (filelist(argc, argv, &files, &eternal_scope, c.arena.scratch,
 	    &c.options)) {
 		error = 1;
