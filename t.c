@@ -1067,11 +1067,11 @@ token_serialize_literal(struct arena_scope *s, const struct token *tk)
 static const char *
 token_serialize_no_flags(struct arena_scope *s, const struct token *tk)
 {
-	return token_serialize(s, tk, 0);
+	return token_serialize(tk, 0, s);
 }
 
 static const char *
 token_serialize_position(struct arena_scope *s, const struct token *tk)
 {
-	return token_serialize(s, tk, TOKEN_SERIALIZE_POSITION);
+	return token_serialize(tk, TOKEN_SERIALIZE_POSITION, s);
 }

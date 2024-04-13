@@ -621,8 +621,9 @@ clang_token_alloc(struct arena_scope *s, const struct token *def)
 static const char *
 clang_token_serialize(const struct token *tk, struct arena_scope *s)
 {
-	return token_serialize(s, tk,
-	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS);
+	return token_serialize(tk,
+	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS,
+	    s);
 }
 
 static const char *

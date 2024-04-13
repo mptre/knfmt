@@ -86,8 +86,8 @@ token_trim(struct token *tk)
 }
 
 const char *
-token_serialize(struct arena_scope *s, const struct token *tk,
-    unsigned int flags)
+token_serialize(const struct token *tk, unsigned int flags,
+    struct arena_scope *s)
 {
 	struct buffer *bf;
 
