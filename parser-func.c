@@ -136,7 +136,7 @@ parser_func_decl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 	    .rl		= rl,
 	    .type	= type,
 	});
-	if (error & (FAIL | NONE))
+	if (error & HALT)
 		return parser_fail(pr);
 
 	if (lexer_expect(lx, TOKEN_SEMI, &tk))
