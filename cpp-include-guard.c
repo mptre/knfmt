@@ -11,6 +11,7 @@
 #include "libks/arena.h"
 #include "libks/buffer.h"
 
+#include "clang.h"
 #include "lexer.h"
 #include "style.h"
 #include "token.h"
@@ -234,7 +235,7 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 	 * make a difference.
 	 */
 	if (c.ifndef.tk != NULL) {
-		token_branch_unlink(c.ifndef.tk);
+		clang_token_branch_unlink(c.ifndef.tk);
 		token_list_remove(&c.ifndef.parent->tk_prefixes, c.ifndef.tk);
 	}
 	ifndef = emit_ifndef(lx, c.ifndef.parent, cpp_ifndef);
@@ -248,7 +249,7 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 	ensure_line(lx, c.endif.parent);
 
 	if (c.endif.tk != NULL) {
-		token_branch_unlink(c.endif.tk);
+		clang_token_branch_unlink(c.endif.tk);
 		token_list_remove(&c.endif.parent->tk_prefixes, c.endif.tk);
 	}
 	endif = emit_cpp(lx, TOKEN_CPP, cpp_endif);

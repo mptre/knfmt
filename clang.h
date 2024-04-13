@@ -17,3 +17,5 @@ struct lexer_callbacks	clang_lexer_callbacks(struct clang *);
 void	clang_stamp(struct clang *, struct lexer *);
 int	clang_branch(struct clang *, struct lexer *, struct token **);
 int	clang_recover(struct clang *, struct lexer *, struct token **);
+
+void	clang_token_branch_unlink(struct token *);

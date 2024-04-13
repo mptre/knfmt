@@ -353,6 +353,12 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	return error ? 0 : ndocs;
 }
 
+void
+clang_token_branch_unlink(struct token *tk)
+{
+	token_branch_unlink(tk);
+}
+
 static void
 clang_after_read(struct lexer *lx, void *arg)
 {
