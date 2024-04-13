@@ -375,7 +375,22 @@ static void
 clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
     struct token *parent)
 {
+	struct token **last;
+
 	clang_branch_link(cl, lx, cpp, parent);
+
+	last = VECTOR_LAST(cl->branches);
+	if (last != NULL) {
+		struct token *br;
+
+		for (br = *last; br != NULL; br = br->tk_branch.br_pv) {
+			struct token *p = br->tk_branch.br_parent;
+
+			if (token_is_branch(p))
+				p->tk_flags |= TOKEN_FLAG_BRANCH;
+		}
+	}
+
 	VECTOR_POP(cl->branches);
 }
 
@@ -787,10 +802,14 @@ token_branch_link(struct token *src, struct token *dst)
 static void
 token_branch_revert(struct token *tk)
 {
-	if (tk->tk_branch.br_parent != NULL)
-		token_rele(tk->tk_branch.br_parent);
+	struct token *parent = tk->tk_branch.br_parent;
+
 	memset(&tk->tk_branch, 0, sizeof(tk->tk_branch));
 	tk->tk_type = TOKEN_CPP;
+	if (parent != NULL) {
+		token_branch_parent_update_flags(parent);
+		token_rele(parent);
+	}
 }
 
 /*

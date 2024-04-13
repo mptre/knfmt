@@ -477,11 +477,12 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 int
 lexer_branch(struct lexer *lx, struct token **unmute)
 {
-	struct token *cpp_dst, *cpp_src, *dst, *rm, *seek, *src, *tk;
+	struct token *back, *cpp_dst, *cpp_src, *dst, *rm, *seek, *src;
 
-	if (!lexer_back(lx, &tk))
+	if (!lexer_back(lx, &back))
 		return 0;
-	cpp_src = token_get_branch(tk);
+	lexer_trace(lx, "back %s", lexer_serialize(lx, back));
+	cpp_src = token_get_branch(back);
 	if (cpp_src == NULL)
 		return 0;
 	token_ref(cpp_src);
@@ -551,17 +552,6 @@ lexer_seek_after(struct lexer *lx, struct token *tk)
 	return nx != NULL && lexer_seek(lx, nx);
 }
 
-/*
- * Returns non-zero if the current token denotes a branch continuation.
- */
-int
-lexer_is_branch(const struct lexer *lx)
-{
-	struct token *tk;
-
-	return lexer_back(lx, &tk) && token_get_branch(tk) != NULL;
-}
-
 int
 lexer_pop(struct lexer *lx, struct token **tk)
 {
@@ -570,17 +560,15 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	if (st->st_tk == NULL) {
 		st->st_tk = TAILQ_FIRST(&lx->lx_tokens);
 	} else if (st->st_tk->tk_type != LEXER_EOF) {
-		struct token *br;
-
 		/* Do not move passed a branch. */
-		if (lx->lx_peek == 0 && token_is_branch(st->st_tk))
+		if (lx->lx_peek == 0 &&
+		    (st->st_tk->tk_flags & TOKEN_FLAG_BRANCH))
 			return 0;
 
 		st->st_tk = token_next(st->st_tk);
 		if (st->st_tk == NULL)
 			return 0;
-		br = token_get_branch(st->st_tk);
-		if (likely(br == NULL))
+		if (likely((st->st_tk->tk_flags & TOKEN_FLAG_BRANCH) == 0))
 			goto out;
 
 		if (lx->lx_peek == 0) {
@@ -589,7 +577,10 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			    lexer_serialize(lx, st->st_tk));
 			return 0;
 		} else {
+			struct token *br;
+
 			/* While peeking, act as taking the current branch. */
+			br = token_get_branch(st->st_tk);
 			while (br->tk_branch.br_nx != NULL)
 				br = br->tk_branch.br_nx;
 			st->st_tk = br->tk_branch.br_parent;
@@ -1220,7 +1211,7 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 	struct token *t;
 
 	/* Be quiet while about to branch. */
-	if (lexer_back(lx, &t) && token_is_branch(t)) {
+	if (lexer_back(lx, &t) && (t->tk_flags & TOKEN_FLAG_BRANCH)) {
 		lexer_trace(lx, "%s:%d: suppressed, expected %s", fun, lno,
 		    lexer_serialize(lx, &(struct token){.tk_type = type}));
 		return;

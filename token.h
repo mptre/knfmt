@@ -158,7 +158,7 @@ struct token {
 #define TOKEN_FLAG_QUALIFIER	0x00000002u
 /* Token denotes a storage keyword. */
 #define TOKEN_FLAG_STORAGE	0x00000004u
-/* was TOKEN_FLAG_STAMP		0x00000008u */
+#define TOKEN_FLAG_BRANCH	0x00000008u
 /* was TOKEN_FLAG_TRIMMED	0x00000010u */
 /* Token denotes an assignment operator. */
 #define TOKEN_FLAG_ASSIGN	0x00000020u
@@ -259,6 +259,7 @@ void	token_move_suffixes_if(struct token *, struct token *, int);
 void	token_clear_prefixes(struct token *);
 
 void	token_branch_parent(struct token *, struct token *);
+void	token_branch_parent_update_flags(struct token *);
 void	token_branch_unlink(struct token *);
 
 unsigned int	token_flags_inherit(const struct token *);

@@ -32,6 +32,7 @@ parser_alloc(const struct parser_arg *arg)
 	pr->pr_st = arg->style;
 	pr->pr_si = arg->simple;
 	pr->pr_lx = arg->lexer;
+	pr->pr_clang = arg->clang;
 	pr->pr_arena.scratch = arg->arena.scratch;
 	pr->pr_arena.doc = arg->arena.doc;
 	pr->pr_bf = arena_buffer_alloc(arg->arena.eternal_scope, 1 << 10);
@@ -131,6 +132,14 @@ parser_exec1(struct parser *pr, struct doc *dc)
 	return error;
 }
 
+static int
+is_branch(const struct lexer *lx)
+{
+	struct token *back;
+
+	return lexer_back(lx, &back) && (back->tk_flags & TOKEN_FLAG_BRANCH);
+}
+
 int
 parser_fail0(struct parser *pr, const char *fun, int lno)
 {
@@ -146,7 +155,7 @@ parser_fail0(struct parser *pr, const char *fun, int lno)
 	    "error at %s", lexer_serialize(lx, tk));
 
 out:
-	if (lexer_is_branch(pr->pr_lx))
+	if (is_branch(pr->pr_lx))
 		return BRCH;
 	return FAIL;
 }
@@ -194,7 +203,7 @@ parser_width(struct parser *pr, const struct doc *dc)
 int
 parser_good(const struct parser *pr)
 {
-	if (lexer_is_branch(pr->pr_lx))
+	if (is_branch(pr->pr_lx))
 		return BRCH;
 	return parser_get_error(pr) ? FAIL : GOOD;
 }
@@ -202,7 +211,7 @@ parser_good(const struct parser *pr)
 int
 parser_none(const struct parser *pr)
 {
-	if (lexer_is_branch(pr->pr_lx))
+	if (is_branch(pr->pr_lx))
 		return BRCH;
 	return parser_get_error(pr) ? FAIL : NONE;
 }
@@ -228,7 +237,7 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 
 	/* Mute if we're about to branch. */
 	nx = token_next(tk);
-	if (nx != NULL && token_is_branch(nx))
+	if (nx != NULL && (nx->tk_flags & TOKEN_FLAG_BRANCH))
 		doc_alloc0(DOC_MUTE, dc, 1, __func__, __LINE__);
 
 	return out;

@@ -70,8 +70,6 @@ int	lexer_branch(struct lexer *, struct token **);
 int	lexer_seek(struct lexer *, struct token *);
 int	lexer_seek_after(struct lexer *, struct token *);
 
-int	lexer_is_branch(const struct lexer *);
-
 int	lexer_pop(struct lexer *, struct token **);
 int	lexer_back(const struct lexer *, struct token **);
 int	lexer_back_if(const struct lexer *, int, struct token **);

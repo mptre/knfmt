@@ -413,6 +413,9 @@ token_get_branch(struct token *tk)
 			continue;
 
 		pv = prefix->tk_branch.br_pv;
+		/* Unlinked branches could be present during lexer read phase. */
+		if (pv == NULL)
+			continue;
 		if (prefix->tk_branch.br_parent != pv->tk_branch.br_parent)
 			return pv;
 	}
@@ -557,6 +560,7 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	    token_type == TOKEN_CPP_ENDIF) {
 		assert(prefix->tk_branch.br_parent == src);
 		token_branch_parent(prefix, dst);
+		token_branch_parent_update_flags(dst);
 	}
 }
 
@@ -606,12 +610,21 @@ token_branch_parent(struct token *cpp, struct token *parent)
 	cpp->tk_branch.br_parent = parent;
 }
 
+void
+token_branch_parent_update_flags(struct token *parent)
+{
+	if (!token_is_branch(parent))
+		parent->tk_flags &= ~TOKEN_FLAG_BRANCH;
+}
+
 static void
 token_branch_exhaust(struct token *tk)
 {
 	tk->tk_type = TOKEN_CPP;
 	tk->tk_branch.br_pv = NULL;
 	tk->tk_branch.br_nx = NULL;
+
+	token_branch_parent_update_flags(tk->tk_branch.br_parent);
 	token_rele(tk->tk_branch.br_parent);
 	tk->tk_branch.br_parent = NULL;
 }
@@ -633,6 +646,8 @@ token_branch_unlink(struct token *tk)
 		} else if (token_type_normalize(nx) == TOKEN_CPP_ELSE) {
 			nx->tk_branch.br_pv = NULL;
 			nx->tk_type = TOKEN_CPP_IF;
+			token_branch_parent_update_flags(
+			    nx->tk_branch.br_parent);
 		} else {
 			assert(0 && "Invalid #if previous token");
 		}
@@ -640,6 +655,8 @@ token_branch_unlink(struct token *tk)
 	} else if (token_type == TOKEN_CPP_ELSE) {
 		pv->tk_branch.br_nx = nx;
 		nx->tk_branch.br_pv = pv;
+		token_branch_parent_update_flags(pv->tk_branch.br_parent);
+		token_branch_parent_update_flags(nx->tk_branch.br_parent);
 		token_branch_exhaust(tk);
 	} else if (token_type == TOKEN_CPP_ENDIF) {
 		assert(nx == NULL);
@@ -648,6 +665,8 @@ token_branch_unlink(struct token *tk)
 		} else if (token_type_normalize(pv) == TOKEN_CPP_ELSE) {
 			pv->tk_branch.br_nx = NULL;
 			pv->tk_type = TOKEN_CPP_ENDIF;
+			token_branch_parent_update_flags(
+			    pv->tk_branch.br_parent);
 		} else {
 			assert(0 && "Invalid #endif previous token");
 		}
@@ -690,6 +709,7 @@ strflags(struct buffer *bf, unsigned int token_flags)
 		unsigned int	 flag;
 	} flags[] = {
 #define F(f, s) { (s), sizeof(s) - 1, (f) }
+		F(TOKEN_FLAG_BRANCH,		"BRANCH"),
 		F(TOKEN_FLAG_DISCARD,		"DISCARD"),
 		F(TOKEN_FLAG_COMMENT_C99,	"C99"),
 		F(TOKEN_FLAG_CPP,		"CPP"),

@@ -230,6 +230,7 @@ fileformat(struct main_context *c, struct file *fe)
 	    .style	= c->style,
 	    .simple	= c->simple,
 	    .lexer	= lx,
+	    .clang	= clang,
 	    .arena	= {
 		.eternal_scope	= &eternal_scope,
 		.scratch	= c->arena.scratch,

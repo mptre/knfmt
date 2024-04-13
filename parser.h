@@ -10,6 +10,7 @@ struct parser_arg {
 	const struct style	*style;
 	struct simple		*simple;
 	struct lexer		*lexer;
+	struct clang		*clang;
 
 	struct {
 		struct arena_scope	*eternal_scope;
