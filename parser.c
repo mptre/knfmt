@@ -25,16 +25,23 @@
 #endif
 
 static void
-clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int beg,
-    unsigned int end)
+clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 {
 	struct lexer_state st;
-	struct token *verbatim;
+	struct token *off, *verbatim;
 	const char *str;
 	size_t len;
+	unsigned int beg;
 
-	if (beg == 0)
+	off = pr->pr_clang_format.off;
+	pr->pr_clang_format.off = NULL;
+	if (off == NULL)
 		return;
+	beg = off->tk_lno;
+	colwidth(off->tk_str, off->tk_len, off->tk_cno, &beg);
+	token_rele(off);
+
+	parser_trace(pr, "beg %u, end %u", beg, end);
 
 	doc_alloc0(DOC_UNMUTE, dc, -1, __func__, __LINE__);
 	if (lexer_get_lines(pr->pr_lx, beg, end, &str, &len) == 0)
@@ -53,32 +60,31 @@ clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int beg,
 static void
 clang_format_on(struct parser *pr, struct token *comment, struct doc *dc)
 {
-	unsigned int beg;
-
 	/* Ignore while peeking and branching. */
 	if (lexer_get_peek(pr->pr_lx) || pr->pr_branch.unmute != NULL)
 		return;
 
-	beg = pr->pr_clang_format.lno;
-	pr->pr_clang_format.lno = 0;
-	clang_format_verbatim(pr, dc, beg, comment->tk_lno);
+	parser_trace(pr, "%s", lexer_serialize(pr->pr_lx, comment));
+
+	clang_format_verbatim(pr, dc, comment->tk_lno);
 }
 
 static void
 clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 {
-	unsigned int lno;
-
 	/* Ignore while peeking and branching. */
 	if (lexer_get_peek(pr->pr_lx) || pr->pr_branch.unmute != NULL)
 		return;
 
+	parser_trace(pr, "%s", lexer_serialize(pr->pr_lx, comment));
+
 	doc_alloc0(DOC_MUTE, dc, 1, __func__, __LINE__);
 
 	/* Must account for more than one trailing hard line(s). */
-	lno = comment->tk_lno;
-	colwidth(comment->tk_str, comment->tk_len, comment->tk_cno, &lno);
-	pr->pr_clang_format.lno = lno;
+	if (pr->pr_clang_format.off != NULL)
+		token_rele(pr->pr_clang_format.off);
+	token_ref(comment);
+	pr->pr_clang_format.off = comment;
 }
 
 static int
@@ -160,7 +166,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 		return 1;
 	}
 
-	clang_format_verbatim(pr, dc, pr->pr_clang_format.lno, 0);
+	clang_format_verbatim(pr, dc, 0);
 
 	if (pr->pr_op->diffparse)
 		doc_flags |= DOC_EXEC_DIFF;
@@ -287,8 +293,18 @@ parser_none(const struct parser *pr)
 void
 parser_reset(struct parser *pr)
 {
+	struct token *nx;
+
 	lexer_error_reset(pr->pr_lx);
 	pr->pr_error = 0;
+
+	/* Remove last clang-format off if about to be traversed again. */
+	if (pr->pr_clang_format.off != NULL &&
+	    lexer_peek(pr->pr_lx, &nx) &&
+	    token_cmp(nx, pr->pr_clang_format.off) < 0) {
+		token_rele(pr->pr_clang_format.off);
+		pr->pr_clang_format.off = NULL;
+	}
 }
 
 struct doc *

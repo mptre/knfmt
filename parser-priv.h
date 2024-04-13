@@ -54,8 +54,7 @@ struct parser {
 	} pr_branch;
 
 	struct {
-		/* First line that must not be formatted. */
-		unsigned int	lno;
+		struct token	*off;
 	} pr_clang_format;
 };
 
