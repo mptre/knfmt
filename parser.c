@@ -25,23 +25,16 @@
 #endif
 
 static void
-clang_format_on(struct parser *pr, struct token *comment, struct doc *dc)
+clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int beg,
+    unsigned int end)
 {
 	struct lexer_state st;
 	struct token *verbatim;
 	const char *str;
 	size_t len;
-	unsigned int beg, end;
 
-	/* Ignore while branching. */
-	if (pr->pr_branch.unmute != NULL)
-		return;
-
-	beg = pr->pr_clang_format.lno;
 	if (beg == 0)
 		return;
-	pr->pr_clang_format.lno = 0;
-	end = comment->tk_lno;
 
 	doc_alloc0(DOC_UNMUTE, dc, -1, __func__, __LINE__);
 	if (lexer_get_lines(pr->pr_lx, beg, end, &str, &len) == 0)
@@ -58,12 +51,26 @@ clang_format_on(struct parser *pr, struct token *comment, struct doc *dc)
 }
 
 static void
+clang_format_on(struct parser *pr, struct token *comment, struct doc *dc)
+{
+	unsigned int beg;
+
+	/* Ignore while peeking and branching. */
+	if (lexer_get_peek(pr->pr_lx) || pr->pr_branch.unmute != NULL)
+		return;
+
+	beg = pr->pr_clang_format.lno;
+	pr->pr_clang_format.lno = 0;
+	clang_format_verbatim(pr, dc, beg, comment->tk_lno);
+}
+
+static void
 clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 {
 	unsigned int lno;
 
-	/* Ignore while branching. */
-	if (pr->pr_branch.unmute != NULL)
+	/* Ignore while peeking and branching. */
+	if (lexer_get_peek(pr->pr_lx) || pr->pr_branch.unmute != NULL)
 		return;
 
 	doc_alloc0(DOC_MUTE, dc, 1, __func__, __LINE__);
@@ -152,6 +159,8 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 		parser_fail(pr);
 		return 1;
 	}
+
+	clang_format_verbatim(pr, dc, pr->pr_clang_format.lno, 0);
 
 	if (pr->pr_op->diffparse)
 		doc_flags |= DOC_EXEC_DIFF;
