@@ -1059,8 +1059,10 @@ again:
 static struct token *
 clang_read_cpp(struct clang *cl, struct lexer *lx)
 {
-	struct lexer_state cmpst, oldst, st;
+	struct lexer_state kwst, oldst, st;
 	struct token *tk;
+	const char *buf, *kw;
+	size_t buflen;
 	int type = TOKEN_CPP;
 	int comment;
 	unsigned char ch;
@@ -1072,9 +1074,15 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		return NULL;
 	}
 
-	/* Space before keyword is allowed. */
+	arena_scope(cl->arena.scratch, s);
+
+	/* Space(s) before keyword is allowed. */
 	lexer_eat_spaces(lx, NULL);
-	cmpst = lexer_get_state(lx);
+
+	kwst = lexer_get_state(lx);
+	lexer_match(lx, "az");
+	buf = lexer_buffer_slice(lx, &kwst, &buflen);
+	kw = arena_sprintf(&s, "#%.*s", (int)buflen, buf);
 
 	ch = '\0';
 	comment = 0;
@@ -1099,21 +1107,21 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		ch = peek;
 	}
 
-	if (lexer_buffer_streq(lx, &cmpst, "ifdef"))
+	if (strcmp(kw, "#ifdef") == 0)
 		type = TOKEN_CPP_IFDEF;
-	else if (lexer_buffer_streq(lx, &cmpst, "ifndef"))
+	else if (strcmp(kw, "#ifndef") == 0)
 		type = TOKEN_CPP_IFNDEF;
-	else if (lexer_buffer_streq(lx, &cmpst, "if"))
+	else if (strcmp(kw, "#if") == 0)
 		type = TOKEN_CPP_IF;
-	else if (lexer_buffer_streq(lx, &cmpst, "else"))
+	else if (strcmp(kw, "#else") == 0)
 		type = TOKEN_CPP_ELSE;
-	else if (lexer_buffer_streq(lx, &cmpst, "elif"))
+	else if (strcmp(kw, "#elif") == 0)
 		type = TOKEN_CPP_ELIF;
-	else if (lexer_buffer_streq(lx, &cmpst, "endif"))
+	else if (strcmp(kw, "#endif") == 0)
 		type = TOKEN_CPP_ENDIF;
-	else if (lexer_buffer_streq(lx, &cmpst, "define"))
+	else if (strcmp(kw, "#define") == 0)
 		type = TOKEN_CPP_DEFINE;
-	else if (lexer_buffer_streq(lx, &cmpst, "include"))
+	else if (strcmp(kw, "#include") == 0)
 		type = TOKEN_CPP_INCLUDE;
 
 	/*

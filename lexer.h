@@ -54,8 +54,6 @@ void	lexer_error(struct lexer *, const struct token *, const char *, int,
 void	lexer_error_flush(struct lexer *);
 void	lexer_error_reset(struct lexer *);
 
-int		 lexer_buffer_streq(const struct lexer *,
-    const struct lexer_state *, const char *);
 const char	*lexer_buffer_slice(const struct lexer *,
     const struct lexer_state *, size_t *);
 

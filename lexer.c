@@ -972,21 +972,6 @@ lexer_column(const struct lexer *lx, const struct lexer_state *st)
 	    st->st_off - line_offset, 1, NULL);
 }
 
-int
-lexer_buffer_streq(const struct lexer *lx, const struct lexer_state *st,
-    const char *str)
-{
-	size_t buflen, len;
-
-	buflen = lx->lx_st.st_off - st->st_off;
-	if (buflen == 0)
-		return 0;
-	len = strlen(str);
-	if (len > buflen)
-		return 0;
-	return strncmp(&lx->lx_input.ptr[st->st_off], str, len) == 0;
-}
-
 const char *
 lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
     size_t *len)
