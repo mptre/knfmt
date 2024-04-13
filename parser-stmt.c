@@ -191,8 +191,15 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 		line = doc_literal(" ", indent);
 	while ((error = parser_stmt(pr, indent)) & GOOD) {
 		nstmt++;
-		if (lexer_peek(lx, &tk) && tk == rbrace)
-			break;
+		if (lexer_peek(lx, &tk)) {
+			if (tk == rbrace)
+				break;
+			/* Cope with invalid source code. */
+			if (tk > rbrace) {
+				error = FAIL;
+				break;
+			}
+		}
 		doc_alloc(DOC_HARDLINE, indent);
 	}
 	/* Do not keep the hard line if the statement block is empty. */
