@@ -20,6 +20,7 @@ next() {
 	_dir="$1"; : "${_dir:?}"
 	_type="$2"; : "${_type:?}"
 
+	# shellcheck disable=SC2010
 	(cd "$_dir" && ls | grep "^${_type}-...\.[ch]$" 2>/dev/null) |
 	sed 's/.*-0*\([0-9]*\)\.c/\1/' |
 	sort -n |
