@@ -154,9 +154,6 @@ lexer_free(void *arg)
 
 	VECTOR_FREE(lx->lx_lines);
 
-	/* Must exhaust all branches to drop references to parent tokens. */
-	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry)
-		token_clear_prefixes(tk);
 	while ((tk = TAILQ_FIRST(&lx->lx_tokens)) != NULL) {
 		TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
 		assert(tk->tk_refs == 1);

@@ -364,9 +364,20 @@ clang_after_read(struct lexer *lx, void *arg)
 }
 
 static void
-clang_before_free(struct lexer *UNUSED(lx), void *arg)
+clang_before_free(struct lexer *lx, void *arg)
 {
 	struct clang *cl = arg;
+	struct token *tk;
+
+	/* Must unlink all branches to drop references to parent tokens. */
+	if (lexer_peek_first(lx, &tk)) {
+		for (; tk != NULL; tk = token_next(tk)) {
+			struct token *prefix;
+
+			TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
+				token_branch_unlink(prefix);
+		}
+	}
 
 	while (!VECTOR_EMPTY(cl->stamps)) {
 		struct token **tail;
