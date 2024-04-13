@@ -51,7 +51,6 @@ struct lexer {
 	int			 lx_peek;
 
 	struct token_list	 lx_tokens;
-	VECTOR(struct token *)	 lx_stamps;
 };
 
 static void	lexer_free(void *);
@@ -62,14 +61,6 @@ static unsigned int	lexer_column(const struct lexer *,
 
 static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
-
-static void	lexer_branch_fold(struct lexer *, struct token *,
-    struct token **);
-
-static struct token	*lexer_recover_find_branch(struct token *,
-    struct token *, int);
-
-static struct token	*lexer_last_stamped(struct lexer *);
 
 static void	lexer_reposition_tokens(struct lexer *, struct token *);
 
@@ -105,8 +96,6 @@ lexer_alloc(const struct lexer_arg *arg)
 	if (VECTOR_INIT(lx->lx_lines))
 		err(1, NULL);
 	TAILQ_INIT(&lx->lx_tokens);
-	if (VECTOR_INIT(lx->lx_stamps))
-		err(1, NULL);
 	lexer_line_alloc(lx, 1);
 
 	if (VECTOR_INIT(discarded))
@@ -160,15 +149,10 @@ lexer_free(void *arg)
 	struct lexer *lx = arg;
 	struct token *tk;
 
+	if (lx->lx_callbacks.before_free != NULL)
+		lx->lx_callbacks.before_free(lx, lx->lx_callbacks.arg);
+
 	VECTOR_FREE(lx->lx_lines);
-
-	while (!VECTOR_EMPTY(lx->lx_stamps)) {
-		struct token **tail;
-
-		tail = VECTOR_POP(lx->lx_stamps);
-		token_rele(*tail);
-	}
-	VECTOR_FREE(lx->lx_stamps);
 
 	/* Must exhaust all branches to drop references to parent tokens. */
 	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry)
@@ -381,165 +365,6 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 	*str = &buf[bo];
 	*len = eo - bo;
 	return 1;
-}
-
-/*
- * Take note of the last consumed token, later used while branching and
- * recovering.
- */
-void
-lexer_stamp(struct lexer *lx)
-{
-	struct token **dst;
-	struct token *tk;
-
-	tk = lx->lx_st.st_tk;
-	lexer_trace(lx, "stamp %s", lexer_serialize(lx, tk));
-	token_ref(tk);
-	dst = VECTOR_ALLOC(lx->lx_stamps);
-	if (dst == NULL)
-		err(1, NULL);
-	*dst = tk;
-}
-
-/*
- * Try to recover after encountering invalid source code. Returns the index of
- * the stamped token seeked to, starting from the end. This index should
- * correspond to the number of documents that must be removed since we're about
- * to parse them again.
- */
-int
-lexer_recover(struct lexer *lx, struct token **unmute)
-{
-	struct token *seek = NULL;
-	struct token *back, *br, *dst, *src, *stamp;
-	size_t i;
-	int error = 0;
-	int ndocs = 1;
-
-	if (!lexer_back(lx, &back))
-		back = TAILQ_FIRST(&lx->lx_tokens);
-	stamp = lexer_last_stamped(lx);
-	lexer_trace(lx, "back %s, stamp %s",
-	    lexer_serialize(lx, back), lexer_serialize(lx, stamp));
-	br = lexer_recover_find_branch(back, stamp, 0);
-	if (br == NULL)
-		br = lexer_recover_find_branch(back, stamp, 1);
-	if (br == NULL)
-		return 0;
-
-	src = br->tk_branch.br_parent;
-	dst = br->tk_branch.br_nx->tk_branch.br_parent;
-	lexer_trace(lx, "branch from %s to %s covering [%s, %s)",
-	    lexer_serialize(lx, br),
-	    lexer_serialize(lx, br->tk_branch.br_nx),
-	    lexer_serialize(lx, src),
-	    lexer_serialize(lx, dst));
-
-	/*
-	 * Find the offset of the first stamped token before the branch.
-	 * Must be done before getting rid of the branch as stamped tokens might
-	 * be removed.
-	 */
-	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
-		stamp = lx->lx_stamps[i - 1];
-		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0)
-			break;
-		ndocs++;
-	}
-	lexer_trace(lx, "removing %d document(s)", ndocs);
-
-	/*
-	 * Turn the whole branch into a prefix. As the branch is about to be
-	 * removed, grab a reference since it's needed below.
-	 */
-	token_ref(br);
-	lexer_branch_fold(lx, br, unmute);
-
-	/* Find first stamped token before the branch. */
-	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
-		stamp = lx->lx_stamps[i - 1];
-		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0) {
-			seek = stamp;
-			break;
-		}
-	}
-	token_rele(br);
-
-	if (seek != NULL)
-		lexer_seek_after(lx, seek);
-	else if (lexer_peek_first(lx, &seek))
-		lexer_seek(lx, seek);
-	else
-		error = 1;
-
-	return error ? 0 : ndocs;
-}
-
-/*
- * Returns non-zero if the lexer took the next branch.
- */
-int
-lexer_branch(struct lexer *lx, struct token **unmute)
-{
-	struct token *back, *cpp_dst, *cpp_src, *dst, *rm, *seek, *src;
-	int error = 0;
-
-	if (!lexer_back(lx, &back))
-		return 0;
-	lexer_trace(lx, "back %s", lexer_serialize(lx, back));
-	cpp_src = token_get_branch(back);
-	if (cpp_src == NULL)
-		return 0;
-	token_ref(cpp_src);
-
-	src = cpp_src->tk_branch.br_parent;
-	token_ref(src);
-	cpp_dst = cpp_src->tk_branch.br_nx;
-	token_ref(cpp_dst);
-	dst = cpp_dst->tk_branch.br_parent;
-	token_ref(dst);
-
-	lexer_trace(lx, "branch from %s to %s, covering [%s, %s)",
-	    lexer_serialize(lx, cpp_src), lexer_serialize(lx, cpp_dst),
-	    lexer_serialize(lx, src), lexer_serialize(lx, dst));
-
-	token_branch_unlink(cpp_src);
-
-	rm = src;
-	for (;;) {
-		struct token *nx;
-
-		lexer_trace(lx, "removing %s", lexer_serialize(lx, rm));
-
-		nx = token_next(rm);
-		lexer_remove(lx, rm, 0);
-		if (nx == dst)
-			break;
-		rm = nx;
-	}
-
-	/*
-	 * Instruct caller that crossing this token must cause tokens to be
-	 * emitted again.
-	 */
-	*unmute = dst;
-
-	/* Rewind to last stamped token. */
-	seek = lexer_last_stamped(lx);
-	if (seek != NULL)
-		lexer_seek_after(lx, seek);
-	else if (lexer_peek_first(lx, &seek))
-		lexer_seek(lx, seek);
-	else
-		error = 1;
-
-	token_rele(dst);
-	token_rele(cpp_dst);
-	token_rele(src);
-	token_rele(cpp_src);
-
-	return error ? 0 : 1;
 }
 
 int
@@ -1228,161 +1053,6 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 	    "expected type %s got %s",
 	    lexer_serialize(lx, &(struct token){.tk_type = type}),
 	    lexer_serialize(lx, tk));
-}
-
-/*
- * Fold tokens covered by the branch into a prefix.
- */
-static void
-lexer_branch_fold(struct lexer *lx, struct token *cpp_src,
-    struct token **unmute)
-{
-	const struct lexer_state st = {
-		.st_lno	= cpp_src->tk_lno,
-		.st_off	= cpp_src->tk_off,
-	};
-	struct token *cpp_dst, *dst, *prefix, *pv, *rm, *src;
-	size_t len;
-	int dangling = 0;
-
-	src = cpp_src->tk_branch.br_parent;
-	token_ref(src);
-
-	cpp_dst = cpp_src->tk_branch.br_nx;
-	token_ref(cpp_dst);
-	dst = cpp_dst->tk_branch.br_parent;
-	token_ref(dst);
-
-	len = (cpp_dst->tk_off + cpp_dst->tk_len) - cpp_src->tk_off;
-	prefix = lexer_emit(lx, &st, &(struct token){
-	    .tk_type	= TOKEN_CPP,
-	    .tk_flags	= TOKEN_FLAG_CPP,
-	    .tk_str	= cpp_src->tk_str,
-	    .tk_len	= len,
-	});
-
-	/*
-	 * Remove all prefixes hanging of the destination covered by the new
-	 * prefix token.
-	 */
-	while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
-		struct token *pr;
-
-		pr = token_list_first(&dst->tk_prefixes);
-		lexer_trace(lx, "removing prefix %s", lexer_serialize(lx, pr));
-		token_branch_unlink(pr);
-		token_list_remove(&dst->tk_prefixes, pr);
-		if (pr == cpp_dst)
-			break;
-	}
-
-	lexer_trace(lx, "add prefix %s to %s",
-	    lexer_serialize(lx, prefix),
-	    lexer_serialize(lx, dst));
-	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
-
-	/*
-	 * Keep any existing prefix not covered by the new prefix token
-	 * by moving them to the destination.
-	 */
-	pv = token_prev(cpp_src);
-	for (;;) {
-		struct token *tmp;
-
-		if (pv == NULL)
-			break;
-
-		lexer_trace(lx, "keeping prefix %s", lexer_serialize(lx, pv));
-		tmp = token_prev(pv);
-		token_move_prefix(pv, src, dst);
-		pv = tmp;
-	}
-
-	/*
-	 * Remove all tokens up to the destination covered by the new prefix
-	 * token. Some tokens might already have been removed by an overlapping
-	 * branch, therefore abort while encountering a dangling token.
-	 */
-	rm = src;
-	while (!dangling) {
-		struct token *nx;
-
-		if (rm == dst)
-			break;
-
-		dangling = token_is_dangling(rm);
-		nx = token_next(rm);
-		lexer_trace(lx, "removing %s", lexer_serialize(lx, rm));
-		lexer_remove(lx, rm, 0);
-		rm = nx;
-	}
-
-	/*
-	 * Instruct caller that crossing this token must cause tokens to be
-	 * emitted again.
-	 */
-	*unmute = dst;
-
-	token_rele(dst);
-	token_rele(cpp_dst);
-	token_rele(src);
-}
-
-/*
- * Find the best suited branch to fold relative to the given token while trying
- * to recover after encountering invalid source code.
- */
-static struct token *
-lexer_recover_find_branch(struct token *tk, struct token *threshold,
-    int forward)
-{
-	for (;;) {
-		struct token *prefix;
-
-		TAILQ_FOREACH_REVERSE(prefix, &tk->tk_prefixes, token_list,
-		    tk_entry) {
-			struct token *br, *nx;
-			int token_type;
-
-			token_type = token_type_normalize(prefix);
-			if (token_type == TOKEN_CPP_IF)
-				br = prefix;
-			else if (token_type == TOKEN_CPP_ELSE)
-				br = prefix;
-			else if (token_type == TOKEN_CPP_ENDIF)
-				br = prefix->tk_branch.br_pv;
-			else
-				continue;
-
-			nx = br->tk_branch.br_nx;
-			if (br->tk_branch.br_parent == nx->tk_branch.br_parent)
-				continue;
-			return br;
-		}
-
-		if (forward)
-			tk = token_next(tk);
-		else
-			tk = token_prev(tk);
-		if (tk == NULL || tk == threshold)
-			break;
-	}
-
-	return NULL;
-}
-
-static struct token *
-lexer_last_stamped(struct lexer *lx)
-{
-	size_t i;
-
-	for (i = VECTOR_LENGTH(lx->lx_stamps); i > 0; i--) {
-		struct token *stamp = lx->lx_stamps[i - 1];
-
-		if (!token_is_dangling(stamp))
-			return stamp;
-	}
-	return NULL;
 }
 
 /*

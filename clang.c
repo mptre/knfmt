@@ -11,6 +11,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/vector.h"
 
 #include "comment.h"
@@ -36,6 +37,7 @@ struct clang {
 	struct cpp_include	*ci;
 	struct token_list	 prefixes;
 	VECTOR(struct token *)	 branches;
+	VECTOR(struct token *)	 stamps;
 
 	struct {
 		struct arena_scope	*eternal_scope;
@@ -56,6 +58,7 @@ static void	clang_branch_purge(struct clang *, struct lexer *);
 
 static void		 clang_free(void *);
 static void		 clang_after_read(struct lexer *, void *);
+static void		 clang_before_free(struct lexer *, void *);
 static struct token	*clang_read(struct lexer *, void *);
 static struct token	*clang_read_prefix(struct clang *, struct lexer *);
 static struct token	*clang_read_comment(struct clang *, struct lexer *,
@@ -78,6 +81,12 @@ static const char	*clang_token_serialize_prefix(const struct token *,
     struct arena_scope *);
 
 static struct token	*clang_end_of_branch(struct token *);
+
+static struct token	*clang_last_stamped(struct clang *);
+static struct token	*clang_recover_find_branch(struct token *,
+    struct token *, int);
+static void		 clang_branch_fold(struct clang *, struct lexer *,
+    struct token *, struct token **);
 
 static void	token_branch_link(struct token *, struct token *);
 static void	token_branch_revert(struct token *);
@@ -154,6 +163,8 @@ clang_alloc(const struct style *st, struct simple *si,
 	    scratch, op);
 	if (VECTOR_INIT(cl->branches))
 		err(1, NULL);
+	if (VECTOR_INIT(cl->stamps))
+		err(1, NULL);
 	return cl;
 }
 
@@ -163,6 +174,7 @@ clang_free(void *arg)
 	struct clang *cl = arg;
 
 	VECTOR_FREE(cl->branches);
+	VECTOR_FREE(cl->stamps);
 }
 
 struct lexer_callbacks
@@ -175,8 +187,169 @@ clang_lexer_callbacks(struct clang *cl)
 	    .serialize_prefix	= clang_token_serialize_prefix,
 	    .end_of_branch	= clang_end_of_branch,
 	    .after_read		= clang_after_read,
+	    .before_free	= clang_before_free,
 	    .arg		= cl,
 	};
+}
+
+/*
+ * Take note of the last consumed token, later used while branching and
+ * recovering.
+ */
+void
+clang_stamp(struct clang *cl, struct lexer *lx)
+{
+	struct token **dst;
+	struct token *back;
+
+	if (!lexer_back(lx, &back))
+		return;
+	clang_trace(cl, "stamp %s", lexer_serialize(lx, back));
+	token_ref(back);
+	dst = VECTOR_ALLOC(cl->stamps);
+	if (dst == NULL)
+		err(1, NULL);
+	*dst = back;
+}
+
+/*
+ * Returns non-zero if the lexer took the next branch.
+ */
+int
+clang_branch(struct clang *cl, struct lexer *lx, struct token **unmute)
+{
+	struct token *back, *cpp_dst, *cpp_src, *dst, *rm, *seek, *src;
+	int error = 0;
+
+	if (!lexer_back(lx, &back))
+		return 0;
+	clang_trace(cl, "back %s", lexer_serialize(lx, back));
+	cpp_src = token_get_branch(back);
+	if (cpp_src == NULL)
+		return 0;
+	token_ref(cpp_src);
+
+	src = cpp_src->tk_branch.br_parent;
+	token_ref(src);
+	cpp_dst = cpp_src->tk_branch.br_nx;
+	token_ref(cpp_dst);
+	dst = cpp_dst->tk_branch.br_parent;
+	token_ref(dst);
+
+	clang_trace(cl, "branch from %s to %s, covering [%s, %s)",
+	    lexer_serialize(lx, cpp_src), lexer_serialize(lx, cpp_dst),
+	    lexer_serialize(lx, src), lexer_serialize(lx, dst));
+
+	token_branch_unlink(cpp_src);
+
+	rm = src;
+	for (;;) {
+		struct token *nx;
+
+		clang_trace(cl, "removing %s", lexer_serialize(lx, rm));
+
+		nx = token_next(rm);
+		lexer_remove(lx, rm, 0);
+		if (nx == dst)
+			break;
+		rm = nx;
+	}
+
+	/*
+	 * Instruct caller that crossing this token must cause tokens to be
+	 * emitted again.
+	 */
+	*unmute = dst;
+
+	/* Rewind to last stamped token. */
+	seek = clang_last_stamped(cl);
+	if (seek != NULL)
+		lexer_seek_after(lx, seek);
+	else if (lexer_peek_first(lx, &seek))
+		lexer_seek(lx, seek);
+	else
+		error = 1;
+
+	token_rele(dst);
+	token_rele(cpp_dst);
+	token_rele(src);
+	token_rele(cpp_src);
+
+	return error ? 0 : 1;
+}
+
+/*
+ * Try to recover after encountering invalid source code. Returns the index of
+ * the stamped token seeked to, starting from the end. This index should
+ * correspond to the number of documents that must be removed since we're about
+ * to parse them again.
+ */
+int
+clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
+{
+	struct token *seek = NULL;
+	struct token *back, *br, *dst, *src, *stamp;
+	size_t i;
+	int error = 0;
+	int ndocs = 1;
+
+	if (!lexer_back(lx, &back) && !lexer_peek_first(lx, &back))
+		return 0;
+	stamp = clang_last_stamped(cl);
+	clang_trace(cl, "back %s, stamp %s",
+	    lexer_serialize(lx, back), lexer_serialize(lx, stamp));
+	br = clang_recover_find_branch(back, stamp, 0);
+	if (br == NULL)
+		br = clang_recover_find_branch(back, stamp, 1);
+	if (br == NULL)
+		return 0;
+
+	src = br->tk_branch.br_parent;
+	dst = br->tk_branch.br_nx->tk_branch.br_parent;
+	clang_trace(cl, "branch from %s to %s covering [%s, %s)",
+	    lexer_serialize(lx, br),
+	    lexer_serialize(lx, br->tk_branch.br_nx),
+	    lexer_serialize(lx, src),
+	    lexer_serialize(lx, dst));
+
+	/*
+	 * Find the offset of the first stamped token before the branch.
+	 * Must be done before getting rid of the branch as stamped tokens might
+	 * be removed.
+	 */
+	for (i = VECTOR_LENGTH(cl->stamps); i > 0; i--) {
+		stamp = cl->stamps[i - 1];
+		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0)
+			break;
+		ndocs++;
+	}
+	clang_trace(cl, "removing %d document(s)", ndocs);
+
+	/*
+	 * Turn the whole branch into a prefix. As the branch is about to be
+	 * removed, grab a reference since it's needed below.
+	 */
+	token_ref(br);
+	clang_branch_fold(cl, lx, br, unmute);
+
+	/* Find first stamped token before the branch. */
+	for (i = VECTOR_LENGTH(cl->stamps); i > 0; i--) {
+		stamp = cl->stamps[i - 1];
+		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0) {
+			seek = stamp;
+			break;
+		}
+	}
+	token_rele(br);
+
+	if (seek != NULL)
+		lexer_seek_after(lx, seek);
+	else if (lexer_peek_first(lx, &seek))
+		lexer_seek(lx, seek);
+	else
+		error = 1;
+
+	return error ? 0 : ndocs;
 }
 
 static void
@@ -188,6 +361,19 @@ clang_after_read(struct lexer *lx, void *arg)
 	cpp_include_done(cl->ci);
 	cpp_include_guard(cl->st, lx, cl->arena.eternal_scope,
 	    cl->arena.scratch);
+}
+
+static void
+clang_before_free(struct lexer *UNUSED(lx), void *arg)
+{
+	struct clang *cl = arg;
+
+	while (!VECTOR_EMPTY(cl->stamps)) {
+		struct token **tail;
+
+		tail = VECTOR_POP(cl->stamps);
+		token_rele(*tail);
+	}
 }
 
 static struct token *
@@ -368,6 +554,161 @@ clang_end_of_branch(struct token *tk)
 	    br = br->tk_branch.br_nx)
 		continue;
 	return br->tk_branch.br_parent;
+}
+
+static struct token *
+clang_last_stamped(struct clang *cl)
+{
+	size_t i;
+
+	for (i = VECTOR_LENGTH(cl->stamps); i > 0; i--) {
+		struct token *stamp = cl->stamps[i - 1];
+
+		if (!token_is_dangling(stamp))
+			return stamp;
+	}
+	return NULL;
+}
+
+/*
+ * Find the best suited branch to fold relative to the given token while trying
+ * to recover after encountering invalid source code.
+ */
+static struct token *
+clang_recover_find_branch(struct token *tk, struct token *threshold,
+    int forward)
+{
+	for (;;) {
+		struct token *prefix;
+
+		TAILQ_FOREACH_REVERSE(prefix, &tk->tk_prefixes, token_list,
+		    tk_entry) {
+			struct token *br, *nx;
+			int token_type;
+
+			token_type = token_type_normalize(prefix);
+			if (token_type == TOKEN_CPP_IF)
+				br = prefix;
+			else if (token_type == TOKEN_CPP_ELSE)
+				br = prefix;
+			else if (token_type == TOKEN_CPP_ENDIF)
+				br = prefix->tk_branch.br_pv;
+			else
+				continue;
+
+			nx = br->tk_branch.br_nx;
+			if (br->tk_branch.br_parent == nx->tk_branch.br_parent)
+				continue;
+			return br;
+		}
+
+		if (forward)
+			tk = token_next(tk);
+		else
+			tk = token_prev(tk);
+		if (tk == NULL || tk == threshold)
+			break;
+	}
+
+	return NULL;
+}
+
+/*
+ * Fold tokens covered by the branch into a prefix.
+ */
+static void
+clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
+    struct token **unmute)
+{
+	const struct lexer_state st = {
+		.st_lno	= cpp_src->tk_lno,
+		.st_off	= cpp_src->tk_off,
+	};
+	struct token *cpp_dst, *dst, *prefix, *pv, *rm, *src;
+	size_t len;
+	int dangling = 0;
+
+	src = cpp_src->tk_branch.br_parent;
+	token_ref(src);
+
+	cpp_dst = cpp_src->tk_branch.br_nx;
+	token_ref(cpp_dst);
+	dst = cpp_dst->tk_branch.br_parent;
+	token_ref(dst);
+
+	len = (cpp_dst->tk_off + cpp_dst->tk_len) - cpp_src->tk_off;
+	prefix = lexer_emit(lx, &st, &(struct token){
+	    .tk_type	= TOKEN_CPP,
+	    .tk_flags	= TOKEN_FLAG_CPP,
+	    .tk_str	= cpp_src->tk_str,
+	    .tk_len	= len,
+	});
+
+	/*
+	 * Remove all prefixes hanging of the destination covered by the new
+	 * prefix token.
+	 */
+	while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
+		struct token *pr;
+
+		pr = token_list_first(&dst->tk_prefixes);
+		clang_trace(cl, "removing prefix %s", lexer_serialize(lx, pr));
+		token_branch_unlink(pr);
+		token_list_remove(&dst->tk_prefixes, pr);
+		if (pr == cpp_dst)
+			break;
+	}
+
+	clang_trace(cl, "add prefix %s to %s",
+	    lexer_serialize(lx, prefix),
+	    lexer_serialize(lx, dst));
+	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+
+	/*
+	 * Keep any existing prefix not covered by the new prefix token
+	 * by moving them to the destination.
+	 */
+	pv = token_prev(cpp_src);
+	for (;;) {
+		struct token *tmp;
+
+		if (pv == NULL)
+			break;
+
+		clang_trace(cl, "keeping prefix %s", lexer_serialize(lx, pv));
+		tmp = token_prev(pv);
+		token_move_prefix(pv, src, dst);
+		pv = tmp;
+	}
+
+	/*
+	 * Remove all tokens up to the destination covered by the new prefix
+	 * token. Some tokens might already have been removed by an overlapping
+	 * branch, therefore abort while encountering a dangling token.
+	 */
+	rm = src;
+	while (!dangling) {
+		struct token *nx;
+
+		if (rm == dst)
+			break;
+
+		dangling = token_is_dangling(rm);
+		nx = token_next(rm);
+		clang_trace(cl, "removing %s", lexer_serialize(lx, rm));
+		lexer_remove(lx, rm, 0);
+		rm = nx;
+	}
+
+	/*
+	 * Instruct caller that crossing this token must cause tokens to be
+	 * emitted again.
+	 */
+	*unmute = dst;
+
+	token_rele(dst);
+	token_rele(cpp_dst);
+	token_rele(src);
 }
 
 static void

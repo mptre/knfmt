@@ -6,6 +6,7 @@
 #include "libks/arena.h"
 #include "libks/compiler.h"
 
+#include "clang.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -45,6 +46,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
     struct buffer *bf)
 {
 	struct doc *dc;
+	struct clang *clang = pr->pr_clang;
 	struct lexer *lx = pr->pr_lx;
 	unsigned int doc_flags = 0;
 	int error = 0;
@@ -73,15 +75,15 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 
 		error = parser_exec1(pr, concat);
 		if (error & GOOD) {
-			lexer_stamp(lx);
+			clang_stamp(clang, lx);
 		} else if (error & BRCH) {
-			if (!lexer_branch(lx, &pr->pr_branch.unmute))
+			if (!clang_branch(clang, lx, &pr->pr_branch.unmute))
 				break;
 			parser_reset(pr);
 		} else if (error & (FAIL | NONE)) {
 			int r;
 
-			r = lexer_recover(lx, &pr->pr_branch.unmute);
+			r = clang_recover(clang, lx, &pr->pr_branch.unmute);
 			if (r == 0)
 				break;
 			while (r-- > 0)

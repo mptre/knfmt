@@ -48,6 +48,12 @@ struct lexer_callbacks {
 	 */
 	void		 (*after_read)(struct lexer *, void *);
 
+	/*
+	 * Informative callback invoked before freeing the lexer.
+	 * May be omitted.
+	 */
+	void		 (*before_free)(struct lexer *, void *);
+
 	/* Opaque argument passed to callbacks. */
 	void		*arg;
 };
