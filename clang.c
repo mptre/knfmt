@@ -546,7 +546,7 @@ clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
 	struct buffer *bf;
 
 	bf = arena_buffer_alloc(s, 1 << 8);
-	buffer_printf(bf, clang_token_serialize(prefix, s));
+	buffer_printf(bf, "%s", clang_token_serialize(prefix, s));
 	if (prefix->tk_branch.br_pv != NULL) {
 		buffer_printf(bf, ", pv %s",
 		    clang_token_serialize(prefix->tk_branch.br_pv, s));
