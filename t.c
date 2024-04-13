@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <assert.h>
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,6 +103,10 @@ static int	test_tmptemplate0(struct context *, const char *, const char *,
 	test(test_path_slice0((a), (b), (c), __LINE__))
 static int	test_path_slice0(const char *, unsigned int, const char *, int);
 
+#define test_token_branch_unlink() \
+	test(test_token_branch_impl(&cx))
+static int	test_token_branch_impl(struct context *);
+
 struct context {
 	struct options		 op;
 	struct buffer		*bf;
@@ -134,6 +139,8 @@ static const char	*tokens_concat(
     const char *(*)(struct arena_scope *, const struct token *),
     const struct token *, const struct token *, struct arena_scope *);
 static const char	*token_serialize_literal(struct arena_scope *,
+    const struct token *);
+static const char	*token_serialize_no_flags(struct arena_scope *,
     const struct token *);
 static const char	*token_serialize_position(struct arena_scope *,
     const struct token *);
@@ -462,6 +469,8 @@ main(int argc, char *argv[])
 	test_path_slice("/dir/file", 2, "dir/file");
 	test_path_slice("dir/file", 3, "dir/file");
 
+	test_token_branch_unlink();
+
 out:
 	context_free(&cx);
 	style_shutdown();
@@ -787,6 +796,101 @@ test_path_slice0(const char *path, unsigned int ncomponents, const char *exp,
 	return 0;
 }
 
+static int
+test_token_branch_impl(struct context *cx)
+{
+	struct {
+		int		 lno;
+		const char	*src;
+		int		 unlink;
+		const char	*exp;
+	} tests[] = {
+		/* #if (unlink) -> #endif */
+		{
+			.lno	= __LINE__,
+			.src	= "#if 0\n#endif\n",
+			.unlink	= TOKEN_CPP_IF,
+			.exp	= "CPP(\"#if 0\\n\") CPP(\"#endif\\n\")",
+		},
+
+		/* #if -> #endif (unlink) */
+		{
+			.lno	= __LINE__,
+			.src	= "#if 0\n#endif\n",
+			.unlink	= TOKEN_CPP_ENDIF,
+			.exp	= "CPP(\"#if 0\\n\") CPP(\"#endif\\n\")",
+		},
+
+		/* #if (unlink) -> #else -> #endif */
+		{
+			.lno	= __LINE__,
+			.src	= "#if 0\n#else\n#endif\n",
+			.unlink	= TOKEN_CPP_IF,
+			.exp	= "CPP(\"#if 0\\n\") CPP_IF(\"#else\\n\") CPP_ENDIF(\"#endif\\n\")",
+		},
+
+		/* #if -> #else (unlink) -> #endif */
+		{
+			.lno	= __LINE__,
+			.src	= "#if 0\n#else\n#endif\n",
+			.unlink	= TOKEN_CPP_ELSE,
+			.exp	= "CPP_IF(\"#if 0\\n\") CPP(\"#else\\n\") CPP_ENDIF(\"#endif\\n\")",
+		},
+
+		/* #if -> #else -> #endif (unlink) */
+		{
+			.lno	= __LINE__,
+			.src	= "#if 0\n#else\n#endif\n",
+			.unlink	= TOKEN_CPP_ENDIF,
+			.exp	= "CPP_IF(\"#if 0\\n\") CPP_ENDIF(\"#else\\n\") CPP(\"#endif\\n\")",
+		},
+
+		/* #if -> #else -> #else (unlink) -> #endif */
+		{
+			.lno	= __LINE__,
+			.src	= "#if 0\n#else\n#else\n#endif\n",
+			.unlink	= TOKEN_CPP_ELSE,
+			.exp	= "CPP_IF(\"#if 0\\n\") CPP_ELSE(\"#else\\n\") CPP(\"#else\\n\") CPP_ENDIF(\"#endif\\n\")",
+		},
+	};
+	int ntests = sizeof(tests) / sizeof(tests[0]);
+	int error = 0;
+	int i;
+
+	for (i = 0; i < ntests; i++) {
+		struct token *it = NULL;
+		struct token *prefix = NULL;
+		struct token *tk;
+		const char *act;
+
+		arena_scope(cx->arena.scratch, s);
+
+		context_init(cx, tests[i].src);
+		lexer_peek(cx->lx, &tk);
+
+		/* Find last prefix of the given type. */
+		for (it = token_list_first(&tk->tk_prefixes);
+		    it != NULL;
+		    it = token_next(it)) {
+			if (it->tk_type == tests[i].unlink)
+				prefix = it;
+		}
+		assert(prefix != NULL);
+
+		token_branch_unlink(prefix);
+		act = tokens_concat(token_serialize_no_flags,
+		    token_list_first(&tk->tk_prefixes), NULL, &s);
+		if (strcmp(tests[i].exp, act) != 0) {
+			fprintf(stderr, "%s:%d\n\texp \"%s\"\n\tgot \"%s\"\n",
+			    __func__, tests[i].lno, tests[i].exp, act);
+			error = 1;
+		}
+		context_reset(cx);
+	}
+
+	return error;
+}
+
 static void
 context_alloc(struct context *cx)
 {
@@ -954,6 +1058,12 @@ static const char *
 token_serialize_literal(struct arena_scope *s, const struct token *tk)
 {
 	return arena_strndup(s, tk->tk_str, tk->tk_len);
+}
+
+static const char *
+token_serialize_no_flags(struct arena_scope *s, const struct token *tk)
+{
+	return token_serialize(s, tk, 0);
 }
 
 static const char *

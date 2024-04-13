@@ -75,6 +75,7 @@ static const char	*clang_token_serialize(struct arena_scope *,
     const struct token *);
 
 static void	token_branch_link(struct token *, struct token *);
+static void	token_branch_revert(struct token *);
 static void	token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char);
@@ -357,7 +358,7 @@ clang_branch_link(struct clang *cl, struct lexer *lx, struct token *cpp,
 	/* Silently ignore broken branch. */
 	last = VECTOR_LAST(cl->branches);
 	if (last == NULL) {
-		token_branch_unlink(cpp);
+		token_branch_revert(cpp);
 		return;
 	}
 	br = *last;
@@ -396,8 +397,7 @@ clang_branch_purge(struct clang *cl, struct lexer *lx)
 			    lexer_serialize(lx, tk),
 			    pv ? " -> " : "",
 			    pv ? lexer_serialize(lx, pv) : "");
-			while (token_branch_unlink(tk) == 0)
-				continue;
+			token_branch_revert(tk);
 			tk = pv;
 		} while (tk != NULL);
 	}
@@ -782,6 +782,15 @@ token_branch_link(struct token *src, struct token *dst)
 {
 	src->tk_branch.br_nx = dst;
 	dst->tk_branch.br_pv = src;
+}
+
+static void
+token_branch_revert(struct token *tk)
+{
+	if (tk->tk_branch.br_parent != NULL)
+		token_rele(tk->tk_branch.br_parent);
+	memset(&tk->tk_branch, 0, sizeof(tk->tk_branch));
+	tk->tk_type = TOKEN_CPP;
 }
 
 /*

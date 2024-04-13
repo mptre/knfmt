@@ -259,6 +259,6 @@ void	token_move_suffixes_if(struct token *, struct token *, int);
 void	token_clear_prefixes(struct token *);
 
 void	token_branch_parent(struct token *, struct token *);
-int	token_branch_unlink(struct token *);
+void	token_branch_unlink(struct token *);
 
 unsigned int	token_flags_inherit(const struct token *);

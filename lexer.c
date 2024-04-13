@@ -1280,9 +1280,7 @@ lexer_branch_fold(struct lexer *lx, struct token *cpp_src,
 
 		pr = token_list_first(&dst->tk_prefixes);
 		lexer_trace(lx, "removing prefix %s", lexer_serialize(lx, pr));
-		/* Completely unlink any branch. */
-		while (token_branch_unlink(pr) == 0)
-			continue;
+		token_branch_unlink(pr);
 		token_list_remove(&dst->tk_prefixes, pr);
 		if (pr == cpp_dst)
 			break;

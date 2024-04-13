@@ -556,17 +556,8 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	if (token_type == TOKEN_CPP_IF ||
 	    token_type == TOKEN_CPP_ELSE ||
 	    token_type == TOKEN_CPP_ENDIF) {
-		struct token *nx = prefix->tk_branch.br_nx;
-
 		assert(prefix->tk_branch.br_parent == src);
-
-		if (nx != NULL && nx->tk_branch.br_parent == dst) {
-			/* Discard empty branch. */
-			while (token_branch_unlink(prefix) == 0)
-				continue;
-		} else {
-			token_branch_parent(prefix, dst);
-		}
+		token_branch_parent(prefix, dst);
 	}
 }
 
@@ -616,15 +607,17 @@ token_branch_parent(struct token *cpp, struct token *parent)
 	cpp->tk_branch.br_parent = parent;
 }
 
-/*
- * Unlink any branch associated with the given token. Returns one of the
- * following:
- *
- *     1    Branch completely unlinked.
- *     0    Branch not completely unlinked.
- *     -1   Not a branch token.
- */
-int
+static void
+token_branch_exhaust(struct token *tk)
+{
+	tk->tk_type = TOKEN_CPP;
+	tk->tk_branch.br_pv = NULL;
+	tk->tk_branch.br_nx = NULL;
+	token_rele(tk->tk_branch.br_parent);
+	tk->tk_branch.br_parent = NULL;
+}
+
+void
 token_branch_unlink(struct token *tk)
 {
 	struct token *nx, *pv;
@@ -635,49 +628,32 @@ token_branch_unlink(struct token *tk)
 
 	token_type = token_type_normalize(tk);
 	if (token_type == TOKEN_CPP_IF) {
-		if (nx != NULL) {
-			/* Recursive invocation must exhaust branch. */
-			token_branch_unlink(nx);
-			assert(tk->tk_type == TOKEN_CPP);
-		} else {
-			/* Branch exhausted. */
-			tk->tk_type = TOKEN_CPP;
-			/* Not allowed to be empty as opposed of else branch. */
-			token_rele(tk->tk_branch.br_parent);
-			tk->tk_branch.br_parent = NULL;
-		}
-		return 1;
-	} else if (token_type == TOKEN_CPP_ELSE ||
-	    token_type == TOKEN_CPP_ENDIF) {
-		if (pv != NULL) {
-			pv->tk_branch.br_nx = NULL;
-			tk->tk_branch.br_pv = NULL;
-			if (token_type_normalize(pv) == TOKEN_CPP_IF)
-				token_branch_unlink(pv);
-			pv = NULL;
-		} else if (nx != NULL) {
+		assert(pv == NULL);
+		if (token_type_normalize(nx) == TOKEN_CPP_ENDIF) {
+			token_branch_exhaust(nx);
+		} else if (token_type_normalize(nx) == TOKEN_CPP_ELSE) {
 			nx->tk_branch.br_pv = NULL;
-			tk->tk_branch.br_nx = NULL;
-			if (token_type_normalize(nx) == TOKEN_CPP_ENDIF)
-				token_branch_unlink(nx);
-			nx = NULL;
+			nx->tk_type = TOKEN_CPP_IF;
+		} else {
+			assert(0 && "Invalid #if previous token");
 		}
-		if (pv == NULL && nx == NULL) {
-			/* Branch exhausted. */
-			tk->tk_type = TOKEN_CPP;
-			/*
-			 * Allowed to be empty while discarding an empty or
-			 * broken branch.
-			 */
-			if (tk->tk_branch.br_parent != NULL) {
-				token_rele(tk->tk_branch.br_parent);
-				tk->tk_branch.br_parent = NULL;
-			}
-			return 1;
+		token_branch_exhaust(tk);
+	} else if (token_type == TOKEN_CPP_ELSE) {
+		pv->tk_branch.br_nx = nx;
+		nx->tk_branch.br_pv = pv;
+		token_branch_exhaust(tk);
+	} else if (token_type == TOKEN_CPP_ENDIF) {
+		assert(nx == NULL);
+		if (token_type_normalize(pv) == TOKEN_CPP_IF) {
+			token_branch_exhaust(pv);
+		} else if (token_type_normalize(pv) == TOKEN_CPP_ELSE) {
+			pv->tk_branch.br_nx = NULL;
+			pv->tk_type = TOKEN_CPP_ENDIF;
+		} else {
+			assert(0 && "Invalid #endif previous token");
 		}
-		return 0;
+		token_branch_exhaust(tk);
 	}
-	return -1;
 }
 
 unsigned int
