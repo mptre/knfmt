@@ -25,7 +25,11 @@
   (Anton Lindqvist)
 
 - In simple mode, introduce pass to correct implicit unsigned int types.
-  (d8d7659)
+  (6101631)
+  (Anton Lindqvist)
+
+- Add support for clang-format off/on comments.
+  (b2f8444)
   (Anton Lindqvist)
 
 ## Bug fixes
@@ -40,7 +44,7 @@
   (Anton Lindqvist)
 
 - Fix expression ternary precedence bug.
-  (09c3137)
+  (04c9d61)
   (Anton Lindqvist)
 
 # 4.3.0 - 2023-10-15
