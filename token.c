@@ -409,8 +409,7 @@ token_get_branch(struct token *tk)
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		struct token *pv;
 
-		if (prefix->tk_type != TOKEN_CPP_ELSE ||
-		    prefix->tk_branch.br_pv == NULL)
+		if (prefix->tk_type != TOKEN_CPP_ELSE)
 			continue;
 
 		pv = prefix->tk_branch.br_pv;
