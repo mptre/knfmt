@@ -28,8 +28,7 @@ struct lexer_callbacks {
 	 * Serialize routine used to turn the given token into something
 	 * human readable.
 	 */
-	const char	*(*serialize)(struct arena_scope *,
-	    const struct token *);
+	const char	*(*serialize)(const struct token *, struct arena_scope *);
 
 	/*
 	 * Serialize routine used to turn the given token prefix into something

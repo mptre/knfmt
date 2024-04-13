@@ -72,8 +72,8 @@ static struct token	*clang_ellipsis(struct lexer *,
     const struct lexer_state *);
 static struct token	*clang_token_alloc(struct arena_scope *,
     const struct token *);
-static const char	*clang_token_serialize(struct arena_scope *,
-    const struct token *);
+static const char	*clang_token_serialize(const struct token *,
+    struct arena_scope *);
 static const char	*clang_token_serialize_prefix(const struct token *,
     struct arena_scope *);
 
@@ -332,7 +332,7 @@ clang_token_alloc(struct arena_scope *s, const struct token *def)
 }
 
 static const char *
-clang_token_serialize(struct arena_scope *s, const struct token *tk)
+clang_token_serialize(const struct token *tk, struct arena_scope *s)
 {
 	return token_serialize(s, tk,
 	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS);
@@ -344,14 +344,14 @@ clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
 	struct buffer *bf;
 
 	bf = arena_buffer_alloc(s, 1 << 8);
-	buffer_printf(bf, clang_token_serialize(s, prefix));
+	buffer_printf(bf, clang_token_serialize(prefix, s));
 	if (prefix->tk_branch.br_pv != NULL) {
 		buffer_printf(bf, ", pv %s",
-		    clang_token_serialize(s, prefix->tk_branch.br_pv));
+		    clang_token_serialize(prefix->tk_branch.br_pv, s));
 	}
 	if (prefix->tk_branch.br_nx != NULL) {
 		buffer_printf(bf, ", nx %s",
-		    clang_token_serialize(s, prefix->tk_branch.br_nx));
+		    clang_token_serialize(prefix->tk_branch.br_nx, s));
 	}
 	return buffer_str(bf);
 }

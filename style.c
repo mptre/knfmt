@@ -109,7 +109,7 @@ static struct token			*yaml_read_integer(struct lexer *);
 static struct token			*yaml_token_alloc(struct arena_scope *,
     const struct token *);
 static const char			*yaml_token_serialize(
-    struct arena_scope *, const struct token *);
+    const struct token *, struct arena_scope *);
 static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
 static const struct style_option	*yaml_find_keyword(const char *,
@@ -928,7 +928,7 @@ yaml_token_alloc(struct arena_scope *s, const struct token *def)
 }
 
 static const char *
-yaml_token_serialize(struct arena_scope *s, const struct token *tk)
+yaml_token_serialize(const struct token *tk, struct arena_scope *s)
 {
 	struct buffer *bf;
 
