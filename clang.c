@@ -12,6 +12,7 @@
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
+#include "libks/map.h"
 #include "libks/vector.h"
 
 #include "comment.h"
@@ -64,28 +65,30 @@ static void	clang_branch_leave(struct clang *, struct lexer *,
     struct token *);
 static void	clang_branch_purge(struct clang *, struct lexer *);
 
-static void		 clang_free(void *);
-static void		 clang_after_read(struct lexer *, void *);
-static void		 clang_before_free(struct lexer *, void *);
-static struct token	*clang_read(struct lexer *, void *);
-static struct token	*clang_read_prefix(struct clang *, struct lexer *);
-static struct token	*clang_read_comment(struct clang *, struct lexer *,
+static void			 clang_free(void *);
+static void			 clang_after_read(struct lexer *, void *);
+static void			 clang_before_free(struct lexer *, void *);
+static struct token		*clang_read(struct lexer *, void *);
+static struct token		*clang_read_prefix(struct clang *,
+    struct lexer *);
+static struct token		*clang_read_comment(struct clang *,
+    struct lexer *,
     int);
-static struct token	*clang_read_cpp(struct clang *, struct lexer *);
-static struct token	*clang_keyword(struct lexer *);
-static void		 clang_insert_keyword(const struct token *);
-static struct token	*clang_find_keyword(const struct lexer *,
+static struct token		*clang_read_cpp(struct clang *, struct lexer *);
+static struct token		*clang_keyword(struct lexer *);
+static const struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
-static struct token	*clang_find_keyword1(const char *, size_t);
-static struct token	*clang_find_alias(struct lexer *,
+static const struct token	*clang_find_keyword1(const char *, size_t);
+static struct token		*clang_find_alias(struct lexer *,
     const struct lexer_state *);
-static struct token	*clang_ellipsis(struct lexer *,
+static const struct token	*clang_ellipsis(struct lexer *,
     const struct lexer_state *);
-static struct token	*clang_token_alloc(struct arena_scope *,
+static struct token		*clang_token_alloc(struct arena_scope *,
     const struct token *);
-static const char	*clang_token_serialize(const struct token *,
+static const char		*clang_token_serialize(const struct token *,
     struct arena_scope *);
-static const char	*clang_token_serialize_prefix(const struct token *,
+static const char		*clang_token_serialize_prefix(
+    const struct token *,
     struct arena_scope *);
 
 static struct token	*clang_end_of_branch(struct lexer *, struct token *,
@@ -111,7 +114,7 @@ static void		 token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char);
 
-static struct token *table_tokens[256];
+static MAP(const char, *, struct token *) table_tokens;
 static const struct token *token_types[TOKEN_NONE + 1];
 
 static const struct token tklit = {
@@ -135,10 +138,15 @@ clang_init(void)
 #undef OP
 	size_t i;
 
+	if (MAP_INIT(table_tokens))
+		err(1, NULL);
+
 	for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
 		const struct token *src = &keywords[i];
 
-		clang_insert_keyword(src);
+		if (MAP_INSERT_VALUE(table_tokens, src->tk_str, src) == NULL)
+			err(1, NULL);
+
 		assert(token_types[src->tk_type] == NULL);
 		token_types[src->tk_type] = src;
 	}
@@ -148,18 +156,15 @@ clang_init(void)
 		struct token *src = &aliases[i];
 
 		src->tk_flags = token_types[src->tk_type]->tk_flags;
-		clang_insert_keyword(src);
+		if (MAP_INSERT_VALUE(table_tokens, src->tk_str, src) == NULL)
+			err(1, NULL);
 	}
 }
 
 void
 clang_shutdown(void)
 {
-	size_t nslots = sizeof(table_tokens) / sizeof(table_tokens[0]);
-	size_t i;
-
-	for (i = 0; i < nslots; i++)
-		VECTOR_FREE(table_tokens[i]);
+	MAP_FREE(table_tokens);
 }
 
 struct clang *
@@ -485,7 +490,7 @@ static struct token *
 clang_read(struct lexer *lx, void *arg)
 {
 	struct clang *cl = arg;
-	struct token *prefix, *t, *tk, *tmp;
+	struct token *prefix, *tk, *tmp;
 	struct lexer_state st;
 	int ncomments = 0;
 	int nlines;
@@ -539,10 +544,12 @@ clang_read(struct lexer *lx, void *arg)
 		lexer_ungetc(lx);
 		tk = lexer_emit(lx, &st, &tklit);
 	} else if (isalpha(ch) || ch == '_') {
+		const struct token *kw;
+
 		lexer_match(lx, "AZaz09__");
 
-		if ((t = clang_find_keyword(lx, &st)) != NULL) {
-			tk = lexer_emit(lx, &st, t);
+		if ((kw = clang_find_keyword(lx, &st)) != NULL) {
+			tk = lexer_emit(lx, &st, kw);
 		} else if ((tk = clang_find_alias(lx, &st)) != NULL) {
 			/* nothing */
 		} else {
@@ -1156,8 +1163,8 @@ static struct token *
 clang_keyword(struct lexer *lx)
 {
 	struct lexer_state st;
-	struct token *pv = NULL;
-	struct token *tk = NULL;
+	const struct token *pv = NULL;
+	const struct token *tk = NULL;
 	unsigned char ch;
 
 	lexer_eat_lines_and_spaces(lx, NULL);
@@ -1166,7 +1173,7 @@ clang_keyword(struct lexer *lx)
 		return NULL;
 
 	for (;;) {
-		struct token *tmp;
+		const struct token *tmp;
 
 		tmp = clang_find_keyword(lx, &st);
 		if (tmp == NULL) {
@@ -1180,7 +1187,7 @@ clang_keyword(struct lexer *lx)
 		}
 
 		if (tmp->tk_type == TOKEN_PERIOD) {
-			struct token *ellipsis;
+			const struct token *ellipsis;
 			unsigned char peek;
 
 			/* Detect fractional only float literals. */
@@ -1209,24 +1216,7 @@ clang_keyword(struct lexer *lx)
 	return lexer_emit(lx, &st, tk);
 }
 
-static void
-clang_insert_keyword(const struct token *tk)
-{
-	struct token *dst;
-	unsigned char slot;
-
-	slot = (unsigned char)tk->tk_str[0];
-	if (table_tokens[slot] == NULL) {
-		if (VECTOR_INIT(table_tokens[slot]))
-			err(1, NULL);
-	}
-	dst = VECTOR_ALLOC(table_tokens[slot]);
-	if (dst == NULL)
-		err(1, NULL);
-	*dst = *tk;
-}
-
-static struct token *
+static const struct token *
 clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 {
 	const char *key;
@@ -1238,22 +1228,15 @@ clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 	return clang_find_keyword1(key, len);
 }
 
-static struct token *
+static const struct token *
 clang_find_keyword1(const char *key, size_t len)
 {
-	unsigned char slot;
-	size_t i;
+	struct token **kw;
 
-	slot = (unsigned char)key[0];
-	if (table_tokens[slot] == NULL)
+	kw = MAP_FIND_N(table_tokens, key, len);
+	if (kw == NULL)
 		return NULL;
-	for (i = 0; i < VECTOR_LENGTH(table_tokens[slot]); i++) {
-		struct token *tk = &table_tokens[slot][i];
-
-		if (token_rawcmp(tk, key, len) == 0)
-			return tk;
-	}
-	return NULL;
+	return *kw;
 }
 
 /*
@@ -1279,7 +1262,7 @@ clang_find_alias(struct lexer *lx, const struct lexer_state *st)
 	};
 	const size_t naliases = sizeof(aliases) / sizeof(aliases[0]);
 	size_t i, len;
-	struct token *kw;
+	const struct token *kw;
 	const char *str;
 	int nunderscores = 0;
 
@@ -1308,7 +1291,7 @@ clang_find_alias(struct lexer *lx, const struct lexer_state *st)
 	});
 }
 
-static struct token *
+static const struct token *
 clang_ellipsis(struct lexer *lx, const struct lexer_state *st)
 {
 	struct lexer_state oldst;
