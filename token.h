@@ -115,10 +115,10 @@ struct arena_scope;
 	/* type			normalized */				\
 	OP(TOKEN_COMMENT,	0)					\
 	OP(TOKEN_CPP,		0)					\
-	OP(TOKEN_CPP_IF,	TOKEN_CPP_IF)				\
+	OP(TOKEN_CPP_IF,	0)					\
 	OP(TOKEN_CPP_IFNDEF,	TOKEN_CPP_IF)				\
-	OP(TOKEN_CPP_ELSE,	TOKEN_CPP_ELSE)				\
-	OP(TOKEN_CPP_ENDIF,	TOKEN_CPP_ENDIF)			\
+	OP(TOKEN_CPP_ELSE,	0)					\
+	OP(TOKEN_CPP_ENDIF,	0)					\
 	OP(TOKEN_CPP_DEFINE,	0)					\
 	OP(TOKEN_CPP_INCLUDE,	0)					\
 	OP(TOKEN_IDENT,		0)					\
