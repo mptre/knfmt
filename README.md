@@ -50,6 +50,7 @@ The installation prefix defaults to `/usr/local` and can be altered using the
 `PREFIX` environment variable when invoking `configure`:
 
 	$ ./configure
+	$ make
 	$ make install
 
 ## License
