@@ -115,8 +115,8 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 		return 1;
 	}
 
+	/* The first line is allowed to not be aligned. */
 	if (nlines >= 3 && all_identical(&lines[1], nlines - 1)) {
-		/* The first line is allowed to not be aligned. */
 		*alignment = (struct alignment){
 		    .mode		= Right,
 		    .width		= lines[nlines - 1].width,
