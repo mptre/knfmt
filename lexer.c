@@ -328,7 +328,7 @@ lexer_serialize(struct lexer *lx, const struct token *tk)
 {
 	if (tk == NULL)
 		return "(null)";
-	return lx->lx_callbacks.serialize(tk, lx->lx_arena.eternal_scope);
+	return lx->lx_callbacks.serialize_token(tk, lx->lx_arena.eternal_scope);
 }
 
 unsigned int

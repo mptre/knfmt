@@ -591,10 +591,10 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .op			= st->op,
 	    .error_flush	= options_trace_level(st->op, 's') > 0,
 	    .callbacks		= {
-		.read		= yaml_read,
-		.alloc		= yaml_token_alloc,
-		.serialize	= yaml_token_serialize,
-		.arg		= st,
+		.read			= yaml_read,
+		.alloc			= yaml_token_alloc,
+		.serialize_token	= yaml_token_serialize,
+		.arg			= st,
 	    },
 	});
 	if (lx == NULL) {

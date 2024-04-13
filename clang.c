@@ -200,7 +200,7 @@ clang_lexer_callbacks(struct clang *cl)
 	return (struct lexer_callbacks){
 	    .read		= clang_read,
 	    .alloc		= clang_token_alloc,
-	    .serialize		= clang_token_serialize,
+	    .serialize_token	= clang_token_serialize,
 	    .serialize_prefix	= clang_token_serialize_prefix,
 	    .end_of_branch	= clang_end_of_branch,
 	    .move_prefixes	= clang_token_move_prefixes,
