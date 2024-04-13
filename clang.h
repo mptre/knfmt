@@ -23,3 +23,5 @@ void	clang_token_move_prefixes(struct token *, struct token *);
 struct token	*clang_token_branch_next(struct token *);
 struct token	*clang_token_branch_parent(struct token *);
 void		 clang_token_branch_unlink(struct token *);
+
+const struct token	*clang_keyword_token(int);

@@ -12,6 +12,7 @@
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
+#include "clang.h"
 #include "lexer.h"
 #include "token.h"
 #include "trace.h"
@@ -413,14 +414,16 @@ simple_decl_move_vars(struct simple_decl *sd, struct decl_type *dt,
 
 		if (dv->dv_delim != NULL)
 			lexer_remove(lx, dv->dv_delim);
-		if (i > 0)
-			after = lexer_insert_after(lx, after, TOKEN_COMMA, ",");
+		if (i > 0) {
+			after = lexer_insert_after(lx, after,
+			    clang_keyword_token(TOKEN_COMMA));
+		}
 
 		TOKEN_RANGE_FOREACH(ident, &dv->dv_ident, tmp)
 			after = lexer_move_after(lx, after, ident);
 	}
 
-	return lexer_insert_after(lx, after, TOKEN_SEMI, ";");
+	return lexer_insert_after(lx, after, clang_keyword_token(TOKEN_SEMI));
 }
 
 static struct decl_var *

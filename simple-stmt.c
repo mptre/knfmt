@@ -10,6 +10,7 @@
 #include "libks/buffer.h"
 #include "libks/vector.h"
 
+#include "clang.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -250,7 +251,8 @@ add_braces(struct simple_stmt *ss)
 		token_move_suffixes(pv, lbrace);
 
 		pv = token_prev(st->st_rbrace);
-		rbrace = lexer_insert_after(lx, pv, TOKEN_RBRACE, "}");
+		rbrace = lexer_insert_after(lx, pv,
+		    clang_keyword_token(TOKEN_RBRACE));
 		token_move_suffixes_if(pv, rbrace, TOKEN_SPACE);
 	}
 }

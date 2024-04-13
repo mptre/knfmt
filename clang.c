@@ -112,6 +112,7 @@ static void		 token_prolong(struct token *, struct token *);
 static int	isnum(unsigned char);
 
 static struct token *table_tokens[256];
+static const struct token *token_types[TOKEN_NONE + 1];
 
 static const struct token tklit = {
 	.tk_type	= TOKEN_LITERAL,
@@ -132,7 +133,6 @@ clang_init(void)
 	static struct token keywords[] = { FOR_TOKEN_TYPES(OP) };
 	static struct token aliases[] = { FOR_TOKEN_ALIASES(OP) };
 #undef OP
-	const struct token *token_types[TOKEN_NONE + 1] = {0};
 	size_t i;
 
 	for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
@@ -438,6 +438,12 @@ clang_token_branch_unlink(struct token *tk)
 		}
 		token_branch_exhaust(tk);
 	}
+}
+
+const struct token *
+clang_keyword_token(int token_type)
+{
+	return token_types[token_type];
 }
 
 static void

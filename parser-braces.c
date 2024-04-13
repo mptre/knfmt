@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include "clang.h"
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
@@ -415,6 +416,7 @@ insert_trailing_comma(struct parser *pr, const struct token *rbrace)
 	    !token_has_line(pv, 1))
 		return;
 
-	comma = lexer_insert_after(pr->pr_lx, pv, TOKEN_COMMA, ",");
+	comma = lexer_insert_after(pr->pr_lx, pv,
+	    clang_keyword_token(TOKEN_COMMA));
 	token_move_suffixes_if(pv, comma, TOKEN_SPACE);
 }
