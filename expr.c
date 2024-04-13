@@ -625,7 +625,11 @@ expr_exec_ternary(struct expr_state *es, struct expr *lhs)
 	ex->ex_rhs = expr_exec1(es, PC0);
 	if (lexer_expect(es->es_lx, TOKEN_COLON, &tk))
 		ex->ex_tokens[1] = tk;	/* : */
-	ex->ex_ternary = expr_exec1(es, PC0);
+	/*
+	 * Use precedence that excludes comma to not include potential
+	 * subsequent argument(s).
+	 */
+	ex->ex_ternary = expr_exec1(es, PC1);
 	if (ex->ex_ternary == NULL)
 		return NULL;
 	return ex;
