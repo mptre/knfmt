@@ -40,7 +40,7 @@ struct lexer_callbacks {
 	/*
 	 * Returns the end of the branch associated with the given token.
 	 */
-	struct token	*(*end_of_branch)(struct token *);
+	struct token	*(*end_of_branch)(struct lexer *, struct token *, void *);
 
 	/*
 	 * Move all prefixes from one token to another.

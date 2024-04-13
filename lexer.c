@@ -410,7 +410,8 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			return 0;
 		} else {
 			/* While peeking, act as taking the current branch. */
-			st->st_tk = lx->lx_callbacks.end_of_branch(st->st_tk);
+			st->st_tk = lx->lx_callbacks.end_of_branch(lx,
+			    st->st_tk, lx->lx_callbacks.arg);
 		}
 	}
 

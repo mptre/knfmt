@@ -88,7 +88,8 @@ static const char	*clang_token_serialize(const struct token *,
 static const char	*clang_token_serialize_prefix(const struct token *,
     struct arena_scope *);
 
-static struct token	*clang_end_of_branch(struct token *);
+static struct token	*clang_end_of_branch(struct lexer *, struct token *,
+    void *);
 
 static struct token	*clang_last_stamped(struct clang *);
 static struct token	*clang_recover_find_branch(struct token *,
@@ -649,20 +650,21 @@ clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
 }
 
 static struct token *
-clang_end_of_branch(struct token *tk)
+clang_end_of_branch(struct lexer *UNUSED(lx), struct token *tk,
+    void *UNUSED(arg))
 {
 	struct token *prefix;
 
 	assert(tk->tk_flags & TOKEN_FLAG_BRANCH);
 
 	prefix = token_branch_find(tk);
-	while (prefix != NULL) {
+	do {
 		struct clang_token *ct = token_priv(prefix, struct clang_token);
 
 		if (ct->branch.nx == NULL)
 			return ct->branch.parent;
 		prefix = ct->branch.nx;
-	}
+	} while (prefix != NULL);
 
 	return NULL;
 }
@@ -895,11 +897,8 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 
 		for (br = *last; br != NULL;
 		    br = token_priv(br, struct clang_token)->branch.pv) {
-			struct token *p = token_priv(br,
-			    struct clang_token)->branch.parent;
-
-			if (token_branch_find(p) != NULL)
-				p->tk_flags |= TOKEN_FLAG_BRANCH;
+			token_branch_parent_update_flags(
+			    token_priv(br, struct clang_token)->branch.parent);
 		}
 	}
 
@@ -1322,6 +1321,7 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 		assert(ct->branch.parent == src);
 		token_branch_parent(prefix, dst);
 		token_branch_parent_update_flags(dst);
+		token_branch_parent_update_flags(src);
 	}
 }
 
@@ -1383,7 +1383,9 @@ token_branch_parent(struct token *cpp, struct token *parent)
 void
 token_branch_parent_update_flags(struct token *parent)
 {
-	if (token_branch_find(parent) == NULL)
+	if (token_branch_find(parent) != NULL)
+		parent->tk_flags |= TOKEN_FLAG_BRANCH;
+	else
 		parent->tk_flags &= ~TOKEN_FLAG_BRANCH;
 }
 
