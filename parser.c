@@ -17,6 +17,12 @@
 #include "parser-stmt-asm.h"
 #include "token.h"
 
+#ifdef HAVE_QUEUE
+#  include <sys/queue.h>
+#else
+#  include "compat-queue.h"
+#endif
+
 static int
 parser_get_error(const struct parser *pr)
 {
@@ -230,12 +236,24 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
     const char *fun, int lno)
 {
 	struct doc *out;
-	struct token *nx;
+	struct token *nx, *prefix, *suffix;
 
 	if (tk == pr->pr_branch.unmute)
 		doc_alloc0(DOC_MUTE, dc, -1, __func__, __LINE__);
 
+	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
+		doc_token(prefix, dc, DOC_VERBATIM, __func__, __LINE__);
+
 	out = doc_token(tk, dc, DOC_LITERAL, fun, lno);
+
+	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		if (suffix->tk_flags & TOKEN_FLAG_DISCARD)
+			continue;
+		if (suffix->tk_flags & TOKEN_FLAG_OPTLINE)
+			doc_alloc(DOC_OPTLINE, dc);
+		else
+			doc_token(suffix, dc, DOC_VERBATIM, __func__, __LINE__);
+	}
 
 	/* Mute if we're about to branch. */
 	nx = token_next(tk);
