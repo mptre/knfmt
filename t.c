@@ -181,6 +181,7 @@ main(int argc, char *argv[])
 	test_parser_expr("x ^= 1", "((x) ^= (1))");
 	test_parser_expr("x |= 1", "((x) |= (1))");
 	test_parser_expr("x ? 1 : 0", "((x) ? (1) : (0))");
+	test_parser_expr("a(x ? 1 : 0, 3)", "((a)((((x) ? (1) : (0)), (3))))");
 	test_parser_expr("x ?: 0", "((x) ?: (0))");
 	test_parser_expr("x || y", "((x) || (y))");
 	test_parser_expr("x && y", "((x) && (y))");
