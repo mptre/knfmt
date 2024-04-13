@@ -132,7 +132,7 @@ struct arena_scope;
 #define TOKEN_SERIALIZE_REFS		0x00000004u
 #define TOKEN_SERIALIZE_ADDRESS		0x00000008u
 
-#define token_data(tk, type) __extension__ ({				\
+#define token_priv(tk, type) __extension__ ({				\
 	typeof(tk) _nx = (tk) + 1;					\
 	(type *)_nx;							\
 })

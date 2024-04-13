@@ -686,7 +686,7 @@ style_parse_yaml_documents(struct style *st, struct lexer *lx, int nested)
 			error = FAIL;
 			break;
 		}
-		so = token_data(key, struct yaml_token)->so;
+		so = token_priv(key, struct yaml_token)->so;
 		if (so != NULL && so->so_scope != st->scope)
 			break;
 		if (so != NULL)
@@ -913,7 +913,7 @@ yaml_read_integer(struct lexer *lx)
 		overflow = 1;
 
 	tk = lexer_emit(lx, &s, &(struct token){.tk_type = Integer});
-	token_data(tk, struct yaml_token)->integer.i32 = integer;
+	token_priv(tk, struct yaml_token)->integer.i32 = integer;
 	if (overflow) {
 		lexer_error(lx, tk, __func__, __LINE__,
 		    "integer %s too large", lexer_serialize(lx, tk));
@@ -964,7 +964,7 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 
 	tk = lexer_emit(lx, st, &(struct token){.tk_type = so->so_type});
 	if (so->so_parse != NULL)
-		token_data(tk, struct yaml_token)->so = so;
+		token_priv(tk, struct yaml_token)->so = so;
 	return tk;
 
 unknown:
@@ -1045,7 +1045,7 @@ parse_integer(struct style *st, struct lexer *lx, const struct style_option *so)
 	if ((error & GOOD) == 0)
 		return error;
 	style_set(st, key->tk_type, Integer,
-	    token_data(val, struct yaml_token)->integer.u32);
+	    token_priv(val, struct yaml_token)->integer.u32);
 	return GOOD;
 }
 
@@ -1256,7 +1256,7 @@ parse_IncludeGuards(struct style *st, struct lexer *lx,
 	if ((error & GOOD) == 0)
 		return error;
 	if (lexer_back(lx, &val) &&
-	    token_data(val, struct yaml_token)->integer.i32 <= 0) {
+	    token_priv(val, struct yaml_token)->integer.i32 <= 0) {
 		style_set(st, IncludeGuards, Integer, 0);
 		lexer_error(lx, val, __func__, __LINE__,
 		    "integer %s too small", lexer_serialize(lx, val));
@@ -1282,7 +1282,7 @@ parse_Priority(struct style *st, struct lexer *lx,
 	ic = VECTOR_LAST(st->include_categories);
 	if (ic == NULL)
 		return FAIL; /* UNREACHABLE */
-	priority = token_data(val, struct yaml_token)->integer.i32;
+	priority = token_priv(val, struct yaml_token)->integer.i32;
 	if (so->so_type == Priority) {
 		ic->priority.group = priority;
 		ic->priority.sort = priority;
