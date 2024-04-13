@@ -396,6 +396,9 @@ parser_stmt_dowhile(struct parser *pr, struct doc *dc)
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_literal(" ", concat);
 		error = parser_stmt_block(pr, &ps);
+		if (error & HALT)
+			return parser_fail(pr);
+
 		/*
 		 * The following while statement is intended to fit on the same
 		 * line as the right brace.
