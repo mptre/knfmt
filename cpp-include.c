@@ -7,6 +7,7 @@
 
 #include "libks/arena.h"
 #include "libks/map.h"
+#include "libks/string.h"
 #include "libks/vector.h"
 
 #include "lexer.h"
@@ -185,27 +186,19 @@ static int
 is_main_include(const char *include_path, const char *path,
     struct arena *scratch)
 {
-	const char *basename, *dot, *filename, *include_main,
-		   *path_without_extension, *slash;
+	const char *basename, *filename, *include_main;
 
 	arena_scope(scratch, s);
 
 	/* Transform path "a/b.c" into "a/b.h". */
-	dot = strrchr(path, '.');
-	if (dot == NULL)
-		return 0;
-	path_without_extension = arena_strndup(&s, path, (size_t)(dot - path));
-	include_main = arena_sprintf(&s, "\"%s.h\"", path_without_extension);
+	basename = *VECTOR_FIRST(KS_str_split(path, '.', &s));
+	include_main = arena_sprintf(&s, "\"%s.h\"", basename);
 	if (strcmp(include_path, include_main) == 0)
 		return 1;
 
 	/* Transform path "a/b.c" into "b.h". */
-	slash = strrchr(path, '/');
-	filename = slash != NULL ? arena_strdup(&s, &slash[1]) : path;
-	dot = strrchr(filename, '.');
-	if (dot == NULL)
-		return 0;
-	basename = arena_strndup(&s, filename, (size_t)(dot - filename));
+	filename = *VECTOR_LAST(KS_str_split(path, '/', &s));
+	basename = *VECTOR_FIRST(KS_str_split(filename, '.', &s));
 	include_main = arena_sprintf(&s, "\"%s.h\"", basename);
 	if (strcmp(include_path, include_main) == 0)
 		return 1;
