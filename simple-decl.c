@@ -211,6 +211,12 @@ is_type_valid(struct token *beg, struct token *end)
 	};
 	struct token *tk, *tmp;
 
+	/* Ignore anonymous struct and union. */
+	if (beg == end &&
+	    (token_is_decl(beg, TOKEN_STRUCT) ||
+	     token_is_decl(beg, TOKEN_UNION)))
+		return 0;
+
 	TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
 		if (!token_is_moveable(tk))
 			return 0;

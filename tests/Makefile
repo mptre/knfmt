@@ -512,6 +512,7 @@ TESTS+=	simple-cpp-sort-includes-003.c
 TESTS+=	simple-decl-001.c
 TESTS+=	simple-decl-002.c
 TESTS+=	simple-decl-003.c
+TESTS+=	simple-decl-004.c
 TESTS+=	simple-decl-005.c
 TESTS+=	simple-decl-006.c
 TESTS+=	simple-decl-007.c
