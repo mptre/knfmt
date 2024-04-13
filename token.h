@@ -190,12 +190,6 @@ struct token {
 	size_t			 tk_len;
 	size_t			 tk_off;
 
-	struct {
-		struct token	*parent;
-		struct token	*pv;
-		struct token	*nx;
-	} tk_branch;
-
 	struct token_list	 tk_prefixes;
 	struct token_list	 tk_suffixes;
 
