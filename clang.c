@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
@@ -73,6 +74,8 @@ static struct token	*clang_token_alloc(struct arena_scope *,
     const struct token *);
 static const char	*clang_token_serialize(struct arena_scope *,
     const struct token *);
+static const char	*clang_token_serialize_prefix(const struct token *,
+    struct arena_scope *);
 
 static void	token_branch_link(struct token *, struct token *);
 static void	token_branch_revert(struct token *);
@@ -167,6 +170,7 @@ clang_lexer_callbacks(struct clang *cl)
 	    .read		= clang_read,
 	    .alloc		= clang_token_alloc,
 	    .serialize		= clang_token_serialize,
+	    .serialize_prefix	= clang_token_serialize_prefix,
 	    .after_read		= clang_after_read,
 	    .arg		= cl,
 	};
@@ -332,6 +336,24 @@ clang_token_serialize(struct arena_scope *s, const struct token *tk)
 {
 	return token_serialize(s, tk,
 	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS);
+}
+
+static const char *
+clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
+{
+	struct buffer *bf;
+
+	bf = arena_buffer_alloc(s, 1 << 8);
+	buffer_printf(bf, clang_token_serialize(s, prefix));
+	if (prefix->tk_branch.br_pv != NULL) {
+		buffer_printf(bf, ", pv %s",
+		    clang_token_serialize(s, prefix->tk_branch.br_pv));
+	}
+	if (prefix->tk_branch.br_nx != NULL) {
+		buffer_printf(bf, ", nx %s",
+		    clang_token_serialize(s, prefix->tk_branch.br_nx));
+	}
+	return buffer_str(bf);
 }
 
 static void

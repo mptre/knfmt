@@ -1041,20 +1041,9 @@ lexer_dump(struct lexer *lx)
 		i++;
 
 		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			str = lexer_serialize(lx, prefix);
-			fprintf(stderr, "[L] %-6u   prefix %s", i, str);
-
-			if (prefix->tk_branch.br_pv != NULL) {
-				str = lexer_serialize(lx,
-				    prefix->tk_branch.br_pv);
-				fprintf(stderr, ", pv %s", str);
-			}
-			if (prefix->tk_branch.br_nx != NULL) {
-				str = lexer_serialize(lx,
-				    prefix->tk_branch.br_nx);
-				fprintf(stderr, ", nx %s", str);
-			}
-			fprintf(stderr, "\n");
+			str = lx->lx_callbacks.serialize_prefix(prefix,
+			    lx->lx_arena.eternal_scope);
+			fprintf(stderr, "[L] %-6u   prefix %s\n", i, str);
 		}
 
 		str = lexer_serialize(lx, tk);

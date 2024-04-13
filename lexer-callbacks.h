@@ -32,6 +32,13 @@ struct lexer_callbacks {
 	    const struct token *);
 
 	/*
+	 * Serialize routine used to turn the given token prefix into something
+	 * human readable.
+	 */
+	const char	*(*serialize_prefix)(const struct token *,
+	    struct arena_scope *);
+
+	/*
 	 * Informative callback invoked once all tokens are read.
 	 * May be omitted.
 	 */
