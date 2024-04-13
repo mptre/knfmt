@@ -368,13 +368,12 @@ lexer_get_lines(const struct lexer *lx, unsigned int beg, unsigned int end,
 	return 1;
 }
 
-int
+void
 lexer_seek(struct lexer *lx, struct token *tk)
 {
 	if (lx->lx_peek == 0)
 		lexer_trace(lx, "seek to %s", lexer_serialize(lx, tk));
 	lx->lx_st.st_tk = token_prev(tk);
-	return lx->lx_st.st_tk == NULL ? 0 : 1;
 }
 
 int
@@ -383,7 +382,10 @@ lexer_seek_after(struct lexer *lx, struct token *tk)
 	struct token *nx;
 
 	nx = token_next(tk);
-	return nx != NULL && lexer_seek(lx, nx);
+	if (nx == NULL)
+		return 0;
+	lexer_seek(lx, nx);
+	return 1;
 }
 
 int
