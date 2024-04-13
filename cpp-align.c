@@ -2,7 +2,6 @@
 
 #include "config.h"
 
-#include <assert.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -41,7 +40,6 @@ classify_indent(const char *str)
 		return INDENT_TYPE_TABS;
 	if (str[0] == ' ')
 		return INDENT_TYPE_SPACES;
-	assert(str[0] == '\\');
 	return INDENT_TYPE_NONE;
 }
 

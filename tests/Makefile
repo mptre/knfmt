@@ -505,6 +505,7 @@ TESTS+=	valid-380.c
 TESTS+=	valid-381.c
 TESTS+=	valid-382.c
 TESTS+=	valid-383.c
+TESTS+=	valid-384.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
