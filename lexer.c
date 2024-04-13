@@ -414,6 +414,7 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 	struct token *seek = NULL;
 	struct token *back, *br, *dst, *src, *stamp;
 	size_t i;
+	int error = 0;
 	int ndocs = 1;
 
 	if (!lexer_back(lx, &back))
@@ -446,6 +447,7 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 			break;
 		ndocs++;
 	}
+	lexer_trace(lx, "removing %d document(s)", ndocs);
 
 	/*
 	 * Turn the whole branch into a prefix. As the branch is about to be
@@ -464,11 +466,14 @@ lexer_recover(struct lexer *lx, struct token **unmute)
 	}
 	token_rele(br);
 
-	lexer_trace(lx, "seek to %s, removing %d document(s)",
-	    lexer_serialize(lx, seek ? seek : TAILQ_FIRST(&lx->lx_tokens)),
-	    ndocs);
-	lx->lx_st.st_tk = seek;
-	return ndocs;
+	if (seek != NULL)
+		lexer_seek_after(lx, seek);
+	else if (lexer_peek_first(lx, &seek))
+		lexer_seek(lx, seek);
+	else
+		error = 1;
+
+	return error ? 0 : ndocs;
 }
 
 /*
