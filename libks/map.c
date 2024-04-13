@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "libks/arithmetic.h"
+#include "libks/compiler.h"
 
 #if defined(__clang__) || !defined(__GNUC__) || __GNUC__ >= 7
 #define HAVE_IMPLICIT_FALLTHROUGH 1
@@ -62,6 +63,15 @@ struct map {
 	} val;
 
 	unsigned int		 flags;
+};
+
+struct hash_key {
+	union {
+		const uint8_t	*u8;
+		const uint32_t	*u32;
+		const uintptr_t	 ptr;
+	};
+	size_t	len;
 };
 
 static struct map_element	*map_alloc_element(struct map *, size_t);
@@ -618,27 +628,48 @@ do {									\
   (c) -= (a); (c) -= (b); (c) ^= (b) >> 15;				\
 } while (0)
 
+static void
+hash_key_init(struct hash_key *key, const void *buf, size_t buflen)
+{
+	key->u8 = buf;
+	key->len = buflen;
+}
+
+static uint32_t
+hash_key_read_u32(struct hash_key *key)
+{
+	uint32_t val;
+	unsigned int size = sizeof(val);
+
+	if (unlikely(key->ptr & (size - 1)))
+		memcpy(&val, key->u8, 4);
+	else
+		val = key->u32[0];
+	key->u8 += size;
+	key->len -= size;
+
+	return val;
+}
+
 static unsigned
 HASH_JEN(const void *key, size_t keylen)
 {
-	union {
-		const uint8_t   *u8;
-		const uint32_t  *u32;
-	} _hj_key = { .u8 = key };
+	struct hash_key _hj_key;
 	size_t k;
 	unsigned int hashv = 0xfeedbeefu;
 	unsigned int _hj_i, _hj_j;
 
+	hash_key_init(&_hj_key, key, keylen);
+
 	_hj_i = _hj_j = 0x9e3779b9u;
 	k = keylen;
 	while (k >= 12U) {
-		_hj_i += _hj_key.u32[0];
-		_hj_j += _hj_key.u32[1];
-		hashv += _hj_key.u32[2];
+		_hj_i += hash_key_read_u32(&_hj_key);
+		_hj_j += hash_key_read_u32(&_hj_key);
+		hashv += hash_key_read_u32(&_hj_key);
 
 		HASH_JEN_MIX(_hj_i, _hj_j, hashv);
 
-		_hj_key.u8 += 12;
 		k -= 12U;
 	}
 	hashv += (unsigned int)(keylen);
