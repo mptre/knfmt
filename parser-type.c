@@ -350,14 +350,15 @@ peek_type_ptr_array(struct lexer *lx, struct token **rsquare)
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_LPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_STAR, NULL) &&
-	    (lexer_if(lx, TOKEN_IDENT, NULL) || 1) &&
-	    lexer_if(lx, TOKEN_RPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_LSQUARE, NULL) &&
-	    (lexer_if(lx, TOKEN_LITERAL, NULL) ||
-	     lexer_if(lx, TOKEN_IDENT, NULL)) &&
-	    lexer_if(lx, TOKEN_RSQUARE, rsquare))
-		peek = 1;
+	    lexer_if(lx, TOKEN_STAR, NULL)) {
+		(void)lexer_if(lx, TOKEN_IDENT, NULL);
+		if (lexer_if(lx, TOKEN_RPAREN, NULL) &&
+		    lexer_if(lx, TOKEN_LSQUARE, NULL) &&
+		    (lexer_if(lx, TOKEN_LITERAL, NULL) ||
+		     lexer_if(lx, TOKEN_IDENT, NULL)) &&
+		    lexer_if(lx, TOKEN_RSQUARE, rsquare))
+			peek = 1;
+	}
 	lexer_peek_leave(lx, &s);
 	return peek;
 }
