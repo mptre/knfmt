@@ -7,7 +7,7 @@
   (Anton Lindqvist)
 
 - Rework memory allocations.
-  Speed up of 50% while formatting $obsd-src/sys/kern/*.[ch].
+  Speed up of 50% while formatting $openbsd-src/sys/kern/*.[ch].
   (bbfc385)
   (Anton Lindqvist)
 
@@ -24,6 +24,10 @@
   (16c9f11)
   (Anton Lindqvist)
 
+- In simple mode, introduce pass to correct implicit unsigned int types.
+  (d8d7659)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Improve handling of expression arguments in declarations making use of cpp
@@ -33,6 +37,10 @@
 
 - Honor optional semicolon after extern blocks.
   (bb044a6)
+  (Anton Lindqvist)
+
+- Fix expression ternary precedence bug.
+  (09c3137)
   (Anton Lindqvist)
 
 # 4.3.0 - 2023-10-15
