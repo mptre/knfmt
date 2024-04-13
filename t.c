@@ -911,8 +911,8 @@ context_free(struct context *cx)
 		return;
 
 	context_reset(cx);
-	buffer_free(cx->bf);
 	arena_scope_leave(&cx->arena.eternal_scope);
+	buffer_free(cx->bf);
 	arena_free(cx->arena.eternal);
 	arena_free(cx->arena.scratch);
 	arena_free(cx->arena.doc);
