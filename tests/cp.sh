@@ -20,7 +20,7 @@ next() {
 	_dir="$1"; : "${_dir:?}"
 	_type="$2"; : "${_type:?}"
 
-	(cd "$_dir" && ls "${_type}"*.c 2>/dev/null) |
+	(cd "$_dir" && ls | grep "^${_type}-...\.[ch]$" 2>/dev/null) |
 	sed 's/.*-0*\([0-9]*\)\.c/\1/' |
 	sort -n |
 	tee "$TMP" |
