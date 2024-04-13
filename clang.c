@@ -1105,9 +1105,10 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		type = TOKEN_CPP_IFNDEF;
 	else if (lexer_buffer_streq(lx, &cmpst, "if"))
 		type = TOKEN_CPP_IF;
-	else if (lexer_buffer_streq(lx, &cmpst, "else") ||
-	    lexer_buffer_streq(lx, &cmpst, "elif"))
+	else if (lexer_buffer_streq(lx, &cmpst, "else"))
 		type = TOKEN_CPP_ELSE;
+	else if (lexer_buffer_streq(lx, &cmpst, "elif"))
+		type = TOKEN_CPP_ELIF;
 	else if (lexer_buffer_streq(lx, &cmpst, "endif"))
 		type = TOKEN_CPP_ENDIF;
 	else if (lexer_buffer_streq(lx, &cmpst, "define"))
@@ -1361,7 +1362,7 @@ token_branch_find(struct token *tk)
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
 		struct token *pv;
 
-		if (prefix->tk_type != TOKEN_CPP_ELSE)
+		if (token_type_normalize(prefix) != TOKEN_CPP_ELSE)
 			continue;
 
 		pv = token_priv(prefix, struct clang_token)->branch.pv;
