@@ -116,6 +116,7 @@ struct arena_scope;
 	OP(TOKEN_COMMENT,	0)					\
 	OP(TOKEN_CPP,		0)					\
 	OP(TOKEN_CPP_IF,	0)					\
+	OP(TOKEN_CPP_IFDEF,	TOKEN_CPP_IF)				\
 	OP(TOKEN_CPP_IFNDEF,	TOKEN_CPP_IF)				\
 	OP(TOKEN_CPP_ELSE,	0)					\
 	OP(TOKEN_CPP_ENDIF,	0)					\

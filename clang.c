@@ -1099,7 +1099,9 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		ch = peek;
 	}
 
-	if (lexer_buffer_streq(lx, &cmpst, "ifndef"))
+	if (lexer_buffer_streq(lx, &cmpst, "ifdef"))
+		type = TOKEN_CPP_IFDEF;
+	else if (lexer_buffer_streq(lx, &cmpst, "ifndef"))
 		type = TOKEN_CPP_IFNDEF;
 	else if (lexer_buffer_streq(lx, &cmpst, "if"))
 		type = TOKEN_CPP_IF;
