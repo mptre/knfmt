@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -18,13 +19,31 @@
 
 #define cpp_trace(op, fmt, ...) trace('C', (op), (fmt), __VA_ARGS__)
 
+enum indent_type {
+	INDENT_TYPE_NONE,
+	INDENT_TYPE_SPACES,
+	INDENT_TYPE_TABS,
+};
+
 struct alignment {
 	const char		*indent;
+	enum indent_type	 indent_type;
 	enum style_keyword	 mode;
 	unsigned int		 width;
 	unsigned int		 tabs:1,
 				 skip_first_line:1;
 };
+
+static enum indent_type
+classify_indent(const char *str)
+{
+	if (str[0] == '\t')
+		return INDENT_TYPE_TABS;
+	if (str[0] == ' ')
+		return INDENT_TYPE_SPACES;
+	assert(str[0] == '\\');
+	return INDENT_TYPE_NONE;
+}
 
 /*
  * Returns a pointer to the end of current line assuming it's a line
@@ -57,8 +76,13 @@ all_identical(const struct alignment *a, size_t len)
 	size_t i;
 
 	for (i = 0; i < len - 1; i++) {
-		if (!(a[i].width == a[i + 1].width &&
-		    a[i].tabs == a[i + 1].tabs))
+		if (a[i].width != a[i + 1].width)
+			return 0;
+
+		if (a[i].indent_type == INDENT_TYPE_NONE ||
+		    a[i + 1].indent_type == INDENT_TYPE_NONE)
+			continue;
+		if (a[i].indent_type != a[i + 1].indent_type)
 			return 0;
 	}
 	return 1;
@@ -71,6 +95,19 @@ all_not_aligned(const struct alignment *a, size_t len)
 
 	for (i = 0; i < len; i++) {
 		if (!is_not_aligned(&a[i]))
+			return 0;
+	}
+	return 1;
+}
+
+static int
+all_tabs(const struct alignment *a, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (a[i].indent_type != INDENT_TYPE_NONE &&
+		    a[i].indent_type != INDENT_TYPE_TABS)
 			return 0;
 	}
 	return 1;
@@ -102,9 +139,8 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 		if (col > maxcol)
 			return 0;
 		lines[i].indent = indent;
+		lines[i].indent_type = classify_indent(indent);
 		lines[i].width = col - 2;
-		lines[i].tabs = indent[0] == '\t';
-
 		len -= linelen;
 		str += linelen;
 		nlines++;
@@ -120,7 +156,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 		*alignment = (struct alignment){
 		    .mode		= Right,
 		    .width		= lines[nlines - 1].width,
-		    .tabs		= lines[nlines - 1].tabs,
+		    .tabs		= all_tabs(lines, nlines) ? 1 : 0,
 		    .skip_first_line	= is_not_aligned(&lines[0]) ? 1 : 0,
 		};
 		return 1;
