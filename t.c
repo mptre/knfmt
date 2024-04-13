@@ -877,7 +877,7 @@ test_token_branch_impl(struct context *cx)
 		}
 		assert(prefix != NULL);
 
-		token_branch_unlink(prefix);
+		clang_token_branch_unlink(prefix);
 		act = tokens_concat(token_serialize_no_flags,
 		    token_list_first(&tk->tk_prefixes), NULL, &s);
 		if (strcmp(tests[i].exp, act) != 0) {

@@ -241,7 +241,7 @@ clang_branch(struct clang *cl, struct lexer *lx, struct token **unmute)
 	    lexer_serialize(lx, cpp_src), lexer_serialize(lx, cpp_dst),
 	    lexer_serialize(lx, src), lexer_serialize(lx, dst));
 
-	token_branch_unlink(cpp_src);
+	clang_token_branch_unlink(cpp_src);
 
 	rm = src;
 	for (;;) {
@@ -353,10 +353,61 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	return error ? 0 : ndocs;
 }
 
+static void
+clang_token_branch_exhaust(struct token *tk)
+{
+	tk->tk_type = TOKEN_CPP;
+	tk->tk_branch.br_pv = NULL;
+	tk->tk_branch.br_nx = NULL;
+
+	token_branch_parent_update_flags(tk->tk_branch.br_parent);
+	token_rele(tk->tk_branch.br_parent);
+	tk->tk_branch.br_parent = NULL;
+}
+
 void
 clang_token_branch_unlink(struct token *tk)
 {
-	token_branch_unlink(tk);
+	struct token *nx, *pv;
+	int token_type;
+
+	pv = tk->tk_branch.br_pv;
+	nx = tk->tk_branch.br_nx;
+
+	token_type = token_type_normalize(tk);
+	if (token_type == TOKEN_CPP_IF) {
+		assert(pv == NULL);
+		if (token_type_normalize(nx) == TOKEN_CPP_ENDIF) {
+			clang_token_branch_exhaust(nx);
+		} else if (token_type_normalize(nx) == TOKEN_CPP_ELSE) {
+			nx->tk_branch.br_pv = NULL;
+			nx->tk_type = TOKEN_CPP_IF;
+			token_branch_parent_update_flags(
+			    nx->tk_branch.br_parent);
+		} else {
+			assert(0 && "Invalid #if previous token");
+		}
+		clang_token_branch_exhaust(tk);
+	} else if (token_type == TOKEN_CPP_ELSE) {
+		pv->tk_branch.br_nx = nx;
+		nx->tk_branch.br_pv = pv;
+		token_branch_parent_update_flags(pv->tk_branch.br_parent);
+		token_branch_parent_update_flags(nx->tk_branch.br_parent);
+		clang_token_branch_exhaust(tk);
+	} else if (token_type == TOKEN_CPP_ENDIF) {
+		assert(nx == NULL);
+		if (token_type_normalize(pv) == TOKEN_CPP_IF) {
+			clang_token_branch_exhaust(pv);
+		} else if (token_type_normalize(pv) == TOKEN_CPP_ELSE) {
+			pv->tk_branch.br_nx = NULL;
+			pv->tk_type = TOKEN_CPP_ENDIF;
+			token_branch_parent_update_flags(
+			    pv->tk_branch.br_parent);
+		} else {
+			assert(0 && "Invalid #endif previous token");
+		}
+		clang_token_branch_exhaust(tk);
+	}
 }
 
 static void
@@ -382,7 +433,7 @@ clang_before_free(struct lexer *lx, void *arg)
 			struct token *prefix;
 
 			TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
-				token_branch_unlink(prefix);
+				clang_token_branch_unlink(prefix);
 		}
 	}
 
@@ -671,7 +722,7 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 
 		pr = token_list_first(&dst->tk_prefixes);
 		clang_trace(cl, "removing prefix %s", lexer_serialize(lx, pr));
-		token_branch_unlink(pr);
+		clang_token_branch_unlink(pr);
 		token_list_remove(&dst->tk_prefixes, pr);
 		if (pr == cpp_dst)
 			break;
@@ -735,7 +786,7 @@ remove_token(struct lexer *lx, struct token *tk)
 	while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
 		struct token *prefix = TAILQ_FIRST(&tk->tk_prefixes);
 
-		token_branch_unlink(prefix);
+		clang_token_branch_unlink(prefix);
 		token_list_remove(&tk->tk_prefixes, prefix);
 	}
 

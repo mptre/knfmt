@@ -606,63 +606,6 @@ token_branch_parent_update_flags(struct token *parent)
 		parent->tk_flags &= ~TOKEN_FLAG_BRANCH;
 }
 
-static void
-token_branch_exhaust(struct token *tk)
-{
-	tk->tk_type = TOKEN_CPP;
-	tk->tk_branch.br_pv = NULL;
-	tk->tk_branch.br_nx = NULL;
-
-	token_branch_parent_update_flags(tk->tk_branch.br_parent);
-	token_rele(tk->tk_branch.br_parent);
-	tk->tk_branch.br_parent = NULL;
-}
-
-void
-token_branch_unlink(struct token *tk)
-{
-	struct token *nx, *pv;
-	int token_type;
-
-	pv = tk->tk_branch.br_pv;
-	nx = tk->tk_branch.br_nx;
-
-	token_type = token_type_normalize(tk);
-	if (token_type == TOKEN_CPP_IF) {
-		assert(pv == NULL);
-		if (token_type_normalize(nx) == TOKEN_CPP_ENDIF) {
-			token_branch_exhaust(nx);
-		} else if (token_type_normalize(nx) == TOKEN_CPP_ELSE) {
-			nx->tk_branch.br_pv = NULL;
-			nx->tk_type = TOKEN_CPP_IF;
-			token_branch_parent_update_flags(
-			    nx->tk_branch.br_parent);
-		} else {
-			assert(0 && "Invalid #if previous token");
-		}
-		token_branch_exhaust(tk);
-	} else if (token_type == TOKEN_CPP_ELSE) {
-		pv->tk_branch.br_nx = nx;
-		nx->tk_branch.br_pv = pv;
-		token_branch_parent_update_flags(pv->tk_branch.br_parent);
-		token_branch_parent_update_flags(nx->tk_branch.br_parent);
-		token_branch_exhaust(tk);
-	} else if (token_type == TOKEN_CPP_ENDIF) {
-		assert(nx == NULL);
-		if (token_type_normalize(pv) == TOKEN_CPP_IF) {
-			token_branch_exhaust(pv);
-		} else if (token_type_normalize(pv) == TOKEN_CPP_ELSE) {
-			pv->tk_branch.br_nx = NULL;
-			pv->tk_type = TOKEN_CPP_ENDIF;
-			token_branch_parent_update_flags(
-			    pv->tk_branch.br_parent);
-		} else {
-			assert(0 && "Invalid #endif previous token");
-		}
-		token_branch_exhaust(tk);
-	}
-}
-
 unsigned int
 token_flags_inherit(const struct token *tk)
 {
