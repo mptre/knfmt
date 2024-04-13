@@ -641,7 +641,7 @@ hash_key_read_u32(struct hash_key *key)
 	uint32_t val;
 	unsigned int size = sizeof(val);
 
-	if (unlikely(key->ptr & (size - 1)))
+	if (unlikely((key->ptr & (size - 1)) != 0))
 		memcpy(&val, key->u8, 4);
 	else
 		val = key->u32[0];
