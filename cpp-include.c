@@ -258,6 +258,11 @@ cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 			if ((nbrackets > 0 && nquotes > 0) ||
 			    (nbrackets > 0 && nslashes > 0))
 				return;
+
+			/* Allow the main include to come first. */
+			if (i == 0 &&
+			    is_main_include(include_path, path, ci->scratch))
+				priority.sort = -1;
 		}
 		include->priority = priority;
 		add_to_include_group(ci, include);
