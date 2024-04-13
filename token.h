@@ -156,38 +156,34 @@ struct token {
 	unsigned int		 tk_cno;
 	unsigned int		 tk_flags;
 /* Token denotes a type keyword. */
-#define TOKEN_FLAG_TYPE		0x00000001u
+#define TOKEN_FLAG_TYPE						0x00000001u
 /* Token denotes a qualifier keyword. */
-#define TOKEN_FLAG_QUALIFIER	0x00000002u
+#define TOKEN_FLAG_QUALIFIER					0x00000002u
 /* Token denotes a storage keyword. */
-#define TOKEN_FLAG_STORAGE	0x00000004u
-#define TOKEN_FLAG_BRANCH	0x00000008u
-/* was TOKEN_FLAG_TRIMMED	0x00000010u */
+#define TOKEN_FLAG_STORAGE					0x00000004u
+#define TOKEN_FLAG_BRANCH					0x00000008u
 /* Token denotes an assignment operator. */
-#define TOKEN_FLAG_ASSIGN	0x00000020u
-#define TOKEN_FLAG_AMBIGUOUS	0x00000040u
-#define TOKEN_FLAG_BINARY	0x00000080u
-#define TOKEN_FLAG_DISCARD	0x00000100u
-/* was TOKEN_FLAG_UNMUTE	0x00000200u */
-#define TOKEN_FLAG_COMMENT_C99	0x00000400u
-#define TOKEN_FLAG_CPP		0x00000800u
-/* was TOKEN_FLAG_DIRTY		0x00001000u */
+#define TOKEN_FLAG_ASSIGN					0x00000010u
+#define TOKEN_FLAG_AMBIGUOUS					0x00000020u
+#define TOKEN_FLAG_BINARY					0x00000040u
+#define TOKEN_FLAG_DISCARD					0x00000080u
+#define TOKEN_FLAG_COMMENT_C99					0x00000100u
+#define TOKEN_FLAG_CPP						0x00000200u
 /*
  * Token followed by exactly one new line. Dangling suffix and only emitted
  * in certain contexts.
  */
-#define TOKEN_FLAG_OPTLINE	0x00002000u
+#define TOKEN_FLAG_OPTLINE					0x00000400u
 /* Token followed by spaces or tabs. Dangling suffix and never emitted. */
-#define TOKEN_FLAG_OPTSPACE	0x00004000u
+#define TOKEN_FLAG_OPTSPACE					0x00000800u
 /*
  * Token may be surrounded by spaces. Only applicable to binary operators, see
  * token.h.
  */
-#define TOKEN_FLAG_SPACE	0x00008000u
+#define TOKEN_FLAG_SPACE					0x00001000u
 /* Token covered by diff chunk. */
-#define TOKEN_FLAG_DIFF		0x00010000u
-/* was TOKEN_FLAG_TYPE_ARGS	0x08000000u */
-#define TOKEN_FLAG_TYPE_FUNC	0x10000000u
+#define TOKEN_FLAG_DIFF						0x00002000u
+#define TOKEN_FLAG_TYPE_FUNC					0x00004000u
 
 	const char		*tk_str;
 	size_t			 tk_len;
