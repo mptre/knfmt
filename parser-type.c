@@ -12,6 +12,7 @@
 #include "parser-priv.h"
 #include "ruler.h"
 #include "simple-static.h"
+#include "simple-unsigned.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
@@ -143,6 +144,12 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
 			t = simple_static(lx, beg, t, tkstatic);
+	}
+
+	{
+		simple_cookie(simple);
+		if (simple_enter(pr->pr_si, SIMPLE_UNSIGNED, 0, &simple))
+			t = simple_unsigned(lx, beg, t);
 	}
 
 out:

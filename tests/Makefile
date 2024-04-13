@@ -556,6 +556,7 @@ TESTS+=	simple-stmt-011.c
 TESTS+=	simple-stmt-012.c
 TESTS+=	simple-stmt-semi-001.c
 TESTS+=	simple-stmt-semi-002.c
+TESTS+=	simple-unsigned-001.c
 
 TESTS+=	inplace-001.c
 
@@ -796,6 +797,8 @@ TESTS+=	../simple-static.c
 TESTS+=	../simple-static.h
 TESTS+=	../simple-stmt.c
 TESTS+=	../simple-stmt.h
+TESTS+=	../simple-unsigned.c
+TESTS+=	../simple-unsigned.h
 TESTS+=	../simple.c
 TESTS+=	../simple.h
 TESTS+=	../style.c
