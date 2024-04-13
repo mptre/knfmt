@@ -146,7 +146,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			t = simple_static(lx, beg, t, tkstatic);
 	}
 
-	{
+	if (peek) {
 		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_UNSIGNED, 0, &simple))
 			t = simple_unsigned(lx, beg, t);
