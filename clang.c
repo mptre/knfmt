@@ -602,9 +602,10 @@ out:
 
 	/* Establish links between cpp branches. */
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-		switch (prefix->tk_type) {
+		int token_type = token_type_normalize(prefix);
+
+		switch (token_type) {
 		case TOKEN_CPP_IF:
-		case TOKEN_CPP_IFNDEF:
 			clang_branch_enter(cl, lx, prefix, tk);
 			break;
 		case TOKEN_CPP_ELSE:
