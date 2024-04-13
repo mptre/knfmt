@@ -506,7 +506,7 @@ parser_simple_decl_enter(struct parser *pr, unsigned int flags,
 	pr->pr_simple.decl = NULL;
 	simple_leave(simple);
 
-	return error;
+	return parser_good(pr);
 }
 
 static int

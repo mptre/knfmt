@@ -827,7 +827,7 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 	pr->pr_simple.stmt = NULL;
 	simple_leave(simple);
 
-	return error;
+	return parser_good(pr);
 }
 
 static struct doc *

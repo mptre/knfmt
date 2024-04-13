@@ -170,7 +170,7 @@ parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 		simple_decl_proto_leave(pr->pr_simple.decl_proto);
 	simple_decl_proto_free(pr->pr_simple.decl_proto);
 	pr->pr_simple.decl_proto = NULL;
-	return error;
+	return parser_good(pr);
 }
 
 int
