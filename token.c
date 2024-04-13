@@ -116,7 +116,7 @@ token_serialize(const struct token *tk, unsigned int flags,
 void
 token_position_after(struct token *after, struct token *tk)
 {
-	struct token *last, *prefix, *suffix;
+	struct token *last, *suffix;
 	unsigned int lno = after->tk_lno;
 	unsigned int cno;
 
@@ -142,12 +142,7 @@ token_position_after(struct token *after, struct token *tk)
 		}
 	}
 
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-		prefix->tk_cno = cno;
-		prefix->tk_lno = lno - (tk->tk_lno - prefix->tk_lno);
-		cno = colwidth(prefix->tk_str, prefix->tk_len, prefix->tk_cno,
-		    NULL);
-	}
+	/* Intentionally not adjusting prefixes. */
 
 	tk->tk_cno = cno;
 	tk->tk_lno = lno;
