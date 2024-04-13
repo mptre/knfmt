@@ -214,8 +214,11 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 	struct token *define, *endif, *ifndef;
 	const char *cpp_define, *cpp_endif, *cpp_ifndef, *guard, *path;
 
+	if (style(st, IncludeGuards) == 0)
+		return;
+
 	path = lexer_get_path(lx);
-	if (style(st, IncludeGuards) == 0 || !is_header(path))
+	if (!is_header(path))
 		return;
 
 	arena_scope(scratch, s);
