@@ -20,4 +20,6 @@ int	clang_recover(struct clang *, struct lexer *, struct token **);
 
 void	clang_token_move_prefixes(struct token *, struct token *);
 
-void	clang_token_branch_unlink(struct token *);
+struct token	*clang_token_branch_next(struct token *);
+struct token	*clang_token_branch_parent(struct token *);
+void		 clang_token_branch_unlink(struct token *);

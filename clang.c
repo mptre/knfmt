@@ -89,15 +89,15 @@ static void		 clang_branch_fold(struct clang *, struct lexer *,
 
 static void		 remove_token(struct lexer *, struct token *);
 
-static void	token_move_prefix(struct token *, struct token *,
+static void		 token_move_prefix(struct token *, struct token *,
     struct token *);
-static void	token_branch_exhaust(struct token *);
+static void		 token_branch_exhaust(struct token *);
 static struct token	*token_branch_find(struct token *);
-static void	token_branch_link(struct token *, struct token *);
-static void	token_branch_parent(struct token *, struct token *);
-static void	token_branch_parent_update_flags(struct token *);
-static void	token_branch_revert(struct token *);
-static void	token_prolong(struct token *, struct token *);
+static void		 token_branch_link(struct token *, struct token *);
+static void		 token_branch_parent(struct token *, struct token *);
+static void		 token_branch_parent_update_flags(struct token *);
+static void		 token_branch_revert(struct token *);
+static void		 token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char);
 
@@ -369,6 +369,18 @@ clang_token_move_prefixes(struct token *src, struct token *dst)
 		prefix = TAILQ_LAST(&src->tk_prefixes, token_list);
 		token_move_prefix(prefix, src, dst);
 	}
+}
+
+struct token *
+clang_token_branch_next(struct token *tk)
+{
+	return tk->tk_branch.br_nx;
+}
+
+struct token *
+clang_token_branch_parent(struct token *tk)
+{
+	return tk->tk_branch.br_parent;
 }
 
 void

@@ -108,9 +108,9 @@ sense_include_guards(struct lexer *lx, const char *cpp_ifndef,
 	    !is_guard_define(define))
 		return 0;
 
-	endif = ifndef->tk_branch.br_nx;
+	endif = clang_token_branch_next(ifndef);
 	if (endif->tk_type != TOKEN_CPP_ENDIF ||
-	    endif->tk_branch.br_parent != eof)
+	    clang_token_branch_parent(endif) != eof)
 		return 0;
 
 	c->ifndef.tk = ifndef;
