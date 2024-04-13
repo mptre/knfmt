@@ -261,6 +261,7 @@ static void		doc_exec_minimize_indent(const struct doc *,
     struct doc_state *);
 static void		doc_exec_minimize_indent1(struct doc *,
     struct doc_state *, int);
+static void		doc_exec_mute(const struct doc *, struct doc_state *);
 static void		doc_exec_scope(const struct doc *, struct doc_state *);
 static void		doc_exec_maxlines(const struct doc *,
     struct doc_state *);
@@ -695,28 +696,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		break;
 
 	case DOC_MUTE:
-		/*
-		 * While going mute, check if any new line is missed while being
-		 * inside a diff chunk.
-		 */
-		if (st->st_mute == 0 && dc->dc_int > 0)
-			doc_diff_mute_enter(dc, st);
-
-		if (dc->dc_int > 0 || st->st_mute >= -dc->dc_int)
-			st->st_mute += dc->dc_int;
-
-		/*
-		 * While going unmute, instruct the next doc_print() invocation
-		 * to emit any missed new line.
-		 */
-		if (st->st_mute == 0) {
-			unsigned int muteline;
-
-			doc_diff_mute_leave(dc, st);
-			muteline = st->st_muteline;
-			doc_state_reset_lines(st);
-			st->st_newline = muteline;
-		}
+		doc_exec_mute(dc, st);
 		break;
 
 	case DOC_OPTIONAL: {
@@ -972,6 +952,33 @@ doc_exec_minimize_indent1(struct doc *dc, struct doc_state *st, int idx)
 	doc_set_indent(dc, minimizers[idx].indent);
 	doc_exec_indent(dc, st);
 	dc->dc_minimizers = minimizers;
+}
+
+static void
+doc_exec_mute(const struct doc *dc, struct doc_state *st)
+{
+	/*
+	 * While going mute, check if any new line is missed while being inside
+	 * a diff chunk.
+	 */
+	if (st->st_mute == 0 && dc->dc_int > 0)
+		doc_diff_mute_enter(dc, st);
+
+	if (dc->dc_int > 0 || st->st_mute >= -dc->dc_int)
+		st->st_mute += dc->dc_int;
+
+	/*
+	 * While going unmute, instruct the next doc_print() invocation to emit
+	 * any missed new line.
+	 */
+	if (st->st_mute == 0) {
+		unsigned int muteline;
+
+		doc_diff_mute_leave(dc, st);
+		muteline = st->st_muteline;
+		doc_state_reset_lines(st);
+		st->st_newline = muteline;
+	}
 }
 
 static void
