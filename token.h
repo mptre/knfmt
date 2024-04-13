@@ -251,8 +251,6 @@ struct token	*token_list_find(const struct token_list *, int, unsigned int);
 
 struct token	*token_find_suffix_spaces(struct token *);
 
-void	token_move_prefixes(struct token *, struct token *);
-void	token_move_prefix(struct token *, struct token *, struct token *);
 void	token_move_suffixes(struct token *, struct token *);
 void	token_move_suffixes_if(struct token *, struct token *, int);
 

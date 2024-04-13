@@ -533,7 +533,7 @@ lexer_remove(struct lexer *lx, struct token *tk)
 	assert(tk->tk_type != LEXER_EOF);
 	nx = token_next(tk);
 	assert(nx != NULL);
-	token_move_prefixes(tk, nx);
+	lx->lx_callbacks.move_prefixes(tk, nx);
 
 	pv = token_prev(tk);
 	if (pv == NULL)

@@ -12,6 +12,7 @@
 #include "libks/consistency.h"
 #include "libks/vector.h"
 
+#include "clang.h"
 #include "doc.h"
 #include "lexer.h"
 #include "options.h"
@@ -1301,7 +1302,7 @@ token_move_next_line(struct token *tk)
 	token_move_suffixes(tk, pv);
 
 	nx = token_next(tk);
-	token_move_prefixes(nx, tk);
+	clang_token_move_prefixes(nx, tk);
 }
 
 /*

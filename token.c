@@ -533,38 +533,6 @@ token_find_suffix_spaces(struct token *tk)
 }
 
 void
-token_move_prefixes(struct token *src, struct token *dst)
-{
-	while (!TAILQ_EMPTY(&src->tk_prefixes)) {
-		struct token *prefix;
-
-		prefix = TAILQ_LAST(&src->tk_prefixes, token_list);
-		token_move_prefix(prefix, src, dst);
-	}
-}
-
-/*
- * Associated the given prefix token with another token.
- */
-void
-token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
-{
-	int token_type;
-
-	TAILQ_REMOVE(&src->tk_prefixes, prefix, tk_entry);
-	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
-
-	token_type = token_type_normalize(prefix);
-	if (token_type == TOKEN_CPP_IF ||
-	    token_type == TOKEN_CPP_ELSE ||
-	    token_type == TOKEN_CPP_ENDIF) {
-		assert(prefix->tk_branch.br_parent == src);
-		token_branch_parent(prefix, dst);
-		token_branch_parent_update_flags(dst);
-	}
-}
-
-void
 token_move_suffixes(struct token *src, struct token *dst)
 {
 	while (!TAILQ_EMPTY(&src->tk_suffixes)) {

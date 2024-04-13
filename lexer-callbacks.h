@@ -43,6 +43,11 @@ struct lexer_callbacks {
 	struct token	*(*end_of_branch)(struct token *);
 
 	/*
+	 * Move all prefixes from one token to another.
+	 */
+	void		 (*move_prefixes)(struct token *, struct token *);
+
+	/*
 	 * Informative callback invoked once all tokens are read.
 	 * May be omitted.
 	 */
