@@ -76,10 +76,6 @@ struct test_token_move {
 	int		 move;
 	const char	*want[16];
 };
-#define test_lexer_move_before(a) \
-	test(test_lexer_move(&cx, (a), lexer_move_before, __LINE__))
-static int	test_lexer_move(struct context *, struct test_token_move *,
-    struct token *(*)(struct lexer *, struct token *, struct token *), int);
 
 #define test_token_position_after(a) \
 	test(test_token_position_after0(&cx, (a), __LINE__))
@@ -383,67 +379,6 @@ main(int argc, char *argv[])
 	    },
 	}));
 
-	test_lexer_move_before((&(struct test_token_move){
-	    .src	= "int static x;",
-	    .target	= TOKEN_INT,
-	    .move	= TOKEN_STATIC,
-	    .want	= {
-		"STATIC<1:1>(\"static\")",
-		"  SPACE<1:7>(\" \")",
-		"INT<1:8>(\"int\")",
-		"  SPACE<1:11>(\" \")",
-		"IDENT<1:12>(\"x\")",
-		"SEMI<1:13>(\";\")",
-	    },
-	}));
-	test_lexer_move_before((&(struct test_token_move){
-	    .src	= "int static\tx;",
-	    .target	= TOKEN_INT,
-	    .move	= TOKEN_STATIC,
-	    .want	= {
-		"STATIC<1:1>(\"static\")",
-		"  SPACE<1:7>(\" \")",
-		"INT<1:8>(\"int\")",
-		"  SPACE<1:11>(\"\\t\")",
-		"IDENT<1:17>(\"x\")",
-		"SEMI<1:18>(\";\")",
-	    },
-	}));
-	test_lexer_move_before((&(struct test_token_move){
-	    .src	= "/* c1 */ int /* c2 */ static",
-	    .target	= TOKEN_INT,
-	    .move	= TOKEN_STATIC,
-	    .want	= {
-		"  COMMENT<1:1>(\"/* c1 */ \")",
-		"STATIC<1:10>(\"static\")",
-		"  COMMENT<1:16>(\" /* c2 */\")",
-		"INT<1:25>(\"int\")",
-	    },
-	}));
-	test_lexer_move_before((&(struct test_token_move){
-	    .src	= "/* c1 */\nint\nstatic",
-	    .target	= TOKEN_INT,
-	    .move	= TOKEN_STATIC,
-	    .want	= {
-		"  COMMENT<1:1>(\"/* c1 */\\n\")",
-		"STATIC<2:1>(\"static\")",
-		"INT<2:7>(\"int\")",
-		"  SPACE<2:10>(\"\\n\")",
-	    },
-	}));
-	test_lexer_move_before((&(struct test_token_move){
-	    .src	= "int\nstatic void",
-	    .target	= TOKEN_INT,
-	    .move	= TOKEN_STATIC,
-	    .want	= {
-		"STATIC<1:1>(\"static\")",
-		"  SPACE<1:7>(\" \")",
-		"INT<1:8>(\"int\")",
-		"  SPACE<1:11>(\"\\n\")",
-		"VOID<2:1>(\"void\")",
-	    },
-	}));
-
 	test_style("UseTab: Never", UseTab, Never);
 	test_style("UseTab: 'Never'", UseTab, Never);
 	test_style("ColumnLimit: '100'", ColumnLimit, 100);
@@ -648,36 +583,6 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 	}
 
 	buffer_free(bf);
-	return error;
-}
-
-static int
-test_lexer_move(struct context *cx, struct test_token_move *arg,
-    struct token *(*impl)(struct lexer *, struct token *, struct token *),
-    int lno)
-{
-	struct token *before, *move;
-	const char *fun = "lexer_move_before";
-	int error;
-
-	context_init(cx, arg->src);
-
-	if (!find_token(cx->lx, arg->target, &before)) {
-		fprintf(stderr, "%s:%d: could not find before token\n",
-		    fun, lno);
-		error = 1;
-		goto out;
-	}
-	if (!find_token(cx->lx, arg->move, &move)) {
-		fprintf(stderr, "%s:%d: could not find move token\n", fun, lno);
-		error = 1;
-		goto out;
-	}
-
-	impl(cx->lx, before, move);
-	error = assert_token_move(cx, arg->want, fun, lno);
-
-out:
 	return error;
 }
 

@@ -62,8 +62,6 @@ static unsigned int	lexer_column(const struct lexer *,
 static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
 
-static void	lexer_reposition_tokens(struct lexer *, struct token *);
-
 static int	lexer_peek_until_not_nested(struct lexer *, int,
     const struct token *, struct token **);
 
@@ -494,7 +492,6 @@ lexer_move_before(struct lexer *lx, struct token *before, struct token *mv)
 	token_list_swap(&before->tk_suffixes, TOKEN_FLAG_OPTLINE,
 	    &mv->tk_suffixes, mv_suffix_flags);
 
-	lexer_reposition_tokens(lx, mv);
 	return mv;
 }
 
@@ -1023,55 +1020,6 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 	    "expected type %s got %s",
 	    lexer_serialize(lx, &(struct token){.tk_type = type}),
 	    lexer_serialize(lx, tk));
-}
-
-/*
- * Recalculate column and line numbers for all tokens on the given line number
- * starting from the given token.
- */
-static void
-lexer_reposition_tokens(struct lexer *UNUSED(lx), struct token *tk)
-{
-	unsigned int cno = 1;
-	unsigned int lno;
-
-	/* Locate the first token on the line. */
-	for (;;) {
-		struct token *pv;
-
-		pv = token_prev(tk);
-		if (pv == NULL || pv->tk_lno != tk->tk_lno)
-			break;
-		tk = pv;
-	}
-	lno = !TAILQ_EMPTY(&tk->tk_prefixes) ?
-	    TAILQ_FIRST(&tk->tk_prefixes)->tk_lno : tk->tk_lno;
-
-	for (;;) {
-		struct token *prefix, *suffix;
-
-		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
-			prefix->tk_lno = lno;
-			prefix->tk_cno = cno;
-			cno = colwidth(prefix->tk_str, prefix->tk_len, cno,
-			    &lno);
-		}
-
-		tk->tk_lno = lno;
-		tk->tk_cno = cno;
-		cno = colwidth(tk->tk_str, tk->tk_len, cno, &lno);
-
-		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
-			suffix->tk_lno = lno;
-			suffix->tk_cno = cno;
-			cno = colwidth(suffix->tk_str, suffix->tk_len, cno,
-			    &lno);
-		}
-
-		tk = token_next(tk);
-		if (tk == NULL || tk->tk_lno != lno)
-			break;
-	}
 }
 
 static void
