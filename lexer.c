@@ -1007,7 +1007,7 @@ int
 lexer_peek_last(struct lexer *lx, struct token **tk)
 {
 	*tk = TAILQ_LAST(&lx->lx_tokens, token_list);
-	return 1;
+	return *tk != NULL;
 }
 
 static const struct diffchunk *
