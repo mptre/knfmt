@@ -71,9 +71,9 @@ is_not_aligned(const struct alignment *a)
 }
 
 static int
-all_identical(const struct alignment *a, size_t len)
+all_identical(const struct alignment *a, unsigned int len)
 {
-	size_t i;
+	unsigned int i;
 
 	for (i = 0; i < len - 1; i++) {
 		if (a[i].width != a[i + 1].width)
@@ -89,9 +89,9 @@ all_identical(const struct alignment *a, size_t len)
 }
 
 static int
-all_not_aligned(const struct alignment *a, size_t len)
+all_not_aligned(const struct alignment *a, unsigned int len)
 {
-	size_t i;
+	unsigned int i;
 
 	for (i = 0; i < len; i++) {
 		if (!is_not_aligned(&a[i]))
@@ -101,9 +101,9 @@ all_not_aligned(const struct alignment *a, size_t len)
 }
 
 static int
-all_tabs(const struct alignment *a, size_t len)
+all_tabs(const struct alignment *a, unsigned int len)
 {
-	size_t i;
+	unsigned int i;
 
 	for (i = 0; i < len; i++) {
 		if (a[i].indent_type != INDENT_TYPE_NONE &&
@@ -118,9 +118,9 @@ sense_alignment(const char *str, size_t len, const struct style *st,
     struct alignment *alignment)
 {
 	struct alignment lines[3] = {0};
-	size_t nlines = 0;
-	size_t i;
 	unsigned int maxcol = style(st, ColumnLimit);
+	unsigned int nlines = 0;
+	unsigned int i;
 
 	for (i = 0; i < sizeof(lines) / sizeof(lines[0]); i++) {
 		const char *indent, *nx;
