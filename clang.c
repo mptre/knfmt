@@ -303,9 +303,8 @@ clang_branch(struct clang *cl, struct lexer *lx, struct token **unmute)
 int
 clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 {
-	struct clang_token *ct;
 	struct token *seek = NULL;
-	struct token *back, *br, *dst, *src, *stamp;
+	struct token *back, *cpp_dst, *cpp_src, *dst, *src, *stamp;
 	size_t i;
 	int error = 0;
 	int ndocs = 1;
@@ -315,20 +314,18 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	stamp = clang_last_stamped(cl);
 	clang_trace(cl, "back %s, stamp %s",
 	    lexer_serialize(lx, back), lexer_serialize(lx, stamp));
-	br = clang_recover_find_branch(back, stamp, 0);
-	if (br == NULL)
-		br = clang_recover_find_branch(back, stamp, 1);
-	if (br == NULL)
+	cpp_src = clang_recover_find_branch(back, stamp, 0);
+	if (cpp_src == NULL)
+		cpp_src = clang_recover_find_branch(back, stamp, 1);
+	if (cpp_src == NULL)
 		return 0;
 
-	ct = token_priv(br, struct clang_token);
-	src = ct->branch.parent;
-	dst = token_priv(ct->branch.nx, struct clang_token)->branch.parent;
+	src = token_priv(cpp_src, struct clang_token)->branch.parent;
+	cpp_dst = token_priv(cpp_src, struct clang_token)->branch.nx;
+	dst = token_priv(cpp_dst, struct clang_token)->branch.parent;
 	clang_trace(cl, "branch from %s to %s covering [%s, %s)",
-	    lexer_serialize(lx, br),
-	    lexer_serialize(lx, token_priv(br, struct clang_token)->branch.nx),
-	    lexer_serialize(lx, src),
-	    lexer_serialize(lx, dst));
+	    lexer_serialize(lx, cpp_src), lexer_serialize(lx, cpp_dst),
+	    lexer_serialize(lx, src), lexer_serialize(lx, dst));
 
 	/*
 	 * Find the offset of the first stamped token before the branch.
@@ -337,7 +334,7 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	 */
 	for (i = VECTOR_LENGTH(cl->stamps); i > 0; i--) {
 		stamp = cl->stamps[i - 1];
-		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0)
+		if (!token_is_dangling(stamp) && token_cmp(stamp, cpp_src) < 0)
 			break;
 		ndocs++;
 	}
@@ -347,18 +344,19 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	 * Turn the whole branch into a prefix. As the branch is about to be
 	 * removed, grab a reference since it's needed below.
 	 */
-	token_ref(br);
-	clang_branch_fold(cl, lx, br, unmute);
+	token_ref(cpp_src);
+	clang_branch_fold(cl, lx, cpp_src, unmute);
 
 	/* Find first stamped token before the branch. */
 	for (i = VECTOR_LENGTH(cl->stamps); i > 0; i--) {
 		stamp = cl->stamps[i - 1];
-		if (!token_is_dangling(stamp) && token_cmp(stamp, br) < 0) {
+		if (!token_is_dangling(stamp) &&
+		    token_cmp(stamp, cpp_src) < 0) {
 			seek = stamp;
 			break;
 		}
 	}
-	token_rele(br);
+	token_rele(cpp_src);
 
 	if (seek != NULL)
 		lexer_seek_after(lx, seek);
@@ -1316,8 +1314,9 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	if (token_type == TOKEN_CPP_IF ||
 	    token_type == TOKEN_CPP_ELSE ||
 	    token_type == TOKEN_CPP_ENDIF) {
-		assert(token_priv(prefix, struct clang_token)->branch.parent ==
-		    src);
+		struct clang_token *ct = token_priv(prefix, struct clang_token);
+
+		assert(ct->branch.parent == src);
 		token_branch_parent(prefix, dst);
 		token_branch_parent_update_flags(dst);
 	}
