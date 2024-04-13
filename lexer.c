@@ -478,6 +478,7 @@ int
 lexer_branch(struct lexer *lx, struct token **unmute)
 {
 	struct token *back, *cpp_dst, *cpp_src, *dst, *rm, *seek, *src;
+	int error = 0;
 
 	if (!lexer_back(lx, &back))
 		return 0;
@@ -521,16 +522,19 @@ lexer_branch(struct lexer *lx, struct token **unmute)
 
 	/* Rewind to last stamped token. */
 	seek = lexer_last_stamped(lx);
-	lexer_trace(lx, "seek to %s",
-	    lexer_serialize(lx, seek ? seek : TAILQ_FIRST(&lx->lx_tokens)));
-	lx->lx_st.st_tk = seek;
+	if (seek != NULL)
+		lexer_seek_after(lx, seek);
+	else if (lexer_peek_first(lx, &seek))
+		lexer_seek(lx, seek);
+	else
+		error = 1;
 
 	token_rele(dst);
 	token_rele(cpp_dst);
 	token_rele(src);
 	token_rele(cpp_src);
 
-	return 1;
+	return error ? 0 : 1;
 }
 
 int
@@ -1001,6 +1005,13 @@ lexer_until(struct lexer *lx, int type, struct token **tk)
 			return 1;
 		}
 	}
+}
+
+int
+lexer_peek_first(struct lexer *lx, struct token **tk)
+{
+	*tk = TAILQ_FIRST(&lx->lx_tokens);
+	return *tk != NULL;
 }
 
 int

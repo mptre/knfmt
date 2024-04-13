@@ -113,6 +113,7 @@ int	lexer_peek_until_comma(struct lexer *, const struct token *,
     struct token **);
 int	lexer_until(struct lexer *, int, struct token **);
 
+int	lexer_peek_first(struct lexer *, struct token **);
 int	lexer_peek_last(struct lexer *, struct token **);
 
 void	lexer_dump(struct lexer *);
