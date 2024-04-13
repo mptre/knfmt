@@ -396,8 +396,6 @@ lexer_pop(struct lexer *lx, struct token **tk)
 			return 0;
 
 		st->st_tk = token_next(st->st_tk);
-		if (st->st_tk == NULL)
-			return 0;
 		if (likely((st->st_tk->tk_flags & TOKEN_FLAG_BRANCH) == 0))
 			goto out;
 
