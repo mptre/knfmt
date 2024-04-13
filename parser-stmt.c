@@ -161,7 +161,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 
 	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0 &&
 	    is_simple_enabled(pr->pr_si, SIMPLE_STMT)) {
-		dc = simple_stmt_braces_enter(pr->pr_simple.stmt, lbrace,
+		dc = simple_stmt_braces_enter(pr->pr_simple.stmt, dc, lbrace,
 		    rbrace, pr->pr_nindent * style(pr->pr_st, IndentWidth));
 	}
 
@@ -841,7 +841,7 @@ parser_simple_stmt_no_braces_enter(struct parser *pr, struct doc *dc,
 	if (!is_simple_enabled(pr->pr_si, SIMPLE_STMT) ||
 	    !lexer_peek(lx, &lbrace))
 		return dc;
-	return simple_stmt_no_braces_enter(pr->pr_simple.stmt, lbrace,
+	return simple_stmt_no_braces_enter(pr->pr_simple.stmt, dc, lbrace,
 	    (pr->pr_nindent + 1) * style(pr->pr_st, IndentWidth), cookie);
 }
 

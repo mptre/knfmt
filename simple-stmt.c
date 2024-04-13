@@ -16,6 +16,8 @@
 #include "options.h"
 #include "token.h"
 
+#define SIMPLE_STMT_MAX 32
+
 struct stmt {
 	struct doc	*st_root;
 	struct doc	*st_indent;
@@ -59,7 +61,8 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 	struct simple_stmt *ss;
 
 	ss = arena_calloc(eternal_scope, 1, sizeof(*ss));
-	if (VECTOR_INIT(ss->ss_stmts))
+	if (VECTOR_INIT(ss->ss_stmts) ||
+	    VECTOR_RESERVE(ss->ss_stmts, SIMPLE_STMT_MAX))
 		err(1, NULL);
 	ss->ss_arena.scratch = scratch;
 	ss->ss_arena.doc_scope = doc_scope;
@@ -128,8 +131,8 @@ simple_stmt_free(struct simple_stmt *ss)
 }
 
 struct doc *
-simple_stmt_braces_enter(struct simple_stmt *ss, struct token *lbrace,
-    struct token *rbrace, unsigned int indent)
+simple_stmt_braces_enter(struct simple_stmt *ss, struct doc *dc,
+    struct token *lbrace, struct token *rbrace, unsigned int indent)
 {
 	struct stmt *st;
 	unsigned int flags = STMT_BRACES;
@@ -138,6 +141,8 @@ simple_stmt_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 	if (!is_brace_moveable(ss, lbrace) || !is_brace_moveable(ss, rbrace))
 		flags |= STMT_IGNORE;
 	st = simple_stmt_alloc(ss, indent, flags);
+	if (st == NULL)
+		return dc;
 	token_ref(lbrace);
 	st->st_lbrace = lbrace;
 	token_ref(rbrace);
@@ -146,8 +151,8 @@ simple_stmt_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 }
 
 struct doc *
-simple_stmt_no_braces_enter(struct simple_stmt *ss, struct token *lbrace,
-    unsigned int indent, void **cookie)
+simple_stmt_no_braces_enter(struct simple_stmt *ss, struct doc *dc,
+    struct token *lbrace, unsigned int indent, void **cookie)
 {
 	struct stmt *st;
 	unsigned int flags = 0;
@@ -155,6 +160,8 @@ simple_stmt_no_braces_enter(struct simple_stmt *ss, struct token *lbrace,
 	if (!is_brace_moveable(ss, lbrace))
 		flags |= STMT_IGNORE;
 	st = simple_stmt_alloc(ss, indent, flags);
+	if (st == NULL)
+		return dc;
 	token_ref(lbrace);
 	st->st_lbrace = lbrace;
 	*cookie = st;
@@ -178,6 +185,10 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
     unsigned int flags)
 {
 	struct stmt *st;
+
+	/* Prevent reallocations causing dangling pointers. */
+	if (VECTOR_LENGTH(ss->ss_stmts) >= SIMPLE_STMT_MAX)
+		return NULL;
 
 	st = VECTOR_CALLOC(ss->ss_stmts);
 	if (st == NULL)
