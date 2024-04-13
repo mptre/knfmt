@@ -286,12 +286,14 @@ clang_branch(struct clang *cl, struct lexer *lx, struct token **unmute)
 
 	/* Rewind to last stamped token. */
 	seek = clang_last_stamped(cl);
-	if (seek != NULL)
-		lexer_seek_after(lx, seek);
-	else if (lexer_peek_first(lx, &seek))
+	if (seek != NULL) {
+		if (!lexer_seek_after(lx, seek))
+			error = 1;
+	} else if (lexer_peek_first(lx, &seek)) {
 		lexer_seek(lx, seek);
-	else
+	} else {
 		error = 1;
+	}
 
 	token_rele(dst);
 	token_rele(cpp_dst);
@@ -365,12 +367,14 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	}
 	token_rele(cpp_src);
 
-	if (seek != NULL)
-		lexer_seek_after(lx, seek);
-	else if (lexer_peek_first(lx, &seek))
+	if (seek != NULL) {
+		if (!lexer_seek_after(lx, seek))
+			error = 1;
+	} else if (lexer_peek_first(lx, &seek)) {
 		lexer_seek(lx, seek);
-	else
+	} else {
 		error = 1;
+	}
 
 	return error ? 0 : ndocs;
 }
