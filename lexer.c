@@ -1237,9 +1237,12 @@ static void
 lexer_branch_fold(struct lexer *lx, struct token *cpp_src,
     struct token **unmute)
 {
+	const struct lexer_state st = {
+		.st_lno	= cpp_src->tk_lno,
+		.st_off	= cpp_src->tk_off,
+	};
 	struct token *cpp_dst, *dst, *prefix, *pv, *rm, *src;
-	const char *buf = lx->lx_input.ptr;
-	size_t len, off;
+	size_t len;
 	int dangling = 0;
 
 	src = cpp_src->tk_branch.br_parent;
@@ -1250,16 +1253,13 @@ lexer_branch_fold(struct lexer *lx, struct token *cpp_src,
 	dst = cpp_dst->tk_branch.br_parent;
 	token_ref(dst);
 
-	off = cpp_src->tk_off;
-	len = (cpp_dst->tk_off + cpp_dst->tk_len) - off;
-
-	prefix = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope,
-	    &(struct token){.tk_type = TOKEN_CPP, .tk_flags = TOKEN_FLAG_CPP});
-	prefix->tk_lno = cpp_src->tk_lno;
-	prefix->tk_cno = cpp_src->tk_cno;
-	prefix->tk_off = off;
-	prefix->tk_str = &buf[off];
-	prefix->tk_len = len;
+	len = (cpp_dst->tk_off + cpp_dst->tk_len) - cpp_src->tk_off;
+	prefix = lexer_emit(lx, &st, &(struct token){
+	    .tk_type	= TOKEN_CPP,
+	    .tk_flags	= TOKEN_FLAG_CPP,
+	    .tk_str	= cpp_src->tk_str,
+	    .tk_len	= len,
+	});
 
 	/*
 	 * Remove all prefixes hanging of the destination covered by the new
