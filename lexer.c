@@ -124,7 +124,7 @@ lexer_alloc(const struct lexer_arg *arg)
 		struct token **tail;
 
 		tail = VECTOR_POP(discarded);
-		lexer_remove(lx, *tail, 1);
+		lexer_remove(lx, *tail);
 	}
 	VECTOR_FREE(discarded);
 
@@ -521,29 +521,24 @@ lexer_move_before(struct lexer *lx, struct token *before, struct token *mv)
 }
 
 void
-lexer_remove(struct lexer *lx, struct token *tk, int keepfixes)
+lexer_remove(struct lexer *lx, struct token *tk)
 {
+	struct token *nx, *pv;
+
+	/*
+	 * Next token must always be present, we're in trouble while
+	 * trying to remove the EOF token which is the only one lacking
+	 * a next token.
+	 */
 	assert(tk->tk_type != LEXER_EOF);
+	nx = token_next(tk);
+	assert(nx != NULL);
+	token_move_prefixes(tk, nx);
 
-	if (keepfixes) {
-		struct token *nx, *pv;
-
-		/*
-		 * Next token must always be present, we're in trouble while
-		 * trying to remove the EOF token which is the only one lacking
-		 * a next token.
-		 */
-		nx = token_next(tk);
-		assert(nx != NULL);
-		token_move_prefixes(tk, nx);
-
-		pv = token_prev(tk);
-		if (pv == NULL)
-			pv = nx;
-		token_move_suffixes(tk, pv);
-	} else {
-		token_clear_prefixes(tk);
-	}
+	pv = token_prev(tk);
+	if (pv == NULL)
+		pv = nx;
+	token_move_suffixes(tk, pv);
 
 	if (lx->lx_st.st_tk == tk)
 		lx->lx_st.st_tk = token_prev(tk);

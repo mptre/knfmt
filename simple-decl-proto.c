@@ -58,7 +58,7 @@ simple_decl_proto_leave(struct simple_decl_proto *sp)
 		struct argument *arg = &sp->arguments[i];
 
 		if (arg->tk != NULL)
-			lexer_remove(sp->lx, arg->tk, 1);
+			lexer_remove(sp->lx, arg->tk);
 	}
 }
 

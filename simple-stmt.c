@@ -268,8 +268,8 @@ remove_braces(struct simple_stmt *ss)
 		    (st->st_flags & STMT_BRACES) == 0)
 			continue;
 
-		lexer_remove(lx, st->st_lbrace, 1);
-		lexer_remove(lx, st->st_rbrace, 1);
+		lexer_remove(lx, st->st_lbrace);
+		lexer_remove(lx, st->st_rbrace);
 	}
 }
 

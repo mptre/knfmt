@@ -577,17 +577,6 @@ token_move_suffixes(struct token *src, struct token *dst)
 }
 
 void
-token_clear_prefixes(struct token *tk)
-{
-	struct token *prefix;
-
-	while ((prefix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL) {
-		token_branch_unlink(prefix);
-		token_list_remove(&tk->tk_prefixes, prefix);
-	}
-}
-
-void
 token_move_suffixes_if(struct token *src, struct token *dst, int type)
 {
 	struct token *suffix, *tmp;

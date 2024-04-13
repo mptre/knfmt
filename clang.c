@@ -88,6 +88,8 @@ static struct token	*clang_recover_find_branch(struct token *,
 static void		 clang_branch_fold(struct clang *, struct lexer *,
     struct token *, struct token **);
 
+static void		 remove_token(struct lexer *, struct token *);
+
 static void	token_branch_link(struct token *, struct token *);
 static void	token_branch_revert(struct token *);
 static void	token_prolong(struct token *, struct token *);
@@ -249,7 +251,7 @@ clang_branch(struct clang *cl, struct lexer *lx, struct token **unmute)
 		clang_trace(cl, "removing %s", lexer_serialize(lx, rm));
 
 		nx = token_next(rm);
-		lexer_remove(lx, rm, 0);
+		remove_token(lx, rm);
 		if (nx == dst)
 			break;
 		rm = nx;
@@ -707,7 +709,7 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 		dangling = token_is_dangling(rm);
 		nx = token_next(rm);
 		clang_trace(cl, "removing %s", lexer_serialize(lx, rm));
-		lexer_remove(lx, rm, 0);
+		remove_token(lx, rm);
 		rm = nx;
 	}
 
@@ -720,6 +722,25 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 	token_rele(dst);
 	token_rele(cpp_dst);
 	token_rele(src);
+}
+
+static void
+remove_token(struct lexer *lx, struct token *tk)
+{
+	while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
+		struct token *prefix = TAILQ_FIRST(&tk->tk_prefixes);
+
+		token_branch_unlink(prefix);
+		token_list_remove(&tk->tk_prefixes, prefix);
+	}
+
+	while (!TAILQ_EMPTY(&tk->tk_suffixes)) {
+		struct token *suffix = TAILQ_FIRST(&tk->tk_suffixes);
+
+		token_list_remove(&tk->tk_suffixes, suffix);
+	}
+
+	lexer_remove(lx, tk);
 }
 
 static void

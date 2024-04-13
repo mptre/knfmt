@@ -169,7 +169,7 @@ simple_decl_leave(struct simple_decl *sd)
 		struct decl *dc = &sd->empty_decls[i];
 
 		TOKEN_RANGE_FOREACH(tk, &dc->tr, tmp)
-			lexer_remove(lx, tk, 1);
+			lexer_remove(lx, tk);
 	}
 }
 
@@ -412,7 +412,7 @@ simple_decl_move_vars(struct simple_decl *sd, struct decl_type *dt,
 		struct token *ident;
 
 		if (dv->dv_delim != NULL)
-			lexer_remove(lx, dv->dv_delim, 1);
+			lexer_remove(lx, dv->dv_delim);
 		if (i > 0)
 			after = lexer_insert_after(lx, after, TOKEN_COMMA, ",");
 

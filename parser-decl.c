@@ -276,7 +276,7 @@ out:
 			struct token *nx;
 
 			while (lexer_if(lx, TOKEN_SEMI, &nx))
-				lexer_remove(lx, nx, 1);
+				lexer_remove(lx, nx);
 		}
 
 		parser_doc_token(pr, semi, concat);

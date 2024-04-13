@@ -66,7 +66,7 @@ parser_stmt_expr(struct parser *pr, struct doc *dc)
 		while (lexer_peek_if(lx, TOKEN_SEMI, &nx) &&
 		    token_cmp(semi, nx) == 0 &&
 		    lexer_pop(lx, &nx))
-			lexer_remove(lx, nx, 1);
+			lexer_remove(lx, nx);
 	}
 	return parser_good(pr);
 }
