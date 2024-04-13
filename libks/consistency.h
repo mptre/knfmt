@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_CONSISTENCY_H
+#define LIBKS_CONSISTENCY_H
+
 #ifndef NDEBUG
 
 #define ASSERT_CONSISTENCY(a, b) do {					\
@@ -29,3 +32,5 @@ int	assert_consistency(int, const char *, const char *, const char *, int);
 #define ASSERT_CONSISTENCY(a, b) ((void)0)
 
 #endif
+
+#endif /* !LIBKS_CONSISTENCY_H */

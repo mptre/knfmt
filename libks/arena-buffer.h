@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_ARENA_BUFFER_H
+#define LIBKS_ARENA_BUFFER_H
+
 #include <stddef.h>	/* size_t */
 
 struct arena_scope;
@@ -24,3 +27,5 @@ struct buffer	*arena_buffer_read(struct arena_scope *, const char *);
 struct buffer	*arena_buffer_read_fd(struct arena_scope *, int);
 const char	*arena_buffer_getline(struct arena_scope *,
     const struct buffer *, struct buffer_getline *);
+
+#endif /* !LIBKS_ARENA_BUFFER_H */

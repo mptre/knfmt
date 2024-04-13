@@ -41,7 +41,7 @@ struct map_element {
 	struct map_element *hh_next;	/* next hh in bucket order        */
 	const void *key;		/* ptr to enclosing struct's key  */
 	size_t keylen;			/* enclosing struct's key len     */
-	unsigned hashv;			/* result of hash-fcn(key)        */
+	unsigned int hashv;		/* result of hash-fcn(key)        */
 };
 
 struct map {
@@ -77,7 +77,7 @@ static int	pointer_align(uint64_t, uint64_t *);
 static int			 HASH_ADD(struct map *, const void *,
     size_t, struct map_element *);
 static int			 HASH_ADD_TO_TABLE(struct map *,
-    unsigned, struct map_element *);
+    unsigned int, struct map_element *);
 static void			 HASH_APPEND_LIST(struct map *,
     struct map_element *);
 static void			 HASH_DELETE(struct map *,
@@ -88,7 +88,7 @@ static int			 HASH_EXPAND_BUCKETS(struct map *);
 static struct map_element	*HASH_FIND(struct map *, const void *,
     size_t);
 static struct UT_hash_table	*HASH_MAKE_TABLE(struct map_element *);
-static unsigned			 HASH_TO_BKT(unsigned, unsigned);
+static unsigned			 HASH_TO_BKT(unsigned int, unsigned int);
 static unsigned			 HASH_JEN(const void *, size_t)
 	__attribute__((NO_SANITIZE_UNSIGNED_INT_OVERFLOW));
 
@@ -328,7 +328,7 @@ pointer_align(uint64_t size, uint64_t *out)
 
 struct UT_hash_bucket {
 	struct map_element *hh_head;
-	unsigned count;
+	unsigned int count;
 
 	/* expand_mult is normally set to 0. In this situation, the max chain length
 	* threshold is enforced at its default value, HASH_BKT_CAPACITY_THRESH. (If
@@ -347,8 +347,8 @@ struct UT_hash_bucket {
 
 struct UT_hash_table {
 	struct UT_hash_bucket *buckets;
-	unsigned num_buckets, log2_num_buckets;
-	unsigned num_items;
+	unsigned int num_buckets, log2_num_buckets;
+	unsigned int num_items;
 	struct map_element *tail; /* tail hh in app order, for fast append    */
 
 	/* in an ideal situation (all buckets used equally), no bucket would have
@@ -373,7 +373,7 @@ static int
 HASH_ADD(struct map *m, const void *key, size_t keylen,
     struct map_element *add)
 {
-	unsigned _ha_hashv;
+	unsigned int _ha_hashv;
 
 	_ha_hashv = HASH_JEN(key, keylen);
 	add->hashv = _ha_hashv;
@@ -391,10 +391,10 @@ HASH_ADD(struct map *m, const void *key, size_t keylen,
 }
 
 static int
-HASH_ADD_TO_TABLE(struct map *m, unsigned hashval, struct map_element *add)
+HASH_ADD_TO_TABLE(struct map *m, unsigned int hashval, struct map_element *add)
 {
 	struct UT_hash_bucket *bkt;
-	unsigned bkt_idx;
+	unsigned int bkt_idx;
 
 	m->table->num_items++;
 	bkt_idx = HASH_TO_BKT(hashval, m->table->num_buckets);
@@ -465,7 +465,7 @@ static void
 HASH_DEL_IN_BKT(struct map *m, const struct map_element *del)
 {
 	struct UT_hash_bucket *bkt;
-	unsigned bkt_idx;
+	unsigned int bkt_idx;
 
 	bkt_idx = HASH_TO_BKT(del->hashv, m->table->num_buckets);
 	bkt = &m->table->buckets[bkt_idx];
@@ -513,7 +513,7 @@ HASH_EXPAND_BUCKETS(struct map *m)
 	struct UT_hash_table *tbl = m->table;
 	struct UT_hash_bucket *_he_newbkt, *newbuckets;
 	struct map_element *_he_hh_nxt, *_he_thh;
-	unsigned bkt_idx, i, nbuckets;
+	unsigned int bkt_idx, i, nbuckets;
 
 	if (KS_u32_mul_overflow(tbl->num_buckets, 2, &nbuckets))
 		return 1;
@@ -562,7 +562,7 @@ static struct map_element *
 HASH_FIND(struct map *m, const void *key, size_t keylen)
 {
 	struct map_element *el;
-	unsigned bkt_idx, hashv;
+	unsigned int bkt_idx, hashv;
 
 	if (m->head == NULL)
 		return NULL;
@@ -600,7 +600,7 @@ HASH_MAKE_TABLE(struct map_element *tail)
 }
 
 static unsigned
-HASH_TO_BKT(unsigned hashv, unsigned num_bkts)
+HASH_TO_BKT(unsigned int hashv, unsigned int num_bkts)
 {
 	return hashv & (num_bkts - 1U);
 }
@@ -626,8 +626,8 @@ HASH_JEN(const void *key, size_t keylen)
 		const uint32_t  *u32;
 	} _hj_key = { .u8 = key };
 	size_t k;
-	unsigned hashv = 0xfeedbeefu;
-	unsigned _hj_i, _hj_j;
+	unsigned int hashv = 0xfeedbeefu;
+	unsigned int _hj_i, _hj_j;
 
 	_hj_i = _hj_j = 0x9e3779b9u;
 	k = keylen;
@@ -641,23 +641,45 @@ HASH_JEN(const void *key, size_t keylen)
 		_hj_key.u8 += 12;
 		k -= 12U;
 	}
-	hashv += (unsigned)(keylen);
+	hashv += (unsigned int)(keylen);
 	switch (k) {
 #if defined(HAVE_IMPLICIT_FALLTHROUGH)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
-	case 11: hashv += ((unsigned)_hj_key.u8[10] << 24); /* FALLTHROUGH */
-	case 10: hashv += ((unsigned)_hj_key.u8[9] << 16);  /* FALLTHROUGH */
-	case 9: hashv += ((unsigned)_hj_key.u8[8] << 8);    /* FALLTHROUGH */
-	case 8: _hj_j += ((unsigned)_hj_key.u8[7] << 24);   /* FALLTHROUGH */
-	case 7: _hj_j += ((unsigned)_hj_key.u8[6] << 16);   /* FALLTHROUGH */
-	case 6: _hj_j += ((unsigned)_hj_key.u8[5] << 8);    /* FALLTHROUGH */
-	case 5: _hj_j += _hj_key.u8[4];                     /* FALLTHROUGH */
-	case 4: _hj_i += ((unsigned)_hj_key.u8[3] << 24);   /* FALLTHROUGH */
-	case 3: _hj_i += ((unsigned)_hj_key.u8[2] << 16);   /* FALLTHROUGH */
-	case 2: _hj_i += ((unsigned)_hj_key.u8[1] << 8);    /* FALLTHROUGH */
-	case 1: _hj_i += _hj_key.u8[0];                     /* FALLTHROUGH */
+	case 11:
+		hashv += ((unsigned int)_hj_key.u8[10] << 24);
+		/* FALLTHROUGH */
+	case 10:
+		hashv += ((unsigned int)_hj_key.u8[9] << 16);
+		/* FALLTHROUGH */
+	case 9:
+		hashv += ((unsigned int)_hj_key.u8[8] << 8);
+		/* FALLTHROUGH */
+	case 8:
+		_hj_j += ((unsigned int)_hj_key.u8[7] << 24);
+		/* FALLTHROUGH */
+	case 7:
+		_hj_j += ((unsigned int)_hj_key.u8[6] << 16);
+		/* FALLTHROUGH */
+	case 6:
+		_hj_j += ((unsigned int)_hj_key.u8[5] << 8);
+		/* FALLTHROUGH */
+	case 5:
+		_hj_j += _hj_key.u8[4];
+		/* FALLTHROUGH */
+	case 4:
+		_hj_i += ((unsigned int)_hj_key.u8[3] << 24);
+		/* FALLTHROUGH */
+	case 3:
+		_hj_i += ((unsigned int)_hj_key.u8[2] << 16);
+		/* FALLTHROUGH */
+	case 2:
+		_hj_i += ((unsigned int)_hj_key.u8[1] << 8);
+		/* FALLTHROUGH */
+	case 1:
+		_hj_i += _hj_key.u8[0];
+		/* FALLTHROUGH */
 	default: ;
 #if defined(HAVE_IMPLICIT_FALLTHROUGH)
 #  pragma GCC diagnostic pop

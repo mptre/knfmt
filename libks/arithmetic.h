@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_ARITHMETIC_H
+#define LIBKS_ARITHMETIC_H
+
 #include <stdint.h>
 
 int	KS_i32_add_overflow0(int32_t, int32_t, int32_t *);
@@ -159,3 +162,5 @@ KS_u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *c)
 }
 
 #undef has_builtin
+
+#endif /* !LIBKS_ARITHMETIC_H */

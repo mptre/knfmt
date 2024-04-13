@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_VECTOR_H
+#define LIBKS_VECTOR_H
+
 #include <limits.h>	/* ULONG_MAX */
 #include <stddef.h>	/* size_t */
 
@@ -78,3 +81,5 @@ VECTOR_LENGTH(const void *vc)
 }
 
 #define VECTOR_EMPTY(vc) (VECTOR_LENGTH(vc) == 0)
+
+#endif /* !LIBKS_VECTOR_H */

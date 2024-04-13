@@ -14,8 +14,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_COMPILER_H
+#define LIBKS_COMPILER_H
+
 #define UNUSED(x)	_##x __attribute__((__unused__))
 #define MAYBE_UNUSED(x)	x __attribute__((__unused__))
 
 #define likely(x)	__builtin_expect((x), 1)
 #define unlikely(x)	__builtin_expect((x), 0)
+
+#endif /* !LIBKS_COMPILER_H */

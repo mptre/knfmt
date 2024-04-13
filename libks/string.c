@@ -175,6 +175,9 @@ KS_str_match_native(const char *MAYBE_UNUSED(str), size_t MAYBE_UNUSED(len),
     const char *MAYBE_UNUSED(ranges))
 {
 #if defined(__x86_64__)
+	if (len < 8)
+		return KS_str_match_default(str, len, ranges);
+
 	char tail[16] = {0};
 	size_t i = 0;
 	uint64_t mask = 0;

@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_FUZZER_H
+#define LIBKS_FUZZER_H
+
 #include <stdint.h>
 
 #include "libks/buffer.h"
@@ -194,3 +197,5 @@ LLVMFuzzerInitialize(int *UNUSED(argc), char ***UNUSED(argv))
 #else
 #error "unknown fuzzer"
 #endif
+
+#endif /* !LIBKS_FUZZER_H */

@@ -14,8 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIKBS_ARENA_H
-#define LIKBS_ARENA_H
+#ifndef LIBKS_ARENA_H
+#define LIBKS_ARENA_H
 
 #include <stddef.h>	/* size_t */
 
@@ -85,4 +85,4 @@ struct arena_stats	*arena_stats(struct arena *);
 
 void    arena_poison(void *, size_t);
 
-#endif
+#endif /* !LIBKS_ARENA_H */

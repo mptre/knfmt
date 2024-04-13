@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_MAP_H
+#define LIBKS_MAP_H
+
 #include <stddef.h>     /* size_t */
 
 #define MAP_KEY_PTR		0x00000001u
@@ -115,3 +118,5 @@ struct map_iterator {
 	(iterator)->val != NULL ? 1 : 0;				\
 })
 void	*map_iterate(void *, struct map_iterator *);
+
+#endif /* !LIBKS_MAP_H */

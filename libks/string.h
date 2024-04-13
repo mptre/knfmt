@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIBKS_STRING_H
+#define LIBKS_STRING_H
+
 #include <stddef.h>	/* size_t */
 
 #ifdef __cplusplus
@@ -41,3 +44,5 @@ size_t	KS_str_match_native(const char *, size_t, const char *);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !LIBKS_STRING_H */

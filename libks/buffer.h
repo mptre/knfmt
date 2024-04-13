@@ -67,4 +67,4 @@ const char	*buffer_get_ptr(const struct buffer *);
 size_t		 buffer_get_len(const struct buffer *);
 size_t		 buffer_get_size(const struct buffer *);
 
-#endif
+#endif /* !LIBKS_BUFFER_H */
