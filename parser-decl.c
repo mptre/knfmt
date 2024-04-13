@@ -318,8 +318,10 @@ parser_decl_init(struct parser *pr, struct doc **out,
 
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
 			parser_doc_token(pr, comma, concat);
-			doc_alloc(token_has_line(comma, 1) ? DOC_HARDLINE : DOC_LINE,
+			doc_alloc(
+			    token_has_line(comma, 1) ? DOC_HARDLINE : DOC_LINE,
 			    concat);
+
 			if (is_simple_enabled(pr->pr_si, SIMPLE_DECL))
 				simple_decl_comma(pr->pr_simple.decl, comma);
 			/* Break before the argument. */
