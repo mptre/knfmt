@@ -93,6 +93,8 @@ static void	token_move_prefix(struct token *, struct token *,
     struct token *);
 static void	token_branch_exhaust(struct token *);
 static void	token_branch_link(struct token *, struct token *);
+static void	token_branch_parent(struct token *, struct token *);
+static void	token_branch_parent_update_flags(struct token *);
 static void	token_branch_revert(struct token *);
 static void	token_prolong(struct token *, struct token *);
 
@@ -1295,6 +1297,22 @@ token_branch_link(struct token *src, struct token *dst)
 {
 	src->tk_branch.br_nx = dst;
 	dst->tk_branch.br_pv = src;
+}
+
+void
+token_branch_parent(struct token *cpp, struct token *parent)
+{
+	if (cpp->tk_branch.br_parent != NULL)
+		token_rele(cpp->tk_branch.br_parent);
+	token_ref(parent);
+	cpp->tk_branch.br_parent = parent;
+}
+
+void
+token_branch_parent_update_flags(struct token *parent)
+{
+	if (!token_is_branch(parent))
+		parent->tk_flags &= ~TOKEN_FLAG_BRANCH;
 }
 
 static void

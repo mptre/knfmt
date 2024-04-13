@@ -558,22 +558,6 @@ token_move_suffixes_if(struct token *src, struct token *dst, int type)
 	}
 }
 
-void
-token_branch_parent(struct token *cpp, struct token *parent)
-{
-	if (cpp->tk_branch.br_parent != NULL)
-		token_rele(cpp->tk_branch.br_parent);
-	token_ref(parent);
-	cpp->tk_branch.br_parent = parent;
-}
-
-void
-token_branch_parent_update_flags(struct token *parent)
-{
-	if (!token_is_branch(parent))
-		parent->tk_flags &= ~TOKEN_FLAG_BRANCH;
-}
-
 unsigned int
 token_flags_inherit(const struct token *tk)
 {

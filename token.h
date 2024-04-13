@@ -254,7 +254,4 @@ struct token	*token_find_suffix_spaces(struct token *);
 void	token_move_suffixes(struct token *, struct token *);
 void	token_move_suffixes_if(struct token *, struct token *, int);
 
-void	token_branch_parent(struct token *, struct token *);
-void	token_branch_parent_update_flags(struct token *);
-
 unsigned int	token_flags_inherit(const struct token *);
