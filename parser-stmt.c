@@ -304,9 +304,10 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
 	struct doc *space = NULL;
-	struct doc *loop;
+	struct doc *indent, *loop;
 	struct token *semi = NULL;
 	struct token *tk;
+	void *simple = NULL;
 	unsigned int w;
 	int error;
 
@@ -383,11 +384,17 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_literal(" ", expr);
-	} else {
-		dc = doc_indent(style(pr->pr_st, IndentWidth), dc);
-		doc_alloc(DOC_HARDLINE, dc);
+		return parser_stmt(pr, dc);
 	}
-	return parser_stmt(pr, dc);
+
+	indent = doc_indent(style(pr->pr_st, IndentWidth), dc);
+	doc_alloc(DOC_HARDLINE, indent);
+	indent = parser_simple_stmt_no_braces_enter(pr, indent, &simple);
+	error = parser_stmt(pr, indent);
+	parser_simple_stmt_no_braces_leave(pr, simple);
+	if (error & (FAIL | NONE))
+		return parser_fail(pr);
+	return parser_good(pr);
 }
 
 static int
