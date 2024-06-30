@@ -58,11 +58,15 @@ enum yaml_type {
 };
 
 struct style {
-	struct arena_scope		*eternal_scope;
-	struct arena			*scratch;
 	const struct options		*op;
 	int				 scope;
 	int				 depth;
+
+	struct {
+		struct arena_scope	*eternal_scope;
+		struct arena		*scratch;
+	} arena;
+
 	struct {
 		int		type;
 		unsigned int	isset;
@@ -387,8 +391,8 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 
 	st = arena_calloc(eternal_scope, 1, sizeof(*st));
 	arena_cleanup(eternal_scope, style_free, st);
-	st->eternal_scope = eternal_scope;
-	st->scratch = scratch;
+	st->arena.eternal_scope = eternal_scope;
+	st->arena.scratch = scratch;
 	st->op = op;
 	if (VECTOR_INIT(st->include_categories))
 		err(1, NULL);
@@ -554,7 +558,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .op			= st->op,
 	    .error_flush	= options_trace_level(st->op, 's') > 0,
 	    .arena		= {
-		.eternal_scope	= st->eternal_scope,
+		.eternal_scope	= st->arena.eternal_scope,
 	    },
 	    .callbacks		= {
 		.read			= yaml_read,
@@ -1128,7 +1132,7 @@ clang_format_dump_style(struct style *st, enum style_keyword based_on_style,
 		struct buffer_getline it = {0};
 		const char *line;
 
-		arena_scope(st->scratch, scratch_scope);
+		arena_scope(st->arena.scratch, scratch_scope);
 
 		while ((line = arena_buffer_getline(&scratch_scope, bf, &it)) !=
 		    NULL)
@@ -1146,7 +1150,7 @@ parse_BasedOnStyle(struct style *st, struct lexer *lx,
 	enum style_keyword based_on_style;
 	int error;
 
-	arena_scope(st->scratch, s);
+	arena_scope(st->arena.scratch, s);
 
 	error = parse_enum(st, lx, so);
 	if ((error & GOOD) == 0)
@@ -1272,7 +1276,8 @@ parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 		return FAIL;
 
 	ic = VECTOR_LAST(st->include_categories);
-	ic->pattern = arena_strndup(st->eternal_scope, tk->tk_str, tk->tk_len);
+	ic->pattern = arena_strndup(st->arena.eternal_scope,
+	    tk->tk_str, tk->tk_len);
 	/* Allow the pattern to be redefined. */
 	regfree(&ic->regex);
 	error = regcomp(&ic->regex, ic->pattern,
