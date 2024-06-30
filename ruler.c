@@ -100,7 +100,7 @@ ruler_insert0(struct ruler *rl, struct token *tk, struct doc *dc,
 	rd = VECTOR_CALLOC(rc->rc_datums);
 	if (rd == NULL)
 		err(1, NULL);
-	rd->rd_dc = doc_alloc0(DOC_ALIGN, dc, 1, fun, lno);
+	rd->rd_dc = doc_alloc_impl(DOC_ALIGN, dc, 1, fun, lno);
 	token_ref(tk);
 	rd->rd_tk = tk;
 	rd->rd_len = len;
@@ -149,13 +149,13 @@ ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
 		err(1, NULL);
 	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
 	ri->ri_sign = sign;
-	ri->ri_dc = doc_alloc0(DOC_INDENT, dc, 0, fun, lno);
+	ri->ri_dc = doc_alloc_impl(DOC_INDENT, dc, 0, fun, lno);
 	if (cookie != NULL)
 		*cookie = ri;
 	return ri->ri_dc;
 
 err:
-	return doc_alloc0(DOC_CONCAT, dc, 0, fun, lno);
+	return doc_alloc_impl(DOC_CONCAT, dc, 0, fun, lno);
 }
 
 void

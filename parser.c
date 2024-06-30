@@ -43,7 +43,7 @@ clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 
 	parser_trace(pr, "beg %u, end %u", beg, end);
 
-	doc_alloc0(DOC_UNMUTE, dc, -1, __func__, __LINE__);
+	doc_alloc_impl(DOC_UNMUTE, dc, -1, __func__, __LINE__);
 	if (lexer_get_lines(pr->pr_lx, beg, end, &str, &len) == 0)
 		return;
 
@@ -78,7 +78,7 @@ clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 
 	parser_trace(pr, "%s", lexer_serialize(pr->pr_lx, comment));
 
-	doc_alloc0(DOC_MUTE, dc, 1, __func__, __LINE__);
+	doc_alloc_impl(DOC_MUTE, dc, 1, __func__, __LINE__);
 
 	/* Must account for more than one trailing hard line(s). */
 	if (pr->pr_token.clang_format_off != NULL)
@@ -317,7 +317,7 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 	if (tk == pr->pr_token.unmute) {
 		if (!lexer_get_peek(pr->pr_lx))
 			pr->pr_token.unmute = NULL;
-		doc_alloc0(DOC_MUTE, dc, -1, __func__, __LINE__);
+		doc_alloc_impl(DOC_MUTE, dc, -1, __func__, __LINE__);
 	}
 
 	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
@@ -344,7 +344,7 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 	/* Mute if we're about to branch. */
 	nx = token_next(tk);
 	if (nx != NULL && (nx->tk_flags & TOKEN_FLAG_BRANCH))
-		doc_alloc0(DOC_MUTE, dc, 1, __func__, __LINE__);
+		doc_alloc_impl(DOC_MUTE, dc, 1, __func__, __LINE__);
 
 	return out;
 }

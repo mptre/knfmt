@@ -1164,7 +1164,7 @@ expr_doc_align0(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc,
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[0].indent = DOC_INDENT_WIDTH;
 	minimizers[1].indent = indent;
-	return doc_minimize0(minimizers, 2, dc, fun, lno);
+	return doc_minimize_impl(minimizers, 2, dc, fun, lno);
 }
 
 static struct doc *
@@ -1176,7 +1176,7 @@ expr_doc_align_disable0(struct expr *UNUSED(ex), struct expr_state *es,
 	expr_doc_align_init(es, minimizers, 2);
 	minimizers[1].indent = indent;
 	minimizers[1].flags |= DOC_MINIMIZE_FORCE;
-	return doc_minimize0(minimizers, 2, dc, fun, lno);
+	return doc_minimize_impl(minimizers, 2, dc, fun, lno);
 }
 
 static void
@@ -1249,9 +1249,9 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 	if (es->es_flags & EXPR_EXEC_NOSOFT)
 		return expr_doc(ex, es, dc);
 
-	dc = doc_alloc0(DOC_CONCAT, doc_alloc0(DOC_GROUP, dc, 0, fun, lno),
-	    0, fun, lno);
-	softline = doc_alloc0(DOC_SOFTLINE, dc, weight, fun, lno);
+	dc = doc_alloc_impl(DOC_CONCAT,
+	    doc_alloc_impl(DOC_GROUP, dc, 0, fun, lno), 0, fun, lno);
+	softline = doc_alloc_impl(DOC_SOFTLINE, dc, weight, fun, lno);
 	parent = doc_alloc(DOC_CONCAT, dc);
 	concat = expr_doc(ex, es, parent);
 	/*

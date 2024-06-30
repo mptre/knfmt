@@ -76,12 +76,12 @@ void		doc_set_dedent(struct doc *, unsigned int);
 void		doc_set_align(struct doc *, const struct doc_align *);
 
 #define doc_root(a) \
-	doc_root0((a), __func__, __LINE__)
-struct doc	*doc_root0(struct arena_scope *, const char *, int);
+	doc_root_impl((a), __func__, __LINE__)
+struct doc	*doc_root_impl(struct arena_scope *, const char *, int);
 
 #define doc_alloc(a, b) \
-	doc_alloc0((a), (b), 0, __func__, __LINE__)
-struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
+	doc_alloc_impl((a), (b), 0, __func__, __LINE__)
+struct doc	*doc_alloc_impl(enum doc_type, struct doc *, int, const char *,
     int);
 
 /*
@@ -104,27 +104,27 @@ struct doc	*doc_alloc0(enum doc_type, struct doc *, int, const char *,
 #define DOC_INDENT_WIDTH	0x08000000
 
 #define doc_indent(a, b) \
-	doc_indent0((a), (b), __func__, __LINE__)
-struct doc	*doc_indent0(unsigned int, struct doc *, const char *, int);
+	doc_indent_impl((a), (b), __func__, __LINE__)
+struct doc	*doc_indent_impl(unsigned int, struct doc *, const char *, int);
 #define doc_dedent(a, b) \
-	doc_dedent0((a), (b), __func__, __LINE__)
-struct doc	*doc_dedent0(unsigned int, struct doc *, const char *, int);
+	doc_dedent_impl((a), (b), __func__, __LINE__)
+struct doc	*doc_dedent_impl(unsigned int, struct doc *, const char *, int);
 
 #define doc_minimize(a, b) \
-    doc_minimize0(a, sizeof(a)/sizeof((a)[0]), b, __func__, __LINE__)
-struct doc	*doc_minimize0(const struct doc_minimize *, size_t,
+    doc_minimize_impl(a, sizeof(a)/sizeof((a)[0]), b, __func__, __LINE__)
+struct doc	*doc_minimize_impl(const struct doc_minimize *, size_t,
     struct doc *, const char *, int);
 
 #define doc_literal(a, b) \
-	doc_literal0((a), (b), __func__, __LINE__)
-struct doc	*doc_literal0(const char *, struct doc *,
+	doc_literal_impl((a), (b), __func__, __LINE__)
+struct doc	*doc_literal_impl(const char *, struct doc *,
     const char *, int);
 
 struct doc	*doc_token(const struct token *, struct doc *, enum doc_type,
     const char *, int);
 
 #define doc_max_lines(a, b) \
-	doc_alloc0(DOC_MAXLINES, (b), (a), __func__, __LINE__)
+	doc_alloc_impl(DOC_MAXLINES, (b), (a), __func__, __LINE__)
 
 int	doc_max(const struct doc *, struct arena *);
 

@@ -329,8 +329,8 @@ static int		doc_diff_covers(const struct doc *, struct doc_state *,
 static int		doc_diff_is_mute(const struct doc_state *);
 
 #define doc_diff_leave(a, b, c) \
-	doc_diff_leave0((a), (b), (c), __func__)
-static void	doc_diff_leave0(const struct doc *, struct doc_state *,
+	doc_diff_leave_impl((a), (b), (c), __func__)
+static void	doc_diff_leave_impl(const struct doc *, struct doc_state *,
     unsigned int, const char *);
 
 /* Emit indentation after new line. */
@@ -345,23 +345,23 @@ static int	doc_print(const struct doc *, struct doc_state *, const char *,
 
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
-		doc_trace0((dc), (st), (fmt), __VA_ARGS__);		\
+		doc_trace_impl((dc), (st), (fmt), __VA_ARGS__);		\
 } while (0)
-static void	doc_trace0(const struct doc *, const struct doc_state *,
+static void	doc_trace_impl(const struct doc *, const struct doc_state *,
     const char *, ...)
 	__attribute__((__format__(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
-		doc_trace_enter0((dc), (st));				\
+		doc_trace_enter_impl((dc), (st));			\
 } while (0)
-static void	doc_trace_enter0(const struct doc *, struct doc_state *);
+static void	doc_trace_enter_impl(const struct doc *, struct doc_state *);
 
 #define doc_trace_leave(dc, st) do {					\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
-		doc_trace_leave0((dc), (st));				\
+		doc_trace_leave_impl((dc), (st));			\
 } while (0)
-static void	doc_trace_leave0(const struct doc *, struct doc_state *);
+static void	doc_trace_leave_impl(const struct doc *, struct doc_state *);
 
 static const char	*docstr(const struct doc *, struct arena_scope *);
 static const char	*indentstr(const struct doc *,
@@ -462,7 +462,7 @@ doc_init(struct doc *dc)
 }
 
 struct doc *
-doc_root0(struct arena_scope *s, const char *fun, int lno)
+doc_root_impl(struct arena_scope *s, const char *fun, int lno)
 {
 	struct doc *dc;
 
@@ -476,8 +476,8 @@ doc_root0(struct arena_scope *s, const char *fun, int lno)
 }
 
 struct doc *
-doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
-    int lno)
+doc_alloc_impl(enum doc_type type, struct doc *parent, int val,
+    const char *fun, int lno)
 {
 	struct doc *dc;
 
@@ -493,23 +493,23 @@ doc_alloc0(enum doc_type type, struct doc *parent, int val, const char *fun,
 }
 
 struct doc *
-doc_indent0(unsigned int val, struct doc *dc, const char *fun, int lno)
+doc_indent_impl(unsigned int val, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *indent;
 
-	indent = doc_alloc0(DOC_INDENT, dc, 0, fun, lno);
+	indent = doc_alloc_impl(DOC_INDENT, dc, 0, fun, lno);
 	doc_set_indent(indent, val);
-	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
+	return doc_alloc_impl(DOC_CONCAT, indent, 0, fun, lno);
 }
 
 struct doc *
-doc_dedent0(unsigned int val, struct doc *dc, const char *fun, int lno)
+doc_dedent_impl(unsigned int val, struct doc *dc, const char *fun, int lno)
 {
 	struct doc *indent;
 
-	indent = doc_alloc0(DOC_INDENT, dc, 0, fun, lno);
+	indent = doc_alloc_impl(DOC_INDENT, dc, 0, fun, lno);
 	doc_set_dedent(indent, val);
-	return doc_alloc0(DOC_CONCAT, indent, 0, fun, lno);
+	return doc_alloc_impl(DOC_CONCAT, indent, 0, fun, lno);
 }
 
 static void
@@ -521,13 +521,13 @@ doc_minimize_free(void *arg)
 }
 
 struct doc *
-doc_minimize0(const struct doc_minimize *minimizers, size_t nminimizers,
+doc_minimize_impl(const struct doc_minimize *minimizers, size_t nminimizers,
     struct doc *parent, const char *fun, int lno)
 {
 	struct doc *dc;
 	size_t i;
 
-	dc = doc_alloc0(DOC_MINIMIZE, parent, 0, fun, lno);
+	dc = doc_alloc_impl(DOC_MINIMIZE, parent, 0, fun, lno);
 	arena_cleanup(dc->dc_scope, doc_minimize_free, dc);
 	if (VECTOR_INIT(dc->dc_minimizers))
 		err(1, NULL);
@@ -541,16 +541,16 @@ doc_minimize0(const struct doc_minimize *minimizers, size_t nminimizers,
 			err(1, NULL);
 		*dst = minimizers[i];
 	}
-	return doc_alloc0(DOC_CONCAT, dc, 0, fun, lno);
+	return doc_alloc_impl(DOC_CONCAT, dc, 0, fun, lno);
 }
 
 struct doc *
-doc_literal0(const char *str, struct doc *dc, const char *fun,
+doc_literal_impl(const char *str, struct doc *dc, const char *fun,
     int lno)
 {
 	struct doc *literal;
 
-	literal = doc_alloc0(DOC_LITERAL, dc, 0, fun, lno);
+	literal = doc_alloc_impl(DOC_LITERAL, dc, 0, fun, lno);
 	literal->dc_str = str;
 	literal->dc_len = strlen(str);
 	return literal;
@@ -570,7 +570,7 @@ doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
 {
 	struct doc *token;
 
-	token = doc_alloc0(type, dc, 0, fun, lno);
+	token = doc_alloc_impl(type, dc, 0, fun, lno);
 	/* Must be mutable for reference counting. */
 	token->dc_tk = (struct token *)tk;
 	token_ref(token->dc_tk);
@@ -1649,8 +1649,8 @@ doc_diff_is_mute(const struct doc_state *st)
 }
 
 static void
-doc_diff_leave0(const struct doc *dc, struct doc_state *st, unsigned int end,
-    const char *fun)
+doc_diff_leave_impl(const struct doc *dc, struct doc_state *st,
+    unsigned int end, const char *fun)
 {
 	if (end == 0)
 		return;
@@ -1821,7 +1821,7 @@ doc_state_snapshot_restore(const struct doc_state_snapshot *sn,
 }
 
 static void
-doc_trace0(const struct doc *UNUSED(dc), const struct doc_state *st,
+doc_trace_impl(const struct doc *UNUSED(dc), const struct doc_state *st,
     const char *fmt, ...)
 {
 	va_list ap;
@@ -1842,7 +1842,7 @@ doc_trace0(const struct doc *UNUSED(dc), const struct doc_state *st,
 }
 
 static void
-doc_trace_enter0(const struct doc *dc, struct doc_state *st)
+doc_trace_enter_impl(const struct doc *dc, struct doc_state *st)
 {
 	const struct doc_description *desc = &doc_descriptions[dc->dc_type];
 	unsigned int depth = st->st_depth;
@@ -1915,7 +1915,7 @@ doc_trace_enter0(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_trace_leave0(const struct doc *dc, struct doc_state *st)
+doc_trace_leave_impl(const struct doc *dc, struct doc_state *st)
 {
 	const struct doc_description *desc = &doc_descriptions[dc->dc_type];
 	unsigned int depth = st->st_depth;
