@@ -125,6 +125,8 @@ struct arena_scope;
 	OP(TOKEN_INLINE,	"_inline_", TOKEN_FLAG_STORAGE)		\
 	OP(TOKEN_INLINE,	"_inline__", TOKEN_FLAG_STORAGE)	\
 	OP(TOKEN_INLINE,	"inline_", TOKEN_FLAG_STORAGE)		\
+	/* restrict */							\
+	OP(TOKEN_RESTRICT,	"_restrict", TOKEN_FLAG_QUALIFIER)	\
 	/* BSD */							\
 	OP(TOKEN_UINT8,		"u_int8_t", 0)				\
 	OP(TOKEN_UINT16,	"u_int16_t", 0)				\
