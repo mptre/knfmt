@@ -335,8 +335,9 @@ parser_decl_init(struct parser *pr, struct doc **out,
 			 * declaration.
 			 */
 			*out = concat;
+
+			ncomma++;
 		}
-		ncomma++;
 
 		error = parser_decl_init1(pr, concat, out);
 		if (error & NONE)
