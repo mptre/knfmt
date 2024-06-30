@@ -27,7 +27,9 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 		.st		= pr->pr_st,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
-		.scratch	= pr->pr_arena.scratch,
+		.arena		= {
+			.scratch	= pr->pr_arena.scratch,
+		},
 		.callbacks	= {
 			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,
@@ -51,13 +53,15 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 		.si		= pr->pr_si,
 		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
-		.scratch	= pr->pr_arena.scratch,
 		.rl		= arg->rl,
 		.dc		= arg->dc,
 		.stop		= arg->stop,
 		.indent		= arg->indent,
 		.align		= arg->align,
 		.flags		= arg->flags,
+		.arena		= {
+			.scratch	= pr->pr_arena.scratch,
+		},
 		.callbacks	= {
 			.recover	= expr_recover,
 			.recover_cast	= expr_recover_cast,

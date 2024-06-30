@@ -3,7 +3,6 @@ struct expr_exec_arg {
 	struct simple		*si;
 	const struct options	*op;
 	struct lexer		*lx;
-	struct arena		*scratch;
 	struct ruler		*rl;
 	struct doc		*dc;
 
@@ -31,6 +30,10 @@ struct expr_exec_arg {
 /* was EXPR_EXEC_ASM			0x00000010u */
 /* Disable expr_doc_soft() logic. */
 #define EXPR_EXEC_NOSOFT		0x00000020u
+
+	struct {
+		struct arena	*scratch;
+	} arena;
 
 	struct {
 		/*

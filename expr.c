@@ -314,7 +314,7 @@ expr_exec(const struct expr_exec_arg *ea)
 	struct doc *dc, *expr, *indent, *optional;
 	struct expr *ex;
 
-	arena_scope(ea->scratch, scratch_scope);
+	arena_scope(ea->arena.scratch, scratch_scope);
 
 	expr_state_init(&es, ea, EXPR_MODE_EXEC, &scratch_scope);
 
@@ -355,7 +355,7 @@ expr_peek(const struct expr_exec_arg *ea, struct token **tk)
 	struct lexer *lx = ea->lx;
 	int peek = 0;
 
-	arena_scope(ea->scratch, scratch_scope);
+	arena_scope(ea->arena.scratch, scratch_scope);
 
 	expr_state_init(&es, ea, EXPR_MODE_PEEK, &scratch_scope);
 
@@ -1275,7 +1275,7 @@ expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
 
 	memset(es, 0, sizeof(*es));
 	es->es_ea = *ea;
-	es->es_arena.scratch = ea->scratch;
+	es->es_arena.scratch = ea->arena.scratch;
 	es->es_arena.scratch_scope = scratch_scope;
 }
 
