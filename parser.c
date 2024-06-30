@@ -33,8 +33,8 @@ clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 	size_t len;
 	unsigned int beg;
 
-	off = pr->pr_clang_format.off;
-	pr->pr_clang_format.off = NULL;
+	off = pr->pr_token.clang_format_off;
+	pr->pr_token.clang_format_off = NULL;
 	if (off == NULL)
 		return;
 	beg = off->tk_lno;
@@ -61,7 +61,7 @@ static void
 clang_format_on(struct parser *pr, struct token *comment, struct doc *dc)
 {
 	/* Ignore while peeking and branching. */
-	if (lexer_get_peek(pr->pr_lx) || pr->pr_branch.unmute != NULL)
+	if (lexer_get_peek(pr->pr_lx) || pr->pr_token.unmute != NULL)
 		return;
 
 	parser_trace(pr, "%s", lexer_serialize(pr->pr_lx, comment));
@@ -73,7 +73,7 @@ static void
 clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 {
 	/* Ignore while peeking and branching. */
-	if (lexer_get_peek(pr->pr_lx) || pr->pr_branch.unmute != NULL)
+	if (lexer_get_peek(pr->pr_lx) || pr->pr_token.unmute != NULL)
 		return;
 
 	parser_trace(pr, "%s", lexer_serialize(pr->pr_lx, comment));
@@ -81,10 +81,10 @@ clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 	doc_alloc0(DOC_MUTE, dc, 1, __func__, __LINE__);
 
 	/* Must account for more than one trailing hard line(s). */
-	if (pr->pr_clang_format.off != NULL)
-		token_rele(pr->pr_clang_format.off);
+	if (pr->pr_token.clang_format_off != NULL)
+		token_rele(pr->pr_token.clang_format_off);
 	token_ref(comment);
-	pr->pr_clang_format.off = comment;
+	pr->pr_token.clang_format_off = comment;
 }
 
 static int
@@ -147,13 +147,13 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 		if (error & GOOD) {
 			clang_stamp(clang, lx);
 		} else if (error & BRCH) {
-			if (!clang_branch(clang, lx, &pr->pr_branch.unmute))
+			if (!clang_branch(clang, lx, &pr->pr_token.unmute))
 				break;
 			parser_reset(pr);
 		} else if (error & (FAIL | NONE)) {
 			int r;
 
-			r = clang_recover(clang, lx, &pr->pr_branch.unmute);
+			r = clang_recover(clang, lx, &pr->pr_token.unmute);
 			if (r == 0)
 				break;
 			while (r-- > 0)
@@ -299,11 +299,11 @@ parser_reset(struct parser *pr)
 	pr->pr_error = 0;
 
 	/* Remove last clang-format off if about to be traversed again. */
-	if (pr->pr_clang_format.off != NULL &&
+	if (pr->pr_token.clang_format_off != NULL &&
 	    lexer_peek(pr->pr_lx, &nx) &&
-	    token_cmp(nx, pr->pr_clang_format.off) < 0) {
-		token_rele(pr->pr_clang_format.off);
-		pr->pr_clang_format.off = NULL;
+	    token_cmp(nx, pr->pr_token.clang_format_off) < 0) {
+		token_rele(pr->pr_token.clang_format_off);
+		pr->pr_token.clang_format_off = NULL;
 	}
 }
 
@@ -314,9 +314,9 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 	struct doc *out;
 	struct token *nx, *prefix, *suffix;
 
-	if (tk == pr->pr_branch.unmute) {
+	if (tk == pr->pr_token.unmute) {
 		if (!lexer_get_peek(pr->pr_lx))
-			pr->pr_branch.unmute = NULL;
+			pr->pr_token.unmute = NULL;
 		doc_alloc0(DOC_MUTE, dc, -1, __func__, __LINE__);
 	}
 

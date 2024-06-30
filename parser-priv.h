@@ -46,11 +46,8 @@ struct parser {
 
 	struct {
 		struct token	*unmute;
-	} pr_branch;
-
-	struct {
-		struct token	*off;
-	} pr_clang_format;
+		struct token	*clang_format_off;
+	} pr_token;
 };
 
 int	parser_good(const struct parser *);
