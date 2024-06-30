@@ -20,7 +20,6 @@
 #include "expr.h"
 #include "file.h"
 #include "fs.h"
-#include "lexer-callbacks.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"

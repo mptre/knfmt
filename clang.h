@@ -1,3 +1,5 @@
+#include "lexer-callbacks.h"
+
 struct arena;
 struct arena_scope;
 struct lexer;
