@@ -20,25 +20,25 @@
 #define SIMPLE_STMT_MAX 32
 
 struct stmt {
-	struct doc	*st_root;
-	struct doc	*st_indent;
-	struct token	*st_lbrace;
-	struct token	*st_rbrace;
-	unsigned int	 st_flags;
+	struct doc	*root;
+	struct doc	*indent;
+	struct token	*lbrace;
+	struct token	*rbrace;
+	unsigned int	 flags;
 #define STMT_BRACES			0x00000001u
 #define STMT_IGNORE			0x00000002u
 };
 
 struct simple_stmt {
-	VECTOR(struct stmt)	 ss_stmts;
-	struct lexer		*ss_lx;
-	const struct options	*ss_op;
-	const struct style	*ss_st;
+	VECTOR(struct stmt)	 stmts;
+	struct lexer		*lx;
+	const struct options	*op;
+	const struct style	*st;
 
 	struct {
 		struct arena		*scratch;
 		struct arena		*buffer;
-	} ss_arena;
+	} arena;
 };
 
 static struct stmt	*simple_stmt_alloc(struct simple_stmt *, struct doc *,
@@ -63,21 +63,21 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 	struct simple_stmt *ss;
 
 	ss = arena_calloc(eternal_scope, 1, sizeof(*ss));
-	if (VECTOR_INIT(ss->ss_stmts) ||
-	    VECTOR_RESERVE(ss->ss_stmts, SIMPLE_STMT_MAX))
+	if (VECTOR_INIT(ss->stmts) ||
+	    VECTOR_RESERVE(ss->stmts, SIMPLE_STMT_MAX))
 		err(1, NULL);
-	ss->ss_arena.scratch = scratch;
-	ss->ss_arena.buffer = buffer;
-	ss->ss_lx = lx;
-	ss->ss_op = op;
-	ss->ss_st = st;
+	ss->arena.scratch = scratch;
+	ss->arena.buffer = buffer;
+	ss->lx = lx;
+	ss->op = op;
+	ss->st = st;
 	return ss;
 }
 
 void
 simple_stmt_leave(struct simple_stmt *ss)
 {
-	if (VECTOR_EMPTY(ss->ss_stmts))
+	if (VECTOR_EMPTY(ss->stmts))
 		return;
 
 	if (need_braces(ss))
@@ -92,16 +92,16 @@ simple_stmt_free(struct simple_stmt *ss)
 	if (ss == NULL)
 		return;
 
-	while (!VECTOR_EMPTY(ss->ss_stmts)) {
+	while (!VECTOR_EMPTY(ss->stmts)) {
 		struct stmt *st;
 
-		st = VECTOR_POP(ss->ss_stmts);
-		if (st->st_lbrace != NULL)
-			token_rele(st->st_lbrace);
-		if (st->st_rbrace != NULL)
-			token_rele(st->st_rbrace);
+		st = VECTOR_POP(ss->stmts);
+		if (st->lbrace != NULL)
+			token_rele(st->lbrace);
+		if (st->rbrace != NULL)
+			token_rele(st->rbrace);
 	}
-	VECTOR_FREE(ss->ss_stmts);
+	VECTOR_FREE(ss->stmts);
 }
 
 struct doc *
@@ -118,10 +118,10 @@ simple_stmt_braces_enter(struct simple_stmt *ss, struct doc *dc,
 	if (st == NULL)
 		return dc;
 	token_ref(lbrace);
-	st->st_lbrace = lbrace;
+	st->lbrace = lbrace;
 	token_ref(rbrace);
-	st->st_rbrace = rbrace;
-	return st->st_indent;
+	st->rbrace = rbrace;
+	return st->indent;
 }
 
 struct doc *
@@ -137,9 +137,9 @@ simple_stmt_no_braces_enter(struct simple_stmt *ss, struct doc *dc,
 	if (st == NULL)
 		return dc;
 	token_ref(lbrace);
-	st->st_lbrace = lbrace;
+	st->lbrace = lbrace;
 	*cookie = st;
-	return st->st_indent;
+	return st->indent;
 }
 
 void
@@ -149,9 +149,9 @@ simple_stmt_no_braces_leave(struct simple_stmt *ss, struct token *rbrace,
 	struct stmt *st = cookie;
 
 	if (!is_brace_moveable(ss, rbrace))
-		st->st_flags |= STMT_IGNORE;
+		st->flags |= STMT_IGNORE;
 	token_ref(rbrace);
-	st->st_rbrace = rbrace;
+	st->rbrace = rbrace;
 }
 
 static struct stmt *
@@ -161,34 +161,34 @@ simple_stmt_alloc(struct simple_stmt *ss, struct doc *dc, unsigned int indent,
 	struct stmt *st;
 
 	/* Prevent reallocations causing dangling pointers. */
-	if (VECTOR_LENGTH(ss->ss_stmts) >= SIMPLE_STMT_MAX)
+	if (VECTOR_LENGTH(ss->stmts) >= SIMPLE_STMT_MAX)
 		return NULL;
 
-	st = VECTOR_CALLOC(ss->ss_stmts);
+	st = VECTOR_CALLOC(ss->stmts);
 	if (st == NULL)
 		err(1, NULL);
-	st->st_root = doc_alloc(DOC_GROUP, dc);
-	st->st_indent = doc_indent(indent, st->st_root);
-	doc_alloc(DOC_HARDLINE, st->st_indent);
-	st->st_flags = flags;
+	st->root = doc_alloc(DOC_GROUP, dc);
+	st->indent = doc_indent(indent, st->root);
+	doc_alloc(DOC_HARDLINE, st->indent);
+	st->flags = flags;
 	return st;
 }
 
 static int
 is_stmt_empty(const struct simple_stmt *ss, const struct stmt *st)
 {
-	const struct token *lbrace = st->st_lbrace;
-	const struct token *rbrace = st->st_rbrace;
+	const struct token *lbrace = st->lbrace;
+	const struct token *rbrace = st->rbrace;
 	const struct token *nx = token_next(lbrace);
 
-	if (st->st_flags & STMT_BRACES) {
+	if (st->flags & STMT_BRACES) {
 		/*
 		 * GCC warning option Wempty-body (implied by Wextra) suggests
 		 * adding braces around statement consisting only of a
 		 * semicolon.
 		 */
 		if (nx == token_prev(rbrace) && nx->tk_type == TOKEN_SEMI &&
-		    VECTOR_LENGTH(ss->ss_stmts) == 1)
+		    VECTOR_LENGTH(ss->stmts) == 1)
 			return 1;
 		return nx == rbrace;
 	}
@@ -208,17 +208,17 @@ simple_stmt_need_braces(struct simple_stmt *ss, const struct stmt *st,
 
 	buffer_reset(bf);
 	doc_exec(&(struct doc_exec_arg){
-	    .dc		= st->st_root,
-	    .scratch	= ss->ss_arena.scratch,
+	    .dc		= st->root,
+	    .scratch	= ss->arena.scratch,
 	    .bf		= bf,
-	    .st		= ss->ss_st,
-	    .op		= ss->ss_op,
+	    .st		= ss->st,
+	    .op		= ss->op,
 	});
 	buflen = buffer_get_len(bf);
 	buf = strtrim(buffer_get_ptr(bf), &buflen);
 	if (isoneline(buf, buflen)) {
-		return (st->st_flags & STMT_BRACES) &&
-		    !token_is_moveable(st->st_rbrace);
+		return (st->flags & STMT_BRACES) &&
+		    !token_is_moveable(st->rbrace);
 	}
 	return 1;
 }
@@ -229,14 +229,14 @@ need_braces(struct simple_stmt *ss)
 	struct buffer *bf;
 	size_t i;
 
-	arena_scope(ss->ss_arena.buffer, s);
+	arena_scope(ss->arena.buffer, s);
 
 	bf = arena_buffer_alloc(&s, 1 << 10);
-	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
-		const struct stmt *st = &ss->ss_stmts[i];
+	for (i = 0; i < VECTOR_LENGTH(ss->stmts); i++) {
+		const struct stmt *st = &ss->stmts[i];
 
-		if (st->st_flags & STMT_IGNORE) {
-			if (st->st_flags & STMT_BRACES)
+		if (st->flags & STMT_IGNORE) {
+			if (st->flags & STMT_BRACES)
 				return 1;
 		} else if (simple_stmt_need_braces(ss, st, bf)) {
 			/*
@@ -253,22 +253,22 @@ need_braces(struct simple_stmt *ss)
 static void
 add_braces(struct simple_stmt *ss)
 {
-	struct lexer *lx = ss->ss_lx;
+	struct lexer *lx = ss->lx;
 	size_t i;
 
-	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
-		struct stmt *st = &ss->ss_stmts[i];
+	for (i = 0; i < VECTOR_LENGTH(ss->stmts); i++) {
+		struct stmt *st = &ss->stmts[i];
 		struct token *lbrace, *pv, *rbrace;
 
-		if (st->st_flags & (STMT_IGNORE | STMT_BRACES))
+		if (st->flags & (STMT_IGNORE | STMT_BRACES))
 			continue;
 
-		pv = token_prev(st->st_lbrace);
+		pv = token_prev(st->lbrace);
 		lbrace = lexer_insert_after(lx, pv,
 		    clang_keyword_token(TOKEN_LBRACE));
 		token_move_suffixes(pv, lbrace);
 
-		pv = token_prev(st->st_rbrace);
+		pv = token_prev(st->rbrace);
 		rbrace = lexer_insert_after(lx, pv,
 		    clang_keyword_token(TOKEN_RBRACE));
 		token_move_suffixes_if(pv, rbrace, TOKEN_SPACE);
@@ -278,18 +278,18 @@ add_braces(struct simple_stmt *ss)
 static void
 remove_braces(struct simple_stmt *ss)
 {
-	struct lexer *lx = ss->ss_lx;
+	struct lexer *lx = ss->lx;
 	size_t i;
 
-	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
-		struct stmt *st = &ss->ss_stmts[i];
+	for (i = 0; i < VECTOR_LENGTH(ss->stmts); i++) {
+		struct stmt *st = &ss->stmts[i];
 
-		if ((st->st_flags & STMT_IGNORE) ||
-		    (st->st_flags & STMT_BRACES) == 0)
+		if ((st->flags & STMT_IGNORE) ||
+		    (st->flags & STMT_BRACES) == 0)
 			continue;
 
-		lexer_remove(lx, st->st_lbrace);
-		lexer_remove(lx, st->st_rbrace);
+		lexer_remove(lx, st->lbrace);
+		lexer_remove(lx, st->rbrace);
 	}
 }
 
@@ -302,7 +302,7 @@ isoneline(const char *str, size_t len)
 static int
 is_brace_moveable(struct simple_stmt *ss, const struct token *tk)
 {
-	if (ss->ss_op->diffparse && (tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
+	if (ss->op->diffparse && (tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
 		return 0;
 	/* Do not require token to be moveable as we can cope with comments. */
 	return !token_has_cpp(tk);
