@@ -37,13 +37,12 @@ struct simple_stmt {
 
 	struct {
 		struct arena		*scratch;
-		struct arena_scope	*doc_scope;
 		struct arena		*buffer;
 	} ss_arena;
 };
 
-static struct stmt	*simple_stmt_alloc(struct simple_stmt *, unsigned int,
-    unsigned int);
+static struct stmt	*simple_stmt_alloc(struct simple_stmt *, struct doc *,
+    unsigned int, unsigned int);
 
 static int	need_braces(struct simple_stmt *, const struct stmt *,
     struct buffer *);
@@ -57,8 +56,8 @@ static const char	*strtrim(const char *, size_t *);
 
 struct simple_stmt *
 simple_stmt_enter(struct lexer *lx, const struct style *st,
-    struct arena_scope *eternal_scope, struct arena_scope *doc_scope,
-    struct arena *scratch, struct arena *buffer, const struct options *op)
+    struct arena_scope *eternal_scope, struct arena *scratch,
+    struct arena *buffer, const struct options *op)
 {
 	struct simple_stmt *ss;
 
@@ -67,7 +66,6 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 	    VECTOR_RESERVE(ss->ss_stmts, SIMPLE_STMT_MAX))
 		err(1, NULL);
 	ss->ss_arena.scratch = scratch;
-	ss->ss_arena.doc_scope = doc_scope;
 	ss->ss_arena.buffer = buffer;
 	ss->ss_lx = lx;
 	ss->ss_op = op;
@@ -142,7 +140,7 @@ simple_stmt_braces_enter(struct simple_stmt *ss, struct doc *dc,
 	/* Make sure both braces are covered by a diff chunk. */
 	if (!is_brace_moveable(ss, lbrace) || !is_brace_moveable(ss, rbrace))
 		flags |= STMT_IGNORE;
-	st = simple_stmt_alloc(ss, indent, flags);
+	st = simple_stmt_alloc(ss, dc, indent, flags);
 	if (st == NULL)
 		return dc;
 	token_ref(lbrace);
@@ -161,7 +159,7 @@ simple_stmt_no_braces_enter(struct simple_stmt *ss, struct doc *dc,
 
 	if (!is_brace_moveable(ss, lbrace))
 		flags |= STMT_IGNORE;
-	st = simple_stmt_alloc(ss, indent, flags);
+	st = simple_stmt_alloc(ss, dc, indent, flags);
 	if (st == NULL)
 		return dc;
 	token_ref(lbrace);
@@ -183,7 +181,7 @@ simple_stmt_no_braces_leave(struct simple_stmt *ss, struct token *rbrace,
 }
 
 static struct stmt *
-simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
+simple_stmt_alloc(struct simple_stmt *ss, struct doc *dc, unsigned int indent,
     unsigned int flags)
 {
 	struct stmt *st;
@@ -195,7 +193,7 @@ simple_stmt_alloc(struct simple_stmt *ss, unsigned int indent,
 	st = VECTOR_CALLOC(ss->ss_stmts);
 	if (st == NULL)
 		err(1, NULL);
-	st->st_root = doc_root(ss->ss_arena.doc_scope);
+	st->st_root = doc_alloc(DOC_GROUP, dc);
 	st->st_indent = doc_indent(indent, st->st_root);
 	doc_alloc(DOC_HARDLINE, st->st_indent);
 	st->st_flags = flags;
