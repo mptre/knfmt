@@ -263,7 +263,7 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 		if (peek_else_if(pr, &tkelse, &tkif)) {
 			error = parser_stmt_kw_expr(pr, dc, TOKEN_IF,
 			    PARSER_STMT_EXPR_ELSEIF);
-			if (error & (FAIL | NONE))
+			if (error & HALT)
 				return parser_fail(pr);
 		} else {
 			if (!lexer_expect(lx, TOKEN_ELSE, &tkelse))
