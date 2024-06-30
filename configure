@@ -147,7 +147,7 @@ while [ $# -gt 0 ]; do
 done
 
 WRKDIR=$(mktemp -dt configure.XXXXXX)
-trap 'atexit $WRKDIR' EXIT
+trap 'atexit ${WRKDIR}' EXIT
 
 exec 3>&1 4>&2
 exec 1>config.log 2>&1
@@ -241,18 +241,18 @@ printf '#endif\n'
 exec 1>config.mk
 
 # Use echo to normalize whitespace.
-# shellcheck disable=all
+# shellcheck disable=SC1083,SC2086,SC2116
 cat <<EOF
-CC=		$(echo $CC)
-CFLAGS=		$(rmdup $CFLAGS)
-CPPFLAGS=	$(rmdup $CPPFLAGS -I\${.CURDIR})
-DEBUG=		$(rmdup $DEBUG)
-LDFLAGS=	$(rmdup $LDFLAGS)
+CC=		$(echo ${CC})
+CFLAGS=		$(rmdup ${CFLAGS})
+CPPFLAGS=	$(rmdup ${CPPFLAGS} -I\${.CURDIR})
+DEBUG=		$(rmdup ${DEBUG})
+LDFLAGS=	$(rmdup ${LDFLAGS})
 
-BINDIR?=	$(echo $BINDIR)
-MANDIR?=	$(echo $MANDIR)
-INSTALL?=	$(echo $INSTALL)
-INSTALL_MAN?=	$(echo $INSTALL_MAN)
+BINDIR?=	$(echo ${BINDIR})
+MANDIR?=	$(echo ${MANDIR})
+INSTALL?=	$(echo ${INSTALL})
+INSTALL_MAN?=	$(echo ${INSTALL_MAN})
 
 NO_SANITIZE_FUZZER=	$(echo ${NO_SANITIZE_FUZZER:-})
 
