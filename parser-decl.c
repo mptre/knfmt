@@ -312,9 +312,9 @@ parser_decl_init(struct parser *pr, struct doc **out,
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
 	for (;;) {
-		struct token *comma, *tk;
+		struct token *comma, *semi;
 
-		if (lexer_peek(lx, &tk) && tk == arg->semi)
+		if (lexer_peek_if(lx, TOKEN_SEMI, &semi) && semi == arg->semi)
 			break;
 
 		if (lexer_if(lx, TOKEN_COMMA, &comma)) {
