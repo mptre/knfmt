@@ -36,15 +36,15 @@ void	ruler_free(struct ruler *);
 void	ruler_exec(struct ruler *);
 
 #define ruler_insert(a, b, c, d, e, f) \
-	ruler_insert0((a), (b), (c), (d), (e), (f), __func__, __LINE__)
-void	ruler_insert0(struct ruler *, struct token *, struct doc *,
+	ruler_insert_impl((a), (b), (c), (d), (e), (f), __func__, __LINE__)
+void	ruler_insert_impl(struct ruler *, struct token *, struct doc *,
     unsigned int, unsigned int, unsigned int, const char *, int);
 
 #define ruler_indent(a, b, c) \
-	ruler_indent0((a), (b), (c), 1, __func__, __LINE__)
+	ruler_indent_impl((a), (b), (c), 1, __func__, __LINE__)
 #define ruler_dedent(a, b, c) \
-	ruler_indent0((a), (b), (c), -1, __func__, __LINE__)
-struct doc	*ruler_indent0(struct ruler *, struct doc *,
+	ruler_indent_impl((a), (b), (c), -1, __func__, __LINE__)
+struct doc	*ruler_indent_impl(struct ruler *, struct doc *,
     struct ruler_indent **, int, const char *, int);
 void		 ruler_indent_remove(struct ruler *,
     const struct ruler_indent *);

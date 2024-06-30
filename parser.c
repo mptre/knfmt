@@ -215,7 +215,7 @@ is_branch(const struct lexer *lx)
 }
 
 int
-parser_fail0(struct parser *pr, const char *fun, int lno)
+parser_fail_impl(struct parser *pr, const char *fun, int lno)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk = NULL;

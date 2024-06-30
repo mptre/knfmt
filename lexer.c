@@ -529,7 +529,7 @@ lexer_remove(struct lexer *lx, struct token *tk)
 }
 
 int
-lexer_expect0(struct lexer *lx, int type, struct token **tk,
+lexer_expect_impl(struct lexer *lx, int type, struct token **tk,
     const char *fun, int lno)
 {
 	struct token *t = NULL;

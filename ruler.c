@@ -81,7 +81,7 @@ ruler_free(struct ruler *rl)
  * in order to insert the alignment in the document.
  */
 void
-ruler_insert0(struct ruler *rl, struct token *tk, struct doc *dc,
+ruler_insert_impl(struct ruler *rl, struct token *tk, struct doc *dc,
     unsigned int col, unsigned int len, unsigned int nspaces, const char *fun,
     int lno)
 {
@@ -128,8 +128,8 @@ ruler_insert0(struct ruler *rl, struct token *tk, struct doc *dc,
  * the caller is expected to free it.
  */
 struct doc *
-ruler_indent0(struct ruler *rl, struct doc *dc, struct ruler_indent **cookie,
-    int sign, const char *fun, int lno)
+ruler_indent_impl(struct ruler *rl, struct doc *dc,
+    struct ruler_indent **cookie, int sign, const char *fun, int lno)
 {
 	struct ruler_column *rc;
 	struct ruler_indent *ri;

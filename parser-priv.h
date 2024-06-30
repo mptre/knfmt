@@ -54,8 +54,8 @@ int	parser_good(const struct parser *);
 int	parser_none(const struct parser *);
 
 #define parser_fail(a) \
-	parser_fail0((a), __func__, __LINE__)
-int	parser_fail0(struct parser *, const char *, int);
+	parser_fail_impl((a), __func__, __LINE__)
+int	parser_fail_impl(struct parser *, const char *, int);
 
 void	parser_reset(struct parser *);
 

@@ -175,13 +175,13 @@ static struct doc	*expr_doc_token_impl(struct expr_state *,
 static void	expr_free_concat(void *);
 
 #define expr_doc_align(a, b, c, d) \
-	expr_doc_align0((a), (b), (c), (d), __func__, __LINE__)
-static struct doc	*expr_doc_align0(struct expr *,
+	expr_doc_align_impl((a), (b), (c), (d), __func__, __LINE__)
+static struct doc	*expr_doc_align_impl(struct expr *,
     struct expr_state *, struct doc *, unsigned int, const char *, int);
 
 #define expr_doc_align_disable(a, b, c, d) \
-	expr_doc_align_disable0((a), (b), (c), (d), __func__, __LINE__)
-static struct doc	*expr_doc_align_disable0(struct expr *,
+	expr_doc_align_disable_impl((a), (b), (c), (d), __func__, __LINE__)
+static struct doc	*expr_doc_align_disable_impl(struct expr *,
     struct expr_state *, struct doc *, unsigned int, const char *, int);
 
 static void	expr_doc_align_init(struct expr_state *,
@@ -194,8 +194,8 @@ static unsigned int	 expr_doc_width(struct expr_state *,
     const struct doc *);
 
 #define expr_doc_soft(a, b, c, d) \
-	expr_doc_soft0((a), (b), (c), (d), __func__, __LINE__)
-static struct doc	*expr_doc_soft0(struct expr *, struct expr_state *,
+	expr_doc_soft_impl((a), (b), (c), (d), __func__, __LINE__)
+static struct doc	*expr_doc_soft_impl(struct expr *, struct expr_state *,
     struct doc *, int, const char *, int);
 
 static void	expr_state_init(struct expr_state *,
@@ -1156,8 +1156,8 @@ expr_free_concat(void *arg)
  * not cause exceesive new line(s). Otherwise, fallback to regular indentation.
  */
 static struct doc *
-expr_doc_align0(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc,
-    unsigned int indent, const char *fun, int lno)
+expr_doc_align_impl(struct expr *UNUSED(ex), struct expr_state *es,
+    struct doc *dc, unsigned int indent, const char *fun, int lno)
 {
 	struct doc_minimize minimizers[2];
 
@@ -1168,7 +1168,7 @@ expr_doc_align0(struct expr *UNUSED(ex), struct expr_state *es, struct doc *dc,
 }
 
 static struct doc *
-expr_doc_align_disable0(struct expr *UNUSED(ex), struct expr_state *es,
+expr_doc_align_disable_impl(struct expr *UNUSED(ex), struct expr_state *es,
     struct doc *dc, unsigned int indent, const char *fun, int lno)
 {
 	struct doc_minimize minimizers[2];
@@ -1240,7 +1240,7 @@ expr_doc_width(struct expr_state *es, const struct doc *dc)
  * nested under the same expression.
  */
 static struct doc *
-expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
+expr_doc_soft_impl(struct expr *ex, struct expr_state *es, struct doc *dc,
     int weight, const char *fun, int lno)
 {
 	struct arena *scratch = es->es_arena.scratch;
