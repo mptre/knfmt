@@ -308,6 +308,8 @@ main(int argc, char *argv[])
 	    "int\nmain(foo)\n\tfoo_t *",
 	    "int");
 	test_parser_type_peek("u_int:4", "u_int");
+	test_parser_type_peek("LIST_ENTRY(list, struct s);",
+	    "LIST_ENTRY ( list , struct s )");
 
 	test_parser_type_peek_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");

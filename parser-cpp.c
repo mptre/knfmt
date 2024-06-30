@@ -18,9 +18,6 @@
 
 static int	iscdefs(const char *, size_t);
 
-/*
- * Detect usage of types hidden behind cpp such as STACK_OF(X509).
- */
 int
 parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 {
@@ -29,6 +26,7 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 	struct token *ident;
 	int peek = 0;
 
+	/* Detect usage of types hidden behind cpp such as STACK_OF(X509). */
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
 	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
@@ -43,6 +41,22 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
+	if (peek)
+		return 1;
+
+	/* Detect LIST_ENTRY(list, struct s) from libks:list(3). */
+	lexer_peek_enter(lx, &s);
+	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
+	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_COMMA, NULL) &&
+	    lexer_if(lx, TOKEN_STRUCT, NULL) &&
+	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_RPAREN, rparen) &&
+	    lexer_if(lx, TOKEN_SEMI, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &s);
+
 	return peek;
 }
 
