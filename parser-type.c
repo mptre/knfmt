@@ -91,8 +91,9 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 				break;
 			peek = 1;
-		} else if (parser_cpp_peek_type(pr, &rparen) &&
-		    lexer_seek_after(lx, rparen)) {
+		} else if (parser_cpp_peek_type(pr, &rparen)) {
+			if (!lexer_seek_after(lx, rparen))
+				return 0;
 			t = rparen;
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
 			/* Ensure this is not the identifier after the type. */
@@ -103,13 +104,16 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 			/* Identifier is part of the type, consume it. */
 			if (!lexer_if(lx, TOKEN_IDENT, &t))
-				break;
+				return 0;
 		} else if (ntokens > 0 && peek_type_func_ptr(lx, &args, &t)) {
-			if (lexer_back(lx, &align))
-				peek = 1;
+			if (!lexer_back(lx, &align))
+				return 0;
+			peek = 1;
 			break;
-		} else if (ntokens > 0 && peek_type_ptr_array(lx, &rsquare) &&
-		    lexer_back(lx, &align) && lexer_seek_after(lx, rsquare)) {
+		} else if (ntokens > 0 && peek_type_ptr_array(lx, &rsquare)) {
+			if (!lexer_back(lx, &align) ||
+			    !lexer_seek_after(lx, rsquare))
+				return 0;
 			t = rsquare;
 			peek = 1;
 			break;
