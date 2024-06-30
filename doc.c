@@ -545,14 +545,14 @@ doc_minimize0(const struct doc_minimize *minimizers, size_t nminimizers,
 }
 
 struct doc *
-doc_literal0(const char *str, size_t len, struct doc *dc, const char *fun,
+doc_literal0(const char *str, struct doc *dc, const char *fun,
     int lno)
 {
 	struct doc *literal;
 
 	literal = doc_alloc0(DOC_LITERAL, dc, 0, fun, lno);
 	literal->dc_str = str;
-	literal->dc_len = len > 0 ? len : strlen(str);
+	literal->dc_len = strlen(str);
 	return literal;
 }
 

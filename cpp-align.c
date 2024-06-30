@@ -209,10 +209,10 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 		return NULL;
 	}
 
-	arena_scope(scratch, doc_scope);
+	arena_scope(scratch, scratch_scope);
 
 	bf = arena_buffer_alloc(s, len);
-	dc = doc_root(&doc_scope);
+	dc = doc_root(&scratch_scope);
 
 	for (;;) {
 		struct doc *concat;
@@ -228,8 +228,12 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 			break;
 
 		cpplen = (size_t)(ep - sp);
-		if (cpplen > 0)
-			doc_literal_n(sp, cpplen, concat);
+		if (cpplen > 0) {
+			const char *literal;
+
+			literal = arena_strndup(&scratch_scope, sp, cpplen);
+			doc_literal(literal, concat);
+		}
 		w = doc_width(&(struct doc_exec_arg){
 		    .dc		= concat,
 		    .scratch	= scratch,
@@ -249,8 +253,12 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 		str += linelen;
 		nlines++;
 	}
-	if (len > 0)
-		doc_literal_n(str, len, dc);
+	if (len > 0) {
+		const char *literal;
+
+		literal = arena_strndup(&scratch_scope, str, len);
+		doc_literal(literal, dc);
+	}
 
 	/* Alignment only wanted for multiple lines. */
 	if (nlines <= 1)

@@ -116,10 +116,8 @@ struct doc	*doc_minimize0(const struct doc_minimize *, size_t,
     struct doc *, const char *, int);
 
 #define doc_literal(a, b) \
-	doc_literal0((a), 0, (b), __func__, __LINE__)
-#define doc_literal_n(a, b, c) \
-	doc_literal0((a), (b), (c), __func__, __LINE__)
-struct doc	*doc_literal0(const char *, size_t, struct doc *,
+	doc_literal0((a), (b), __func__, __LINE__)
+struct doc	*doc_literal0(const char *, struct doc *,
     const char *, int);
 
 struct doc	*doc_token(const struct token *, struct doc *, enum doc_type,
