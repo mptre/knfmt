@@ -41,6 +41,12 @@
 
 TAILQ_HEAD(doc_list, doc);
 
+enum doc_diff_group {
+	DOC_DIFF_GROUP_IGNORE,
+	DOC_DIFF_GROUP_NOT_COVERED,
+	DOC_DIFF_GROUP_COVERED,
+};
+
 struct doc {
 	enum doc_type		 dc_type;
 
@@ -151,7 +157,7 @@ struct doc_diff {
 	unsigned int		 dd_threshold;	/* last seen token */
 	unsigned int		 dd_first;	/* first token in group */
 	unsigned int		 dd_chunk;	/* first token covered by chunk */
-	int			 dd_covers;	/* doc_diff_covers() return value */
+	enum doc_diff_group	 dd_covers;	/* doc_diff_covers() return value */
 };
 
 struct doc_fits {
@@ -1315,17 +1321,19 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	 * for instance brace initializers. Such groups are ignored allowing the
 	 * first nested group covering a single line to be found.
 	 */
-	memset(&dd, 0, sizeof(dd));
-	dd.dd_threshold = st->st_diff.beg;
+	dd = (struct doc_diff){
+	    .dd_threshold	= st->st_diff.beg,
+	    .dd_covers		= DOC_DIFF_GROUP_NOT_COVERED,
+	};
 	doc_walk(dc, st, doc_diff_covers, &dd);
 	switch (dd.dd_covers) {
-	case -1:
+	case DOC_DIFF_GROUP_IGNORE:
 		/*
 		 * The group spans multiple lines. Ignore it and keep evaluating
 		 * nested groups on subsequent invocations of this routine.
 		 */
 		return 0;
-	case 0:
+	case DOC_DIFF_GROUP_NOT_COVERED:
 		/*
 		 * The group is not covered by any diff chunk and all nested
 		 * groups can therefore be ignored. However, if the previous
@@ -1336,7 +1344,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 			doc_diff_leave(dc, st, 1);
 		st->st_diff.group = 1;
 		return 1;
-	case 1:
+	case DOC_DIFF_GROUP_COVERED:
 		/*
 		 * The group is covered by a diff chunk. Make sure to leave any
 		 * previous diff chunk if we're entering a new one.
@@ -1578,14 +1586,14 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 				dd->dd_first = lno;
 			if (dc->dc_tk->tk_flags & TOKEN_FLAG_DIFF) {
 				dd->dd_chunk = lno;
-				dd->dd_covers = 1;
+				dd->dd_covers = DOC_DIFF_GROUP_COVERED;
 				return DOC_WALK_BREAK;
 			}
 		}
 		break;
 
 	case DOC_HARDLINE:
-		dd->dd_covers = -1;
+		dd->dd_covers = DOC_DIFF_GROUP_IGNORE;
 		return DOC_WALK_BREAK;
 
 	default:
