@@ -43,9 +43,10 @@ struct simple_stmt {
 
 static struct stmt	*simple_stmt_alloc(struct simple_stmt *, struct doc *,
     unsigned int, unsigned int);
+static int		 simple_stmt_need_braces(struct simple_stmt *,
+    const struct stmt *, struct buffer *);
 
-static int	need_braces(struct simple_stmt *, const struct stmt *,
-    struct buffer *);
+static int	need_braces(struct simple_stmt *);
 static void	add_braces(struct simple_stmt *);
 static void	remove_braces(struct simple_stmt *);
 
@@ -76,35 +77,10 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 void
 simple_stmt_leave(struct simple_stmt *ss)
 {
-	struct buffer *bf;
-	size_t i;
-	int dobraces = 0;
-
 	if (VECTOR_EMPTY(ss->ss_stmts))
 		return;
 
-	arena_scope(ss->ss_arena.buffer, s);
-
-	bf = arena_buffer_alloc(&s, 1 << 10);
-	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
-		const struct stmt *st = &ss->ss_stmts[i];
-
-		if (st->st_flags & STMT_IGNORE) {
-			if (st->st_flags & STMT_BRACES) {
-				dobraces = 1;
-				break;
-			}
-		} else if (need_braces(ss, st, bf)) {
-			/*
-			 * No point in continuing as at least one statement
-			 * spans over multiple lines.
-			 */
-			dobraces = 1;
-			break;
-		}
-	}
-
-	if (dobraces)
+	if (need_braces(ss))
 		add_braces(ss);
 	else
 		remove_braces(ss);
@@ -221,7 +197,8 @@ is_stmt_empty(const struct simple_stmt *ss, const struct stmt *st)
 }
 
 static int
-need_braces(struct simple_stmt *ss, const struct stmt *st, struct buffer *bf)
+simple_stmt_need_braces(struct simple_stmt *ss, const struct stmt *st,
+    struct buffer *bf)
 {
 	const char *buf;
 	size_t buflen;
@@ -244,6 +221,33 @@ need_braces(struct simple_stmt *ss, const struct stmt *st, struct buffer *bf)
 		    !token_is_moveable(st->st_rbrace);
 	}
 	return 1;
+}
+
+static int
+need_braces(struct simple_stmt *ss)
+{
+	struct buffer *bf;
+	size_t i;
+
+	arena_scope(ss->ss_arena.buffer, s);
+
+	bf = arena_buffer_alloc(&s, 1 << 10);
+	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
+		const struct stmt *st = &ss->ss_stmts[i];
+
+		if (st->st_flags & STMT_IGNORE) {
+			if (st->st_flags & STMT_BRACES)
+				return 1;
+		} else if (simple_stmt_need_braces(ss, st, bf)) {
+			/*
+			 * No point in continuing as at least one statement
+			 * spans over multiple lines.
+			 */
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 static void
