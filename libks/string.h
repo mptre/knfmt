@@ -39,6 +39,6 @@ extern unsigned int KS_features;
 size_t	KS_str_match_default(const char *, size_t, const char *);
 size_t	KS_str_match_native(const char *, size_t, const char *);
 
-char	**KS_str_split(const char *, char, struct arena_scope *);
+char	**KS_str_split(const char *, const char *, struct arena_scope *);
 
 #endif /* !LIBKS_STRING_H */

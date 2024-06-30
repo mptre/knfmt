@@ -238,11 +238,13 @@ KS_str_match_native(const char *USED_IF_X86_64(str), size_t USED_IF_X86_64(len),
 #endif
 
 char **
-KS_str_split(const char *str, char delim, struct arena_scope *s)
+KS_str_split(const char *str, const char *delim, struct arena_scope *s)
 {
 	VECTOR(char *) parts;
+	size_t delimlen;
 
 	ARENA_VECTOR_INIT(s, parts, 2);
+	delimlen = strlen(delim);
 
 	for (;;) {
 		const char *p;
@@ -251,10 +253,10 @@ KS_str_split(const char *str, char delim, struct arena_scope *s)
 		dst = VECTOR_ALLOC(parts);
 		if (unlikely(dst == NULL))
 			return NULL; /* UNREACHABLE */
-		p = strchr(str, delim);
+		p = strstr(str, delim);
 		if (p != NULL) {
 			*dst = arena_strndup(s, str, (size_t)(p - str));
-			str = &p[1];
+			str = &p[delimlen];
 		} else {
 			*dst = arena_strdup(s, str);
 			break;

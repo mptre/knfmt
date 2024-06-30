@@ -20,7 +20,6 @@
 #include <stdint.h>
 
 #include "libks/buffer.h"
-#include "libks/compiler.h"
 #include "libks/tmp.h"
 
 #if !defined(FUZZER_AFL) && !defined(FUZZER_LLVM)
@@ -43,7 +42,7 @@ struct fuzzer_target {
 };
 
 union fuzzer_callback {
-	void *(*init)(void);
+	void *(*init)(int, char **);
 	void (*teardown)(void *);
 };
 
@@ -85,7 +84,7 @@ FUZZER_SECTION(teardown);
 
 __attribute__((NO_SANITIZE_UNDEFINED))
 static inline void *
-fuzzer_init(void)
+fuzzer_init(int argc, char *argv[])
 {
 	/* NOLINTBEGIN(bugprone-reserved-identifier) */
 
@@ -95,7 +94,7 @@ fuzzer_init(void)
 
 	for (; it != &__stop_fuzzer_callback_init; it++) {
 		if (it->init != NULL)
-			return it->init();
+			return it->init(argc, argv);
 	}
 	return NULL;
 
@@ -123,11 +122,11 @@ fuzzer_teardown(void *userdata)
 #if defined(FUZZER_AFL)
 
 int
-main(void)
+main(int argc, char *argv[])
 {
 	void *userdata;
 
-	userdata = fuzzer_init();
+	userdata = fuzzer_init(argc, argv);
 
 	if (fuzzer_target.buffer) {
 		struct buffer *bf;
@@ -187,9 +186,9 @@ LLVMFuzzerTestOneInput(const uint8_t *buf, size_t buflen)
 }
 
 int
-LLVMFuzzerInitialize(int *UNUSED(argc), char ***UNUSED(argv))
+LLVMFuzzerInitialize(int *argc, char ***argv)
 {
-	fuzzer_llvm_userdata = fuzzer_init();
+	fuzzer_llvm_userdata = fuzzer_init(*argc, *argv);
 
 	return 0;
 }

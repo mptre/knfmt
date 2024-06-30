@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>	/* mkstemp(3) on Linux */
 #include <unistd.h>
 
 int
