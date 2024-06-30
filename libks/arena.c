@@ -25,6 +25,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libks/arithmetic.h"
 #include "libks/compiler.h"
 
 #if defined(__has_feature)
@@ -172,12 +173,20 @@ static int
 arena_frame_alloc(struct arena *a, size_t frame_size)
 {
 	struct arena_frame *frame;
+	uint64_t total_size;
 
-	frame = malloc(frame_size);
+	/* Must account for first arena_push() representing the actual frame. */
+	if (KS_u64_add_overflow(sizeof(*frame) + a->poison_size, frame_size,
+	    &total_size)) {
+		errno = EOVERFLOW;
+		return 0;
+	}
+
+	frame = malloc(total_size);
 	if (frame == NULL)
 		return 0;
 	frame->ptr = (char *)frame;
-	frame->size = frame_size;
+	frame->size = total_size;
 	frame->len = 0;
 	frame->next = NULL;
 	if (arena_push(a, frame, sizeof(*frame)) == NULL) {
