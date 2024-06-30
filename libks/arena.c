@@ -37,10 +37,12 @@
 #endif
 #if defined(HAVE_ASAN)
 #  include <sanitizer/asan_interface.h>
+#  define USED_IF_ASAN(x) x
 #  define POISON_SIZE 8
 #else
 #  define ASAN_POISON_MEMORY_REGION(...) (void)0
 #  define ASAN_UNPOISON_MEMORY_REGION(...) (void)0
+#  define USED_IF_ASAN(x) UNUSED(x)
 #  define POISON_SIZE 0
 #endif
 
@@ -84,15 +86,15 @@ union address {
 static const size_t maxalign = sizeof(void *);
 
 static void
-frame_poison(const struct arena_frame *MAYBE_UNUSED(frame))
+frame_poison(const struct arena_frame *USED_IF_ASAN(frame))
 {
 	ASAN_POISON_MEMORY_REGION(&frame->ptr[frame->len],
 	    frame->size - frame->len);
 }
 
 static void
-frame_unpoison(const struct arena_frame *MAYBE_UNUSED(frame),
-    size_t MAYBE_UNUSED(size))
+frame_unpoison(const struct arena_frame *USED_IF_ASAN(frame),
+    size_t USED_IF_ASAN(size))
 {
 	ASAN_UNPOISON_MEMORY_REGION(&frame->ptr[frame->len], size);
 }
@@ -530,7 +532,7 @@ arena_stats(struct arena *a)
 }
 
 void
-arena_poison(const void *MAYBE_UNUSED(ptr), size_t MAYBE_UNUSED(size))
+arena_poison(const void *USED_IF_ASAN(ptr), size_t USED_IF_ASAN(size))
 {
 	ASAN_POISON_MEMORY_REGION(ptr, size);
 }

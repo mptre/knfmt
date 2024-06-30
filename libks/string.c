@@ -24,6 +24,12 @@
 #include "libks/compiler.h"
 #include "libks/vector.h"
 
+#if defined(__x86_64__)
+#define USED_IF_X86_64(x) x
+#else
+#define USED_IF_X86_64(x) UNUSED(x)
+#endif
+
 #define CTRL_SOURCE_SHIFT		0
 #define  CTRL_SOURCE_U8			0x00
 #define  CTRL_SOURCE_U16		0x01
@@ -69,7 +75,7 @@ static void KS_str_init(void) __attribute__((constructor));
 #endif
 
 static int
-is_intel(uint32_t *MAYBE_UNUSED(max_leaf))
+is_intel(uint32_t *USED_IF_X86_64(max_leaf))
 {
 #if defined(__x86_64__)
 	struct cpuid leaf;
@@ -87,7 +93,7 @@ is_intel(uint32_t *MAYBE_UNUSED(max_leaf))
 }
 
 static enum sse_version
-sse_version(uint32_t MAYBE_UNUSED(max_leaf))
+sse_version(uint32_t USED_IF_X86_64(max_leaf))
 {
 #if defined(__x86_64__)
 #define CPUID_01_C_SSE3_0_MASK		(1 << 9)
@@ -124,7 +130,7 @@ sse_version(uint32_t MAYBE_UNUSED(max_leaf))
 }
 
 static int
-has_bmi1(uint32_t MAYBE_UNUSED(max_leaf))
+has_bmi1(uint32_t USED_IF_X86_64(max_leaf))
 {
 #if defined(__x86_64__)
 #define CPUID_07_B_BMI1		(1 << 3)
@@ -174,8 +180,8 @@ KS_str_match_default(const char *str, size_t len, const char *ranges)
 }
 
 size_t
-KS_str_match_native(const char *MAYBE_UNUSED(str), size_t MAYBE_UNUSED(len),
-    const char *MAYBE_UNUSED(ranges))
+KS_str_match_native(const char *USED_IF_X86_64(str), size_t USED_IF_X86_64(len),
+    const char *USED_IF_X86_64(ranges))
 {
 #if defined(__x86_64__)
 	if (len < 8)
