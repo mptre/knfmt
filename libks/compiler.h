@@ -18,7 +18,6 @@
 #define LIBKS_COMPILER_H
 
 #define UNUSED(x)	_##x __attribute__((__unused__))
-#define MAYBE_UNUSED(x)	x __attribute__((__unused__))
 
 #ifndef NDEBUG
 #define NDEBUG_UNUSED(x) x

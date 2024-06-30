@@ -80,8 +80,10 @@ size_t	vector_first(void *);
 })
 size_t	vector_last(void *);
 
+#define VECTOR_LENGTH(vc) vector_length((const void *)(vc))
+
 static inline size_t
-VECTOR_LENGTH(const void *vc)
+vector_length(const void *vc)
 {
 	const struct vector_public *vp = vc;
 

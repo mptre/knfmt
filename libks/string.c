@@ -57,7 +57,8 @@ struct cpuid {
 };
 
 enum sse_version {
-	SSE1_0 = 1,
+	SEE_UNSUPPORTED = 0,
+	SSE1_0,
 	SSE2_0,
 	SSE3_0,
 	SSE4_1,
@@ -103,10 +104,10 @@ sse_version(uint32_t USED_IF_X86_64(max_leaf))
 #define CPUID_01_D_SSE2_0_MASK		(1 << 26)
 
 	struct cpuid leaf;
-	enum sse_version version = 0;
+	enum sse_version version = SEE_UNSUPPORTED;
 
 	if (max_leaf < 1)
-		return 0;
+		return version;
 
 	asm("cpuid" : "=c" (leaf.c), "=d" (leaf.d) : "a" (1), "c" (0));
 	if (leaf.d & CPUID_01_D_SSE1_0_MASK)
@@ -125,7 +126,7 @@ sse_version(uint32_t USED_IF_X86_64(max_leaf))
 		version = SSE4_2;
 	return version;
 #else
-	return 0;
+	return SEE_UNSUPPORTED;
 #endif
 }
 

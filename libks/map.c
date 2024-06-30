@@ -286,7 +286,7 @@ element_get_val(struct map_element *el)
 static const void *
 key_get_ptr(const struct map *m, const void *const *key)
 {
-	return (m->flags & MAP_KEY_PTR) ? *key : key;
+	return (m->flags & MAP_KEY_PTR) ? *key : (const void *)key;
 }
 
 static size_t

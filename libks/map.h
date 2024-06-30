@@ -45,15 +45,14 @@ void	map_free(void *);
 
 #define MAP_INSERT(m, key) __extension__ ({				\
 	__typeof__((m)->kp) _k = (key);					\
-	const void *_kk = &_k;						\
-	(__typeof__((m)->v))map_insert((m), _kk);			\
+	(__typeof__((m)->v))map_insert((m), (const void *const *)&_k);	\
 })
 void	*map_insert(void *, const void *const *);
 
 #define MAP_INSERT_N(m, key, keysize) __extension__ ({			\
 	__typeof__((m)->kp) _k = (key);					\
-	const void *_kk = &_k;						\
-	(__typeof__((m)->v))map_insert_n((m), _kk, (keysize));		\
+	(__typeof__((m)->v))map_insert_n((m),				\
+	    (const void *const *)&_k, (keysize));			\
 })
 void	*map_insert_n(void *, const void *const *, size_t);
 
@@ -72,22 +71,20 @@ void	*map_key(void *, const void *);
 
 #define MAP_FIND(m, key) __extension__ ({				\
 	const __typeof__((m)->kp) _k = (key);				\
-	const void *_kk = &_k;						\
-	(__typeof__((m)->v))map_find((m), _kk);				\
+	(__typeof__((m)->v))map_find((m), (const void *const *)&_k);	\
 })
 void	*map_find(void *, const void *const *);
 
 #define MAP_FIND_N(m, key, keysize) __extension__ ({			\
 	const __typeof__((m)->kp) _k = (key);				\
-	const void *_kk = &_k;						\
-	(__typeof__((m)->v))map_find_n((m), _kk, (keysize));		\
+	(__typeof__((m)->v))map_find_n((m),				\
+	    (const void *const *)&_k, (keysize));			\
 })
 void	*map_find_n(void *, const void *const *, size_t);
 
 #define MAP_REMOVE(m, key) do {						\
 	const __typeof__((m)->kp) _k = (key);				\
-	const void *_kk = &_k;						\
-	map_remove((m), _kk);						\
+	map_remove((m), (const void *const *)&_k);			\
 } while (0)
 void	map_remove(void *, const void *const *);
 
