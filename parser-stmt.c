@@ -840,7 +840,7 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 
 	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st,
 	    pr->pr_arena.scratch_scope, &doc_scope, pr->pr_arena.scratch,
-	    pr->pr_op);
+	    pr->pr_arena.buffer, pr->pr_op);
 	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
 	error = parser_stmt1(pr, dc);

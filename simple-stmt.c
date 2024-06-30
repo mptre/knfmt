@@ -6,6 +6,7 @@
 #include <err.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/vector.h"
@@ -37,6 +38,7 @@ struct simple_stmt {
 	struct {
 		struct arena		*scratch;
 		struct arena_scope	*doc_scope;
+		struct arena		*buffer;
 	} ss_arena;
 };
 
@@ -56,7 +58,7 @@ static const char	*strtrim(const char *, size_t *);
 struct simple_stmt *
 simple_stmt_enter(struct lexer *lx, const struct style *st,
     struct arena_scope *eternal_scope, struct arena_scope *doc_scope,
-    struct arena *scratch, const struct options *op)
+    struct arena *scratch, struct arena *buffer, const struct options *op)
 {
 	struct simple_stmt *ss;
 
@@ -66,6 +68,7 @@ simple_stmt_enter(struct lexer *lx, const struct style *st,
 		err(1, NULL);
 	ss->ss_arena.scratch = scratch;
 	ss->ss_arena.doc_scope = doc_scope;
+	ss->ss_arena.buffer = buffer;
 	ss->ss_lx = lx;
 	ss->ss_op = op;
 	ss->ss_st = st;
@@ -82,9 +85,9 @@ simple_stmt_leave(struct simple_stmt *ss)
 	if (VECTOR_EMPTY(ss->ss_stmts))
 		return;
 
-	bf = buffer_alloc(1024);
-	if (bf == NULL)
-		err(1, NULL);
+	arena_scope(ss->ss_arena.buffer, s);
+
+	bf = arena_buffer_alloc(&s, 1 << 10);
 	for (i = 0; i < VECTOR_LENGTH(ss->ss_stmts); i++) {
 		const struct stmt *st = &ss->ss_stmts[i];
 
@@ -104,7 +107,6 @@ simple_stmt_leave(struct simple_stmt *ss)
 			break;
 		}
 	}
-	buffer_free(bf);
 
 	if (dobraces)
 		add_braces(ss);
