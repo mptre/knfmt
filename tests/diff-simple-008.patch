@@ -1,0 +1,11 @@
+--- diff-simple-008.c
++++ diff-simple-008.c
+@@ -3,6 +3,8 @@
+ {
+ 	if (0)
+ 		return 0;
++	else if (1)
++		return 1;
+ 	else if (2)
+ 		return 2;
+ }

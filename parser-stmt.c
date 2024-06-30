@@ -20,6 +20,7 @@
 #include "token.h"
 
 #define PARSER_STMT_EXPR_DOWHILE		0x00000001u
+#define PARSER_STMT_EXPR_ELSEIF			0x00000002u
 
 static int	parser_stmt(struct parser *, struct doc *);
 static int	parser_stmt1(struct parser *, struct doc *);
@@ -225,10 +226,24 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 }
 
 static int
+peek_else_if(struct parser *pr, struct token **tkif, struct token **tkelse)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	int peek;
+
+	lexer_peek_enter(lx, &s);
+	peek = lexer_if(lx, TOKEN_ELSE, tkelse) &&
+	    lexer_peek_if(lx, TOKEN_IF, tkif) &&
+	    token_cmp(*tkelse, *tkif) == 0;
+	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+static int
 parser_stmt_if(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *tkelse, *tkif;
 
 	if (!lexer_peek_if(lx, TOKEN_IF, NULL))
 		return parser_none(pr);
@@ -236,24 +251,26 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 	if (parser_stmt_kw_expr(pr, dc, TOKEN_IF, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
-	while (lexer_peek_if(lx, TOKEN_ELSE, &tkelse)) {
+	while (lexer_peek_if(lx, TOKEN_ELSE, NULL)) {
+		struct token *tkelse, *tkif;
 		int error;
 
 		if (lexer_back_if(lx, TOKEN_RBRACE, NULL))
 			doc_literal(" ", dc);
 		else
 			doc_alloc(DOC_HARDLINE, dc);
-		if (!lexer_expect(lx, TOKEN_ELSE, &tkelse))
-			break;
-		parser_doc_token(pr, tkelse, dc);
-		doc_literal(" ", dc);
 
-		if (lexer_peek_if(lx, TOKEN_IF, &tkif) &&
-		    token_cmp(tkelse, tkif) == 0) {
-			error = parser_stmt_kw_expr(pr, dc, TOKEN_IF, 0);
+		if (peek_else_if(pr, &tkelse, &tkif)) {
+			error = parser_stmt_kw_expr(pr, dc, TOKEN_IF,
+			    PARSER_STMT_EXPR_ELSEIF);
 			if (error & (FAIL | NONE))
 				return parser_fail(pr);
 		} else {
+			if (!lexer_expect(lx, TOKEN_ELSE, &tkelse))
+				return parser_fail(pr);
+			parser_doc_token(pr, tkelse, dc);
+			doc_literal(" ", dc);
+
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 				error = parser_stmt(pr, dc);
 				if (error & FAIL)
@@ -434,9 +451,14 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc, int token_type,
 	struct doc *expr = NULL;
 	struct doc *stmt;
 	struct lexer *lx = pr->pr_lx;
-	struct token *kw, *lparen, *rparen, *tk;
+	struct token *kw, *lparen, *prefix, *rparen, *tk;
 	unsigned int w;
 	int error;
+
+	if (flags & PARSER_STMT_EXPR_ELSEIF) {
+		if (!lexer_expect(lx, TOKEN_ELSE, &prefix))
+			return parser_fail(pr);
+	}
 
 	if (!lexer_expect(lx, token_type, &kw) ||
 	    !lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &lparen,
@@ -446,6 +468,10 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc, int token_type,
 	parser_token_trim_after(pr, rparen);
 
 	stmt = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	if (flags & PARSER_STMT_EXPR_ELSEIF) {
+		parser_doc_token(pr, prefix, stmt);
+		doc_literal(" ", stmt);
+	}
 	parser_doc_token(pr, kw, stmt);
 	if (token_type != TOKEN_IDENT)
 		doc_literal(" ", stmt);
