@@ -405,12 +405,15 @@ static int
 peek_type_unknown_array(struct lexer *lx, struct token **tk)
 {
 	struct lexer_state s;
-	int peek;
+	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
-	peek = lexer_if(lx, TOKEN_IDENT, NULL) &&
-	    lexer_if(lx, TOKEN_LSQUARE, NULL) &&
-	    lexer_if(lx, TOKEN_RSQUARE, tk);
+	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    lexer_if(lx, TOKEN_LSQUARE, NULL)) {
+		(void)lexer_if(lx, TOKEN_LITERAL, NULL);
+		if (lexer_if(lx, TOKEN_RSQUARE, tk))
+			peek = 1;
+	}
 	lexer_peek_leave(lx, &s);
 	return peek;
 }
