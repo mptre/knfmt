@@ -197,7 +197,7 @@ vector_reserve1(struct vector **vv, size_t len)
 
 	if (vc->p.len > ULONG_MAX - len)
 		goto overflow;
-	if (vc->p.len + len < vc->vc_siz)
+	if (vc->p.len + len <= vc->vc_siz)
 		return VECTOR_SUCCESS;
 
 	oldlen = sizeof(*vc) + vc->p.len * vc->vc_stride;
