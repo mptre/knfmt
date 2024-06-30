@@ -79,8 +79,6 @@ static struct token		*clang_keyword(struct lexer *);
 static const struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
 static const struct token	*clang_find_keyword1(const char *, size_t);
-static struct token		*clang_find_alias(struct lexer *,
-    const struct lexer_state *);
 static const struct token	*clang_ellipsis(struct lexer *,
     const struct lexer_state *);
 static struct token		*clang_token_alloc(struct arena_scope *,
@@ -554,8 +552,6 @@ clang_read(struct lexer *lx, void *arg)
 
 		if ((kw = clang_find_keyword(lx, &st)) != NULL) {
 			tk = lexer_emit(lx, &st, kw);
-		} else if ((tk = clang_find_alias(lx, &st)) != NULL) {
-			/* nothing */
 		} else {
 			/* Fallback, treat everything as an identifier. */
 			tk = lexer_emit(lx, &st, &(struct token){
@@ -1278,54 +1274,6 @@ clang_find_keyword1(const char *key, size_t len)
 	if (kw == NULL)
 		return NULL;
 	return *kw;
-}
-
-/*
- * Recognize aliased token which is a keyword preceded or succeeded with
- * underscores.
- */
-static struct token *
-clang_find_alias(struct lexer *lx, const struct lexer_state *st)
-{
-	const struct {
-		struct {
-			const char	*str;
-			size_t		 len;
-		} alias, keyword;
-	} aliases[] = {
-#define ALIAS(a, k)	{ { a, sizeof(a) - 1, }, { k, sizeof(k) - 1 } }
-		ALIAS("volatile",	"volatile"),
-#undef ALIAS
-	};
-	const size_t naliases = sizeof(aliases) / sizeof(aliases[0]);
-	size_t i, len;
-	const struct token *kw;
-	const char *str;
-	int nunderscores = 0;
-
-	str = lexer_buffer_slice(lx, st, &len);
-	if (str == NULL)
-		return NULL;
-	for (; len > 0 && str[0] == '_'; len--, str++)
-		nunderscores++;
-	for (; len > 0 && str[len - 1] == '_'; len--)
-		nunderscores++;
-	if (nunderscores == 0)
-		return NULL;
-	for (i = 0; i < naliases; i++) {
-		if (aliases[i].alias.len == len &&
-		    strncmp(aliases[i].alias.str, str, len) == 0)
-			break;
-	}
-	if (i == naliases)
-		return NULL;
-
-	kw = clang_find_keyword1(aliases[i].keyword.str,
-	    aliases[i].keyword.len);
-	return lexer_emit(lx, st, &(struct token){
-	    .tk_type	= kw->tk_type,
-	    .tk_flags	= kw->tk_flags,
-	});
 }
 
 static const struct token *
