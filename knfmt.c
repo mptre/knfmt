@@ -207,10 +207,8 @@ fileformat(struct main_context *c, struct file *fe)
 	arena_scope(c->arena.eternal, eternal_scope);
 
 	buffer_reset(c->src);
-	if (file_read(fe, c->src)) {
-		error = 1;
-		goto out;
-	}
+	if (file_read(fe, c->src))
+		return 1;
 	clang = clang_alloc(c->style, c->simple, &eternal_scope,
 	    c->arena.scratch, &c->options);
 	lx = lexer_alloc(&(const struct lexer_arg){
@@ -222,10 +220,8 @@ fileformat(struct main_context *c, struct file *fe)
 	    .error_flush	= options_trace_level(&c->options, 'l') > 0,
 	    .callbacks		= clang_lexer_callbacks(clang),
 	});
-	if (lx == NULL) {
-		error = 1;
-		goto out;
-	}
+	if (lx == NULL)
+		return 1;
 	pr = parser_alloc(&(struct parser_arg){
 	    .options	= &c->options,
 	    .style	= c->style,
@@ -256,7 +252,7 @@ fileformat(struct main_context *c, struct file *fe)
 		error = fileprint(c->dst);
 
 out:
-	if (lx != NULL && error)
+	if (error)
 		lexer_error_flush(lx);
 	return error;
 }
