@@ -22,7 +22,6 @@ struct parser {
 	struct simple		*pr_si;
 	struct lexer		*pr_lx;
 	struct clang		*pr_clang;
-	struct buffer		*pr_bf;
 	unsigned int		 pr_error;
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
@@ -31,6 +30,7 @@ struct parser {
 		struct arena_scope	*scratch_scope;
 		struct arena		*doc;
 		struct arena_scope	*doc_scope;
+		struct arena		*buffer;
 	} pr_arena;
 
 	struct {

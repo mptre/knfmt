@@ -16,6 +16,7 @@ struct parser_arg {
 		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
 		struct arena		*doc;
+		struct arena		*buffer;
 	} arena;
 };
 

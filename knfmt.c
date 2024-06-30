@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/tmp.h"
@@ -38,6 +39,7 @@ struct main_context {
 		struct arena		*eternal;
 		struct arena		*scratch;
 		struct arena		*doc;
+		struct arena		*buffer;
 	} arena;
 };
 
@@ -110,6 +112,8 @@ main(int argc, char *argv[])
 	arena_scope(c.arena.eternal, eternal_scope);
 	c.arena.scratch = arena_alloc();
 	c.arena.doc = arena_alloc();
+	c.arena.buffer = arena_alloc();
+	arena_scope(c.arena.buffer, buffer_scope);
 	c.style = style_parse(clang_format, &eternal_scope, c.arena.scratch,
 	    &c.options);
 	if (c.style == NULL) {
@@ -129,16 +133,9 @@ main(int argc, char *argv[])
 	}
 
 	c.simple = simple_alloc(&eternal_scope, &c.options);
-	c.src = buffer_alloc(1 << 12);
-	if (c.src == NULL) {
-		error = 1;
-		goto out;
-	}
-	c.dst = buffer_alloc(1 << 12);
-	if (c.dst == NULL) {
-		error = 1;
-		goto out;
-	}
+
+	c.src = arena_buffer_alloc(&buffer_scope, 1 << 12);
+	c.dst = arena_buffer_alloc(&buffer_scope, 1 << 12);
 
 	if (filelist(argc, argv, &files, &eternal_scope, c.arena.scratch,
 	    &c.options)) {
@@ -156,8 +153,7 @@ main(int argc, char *argv[])
 
 out:
 	files_free(&files);
-	buffer_free(c.dst);
-	buffer_free(c.src);
+	arena_free(c.arena.buffer);
 	arena_free(c.arena.doc);
 	arena_free(c.arena.scratch);
 	arena_free(c.arena.eternal);
@@ -232,6 +228,7 @@ fileformat(struct main_context *c, struct file *fe)
 		.eternal_scope	= &eternal_scope,
 		.scratch	= c->arena.scratch,
 		.doc		= c->arena.doc,
+		.buffer		= c->arena.buffer,
 	    },
 	});
 	if (pr == NULL) {

@@ -106,7 +106,7 @@ parser_alloc(const struct parser_arg *arg)
 	pr->pr_clang = arg->clang;
 	pr->pr_arena.scratch = arg->arena.scratch;
 	pr->pr_arena.doc = arg->arena.doc;
-	pr->pr_bf = arena_buffer_alloc(arg->arena.eternal_scope, 1 << 10);
+	pr->pr_arena.buffer = arg->arena.buffer;
 
 	return pr;
 }
@@ -265,10 +265,15 @@ parser_token_trim_after(const struct parser *UNUSED(pr), struct token *tk)
 unsigned int
 parser_width(struct parser *pr, const struct doc *dc)
 {
+	struct buffer *bf;
+
+	arena_scope(pr->pr_arena.buffer, s);
+
+	bf = arena_buffer_alloc(&s, 1 << 10);
 	return doc_width(&(struct doc_exec_arg){
 	    .dc		= dc,
 	    .scratch	= pr->pr_arena.scratch,
-	    .bf		= pr->pr_bf,
+	    .bf		= bf,
 	    .st		= pr->pr_st,
 	    .op		= pr->pr_op,
 	});
