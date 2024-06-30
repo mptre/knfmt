@@ -516,7 +516,7 @@ expr_exec_field(struct expr_state *es, struct expr *lhs)
 }
 
 static struct expr *
-expr_exec_literal(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
+expr_exec_literal(struct expr_state *es, struct expr *NDEBUG_UNUSED(lhs))
 {
 	assert(lhs == NULL);
 
@@ -574,7 +574,7 @@ expr_exec_prepost(struct expr_state *es, struct expr *lhs)
 }
 
 static struct expr *
-expr_exec_sizeof(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
+expr_exec_sizeof(struct expr_state *es, struct expr *NDEBUG_UNUSED(lhs))
 {
 	struct expr *ex;
 	struct token *tk;
@@ -636,7 +636,7 @@ expr_exec_ternary(struct expr_state *es, struct expr *lhs)
 }
 
 static struct expr *
-expr_exec_unary(struct expr_state *es, struct expr *MAYBE_UNUSED(lhs))
+expr_exec_unary(struct expr_state *es, struct expr *NDEBUG_UNUSED(lhs))
 {
 	struct expr *ex;
 
@@ -1267,7 +1267,7 @@ expr_doc_soft0(struct expr *ex, struct expr_state *es, struct doc *dc,
 
 static void
 expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
-    enum expr_mode MAYBE_UNUSED(mode), struct arena_scope *scratch_scope)
+    enum expr_mode NDEBUG_UNUSED(mode), struct arena_scope *scratch_scope)
 {
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->si);
 	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);

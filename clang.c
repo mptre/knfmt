@@ -1362,7 +1362,7 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 	if (token_type == TOKEN_CPP_IF ||
 	    token_type == TOKEN_CPP_ELSE ||
 	    token_type == TOKEN_CPP_ENDIF) {
-		struct clang_token *MAYBE_UNUSED(ct);
+		struct clang_token *NDEBUG_UNUSED(ct);
 
 		ct = token_priv(prefix, struct clang_token);
 		assert(ct->branch.parent == src);
