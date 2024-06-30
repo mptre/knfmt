@@ -89,6 +89,6 @@ void    arena_cleanup(struct arena_scope *, void (*)(void *), void *);
 
 struct arena_stats	*arena_stats(struct arena *);
 
-void    arena_poison(void *, size_t);
+void    arena_poison(const void *, size_t);
 
 #endif /* !LIBKS_ARENA_H */

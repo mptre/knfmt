@@ -242,6 +242,8 @@ KS_str_split(const char *str, char delim, struct arena_scope *s)
 		char **dst;
 
 		dst = VECTOR_ALLOC(parts);
+		if (unlikely(dst == NULL))
+			return NULL; /* UNREACHABLE */
 		p = strchr(str, delim);
 		if (p != NULL) {
 			*dst = arena_strndup(s, str, (size_t)(p - str));

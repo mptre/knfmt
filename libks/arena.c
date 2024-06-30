@@ -78,19 +78,20 @@ struct arena {
 union address {
 	char		*s8;
 	uint64_t	 u64;
+	size_t		 size;
 };
 
 static const size_t maxalign = sizeof(void *);
 
 static void
-frame_poison(struct arena_frame *MAYBE_UNUSED(frame))
+frame_poison(const struct arena_frame *MAYBE_UNUSED(frame))
 {
 	ASAN_POISON_MEMORY_REGION(&frame->ptr[frame->len],
 	    frame->size - frame->len);
 }
 
 static void
-frame_unpoison(struct arena_frame *MAYBE_UNUSED(frame),
+frame_unpoison(const struct arena_frame *MAYBE_UNUSED(frame),
     size_t MAYBE_UNUSED(size))
 {
 	ASAN_UNPOISON_MEMORY_REGION(&frame->ptr[frame->len], size);
@@ -101,7 +102,7 @@ align_address(const struct arena *a, union address addr)
 {
 	addr.u64 = (addr.u64 + maxalign - 1) & ~(maxalign - 1);
 	if (a->poison_size > 0) {
-		if (a->poison_size > INT64_MAX - addr.u64) {
+		if (a->poison_size > SIZE_MAX - addr.u64) {
 			/* Insufficient space for poison bytes is not fatal. */
 		} else {
 			addr.u64 += a->poison_size;
@@ -146,9 +147,9 @@ static void *
 arena_push(const struct arena *a, struct arena_frame *frame, size_t size)
 {
 	void *ptr;
-	uint64_t newlen;
+	size_t newlen;
 
-	if (size > INT64_MAX - frame->len) {
+	if (size > SIZE_MAX - frame->len) {
 		errno = EOVERFLOW;
 		return NULL;
 	}
@@ -160,7 +161,7 @@ arena_push(const struct arena *a, struct arena_frame *frame, size_t size)
 
 	frame_unpoison(frame, size);
 	ptr = &frame->ptr[frame->len];
-	newlen = align_address(a, (union address){.u64 = newlen}).u64;
+	newlen = align_address(a, (union address){.size = newlen}).size;
 	/*
 	 * Discard alignment if the frame is exhausted, the next allocation will
 	 * require a new frame anyway.
@@ -173,10 +174,10 @@ static int
 arena_frame_alloc(struct arena *a, size_t frame_size)
 {
 	struct arena_frame *frame;
-	uint64_t total_size;
+	size_t total_size;
 
 	/* Must account for first arena_push() representing the actual frame. */
-	if (KS_u64_add_overflow(sizeof(*frame) + a->poison_size, frame_size,
+	if (KS_size_add_overflow(sizeof(*frame) + a->poison_size, frame_size,
 	    &total_size)) {
 		errno = EOVERFLOW;
 		return 0;
@@ -342,7 +343,7 @@ arena_malloc(struct arena_scope *s, size_t size)
 	struct arena *a = s->arena;
 	struct arena_frame *frame;
 	void *ptr;
-	uint64_t frame_size, total_size;
+	size_t frame_size, total_size;
 
 	arena_scope_validate(a, s, size);
 
@@ -352,13 +353,13 @@ arena_malloc(struct arena_scope *s, size_t size)
 		return ptr;
 	}
 
-	if (sizeof(*frame) > INT64_MAX - size)
+	if (sizeof(*frame) > SIZE_MAX - size)
 		errx(1, "%s: Requested allocation too large", __func__);
 	total_size = size + sizeof(*frame);
 
 	frame_size = a->frame_size;
 	while (frame_size < total_size) {
-		if (frame_size > INT64_MAX / frame_size) {
+		if (frame_size > SIZE_MAX / 2) {
 			errx(1, "%s: Requested allocation exceeds frame size",
 			    __func__);
 		}
@@ -381,9 +382,9 @@ void *
 arena_calloc(struct arena_scope *s, size_t nmemb, size_t size)
 {
 	void *ptr;
-	uint64_t total_size;
+	size_t total_size;
 
-	if (nmemb > INT64_MAX / size)
+	if (nmemb > SIZE_MAX / size)
 		errx(1, "%s: Requested allocation too large", __func__);
 	total_size = nmemb * size;
 
@@ -496,9 +497,9 @@ char *
 arena_strndup(struct arena_scope *s, const char *src, size_t len)
 {
 	char *dst;
-	uint64_t total_size;
+	size_t total_size;
 
-	if (len > INT64_MAX - 1)
+	if (len > SIZE_MAX - 1)
 		errx(1, "%s: Requested allocation too large", __func__);
 	total_size = len + 1;
 
@@ -529,7 +530,7 @@ arena_stats(struct arena *a)
 }
 
 void
-arena_poison(void *MAYBE_UNUSED(ptr), size_t MAYBE_UNUSED(size))
+arena_poison(const void *MAYBE_UNUSED(ptr), size_t MAYBE_UNUSED(size))
 {
 	ASAN_POISON_MEMORY_REGION(ptr, size);
 }

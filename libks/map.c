@@ -70,7 +70,7 @@ struct hash_key {
 		const uint8_t	*u8;
 		const uint32_t	*u32;
 		const uintptr_t	 ptr;
-	};
+	} u;
 	size_t	len;
 };
 
@@ -82,7 +82,7 @@ static void	*element_get_val(struct map_element *);
 static const void	*key_get_ptr(const struct map *, const void *const *);
 static size_t		 key_get_size(const struct map *, const void *);
 
-static int	pointer_align(uint64_t, uint64_t *);
+static int	pointer_align(size_t, size_t *);
 
 static int			 HASH_ADD(struct map *, const void *,
     size_t, struct map_element *);
@@ -106,15 +106,15 @@ int
 map_init(void **mp, size_t keysize, size_t valsize, unsigned int flags)
 {
 	struct map *m;
-	uint64_t elementsize, valsize_aligned;
+	size_t elementsize, valsize_aligned;
 
 	if (pointer_align(valsize, &valsize_aligned))
 		goto overflow;
-	if (KS_u64_add_overflow(valsize_aligned, sizeof(struct map_element),
+	if (KS_size_add_overflow(valsize_aligned, sizeof(struct map_element),
 	    &elementsize))
 		goto overflow;
 	if ((flags & MAP_KEY_STR) == 0 &&
-	    KS_u64_add_overflow(keysize, elementsize, &elementsize))
+	    KS_size_add_overflow(keysize, elementsize, &elementsize))
 		goto overflow;
 
 	m = calloc(1, sizeof(*m));
@@ -251,15 +251,15 @@ static struct map_element *
 map_alloc_element(struct map *m, size_t keysize)
 {
 	struct map_element *el;
-	uint64_t totsize = m->element.size;
+	size_t totsize = m->element.size;
 
 	if (m->flags & MAP_KEY_STR) {
-		uint64_t keysize_aligned;
+		size_t keysize_aligned;
 
 		/* Add one byte to ensure NUL-terminator. */
 		if (pointer_align(keysize, &keysize_aligned) ||
-		    KS_u64_add_overflow(keysize_aligned, totsize, &totsize) ||
-		    KS_u64_add_overflow(1, totsize, &totsize)) {
+		    KS_size_add_overflow(keysize_aligned, totsize, &totsize) ||
+		    KS_size_add_overflow(1, totsize, &totsize)) {
 			errno = EOVERFLOW;
 			return NULL;
 		}
@@ -297,12 +297,12 @@ key_get_size(const struct map *m, const void *key)
 }
 
 static int
-pointer_align(uint64_t size, uint64_t *out)
+pointer_align(size_t size, size_t *out)
 {
-	uint64_t pointer_size = sizeof(void *);
-	uint64_t sum;
+	size_t pointer_size = sizeof(void *);
+	size_t sum;
 
-	if (KS_u64_add_overflow(size, pointer_size - 1, &sum))
+	if (KS_size_add_overflow(size, pointer_size - 1, &sum))
 		return 1;
 	*out = sum & ~(pointer_size - 1);
 	return 0;
@@ -631,7 +631,7 @@ do {									\
 static void
 hash_key_init(struct hash_key *key, const void *buf, size_t buflen)
 {
-	key->u8 = buf;
+	key->u.u8 = buf;
 	key->len = buflen;
 }
 
@@ -641,11 +641,11 @@ hash_key_read_u32(struct hash_key *key)
 	uint32_t val;
 	unsigned int size = sizeof(val);
 
-	if (unlikely((key->ptr & (size - 1)) != 0))
-		memcpy(&val, key->u8, 4);
+	if (unlikely((key->u.ptr & (size - 1)) != 0))
+		memcpy(&val, key->u.u8, 4);
 	else
-		val = key->u32[0];
-	key->u8 += size;
+		val = key->u.u32[0];
+	key->u.u8 += size;
 	key->len -= size;
 
 	return val;
@@ -679,37 +679,37 @@ HASH_JEN(const void *key, size_t keylen)
 #  pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
 	case 11:
-		hashv += ((unsigned int)_hj_key.u8[10] << 24);
+		hashv += ((unsigned int)_hj_key.u.u8[10] << 24);
 		/* FALLTHROUGH */
 	case 10:
-		hashv += ((unsigned int)_hj_key.u8[9] << 16);
+		hashv += ((unsigned int)_hj_key.u.u8[9] << 16);
 		/* FALLTHROUGH */
 	case 9:
-		hashv += ((unsigned int)_hj_key.u8[8] << 8);
+		hashv += ((unsigned int)_hj_key.u.u8[8] << 8);
 		/* FALLTHROUGH */
 	case 8:
-		_hj_j += ((unsigned int)_hj_key.u8[7] << 24);
+		_hj_j += ((unsigned int)_hj_key.u.u8[7] << 24);
 		/* FALLTHROUGH */
 	case 7:
-		_hj_j += ((unsigned int)_hj_key.u8[6] << 16);
+		_hj_j += ((unsigned int)_hj_key.u.u8[6] << 16);
 		/* FALLTHROUGH */
 	case 6:
-		_hj_j += ((unsigned int)_hj_key.u8[5] << 8);
+		_hj_j += ((unsigned int)_hj_key.u.u8[5] << 8);
 		/* FALLTHROUGH */
 	case 5:
-		_hj_j += _hj_key.u8[4];
+		_hj_j += _hj_key.u.u8[4];
 		/* FALLTHROUGH */
 	case 4:
-		_hj_i += ((unsigned int)_hj_key.u8[3] << 24);
+		_hj_i += ((unsigned int)_hj_key.u.u8[3] << 24);
 		/* FALLTHROUGH */
 	case 3:
-		_hj_i += ((unsigned int)_hj_key.u8[2] << 16);
+		_hj_i += ((unsigned int)_hj_key.u.u8[2] << 16);
 		/* FALLTHROUGH */
 	case 2:
-		_hj_i += ((unsigned int)_hj_key.u8[1] << 8);
+		_hj_i += ((unsigned int)_hj_key.u.u8[1] << 8);
 		/* FALLTHROUGH */
 	case 1:
-		_hj_i += _hj_key.u8[0];
+		_hj_i += _hj_key.u.u8[0];
 		/* FALLTHROUGH */
 	default: ;
 #if defined(HAVE_IMPLICIT_FALLTHROUGH)

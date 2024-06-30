@@ -17,6 +17,7 @@
 #ifndef LIBKS_ARITHMETIC_H
 #define LIBKS_ARITHMETIC_H
 
+#include <stddef.h> /* size_t */
 #include <stdint.h>
 
 int	KS_i32_add_overflow0(int32_t, int32_t, int32_t *);
@@ -34,6 +35,10 @@ int	KS_u32_mul_overflow0(uint32_t, uint32_t, uint32_t *);
 int	KS_u64_add_overflow0(uint64_t, uint64_t, uint64_t *);
 int	KS_u64_sub_overflow0(uint64_t, uint64_t, uint64_t *);
 int	KS_u64_mul_overflow0(uint64_t, uint64_t, uint64_t *);
+
+int	KS_size_add_overflow0(size_t, size_t, size_t *);
+int	KS_size_sub_overflow0(size_t, size_t, size_t *);
+int	KS_size_mul_overflow0(size_t, size_t, size_t *);
 
 #if defined(__has_builtin)
 #define has_builtin(x) __has_builtin(x)
@@ -158,6 +163,36 @@ KS_u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *c)
 	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
 #else
 	return KS_u64_mul_overflow0(a, b, c);
+#endif
+}
+
+static inline int
+KS_size_add_overflow(size_t a, size_t b, size_t *c)
+{
+#if has_builtin(__builtin_add_overflow)
+	return __builtin_add_overflow(a, b, c) ? 1 : 0;
+#else
+	return KS_size_add_overflow0(a, b, c);
+#endif
+}
+
+static inline int
+KS_size_sub_overflow(size_t a, size_t b, size_t *c)
+{
+#if has_builtin(__builtin_sub_overflow)
+	return __builtin_sub_overflow(a, b, c) ? 1 : 0;
+#else
+	return KS_size_sub_overflow0(a, b, c);
+#endif
+}
+
+static inline int
+KS_size_mul_overflow(size_t a, size_t b, size_t *c)
+{
+#if has_builtin(__builtin_mul_overflow)
+	return __builtin_mul_overflow(a, b, c) ? 1 : 0;
+#else
+	return KS_size_mul_overflow0(a, b, c);
 #endif
 }
 
