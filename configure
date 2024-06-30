@@ -11,13 +11,13 @@ atexit() {
 	[ -e config.h ] && cat config.h
 	[ -e config.mk ] && cat config.mk
 	rm -rf "$@" || :
-	[ "$_err" -ne 0 ] && fatal
+	[ "${_err}" -ne 0 ] && fatal
 	exit 0
 }
 
 compile() {
 	# shellcheck disable=SC2086
-	"$CC" $CPPFLAGS -Werror -o /dev/null -x c - "$@"
+	"${CC}" ${CPPFLAGS} -Werror -o /dev/null -x c - "$@"
 }
 
 cc_has_option() {
@@ -47,17 +47,17 @@ fatal() {
 headers() {
 	local _tmp="${WRKDIR}/headers"
 
-	cat >"$_tmp"
-	[ -s "$_tmp" ] || return 0
+	cat >"${_tmp}"
+	[ -s "${_tmp}" ] || return 0
 
-	xargs printf '#include <%s>\n' <"$_tmp"
+	xargs printf '#include <%s>\n' <"${_tmp}"
 }
 
 makevar() {
 	# shellcheck disable=SC2016
 	var="$(printf 'all:\n\t@echo ${%s}\n' "$1" | make -sf -)"
-	if [ -n "$var" ]; then
-		echo "$var"
+	if [ -n "${var}" ]; then
+		echo "${var}"
 	else
 		return 1
 	fi
@@ -174,10 +174,10 @@ PREFIX="$(makevar PREFIX || echo /usr/local)"
 BINDIR="$(makevar BINDIR || echo "${PREFIX}/bin")"
 MANDIR="$(makevar MANDIR || echo "${PREFIX}/man")"
 INSTALL="$(makevar INSTALL || echo install)"
-INSTALL_MAN="$(makevar INSTALL_MAN || echo "$INSTALL")"
+INSTALL_MAN="$(makevar INSTALL_MAN || echo "${INSTALL}")"
 
 # Following chunks must happen after CC is defined.
-if [ "$_pedantic" -eq 1 ]; then
+if [ "${_pedantic}" -eq 1 ]; then
 	CFLAGS="$(cc_has_option -Wformat-signedness) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wimplicit-fallthrough) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wunreachable-code-aggressive) ${CFLAGS}"
@@ -185,12 +185,12 @@ if [ "$_pedantic" -eq 1 ]; then
 	CFLAGS="-g $(pedantic) ${CFLAGS}"
 	DEBUG="-g ${DEBUG}"
 fi
-if [ "$_sanitize" -eq 1 ]; then
+if [ "${_sanitize}" -eq 1 ]; then
 	{
 		cc_has_sanitizer address
 		cc_has_sanitizer undefined
 		cc_has_sanitizer unsigned-integer-overflow
-		[ "$_fuzz" = "llvm" ] && echo fuzzer
+		[ "${_fuzz}" = "llvm" ] && echo fuzzer
 	} >"${WRKDIR}/sanitize"
 	if ! cmp -s /dev/null "${WRKDIR}/sanitize"; then
 		_sanitize="-fsanitize=$(paste -sd , "${WRKDIR}/sanitize")"
@@ -199,7 +199,7 @@ if [ "$_sanitize" -eq 1 ]; then
 		CFLAGS="${_sanitize} ${CFLAGS}"
 		DEBUG="${_sanitize} ${DEBUG}"
 	fi
-	if [ "$_fuzz" = "llvm" ]; then
+	if [ "${_fuzz}" = "llvm" ]; then
 		NO_SANITIZE_FUZZER="$(cc_has_option -fno-sanitize=fuzzer)"
 	fi
 fi
@@ -218,21 +218,21 @@ printf '#ifndef CONFIG_H\n#define CONFIG_H\n'
 	:
 } | sort | uniq | headers
 
-[ "$HAVE_PLEDGE" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
-[ "$HAVE_QUEUE" -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
+[ "${HAVE_PLEDGE}" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
+[ "${HAVE_QUEUE}" -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
 
-if [ "$HAVE_ATTRIBUTE_FALLTHROUGH" -eq 1 ]; then
+if [ "${HAVE_ATTRIBUTE_FALLTHROUGH}" -eq 1 ]; then
 	printf '#define FALLTHROUGH __attribute__((__fallthrough__))\n'
 else
 	printf '#define FALLTHROUGH do {} while (0) /* FALLTHROUGH */\n'
 fi
 
-if [ -n "$_fuzz" ]; then
+if [ -n "${_fuzz}" ]; then
 	printf '#define FUZZER_%s\t1\n' \
-		"$(echo "$_fuzz" | tr '[:lower:]' '[:upper:]')"
+		"$(echo "${_fuzz}" | tr '[:lower:]' '[:upper:]')"
 fi
 
-[ "$HAVE_PLEDGE" -eq 0 ] &&
+[ "${HAVE_PLEDGE}" -eq 0 ] &&
 	printf 'int pledge(const char *, const char *);\n'
 
 printf '#endif\n'

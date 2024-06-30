@@ -4,7 +4,7 @@ set -e
 
 _wrkdir="$(mktemp -dt knfmt.XXXXXX)"
 trap 'rm -r $_wrkdir' EXIT
-cd "$_wrkdir"
+cd "${_wrkdir}"
 
 cat <<'EOF' >.clang-format
 ---
@@ -22,4 +22,4 @@ cat <<'EOF' >libks/arena.c
 #include "libks/arithmetic.h"
 EOF
 
-${EXEC:-} "$KNFMT" -ds libks/arena.c
+${EXEC:-} "${KNFMT}" -ds libks/arena.c

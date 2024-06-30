@@ -21,26 +21,26 @@ next() {
 	_type="$2"; : "${_type:?}"
 
 	# shellcheck disable=SC2010
-	(cd "$_dir" && ls | grep "^${_type}-...\.[ch]$" 2>/dev/null) |
+	(cd "${_dir}" && ls | grep "^${_type}-...\.[ch]$" 2>/dev/null) |
 	sed 's/.*-0*\([0-9]*\)\.c/\1/' |
 	sort -n |
-	tee "$TMP" |
+	tee "${TMP}" |
 	while read -r _c; do
 		if [ $((_c - _p)) -gt 1 ]; then
 			echo "$((_p + 1))"
 			return 1
 		fi
-		_p="$_c"
+		_p="${_c}"
 	done || return 0
 
-	_c="$(tail -1 "$TMP")"
+	_c="$(tail -1 "${TMP}")"
 	echo $((_c + 1))
 }
 
 _exec="eval"
 
 while getopts "n" _opt; do
-	case "$_opt" in
+	case "${_opt}" in
 	n)	_exec="echo";;
 	*)	usage;;
 	esac
@@ -53,5 +53,5 @@ _type="$2"
 TMP="$(mktemp -t knfmt.XXXXXX)"
 trap 'rm $TMP' 0
 
-_n="$(next tests "$_type")"
-"$_exec" "$(printf 'mv %s tests/%s-%03d.c\n' "$_path" "$_type" "$_n")"
+_n="$(next tests "${_type}")"
+"${_exec}" "$(printf 'mv %s tests/%s-%03d.c\n' "${_path}" "${_type}" "${_n}")"

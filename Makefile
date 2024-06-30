@@ -307,6 +307,7 @@ SHELLCHECKFLAGS+=	-s ksh
 SHELLCHECKFLAGS+=	-o add-default-case
 SHELLCHECKFLAGS+=	-o avoid-nullary-conditions
 SHELLCHECKFLAGS+=	-o quote-safe-variables
+SHELLCHECKFLAGS+=	-o require-variable-braces
 
 all: ${PROG_knfmt}
 

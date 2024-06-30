@@ -4,7 +4,7 @@ set -e
 
 _wrkdir="$(mktemp -dt knfmt.XXXXXX)"
 trap 'rm -r $_wrkdir' EXIT
-cd "$_wrkdir"
+cd "${_wrkdir}"
 
 cat <<'EOF' >a.c
 int
@@ -30,4 +30,4 @@ main(void)
 }
 EOF
 
-! ${EXEC:-} "$KNFMT" -ds a.c b.c >/dev/null
+! ${EXEC:-} "${KNFMT}" -ds a.c b.c >/dev/null
