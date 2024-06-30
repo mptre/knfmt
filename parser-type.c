@@ -50,15 +50,11 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	 * variable name.
 	 */
 	if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
-	    (peek_type_noident(lx, &t) || peek_type_unknown_array(lx, &t))) {
-		peek = 1;
+	    (peek_type_noident(lx, &t) || peek_type_unknown_array(lx, &t)))
 		goto out;
-	}
 
-	if (peek_type_unknown_bitfield(lx, &t)) {
-		peek = 1;
+	if (peek_type_unknown_bitfield(lx, &t))
 		goto out;
-	}
 
 	lexer_peek_enter(lx, &s);
 	for (;;) {
@@ -139,6 +135,8 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		 */
 		peek = 1;
 	}
+	if (!peek)
+		return 0;
 
 	if (tkstatic != NULL) {
 		simple_cookie(simple);
@@ -146,14 +144,14 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			t = simple_static(lx, beg, t, tkstatic);
 	}
 
-	if (peek) {
+	if (ntokens == 1) {
 		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_IMPLICIT_INT, 0, &simple))
 			t = simple_implicit_int(lx, beg, t);
 	}
 
 out:
-	if (peek && type != NULL) {
+	if (type != NULL) {
 		/*
 		 * Must be evaluated again as the simple static pass above could
 		 * reorder tokens.
@@ -167,7 +165,7 @@ out:
 		    .args	= args,
 		};
 	}
-	return peek;
+	return 1;
 }
 
 static const struct token *
