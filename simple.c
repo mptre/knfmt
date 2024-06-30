@@ -120,8 +120,8 @@ is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 	static const enum simple_pass exceptions[][2] = {
 		{ SIMPLE_DECL, SIMPLE_BRACES },
 		{ SIMPLE_DECL, SIMPLE_DECL_PROTO },
+		{ SIMPLE_DECL, SIMPLE_IMPLICIT_INT },
 		{ SIMPLE_DECL, SIMPLE_STATIC },
-		{ SIMPLE_DECL, SIMPLE_UNSIGNED },
 		/*
 		 * SIMPLE_DECL_FORWARD only operates on root level declarations
 		 * as opposed to SIMPLE_DECL which only operates on nested

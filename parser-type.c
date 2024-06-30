@@ -11,8 +11,8 @@
 #include "parser-func.h"
 #include "parser-priv.h"
 #include "ruler.h"
+#include "simple-implicit-int.h"
 #include "simple-static.h"
-#include "simple-unsigned.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
@@ -148,8 +148,8 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 	if (peek) {
 		simple_cookie(simple);
-		if (simple_enter(pr->pr_si, SIMPLE_UNSIGNED, 0, &simple))
-			t = simple_unsigned(lx, beg, t);
+		if (simple_enter(pr->pr_si, SIMPLE_IMPLICIT_INT, 0, &simple))
+			t = simple_implicit_int(lx, beg, t);
 	}
 
 out:
