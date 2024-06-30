@@ -207,27 +207,37 @@ err:
 	errx(1, "%.*s: path too long", (int)len, buf);
 }
 
+static unsigned int
+strtou(const char *str)
+{
+	unsigned long n;
+
+	errno = 0;
+	n = strtoul(str, NULL, 10);
+	if (n == 0 || n > UINT_MAX || errno != 0)
+		return 0;
+	return (unsigned int)n;
+}
+
 static int
 matchchunk(const char *str, unsigned int *sl, unsigned int *el)
 {
 	regmatch_t rm[4];
-	long n;
+	unsigned int lno;
 
 	if (regexec(&rechunk, str, 4, rm, 0))
 		return 0;
 
-	errno = 0;
-	n = strtol(str + rm[1].rm_so, NULL, 10);
-	if (n == 0 || errno)
+	lno = strtou(str + rm[1].rm_so);
+	if (lno == 0)
 		return 0;
-	*sl = n;
+	*sl = lno;
 
 	if (rm[3].rm_so != -1 && rm[3].rm_eo != -1) {
-		errno = 0;
-		n = strtol(str + rm[3].rm_so, NULL, 10);
-		if (n == 0 || errno != 0)
+		lno = strtou(str + rm[3].rm_so);
+		if (lno == 0)
 			return 0;
-		*el = (*sl + n) - 1;
+		*el = (*sl + lno) - 1;
 	} else {
 		*el = *sl;
 	}
