@@ -36,7 +36,7 @@ parser_extern(struct parser *pr, struct doc *dc)
 	for (;;) {
 		int error;
 
-		error = parser_exec1(pr, dc);
+		error = parser_root(pr, dc);
 		if (error & NONE)
 			break;
 		if (error & HALT)

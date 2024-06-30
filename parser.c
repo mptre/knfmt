@@ -143,7 +143,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 			break;
 		}
 
-		error = parser_exec1(pr, concat);
+		error = parser_root(pr, concat);
 		if (error & GOOD) {
 			clang_stamp(clang, lx);
 		} else if (error & BRCH) {
@@ -189,7 +189,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 }
 
 int
-parser_exec1(struct parser *pr, struct doc *dc)
+parser_root(struct parser *pr, struct doc *dc)
 {
 	int error;
 
