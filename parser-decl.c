@@ -303,7 +303,6 @@ parser_decl_init(struct parser *pr, struct doc **out,
 	struct doc *concat, *dc, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct ruler_indent *cookie = NULL;
-	int error = 0;
 	int ninit = 0;
 
 	indent = ruler_indent(arg->rl, arg->dc, &cookie);
@@ -312,6 +311,7 @@ parser_decl_init(struct parser *pr, struct doc **out,
 
 	for (;;) {
 		struct token *comma, *semi;
+		int error;
 
 		if (lexer_peek_if(lx, TOKEN_SEMI, &semi) && semi == arg->semi)
 			break;
