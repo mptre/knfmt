@@ -112,6 +112,14 @@ struct arena_scope;
 	/* assembly linux */						\
 	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
 	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)			\
+	/* attribute */							\
+	OP(TOKEN_ATTRIBUTE,	"__attribute", 0)			\
+	OP(TOKEN_ATTRIBUTE,	"__attribute_", 0)			\
+	OP(TOKEN_ATTRIBUTE,	"__attribute__", 0)			\
+	OP(TOKEN_ATTRIBUTE,	"_attribute", 0)			\
+	OP(TOKEN_ATTRIBUTE,	"_attribute_", 0)			\
+	OP(TOKEN_ATTRIBUTE,	"_attribute__", 0)			\
+	OP(TOKEN_ATTRIBUTE,	"attribute_", 0)			\
 	/* BSD */							\
 	OP(TOKEN_UINT8,		"u_int8_t", 0)				\
 	OP(TOKEN_UINT16,	"u_int16_t", 0)				\
