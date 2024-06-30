@@ -38,7 +38,7 @@
 #if defined(HAVE_ASAN)
 #  include <sanitizer/asan_interface.h>
 #  define USED_IF_ASAN(x) x
-#  define POISON_SIZE 8
+#  define POISON_SIZE sizeof(void *)
 #else
 #  define ASAN_POISON_MEMORY_REGION(...) (void)0
 #  define ASAN_UNPOISON_MEMORY_REGION(...) (void)0
@@ -102,13 +102,12 @@ frame_unpoison(const struct arena_frame *USED_IF_ASAN(frame),
 static union address
 align_address(const struct arena *a, union address addr)
 {
+	const union address old_addr = addr;
+
 	addr.u64 = (addr.u64 + maxalign - 1) & ~(maxalign - 1);
-	if (a->poison_size > 0) {
-		if (a->poison_size > SIZE_MAX - addr.u64) {
-			/* Insufficient space for poison bytes is not fatal. */
-		} else {
-			addr.u64 += a->poison_size;
-		}
+	if (a->poison_size > 0 && addr.u64 - old_addr.u64 < a->poison_size) {
+		/* Insufficient space for poison bytes is not fatal. */
+		(void)KS_u64_add_overflow(a->poison_size, addr.u64, &addr.u64);
 	}
 	return addr;
 }
@@ -145,17 +144,25 @@ arena_stats_frames(struct arena *a, size_t frames)
 		a->stats.frames.max = a->stats.frames.now;
 }
 
+static void
+arena_stats_alignment(struct arena *a, size_t alignment)
+{
+	a->stats.alignment.now += alignment;
+	a->stats.alignment.total += alignment;
+	if (a->stats.alignment.now > a->stats.alignment.max)
+		a->stats.alignment.max = a->stats.alignment.now;
+}
+
 static void *
-arena_push(const struct arena *a, struct arena_frame *frame, size_t size)
+arena_push(struct arena *a, struct arena_frame *frame, size_t size)
 {
 	void *ptr;
-	size_t newlen;
+	size_t newlen, oldlen;
 
-	if (size > SIZE_MAX - frame->len) {
+	if (KS_size_add_overflow(frame->len, size, &newlen)) {
 		errno = EOVERFLOW;
 		return NULL;
 	}
-	newlen = frame->len + size;
 	if (newlen > frame->size) {
 		errno = ENOMEM;
 		return NULL;
@@ -163,7 +170,9 @@ arena_push(const struct arena *a, struct arena_frame *frame, size_t size)
 
 	frame_unpoison(frame, size);
 	ptr = &frame->ptr[frame->len];
+	oldlen = newlen;
 	newlen = align_address(a, (union address){.size = newlen}).size;
+	arena_stats_alignment(a, newlen - oldlen);
 	/*
 	 * Discard alignment if the frame is exhausted, the next allocation will
 	 * require a new frame anyway.
@@ -176,20 +185,12 @@ static int
 arena_frame_alloc(struct arena *a, size_t frame_size)
 {
 	struct arena_frame *frame;
-	size_t total_size;
 
-	/* Must account for first arena_push() representing the actual frame. */
-	if (KS_size_add_overflow(sizeof(*frame) + a->poison_size, frame_size,
-	    &total_size)) {
-		errno = EOVERFLOW;
-		return 0;
-	}
-
-	frame = malloc(total_size);
+	frame = malloc(frame_size);
 	if (frame == NULL)
 		return 0;
 	frame->ptr = (char *)frame;
-	frame->size = total_size;
+	frame->size = frame_size;
 	frame->len = 0;
 	frame->next = NULL;
 	if (arena_push(a, frame, sizeof(*frame)) == NULL) {
@@ -281,6 +282,7 @@ arena_scope_leave(struct arena_scope *s)
 
 	a->stats.bytes.now = s->bytes;
 	a->stats.frames.now = s->frames;
+	a->stats.alignment.now = s->alignment;
 
 	arena_rele(a);
 }
@@ -304,6 +306,7 @@ arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 	    .frame_len	= a->frame->len,
 	    .bytes	= a->stats.bytes.now,
 	    .frames	= a->stats.frames.now,
+	    .alignment	= a->stats.alignment.now,
 	    .id		= a->refs,
 	};
 }
@@ -355,17 +358,17 @@ arena_malloc(struct arena_scope *s, size_t size)
 		return ptr;
 	}
 
-	if (sizeof(*frame) > SIZE_MAX - size)
+	/* Must account for first arena_push() representing the actual frame. */
+	if (KS_size_add_overflow(size, sizeof(*frame), &total_size) ||
+	    KS_size_add_overflow(a->poison_size, total_size, &total_size))
 		errx(1, "%s: Requested allocation too large", __func__);
-	total_size = size + sizeof(*frame);
 
 	frame_size = a->frame_size;
 	while (frame_size < total_size) {
-		if (frame_size > SIZE_MAX / 2) {
+		if (KS_size_mul_overflow(2, frame_size, &frame_size)) {
 			errx(1, "%s: Requested allocation exceeds frame size",
 			    __func__);
 		}
-		frame_size <<= 1;
 	}
 
 	if (!arena_frame_alloc(a, frame_size))
@@ -386,9 +389,8 @@ arena_calloc(struct arena_scope *s, size_t nmemb, size_t size)
 	void *ptr;
 	size_t total_size;
 
-	if (nmemb > SIZE_MAX / size)
+	if (KS_size_mul_overflow(nmemb, size, &total_size))
 		errx(1, "%s: Requested allocation too large", __func__);
-	total_size = nmemb * size;
 
 	ptr = arena_malloc(s, total_size);
 	if (ptr == NULL)
@@ -443,6 +445,8 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 	}
 
 	a->stats.realloc.total++;
+	if (old_size == 0)
+		a->stats.realloc.zero++;
 
 	/* Fast path while reallocating last allocated object. */
 	if (ptr != NULL && arena_realloc_fast(s, ptr, old_size, new_size)) {
@@ -501,9 +505,8 @@ arena_strndup(struct arena_scope *s, const char *src, size_t len)
 	char *dst;
 	size_t total_size;
 
-	if (len > SIZE_MAX - 1)
+	if (KS_size_add_overflow(len, 1, &total_size))
 		errx(1, "%s: Requested allocation too large", __func__);
-	total_size = len + 1;
 
 	dst = arena_malloc(s, total_size);
 	if (dst == NULL)

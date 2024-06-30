@@ -33,7 +33,7 @@ KS_tmpfd(const char *buf, size_t buflen, char *path, size_t pathsiz)
 	int fd = -1;
 	int n;
 
-	n = snprintf(tmppath, siz, "/tmp/knfmt.XXXXXXXX");
+	n = snprintf(tmppath, siz, "/tmp/libks.XXXXXXXX");
 	if (n < 0 || (size_t)n >= siz) {
 		errno = ENAMETOOLONG;
 		return -1;

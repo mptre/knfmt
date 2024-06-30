@@ -30,6 +30,7 @@ struct arena_scope {
 	size_t			 frame_len;
 	unsigned long		 bytes;
 	unsigned long		 frames;
+	unsigned long		 alignment;
 	int			 id;
 };
 
@@ -53,8 +54,19 @@ struct arena_stats {
 	} frames;
 
 	struct {
+		/* Effective amount of alignment. */
+		unsigned long	now;
+		/* Total amount of allocated alignment. */
+		unsigned long	total;
+		/* Peek amount of effective allocated alignment. */
+		unsigned long	max;
+	} alignment;
+
+	struct {
 		/* Number of fast reallocations. */
 		unsigned long	fast;
+		/* Number of zero sized reallocations. */
+		unsigned long	zero;
 		/* Number of reallocations. */
 		unsigned long	total;
 		/* Number of bytes spilled while moving allocations. */

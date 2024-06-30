@@ -264,7 +264,7 @@ buffer_getline(const struct buffer *bf, struct buffer_getline *getline)
 {
 	if (getline->bf == NULL) {
 		getline->bf = buffer_alloc(1 << 10);
-		if (bf == NULL)
+		if (getline->bf == NULL)
 			return NULL;
 	}
 
