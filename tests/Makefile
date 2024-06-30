@@ -559,6 +559,7 @@ TESTS+=	simple-expr-parens-002.c
 TESTS+=	simple-expr-sizeof-001.c
 TESTS+=	simple-expr-sizeof-002.c
 TESTS+=	simple-implicit-int-001.c
+TESTS+=	simple-implicit-int-002.c
 TESTS+=	simple-static-001.c
 TESTS+=	simple-static-002.c
 TESTS+=	simple-static-003.c
