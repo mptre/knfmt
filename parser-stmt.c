@@ -342,7 +342,7 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 		expr = loop;
 	}
 	space = lexer_back(lx, &semi) && !token_has_line(semi, 1) ?
-	    doc_literal(" ", expr) : NULL;
+	    doc_alloc(DOC_LINE, expr) : NULL;
 
 	/* If the expression does not fit, break after the semicolon. */
 	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
@@ -358,12 +358,10 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 			doc_remove(space, expr);
 		expr = loop;
 	}
-	space = NULL;
-	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
-		parser_doc_token(pr, semi, expr);
-		if (!token_has_line(semi, 1))
-			space = doc_literal(" ", expr);
-	}
+	if (!lexer_expect(lx, TOKEN_SEMI, &semi))
+		return parser_fail(pr);
+	parser_doc_token(pr, semi, expr);
+	space = doc_alloc(DOC_LINE, expr);
 
 	/* If the expression does not fit, break after the semicolon. */
 	error = parser_expr(pr, &expr, &(struct parser_expr_arg){
@@ -375,8 +373,7 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 		return parser_fail(pr);
 	if (error & NONE) {
 		/* Expression empty, remove the space. */
-		if (space != NULL)
-			doc_remove(space, expr);
+		doc_remove(space, expr);
 		expr = loop;
 	}
 	if (lexer_expect(lx, TOKEN_RPAREN, &tk)) {
