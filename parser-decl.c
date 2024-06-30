@@ -13,6 +13,7 @@
 #include "parser-expr.h"
 #include "parser-func.h"
 #include "parser-priv.h"
+#include "parser-stmt-asm.h"
 #include "parser-type.h"
 #include "parser.h"
 #include "ruler.h"
@@ -415,6 +416,9 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 			*out = NULL;
 		}
 		return parser_good(pr);
+	} else if (parser_asm_peek(pr)) {
+		doc_alloc(DOC_LINE, dc);
+		return parser_decl_asm(pr, dc);
 	}
 
 	return parser_none(pr);

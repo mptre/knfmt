@@ -9,6 +9,8 @@
 #include "style.h"
 #include "token.h"
 
+static int	parser_asm(struct parser *, struct doc *, struct doc **);
+
 /*
  * Returns a document which favors break before the operand.
  */
@@ -105,7 +107,15 @@ parser_stmt_asm_operand(struct parser *pr, struct doc *dc)
 }
 
 int
-parser_asm(struct parser *pr, struct doc *dc)
+parser_asm_peek(struct parser *pr)
+{
+	struct lexer *lx = pr->pr_lx;
+
+	return lexer_peek_if(lx, TOKEN_ASSEMBLY, NULL);
+}
+
+int
+parser_root_asm(struct parser *pr, struct doc *dc)
 {
 	int error;
 
@@ -117,13 +127,35 @@ parser_asm(struct parser *pr, struct doc *dc)
 }
 
 int
+parser_decl_asm(struct parser *pr, struct doc *dc)
+{
+	return parser_asm(pr, dc, NULL);
+}
+
+int
 parser_stmt_asm(struct parser *pr, struct doc *dc)
+{
+	struct doc *out;
+	struct lexer *lx = pr->pr_lx;
+	struct token *semi;
+	int error;
+
+	error = parser_asm(pr, dc, &out);
+	if ((error & GOOD) == 0)
+		return error;
+	if (lexer_expect(lx, TOKEN_SEMI, &semi))
+		parser_doc_token(pr, semi, dc);
+	return parser_good(pr);
+}
+
+static int
+parser_asm(struct parser *pr, struct doc *dc, struct doc **out)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *concat, *opt;
 	struct token *colon = NULL;
 	struct token *qualifier = NULL;
-	struct token *assembly, *lparen, *rparen, *tk;
+	struct token *assembly, *lparen, *rparen;
 	int ninputs = 0;
 	int error;
 
@@ -212,8 +244,8 @@ parser_stmt_asm(struct parser *pr, struct doc *dc)
 
 	if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
 		parser_doc_token(pr, rparen, concat);
-	if (lexer_expect(lx, TOKEN_SEMI, &tk))
-		parser_doc_token(pr, tk, concat);
 
+	if (out != NULL)
+		*out = concat;
 	return parser_good(pr);
 }

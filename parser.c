@@ -202,7 +202,7 @@ parser_root(struct parser *pr, struct doc *dc)
 	if (error & NONE)
 		error = parser_extern(pr, dc);
 	if (error & NONE)
-		error = parser_asm(pr, dc);
+		error = parser_root_asm(pr, dc);
 	return error;
 }
 
