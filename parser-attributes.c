@@ -75,7 +75,6 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 			doc_alloc(linetype, optional);
 		linetype = DOC_LINE;
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, optional));
-		*out = concat;
 		parser_doc_token(pr, tk, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			parser_doc_token(pr, tk, concat);
