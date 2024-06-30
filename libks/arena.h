@@ -30,6 +30,7 @@ struct arena_scope {
 	size_t			 frame_len;
 	unsigned long		 bytes;
 	unsigned long		 frames;
+	unsigned long		 scopes;
 	unsigned long		 alignment;
 	int			 id;
 };
@@ -52,6 +53,15 @@ struct arena_stats {
 		/* Peek amount of effective allocated frames. */
 		unsigned long	max;
 	} frames;
+
+	struct {
+		/* Effective amount of scopes. */
+		unsigned long	now;
+		/* Total amount of scopes. */
+		unsigned long	total;
+		/* Peek amount of effective scopes. */
+		unsigned long	max;
+	} scopes;
 
 	struct {
 		/* Effective amount of alignment. */

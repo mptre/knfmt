@@ -145,6 +145,15 @@ arena_stats_frames(struct arena *a, size_t frames)
 }
 
 static void
+arena_stats_scopes(struct arena *a)
+{
+	a->stats.scopes.now++;
+	a->stats.scopes.total++;
+	if (a->stats.scopes.now > a->stats.scopes.max)
+		a->stats.scopes.max = a->stats.scopes.now;
+}
+
+static void
 arena_stats_alignment(struct arena *a, size_t alignment)
 {
 	a->stats.alignment.now += alignment;
@@ -282,6 +291,7 @@ arena_scope_leave(struct arena_scope *s)
 
 	a->stats.bytes.now = s->bytes;
 	a->stats.frames.now = s->frames;
+	a->stats.scopes.now = s->scopes;
 	a->stats.alignment.now = s->alignment;
 
 	arena_rele(a);
@@ -290,6 +300,7 @@ arena_scope_leave(struct arena_scope *s)
 struct arena_scope
 arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 {
+	struct arena_scope s;
 	int idx = a->refs;
 
 	if (idx < MAX_SOURCE_LOCATIONS) {
@@ -300,15 +311,18 @@ arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 	}
 
 	arena_ref(a);
-	return (struct arena_scope){
+	s = (struct arena_scope){
 	    .arena	= a,
 	    .frame	= a->frame,
 	    .frame_len	= a->frame->len,
 	    .bytes	= a->stats.bytes.now,
 	    .frames	= a->stats.frames.now,
+	    .scopes	= a->stats.scopes.now,
 	    .alignment	= a->stats.alignment.now,
 	    .id		= a->refs,
 	};
+	arena_stats_scopes(a);
+	return s;
 }
 
 static void
@@ -375,10 +389,8 @@ arena_malloc(struct arena_scope *s, size_t size)
 		err(1, "%s", __func__);
 
 	ptr = arena_push(a, a->frame, size);
-	if (ptr == NULL) {
+	if (ptr == NULL)
 		err(1, "%s", __func__);
-		return NULL;
-	}
 	arena_stats_bytes(a, size);
 	return ptr;
 }
@@ -393,8 +405,6 @@ arena_calloc(struct arena_scope *s, size_t nmemb, size_t size)
 		errx(1, "%s: Requested allocation too large", __func__);
 
 	ptr = arena_malloc(s, total_size);
-	if (ptr == NULL)
-		return NULL;
 	memset(ptr, 0, total_size);
 	return ptr;
 }
@@ -455,8 +465,6 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 	}
 
 	new_ptr = arena_malloc(s, new_size);
-	if (new_ptr == NULL)
-		return NULL;
 	if (ptr != NULL)
 		memcpy(new_ptr, ptr, old_size);
 	a->stats.realloc.spill += old_size;
@@ -509,8 +517,6 @@ arena_strndup(struct arena_scope *s, const char *src, size_t len)
 		errx(1, "%s: Requested allocation too large", __func__);
 
 	dst = arena_malloc(s, total_size);
-	if (dst == NULL)
-		return NULL;
 	memcpy(dst, src, total_size - 1);
 	dst[total_size - 1] = '\0';
 	return dst;
