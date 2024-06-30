@@ -85,6 +85,8 @@ static struct token		*clang_token_alloc(struct arena_scope *,
     const struct token *);
 static const char		*clang_token_serialize(const struct token *,
     struct arena_scope *);
+static const char		*clang_token_type_serialize(int,
+    struct arena_scope *);
 static const char		*clang_token_serialize_prefix(
     const struct token *,
     struct arena_scope *);
@@ -201,15 +203,16 @@ struct lexer_callbacks
 clang_lexer_callbacks(struct clang *cl)
 {
 	return (struct lexer_callbacks){
-	    .read		= clang_read,
-	    .alloc		= clang_token_alloc,
-	    .serialize_token	= clang_token_serialize,
-	    .serialize_prefix	= clang_token_serialize_prefix,
-	    .end_of_branch	= clang_end_of_branch,
-	    .move_prefixes	= clang_token_move_prefixes,
-	    .after_read		= clang_after_read,
-	    .before_free	= clang_before_free,
-	    .arg		= cl,
+	    .read			= clang_read,
+	    .alloc			= clang_token_alloc,
+	    .serialize_token		= clang_token_serialize,
+	    .serialize_token_type	= clang_token_type_serialize,
+	    .serialize_prefix		= clang_token_serialize_prefix,
+	    .end_of_branch		= clang_end_of_branch,
+	    .move_prefixes		= clang_token_move_prefixes,
+	    .after_read			= clang_after_read,
+	    .before_free		= clang_before_free,
+	    .arg			= cl,
 	};
 }
 
@@ -637,8 +640,14 @@ static const char *
 clang_token_serialize(const struct token *tk, struct arena_scope *s)
 {
 	return token_serialize(tk,
-	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS,
-	    s);
+	    TOKEN_SERIALIZE_VERBATIM | TOKEN_SERIALIZE_POSITION |
+	    TOKEN_SERIALIZE_FLAGS, s);
+}
+
+static const char *
+clang_token_type_serialize(int token_type, struct arena_scope *s)
+{
+	return token_serialize(&(struct token){.tk_type = token_type}, 0, s);
 }
 
 static const char *

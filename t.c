@@ -544,7 +544,7 @@ test_parser_attributes_peek0(struct context *cx, const char *src,
 }
 
 static int
-test_lexer_read0(struct context *cx, const char *src, const char *exp,
+test_lexer_read0(struct context *c, const char *src, const char *exp,
     int lno)
 {
 	struct buffer *bf = NULL;
@@ -552,28 +552,24 @@ test_lexer_read0(struct context *cx, const char *src, const char *exp,
 	int error = 0;
 	int ntokens = 0;
 
-	context_init(cx, src);
+	arena_scope(c->arena.scratch, s);
+
+	context_init(c, src);
 
 	bf = buffer_alloc(128);
 	if (bf == NULL)
 		err(1, NULL);
 	for (;;) {
 		struct token *tk;
-		const char *end, *str;
-		size_t tokenlen;
 
-		if (!lexer_pop(cx->lx, &tk))
+		if (!lexer_pop(c->lx, &tk))
 			errx(1, "lexer_read:%d: out of tokens", lno);
 		if (tk->tk_type == LEXER_EOF)
 			break;
 
 		if (ntokens++ > 0)
 			buffer_putc(bf, ' ');
-		str = lexer_serialize(cx->lx, tk);
-		/* Strip of the token position and verbatim representation. */
-		end = strchr(str, '<');
-		tokenlen = (size_t)(end - str);
-		buffer_puts(bf, str, tokenlen);
+		buffer_printf(bf, "%s", token_serialize(tk, 0, &s));
 	}
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
@@ -975,11 +971,12 @@ token_serialize_literal(struct arena_scope *s, const struct token *tk)
 static const char *
 token_serialize_no_flags(struct arena_scope *s, const struct token *tk)
 {
-	return token_serialize(tk, 0, s);
+	return token_serialize(tk, TOKEN_SERIALIZE_VERBATIM, s);
 }
 
 static const char *
 token_serialize_position(struct arena_scope *s, const struct token *tk)
 {
-	return token_serialize(tk, TOKEN_SERIALIZE_POSITION, s);
+	return token_serialize(tk,
+	    TOKEN_SERIALIZE_VERBATIM | TOKEN_SERIALIZE_POSITION, s);
 }

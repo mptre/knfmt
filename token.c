@@ -90,26 +90,32 @@ token_serialize(const struct token *tk, unsigned int flags,
     struct arena_scope *s)
 {
 	struct buffer *bf;
+	unsigned int verbatim;
+
+	verbatim = flags & TOKEN_SERIALIZE_VERBATIM;
+	flags &= ~TOKEN_SERIALIZE_VERBATIM;
 
 	bf = arena_buffer_alloc(s, 128);
 	buffer_printf(bf, "%s", token_type_str(tk->tk_type));
-	if (tk->tk_str != NULL) {
-		if (flags > 0)
-			buffer_printf(bf, "<");
-		if (flags & TOKEN_SERIALIZE_POSITION)
-			buffer_printf(bf, "%u:%u", tk->tk_lno, tk->tk_cno);
-		if (flags & TOKEN_SERIALIZE_FLAGS)
-			strflags(bf, tk->tk_flags);
-		if (flags & TOKEN_SERIALIZE_REFS)
-			buffer_printf(bf, ",%d", tk->tk_refs);
-		if (flags & TOKEN_SERIALIZE_ADDRESS)
-			buffer_printf(bf, ",%p", (void *)tk);
-		if (flags > 0)
-			buffer_printf(bf, ">");
+	if (flags > 0)
+		buffer_printf(bf, "<");
+	if (flags & TOKEN_SERIALIZE_POSITION)
+		buffer_printf(bf, "%u:%u", tk->tk_lno, tk->tk_cno);
+	if (flags & TOKEN_SERIALIZE_FLAGS)
+		strflags(bf, tk->tk_flags);
+	if (flags & TOKEN_SERIALIZE_REFS)
+		buffer_printf(bf, ",%d", tk->tk_refs);
+	if (flags & TOKEN_SERIALIZE_ADDRESS)
+		buffer_printf(bf, ",%p", (void *)tk);
+	if (flags > 0)
+		buffer_printf(bf, ">");
+
+	if (verbatim) {
 		buffer_printf(bf, "(\"");
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
 		buffer_printf(bf, "\")");
 	}
+
 	return buffer_str(bf);
 }
 

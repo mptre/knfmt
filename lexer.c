@@ -990,6 +990,13 @@ lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
 	return &lx->lx_input.ptr[st->st_off];
 }
 
+static const char *
+lexer_serialize_token_type(struct lexer *lx, int type)
+{
+	return lx->lx_callbacks.serialize_token_type(type,
+	    lx->lx_arena.eternal_scope);
+}
+
 static void
 lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
     const char *fun, int lno)
@@ -1013,7 +1020,7 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 
 	lexer_error(lx, tk, fun, lno,
 	    "expected type %s got %s",
-	    lexer_serialize(lx, &(struct token){.tk_type = type}),
+	    lexer_serialize_token_type(lx, type),
 	    lexer_serialize(lx, tk));
 }
 

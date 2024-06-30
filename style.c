@@ -114,6 +114,8 @@ static struct token			*yaml_token_alloc(struct arena_scope *,
     const struct token *);
 static const char			*yaml_token_serialize(
     const struct token *, struct arena_scope *);
+static const char			*yaml_token_type_serialize(int,
+    struct arena_scope *);
 static struct token			*yaml_keyword(struct lexer *,
     const struct lexer_state *);
 static const struct style_option	*yaml_find_keyword(const char *,
@@ -568,6 +570,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 		.read			= yaml_read,
 		.alloc			= yaml_token_alloc,
 		.serialize_token	= yaml_token_serialize,
+		.serialize_token_type	= yaml_token_type_serialize,
 		.arg			= st,
 	    },
 	});
@@ -907,17 +910,25 @@ yaml_token_serialize(const struct token *tk, struct arena_scope *s)
 	struct buffer *bf;
 
 	bf = arena_buffer_alloc(s, 128);
-	if (tk->tk_type < Last) {
-		buffer_printf(bf, "Keyword");
-	} else {
-		buffer_printf(bf, "%s",
-		    yaml_type_str((enum yaml_type)tk->tk_type));
-	}
+	buffer_printf(bf, "%s", yaml_token_type_serialize(tk->tk_type, s));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
 		buffer_printf(bf, "\")");
 	}
+	return buffer_str(bf);
+}
+
+static const char *
+yaml_token_type_serialize(int type, struct arena_scope *s)
+{
+	struct buffer *bf;
+
+	bf = arena_buffer_alloc(s, 128);
+	if (type < Last)
+		buffer_printf(bf, "Keyword");
+	else
+		buffer_printf(bf, "%s", yaml_type_str((enum yaml_type)type));
 	return buffer_str(bf);
 }
 
