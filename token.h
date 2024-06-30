@@ -102,14 +102,21 @@ struct arena_scope;
 	OP(TOKEN_VA_LIST,	"va_list", TOKEN_FLAG_TYPE)
 
 #define FOR_TOKEN_ALIASES(OP)						\
+	/* assembly */							\
+	OP(TOKEN_ASSEMBLY,	"__asm", 0)				\
+	OP(TOKEN_ASSEMBLY,	"__asm_", 0)				\
+	OP(TOKEN_ASSEMBLY,	"__asm__", 0)				\
+	OP(TOKEN_ASSEMBLY,	"_asm", 0)				\
+	OP(TOKEN_ASSEMBLY,	"_asm_", 0)				\
+	OP(TOKEN_ASSEMBLY,	"asm_", 0)				\
+	/* assembly linux */						\
+	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
+	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)			\
 	/* BSD */							\
 	OP(TOKEN_UINT8,		"u_int8_t", 0)				\
 	OP(TOKEN_UINT16,	"u_int16_t", 0)				\
 	OP(TOKEN_UINT32,	"u_int32_t", 0)				\
-	OP(TOKEN_UINT64,	"u_int64_t", 0)				\
-	/* Linux */							\
-	OP(TOKEN_ASSEMBLY,	"asm_inline", 0)			\
-	OP(TOKEN_ASSEMBLY,	"asm_volatile_goto", 0)
+	OP(TOKEN_UINT64,	"u_int64_t", 0)
 
 #define FOR_TOKEN_SENTINELS(OP)						\
 	/* type			normalized */				\
