@@ -98,7 +98,8 @@ struct doc_state {
 
 	struct {
 		const struct token	*verbatim;
-		int			 group;
+		const struct doc	*group;
+		int			 group_has_many_chunks;
 		int			 mute;
 		unsigned int		 beg;
 		unsigned int		 end;
@@ -158,6 +159,8 @@ struct doc_diff {
 	unsigned int		 dd_first;	/* first token in group */
 	unsigned int		 dd_chunk;	/* first token covered by chunk */
 	enum doc_diff_group	 dd_covers;	/* doc_diff_covers() return value */
+	int			 dd_below_threshold;
+						/* below threshold doc_walk() return value */
 };
 
 struct doc_fits {
@@ -305,9 +308,11 @@ static void	doc_state_snapshot_restore(const struct doc_state_snapshot *,
 #define DOC_DIFF(st) (((st)->st_flags & DOC_EXEC_DIFF))
 
 static int		doc_diff_group_enter(const struct doc *,
-    struct doc_state *);
+    struct doc_state *, int);
 static void		doc_diff_group_leave(const struct doc *,
     struct doc_state *, int);
+static int		doc_diff_group_has_many_chunks(const struct doc *,
+    struct doc_state *, unsigned int);
 static void		doc_diff_mute_enter(const struct doc *,
     struct doc_state *);
 static void		doc_diff_mute_leave(const struct doc *,
@@ -618,7 +623,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 		unsigned int oldmode;
 		int diff;
 
-		diff = doc_diff_group_enter(dc, st);
+		diff = doc_diff_group_enter(dc, st, 0);
 		switch (st->st_mode) {
 		case MUNGE:
 			if (st->st_refit == 0) {
@@ -1296,7 +1301,7 @@ doc_trim_lines(const struct doc *dc, struct doc_state *st)
 }
 
 static int
-doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
+doc_diff_group_enter(const struct doc *dc, struct doc_state *st, int nested)
 {
 	struct doc_diff dd;
 	const struct diffchunk *du;
@@ -1306,10 +1311,10 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		return 0;
 
 	/*
-	 * Only applicable while entering the first group. Unless the group
-	 * above us was ignored, see below.
+	 * Only relevant while entering the first group. Unless the group above
+	 * us was ignored or if the group covers many diff chunks, see below.
 	 */
-	if (st->st_diff.group)
+	if (st->st_diff.group != NULL && !nested)
 		return 0;
 
 	/*
@@ -1324,6 +1329,17 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	dd = (struct doc_diff){
 	    .dd_threshold	= st->st_diff.beg,
 	    .dd_covers		= DOC_DIFF_GROUP_NOT_COVERED,
+	    /*
+	     * Upon entering the group for the first time, abort the walk while
+	     * traversing a document with a line number less than the one from
+	     * the previous diff chunk (i.e. dd_threshold) as we have already
+	     * seen this document before. This could happen while traversing the
+	     * same source code again after branching.
+	     *
+	     * Upon nested invocations, we want to move past the threshold in
+	     * order to find the next diff chunk covered by this group.
+	     */
+	    .dd_below_threshold	= nested ? DOC_WALK_CONTINUE : DOC_WALK_BREAK,
 	};
 	doc_walk(dc, st, doc_diff_covers, &dd);
 	switch (dd.dd_covers) {
@@ -1342,7 +1358,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		 */
 		if (st->st_diff.end > 0)
 			doc_diff_leave(dc, st, 1);
-		st->st_diff.group = 1;
+		st->st_diff.group = dc;
 		return 1;
 	case DOC_DIFF_GROUP_COVERED:
 		/*
@@ -1354,13 +1370,14 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 		break;
 	}
 
-	st->st_diff.group = 1;
+	st->st_diff.group = dc;
 
 	doc_trace(dc, st, "%s: enter chunk: beg %u, end %u, first %u, "
-	    "chunk %u, seen %d", __func__,
+	    "chunk %u, seen %d, nested %d", __func__,
 	    st->st_diff.beg, st->st_diff.end,
 	    dd.dd_first, dd.dd_chunk,
-	    st->st_diff.end > 0);
+	    st->st_diff.end > 0,
+	    nested);
 
 	if (st->st_diff.end > 0) {
 		/*
@@ -1373,8 +1390,16 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st)
 	du = diff_get_chunk(st->st_diff_chunks, dd.dd_chunk);
 	if (du == NULL)
 		return 1;
-	doc_trace(dc, st, "%s: chunk range [%u-%u]", __func__,
-	    du->du_beg, du->du_end);
+	/*
+	 * Signal to doc_diff_leave() that this group covers more than one diff
+	 * chunk. This could happen when a prefix token and the corresponding
+	 * token is covered by two disjoint diff chunks, both residing in the
+	 * same group.
+	 */
+	if (doc_diff_group_has_many_chunks(dc, st, du->du_end + 1))
+		st->st_diff.group_has_many_chunks = 1;
+	doc_trace(dc, st, "%s: chunk range [%u-%u], many? %d", __func__,
+	    du->du_beg, du->du_end, st->st_diff.group_has_many_chunks);
 
 	/*
 	 * Take a tentative note on which line the diff chunk ends. Note that if
@@ -1425,8 +1450,23 @@ doc_diff_group_leave(const struct doc *UNUSED(dc), struct doc_state *st,
 {
 	if (enter == 0 || !DOC_DIFF(st))
 		return;
-	assert(st->st_diff.group == 1);
-	st->st_diff.group = 0;
+	assert(st->st_diff.group != NULL);
+	st->st_diff.group = NULL;
+	st->st_diff.group_has_many_chunks = 0;
+}
+
+static int
+doc_diff_group_has_many_chunks(const struct doc *dc, struct doc_state *st,
+    unsigned int threshold)
+{
+	struct doc_diff dd = {
+		.dd_threshold		= threshold,
+		.dd_covers		= DOC_DIFF_GROUP_NOT_COVERED,
+		.dd_below_threshold	= DOC_WALK_CONTINUE,
+	};
+
+	doc_walk(dc, st, doc_diff_covers, &dd);
+	return dd.dd_covers == DOC_DIFF_GROUP_COVERED;
 }
 
 static void
@@ -1463,7 +1503,7 @@ doc_diff_literal(const struct doc *dc, struct doc_state *st)
 		return;
 
 	lno = dc->dc_tk->tk_lno;
-	if (st->st_diff.group) {
+	if (st->st_diff.group != NULL) {
 		if (lno > st->st_diff.end) {
 			/*
 			 * The current group spans beyond the diff chunk, adjust
@@ -1573,14 +1613,8 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 		if (dc->dc_tk != NULL) {
 			unsigned int lno = dc->dc_tk->tk_lno;
 
-			/*
-			 * If the current line number is less than the last one
-			 * from the previous diff chunk, we have seen this
-			 * document before. This could happen while traversing
-			 * the same source code again after branching.
-			 */
 			if (lno < dd->dd_threshold)
-				return DOC_WALK_BREAK;
+				return dd->dd_below_threshold;
 
 			if (dd->dd_first == 0)
 				dd->dd_first = lno;
@@ -1635,6 +1669,14 @@ doc_diff_leave0(const struct doc *dc, struct doc_state *st, unsigned int end,
 	 */
 	if (st->st_newline)
 		doc_print(dc, st, "\n", 1, DOC_PRINT_FORCE);
+
+	if (st->st_diff.group_has_many_chunks) {
+		/*
+		 * The current group covers more than one diff chunk.
+		 * Re-evaluate in order to enter the next one.
+		 */
+		doc_diff_group_enter(st->st_diff.group, st, 1);
+	}
 }
 
 static int

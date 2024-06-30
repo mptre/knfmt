@@ -1,0 +1,11 @@
+--- diff-simple-009.c
++++ diff-simple-009.c
+@@ -1,2 +1,8 @@
+ #include "foo.h"
++#include "more.h"
+ #include "bar.h"
++
++static void
++foo(void)
++{
++}
