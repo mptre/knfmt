@@ -8,7 +8,6 @@
 
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
-#include "libks/buffer.h"
 #include "libks/compiler.h"
 #include "libks/consistency.h"
 #include "libks/vector.h"
