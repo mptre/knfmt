@@ -1,3 +1,29 @@
+# 4.5.0 - YYYY-MM-DD
+
+## News
+
+- In simple mode, introduce pass to correct implicit signed int types.
+  (f10c3816a2fa)
+  (Anton Lindqvist)
+
+- Honor inline assembler in declarations.
+  (e325c911e4e2)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Fix missing space before increment statement in for loops.
+  (ebc1204a6b33)
+  (Anton Lindqvist)
+
+- In diff mode, fix bug when one group covers more than one diff chunk.
+  (4ee2e1b7ff25)
+  (Anton Lindqvist)
+
+- In simple mode, detect for loop statements without braces.
+  (086f74af173d)
+  (Anton Lindqvist)
+
 # 4.4.0 - 2024-04-13
 
 ## News
