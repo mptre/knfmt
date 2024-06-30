@@ -181,6 +181,7 @@ if [ "$_pedantic" -eq 1 ]; then
 	CFLAGS="$(cc_has_option -Wformat-signedness) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wimplicit-fallthrough) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wunreachable-code-aggressive) ${CFLAGS}"
+	CFLAGS="$(cc_has_option -Wused-but-marked-unused) ${CFLAGS}"
 	CFLAGS="-g $(pedantic) ${CFLAGS}"
 	DEBUG="-g ${DEBUG}"
 fi
