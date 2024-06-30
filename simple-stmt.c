@@ -239,10 +239,6 @@ need_braces(struct simple_stmt *ss)
 			if (st->flags & STMT_BRACES)
 				return 1;
 		} else if (simple_stmt_need_braces(ss, st, bf)) {
-			/*
-			 * No point in continuing as at least one statement
-			 * spans over multiple lines.
-			 */
 			return 1;
 		}
 	}
