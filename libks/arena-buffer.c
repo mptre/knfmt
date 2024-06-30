@@ -16,6 +16,8 @@
 
 #include "libks/arena-buffer.h"
 
+#include <errno.h>
+
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
@@ -42,7 +44,11 @@ arena_buffer_read(struct arena_scope *s, const char *path)
 
 	bf = arena_buffer_alloc(s, 1 << 13);
 	if (buffer_read_impl(bf, path)) {
+		int errno_save;
+
+		errno_save = errno;
 		buffer_free(bf);
+		errno = errno_save;
 		return NULL;
 	}
 	return bf;
