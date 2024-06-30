@@ -94,9 +94,7 @@ simple_stmt_leave(struct simple_stmt *ss)
 				dobraces = 1;
 				break;
 			}
-			continue;
-		}
-		if (need_braces(ss, st, bf)) {
+		} else if (need_braces(ss, st, bf)) {
 			/*
 			 * No point in continuing as at least one statement
 			 * spans over multiple lines.
