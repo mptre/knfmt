@@ -41,11 +41,6 @@ struct parser {
 	} pr_simple;
 
 	struct {
-		int		 valid;
-		struct token	*lbrace;
-	} pr_braces;
-
-	struct {
 		struct ruler	*ruler;		/* align X macros */
 	} pr_cpp;
 

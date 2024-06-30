@@ -29,14 +29,20 @@ struct braces_field_arg {
 	unsigned int		 flags;
 };
 
+struct lbrace_cache {
+	int		 valid;
+	struct token	*lbrace;
+};
+
 static int	parser_braces1(struct parser *, struct braces_arg *);
 static int	parser_braces_field(struct parser *, struct braces_field_arg *);
 static int	parser_braces_field1(struct parser *,
     struct braces_field_arg *);
 
-static struct token	*peek_expr_stop(struct parser *, struct token *);
-static struct token	*lbrace_cache(struct parser *, struct token *);
-static void		 lbrace_cache_purge(struct parser *);
+static struct token	*peek_expr_stop(struct parser *, struct lbrace_cache *,
+    struct token *);
+static struct token	*lbrace_cache_lookup(struct parser *,
+    struct lbrace_cache *, struct token *);
 static void		 insert_trailing_comma(struct parser *,
     const struct token *);
 
@@ -54,7 +60,6 @@ parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 	    .indent	= indent,
 	    .flags	= flags,
 	});
-	lbrace_cache_purge(pr);
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
@@ -63,6 +68,7 @@ parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 static int
 parser_braces1(struct parser *pr, struct braces_arg *arg)
 {
+	struct lbrace_cache lbrace_cache = {0};
 	struct doc *braces, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *pv, *rbrace, *tk;
@@ -72,8 +78,6 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	if (!lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &lbrace,
 	    &rbrace))
 		return parser_fail(pr);
-
-	lbrace_cache_purge(pr);
 
 	braces = doc_alloc(DOC_CONCAT, arg->dc);
 
@@ -169,7 +173,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		} else {
 			struct token *stop;
 
-			stop = peek_expr_stop(pr, rbrace);
+			stop = peek_expr_stop(pr, &lbrace_cache, rbrace);
 			error = parser_expr(pr, &expr,
 			    &(struct parser_expr_arg){
 				.dc	= concat,
@@ -246,8 +250,6 @@ out:
 	    !lexer_peek_if(lx, TOKEN_RBRACE, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 		doc_literal(" ", braces);
-
-	lbrace_cache_purge(pr);
 
 	return parser_good(pr);
 }
@@ -359,7 +361,8 @@ parser_braces_field1(struct parser *pr, struct braces_field_arg *arg)
 }
 
 static struct token *
-peek_expr_stop(struct parser *pr, struct token *rbrace)
+peek_expr_stop(struct parser *pr, struct lbrace_cache *cache,
+    struct token *rbrace)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *comma, *rparen, *stop;
@@ -371,35 +374,21 @@ peek_expr_stop(struct parser *pr, struct token *rbrace)
 	 * Finding the next lbrace can be costly if the current pair of braces
 	 * has many entries. Therefore utilize a tiny cache.
 	 */
-	stop = lbrace_cache(pr, rbrace);
+	stop = lbrace_cache_lookup(pr, cache, rbrace);
 	if (lexer_peek_until_comma(lx, stop, &comma))
 		return comma;
 	return stop;
 }
 
 static struct token *
-lbrace_cache(struct parser *pr, struct token *fallback)
+lbrace_cache_lookup(struct parser *pr, struct lbrace_cache *cache,
+    struct token *fallback)
 {
-	if (!pr->pr_braces.valid) {
-		struct token *lbrace = NULL;
-
-		lbrace_cache_purge(pr);
-		lexer_peek_until(pr->pr_lx, TOKEN_LBRACE, &lbrace);
-		if (lbrace != NULL)
-			token_ref(lbrace);
-		pr->pr_braces.lbrace = lbrace;
-		pr->pr_braces.valid = 1;
+	if (!cache->valid) {
+		lexer_peek_until(pr->pr_lx, TOKEN_LBRACE, &cache->lbrace);
+		cache->valid = 1;
 	}
-	return pr->pr_braces.lbrace != NULL ? pr->pr_braces.lbrace : fallback;
-}
-
-static void
-lbrace_cache_purge(struct parser *pr)
-{
-	if (pr->pr_braces.lbrace != NULL)
-		token_rele(pr->pr_braces.lbrace);
-	pr->pr_braces.lbrace = NULL;
-	pr->pr_braces.valid = 0;
+	return cache->lbrace != NULL ? cache->lbrace : fallback;
 }
 
 static void
