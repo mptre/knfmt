@@ -6,6 +6,7 @@
 #include <err.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
@@ -113,11 +114,11 @@ struct expr_state {
 	struct {
 		struct arena		*scratch;
 		struct arena_scope	*scratch_scope;
+		struct arena		*buffer;
 	} es_arena;
 
 	const struct expr_rule	*es_er;
 	struct token		*es_tk;
-	struct buffer		*es_bf;
 	unsigned int		 es_depth;
 	unsigned int		 es_nassign;	/* # nested binary assignments */
 	unsigned int		 es_ncalls;	/* # nested calls */
@@ -200,7 +201,6 @@ static struct doc	*expr_doc_soft_impl(struct expr *, struct expr_state *,
 
 static void	expr_state_init(struct expr_state *,
     const struct expr_exec_arg *, enum expr_mode, struct arena_scope *);
-static void	expr_state_reset(struct expr_state *);
 
 static const struct expr_rule	*expr_find_rule(const struct token *, int);
 
@@ -342,7 +342,6 @@ expr_exec(const struct expr_exec_arg *ea)
 		indent = doc_alloc(DOC_OPTIONAL, indent);
 	}
 	expr = expr_doc(ex, &es, indent);
-	expr_state_reset(&es);
 	return expr;
 }
 
@@ -364,7 +363,6 @@ expr_peek(const struct expr_exec_arg *ea, struct token **tk)
 	if (ex != NULL && lexer_get_error(lx) == 0 && lexer_back(lx, tk))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
-	expr_state_reset(&es);
 	return peek;
 }
 
@@ -1221,15 +1219,15 @@ expr_doc_has_spaces(const struct expr *ex)
 static unsigned int
 expr_doc_width(struct expr_state *es, const struct doc *dc)
 {
-	if (es->es_bf == NULL) {
-		es->es_bf = buffer_alloc(1024);
-		if (es->es_bf == NULL)
-			err(1, NULL);
-	}
+	struct buffer *bf;
+
+	arena_scope(es->es_arena.buffer, s);
+
+	bf = arena_buffer_alloc(&s, 1 << 10);
 	return doc_width(&(struct doc_exec_arg){
 	    .dc		= dc,
 	    .scratch	= es->es_arena.scratch,
-	    .bf		= es->es_bf,
+	    .bf		= bf,
 	    .st		= es->es_st,
 	    .op		= es->es_op,
 	});
@@ -1277,12 +1275,7 @@ expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
 	es->es_ea = *ea;
 	es->es_arena.scratch = ea->arena.scratch;
 	es->es_arena.scratch_scope = scratch_scope;
-}
-
-static void
-expr_state_reset(struct expr_state *es)
-{
-	buffer_free(es->es_bf);
+	es->es_arena.buffer = ea->arena.buffer;
 }
 
 static const struct expr_rule *

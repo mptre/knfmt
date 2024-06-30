@@ -33,6 +33,7 @@ struct expr_exec_arg {
 
 	struct {
 		struct arena	*scratch;
+		struct arena	*buffer;
 	} arena;
 
 	struct {
