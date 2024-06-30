@@ -291,6 +291,10 @@ CPPCHECKFLAGS+=	--max-configs=2
 CPPCHECKFLAGS+=	--suppress-xml=cppcheck-suppressions.xml
 CPPCHECKFLAGS+=	${CPPFLAGS}
 
+IWYUFLAGS+=	-d config.h
+IWYUFLAGS+=	-d trace.h:options.h
+IWYUFLAGS+=	${CPPFLAGS}
+
 SHLINT+=	configure
 SHLINT+=	tests/cp.sh
 SHLINT+=	tests/diff.sh
@@ -371,10 +375,8 @@ lint-cppcheck:
 	cd ${.CURDIR} && cppcheck ${CPPCHECKFLAGS} ${CPPCHECK}
 .PHONY: lint-cppcheck
 
-IWYU?=	include-what-you-use
 lint-include-what-you-use:
-	cd ${.CURDIR} && echo ${CPPCHECK} | xargs printf '%s\n' | \
-		xargs -I{} ${IWYU} ${CPPFLAGS} {}
+	cd ${.CURDIR} && iwyu-filter ${IWYUFLAGS} -- ${CPPCHECK}
 .PHONY: lint-include-what-you-use
 
 lint-shellcheck:
