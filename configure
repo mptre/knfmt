@@ -220,15 +220,15 @@ printf '#ifndef CONFIG_H\n#define CONFIG_H\n'
 [ "$HAVE_PLEDGE" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
 [ "$HAVE_QUEUE" -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
 
-if [ -n "$_fuzz" ]; then
-	printf '#define FUZZER_%s\t1\n' \
-		"$(echo "$_fuzz" | tr '[:lower:]' '[:upper:]')"
-fi
-
 if [ "$HAVE_ATTRIBUTE_FALLTHROUGH" -eq 1 ]; then
 	printf '#define FALLTHROUGH __attribute__((__fallthrough__))\n'
 else
 	printf '#define FALLTHROUGH do {} while (0) /* FALLTHROUGH */\n'
+fi
+
+if [ -n "$_fuzz" ]; then
+	printf '#define FUZZER_%s\t1\n' \
+		"$(echo "$_fuzz" | tr '[:lower:]' '[:upper:]')"
 fi
 
 [ "$HAVE_PLEDGE" -eq 0 ] &&
