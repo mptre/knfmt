@@ -867,9 +867,9 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 	VECTOR(struct doc_minimize) minimizers;
 	struct doc_state_snapshot sn;
 	ssize_t best = -1;
-	size_t i;
 	unsigned int nlines = 0;
 	unsigned int nexceeds = 0;
+	int i, nminimizers;
 	double minpenality = DBL_MAX;
 
 	if (st->st_minimize.idx != -1) {
@@ -881,7 +881,8 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 
 	doc_state_snapshot(&sn, st, &s);
 	minimizers = dc->dc_minimizers;
-	for (i = 0; i < VECTOR_LENGTH(minimizers); i++) {
+	nminimizers = (int)VECTOR_LENGTH(minimizers);
+	for (i = 0; i < nminimizers; i++) {
 		memset(&st->st_stats, 0, sizeof(st->st_stats));
 		st->st_minimize.force = -1;
 		st->st_flags &= ~DOC_EXEC_TRACE;
@@ -901,7 +902,7 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 	}
 	dc->dc_minimizers = minimizers;
 
-	for (i = 0; i < VECTOR_LENGTH(dc->dc_minimizers); i++) {
+	for (i = 0; i < nminimizers; i++) {
 		struct doc_minimize *mi = &dc->dc_minimizers[i];
 		double p = 0;
 
@@ -923,7 +924,7 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 	}
 
 	if (st->st_flags & DOC_EXEC_TRACE) {
-		for (i = 0; i < VECTOR_LENGTH(dc->dc_minimizers); i++) {
+		for (i = 0; i < nminimizers; i++) {
 			const struct doc_minimize *mi = &dc->dc_minimizers[i];
 			const char *suffix = "";
 
