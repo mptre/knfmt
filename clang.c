@@ -1294,7 +1294,6 @@ clang_find_alias(struct lexer *lx, const struct lexer_state *st)
 		} alias, keyword;
 	} aliases[] = {
 #define ALIAS(a, k)	{ { a, sizeof(a) - 1, }, { k, sizeof(k) - 1 } }
-		ALIAS("inline",		"inline"),
 		ALIAS("restrict",	"restrict"),
 		ALIAS("volatile",	"volatile"),
 #undef ALIAS
