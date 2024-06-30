@@ -304,7 +304,6 @@ parser_decl_init(struct parser *pr, struct doc **out,
 	struct lexer *lx = pr->pr_lx;
 	struct ruler_indent *cookie = NULL;
 	int error = 0;
-	int ncomma = 0;
 	int ninit = 0;
 
 	indent = ruler_indent(arg->rl, arg->dc, &cookie);
@@ -336,8 +335,6 @@ parser_decl_init(struct parser *pr, struct doc **out,
 			 * declaration.
 			 */
 			*out = concat;
-
-			ncomma++;
 		}
 
 		error = parser_decl_init1(pr, concat, out);
@@ -347,12 +344,10 @@ parser_decl_init(struct parser *pr, struct doc **out,
 			break;
 		ninit++;
 	}
-	if ((ninit == 0 || ncomma > ninit) && (error & BRCH) == 0) {
+	if (ninit == 0) {
 		ruler_indent_remove(arg->rl, cookie);
 		doc_remove(indent, arg->dc);
 	}
-	if (ncomma > ninit)
-		return parser_fail(pr);
 	return parser_good(pr);
 }
 
