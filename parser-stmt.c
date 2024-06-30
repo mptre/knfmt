@@ -228,7 +228,7 @@ static int
 parser_stmt_if(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk, *tkelse, *tkif;
+	struct token *tkelse, *tkif;
 
 	if (!lexer_peek_if(lx, TOKEN_IF, NULL))
 		return parser_none(pr);
@@ -243,9 +243,9 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 			doc_literal(" ", dc);
 		else
 			doc_alloc(DOC_HARDLINE, dc);
-		if (!lexer_expect(lx, TOKEN_ELSE, &tk))
+		if (!lexer_expect(lx, TOKEN_ELSE, &tkelse))
 			break;
-		parser_doc_token(pr, tk, dc);
+		parser_doc_token(pr, tkelse, dc);
 		doc_literal(" ", dc);
 
 		if (lexer_peek_if(lx, TOKEN_IF, &tkif) &&
