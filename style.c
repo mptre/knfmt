@@ -688,7 +688,7 @@ style_dump(const struct style *st)
 	size_t i;
 	int scope = 0;
 
-	for (i = 0; i < noptions; i++) {
+	for (i = First; i < noptions; i++) {
 		const struct style_option *so;
 		const char *key;
 
