@@ -841,8 +841,10 @@ context_init(struct context *cx, const char *src)
 	cx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= cx->bf,
-	    .eternal_scope	= &cx->arena.eternal_scope,
 	    .op			= &cx->op,
+	    .arena		= {
+		.eternal_scope	= &cx->arena.eternal_scope,
+	    },
 	    .callbacks		= clang_lexer_callbacks(cx->cl),
 	});
 	cx->pr = parser_alloc(&(struct parser_arg){

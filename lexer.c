@@ -79,13 +79,13 @@ lexer_alloc(const struct lexer_arg *arg)
 	VECTOR(struct token *) discarded;
 	struct lexer *lx;
 
-	lx = arena_calloc(arg->eternal_scope, 1, sizeof(*lx));
-	arena_cleanup(arg->eternal_scope, lexer_free, lx);
+	lx = arena_calloc(arg->arena.eternal_scope, 1, sizeof(*lx));
+	arena_cleanup(arg->arena.eternal_scope, lexer_free, lx);
 	lx->lx_callbacks = arg->callbacks;
 	lx->lx_path = arg->path;
-	lx->lx_er = error_alloc(arg->eternal_scope, arg->error_flush);
+	lx->lx_er = error_alloc(arg->arena.eternal_scope, arg->error_flush);
 	lx->lx_op = arg->op;
-	lx->lx_arena.eternal_scope = arg->eternal_scope;
+	lx->lx_arena.eternal_scope = arg->arena.eternal_scope;
 	lx->lx_input.bf = arg->bf;
 	lx->lx_input.ptr = buffer_get_ptr(arg->bf);
 	lx->lx_input.len = buffer_get_len(arg->bf);

@@ -10,7 +10,6 @@ struct lexer_arg {
 	const char		*path;
 	const struct buffer	*bf;
 	struct diffchunk	*diff;
-	struct arena_scope	*eternal_scope;
 	const struct options	*op;
 
 	/*
@@ -18,6 +17,10 @@ struct lexer_arg {
 	 * lexer_error_flush() explicitly.
 	 */
 	int			 error_flush;
+
+	struct {
+		struct arena_scope	*eternal_scope;
+	} arena;
 
 	struct lexer_callbacks	 callbacks;
 };

@@ -551,9 +551,11 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= bf,
-	    .eternal_scope	= st->eternal_scope,
 	    .op			= st->op,
 	    .error_flush	= options_trace_level(st->op, 's') > 0,
+	    .arena		= {
+		.eternal_scope	= st->eternal_scope,
+	    },
 	    .callbacks		= {
 		.read			= yaml_read,
 		.alloc			= yaml_token_alloc,

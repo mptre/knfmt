@@ -212,8 +212,10 @@ fileformat(struct main_context *c, struct file *fe)
 	    .bf			= c->src,
 	    .diff		= fe->fe_diff,
 	    .op			= &c->options,
-	    .eternal_scope	= &eternal_scope,
 	    .error_flush	= options_trace_level(&c->options, 'l') > 0,
+	    .arena		= {
+		.eternal_scope	= &eternal_scope,
+	    },
 	    .callbacks		= clang_lexer_callbacks(clang),
 	});
 	if (lx == NULL)
