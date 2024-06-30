@@ -301,6 +301,7 @@ SHLINT+=	tests/include-categories.sh
 SHLINT+=	tests/knfmt.sh
 SHLINT+=	tests/simple.sh
 SHLINT+=	tests/stdin.sh
+SHLINT+=	tests/style-enoent.sh
 
 SHELLCHECKFLAGS+=	-f gcc
 SHELLCHECKFLAGS+=	-s ksh

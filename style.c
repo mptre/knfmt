@@ -366,6 +366,10 @@ style_parse(const char *path, struct arena_scope *eternal_scope,
 
 	if (path != NULL) {
 		bf = arena_buffer_read(&s, path);
+		if (bf == NULL) {
+			warn("%s", path);
+			return NULL;
+		}
 	} else {
 		int fd;
 

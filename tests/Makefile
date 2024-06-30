@@ -846,6 +846,7 @@ TESTS+=	git.sh
 TESTS+=	include-categories.sh
 TESTS+=	simple.sh
 TESTS+=	stdin.sh
+TESTS+=	style-enoent.sh
 
 .SUFFIXES: .c .cfake .h .hfake .sh .shfake
 
