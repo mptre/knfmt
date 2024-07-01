@@ -3,5 +3,5 @@
  */
 
 struct s {
-	LIST_ENTRY(list, struct s);
+	LIST_ENTRY(list, s);
 };

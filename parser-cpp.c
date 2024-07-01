@@ -18,6 +18,15 @@
 
 static int	iscdefs(const char *, size_t);
 
+static int
+is_list_entry(const struct token *tk)
+{
+	const char needle[] = "LIST_ENTRY";
+	size_t needlen = sizeof(needle) - 1;
+
+	return token_rawcmp(tk, needle, needlen) == 0;
+}
+
 int
 parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 {
@@ -46,11 +55,10 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 
 	/* Detect LIST_ENTRY(list, struct s) from libks:list(3). */
 	lexer_peek_enter(lx, &s);
-	if (lexer_if(lx, TOKEN_IDENT, NULL) &&
+	if (lexer_if(lx, TOKEN_IDENT, &ident) && is_list_entry(ident) &&
 	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
 	    lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if(lx, TOKEN_COMMA, NULL) &&
-	    lexer_if(lx, TOKEN_STRUCT, NULL) &&
 	    lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if(lx, TOKEN_RPAREN, rparen) &&
 	    lexer_if(lx, TOKEN_SEMI, NULL))
