@@ -33,7 +33,6 @@ struct context;
 #define test(e) do {							\
 	error |= (e);							\
 	if (xflag && error) goto out;					\
-	context_reset(&cx);						\
 } while (0)
 
 #define test_parser_expr(a, b) \
@@ -108,7 +107,6 @@ struct context {
 
 	struct {
 		struct arena		*eternal;
-		struct arena_scope	 eternal_scope;
 		struct arena		*scratch;
 		struct arena		*doc;
 	} arena;
@@ -118,8 +116,8 @@ static void	usage(void) __attribute__((__noreturn__));
 
 static void	context_alloc(struct context *);
 static void	context_free(struct context *);
-static void	context_init(struct context *, const char *);
-static void	context_reset(struct context *);
+static void	context_init(struct context *, const char *,
+    struct arena_scope *);
 
 static int	assert_token_move(struct context *, const char **, const char *,
     int);
@@ -420,20 +418,23 @@ usage(void)
 }
 
 static int
-test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
+test_parser_expr0(struct context *ctx, const char *src, const char *exp,
+    int lno)
 {
 	struct buffer *bf = NULL;
 	struct doc *concat, *expr;
 	const char *act;
 	int error;
 
-	context_init(cx, src);
+	arena_scope(ctx->arena.eternal, eternal_scope);
 
-	arena_scope(cx->arena.doc, doc_scope);
-	parser_arena_scope(&cx->pr->pr_arena.doc_scope, &doc_scope);
+	context_init(ctx, src, &eternal_scope);
+
+	arena_scope(ctx->arena.doc, doc_scope);
+	parser_arena_scope(&ctx->pr->pr_arena.doc_scope, &doc_scope);
 
 	concat = doc_root(&doc_scope);
-	error = parser_expr(cx->pr, &expr, &(struct parser_expr_arg){
+	error = parser_expr(ctx->pr, &expr, &(struct parser_expr_arg){
 	    .dc	= concat,
 	});
 	if (error & HALT) {
@@ -449,10 +450,10 @@ test_parser_expr0(struct context *cx, const char *src, const char *exp, int lno)
 		err(1, NULL);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc		= concat,
-	    .scratch	= cx->arena.scratch,
+	    .scratch	= ctx->arena.scratch,
 	    .bf		= bf,
-	    .st		= cx->st,
-	    .op		= &cx->op,
+	    .st		= ctx->st,
+	    .op		= &ctx->op,
 	});
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
@@ -468,7 +469,7 @@ out:
 }
 
 static int
-test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
+test_parser_type_peek0(struct context *ctx, const char *src, const char *exp,
     unsigned int flags, int peek, int lno)
 {
 	const char *fun = "parser_type_peek";
@@ -476,11 +477,12 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	struct parser_type type;
 	struct token *beg;
 
-	arena_scope(cx->arena.scratch, s);
+	arena_scope(ctx->arena.eternal, eternal_scope);
+	arena_scope(ctx->arena.scratch, s);
 
-	context_init(cx, src);
+	context_init(ctx, src, &eternal_scope);
 
-	if (parser_type_peek(cx->pr, &type, flags) != peek) {
+	if (parser_type_peek(ctx->pr, &type, flags) != peek) {
 		fprintf(stderr, "%s:%d: want %d, got %d\n",
 		    fun, lno, peek, !peek);
 		return 1;
@@ -488,7 +490,7 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 	if (!peek)
 		return 0;
 
-	(void)lexer_peek(cx->lx, &beg);
+	(void)lexer_peek(ctx->lx, &beg);
 	act = tokens_concat(token_serialize_literal, beg, type.end, &s);
 	if (act == NULL) {
 		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
@@ -505,18 +507,19 @@ test_parser_type_peek0(struct context *cx, const char *src, const char *exp,
 }
 
 static int
-test_parser_attributes_peek0(struct context *cx, const char *src,
+test_parser_attributes_peek0(struct context *ctx, const char *src,
     const char *exp, int peek, unsigned int flags, int lno)
 {
 	const char *fun = "parser_attributes_peek";
 	const char *act;
 	struct token *beg, *rparen;
 
-	arena_scope(cx->arena.scratch, s);
+	arena_scope(ctx->arena.eternal, eternal_scope);
+	arena_scope(ctx->arena.scratch, s);
 
-	context_init(cx, src);
+	context_init(ctx, src, &eternal_scope);
 
-	if (parser_attributes_peek(cx->pr, &rparen, flags) != peek) {
+	if (parser_attributes_peek(ctx->pr, &rparen, flags) != peek) {
 		fprintf(stderr, "%s:%d: want %d, got %d\n",
 		    fun, lno, peek, !peek);
 		return 1;
@@ -524,7 +527,7 @@ test_parser_attributes_peek0(struct context *cx, const char *src,
 	if (!peek)
 		return 0;
 
-	(void)lexer_peek(cx->lx, &beg);
+	(void)lexer_peek(ctx->lx, &beg);
 	act = tokens_concat(token_serialize_literal, beg, rparen, &s);
 	if (act == NULL) {
 		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
@@ -541,7 +544,7 @@ test_parser_attributes_peek0(struct context *cx, const char *src,
 }
 
 static int
-test_lexer_read0(struct context *c, const char *src, const char *exp,
+test_lexer_read0(struct context *ctx, const char *src, const char *exp,
     int lno)
 {
 	struct buffer *bf = NULL;
@@ -549,9 +552,10 @@ test_lexer_read0(struct context *c, const char *src, const char *exp,
 	int error = 0;
 	int ntokens = 0;
 
-	arena_scope(c->arena.scratch, s);
+	arena_scope(ctx->arena.eternal, eternal_scope);
+	arena_scope(ctx->arena.scratch, s);
 
-	context_init(c, src);
+	context_init(ctx, src, &eternal_scope);
 
 	bf = buffer_alloc(128);
 	if (bf == NULL)
@@ -559,7 +563,7 @@ test_lexer_read0(struct context *c, const char *src, const char *exp,
 	for (;;) {
 		struct token *tk;
 
-		if (!lexer_pop(c->lx, &tk))
+		if (!lexer_pop(ctx->lx, &tk))
 			errx(1, "lexer_read:%d: out of tokens", lno);
 		if (tk->tk_type == LEXER_EOF)
 			break;
@@ -581,27 +585,29 @@ test_lexer_read0(struct context *c, const char *src, const char *exp,
 }
 
 static int
-test_token_position_after0(struct context *cx,
-    struct test_token_move *arg, int lno)
+test_token_position_after0(struct context *ctx, struct test_token_move *arg,
+    int lno)
 {
 	const char *fun = "token_position_after";
 	struct token *after, *move;
 	int error = 0;
 
-	context_init(cx, arg->src);
+	arena_scope(ctx->arena.eternal, eternal_scope);
 
-	if (!find_token(cx->lx, arg->target, &after)) {
+	context_init(ctx, arg->src, &eternal_scope);
+
+	if (!find_token(ctx->lx, arg->target, &after)) {
 		fprintf(stderr, "%s:%d: could not find after token\n",
 		    fun, lno);
 		return 1;
 	}
-	if (!find_token(cx->lx, arg->move, &move)) {
+	if (!find_token(ctx->lx, arg->move, &move)) {
 		fprintf(stderr, "%s:%d: could not find move token\n", fun, lno);
 		return 1;
 	}
 
 	token_position_after(after, move);
-	error = assert_token_move(cx, arg->want, fun, lno);
+	error = assert_token_move(ctx, arg->want, fun, lno);
 
 	return error;
 }
@@ -627,16 +633,19 @@ find_token(struct lexer *lx, int type, struct token **tk)
 }
 
 static int
-test_style0(struct context *cx, const char *src, int key, int exp, int lno)
+test_style0(struct context *ctx, const char *src, int key, int exp, int lno)
 {
 	struct style *st;
 	int error = 0;
 	int act;
 
-	context_init(cx, src);
-	options_trace_parse(&cx->op, "ss");
-	st = style_parse_buffer(cx->bf, ".clang-format",
-	    &cx->arena.eternal_scope, cx->arena.scratch, &cx->op);
+	arena_scope(ctx->arena.eternal, eternal_scope);
+
+	context_init(ctx, src, &eternal_scope);
+	options_trace_parse(&ctx->op, "ss");
+
+	st = style_parse_buffer(ctx->bf, ".clang-format",
+	    &eternal_scope, ctx->arena.scratch, &ctx->op);
 	act = (int)style(st, key);
 	if (exp != act) {
 		fprintf(stderr, "style_parse:%d:\n\texp %d\n\tgot %d\n",
@@ -697,7 +706,7 @@ test_path_slice0(const char *path, unsigned int ncomponents, const char *exp,
 }
 
 static int
-test_token_branch_impl(struct context *cx)
+test_token_branch_impl(struct context *ctx)
 {
 	struct {
 		int		 lno;
@@ -763,10 +772,11 @@ test_token_branch_impl(struct context *cx)
 		struct token *tk;
 		const char *act;
 
-		arena_scope(cx->arena.scratch, s);
+		arena_scope(ctx->arena.eternal, eternal_scope);
+		arena_scope(ctx->arena.scratch, s);
 
-		context_init(cx, tests[i].src);
-		lexer_peek(cx->lx, &tk);
+		context_init(ctx, tests[i].src, &eternal_scope);
+		lexer_peek(ctx->lx, &tk);
 
 		/* Find last prefix of the given type. */
 		for (it = token_list_first(&tk->tk_prefixes);
@@ -785,7 +795,6 @@ test_token_branch_impl(struct context *cx)
 			    __func__, tests[i].lno, tests[i].exp, act);
 			error = 1;
 		}
-		context_reset(cx);
 	}
 
 	return error;
@@ -796,12 +805,10 @@ context_alloc(struct context *cx)
 {
 	cx->arena.scratch = arena_alloc();
 	cx->arena.eternal = arena_alloc();
-	cx->arena.eternal_scope = arena_scope_enter(cx->arena.eternal);
 	cx->arena.doc = arena_alloc();
 	cx->bf = buffer_alloc(128);
 	if (cx->bf == NULL)
 		err(1, NULL);
-	context_reset(cx);
 }
 
 static void
@@ -810,8 +817,6 @@ context_free(struct context *cx)
 	if (cx == NULL)
 		return;
 
-	context_reset(cx);
-	arena_scope_leave(&cx->arena.eternal_scope);
 	buffer_free(cx->bf);
 	arena_free(cx->arena.eternal);
 	arena_free(cx->arena.scratch);
@@ -819,45 +824,42 @@ context_free(struct context *cx)
 }
 
 static void
-context_init(struct context *cx, const char *src)
+context_init(struct context *ctx, const char *src,
+    struct arena_scope *eternal_scope)
 {
 	static const char *path = "test.c";
 
-	buffer_puts(cx->bf, src, strlen(src));
-	cx->st = style_parse("/dev/null", &cx->arena.eternal_scope,
-	    cx->arena.scratch, &cx->op);
-	cx->si = simple_alloc(&cx->arena.eternal_scope, &cx->op);
-	cx->cl = clang_alloc(cx->st, cx->si, &cx->arena.eternal_scope,
-	    cx->arena.scratch, &cx->op);
-	cx->lx = lexer_alloc(&(const struct lexer_arg){
+	options_init(&ctx->op);
+	ctx->op.test = 1;
+
+	buffer_reset(ctx->bf);
+	buffer_puts(ctx->bf, src, strlen(src));
+
+	ctx->st = style_parse("/dev/null", eternal_scope,
+	    ctx->arena.scratch, &ctx->op);
+	ctx->si = simple_alloc(eternal_scope, &ctx->op);
+	ctx->cl = clang_alloc(ctx->st, ctx->si, eternal_scope,
+	    ctx->arena.scratch, &ctx->op);
+	ctx->lx = lexer_alloc(&(const struct lexer_arg){
 	    .path		= path,
-	    .bf			= cx->bf,
-	    .op			= &cx->op,
+	    .bf			= ctx->bf,
+	    .op			= &ctx->op,
 	    .arena		= {
-		.eternal_scope	= &cx->arena.eternal_scope,
+		.eternal_scope	= eternal_scope,
 	    },
-	    .callbacks		= clang_lexer_callbacks(cx->cl),
+	    .callbacks		= clang_lexer_callbacks(ctx->cl),
 	});
-	cx->pr = parser_alloc(&(struct parser_arg){
-	    .options	= &cx->op,
-	    .style	= cx->st,
-	    .simple	= cx->si,
-	    .lexer	= cx->lx,
+	ctx->pr = parser_alloc(&(struct parser_arg){
+	    .options	= &ctx->op,
+	    .style	= ctx->st,
+	    .simple	= ctx->si,
+	    .lexer	= ctx->lx,
 	    .arena	= {
-		.eternal_scope	= &cx->arena.eternal_scope,
-		.scratch	= cx->arena.scratch,
-		.doc		= cx->arena.doc,
+		.eternal_scope	= eternal_scope,
+		.scratch	= ctx->arena.scratch,
+		.doc		= ctx->arena.doc,
 	    },
 	});
-}
-
-static void
-context_reset(struct context *cx)
-{
-	options_init(&cx->op);
-	cx->op.test = 1;
-
-	buffer_reset(cx->bf);
 }
 
 static int
