@@ -429,10 +429,9 @@ token_list_append_after(struct token_list *tl, struct token *after,
 void
 token_list_remove(struct token_list *tl, struct token *tk)
 {
-	if (!token_is_dangling(tk)) {
-		TAILQ_REMOVE(tl, tk, tk_entry);
-		memset(&tk->tk_entry, 0, sizeof(tk->tk_entry));
-	}
+	assert(!token_is_dangling(tk));
+	TAILQ_REMOVE(tl, tk, tk_entry);
+	memset(&tk->tk_entry, 0, sizeof(tk->tk_entry));
 	token_rele(tk);
 }
 
