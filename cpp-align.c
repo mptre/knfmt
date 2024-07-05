@@ -234,6 +234,7 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 			literal = arena_strndup(&scratch_scope, sp, cpplen);
 			doc_literal(literal, concat);
 		}
+		buffer_reset(bf);
 		w = doc_width(&(struct doc_exec_arg){
 		    .dc		= concat,
 		    .scratch	= scratch,
