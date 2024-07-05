@@ -147,8 +147,7 @@ lexer_free(void *arg)
 
 	VECTOR_FREE(lx->lx_lines);
 
-	while ((tk = LIST_FIRST(&lx->lx_tokens)) != NULL) {
-		LIST_REMOVE(&lx->lx_tokens, tk);
+	LIST_FOREACH(tk, &lx->lx_tokens) {
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
