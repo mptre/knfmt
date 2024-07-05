@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <limits.h>	/* PATH_MAX */
 #include <regex.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -25,7 +24,7 @@
 
 static void	diff_end(struct diffchunk *, unsigned int);
 
-static int	matchpath(const char *, char *, size_t);
+static int	matchpath(const char *, const char **, struct arena_scope *);
 static int	matchchunk(const char *, unsigned int *, unsigned int *);
 static int	matchline(const char *, unsigned int, struct file *);
 
@@ -96,10 +95,10 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 		return 1;
 
 	while ((line = arena_buffer_getline(&s, bf, &it)) != NULL) {
-		char path[PATH_MAX];
+		const char *path;
 		unsigned int el, sl;
 
-		if (matchpath(line, path, sizeof(path))) {
+		if (matchpath(line, &path, &s)) {
 			fe = files_alloc(files, path, eternal_scope);
 		} else if (matchchunk(line, &sl, &el)) {
 			/* Chunks cannot be present before the path. */
@@ -168,13 +167,12 @@ diff_end(struct diffchunk *chunks, unsigned int lno)
 }
 
 static int
-matchpath(const char *str, char *path, size_t pathsiz)
+matchpath(const char *str, const char **out, struct arena_scope *s)
 {
 	regmatch_t rm[2];
 	struct stat sb;
-	const char *buf;
+	const char *buf, *path;
 	size_t len;
-	int n;
 
 	if (regexec(&repath, str, 2, rm, 0))
 		return 0;
@@ -185,9 +183,7 @@ matchpath(const char *str, char *path, size_t pathsiz)
 		/* Trim git prefix. */
 		buf = trimprefix(buf, &len);
 	}
-	n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
-	if (n < 0 || (size_t)n >= pathsiz)
-		goto err;
+	path = arena_strndup(s, buf, len);
 
 	/* Try to adjust Git repository relative path(s). */
 	if (git_ndirs > 0 && path[0] != '/' &&
@@ -196,15 +192,11 @@ matchpath(const char *str, char *path, size_t pathsiz)
 
 		for (ntrim = git_ndirs; ntrim > 0; ntrim--)
 			buf = trimprefix(buf, &len);
-		n = snprintf(path, pathsiz, "%.*s", (int)len, buf);
-		if (n < 0 || (size_t)n >= pathsiz)
-			goto err;
+		path = arena_strndup(s, buf, len);
 	}
 
+	*out = path;
 	return 1;
-
-err:
-	errx(1, "%.*s: path too long", (int)len, buf);
 }
 
 static unsigned int
