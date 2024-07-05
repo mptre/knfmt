@@ -114,24 +114,6 @@ check_pledge() {
 	EOF
 }
 
-check_queue() {
-	compile <<-EOF
-	#include <sys/queue.h>
-
-	#if !defined(TAILQ_FOREACH_SAFE)
-	#error "TAILQ_FOREACH_SAFE not present"
-	#endif
-
-	#if !defined(TAILQ_END)
-	#error "TAILQ_END not present"
-	#endif
-
-	int main(void) {
-		return 0;
-	}
-	EOF
-}
-
 _fuzz=''
 _pedantic=0
 _sanitize=0
@@ -159,7 +141,6 @@ set -x
 
 HAVE_ATTRIBUTE_FALLTHROUGH=0
 HAVE_PLEDGE=0
-HAVE_QUEUE=0
 
 # Order is important, must come first if not defined.
 DEBUG="$(makevar DEBUG || :)"
@@ -206,7 +187,6 @@ fi
 
 check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
 check_pledge && HAVE_PLEDGE=1
-check_queue && HAVE_QUEUE=1
 
 # Redirect stdout to config.h.
 exec 1>config.h
@@ -219,7 +199,6 @@ printf '#ifndef CONFIG_H\n#define CONFIG_H\n'
 } | sort | uniq | headers
 
 [ "${HAVE_PLEDGE}" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
-[ "${HAVE_QUEUE}" -eq 1 ] && printf '#define HAVE_QUEUE\t1\n'
 
 if [ "${HAVE_ATTRIBUTE_FALLTHROUGH}" -eq 1 ]; then
 	printf '#define FALLTHROUGH __attribute__((__fallthrough__))\n'

@@ -12,6 +12,7 @@
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
+#include "libks/list.h"
 #include "libks/map.h"
 #include "libks/vector.h"
 
@@ -23,12 +24,6 @@
 #include "lexer.h"
 #include "token.h"
 #include "trace.h"
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
 
 #define clang_trace(cl, fmt, ...) trace('c', (cl)->op, (fmt), __VA_ARGS__)
 
@@ -176,7 +171,7 @@ clang_alloc(const struct style *st, struct simple *si,
 
 	cl = arena_calloc(eternal_scope, 1, sizeof(*cl));
 	arena_cleanup(eternal_scope, clang_free, cl);
-	TAILQ_INIT(&cl->prefixes);
+	LIST_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
 	cl->arena.eternal_scope = eternal_scope;
@@ -383,10 +378,10 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 void
 clang_token_move_prefixes(struct token *src, struct token *dst)
 {
-	while (!TAILQ_EMPTY(&src->tk_prefixes)) {
+	while (!LIST_EMPTY(&src->tk_prefixes)) {
 		struct token *prefix;
 
-		prefix = TAILQ_LAST(&src->tk_prefixes, token_list);
+		prefix = LIST_LAST(&src->tk_prefixes);
 		token_move_prefix(prefix, src, dst);
 	}
 }
@@ -478,7 +473,7 @@ clang_before_free(struct lexer *lx, void *arg)
 		for (; tk != NULL; tk = token_next(tk)) {
 			struct token *prefix;
 
-			TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry)
+			LIST_FOREACH(prefix, &tk->tk_prefixes)
 				clang_token_branch_unlink(prefix);
 		}
 	}
@@ -574,7 +569,7 @@ eof:
 	}
 
 out:
-	TAILQ_CONCAT(&tk->tk_prefixes, &cl->prefixes, tk_entry);
+	LIST_CONCAT(&tk->tk_prefixes, &cl->prefixes);
 
 	/*
 	 * Consume trailing/interwined comments. If the token is about to be
@@ -611,7 +606,7 @@ out:
 	}
 
 	/* Establish links between cpp branches. */
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+	LIST_FOREACH(prefix, &tk->tk_prefixes) {
 		int token_type = token_type_normalize(prefix);
 
 		switch (token_type) {
@@ -717,8 +712,7 @@ clang_recover_find_branch(struct token *tk, struct token *threshold,
 	for (;;) {
 		struct token *prefix;
 
-		TAILQ_FOREACH_REVERSE(prefix, &tk->tk_prefixes, token_list,
-		    tk_entry) {
+		LIST_FOREACH_REVERSE(prefix, &tk->tk_prefixes) {
 			struct token *br, *nx;
 			int token_type;
 
@@ -787,7 +781,7 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 	 * Remove all prefixes hanging of the destination covered by the new
 	 * prefix token.
 	 */
-	while (!TAILQ_EMPTY(&dst->tk_prefixes)) {
+	while (!LIST_EMPTY(&dst->tk_prefixes)) {
 		struct token *pr;
 
 		pr = token_list_first(&dst->tk_prefixes);
@@ -801,7 +795,7 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 	clang_trace(cl, "add prefix %s to %s",
 	    lexer_serialize(lx, prefix),
 	    lexer_serialize(lx, dst));
-	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+	LIST_INSERT_HEAD(&dst->tk_prefixes, prefix);
 
 	/*
 	 * Keep any existing prefix not covered by the new prefix token
@@ -853,15 +847,15 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 static void
 remove_token(struct lexer *lx, struct token *tk)
 {
-	while (!TAILQ_EMPTY(&tk->tk_prefixes)) {
-		struct token *prefix = TAILQ_FIRST(&tk->tk_prefixes);
+	while (!LIST_EMPTY(&tk->tk_prefixes)) {
+		struct token *prefix = LIST_FIRST(&tk->tk_prefixes);
 
 		clang_token_branch_unlink(prefix);
 		token_list_remove(&tk->tk_prefixes, prefix);
 	}
 
-	while (!TAILQ_EMPTY(&tk->tk_suffixes)) {
-		struct token *suffix = TAILQ_FIRST(&tk->tk_suffixes);
+	while (!LIST_EMPTY(&tk->tk_suffixes)) {
+		struct token *suffix = LIST_FIRST(&tk->tk_suffixes);
 
 		token_list_remove(&tk->tk_suffixes, suffix);
 	}
@@ -961,7 +955,7 @@ clang_read_prefix(struct clang *cl, struct lexer *lx)
 	if (comment != NULL) {
 		struct token *pv;
 
-		pv = TAILQ_LAST(&cl->prefixes, token_list);
+		pv = LIST_LAST(&cl->prefixes);
 		if (pv != NULL &&
 		    pv->tk_type == TOKEN_COMMENT &&
 		    token_cmp(comment, pv) == 0) {
@@ -1308,8 +1302,8 @@ token_move_prefix(struct token *prefix, struct token *src, struct token *dst)
 {
 	int token_type;
 
-	TAILQ_REMOVE(&src->tk_prefixes, prefix, tk_entry);
-	TAILQ_INSERT_HEAD(&dst->tk_prefixes, prefix, tk_entry);
+	LIST_REMOVE(&src->tk_prefixes, prefix);
+	LIST_INSERT_HEAD(&dst->tk_prefixes, prefix);
 
 	token_type = token_type_normalize(prefix);
 	if (token_type == TOKEN_CPP_IF ||
@@ -1340,7 +1334,7 @@ token_branch_find(struct token *tk)
 {
 	struct token *prefix;
 
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+	LIST_FOREACH(prefix, &tk->tk_prefixes) {
 		struct token *pv;
 
 		if (token_type_normalize(prefix) != TOKEN_CPP_ELSE)

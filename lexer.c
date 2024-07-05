@@ -11,6 +11,7 @@
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
+#include "libks/list.h"
 #include "libks/string.h"
 #include "libks/vector.h"
 
@@ -20,12 +21,6 @@
 #include "token.h"
 #include "trace.h"
 #include "util.h"
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
 
 struct lexer {
 	struct lexer_state	 lx_st;
@@ -93,7 +88,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_st.st_lno = 1;
 	if (VECTOR_INIT(lx->lx_lines))
 		err(1, NULL);
-	TAILQ_INIT(&lx->lx_tokens);
+	LIST_INIT(&lx->lx_tokens);
 	lexer_line_alloc(lx, 1);
 
 	if (VECTOR_INIT(discarded))
@@ -105,7 +100,7 @@ lexer_alloc(const struct lexer_arg *arg)
 		tk = lx->lx_callbacks.read(lx, lx->lx_callbacks.arg);
 		if (tk == NULL)
 			goto err;
-		TAILQ_INSERT_TAIL(&lx->lx_tokens, tk, tk_entry);
+		LIST_INSERT_TAIL(&lx->lx_tokens, tk);
 		if (tk->tk_flags & TOKEN_FLAG_DISCARD) {
 			struct token **dst;
 
@@ -152,8 +147,8 @@ lexer_free(void *arg)
 
 	VECTOR_FREE(lx->lx_lines);
 
-	while ((tk = TAILQ_FIRST(&lx->lx_tokens)) != NULL) {
-		TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
+	while ((tk = LIST_FIRST(&lx->lx_tokens)) != NULL) {
+		LIST_REMOVE(&lx->lx_tokens, tk);
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
@@ -394,7 +389,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 	struct lexer_state *st = &lx->lx_st;
 
 	if (st->st_tk == NULL) {
-		*tk = st->st_tk = TAILQ_FIRST(&lx->lx_tokens);
+		*tk = st->st_tk = LIST_FIRST(&lx->lx_tokens);
 		return 1;
 	}
 
@@ -458,7 +453,7 @@ lexer_copy_after(struct lexer *lx, struct token *after, const struct token *src)
 	lexer_copy_token_list(lx, &src->tk_prefixes, &tk->tk_prefixes);
 	lexer_copy_token_list(lx, &src->tk_suffixes, &tk->tk_suffixes);
 	token_position_after(after, tk);
-	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
+	LIST_INSERT_AFTER(&lx->lx_tokens, after, tk);
 	return tk;
 }
 
@@ -471,16 +466,16 @@ lexer_insert_after(struct lexer *lx, struct token *after,
 	tk = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, def);
 	tk->tk_flags |= token_flags_inherit(after);
 	token_position_after(after, tk);
-	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
+	LIST_INSERT_AFTER(&lx->lx_tokens, after, tk);
 	return tk;
 }
 
 struct token *
 lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
 {
-	TAILQ_REMOVE(&lx->lx_tokens, tk, tk_entry);
+	LIST_REMOVE(&lx->lx_tokens, tk);
 	token_position_after(after, tk);
-	TAILQ_INSERT_AFTER(&lx->lx_tokens, after, tk, tk_entry);
+	LIST_INSERT_AFTER(&lx->lx_tokens, after, tk);
 	return tk;
 }
 
@@ -492,8 +487,8 @@ lexer_move_before(struct lexer *lx, struct token *before, struct token *mv)
 	if (token_is_first(mv))
 		mv_suffix_flags |= TOKEN_FLAG_OPTSPACE;
 
-	TAILQ_REMOVE(&lx->lx_tokens, mv, tk_entry);
-	TAILQ_INSERT_BEFORE(before, mv, tk_entry);
+	LIST_REMOVE(&lx->lx_tokens, mv);
+	LIST_INSERT_BEFORE(before, mv);
 	mv->tk_lno = before->tk_lno;
 
 	lx->lx_callbacks.move_prefixes(before, mv);
@@ -724,7 +719,7 @@ lexer_peek_if_prefix_flags(struct lexer *lx, unsigned int flags,
 	t = token_next(t);
 	if (t == NULL)
 		return 0;
-	TAILQ_FOREACH(px, &t->tk_prefixes, tk_entry) {
+	LIST_FOREACH(px, &t->tk_prefixes) {
 		if (px->tk_flags & flags) {
 			if (tk != NULL)
 				*tk = px;
@@ -817,14 +812,14 @@ lexer_until(struct lexer *lx, int type, struct token **tk)
 int
 lexer_peek_first(struct lexer *lx, struct token **tk)
 {
-	*tk = TAILQ_FIRST(&lx->lx_tokens);
+	*tk = LIST_FIRST(&lx->lx_tokens);
 	return *tk != NULL;
 }
 
 int
 lexer_peek_last(struct lexer *lx, struct token **tk)
 {
-	*tk = TAILQ_LAST(&lx->lx_tokens, token_list);
+	*tk = LIST_LAST(&lx->lx_tokens);
 	return *tk != NULL;
 }
 
@@ -847,13 +842,13 @@ lexer_dump(struct lexer *lx)
 
 	fprintf(stderr, "[L] %s:\n", lx->lx_path);
 
-	TAILQ_FOREACH(tk, &lx->lx_tokens, tk_entry) {
+	LIST_FOREACH(tk, &lx->lx_tokens) {
 		struct token *prefix, *suffix;
 		const char *str;
 
 		i++;
 
-		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		LIST_FOREACH(prefix, &tk->tk_prefixes) {
 			str = lx->lx_callbacks.serialize_prefix(prefix,
 			    lx->lx_arena.eternal_scope);
 			fprintf(stderr, "[L] %-6u   prefix %s\n", i, str);
@@ -862,7 +857,7 @@ lexer_dump(struct lexer *lx)
 		str = lexer_serialize(lx, tk);
 		fprintf(stderr, "[L] %-6u %s\n", i, str);
 
-		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		LIST_FOREACH(suffix, &tk->tk_suffixes) {
 			str = lexer_serialize(lx, suffix);
 			fprintf(stderr, "[L] %-6u   suffix %s\n", i, str);
 		}
@@ -1030,10 +1025,10 @@ lexer_copy_token_list(struct lexer *lx, const struct token_list *src,
 {
 	const struct token *tk;
 
-	TAILQ_FOREACH(tk, src, tk_entry) {
+	LIST_FOREACH(tk, src) {
 		struct token *cp;
 
 		cp = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, tk);
-		TAILQ_INSERT_TAIL(dst, cp, tk_entry);
+		LIST_INSERT_TAIL(dst, cp);
 	}
 }

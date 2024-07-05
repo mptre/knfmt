@@ -1,6 +1,6 @@
 #include <stddef.h>	/* size_t */
 
-#include "queue-fwd.h"
+#include "libks/list.h"
 
 struct arena_scope;
 
@@ -174,7 +174,7 @@ enum {
 #undef OP
 };
 
-TAILQ_HEAD(token_list, token);
+LIST(token_list, token);
 
 struct token {
 	int			 tk_type;
@@ -222,7 +222,7 @@ struct token {
 	struct token_list	 tk_prefixes;
 	struct token_list	 tk_suffixes;
 
-	TAILQ_ENTRY(token)	 tk_entry;
+	LIST_ENTRY(token_list, token);
 };
 
 struct token	*token_alloc(struct arena_scope *, unsigned int,

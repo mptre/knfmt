@@ -10,6 +10,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/list.h"
 
 #include "clang.h"
 #include "doc.h"
@@ -26,12 +27,6 @@
 #include "style.h"
 #include "token.h"
 #include "util.h"
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
 
 struct context;
 
@@ -882,7 +877,7 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 		if (!lexer_pop(lx, &tk))
 			break;
 
-		TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+		LIST_FOREACH(prefix, &tk->tk_prefixes) {
 			if (want[i] == NULL) {
 				fprintf(stderr, "%s:%d: too few wanted "
 				    "tokens\n", fun, lno);
@@ -909,7 +904,7 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 		}
 		i++;
 
-		TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+		LIST_FOREACH(suffix, &tk->tk_suffixes) {
 			if (want[i] == NULL) {
 				fprintf(stderr, "%s:%d: too few wanted "
 				    "tokens\n", fun, lno);

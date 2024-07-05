@@ -8,18 +8,13 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/list.h"
 
 #include "lexer.h"
 #include "util.h"
 
 static void		 strflags(struct buffer *, unsigned int);
 static const char	*token_type_str(int);
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
 
 struct token *
 token_alloc(struct arena_scope *s, unsigned int priv_size,
@@ -31,8 +26,8 @@ token_alloc(struct arena_scope *s, unsigned int priv_size,
 	*tk = *def;
 	tk->tk_refs = 1;
 	tk->tk_priv_size = priv_size;
-	TAILQ_INIT(&tk->tk_prefixes);
-	TAILQ_INIT(&tk->tk_suffixes);
+	LIST_INIT(&tk->tk_prefixes);
+	LIST_INIT(&tk->tk_suffixes);
 	return tk;
 }
 
@@ -51,9 +46,9 @@ token_rele(struct token *tk)
 	if (--tk->tk_refs > 0)
 		return;
 
-	while ((fix = TAILQ_FIRST(&tk->tk_prefixes)) != NULL)
+	while ((fix = LIST_FIRST(&tk->tk_prefixes)) != NULL)
 		token_list_remove(&tk->tk_prefixes, fix);
-	while ((fix = TAILQ_FIRST(&tk->tk_suffixes)) != NULL)
+	while ((fix = LIST_FIRST(&tk->tk_suffixes)) != NULL)
 		token_list_remove(&tk->tk_suffixes, fix);
 
 	arena_poison(tk, sizeof(*tk) + tk->tk_priv_size);
@@ -69,7 +64,7 @@ token_trim(struct token *tk)
 	struct token *suffix;
 	int ntrim = 0;
 
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+	LIST_FOREACH(suffix, &tk->tk_suffixes) {
 		/*
 		 * Optional spaces are never emitted and must therefore be
 		 * preserved.
@@ -126,8 +121,8 @@ token_position_after(struct token *after, struct token *tk)
 	unsigned int lno = after->tk_lno;
 	unsigned int cno;
 
-	last = TAILQ_EMPTY(&after->tk_suffixes) ?
-	    after : TAILQ_LAST(&after->tk_suffixes, token_list);
+	last = LIST_EMPTY(&after->tk_suffixes) ?
+	    after : LIST_LAST(&after->tk_suffixes);
 
 	cno = colwidth(last->tk_str, last->tk_len, last->tk_cno, NULL);
 	/*
@@ -154,7 +149,7 @@ token_position_after(struct token *after, struct token *tk)
 	tk->tk_lno = lno;
 	cno = colwidth(tk->tk_str, tk->tk_len, tk->tk_cno, NULL);
 
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+	LIST_FOREACH(suffix, &tk->tk_suffixes) {
 		suffix->tk_cno = cno;
 		suffix->tk_lno = lno;
 		cno = colwidth(suffix->tk_str, suffix->tk_len, suffix->tk_cno,
@@ -202,7 +197,7 @@ token_has_cpp(const struct token *tk)
 {
 	const struct token *prefix;
 
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+	LIST_FOREACH(prefix, &tk->tk_prefixes) {
 		if (prefix->tk_flags & TOKEN_FLAG_CPP)
 			return 1;
 	}
@@ -253,7 +248,7 @@ token_has_line(const struct token *tk, int nlines)
 	if (nlines > 1)
 		flags |= TOKEN_FLAG_OPTLINE;
 
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+	LIST_FOREACH(suffix, &tk->tk_suffixes) {
 		if (suffix->tk_type == TOKEN_SPACE &&
 		    (suffix->tk_flags & flags) == 0)
 			return 1;
@@ -286,7 +281,7 @@ token_has_verbatim_line(const struct token *tk, int nlines)
 int
 token_has_prefixes(const struct token *tk)
 {
-	return !TAILQ_EMPTY(&tk->tk_prefixes);
+	return !LIST_EMPTY(&tk->tk_prefixes);
 }
 
 /*
@@ -297,7 +292,7 @@ token_has_tabs(const struct token *tk)
 {
 	const struct token *suffix;
 
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+	LIST_FOREACH(suffix, &tk->tk_suffixes) {
 		if (suffix->tk_type == TOKEN_SPACE &&
 		    (suffix->tk_flags & TOKEN_FLAG_OPTSPACE) &&
 		    suffix->tk_str[0] == '\t')
@@ -352,7 +347,7 @@ token_is_moveable(const struct token *tk)
 {
 	const struct token *prefix;
 
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+	LIST_FOREACH(prefix, &tk->tk_prefixes) {
 		if (prefix->tk_type == TOKEN_COMMENT ||
 		    (prefix->tk_flags & TOKEN_FLAG_CPP))
 			return 0;
@@ -382,22 +377,19 @@ token_is_first(const struct token *tk)
 int
 token_is_dangling(const struct token *tk)
 {
-	static char zero[sizeof(tk->tk_entry)];
-
-	/* Try to not rely on TAILQ_ENTRY() implementation details. */
-	return memcmp(&tk->tk_entry, zero, sizeof(zero)) == 0;
+	return !LIST_LINKED(tk);
 }
 
 struct token *
 token_next(const struct token *tk)
 {
-	return (struct token *)TAILQ_NEXT(tk, tk_entry);
+	return (struct token *)LIST_NEXT(tk);
 }
 
 struct token *
 token_prev(const struct token *tk)
 {
-	return (struct token *)TAILQ_PREV(tk, token_list, tk_entry);
+	return (struct token *)LIST_PREV(tk);
 }
 
 void
@@ -410,28 +402,27 @@ token_set_str(struct token *tk, const char *str, size_t len)
 void
 token_list_prepend(struct token_list *tl, struct token *tk)
 {
-	TAILQ_INSERT_HEAD(tl, tk, tk_entry);
+	LIST_INSERT_HEAD(tl, tk);
 }
 
 void
 token_list_append(struct token_list *tl, struct token *tk)
 {
-	TAILQ_INSERT_TAIL(tl, tk, tk_entry);
+	LIST_INSERT_TAIL(tl, tk);
 }
 
 void
 token_list_append_after(struct token_list *tl, struct token *after,
     struct token *tk)
 {
-	TAILQ_INSERT_AFTER(tl, after, tk, tk_entry);
+	LIST_INSERT_AFTER(tl, after, tk);
 }
 
 void
 token_list_remove(struct token_list *tl, struct token *tk)
 {
 	assert(!token_is_dangling(tk));
-	TAILQ_REMOVE(tl, tk, tk_entry);
-	memset(&tk->tk_entry, 0, sizeof(tk->tk_entry));
+	LIST_REMOVE(tl, tk);
 	token_rele(tk);
 }
 
@@ -446,47 +437,47 @@ token_list_swap(struct token_list *src, unsigned int src_token_flags,
 	struct token *before = NULL;
 	struct token *safe, *tk;
 
-	TAILQ_INIT(&tmp);
-	TAILQ_FOREACH_SAFE(tk, src, tk_entry, safe) {
-		tk = TAILQ_FIRST(src);
+	LIST_INIT(&tmp);
+	LIST_FOREACH_SAFE(tk, src, safe) {
+		tk = LIST_FIRST(src);
 		if (tk->tk_flags & src_token_flags) {
 			if (before == NULL)
 				before = tk;
 			continue;
 		}
 
-		TAILQ_REMOVE(src, tk, tk_entry);
-		TAILQ_INSERT_TAIL(&tmp, tk, tk_entry);
+		LIST_REMOVE(src, tk);
+		LIST_INSERT_TAIL(&tmp, tk);
 	}
 
-	TAILQ_FOREACH_SAFE(tk, dst, tk_entry, safe) {
+	LIST_FOREACH_SAFE(tk, dst, safe) {
 		if (tk->tk_flags & dst_token_flags)
 			continue;
 
-		TAILQ_REMOVE(dst, tk, tk_entry);
+		LIST_REMOVE(dst, tk);
 		if (before != NULL)
-			TAILQ_INSERT_BEFORE(before, tk, tk_entry);
+			LIST_INSERT_BEFORE(before, tk);
 		else
-			TAILQ_INSERT_TAIL(src, tk, tk_entry);
+			LIST_INSERT_TAIL(src, tk);
 	}
 
-	while (!TAILQ_EMPTY(&tmp)) {
-		tk = TAILQ_FIRST(&tmp);
-		TAILQ_REMOVE(&tmp, tk, tk_entry);
-		TAILQ_INSERT_TAIL(dst, tk, tk_entry);
+	while (!LIST_EMPTY(&tmp)) {
+		tk = LIST_FIRST(&tmp);
+		LIST_REMOVE(&tmp, tk);
+		LIST_INSERT_TAIL(dst, tk);
 	}
 }
 
 struct token *
 token_list_first(struct token_list *tl)
 {
-	return TAILQ_FIRST(tl);
+	return LIST_FIRST(tl);
 }
 
 struct token *
 token_list_last(struct token_list *tl)
 {
-	return TAILQ_LAST(tl, token_list);
+	return LIST_LAST(tl);
 }
 
 struct token *
@@ -499,12 +490,12 @@ token_find_suffix_spaces(struct token *tk)
 void
 token_move_suffixes(struct token *src, struct token *dst)
 {
-	while (!TAILQ_EMPTY(&src->tk_suffixes)) {
+	while (!LIST_EMPTY(&src->tk_suffixes)) {
 		struct token *suffix;
 
-		suffix = TAILQ_FIRST(&src->tk_suffixes);
-		TAILQ_REMOVE(&src->tk_suffixes, suffix, tk_entry);
-		TAILQ_INSERT_TAIL(&dst->tk_suffixes, suffix, tk_entry);
+		suffix = LIST_FIRST(&src->tk_suffixes);
+		LIST_REMOVE(&src->tk_suffixes, suffix);
+		LIST_INSERT_TAIL(&dst->tk_suffixes, suffix);
 	}
 }
 
@@ -513,12 +504,12 @@ token_move_suffixes_if(struct token *src, struct token *dst, int type)
 {
 	struct token *suffix, *tmp;
 
-	TAILQ_FOREACH_SAFE(suffix, &src->tk_suffixes, tk_entry, tmp) {
+	LIST_FOREACH_SAFE(suffix, &src->tk_suffixes, tmp) {
 		if (suffix->tk_type != type)
 			continue;
 
-		TAILQ_REMOVE(&src->tk_suffixes, suffix, tk_entry);
-		TAILQ_INSERT_TAIL(&dst->tk_suffixes, suffix, tk_entry);
+		LIST_REMOVE(&src->tk_suffixes, suffix);
+		LIST_INSERT_TAIL(&dst->tk_suffixes, suffix);
 	}
 }
 
@@ -534,12 +525,12 @@ token_list_find(const struct token_list *tokens, int type, unsigned int flags)
 	struct token *tk;
 
 	if (flags > 0) {
-		TAILQ_FOREACH(tk, tokens, tk_entry) {
+		LIST_FOREACH(tk, tokens) {
 			if (tk->tk_type == type && (tk->tk_flags & flags))
 				return tk;
 		}
 	} else {
-		TAILQ_FOREACH(tk, tokens, tk_entry) {
+		LIST_FOREACH(tk, tokens) {
 			if (tk->tk_type == type)
 				return tk;
 		}

@@ -16,6 +16,7 @@
 #include "libks/buffer.h"
 #include "libks/compiler.h"
 #include "libks/consistency.h"
+#include "libks/list.h"
 #include "libks/vector.h"
 
 #include "diff.h"
@@ -23,12 +24,6 @@
 #include "style.h"
 #include "token.h"
 #include "util.h"
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
 
 #define IS_DOC_INDENT_PARENS(indent) \
 	((indent) > 0 && ((indent) & DOC_INDENT_PARENS))
@@ -39,7 +34,7 @@
 #define IS_DOC_INDENT_WIDTH(indent) \
 	((indent) > 0 && ((indent) & DOC_INDENT_WIDTH))
 
-TAILQ_HEAD(doc_list, doc);
+LIST(doc_list, doc);
 
 enum doc_diff_group {
 	DOC_DIFF_GROUP_IGNORE,
@@ -75,7 +70,7 @@ struct doc {
 
 	struct arena_scope	*dc_scope;
 
-	TAILQ_ENTRY(doc)	 dc_entry;
+	LIST_ENTRY(doc_list, doc);
 };
 
 struct doc_state_indent {
@@ -401,7 +396,7 @@ void
 doc_remove(struct doc *dc, struct doc *parent)
 {
 	assert(doc_has_list(parent));
-	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
+	LIST_REMOVE(&parent->dc_list, dc);
 }
 
 int
@@ -410,10 +405,10 @@ doc_remove_tail(struct doc *parent)
 	struct doc *dc;
 
 	assert(doc_has_list(parent));
-	dc = TAILQ_LAST(&parent->dc_list, doc_list);
+	dc = LIST_LAST(&parent->dc_list);
 	if (dc == NULL)
 		return 0;
-	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
+	LIST_REMOVE(&parent->dc_list, dc);
 	return 1;
 }
 
@@ -439,7 +434,7 @@ void
 doc_append(struct doc *dc, struct doc *parent)
 {
 	if (doc_has_list(parent)) {
-		TAILQ_INSERT_TAIL(&parent->dc_list, dc, dc_entry);
+		LIST_INSERT_TAIL(&parent->dc_list, dc);
 	} else {
 		assert(parent->dc_doc == NULL);
 		parent->dc_doc = dc;
@@ -450,15 +445,15 @@ void
 doc_move_before(struct doc *dc, struct doc *before, struct doc *parent)
 {
 	assert(doc_has_list(parent));
-	TAILQ_REMOVE(&parent->dc_list, dc, dc_entry);
-	TAILQ_INSERT_BEFORE(before, dc, dc_entry);
+	LIST_REMOVE(&parent->dc_list, dc);
+	LIST_INSERT_BEFORE(before, dc);
 }
 
 static void
 doc_init(struct doc *dc)
 {
 	if (doc_has_list(dc))
-		TAILQ_INIT(&dc->dc_list);
+		LIST_INIT(&dc->dc_list);
 }
 
 struct doc *
@@ -613,7 +608,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_CONCAT: {
 		struct doc *concat;
 
-		TAILQ_FOREACH(concat, &dc->dc_list, dc_entry)
+		LIST_FOREACH(concat, &dc->dc_list)
 			doc_exec1(concat, st);
 
 		break;
@@ -1046,7 +1041,7 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		if (desc->children.many) {
 			const struct doc_list *dl = &dc->dc_list;
 
-			TAILQ_FOREACH_REVERSE(dc, dl, doc_list, dc_entry) {
+			LIST_FOREACH_REVERSE(dc, dl) {
 				dst = VECTOR_ALLOC(st->st_walk);
 				if (dst == NULL)
 					err(1, NULL);

@@ -5,6 +5,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/compiler.h"
+#include "libks/list.h"
 
 #include "clang.h"
 #include "doc.h"
@@ -17,12 +18,6 @@
 #include "parser-stmt-asm.h"
 #include "token.h"
 #include "util.h"
-
-#ifdef HAVE_QUEUE
-#  include <sys/queue.h>
-#else
-#  include "compat-queue.h"
-#endif
 
 static void
 clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
@@ -325,7 +320,7 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 		doc_alloc_impl(DOC_MUTE, dc, -1, __func__, __LINE__);
 	}
 
-	TAILQ_FOREACH(prefix, &tk->tk_prefixes, tk_entry) {
+	LIST_FOREACH(prefix, &tk->tk_prefixes) {
 		if (prefix->tk_flags & TOKEN_FLAG_COMMENT_CLANG_FORMAT_ON)
 			clang_format_on(pr, prefix, dc);
 
@@ -337,7 +332,7 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 
 	out = doc_token(tk, dc, DOC_LITERAL, fun, lno);
 
-	TAILQ_FOREACH(suffix, &tk->tk_suffixes, tk_entry) {
+	LIST_FOREACH(suffix, &tk->tk_suffixes) {
 		if (suffix->tk_flags & TOKEN_FLAG_DISCARD)
 			continue;
 		if (suffix->tk_flags & TOKEN_FLAG_OPTLINE)
