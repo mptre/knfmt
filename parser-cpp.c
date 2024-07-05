@@ -22,9 +22,9 @@ static int
 is_list_entry(const struct token *tk)
 {
 	const char needle[] = "LIST_ENTRY";
-	size_t needlen = sizeof(needle) - 1;
+	size_t needlelen = sizeof(needle) - 1;
 
-	return token_rawcmp(tk, needle, needlen) == 0;
+	return token_rawcmp(tk, needle, needlelen) == 0;
 }
 
 int
