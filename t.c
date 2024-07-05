@@ -1,15 +1,13 @@
 #include "config.h"
 
-#include <assert.h>
 #include <err.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/expect.h"
 #include "libks/list.h"
 
 #include "clang.h"
@@ -28,74 +26,6 @@
 #include "token.h"
 #include "util.h"
 
-struct context;
-
-#define test(e) do {							\
-	error |= (e);							\
-	if (xflag && error) goto out;					\
-} while (0)
-
-#define test_parser_expr(a, b) \
-	test(test_parser_expr0(&cx, (a), (b), __LINE__))
-static int	test_parser_expr0(struct context *, const char *, const char *,
-    int);
-
-#define test_parser_type_peek(a, b) \
-	test(test_parser_type_peek0(&cx, (a), (b), 0, 1, __LINE__))
-#define test_parser_type_peek_flags(a, b, c) \
-	test(test_parser_type_peek0(&cx, (b), (c), (a), 1, __LINE__))
-#define test_parser_type_peek_error(a) \
-	test(test_parser_type_peek0(&cx, (a), "", 0, 0, __LINE__))
-static int	test_parser_type_peek0(struct context *, const char *,
-    const char *, unsigned int, int, int);
-
-#define test_parser_attributes_peek(a, b) \
-	test(test_parser_attributes_peek0(&cx, (a), (b), 1, 0, __LINE__))
-#define test_parser_attributes_peek_flags(a, b, c) \
-	test(test_parser_attributes_peek0(&cx, (b), (c), 1, (a), __LINE__))
-#define test_parser_attributes_peek_flags_error(a, b) \
-	test(test_parser_attributes_peek0(&cx, (b), "", 0, (a), __LINE__))
-static int	test_parser_attributes_peek0(struct context *, const char *,
-    const char *, int, unsigned int, int);
-
-#define test_lexer_read(a, b) \
-	test(test_lexer_read0(&cx, (a), (b), __LINE__))
-static int	test_lexer_read0(struct context *, const char *, const char *,
-    int);
-
-struct test_token_move {
-	const char	*src;
-	int		 target;
-	int		 move;
-	const char	*want[16];
-};
-
-#define test_token_position_after(a) \
-	test(test_token_position_after0(&cx, (a), __LINE__))
-static int	test_token_position_after0(struct context *,
-    struct test_token_move *, int);
-
-#define test_style(a, b, c) \
-	test(test_style0(&cx, (a), (b), (c), __LINE__))
-static int	test_style0(struct context *, const char *, int, int, int);
-
-#define test_strwidth(a, b, c) \
-	test(test_strwidth0((a), (b), (c), __LINE__))
-static int	test_strwidth0(const char *, size_t, size_t, int);
-
-#define test_tmptemplate(a, b) \
-	test(test_tmptemplate0(&cx, (a), (b), __LINE__))
-static int	test_tmptemplate0(struct context *, const char *, const char *,
-    int);
-
-#define test_path_slice(a, b, c) \
-	test(test_path_slice0((a), (b), (c), __LINE__))
-static int	test_path_slice0(const char *, unsigned int, const char *, int);
-
-#define test_token_branch_unlink() \
-	test(test_token_branch_impl(&cx))
-static int	test_token_branch_impl(struct context *);
-
 struct context {
 	struct options		 op;
 	struct buffer		*bf;
@@ -112,15 +42,74 @@ struct context {
 	} arena;
 };
 
-static void	usage(void) __attribute__((__noreturn__));
+#define test_parser_expr(a, b) \
+	test_parser_expr_impl(&ctx, (a), (b), __LINE__)
+static void	test_parser_expr_impl(struct context *, const char *,
+    const char *, int);
+
+#define test_parser_type_peek(a, b) \
+	test_parser_type_peek_impl(&ctx, (a), (b), 0, 1, __LINE__)
+#define test_parser_type_peek_flags(a, b, c) \
+	test_parser_type_peek_impl(&ctx, (b), (c), (a), 1, __LINE__)
+#define test_parser_type_peek_error(a) \
+	test_parser_type_peek_impl(&ctx, (a), "", 0, 0, __LINE__)
+static void	test_parser_type_peek_impl(struct context *, const char *,
+    const char *, unsigned int, int, int);
+
+#define test_parser_attributes_peek(a, b) \
+	test_parser_attributes_peek_impl(&ctx, (a), (b), 1, 0, __LINE__)
+#define test_parser_attributes_peek_flags(a, b, c) \
+	test_parser_attributes_peek_impl(&ctx, (b), (c), 1, (a), __LINE__)
+#define test_parser_attributes_peek_flags_error(a, b) \
+	test_parser_attributes_peek_impl(&ctx, (b), "", 0, (a), __LINE__)
+static void	test_parser_attributes_peek_impl(struct context *, const char *,
+    const char *, int, unsigned int, int);
+
+#define test_lexer_read(a, b) \
+	test_lexer_read_impl(&ctx, (a), (b), __LINE__)
+static void	test_lexer_read_impl(struct context *, const char *,
+    const char *, int);
+
+struct test_token_move {
+	const char	*src;
+	int		 target;
+	int		 move;
+	const char	*want[16];
+};
+
+#define test_token_position_after(a) \
+	test_token_position_after_impl(&ctx, (a), __LINE__)
+static void	test_token_position_after_impl(struct context *,
+    struct test_token_move *, int);
+
+#define test_style(a, b, c) \
+	test_style_impl(&ctx, (a), (b), (c), __LINE__)
+static void	test_style_impl(struct context *, const char *, int, int, int);
+
+#define test_strwidth(a, b, c) \
+	test_strwidth_impl((a), (b), (c), __LINE__)
+static void	test_strwidth_impl(const char *, size_t, size_t, int);
+
+#define test_tmptemplate(a, b) \
+	test_tmptemplate_impl(&ctx, (a), (b), __LINE__)
+static void	test_tmptemplate_impl(struct context *, const char *,
+    const char *, int);
+
+#define test_path_slice(a, b, c) \
+	test_path_slice_impl((a), (b), (c), __LINE__)
+static void	test_path_slice_impl(const char *, unsigned int, const char *,
+    int);
+
+#define test_token_branch_unlink() \
+	test_token_branch_impl(&ctx)
+static void	test_token_branch_impl(struct context *);
 
 static void	context_alloc(struct context *);
 static void	context_free(struct context *);
 static void	context_init(struct context *, const char *,
     struct arena_scope *);
 
-static int	assert_token_move(struct context *, const char **, const char *,
-    int);
+static void	assert_token_move(struct context *, const char **);
 static int	find_token(struct lexer *, int, struct token **);
 
 static const char	*tokens_concat(
@@ -134,27 +123,14 @@ static const char	*token_serialize_position(struct arena_scope *,
     const struct token *);
 
 int
-main(int argc, char *argv[])
+main(void)
 {
-	struct context cx = {0};
-	int error = 0;
-	int xflag = 0;
-	int ch;
-
-	while ((ch = getopt(argc, argv, "x")) != -1) {
-		switch (ch) {
-		case 'x':
-			xflag = 1;
-			break;
-		default:
-			usage();
-		}
-	}
+	struct context ctx = {0};
 
 	clang_init();
 	expr_init();
 	style_init();
-	context_alloc(&cx);
+	context_alloc(&ctx);
 
 	test_parser_expr("1", "(1)");
 	test_parser_expr("x", "(x)");
@@ -402,23 +378,15 @@ main(int argc, char *argv[])
 
 	test_token_branch_unlink();
 
-out:
-	context_free(&cx);
+	context_free(&ctx);
 	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();
-	return error;
+	return 0;
 }
 
 static void
-usage(void)
-{
-	fprintf(stderr, "usage: t [-x]\n");
-	exit(1);
-}
-
-static int
-test_parser_expr0(struct context *ctx, const char *src, const char *exp,
+test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
     int lno)
 {
 	struct buffer *bf = NULL;
@@ -426,6 +394,7 @@ test_parser_expr0(struct context *ctx, const char *src, const char *exp,
 	const char *act;
 	int error;
 
+	KS_expect_scope("parser_expr", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
 
 	context_init(ctx, src, &eternal_scope);
@@ -437,13 +406,7 @@ test_parser_expr0(struct context *ctx, const char *src, const char *exp,
 	error = parser_expr(ctx->pr, &expr, &(struct parser_expr_arg){
 	    .dc	= concat,
 	});
-	if (error & HALT) {
-		fprintf(stderr, "parser_expr:%d: want %x, got %x\n", lno,
-		    (unsigned int)GOOD, (unsigned int)error);
-		error = 1;
-		goto out;
-	}
-	error = 0;
+	KS_expect_int(GOOD, error);
 
 	bf = buffer_alloc(128);
 	if (bf == NULL)
@@ -457,101 +420,70 @@ test_parser_expr0(struct context *ctx, const char *src, const char *exp,
 	});
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
-	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "parser_expr:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
-		    lno, exp, act);
-		error = 1;
-	}
-
-out:
+	KS_expect_str(exp, act);
 	buffer_free(bf);
-	return error;
 }
 
-static int
-test_parser_type_peek0(struct context *ctx, const char *src, const char *exp,
-    unsigned int flags, int peek, int lno)
+static void
+test_parser_type_peek_impl(struct context *ctx, const char *src,
+    const char *exp, unsigned int flags, int peek, int lno)
 {
-	const char *fun = "parser_type_peek";
 	const char *act;
 	struct parser_type type;
 	struct token *beg;
+	int peek_act;
 
+	KS_expect_scope("parser_type_peek", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
 	arena_scope(ctx->arena.scratch, s);
 
 	context_init(ctx, src, &eternal_scope);
 
-	if (parser_type_peek(ctx->pr, &type, flags) != peek) {
-		fprintf(stderr, "%s:%d: want %d, got %d\n",
-		    fun, lno, peek, !peek);
-		return 1;
-	}
+	peek_act = parser_type_peek(ctx->pr, &type, flags);
+	KS_expect_int(peek, peek_act);
 	if (!peek)
-		return 0;
+		return;
 
 	(void)lexer_peek(ctx->lx, &beg);
 	act = tokens_concat(token_serialize_literal, beg, type.end, &s);
-	if (act == NULL) {
-		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
-		return 1;
-	}
-	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "%s:%d:\n"
-		    "\texp \"%s\"\n\tgot \"%s\"\n",
-		    fun, lno, exp, act);
-		return 1;
-	}
-
-	return 0;
+	KS_expect_true(act != NULL);
+	KS_expect_str(exp, act);
 }
 
-static int
-test_parser_attributes_peek0(struct context *ctx, const char *src,
+static void
+test_parser_attributes_peek_impl(struct context *ctx, const char *src,
     const char *exp, int peek, unsigned int flags, int lno)
 {
-	const char *fun = "parser_attributes_peek";
 	const char *act;
 	struct token *beg, *rparen;
+	int peek_act;
 
+	KS_expect_scope("parser_attributes_peek", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
 	arena_scope(ctx->arena.scratch, s);
 
 	context_init(ctx, src, &eternal_scope);
 
-	if (parser_attributes_peek(ctx->pr, &rparen, flags) != peek) {
-		fprintf(stderr, "%s:%d: want %d, got %d\n",
-		    fun, lno, peek, !peek);
-		return 1;
-	}
+	peek_act = parser_attributes_peek(ctx->pr, &rparen, flags);
+	KS_expect_int(peek, peek_act);
 	if (!peek)
-		return 0;
+		return;
 
 	(void)lexer_peek(ctx->lx, &beg);
 	act = tokens_concat(token_serialize_literal, beg, rparen, &s);
-	if (act == NULL) {
-		fprintf(stderr, "%s:%d: failed to concat tokens\n", fun, lno);
-		return 1;
-	}
-	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "%s:%d:\n"
-		    "\texp \"%s\"\n\tgot \"%s\"\n",
-		    fun, lno, exp, act);
-		return 1;
-	}
-
-	return 0;
+	KS_expect_true(act != NULL);
+	KS_expect_str(exp, act);
 }
 
-static int
-test_lexer_read0(struct context *ctx, const char *src, const char *exp,
+static void
+test_lexer_read_impl(struct context *ctx, const char *src, const char *exp,
     int lno)
 {
 	struct buffer *bf = NULL;
 	const char *act;
-	int error = 0;
 	int ntokens = 0;
 
+	KS_expect_scope("lexer_read", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
 	arena_scope(ctx->arena.scratch, s);
 
@@ -574,42 +506,30 @@ test_lexer_read0(struct context *ctx, const char *src, const char *exp,
 	}
 	buffer_putc(bf, '\0');
 	act = buffer_get_ptr(bf);
-	if (strcmp(exp, act) != 0) {
-		fprintf(stderr, "lexer_read:%d:\n\texp \"%s\"\n\tgot \"%s\"\n",
-		    lno, exp, act);
-		error = 1;
-	}
-
+	KS_expect_str(exp, act);
 	buffer_free(bf);
-	return error;
 }
 
-static int
-test_token_position_after0(struct context *ctx, struct test_token_move *arg,
-    int lno)
+static void
+test_token_position_after_impl(struct context *ctx,
+    struct test_token_move *arg, int lno)
 {
-	const char *fun = "token_position_after";
 	struct token *after, *move;
-	int error = 0;
+	int found;
 
+	KS_expect_scope("token_position_after", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
 
 	context_init(ctx, arg->src, &eternal_scope);
 
-	if (!find_token(ctx->lx, arg->target, &after)) {
-		fprintf(stderr, "%s:%d: could not find after token\n",
-		    fun, lno);
-		return 1;
-	}
-	if (!find_token(ctx->lx, arg->move, &move)) {
-		fprintf(stderr, "%s:%d: could not find move token\n", fun, lno);
-		return 1;
-	}
+	found = find_token(ctx->lx, arg->target, &after);
+	KS_expect_true(found);
+
+	found = find_token(ctx->lx, arg->move, &move);
+	KS_expect_true(found);
 
 	token_position_after(after, move);
-	error = assert_token_move(ctx, arg->want, fun, lno);
-
-	return error;
+	assert_token_move(ctx, arg->want);
 }
 
 static int
@@ -632,13 +552,13 @@ find_token(struct lexer *lx, int type, struct token **tk)
 	return found;
 }
 
-static int
-test_style0(struct context *ctx, const char *src, int key, int exp, int lno)
+static void
+test_style_impl(struct context *ctx, const char *src, int key, int exp, int lno)
 {
 	struct style *st;
-	int error = 0;
 	int act;
 
+	KS_expect_scope("style_parse", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
 
 	context_init(ctx, src, &eternal_scope);
@@ -647,65 +567,46 @@ test_style0(struct context *ctx, const char *src, int key, int exp, int lno)
 	st = style_parse_buffer(ctx->bf, ".clang-format",
 	    &eternal_scope, ctx->arena.scratch, &ctx->op);
 	act = (int)style(st, key);
-	if (exp != act) {
-		fprintf(stderr, "style_parse:%d:\n\texp %d\n\tgot %d\n",
-		    lno, exp, act);
-		error = 1;
-	}
-	return error;
+	KS_expect_int(exp, act);
 }
 
-static int
-test_strwidth0(const char *str, size_t pos, size_t exp, int lno)
+static void
+test_strwidth_impl(const char *str, size_t pos, size_t exp, int lno)
 {
 	size_t act;
 
+	KS_expect_scope("strwidth", lno, e);
+
 	act = strwidth(str, strlen(str), pos);
-	if (exp != act) {
-		fprintf(stderr, "strwidth:%d:\n\texp %zu\n\tgot %zu\n",
-		    lno, exp, act);
-		return 1;
-	}
-	return 0;
+	KS_expect_int(exp, act);
 }
 
-static int
-test_tmptemplate0(struct context *c, const char *path, const char *exp, int lno)
+static void
+test_tmptemplate_impl(struct context *c, const char *path, const char *exp,
+    int lno)
 {
 	char *act;
-	int error = 0;
 
+	KS_expect_scope("tmptemplate", lno, e);
 	arena_scope(c->arena.scratch, s);
 
 	act = tmptemplate(path, &s);
-	if (strcmp(act, exp) != 0) {
-		const char *fun = "tmptemplate";
-
-		fprintf(stderr, "%s:%d:\n\texp %s\n\tgot %s\n",
-		    fun, lno, exp, act);
-		error = 1;
-	}
-	return error;
+	KS_expect_str(exp, act);
 }
 
-static int
-test_path_slice0(const char *path, unsigned int ncomponents, const char *exp,
-    int lno)
+static void
+test_path_slice_impl(const char *path, unsigned int ncomponents,
+    const char *exp, int lno)
 {
 	const char *act;
 
-	act = path_slice(path, ncomponents);
-	if (strcmp(act, exp) != 0) {
-		const char *fun = "path_slice";
+	KS_expect_scope("path_slice", lno, e);
 
-		fprintf(stderr, "%s:%d:\n\texp %s\n\tgot %s\n",
-		    fun, lno, exp, act);
-		return 1;
-	}
-	return 0;
+	act = path_slice(path, ncomponents);
+	KS_expect_str(exp, act);
 }
 
-static int
+static void
 test_token_branch_impl(struct context *ctx)
 {
 	struct {
@@ -763,7 +664,6 @@ test_token_branch_impl(struct context *ctx)
 		},
 	};
 	int ntests = sizeof(tests) / sizeof(tests[0]);
-	int error = 0;
 	int i;
 
 	for (i = 0; i < ntests; i++) {
@@ -772,6 +672,7 @@ test_token_branch_impl(struct context *ctx)
 		struct token *tk;
 		const char *act;
 
+		KS_expect_scope("clang_token_branch_unlink", tests[i].lno, e);
 		arena_scope(ctx->arena.eternal, eternal_scope);
 		arena_scope(ctx->arena.scratch, s);
 
@@ -785,42 +686,36 @@ test_token_branch_impl(struct context *ctx)
 			if (it->tk_type == tests[i].unlink)
 				prefix = it;
 		}
-		assert(prefix != NULL);
+		KS_expect_true(prefix != NULL);
 
 		clang_token_branch_unlink(prefix);
 		act = tokens_concat(token_serialize_no_flags,
 		    token_list_first(&tk->tk_prefixes), NULL, &s);
-		if (strcmp(tests[i].exp, act) != 0) {
-			fprintf(stderr, "%s:%d\n\texp \"%s\"\n\tgot \"%s\"\n",
-			    __func__, tests[i].lno, tests[i].exp, act);
-			error = 1;
-		}
+		KS_expect_str(tests[i].exp, act);
 	}
-
-	return error;
 }
 
 static void
-context_alloc(struct context *cx)
+context_alloc(struct context *ctx)
 {
-	cx->arena.scratch = arena_alloc();
-	cx->arena.eternal = arena_alloc();
-	cx->arena.doc = arena_alloc();
-	cx->bf = buffer_alloc(128);
-	if (cx->bf == NULL)
+	ctx->arena.scratch = arena_alloc();
+	ctx->arena.eternal = arena_alloc();
+	ctx->arena.doc = arena_alloc();
+	ctx->bf = buffer_alloc(128);
+	if (ctx->bf == NULL)
 		err(1, NULL);
 }
 
 static void
-context_free(struct context *cx)
+context_free(struct context *ctx)
 {
-	if (cx == NULL)
+	if (ctx == NULL)
 		return;
 
-	buffer_free(cx->bf);
-	arena_free(cx->arena.eternal);
-	arena_free(cx->arena.scratch);
-	arena_free(cx->arena.doc);
+	buffer_free(ctx->bf);
+	arena_free(ctx->arena.eternal);
+	arena_free(ctx->arena.scratch);
+	arena_free(ctx->arena.doc);
 }
 
 static void
@@ -862,16 +757,14 @@ context_init(struct context *ctx, const char *src,
 	});
 }
 
-static int
-assert_token_move(struct context *cx, const char **want, const char *fun,
-    int lno)
+static void
+assert_token_move(struct context *ctx, const char **want)
 {
-	struct lexer *lx = cx->lx;
+	struct lexer *lx = ctx->lx;
 	const char *str;
 	int i = 0;
-	int error = 1;
 
-	arena_scope(cx->arena.scratch, s);
+	arena_scope(ctx->arena.scratch, s);
 
 	for (;;) {
 		struct token *prefix, *suffix, *tk;
@@ -880,18 +773,10 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 			break;
 
 		LIST_FOREACH(prefix, &tk->tk_prefixes) {
-			if (want[i] == NULL) {
-				fprintf(stderr, "%s:%d: too few wanted "
-				    "tokens\n", fun, lno);
-				goto out;
-			}
+			KS_expect_true(want[i] != NULL);
 
 			str = token_serialize_position(&s, prefix);
-			if (strcmp(str, &want[i][2]) != 0) {
-				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
-				    fun, lno, i, &want[i][2], str);
-				goto out;
-			}
+			KS_expect_str(&want[i][2], str);
 			i++;
 		}
 
@@ -899,38 +784,18 @@ assert_token_move(struct context *cx, const char **want, const char *fun,
 			break;
 
 		str = token_serialize_position(&s, tk);
-		if (strcmp(str, want[i]) != 0) {
-			fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
-			    fun, lno, i, want[i], str);
-			goto out;
-		}
+		KS_expect_str(want[i], str);
 		i++;
 
 		LIST_FOREACH(suffix, &tk->tk_suffixes) {
-			if (want[i] == NULL) {
-				fprintf(stderr, "%s:%d: too few wanted "
-				    "tokens\n", fun, lno);
-				goto out;
-			}
+			KS_expect_true(want[i] != NULL);
 
 			str = token_serialize_position(&s, suffix);
-			if (strcmp(str, &want[i][2]) != 0) {
-				fprintf(stderr, "%s:%d: %d: want %s, got %s\n",
-				    fun, lno, i, &want[i][2], str);
-				goto out;
-			}
+			KS_expect_str(&want[i][2], str);
 			i++;
 		}
 	}
-	if (want[i] != NULL) {
-		fprintf(stderr, "%s:%d: wanted tokens not exhausted\n",
-		    fun, lno);
-		goto out;
-	}
-	error = 0;
-
-out:
-	return error;
+	KS_expect_true(want[i] == NULL);
 }
 
 static const char *
