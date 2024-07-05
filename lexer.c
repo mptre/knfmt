@@ -140,14 +140,14 @@ static void
 lexer_free(void *arg)
 {
 	struct lexer *lx = arg;
-	struct token *tk;
+	struct token *tk, *tmp;
 
 	if (lx->lx_callbacks.before_free != NULL)
 		lx->lx_callbacks.before_free(lx, lx->lx_callbacks.arg);
 
 	VECTOR_FREE(lx->lx_lines);
 
-	LIST_FOREACH(tk, &lx->lx_tokens) {
+	LIST_FOREACH_SAFE(tk, &lx->lx_tokens, tmp) {
 		assert(tk->tk_refs == 1);
 		token_rele(tk);
 	}
