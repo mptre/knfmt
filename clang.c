@@ -635,8 +635,8 @@ static const char *
 clang_token_serialize(const struct token *tk, struct arena_scope *s)
 {
 	return token_serialize(tk,
-	    TOKEN_SERIALIZE_VERBATIM | TOKEN_SERIALIZE_POSITION |
-	    TOKEN_SERIALIZE_FLAGS, s);
+	    TOKEN_SERIALIZE_VERBATIM | TOKEN_SERIALIZE_QUOTE |
+	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS, s);
 }
 
 static const char *

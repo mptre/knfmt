@@ -161,6 +161,7 @@ struct arena_scope;
 #define TOKEN_SERIALIZE_FLAGS		0x00000004u
 #define TOKEN_SERIALIZE_REFS		0x00000008u
 #define TOKEN_SERIALIZE_ADDRESS		0x00000010u
+#define TOKEN_SERIALIZE_QUOTE		0x00000020u
 
 #define token_priv(tk, type) __extension__ ({				\
 	typeof(tk) _nx = (tk) + 1;					\

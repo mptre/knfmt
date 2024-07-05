@@ -85,10 +85,12 @@ token_serialize(const struct token *tk, unsigned int flags,
     struct arena_scope *s)
 {
 	struct buffer *bf;
-	unsigned int verbatim;
+	unsigned int quote, verbatim;
 
 	verbatim = flags & TOKEN_SERIALIZE_VERBATIM;
 	flags &= ~TOKEN_SERIALIZE_VERBATIM;
+	quote = flags & TOKEN_SERIALIZE_QUOTE;
+	flags &= ~TOKEN_SERIALIZE_QUOTE;
 
 	bf = arena_buffer_alloc(s, 128);
 	buffer_printf(bf, "%s", token_type_str(tk->tk_type));
@@ -106,9 +108,13 @@ token_serialize(const struct token *tk, unsigned int flags,
 		buffer_printf(bf, ">");
 
 	if (verbatim) {
-		buffer_printf(bf, "(\"");
+		buffer_printf(bf, "(");
+		if (quote)
+			buffer_printf(bf, "\"");
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
-		buffer_printf(bf, "\")");
+		if (quote)
+			buffer_printf(bf, "\"");
+		buffer_printf(bf, ")");
 	}
 
 	return buffer_str(bf);

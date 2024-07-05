@@ -338,16 +338,16 @@ main(void)
 	    .target	= TOKEN_SEMI,
 	    .move	= TOKEN_CHAR,
 	    .want	= {
-		"INT<1:9>(\"int\")",
-		"  SPACE<1:12>(\" \")",
-		"IDENT<1:13>(\"a\")",
-		"SEMI<1:14>(\";\")",
-		"  SPACE<1:15>(\"\\n\")",
-		"CHAR<1:9>(\"char\")",
-		"  SPACE<1:13>(\" \")",
-		"IDENT<2:14>(\"b\")",
-		"SEMI<2:15>(\";\")",
-		"  SPACE<2:16>(\"\\n\")",
+		"INT<1:9>(int)",
+		"  SPACE<1:12>( )",
+		"IDENT<1:13>(a)",
+		"SEMI<1:14>(;)",
+		"  SPACE<1:15>(\\n)",
+		"CHAR<1:9>(char)",
+		"  SPACE<1:13>( )",
+		"IDENT<2:14>(b)",
+		"SEMI<2:15>(;)",
+		"  SPACE<2:16>(\\n)",
 	    },
 	}));
 
@@ -620,7 +620,7 @@ test_token_branch_impl(struct context *ctx)
 			.lno	= __LINE__,
 			.src	= "#if 0\n#endif\n",
 			.unlink	= TOKEN_CPP_IF,
-			.exp	= "CPP(\"#if 0\\n\") CPP(\"#endif\\n\")",
+			.exp	= "CPP(#if 0\\n) CPP(#endif\\n)",
 		},
 
 		/* #if -> #endif (unlink) */
@@ -628,7 +628,7 @@ test_token_branch_impl(struct context *ctx)
 			.lno	= __LINE__,
 			.src	= "#if 0\n#endif\n",
 			.unlink	= TOKEN_CPP_ENDIF,
-			.exp	= "CPP(\"#if 0\\n\") CPP(\"#endif\\n\")",
+			.exp	= "CPP(#if 0\\n) CPP(#endif\\n)",
 		},
 
 		/* #if (unlink) -> #else -> #endif */
@@ -636,7 +636,7 @@ test_token_branch_impl(struct context *ctx)
 			.lno	= __LINE__,
 			.src	= "#if 0\n#else\n#endif\n",
 			.unlink	= TOKEN_CPP_IF,
-			.exp	= "CPP(\"#if 0\\n\") CPP_IF(\"#else\\n\") CPP_ENDIF(\"#endif\\n\")",
+			.exp	= "CPP(#if 0\\n) CPP_IF(#else\\n) CPP_ENDIF(#endif\\n)",
 		},
 
 		/* #if -> #else (unlink) -> #endif */
@@ -644,7 +644,7 @@ test_token_branch_impl(struct context *ctx)
 			.lno	= __LINE__,
 			.src	= "#if 0\n#else\n#endif\n",
 			.unlink	= TOKEN_CPP_ELSE,
-			.exp	= "CPP_IF(\"#if 0\\n\") CPP(\"#else\\n\") CPP_ENDIF(\"#endif\\n\")",
+			.exp	= "CPP_IF(#if 0\\n) CPP(#else\\n) CPP_ENDIF(#endif\\n)",
 		},
 
 		/* #if -> #else -> #endif (unlink) */
@@ -652,7 +652,7 @@ test_token_branch_impl(struct context *ctx)
 			.lno	= __LINE__,
 			.src	= "#if 0\n#else\n#endif\n",
 			.unlink	= TOKEN_CPP_ENDIF,
-			.exp	= "CPP_IF(\"#if 0\\n\") CPP_ENDIF(\"#else\\n\") CPP(\"#endif\\n\")",
+			.exp	= "CPP_IF(#if 0\\n) CPP_ENDIF(#else\\n) CPP(#endif\\n)",
 		},
 
 		/* #if -> #else -> #else (unlink) -> #endif */
@@ -660,7 +660,7 @@ test_token_branch_impl(struct context *ctx)
 			.lno	= __LINE__,
 			.src	= "#if 0\n#else\n#else\n#endif\n",
 			.unlink	= TOKEN_CPP_ELSE,
-			.exp	= "CPP_IF(\"#if 0\\n\") CPP_ELSE(\"#else\\n\") CPP(\"#else\\n\") CPP_ENDIF(\"#endif\\n\")",
+			.exp	= "CPP_IF(#if 0\\n) CPP_ELSE(#else\\n) CPP(#else\\n) CPP_ENDIF(#endif\\n)",
 		},
 	};
 	int ntests = sizeof(tests) / sizeof(tests[0]);
