@@ -26,13 +26,13 @@ enum doc_type {
 };
 
 struct doc_exec_arg {
-	const struct doc	*dc;
-	struct lexer		*lx;
-	struct arena		*scratch;
-	const struct diffchunk	*diff_chunks;
-	struct buffer		*bf;
-	const struct style	*st;
 	const struct options	*op;
+	const struct style	*st;
+	struct buffer		*bf;
+	struct lexer		*lx;
+	const struct diffchunk	*diff_chunks;
+	const struct doc	*dc;
+	struct arena		*scratch;
 	unsigned int		 flags;
 #define DOC_EXEC_DIFF	    0x00000001u
 #define DOC_EXEC_TRACE	    0x00000002u
