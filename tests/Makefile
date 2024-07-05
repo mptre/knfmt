@@ -779,6 +779,7 @@ TESTS+=	../libks/buffer.h
 TESTS+=	../libks/compiler.h
 TESTS+=	../libks/consistency.c
 TESTS+=	../libks/consistency.h
+TESTS+=	../libks/expect.h
 TESTS+=	../libks/fuzzer.h
 TESTS+=	../libks/list.h
 TESTS+=	../libks/map.c

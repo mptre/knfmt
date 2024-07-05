@@ -39,6 +39,10 @@ KS_expect_scope_leave(void *arg)
 	KS_expect_current_scope = *scope;
 }
 
+/* Suppress cppcheck unusedFunction false positive. */
+static void (*KS_expect_scope_leave_used)(void *) __attribute__((__used__)) =
+    KS_expect_scope_leave;
+
 #define KS_expect_scope(f, l, varname)					\
 	__attribute__((cleanup(KS_expect_scope_leave)))			\
 	struct KS_expect_scope varname = KS_expect_current_scope;	\
