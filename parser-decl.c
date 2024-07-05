@@ -406,7 +406,8 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 		return parser_good(pr);
 	} else if (parser_attributes(pr, dc, out,
 	    PARSER_ATTRIBUTES_LINE) & GOOD) {
-		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL)) {
+		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
+		    !lexer_peek_if(lx, TOKEN_EQUAL, NULL)) {
 			doc_literal(" ", dc);
 			*out = NULL;
 		}
