@@ -21,7 +21,7 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 		str += n;
 		len -= n;
 
-		while (len > 0) {
+		for (; len > 0; len--, str++) {
 			char c = str[0];
 
 			if (c == '\t') {
@@ -33,8 +33,6 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 			} else {
 				break;
 			}
-			str++;
-			len--;
 		}
 	}
 
