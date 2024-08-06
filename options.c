@@ -27,7 +27,7 @@ options_trace_parse(struct options *op, const char *flags)
 		} else if (idx == 0) {
 			size_t i;
 
-			for (i = 0; i < sizeof(traces); i++)
+			for (i = 0; i < TRACE_MAX; i++)
 				op->op_trace[i] = UINT_MAX;
 		} else {
 			op->op_trace[idx]++;
@@ -48,12 +48,10 @@ options_trace_level(const struct options *op, char c)
 static int
 ctotrace(char c)
 {
-	int len = sizeof(traces);
-	int i;
-
-	for (i = 0; i < len; i++) {
-		if (traces[i] == c)
-			return i;
+	switch (c) {
+#define OP(name, shortname) case shortname: return TRACE_ ## name;
+	FOR_TRACE_TYPES(OP)
+#undef OP
 	}
 	return -1;
 }

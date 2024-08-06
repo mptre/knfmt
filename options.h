@@ -1,22 +1,10 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-static const char traces[] = {
-	'a',	/* all */
-	'c',	/* clang */
-	'C',	/* cpp */
-	'd',	/* doc */
-	'D',	/* diff */
-	'f',	/* func:line */
-	'l',	/* lexer */
-	'p',	/* parser */
-	's',	/* style */
-	'S',	/* simple */
-	't',	/* token */
-};
+#include "trace.h"
 
 struct options {
-	unsigned int	op_trace[sizeof(traces)];
+	unsigned int	op_trace[TRACE_MAX];
 
 	unsigned int	diff:1,
 			diffparse:1,
