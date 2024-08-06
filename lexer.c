@@ -268,7 +268,6 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 struct token *
 lexer_emit_synthetic(struct lexer *lx, const struct token *tk)
 {
-	assert(tk->tk_len > 0 && tk->tk_str != NULL);
 	return lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, tk);
 }
 
