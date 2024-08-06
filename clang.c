@@ -1291,7 +1291,7 @@ clang_ellipsis(struct lexer *lx, const struct lexer_state *st)
 	oldst = lexer_get_state(lx);
 
 	for (i = 0; i < 2; i++) {
-		if (lexer_eof(lx) || lexer_getc(lx, &ch) || ch != '.') {
+		if (lexer_getc(lx, &ch) || ch != '.') {
 			lexer_set_state(lx, &oldst);
 			return NULL;
 		}
