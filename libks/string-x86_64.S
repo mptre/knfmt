@@ -55,19 +55,19 @@ ctrl_mask = \
 	mov	rcx, rsi
 	movdqu	xmm1, [rdx]
 	.align 16
-.Lloop:
+1:
 	cmp	rcx, 16
-	jb	.Ltail
+	jb	3f
 	pcmpistrm xmm1, [r8 + rax], ctrl_mask
 	/* As the polarity is negative, all zeros means that all 16
 	 * bytes matched the ranges. */
-	jna	.Lpartial_match
+	jna	2f
 	add	rax, 16
 	sub	rcx, 16
-	jmp	.Lloop
+	jmp	1b
 	/* Partial match, the number of leading zeroes represents the
 	 * number of matched bytes as the polarity is negative. */
-.Lpartial_match:
+2:
 	movq	r9, xmm0
 	tzcnt	r9w, r9w
 	add	rax, r9
@@ -75,13 +75,53 @@ ctrl_mask = \
 	/* Copy the remaining less than 16 bytes to a dedicated buffer in
 	 * order safely continue loading 16 bytes worth of data. Rely on the
 	 * stack red zone since this is a leaf function. */
-.Ltail:
+3:
 	lea	rsi, [r8 + rax]
-	pxor	xmm0, xmm0
-	movaps	[rsp - 0x18], xmm0
 	lea	rdi, [rsp - 0x18]
+	mov	byte ptr [rdi + rcx], 0
 	rep	movsb
 	pcmpistrm xmm1, [rsp - 0x18], ctrl_mask
-	jmp	.Lpartial_match
+	jmp	2b
+
+	.align 16
+
+ENTRY(KS_str_match_until_native)
+ctrl_mask = \
+	(CTRL_SOURCE_U8 << CTRL_SOURCE_SHIFT) | \
+	(CTRL_AGGREGATE_RANGES << CTRL_AGGREGATE_SHIFT) | \
+	(CTRL_POLARITY_POSITIVE << CTRL_POLARITY_SHIFT) | \
+	(CTRL_OUTPUT_INDEX_LSB << CTRL_OUTPUT_INDEX_SHIFT) | \
+	(CTRL_OUTPUT_MASK_BITMASK << CTRL_OUTPUT_MASK_SHIFT)
+	xor	eax, eax
+	mov	r8, rdi
+	mov	r9, rsi
+	movdqu	xmm1, [rdx]
+	.align 16
+1:
+	cmp	r9, 16
+	jb	3f
+	pcmpistri xmm1, [r8 + rax], ctrl_mask
+	jc	2f
+	add	rax, 16
+	sub	r9, 16
+	jmp	1b
+	/* At least one byte matched the ranges, the index of the first matching
+	 * byte resides in rcx. */
+2:
+	add	rax, rcx
+	ret
+	/* Copy the remaining less than 16 bytes to a dedicated buffer in
+	 * order safely continue loading 16 bytes worth of data. Rely on the
+	 * stack red zone since this is a leaf function. */
+3:
+	lea	rsi, [r8 + rax]
+	lea	rdi, [rsp - 0x18]
+	mov	byte ptr [rdi + r9], 0
+	mov	rcx, r9
+	rep	movsb
+	pcmpistri xmm1, [rsp - 0x18], ctrl_mask
+	jc	2b
+	add	rax, r9
+	ret
 
 #endif

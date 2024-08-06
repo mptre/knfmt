@@ -520,6 +520,7 @@ TESTS+=	valid-390.c
 TESTS+=	valid-391.c
 TESTS+=	valid-392.c
 TESTS+=	valid-393.c
+TESTS+=	valid-394.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -779,6 +780,8 @@ TESTS+=	../knfmt.c
 TESTS+=	../lexer-callbacks.h
 TESTS+=	../lexer.c
 TESTS+=	../lexer.h
+TESTS+=	../libks/arch-x86_64.c
+TESTS+=	../libks/arch.c
 TESTS+=	../libks/arena-buffer.c
 TESTS+=	../libks/arena-buffer.h
 TESTS+=	../libks/arena-vector.c

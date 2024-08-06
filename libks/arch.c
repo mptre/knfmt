@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Anton Lindqvist <anton@basename.se>
+ * Copyright (c) 2024 Anton Lindqvist <anton@basename.se>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,21 +14,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIBKS_STRING_H
-#define LIBKS_STRING_H
+#if defined(__x86_64__)
 
-#include <stddef.h>	/* size_t */
+extern int unused;
 
-struct arena_scope;
+#else
 
-extern size_t	(*KS_str_match)(const char *, size_t, const char *);
-size_t		KS_str_match_default(const char *, size_t, const char *);
-size_t		KS_str_match_native(const char *, size_t, const char *);
+#include "libks/string.h"
 
-extern size_t	(*KS_str_match_until)(const char *, size_t, const char *);
-size_t		KS_str_match_until_default(const char *, size_t, const char *);
-size_t		KS_str_match_until_native(const char *, size_t, const char *);
+size_t (*KS_str_match)(const char *, size_t, const char *) =
+    KS_str_match_default;
+size_t (*KS_str_match_until)(const char *, size_t, const char *) =
+    KS_str_match_until_default;
 
-char	**KS_str_split(const char *, const char *, struct arena_scope *);
-
-#endif /* !LIBKS_STRING_H */
+#endif

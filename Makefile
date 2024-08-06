@@ -2,6 +2,8 @@ include ${.CURDIR}/config.mk
 
 VERSION=	4.5.0rc3
 
+SRCS+=	arch-x86_64.c
+SRCS+=	arch.c
 SRCS+=	arena-buffer.c
 SRCS+=	arena-vector.c
 SRCS+=	arena.c
