@@ -404,7 +404,8 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 
 	concat = doc_root(&doc_scope);
 	error = parser_expr(ctx->pr, &expr, &(struct parser_expr_arg){
-	    .dc	= concat,
+	    .dc		= concat,
+	    .flags	= EXPR_EXEC_TEST,
 	});
 	KS_expect_int(GOOD, error);
 
@@ -725,7 +726,6 @@ context_init(struct context *ctx, const char *src,
 	static const char *path = "test.c";
 
 	options_init(&ctx->op);
-	ctx->op.test = 1;
 
 	buffer_reset(ctx->bf);
 	buffer_puts(ctx->bf, src, strlen(src));

@@ -21,8 +21,7 @@ struct options {
 	unsigned int	diff:1,
 			diffparse:1,
 			inplace:1,
-			simple:1,
-			test:1;
+			simple:1;
 };
 
 void		options_init(struct options *);
