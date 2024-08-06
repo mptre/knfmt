@@ -48,7 +48,7 @@ path_slice(const char *path, unsigned int ncomponents, struct arena_scope *s)
 		return path;
 	}
 
-	bf = buffer_alloc(1 << 8);
+	bf = arena_buffer_alloc(s, 1 << 8);
 	for (i = n - ncomponents; i < n; i++) {
 		if (buffer_get_len(bf) > 0)
 			buffer_putc(bf, '/');
