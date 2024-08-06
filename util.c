@@ -39,6 +39,25 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 	return cno;
 }
 
+/*
+ * Returns the width of the last line in the given string, with respect to tabs.
+ */
+size_t
+strwidth(const char *str, size_t len, size_t pos)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (str[i] == '\n')
+			pos = 0;
+		else if (str[i] == '\t')
+			pos += 8 - (pos % 8);
+		else
+			pos += 1;
+	}
+	return pos;
+}
+
 const char *
 path_slice(const char *path, unsigned int ncomponents, struct arena_scope *s)
 {
@@ -123,23 +142,4 @@ strnice_buffer(struct buffer *bf, const char *str, size_t len)
 		else
 			buffer_printf(bf, "\\x%02x", (unsigned char)c);
 	}
-}
-
-/*
- * Returns the width of the last line in the given string, with respect to tabs.
- */
-size_t
-strwidth(const char *str, size_t len, size_t pos)
-{
-	size_t i;
-
-	for (i = 0; i < len; i++) {
-		if (str[i] == '\n')
-			pos = 0;
-		else if (str[i] == '\t')
-			pos += 8 - (pos % 8);
-		else
-			pos += 1;
-	}
-	return pos;
 }
