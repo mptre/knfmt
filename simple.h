@@ -17,7 +17,6 @@ enum simple_pass {
 	SIMPLE_IMPLICIT_INT,
 	SIMPLE_STATIC,
 	SIMPLE_STMT,
-	SIMPLE_STMT_SEMI,
 
 	SIMPLE_LAST, /* sentinel */
 };

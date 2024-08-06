@@ -162,7 +162,7 @@ static inline void
 dwc2_qh_schedule_print(struct dwc2_hsotg *hsotg,
     struct dwc2_qh *qh)
 {
-};
+}
 #endif
 
 static int

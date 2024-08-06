@@ -32,7 +32,6 @@ is_loop_stmt(struct parser *pr, const struct token *semi)
 int
 parser_stmt_expr(struct parser *pr, struct doc *dc)
 {
-	struct lexer *lx = pr->pr_lx;
 	struct doc *expr = NULL;
 	struct token *nx, *semi;
 	int error;
@@ -60,14 +59,7 @@ parser_stmt_expr(struct parser *pr, struct doc *dc)
 	});
 	if (error & HALT)
 		return parser_fail(pr);
-	if (lexer_expect(lx, TOKEN_SEMI, &semi)) {
-		parser_doc_token(pr, semi, expr);
-		while (lexer_peek_if(lx, TOKEN_SEMI, &nx) &&
-		    token_cmp(semi, nx) == 0 &&
-		    lexer_pop(lx, &nx))
-			lexer_remove(lx, nx);
-	}
-	return parser_good(pr);
+	return parser_semi(pr, expr);
 }
 
 int

@@ -68,6 +68,8 @@ struct doc	*parser_doc_token_impl(struct parser *, struct token *,
 void	parser_token_trim_after(const struct parser *, struct token *);
 void	parser_token_trim_before(const struct parser *, struct token *);
 
+int	parser_semi(struct parser *, struct doc *);
+
 unsigned int	parser_width(struct parser *, const struct doc *);
 
 int	parser_root(struct parser *, struct doc *);

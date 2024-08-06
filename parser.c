@@ -350,6 +350,36 @@ parser_doc_token_impl(struct parser *pr, struct token *tk, struct doc *dc,
 	return out;
 }
 
+int
+parser_semi(struct parser *pr, struct doc *dc)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *last = NULL;
+	struct token *nx, *semi;
+
+	if (!lexer_expect(lx, TOKEN_SEMI, &semi))
+		return parser_fail(pr);
+
+	/*
+	 * Discard subsequent semicolon(s) on the same line. The last one is
+	 * emitted in order to honor optional lines.
+	 */
+	lexer_peek_enter(lx, &s);
+	while (lexer_peek_if(lx, TOKEN_SEMI, &nx) &&
+	    token_cmp(semi, nx) == 0 &&
+	    lexer_pop(lx, &nx))
+		last = nx;
+	lexer_peek_leave(lx, &s);
+	if (last != NULL) {
+		while (lexer_pop(lx, &semi) && semi != last)
+			lexer_remove(lx, semi);
+	}
+	parser_doc_token(pr, semi, dc);
+
+	return parser_good(pr);
+}
+
 void
 parser_arena_scope_enter(struct parser_arena_scope_cookie *cookie,
     struct arena_scope **old_scope, struct arena_scope *new_scope)
