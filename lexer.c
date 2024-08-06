@@ -23,6 +23,9 @@
 #include "trace.h"
 #include "util.h"
 
+#define lexer_trace(lx, fmt, ...) \
+	trace(TRACE_LEXER, (lx)->lx_op, (fmt), __VA_ARGS__)
+
 struct lexer {
 	struct lexer_state	 lx_st;
 	struct lexer_callbacks	 lx_callbacks;
@@ -66,9 +69,6 @@ static const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
 
 static void	lexer_copy_token_list(struct lexer *,
     const struct token_list *, struct token_list *);
-
-#define lexer_trace(lx, fmt, ...) \
-	trace(TRACE_LEXER, (lx)->lx_op, (fmt), __VA_ARGS__)
 
 struct lexer *
 lexer_alloc(const struct lexer_arg *arg)
