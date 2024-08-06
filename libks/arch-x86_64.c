@@ -111,6 +111,28 @@ has_bmi1(uint32_t max_leaf)
 	return (leaf.b & CPUID_07_B_BMI1) ? 1 : 0;
 }
 
+/*
+ * The gist of RUNNING_ON_VALGRIND from valgrind.h.
+ */
+static int
+is_valgrind_running(void)
+{
+	uint64_t request = 0x1001;
+	int d;
+
+	__asm__(
+	    "rolq $3, %%rdi\n"
+	    "rolq $13, %%rdi\n"
+	    "rolq $61, %%rdi\n"
+	    "rolq $51, %%rdi\n"
+	    "xchgq %%rbx, %%rbx\n"
+	    : [res] "=d" (d)
+	    : "a" (&request), "[res]" (0)
+	    : "cc", "memory");
+
+	return d;
+}
+
 static void
 KS_init(void)
 {
@@ -124,7 +146,9 @@ KS_init(void)
 	bmi1 = has_bmi1(max_leaf);
 	if (sse4_2 /* PCMPISTRM */ && bmi1 /* TZCNT */)
 		KS_str_match = KS_str_match_native;
-	if (sse4_2 /* PCMPISTRI */)
+	if (sse4_2 /* PCMPISTRI */ &&
+	    /* Valgrind does not emulate PCMPISTRI $0x4. */
+	    !is_valgrind_running())
 		KS_str_match_until = KS_str_match_until_native;
 }
 

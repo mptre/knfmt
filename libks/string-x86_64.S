@@ -78,7 +78,8 @@ ctrl_mask = \
 3:
 	lea	rsi, [r8 + rax]
 	lea	rdi, [rsp - 0x18]
-	mov	byte ptr [rdi + rcx], 0
+	pxor	xmm0, xmm0
+	movaps	[rdi], xmm0
 	rep	movsb
 	pcmpistrm xmm1, [rsp - 0x18], ctrl_mask
 	jmp	2b

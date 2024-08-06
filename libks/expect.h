@@ -57,7 +57,7 @@ static void (*KS_expect_scope_leave_used)(void *) __attribute__((__used__)) =
 	(KS_expect_current_scope.lno != 0 ? KS_expect_current_scope.lno :\
 	 __LINE__)
 
-#define KS_expect_true(expr) KS_expect_int(1, (expr))
+#define KS_expect_true(expr) KS_expect_int(1, (expr) ? 1 : 0)
 #define KS_expect_false(expr) KS_expect_int(0, (expr))
 
 #define KS_expect_int(exp, act) __extension__ ({			\
