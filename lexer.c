@@ -845,6 +845,8 @@ lexer_dump(struct lexer *lx)
 	struct token *tk;
 	unsigned int i = 0;
 
+	arena_scope(lx->lx_arena.scratch, s);
+
 	fprintf(stderr, "[L] %s:\n", lx->lx_path);
 
 	LIST_FOREACH(tk, &lx->lx_tokens) {
@@ -854,16 +856,15 @@ lexer_dump(struct lexer *lx)
 		i++;
 
 		LIST_FOREACH(prefix, &tk->tk_prefixes) {
-			str = lx->lx_callbacks.serialize_prefix(prefix,
-			    lx->lx_arena.eternal_scope);
+			str = lx->lx_callbacks.serialize_prefix(prefix, &s);
 			fprintf(stderr, "[L] %-6u   prefix %s\n", i, str);
 		}
 
-		str = lexer_serialize(lx, tk);
+		str = lexer_serialize_impl(lx, tk, &s);
 		fprintf(stderr, "[L] %-6u %s\n", i, str);
 
 		LIST_FOREACH(suffix, &tk->tk_suffixes) {
-			str = lexer_serialize(lx, suffix);
+			str = lexer_serialize_impl(lx, suffix, &s);
 			fprintf(stderr, "[L] %-6u   suffix %s\n", i, str);
 		}
 	}
