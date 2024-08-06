@@ -14,12 +14,12 @@ struct error {
 };
 
 struct error *
-error_alloc(struct arena_scope *eternal_scope, int flush)
+error_alloc(int flush, struct arena_scope *s)
 {
 	struct error *er;
 
-	er = arena_calloc(eternal_scope, 1, sizeof(*er));
-	er->er_bf = arena_buffer_alloc(eternal_scope, 1 << 10);
+	er = arena_calloc(s, 1, sizeof(*er));
+	er->er_bf = arena_buffer_alloc(s, 1 << 10);
 	er->er_flush = flush;
 	return er;
 }

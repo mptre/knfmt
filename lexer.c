@@ -84,7 +84,7 @@ lexer_tokenize(const struct lexer_arg *arg)
 	arena_cleanup(arg->arena.eternal_scope, lexer_free, lx);
 	lx->lx_callbacks = arg->callbacks;
 	lx->lx_path = arg->path;
-	lx->lx_er = error_alloc(arg->arena.eternal_scope, arg->error_flush);
+	lx->lx_er = error_alloc(arg->error_flush, arg->arena.eternal_scope);
 	lx->lx_op = arg->op;
 	lx->lx_arena.eternal_scope = arg->arena.eternal_scope;
 	lx->lx_arena.scratch = arg->arena.scratch;
