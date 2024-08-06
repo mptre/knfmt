@@ -149,8 +149,10 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 			parser_reset(pr);
 		}
 	}
-	if (error)
+	if (error) {
+		lexer_error_flush(lx);
 		return 1;
+	}
 
 	clang_format_verbatim(pr, dc, 0);
 

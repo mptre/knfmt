@@ -197,7 +197,6 @@ fileformat(struct main_context *c, struct file *fe)
 	struct clang *clang;
 	struct lexer *lx = NULL;
 	struct parser *pr = NULL;
-	int error = 0;
 
 	arena_scope(c->arena.eternal, eternal_scope);
 
@@ -235,22 +234,14 @@ fileformat(struct main_context *c, struct file *fe)
 	    },
 	});
 	buffer_reset(c->dst);
-	if (parser_exec(pr, fe->fe_diff, c->dst)) {
-		error = 1;
-		goto out;
-	}
+	if (parser_exec(pr, fe->fe_diff, c->dst))
+		return 1;
 
 	if (c->options.diff)
-		error = filediff(c, fe);
-	else if (c->options.inplace)
-		error = filewrite(c, fe);
-	else
-		error = fileprint(c->dst);
-
-out:
-	if (error)
-		lexer_error_flush(lx);
-	return error;
+		return filediff(c, fe);
+	if (c->options.inplace)
+		return filewrite(c, fe);
+	return fileprint(c->dst);
 }
 
 static int
