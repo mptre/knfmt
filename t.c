@@ -517,7 +517,8 @@ static void
 test_token_position_after_impl(struct context *ctx,
     struct test_token_move *arg, int lno)
 {
-	struct token *after, *move;
+	struct token *after = NULL;
+	struct token *move = NULL;
 	int found;
 
 	KS_expect_scope("token_position_after", lno, e);
