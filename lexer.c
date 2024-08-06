@@ -601,12 +601,11 @@ lexer_peek_if(struct lexer *lx, int type, struct token **tk)
 {
 	struct token *t;
 
-	if (lexer_peek(lx, &t) && t->tk_type == type) {
-		if (tk != NULL)
-			*tk = t;
-		return 1;
-	}
-	return 0;
+	if (!lexer_peek(lx, &t) || t->tk_type != type)
+		return 0;
+	if (tk != NULL)
+		*tk = t;
+	return 1;
 }
 
 /*
