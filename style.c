@@ -559,7 +559,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	struct lexer *lx;
 	int error = 0;
 
-	lx = lexer_alloc(&(const struct lexer_arg){
+	lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= bf,
 	    .op			= st->op,

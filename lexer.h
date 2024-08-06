@@ -36,7 +36,7 @@ struct lexer_state {
 	} st_flags;
 };
 
-struct lexer	*lexer_alloc(const struct lexer_arg *);
+struct lexer	*lexer_tokenize(const struct lexer_arg *);
 
 struct lexer_state	lexer_get_state(const struct lexer *);
 void			lexer_set_state(struct lexer *,

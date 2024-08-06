@@ -206,7 +206,7 @@ fileformat(struct main_context *c, struct file *fe)
 		return 1;
 	clang = clang_alloc(c->style, c->simple, &eternal_scope,
 	    c->arena.scratch, &c->options);
-	lx = lexer_alloc(&(const struct lexer_arg){
+	lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,
 	    .diff		= fe->fe_diff,

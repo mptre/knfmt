@@ -729,7 +729,7 @@ context_init(struct context *ctx, const char *src,
 	ctx->si = simple_alloc(eternal_scope, &ctx->op);
 	ctx->cl = clang_alloc(ctx->st, ctx->si, eternal_scope,
 	    ctx->arena.scratch, &ctx->op);
-	ctx->lx = lexer_alloc(&(const struct lexer_arg){
+	ctx->lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= ctx->bf,
 	    .op			= &ctx->op,

@@ -75,7 +75,7 @@ static const char       *lexer_serialize_impl(struct lexer *,
     const struct token *, struct arena_scope *);
 
 struct lexer *
-lexer_alloc(const struct lexer_arg *arg)
+lexer_tokenize(const struct lexer_arg *arg)
 {
 	VECTOR(struct token *) discarded;
 	struct lexer *lx;
