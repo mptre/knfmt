@@ -81,7 +81,7 @@ int	parser_root(struct parser *, struct doc *);
 #define parser_arena_scope(old_scope, new_scope, varname)		\
 	__attribute__((cleanup(parser_arena_scope_leave)))		\
 	    struct parser_arena_scope_cookie varname;			\
-	parser_arena_scope_enter(&varname, (old_scope), (new_scope))
+	parser_arena_scope_enter(&(varname), (old_scope), (new_scope))
 void	parser_arena_scope_enter(struct parser_arena_scope_cookie *,
     struct arena_scope **, struct arena_scope *);
 void	parser_arena_scope_leave(struct parser_arena_scope_cookie *);
