@@ -1,0 +1,8 @@
+--- diff-simple-010.c
++++ diff-simple-010.c
+@@ -3,4 +3,5 @@
+ {
+ 	for (;;) {
+ 	}
++	return 0;
+ }

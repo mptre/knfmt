@@ -1,0 +1,9 @@
+--- diff-simple-011.c
++++ diff-simple-011.c
+@@ -1,4 +1,6 @@
+ int
+ main(void)
+ {
++	for (;;) {
++	}
+ }

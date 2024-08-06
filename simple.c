@@ -130,6 +130,8 @@ is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 		{ SIMPLE_DECL, SIMPLE_DECL_FORWARD },
 
 		{ SIMPLE_EXPR_PARENS, SIMPLE_EXPR_SIZEOF },
+
+		{ SIMPLE_STMT, SIMPLE_STMT_EMPTY_LOOP },
 	};
 	unsigned int nexceptions = sizeof(exceptions) / sizeof(exceptions[0]);
 	unsigned int i;

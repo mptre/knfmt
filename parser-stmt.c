@@ -13,6 +13,7 @@
 #include "parser-priv.h"
 #include "parser-stmt-asm.h"
 #include "parser-stmt-expr.h"
+#include "simple-stmt-empty-loop.h"
 #include "simple-stmt.h"
 #include "simple.h"
 #include "style.h"
@@ -45,6 +46,7 @@ static struct doc	*parser_simple_stmt_no_braces_enter(struct parser *,
     struct doc *, void **);
 static void		 parser_simple_stmt_no_braces_leave(struct parser *,
     void *);
+static int		 is_loop_stmt(const struct token *);
 static int		 is_simple_stmt(const struct token *);
 static int		 peek_simple_stmt(struct parser *);
 
@@ -379,6 +381,14 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 		parser_doc_token(pr, tk, expr);
 	}
 
+	simple_cookie(cookie);
+	if (simple_enter(pr->pr_si, SIMPLE_STMT_EMPTY_LOOP, 0, &cookie)) {
+		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL))
+			simple_stmt_empty_loop_braces(lx);
+		else
+			simple_stmt_empty_loop_no_braces(lx);
+	}
+
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		doc_literal(" ", expr);
 		return parser_stmt(pr, dc);
@@ -529,6 +539,15 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc, int token_type,
 
 	if (flags & PARSER_STMT_EXPR_DOWHILE)
 		return parser_semi(pr, expr);
+
+	simple_cookie(cookie);
+	if (is_loop_stmt(kw) &&
+	    simple_enter(pr->pr_si, SIMPLE_STMT_EMPTY_LOOP, 0, &cookie)) {
+		if (lexer_peek_if(lx, TOKEN_LBRACE, NULL))
+			simple_stmt_empty_loop_braces(lx);
+		else
+			simple_stmt_empty_loop_no_braces(lx);
+	}
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
 		unsigned int parser_stmt_flags = 0;
@@ -868,6 +887,18 @@ parser_simple_stmt_no_braces_leave(struct parser *pr, void *cookie)
 	if (cookie == NULL || !lexer_peek(lx, &rbrace))
 		return;
 	simple_stmt_no_braces_leave(pr->pr_simple.stmt, rbrace, cookie);
+}
+
+static int
+is_loop_stmt(const struct token *tk)
+{
+	switch (tk->tk_type) {
+	case TOKEN_WHILE:
+	case TOKEN_IDENT:
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 static int
