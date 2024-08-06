@@ -25,18 +25,6 @@ struct include_guard_context {
 };
 
 static int
-is_header(const char *path)
-{
-	const char needle[] = ".h";
-	const char *dot;
-
-	dot = strrchr(path, '.');
-	if (dot == NULL)
-		return 0;
-	return dot[sizeof(needle) - 1] == '\0' && strcmp(dot, needle) == 0;
-}
-
-static int
 is_guard_define(const struct token *tk)
 {
 	const char *str = tk->tk_str;
@@ -210,7 +198,7 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 		return;
 
 	path = lexer_get_path(lx);
-	if (!is_header(path))
+	if (!is_path_header(path))
 		return;
 
 	arena_scope(scratch, s);

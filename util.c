@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <string.h>
 
 #include "libks/arena-buffer.h"
 #include "libks/buffer.h"
@@ -55,6 +56,18 @@ path_slice(const char *path, unsigned int ncomponents, struct arena_scope *s)
 		buffer_printf(bf, "%s", components[i]);
 	}
 	return buffer_str(bf);
+}
+
+int
+is_path_header(const char *path)
+{
+	const char needle[] = ".h";
+	const char *dot;
+
+	dot = strrchr(path, '.');
+	if (dot == NULL)
+		return 0;
+	return strcmp(dot, needle) == 0 && dot[sizeof(needle) - 1] == '\0';
 }
 
 size_t
