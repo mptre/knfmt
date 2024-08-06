@@ -15,6 +15,7 @@
 #include "clang.h"
 #include "lexer.h"
 #include "token.h"
+#include "trace-types.h"
 #include "trace.h"
 
 #define simple_trace(sd, fmt, ...) \

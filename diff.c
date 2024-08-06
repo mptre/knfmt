@@ -20,6 +20,7 @@
 #include "file.h"
 #include "fs.h"
 #include "options.h"
+#include "trace-types.h"
 #include "trace.h"
 
 static void	diff_end(struct diffchunk *, unsigned int);

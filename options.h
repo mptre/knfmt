@@ -1,7 +1,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include "trace.h"
+#include "trace-types.h"
 
 struct options {
 	unsigned int	trace[TRACE_MAX];

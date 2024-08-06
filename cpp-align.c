@@ -13,6 +13,7 @@
 #include "ruler.h"
 #include "style.h"
 #include "token.h"
+#include "trace-types.h"
 #include "trace.h"
 #include "util.h"
 

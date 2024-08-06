@@ -6,8 +6,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include "trace.h"
-
 static int	ctotrace(char c);
 
 void

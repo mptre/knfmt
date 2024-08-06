@@ -1,27 +1,5 @@
-#ifndef TRACE_H
-#define TRACE_H
-
-#define FOR_TRACE_TYPES(OP)		\
-	OP(ALL,			'a')	\
-	OP(CLANG,		'c')	\
-	OP(CPP,			'C')	\
-	OP(DOC,			'd')	\
-	OP(DIFF,		'D')	\
-	OP(FUNC,		'f')	\
-	OP(LEXER,		'l')	\
-	OP(PARSER,		'p')	\
-	OP(STYLE,		's')	\
-	OP(SIMPLE,		'S')	\
-	OP(TOKEN,		't')
-
-enum trace_type {
-#define OP(name, ...) TRACE_ ## name,
-	FOR_TRACE_TYPES(OP)
-#undef OP
-	TRACE_MAX,
-};
-
 #include "options.h"	/* options_trace_level() */
+#include "trace-types.h"
 
 #define trace(trace, op, fmt, ...) do {					\
 	if (options_trace_level((op), (trace)) > 0)			\
@@ -35,5 +13,3 @@ enum trace_type {
 
 void	trace_impl(enum trace_type, const char *, const char *, ...)
 	__attribute__((__format__(printf, 3, 4)));
-
-#endif

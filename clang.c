@@ -23,6 +23,7 @@
 #include "lexer-callbacks.h"
 #include "lexer.h"
 #include "token.h"
+#include "trace-types.h"
 #include "trace.h"
 
 #define clang_trace(cl, fmt, ...) \
