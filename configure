@@ -37,6 +37,17 @@ cc_has_sanitizer() {
 	fi
 }
 
+cxx_compile() {
+	# shellcheck disable=SC2086
+	"${CXX}" ${CPPFLAGS} -Werror -o /dev/null -x c++ - "$@"
+}
+
+cxx_has_option() {
+	if echo 'int main(void) { return 0; }' | cxx_compile "$@"; then
+		echo "$@"
+	fi
+}
+
 fatal() {
 	[ $# -gt 0 ] && echo "fatal: ${*}"
 	exec 1>&3 2>&4
@@ -114,12 +125,14 @@ check_pledge() {
 	EOF
 }
 
+_benchmark=0
 _fuzz=''
 _pedantic=0
 _sanitize=0
 
 while [ $# -gt 0 ]; do
 	case "$1" in
+	--benchmark)	_benchmark=1;;
 	--fuzz)		shift; _fuzz="$1"; _sanitize=1;;
 	--pedantic)	_pedantic=1;;
 	--sanitize)	_sanitize=1;;
@@ -148,6 +161,8 @@ DEBUG="$(makevar DEBUG || :)"
 CC=$(makevar CC || fatal "CC: not defined")
 CFLAGS="$(unset CFLAGS DEBUG; makevar CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
 CFLAGS="${CFLAGS} -MD -MP"
+CXX=$(makevar CXX || fatal "CXX: not defined")
+CXXFLAGS="$(makevar CXXFLAGS || :)"
 CPPFLAGS="$(makevar CPPFLAGS || :)"
 AFLAGS="$(makevar AFLAGS || :) -MD -MP"
 ASFLAGS="$(makevar ASFLAGS || :) -MD -MP"
@@ -186,6 +201,15 @@ if [ "${_sanitize}" -eq 1 ]; then
 		NO_SANITIZE_FUZZER="$(cc_has_option -fno-sanitize=fuzzer)"
 	fi
 fi
+if [ "${_benchmark}" -eq 1 ]; then
+	CPPFLAGS="${CPPFLAGS} $(pkg-config --cflags-only-I benchmark)"
+	LDFLAGS_benchmark="${LDFLAGS} $(pkg-config --libs benchmark)"
+fi
+
+# Let CXX inherit applicable CFLAGS.
+for _c in ${CFLAGS}; do
+	CXXFLAGS="${CXXFLAGS} $(cxx_has_option "${_c}")"
+done
 
 check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
 check_pledge && HAVE_PLEDGE=1
@@ -224,18 +248,21 @@ exec 1>config.mk
 # Use echo to normalize whitespace.
 # shellcheck disable=SC1083,SC2086,SC2116
 cat <<EOF
-CC=		$(echo ${CC})
-CFLAGS=		$(rmdup ${CFLAGS})
-CPPFLAGS=	$(rmdup ${CPPFLAGS} -I\${.CURDIR})
-DEBUG=		$(rmdup ${DEBUG})
-AFLAGS=		$(rmdup ${AFLAGS})
-ASFLAGS=	$(rmdup ${ASFLAGS})
-LDFLAGS=	$(rmdup ${LDFLAGS})
+CC=			$(echo ${CC})
+CFLAGS=			$(rmdup ${CFLAGS})
+CXX=			$(echo ${CXX})
+CXXFLAGS=		$(rmdup ${CXXFLAGS})
+CPPFLAGS=		$(rmdup ${CPPFLAGS} -I\${.CURDIR})
+DEBUG=			$(rmdup ${DEBUG})
+AFLAGS=			$(rmdup ${AFLAGS})
+ASFLAGS=		$(rmdup ${ASFLAGS})
+LDFLAGS=		$(rmdup ${LDFLAGS})
+LDFLAGS_benchmark=	$(rmdup ${LDFLAGS_benchmark})
 
-BINDIR?=	$(echo ${BINDIR})
-MANDIR?=	$(echo ${MANDIR})
-INSTALL?=	$(echo ${INSTALL})
-INSTALL_MAN?=	$(echo ${INSTALL_MAN})
+BINDIR?=		$(echo ${BINDIR})
+MANDIR?=		$(echo ${MANDIR})
+INSTALL?=		$(echo ${INSTALL})
+INSTALL_MAN?=		$(echo ${INSTALL_MAN})
 
 NO_SANITIZE_FUZZER=	$(echo ${NO_SANITIZE_FUZZER:-})
 

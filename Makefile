@@ -84,6 +84,15 @@ DEPS_fuzz-style=	${OBJS_fuzz-style:.o=.d}
 PROG_fuzz-style=	fuzz-style
 DICT_fuzz-style=	style.dict
 
+SRCS_benchmark+=	${SRCS}
+SRCS_benchmark+=	benchmark.cpp
+OBJS_benchmark:=	${SRCS_benchmark}
+OBJS_benchmark:=	${OBJS_benchmark:.c=.o}
+OBJS_benchmark:=	${OBJS_benchmark:.cpp=.o}
+OBJS_benchmark:=	${OBJS_benchmark:.S=.o}
+DEPS_benchmark=		${OBJS_benchmark:.o=.d}
+PROG_benchmark=		benchmark
+
 KNFMT+=	clang.c
 KNFMT+=	clang.h
 KNFMT+=	comment.c
@@ -335,11 +344,16 @@ ${PROG_knfmt}: ${OBJS_knfmt}
 ${PROG_test}: ${OBJS_test}
 	${CC} ${DEBUG} ${NO_SANITIZE_FUZZER} -o ${PROG_test} ${OBJS_test} ${LDFLAGS}
 
+${PROG_benchmark}: ${OBJS_benchmark}
+	${CXX} ${DEBUG} -o ${PROG_benchmark} ${OBJS_benchmark} \
+		${LDFLAGS_benchmark}
+
 clean:
 	rm -f ${DEPS_knfmt} ${OBJS_knfmt} ${PROG_knfmt} \
 		${DEPS_test} ${OBJS_test} ${PROG_test} \
 		${DEPS_fuzz-dict} ${OBJS_fuzz-dict} ${PROG_fuzz-dict} \
-		${DEPS_fuzz-style} ${OBJS_fuzz-style} ${PROG_fuzz-style} ${DICT_fuzz-style}
+		${DEPS_fuzz-style} ${OBJS_fuzz-style} ${PROG_fuzz-style} ${DICT_fuzz-style} \
+		${DEPS_benchmark} ${OBJS_benchmark} ${PROG_benchmark}
 .PHONY: clean
 
 cleandir: clean
@@ -407,3 +421,4 @@ test-${PROG_test}: ${PROG_test}
 -include ${DEPS_test}
 -include ${DEPS_fuzz-dict}
 -include ${DEPS_fuzz-style}
+-include ${DEPS_benchmark}
