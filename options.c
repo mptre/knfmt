@@ -30,9 +30,9 @@ options_trace_parse(struct options *op, const char *flags)
 			size_t i;
 
 			for (i = 0; i < TRACE_MAX; i++)
-				op->op_trace[i] = UINT_MAX;
+				op->trace[i] = UINT_MAX;
 		} else {
-			op->op_trace[idx]++;
+			op->trace[idx]++;
 		}
 	}
 	return 0;
