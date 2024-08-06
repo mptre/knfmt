@@ -1,6 +1,5 @@
 #include "config.h"
 
-#include <err.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -39,6 +38,7 @@ struct context {
 		struct arena		*eternal;
 		struct arena		*scratch;
 		struct arena		*doc;
+		struct arena		*buffer;
 	} arena;
 };
 
@@ -396,6 +396,7 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 
 	KS_expect_scope("parser_expr", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
+	arena_scope(ctx->arena.buffer, buffer_scope);
 
 	context_init(ctx, src, &eternal_scope);
 
@@ -409,9 +410,7 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 	});
 	KS_expect_int(GOOD, error);
 
-	bf = buffer_alloc(128);
-	if (bf == NULL)
-		err(1, NULL);
+	bf = arena_buffer_alloc(&buffer_scope, 128);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc		= concat,
 	    .scratch	= ctx->arena.scratch,
@@ -420,9 +419,8 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 	    .op		= &ctx->op,
 	});
 	buffer_putc(bf, '\0');
-	act = buffer_get_ptr(bf);
+	act = buffer_str(bf);
 	KS_expect_str(exp, act);
-	buffer_free(bf);
 }
 
 static void
@@ -486,18 +484,16 @@ test_lexer_read_impl(struct context *ctx, const char *src, const char *exp,
 
 	KS_expect_scope("lexer_read", lno, e);
 	arena_scope(ctx->arena.eternal, eternal_scope);
+	arena_scope(ctx->arena.buffer, buffer_scope);
 	arena_scope(ctx->arena.scratch, s);
 
 	context_init(ctx, src, &eternal_scope);
 
-	bf = buffer_alloc(128);
-	if (bf == NULL)
-		err(1, NULL);
+	bf = arena_buffer_alloc(&buffer_scope, 128);
 	for (;;) {
 		struct token *tk;
 
-		if (!lexer_pop(ctx->lx, &tk))
-			errx(1, "lexer_read:%d: out of tokens", lno);
+		KS_expect_true(lexer_pop(ctx->lx, &tk));
 		if (tk->tk_type == LEXER_EOF)
 			break;
 
@@ -505,10 +501,8 @@ test_lexer_read_impl(struct context *ctx, const char *src, const char *exp,
 			buffer_putc(bf, ' ');
 		buffer_printf(bf, "%s", token_serialize(tk, 0, &s));
 	}
-	buffer_putc(bf, '\0');
-	act = buffer_get_ptr(bf);
+	act = buffer_str(bf);
 	KS_expect_str(exp, act);
-	buffer_free(bf);
 }
 
 static void
@@ -702,9 +696,8 @@ context_alloc(struct context *ctx)
 	ctx->arena.scratch = arena_alloc();
 	ctx->arena.eternal = arena_alloc();
 	ctx->arena.doc = arena_alloc();
-	ctx->bf = buffer_alloc(128);
-	if (ctx->bf == NULL)
-		err(1, NULL);
+	ctx->arena.buffer = arena_alloc();
+	ctx->bf = NULL;
 }
 
 static void
@@ -713,10 +706,10 @@ context_free(struct context *ctx)
 	if (ctx == NULL)
 		return;
 
-	buffer_free(ctx->bf);
 	arena_free(ctx->arena.eternal);
 	arena_free(ctx->arena.scratch);
 	arena_free(ctx->arena.doc);
+	arena_free(ctx->arena.buffer);
 }
 
 static void
@@ -727,7 +720,7 @@ context_init(struct context *ctx, const char *src,
 
 	options_init(&ctx->op);
 
-	buffer_reset(ctx->bf);
+	ctx->bf = arena_buffer_alloc(eternal_scope, 128);
 	buffer_puts(ctx->bf, src, strlen(src));
 
 	ctx->st = style_parse("/dev/null", eternal_scope,
