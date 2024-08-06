@@ -113,7 +113,8 @@ struct {								\
 } while (0)
 
 #define LIST_INSERT_HEAD(head, elm) do {				\
-	if ((LIST_FIELD(elm).tqe_next = (head)->tqh_first) != NULL)	\
+	LIST_FIELD(elm).tqe_next = (head)->tqh_first;			\
+	if (LIST_FIELD(elm).tqe_next != NULL)				\
 		LIST_FIELD((head)->tqh_first).tqe_prev =		\
 		    &LIST_FIELD(elm).tqe_next;				\
 	else								\
@@ -130,7 +131,8 @@ struct {								\
 } while (0)
 
 #define LIST_INSERT_AFTER(head, listelm, elm) do {			\
-	if ((LIST_FIELD(elm).tqe_next = LIST_FIELD(listelm).tqe_next) != NULL)\
+	LIST_FIELD(elm).tqe_next = LIST_FIELD(listelm).tqe_next;	\
+	if (LIST_FIELD(elm).tqe_next != NULL)				\
 		LIST_FIELD(LIST_FIELD(elm).tqe_next).tqe_prev =		\
 		    &LIST_FIELD(elm).tqe_next;				\
 	else								\
