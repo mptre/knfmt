@@ -52,6 +52,7 @@ void		 lexer_eat_lines_and_spaces(struct lexer *,
     struct lexer_state *);
 struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
     const struct token *);
+struct token	*lexer_emit_synthetic(struct lexer *, const struct token *);
 const char	*lexer_serialize(struct lexer *, const struct token *);
 int		 lexer_eat_lines(struct lexer *, int, struct token **);
 int		 lexer_eat_spaces(struct lexer *, struct token **);

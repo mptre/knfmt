@@ -262,6 +262,16 @@ lexer_emit(struct lexer *lx, const struct lexer_state *st,
 	return t;
 }
 
+/*
+ * Emit a token that's not part of the tokenized source code.
+ */
+struct token *
+lexer_emit_synthetic(struct lexer *lx, const struct token *tk)
+{
+	assert(tk->tk_len > 0 && tk->tk_str != NULL);
+	return lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, tk);
+}
+
 static int
 has_line(const char *str, size_t len)
 {

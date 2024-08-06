@@ -328,11 +328,9 @@ cpp_include_reset(struct cpp_include *ci)
 static struct token *
 add_line(struct cpp_include *ci, struct lexer *lx, struct token *after)
 {
-	struct lexer_state st;
 	struct token *tk;
 
-	st = lexer_get_state(lx);
-	tk = lexer_emit(lx, &st, &(struct token){
+	tk = lexer_emit_synthetic(lx, &(struct token){
 	    .tk_type	= TOKEN_SPACE,
 	    .tk_str	= "\n",
 	    .tk_len	= 1,

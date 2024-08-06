@@ -23,7 +23,6 @@
 static void
 clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 {
-	struct lexer_state st;
 	struct token *off, *verbatim;
 	const char *str;
 	size_t len;
@@ -43,8 +42,7 @@ clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 	if (!lexer_get_lines(pr->pr_lx, beg, end, &str, &len))
 		return;
 
-	st = lexer_get_state(pr->pr_lx);
-	verbatim = lexer_emit(pr->pr_lx, &st, &(struct token){
+	verbatim = lexer_emit_synthetic(pr->pr_lx, &(struct token){
 	    .tk_type	= TOKEN_LITERAL,
 	    .tk_str	= str,
 	    .tk_len	= len,

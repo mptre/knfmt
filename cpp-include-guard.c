@@ -125,11 +125,7 @@ sense_include_guards(struct lexer *lx, const char *cpp_ifndef,
 static struct token *
 emit_cpp(struct lexer *lx, int token_type, const char *str)
 {
-	struct lexer_state ls;
-
-	/* Note, line and column will be off. */
-	ls = lexer_get_state(lx);
-	return lexer_emit(lx, &ls, &(struct token){
+	return lexer_emit_synthetic(lx, &(struct token){
 	    .tk_type		= token_type,
 	    .tk_flags		= TOKEN_FLAG_CPP,
 	    .tk_str		= str,
@@ -140,11 +136,7 @@ emit_cpp(struct lexer *lx, int token_type, const char *str)
 static struct token *
 emit_line(struct lexer *lx)
 {
-	struct lexer_state ls;
-
-	/* Note, line and column will be off. */
-	ls = lexer_get_state(lx);
-	return lexer_emit(lx, &ls, &(struct token){
+	return lexer_emit_synthetic(lx, &(struct token){
 	    .tk_type = TOKEN_SPACE,
 	    .tk_str = "\n",
 	    .tk_len = 1,
