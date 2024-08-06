@@ -147,6 +147,8 @@ main(int argc, char *argv[])
 
 		if (fileformat(&c, fe))
 			error = 1;
+		buffer_reset(c.src);
+		buffer_reset(c.dst);
 		file_close(fe);
 	}
 
@@ -200,7 +202,6 @@ fileformat(struct main_context *c, struct file *fe)
 
 	arena_scope(c->arena.eternal, eternal_scope);
 
-	buffer_reset(c->src);
 	if (file_read(fe, c->src))
 		return 1;
 	clang = clang_alloc(c->style, c->simple, &eternal_scope,
@@ -233,7 +234,6 @@ fileformat(struct main_context *c, struct file *fe)
 		.buffer		= c->arena.buffer,
 	    },
 	});
-	buffer_reset(c->dst);
 	if (parser_exec(pr, fe->fe_diff, c->dst))
 		return 1;
 
