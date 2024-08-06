@@ -1207,6 +1207,8 @@ clang_find_cpp(const struct lexer *lx, const struct lexer_state *st,
 	int *token_type;
 
 	buf = lexer_buffer_slice(lx, st, &buflen);
+	if (buf == NULL)
+		return fallback;
 	token_type = MAP_FIND_N(cpp_token_types, buf, buflen);
 	if (token_type == NULL)
 		return fallback;
