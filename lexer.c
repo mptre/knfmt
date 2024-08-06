@@ -1018,7 +1018,7 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 	/* Be quiet while about to branch. */
 	if (lexer_back(lx, &t) && (t->tk_flags & TOKEN_FLAG_BRANCH)) {
 		lexer_trace(lx, "%s:%d: suppressed, expected %s", fun, lno,
-		    lexer_serialize(lx, &(struct token){.tk_type = type}));
+		    lexer_serialize_token_type(lx, type));
 		return;
 	}
 
