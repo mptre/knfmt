@@ -1331,9 +1331,9 @@ const char *
 style_keyword_str(enum style_keyword keyword)
 {
 	switch (keyword) {
-#define DO(style) case style: return #style;
-	FOR_STYLES(DO)
-#undef DO
+#define OP(style) case style: return #style;
+	FOR_STYLES(OP)
+#undef OP
 	default:
 		break;
 	}
