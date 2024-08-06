@@ -27,6 +27,7 @@ jobs:
       - name: test
         env:
           CC: gcc
+          ASFLAGS: -m32
           CFLAGS: -m32
           LDFLAGS: -m32
         run: |
