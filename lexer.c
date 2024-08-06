@@ -285,7 +285,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	struct buffer *bf;
 	const char *line;
 	size_t linelen;
-	unsigned int l = ctx != NULL ? ctx->tk_lno : 0;
+	unsigned int l = ctx->tk_lno;
 
 	lx->lx_st.st_flags.error = 1;
 
@@ -295,9 +295,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 
 	bf = error_begin(lx->lx_er);
 
-	buffer_printf(bf, "%s", lx->lx_path);
-	if (l > 0)
-		buffer_printf(bf, ":%u", l);
+	buffer_printf(bf, "%s:%u", lx->lx_path, l);
 	buffer_printf(bf, ": ");
 	va_start(ap, fmt);
 	buffer_vprintf(bf, fmt, ap);
@@ -310,7 +308,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	 * Include best effort line context. However, do not bother with
 	 * verbatim hard lines(s) as the column calculation becomes trickier.
 	 */
-	if (l > 0 && lexer_get_lines(lx, l, l + 1, &line, &linelen) &&
+	if (lexer_get_lines(lx, l, l + 1, &line, &linelen) &&
 	    !has_line(ctx->tk_str, ctx->tk_len)) {
 		unsigned int cno = ctx->tk_cno;
 		unsigned int w;
