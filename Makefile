@@ -43,6 +43,7 @@ SRCS+=	simple-implicit-int.c
 SRCS+=	simple-static.c
 SRCS+=	simple-stmt.c
 SRCS+=	simple.c
+SRCS+=	string-x86_64.S
 SRCS+=	string.c
 SRCS+=	style.c
 SRCS+=	tmp.c
@@ -53,26 +54,30 @@ SRCS+=	vector.c
 
 SRCS_knfmt+=	${SRCS}
 SRCS_knfmt+=	knfmt.c
-OBJS_knfmt=	${SRCS_knfmt:.c=.o}
-DEPS_knfmt=	${SRCS_knfmt:.c=.d}
+OBJS_knfmt:=	${SRCS_knfmt:.c=.o}
+OBJS_knfmt:=	${OBJS_knfmt:.S=.o}
+DEPS_knfmt=	${OBJS_knfmt:.o=.d}
 PROG_knfmt=	knfmt
 
 SRCS_test+=	${SRCS}
 SRCS_test+=	t.c
-OBJS_test=	${SRCS_test:.c=.o}
-DEPS_test=	${SRCS_test:.c=.d}
+OBJS_test:=	${SRCS_test:.c=.o}
+OBJS_test:=	${OBJS_test:.S=.o}
+DEPS_test=	${OBJS_test:.o=.d}
 PROG_test=	t
 
 SRCS_fuzz-dict+=	${SRCS}
 SRCS_fuzz-dict+=	fuzz-dict.c
-OBJS_fuzz-dict=		${SRCS_fuzz-dict:.c=.o}
-DEPS_fuzz-dict=		${SRCS_fuzz-dict:.c=.d}
+OBJS_fuzz-dict:=	${SRCS_fuzz-dict:.c=.o}
+OBJS_fuzz-dict:=	${OBJS_fuzz-dict:.S=.o}
+DEPS_fuzz-dict=		${OBJS_fuzz-dict:.o=.d}
 PROG_fuzz-dict=		fuzz-dict
 
 SRCS_fuzz-style+=	${SRCS}
 SRCS_fuzz-style+=	fuzz-style.c
-OBJS_fuzz-style=	${SRCS_fuzz-style:.c=.o}
-DEPS_fuzz-style=	${SRCS_fuzz-style:.c=.d}
+OBJS_fuzz-style:=	${SRCS_fuzz-style:.c=.o}
+OBJS_fuzz-style:=	${OBJS_fuzz-style:.S=.o}
+DEPS_fuzz-style=	${OBJS_fuzz-style:.o=.d}
 PROG_fuzz-style=	fuzz-style
 DICT_fuzz-style=	style.dict
 

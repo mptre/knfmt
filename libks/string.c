@@ -158,6 +158,10 @@ KS_str_init(void)
 		KS_features |= KS_FEATURE_STR_NATIVE;
 }
 
+#if defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
+
 size_t
 KS_str_match_default(const char *str, size_t len, const char *ranges)
 {
@@ -180,61 +184,15 @@ KS_str_match_default(const char *str, size_t len, const char *ranges)
 	return i;
 }
 
+#if !defined(__x86_64__)
+
 size_t
-KS_str_match_native(const char *USED_IF_X86_64(str), size_t USED_IF_X86_64(len),
-    const char *USED_IF_X86_64(ranges))
+KS_str_match_native(const char *UNUSED(str), size_t UNUSED(len),
+    const char *UNUSED(ranges))
 {
-#if defined(__x86_64__)
-	if (len < 8)
-		return KS_str_match_default(str, len, ranges);
-
-	char tail[16] = {0};
-	size_t i = 0;
-	uint64_t mask = 0;
-	const uint8_t ctrl = (CTRL_SOURCE_U8 << CTRL_SOURCE_SHIFT) |
-	    (CTRL_AGGREGATE_RANGES << CTRL_AGGREGATE_SHIFT) |
-	    (CTRL_POLARITY_NEGATIVE << CTRL_POLARITY_SHIFT) |
-	    (CTRL_OUTPUT_MASK_BITMASK << CTRL_OUTPUT_MASK_SHIFT);
-
-	asm(
-	    "   movdqu (%[ranges]), %%xmm1\n"
-	    ".align 16\n"
-	    "1: cmp $16, %[len]\n"
-	    "   jb 3f\n"
-	    "   pcmpistrm %[ctrl], (%[str],%[i]), %%xmm1\n"
-	    /* As the polarity is negative, all zeros means that all 16
-	     * bytes matched the ranges. */
-	    "   jna 2f\n"
-	    "   add $16, %[i]\n"
-	    "   sub $16, %[len]\n"
-	    "   jmp 1b\n"
-	    /* Partial match, the number of leading zeroes represents the
-	     * number of matched bytes as the polarity is negative. */
-	    "2: movq %%xmm0, %[mask]\n"
-	    "   tzcnt %w[mask], %w[mask]\n"
-	    "   add %[mask], %[i]\n"
-	    "   jmp 4f\n"
-	    /* Copy the remaining less than 16 bytes to a dedicated buffer in
-	     * order safetly continue loading 16 bytes worth of data. */
-	    "3: lea (%[str],%[i]), %%rsi\n"
-	    "   lea %[tail], %%rdi\n"
-	    "   rep movsb\n"
-	    "   pcmpistrm %[ctrl], %[tail], %%xmm1\n"
-	    "   jmp 2b\n"
-	    "4:\n"
-	    : [i] "+a" (i), [len] "+c" (len), [mask] "+r" (mask),
-	      [tail] "+m" (tail)
-	    : [ctrl] "i" (ctrl), [ranges] "r" (ranges), [str] "r" (str)
-	    : "xmm0", "xmm1", "rdi", "rsi");
-
-	return i;
-#else
 	return 0;
-#endif
 }
 
-#if defined(__clang__)
-#  pragma GCC diagnostic pop
 #endif
 
 char **
