@@ -12,13 +12,13 @@ parser_extern(struct parser *pr, struct doc *dc)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *tk;
+	struct token *rbrace, *tk;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_EXTERN, NULL) &&
 	    lexer_if(lx, TOKEN_STRING, NULL) &&
-	    lexer_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, NULL, NULL))
+	    lexer_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, NULL, &rbrace))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 	if (!peek)
@@ -34,7 +34,11 @@ parser_extern(struct parser *pr, struct doc *dc)
 		parser_doc_token(pr, tk, dc);
 	doc_alloc(DOC_HARDLINE, dc);
 	for (;;) {
+		struct token *nx;
 		int error;
+
+		if (lexer_peek(lx, &nx) && nx == rbrace)
+			break;
 
 		error = parser_root(pr, dc);
 		if (error & NONE)

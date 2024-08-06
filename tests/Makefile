@@ -103,6 +103,7 @@ TESTS+=	error-053.c
 TESTS+=	error-054.c
 TESTS+=	error-055.c
 TESTS+=	error-056.c
+TESTS+=	error-057.c
 TESTS+=	error-058.c
 TESTS+=	error-059.c
 TESTS+=	error-060.c

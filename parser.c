@@ -83,12 +83,6 @@ clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 	pr->pr_token.clang_format_off = comment;
 }
 
-static int
-parser_get_error(const struct parser *pr)
-{
-	return pr->pr_error || lexer_get_error(pr->pr_lx);
-}
-
 struct parser *
 parser_alloc(const struct parser_arg *arg)
 {
@@ -157,10 +151,8 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 			parser_reset(pr);
 		}
 	}
-	if (error) {
-		parser_fail(pr);
+	if (error)
 		return 1;
-	}
 
 	clang_format_verbatim(pr, dc, 0);
 
@@ -199,6 +191,8 @@ parser_root(struct parser *pr, struct doc *dc)
 		error = parser_extern(pr, dc);
 	if (error & NONE)
 		error = parser_root_asm(pr, dc);
+	if (error & NONE)
+		return parser_fail(pr);
 	return error;
 }
 
@@ -216,11 +210,11 @@ parser_fail_impl(struct parser *pr, const char *fun, int lno)
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk = NULL;
 
-	if (parser_get_error(pr))
+	if (lexer_get_error(lx))
 		goto out;
-	pr->pr_error = 1;
 
-	(void)lexer_back(lx, &tk);
+	if (!lexer_back(lx, &tk))
+		lexer_peek_first(lx, &tk);
 	lexer_error(pr->pr_lx, tk, fun, lno,
 	    "error at %s", lexer_serialize(lx, tk));
 
@@ -280,7 +274,7 @@ parser_good(const struct parser *pr)
 {
 	if (is_branch(pr->pr_lx))
 		return BRCH;
-	return parser_get_error(pr) ? FAIL : GOOD;
+	return lexer_get_error(pr->pr_lx) ? FAIL : GOOD;
 }
 
 int
@@ -288,7 +282,7 @@ parser_none(const struct parser *pr)
 {
 	if (is_branch(pr->pr_lx))
 		return BRCH;
-	return parser_get_error(pr) ? FAIL : NONE;
+	return lexer_get_error(pr->pr_lx) ? FAIL : NONE;
 }
 
 void
@@ -297,7 +291,6 @@ parser_reset(struct parser *pr)
 	struct token *nx;
 
 	lexer_error_reset(pr->pr_lx);
-	pr->pr_error = 0;
 
 	/* Remove last clang-format off if about to be traversed again. */
 	if (pr->pr_token.clang_format_off != NULL &&

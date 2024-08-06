@@ -280,6 +280,10 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 
 	lx->lx_st.st_flags.error = 1;
 
+	/* Be quiet while peeking. */
+	if (lx->lx_peek > 0)
+		return;
+
 	bf = error_begin(lx->lx_er);
 
 	buffer_printf(bf, "%s", lx->lx_path);
@@ -1013,11 +1017,6 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 
 	/* Be quiet if an error already has been emitted. */
 	if (lx->lx_st.st_flags.error)
-		return;
-	lx->lx_st.st_flags.error = 1;
-
-	/* Be quiet while peeking. */
-	if (lx->lx_peek > 0)
 		return;
 
 	lexer_error(lx, tk, fun, lno,
