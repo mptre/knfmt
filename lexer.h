@@ -20,6 +20,7 @@ struct lexer_arg {
 
 	struct {
 		struct arena_scope	*eternal_scope;
+		struct arena		*scratch;
 	} arena;
 
 	struct lexer_callbacks	 callbacks;

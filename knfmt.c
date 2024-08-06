@@ -215,6 +215,7 @@ fileformat(struct main_context *c, struct file *fe)
 		TRACE_LEXER) > 0,
 	    .arena		= {
 		.eternal_scope	= &eternal_scope,
+		.scratch	= c->arena.scratch,
 	    },
 	    .callbacks		= clang_lexer_callbacks(clang),
 	});

@@ -566,6 +566,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .error_flush	= options_trace_level(st->op, TRACE_STYLE) > 0,
 	    .arena		= {
 		.eternal_scope	= st->arena.eternal_scope,
+		.scratch	= st->arena.scratch,
 	    },
 	    .callbacks		= {
 		.read			= yaml_read,

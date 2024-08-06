@@ -741,6 +741,7 @@ context_init(struct context *ctx, const char *src,
 	    .op			= &ctx->op,
 	    .arena		= {
 		.eternal_scope	= eternal_scope,
+		.scratch	= ctx->arena.scratch,
 	    },
 	    .callbacks		= clang_lexer_callbacks(ctx->cl),
 	});

@@ -36,6 +36,7 @@ struct lexer {
 
 	struct {
 		struct arena_scope	*eternal_scope;
+		struct arena		*scratch;
 	} lx_arena;
 
 	struct {
@@ -86,6 +87,7 @@ lexer_alloc(const struct lexer_arg *arg)
 	lx->lx_er = error_alloc(arg->arena.eternal_scope, arg->error_flush);
 	lx->lx_op = arg->op;
 	lx->lx_arena.eternal_scope = arg->arena.eternal_scope;
+	lx->lx_arena.scratch = arg->arena.scratch;
 	lx->lx_input.bf = arg->bf;
 	lx->lx_input.ptr = buffer_get_ptr(arg->bf);
 	lx->lx_input.len = buffer_get_len(arg->bf);
