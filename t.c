@@ -401,7 +401,7 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 	context_init(ctx, src, &eternal_scope);
 
 	arena_scope(ctx->arena.doc, doc_scope);
-	parser_arena_scope(&ctx->pr->pr_arena.doc_scope, &doc_scope);
+	parser_arena_scope(&ctx->pr->pr_arena.doc_scope, &doc_scope, cookie);
 
 	concat = doc_root(&doc_scope);
 	error = parser_expr(ctx->pr, &expr, &(struct parser_expr_arg){
