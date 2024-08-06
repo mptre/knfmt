@@ -40,7 +40,7 @@ clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 	parser_trace(pr, "beg %u, end %u", beg, end);
 
 	doc_alloc_impl(DOC_UNMUTE, dc, -1, __func__, __LINE__);
-	if (lexer_get_lines(pr->pr_lx, beg, end, &str, &len) == 0)
+	if (!lexer_get_lines(pr->pr_lx, beg, end, &str, &len))
 		return;
 
 	st = lexer_get_state(pr->pr_lx);
