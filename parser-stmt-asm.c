@@ -157,6 +157,7 @@ parser_asm(struct parser *pr, struct doc *dc, struct doc **out)
 	struct token *qualifier = NULL;
 	struct token *assembly, *lparen, *rparen;
 	int ninputs = 0;
+	int noutputs = 0;
 	int error;
 
 	if (!lexer_peek_if(lx, TOKEN_ASSEMBLY, NULL))
@@ -213,12 +214,14 @@ parser_asm(struct parser *pr, struct doc *dc, struct doc **out)
 		parser_doc_token(pr, colon, concat);
 		concat = doc_indent(2, concat);
 		while (parser_stmt_asm_operand(pr, concat) & GOOD)
-			continue;
+			noutputs++;
 	}
 
 	/* clobbers */
 	if (lexer_if(lx, TOKEN_COLON, &colon)) {
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, opt));
+		if (noutputs > 0)
+			doc_alloc(DOC_LINE, concat);
 		parser_doc_token(pr, colon, concat);
 		if (!lexer_peek_if(lx, TOKEN_RPAREN, NULL))
 			doc_alloc(DOC_LINE, concat);
