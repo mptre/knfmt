@@ -24,7 +24,7 @@
   (086f74af173d)
   (Anton Lindqvist)
 
-- Fix double space between attribute and initialization in declarations.
+- Remove double space between attribute and initialization in declarations.
   (63e8d3d2407f)
   (Anton Lindqvist)
 
