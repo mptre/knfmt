@@ -149,6 +149,8 @@ CC=$(makevar CC || fatal "CC: not defined")
 CFLAGS="$(unset CFLAGS DEBUG; makevar CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
 CFLAGS="${CFLAGS} -MD -MP"
 CPPFLAGS="$(makevar CPPFLAGS || :)"
+AFLAGS="$(makevar AFLAGS || :) -MD -MP"
+ASFLAGS="$(makevar ASFLAGS || :) -MD -MP"
 LDFLAGS="$(unset DEBUG; makevar LDFLAGS || :)"
 
 PREFIX="$(makevar PREFIX || echo /usr/local)"
@@ -226,6 +228,8 @@ CC=		$(echo ${CC})
 CFLAGS=		$(rmdup ${CFLAGS})
 CPPFLAGS=	$(rmdup ${CPPFLAGS} -I\${.CURDIR})
 DEBUG=		$(rmdup ${DEBUG})
+AFLAGS=		$(rmdup ${AFLAGS})
+ASFLAGS=	$(rmdup ${ASFLAGS})
 LDFLAGS=	$(rmdup ${LDFLAGS})
 
 BINDIR?=	$(echo ${BINDIR})
