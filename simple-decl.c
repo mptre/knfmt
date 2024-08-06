@@ -17,7 +17,8 @@
 #include "token.h"
 #include "trace.h"
 
-#define simple_trace(sd, fmt, ...) trace('S', (sd)->op, (fmt), __VA_ARGS__)
+#define simple_trace(sd, fmt, ...) \
+	trace(TRACE_SIMPLE, (sd)->op, (fmt), __VA_ARGS__)
 
 struct token_range {
 	struct token	*tr_beg;

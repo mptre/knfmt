@@ -37,12 +37,9 @@ options_trace_parse(struct options *op, const char *flags)
 }
 
 unsigned int
-options_trace_level(const struct options *op, char c)
+options_trace_level(const struct options *op, enum trace_type type)
 {
-	int idx;
-
-	idx = ctotrace(c);
-	return idx == -1 ? 0 : op->op_trace[idx];
+	return op->op_trace[type];
 }
 
 static int

@@ -29,7 +29,7 @@
 #include "util.h"
 
 #define style_trace(st, fmt, ...) \
-	trace_no_func('s', (st)->op, (fmt), __VA_ARGS__)
+	trace_no_func(TRACE_STYLE, (st)->op, (fmt), __VA_ARGS__)
 
 /*
  * Return values for yaml parser routines. Only one of the following may be
@@ -383,7 +383,7 @@ style_parse(const char *path, struct arena_scope *eternal_scope,
 		}
 	}
 	st = style_parse_buffer(bf, path, eternal_scope, scratch, op);
-	if (st != NULL && options_trace_level(op, 's') >= 2)
+	if (st != NULL && options_trace_level(op, TRACE_STYLE) >= 2)
 		style_dump(st);
 	return st;
 }
@@ -562,7 +562,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	    .path		= path,
 	    .bf			= bf,
 	    .op			= st->op,
-	    .error_flush	= options_trace_level(st->op, 's') > 0,
+	    .error_flush	= options_trace_level(st->op, TRACE_STYLE) > 0,
 	    .arena		= {
 		.eternal_scope	= st->arena.eternal_scope,
 	    },

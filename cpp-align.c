@@ -16,7 +16,7 @@
 #include "trace.h"
 #include "util.h"
 
-#define cpp_trace(op, fmt, ...) trace('C', (op), (fmt), __VA_ARGS__)
+#define cpp_trace(op, fmt, ...) trace(TRACE_CPP, (op), (fmt), __VA_ARGS__)
 
 enum indent_type {
 	INDENT_TYPE_NONE,

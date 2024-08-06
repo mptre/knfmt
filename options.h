@@ -14,6 +14,6 @@ struct options {
 
 void		options_init(struct options *);
 int		options_trace_parse(struct options *, const char *);
-unsigned int	options_trace_level(const struct options *, char);
+unsigned int	options_trace_level(const struct options *, enum trace_type);
 
 #endif

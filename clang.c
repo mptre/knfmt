@@ -25,7 +25,8 @@
 #include "token.h"
 #include "trace.h"
 
-#define clang_trace(cl, fmt, ...) trace('c', (cl)->op, (fmt), __VA_ARGS__)
+#define clang_trace(cl, fmt, ...) \
+	trace(TRACE_CLANG, (cl)->op, (fmt), __VA_ARGS__)
 
 struct clang {
 	const struct style	*st;

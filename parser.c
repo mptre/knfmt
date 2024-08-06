@@ -167,7 +167,7 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 		doc_flags |= DOC_EXEC_DIFF;
 	else
 		doc_flags |= DOC_EXEC_TRIM;
-	if (options_trace_level(pr->pr_op, 'd') > 0)
+	if (options_trace_level(pr->pr_op, TRACE_DIFF) > 0)
 		doc_flags |= DOC_EXEC_TRACE;
 	doc_exec(&(struct doc_exec_arg){
 	    .dc			= dc,

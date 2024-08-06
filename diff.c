@@ -122,7 +122,7 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 		}
 	}
 
-	if (options_trace_level(op, 'D') > 0) {
+	if (options_trace_level(op, TRACE_DIFF) > 0) {
 		size_t i;
 
 		for (i = 0; i < VECTOR_LENGTH(files->fs_vc); i++) {
@@ -132,7 +132,7 @@ diff_parse(struct files *files, struct arena_scope *eternal_scope,
 			for (j = 0; j < VECTOR_LENGTH(fe->fe_diff); j++) {
 				const struct diffchunk *du = &fe->fe_diff[j];
 
-				trace('D', op, "%s: %u-%u",
+				trace(TRACE_DIFF, op, "%s: %u-%u",
 				    fe->fe_path, du->du_beg, du->du_end);
 			}
 		}

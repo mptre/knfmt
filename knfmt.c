@@ -210,7 +210,8 @@ fileformat(struct main_context *c, struct file *fe)
 	    .bf			= c->src,
 	    .diff		= fe->fe_diff,
 	    .op			= &c->options,
-	    .error_flush	= options_trace_level(&c->options, 'l') > 0,
+	    .error_flush	= options_trace_level(&c->options,
+		TRACE_LEXER) > 0,
 	    .arena		= {
 		.eternal_scope	= &eternal_scope,
 	    },
