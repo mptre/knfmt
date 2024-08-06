@@ -10,6 +10,14 @@
   (e325c911e4e2)
   (Anton Lindqvist)
 
+- Remove redundant semicolons from all statements.
+  (7f813ea1842b)
+  (Anton Lindqvist)
+
+- In simple mode, introduce pass to insert continue in empty loops.
+  (0057a47df0a4)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Fix missing space before increment statement in for loops.
@@ -26,6 +34,10 @@
 
 - Remove double space between attribute and initialization in declarations.
   (63e8d3d2407f)
+  (Anton Lindqvist)
+
+- Add missing space between outputs and clobbers in inline assembler.
+  (8c56495c53ed)
   (Anton Lindqvist)
 
 # 4.4.0 - 2024-04-13
