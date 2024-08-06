@@ -776,6 +776,7 @@ TESTS+=	../libks/arena.c
 TESTS+=	../libks/arena.h
 TESTS+=	../libks/arithmetic.c
 TESTS+=	../libks/arithmetic.h
+TESTS+=	../libks/asm.h
 TESTS+=	../libks/buffer.c
 TESTS+=	../libks/buffer.h
 TESTS+=	../libks/compiler.h
