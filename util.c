@@ -11,7 +11,7 @@
 #include "libks/vector.h"
 
 unsigned int
-colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
+colwidth(const char *str, size_t len, unsigned int cno)
 {
 	while (len > 0) {
 		size_t n;
@@ -28,8 +28,6 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 				cno = ((cno + 8 - 1) & ~0x7u) + 1;
 			} else if (c == '\n') {
 				cno = 1;
-				if (lno != NULL)
-					(*lno)++;
 			} else {
 				break;
 			}

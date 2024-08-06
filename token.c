@@ -130,7 +130,7 @@ token_position_after(struct token *after, struct token *tk)
 	last = LIST_EMPTY(&after->tk_suffixes) ?
 	    after : LIST_LAST(&after->tk_suffixes);
 
-	cno = colwidth(last->tk_str, last->tk_len, last->tk_cno, NULL);
+	cno = colwidth(last->tk_str, last->tk_len, last->tk_cno);
 	/*
 	 * If after is the last token on this line, use the column from the
 	 * first token on the same line.
@@ -153,13 +153,12 @@ token_position_after(struct token *after, struct token *tk)
 
 	tk->tk_cno = cno;
 	tk->tk_lno = lno;
-	cno = colwidth(tk->tk_str, tk->tk_len, tk->tk_cno, NULL);
+	cno = colwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
 
 	LIST_FOREACH(suffix, &tk->tk_suffixes) {
 		suffix->tk_cno = cno;
 		suffix->tk_lno = lno;
-		cno = colwidth(suffix->tk_str, suffix->tk_len, suffix->tk_cno,
-		    NULL);
+		cno = colwidth(suffix->tk_str, suffix->tk_len, suffix->tk_cno);
 	}
 }
 

@@ -316,7 +316,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 		buffer_printf(bf, "%.*s", (int)linelen, line);
 
 		buffer_printf(bf, "%*s", (int)cno - 1, "");
-		w = colwidth(ctx->tk_str, ctx->tk_len, cno, NULL) - cno;
+		w = colwidth(ctx->tk_str, ctx->tk_len, cno) - cno;
 		for (; w > 0; w--)
 			buffer_putc(bf, '^');
 		buffer_putc(bf, '\n');
@@ -989,7 +989,7 @@ lexer_column(const struct lexer *lx, const struct lexer_state *st)
 
 	line_offset = lx->lx_lines[st->st_lno - 1];
 	return colwidth(&lx->lx_input.ptr[line_offset],
-	    st->st_off - line_offset, 1, NULL);
+	    st->st_off - line_offset, 1);
 }
 
 const char *

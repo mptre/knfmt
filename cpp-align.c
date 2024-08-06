@@ -134,7 +134,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 		/* Require trailing '\\' '\n' characters. */
 		if (linelen < 2)
 			return 0;
-		col = colwidth(str, linelen - 1, 1, NULL);
+		col = colwidth(str, linelen - 1, 1);
 		if (col > maxcol)
 			return 0;
 		lines[i].indent = indent;
