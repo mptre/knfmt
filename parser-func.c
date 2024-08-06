@@ -11,7 +11,6 @@
 #include "parser-priv.h"
 #include "parser-stmt.h"
 #include "parser-type.h"
-#include "parser.h"
 #include "ruler.h"
 #include "simple-decl-proto.h"
 #include "simple.h"

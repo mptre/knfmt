@@ -15,7 +15,6 @@
 #include "parser-priv.h"
 #include "parser-stmt-asm.h"
 #include "parser-type.h"
-#include "parser.h"
 #include "ruler.h"
 #include "simple-decl-forward.h"
 #include "simple-decl.h"

@@ -13,7 +13,6 @@
 #include "parser-priv.h"
 #include "parser-stmt-asm.h"
 #include "parser-stmt-expr.h"
-#include "parser.h"
 #include "simple-stmt.h"
 #include "simple.h"
 #include "style.h"
