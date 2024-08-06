@@ -45,16 +45,26 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 size_t
 strwidth(const char *str, size_t len, size_t pos)
 {
-	size_t i;
+	while (len > 0) {
+		size_t n;
 
-	for (i = 0; i < len; i++) {
-		if (str[i] == '\n')
-			pos = 0;
-		else if (str[i] == '\t')
-			pos += 8 - (pos % 8);
-		else
-			pos += 1;
+		n = KS_str_match_until(str, len, "\t\t\n\n");
+		pos += n;
+		str += n;
+		len -= n;
+
+		for (; len > 0; len--, str++) {
+			char c = str[0];
+
+			if (c == '\t')
+				pos += 8 - (pos % 8);
+			else if (c == '\n')
+				pos = 0;
+			else
+				break;
+		}
 	}
+
 	return pos;
 }
 
