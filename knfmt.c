@@ -234,10 +234,6 @@ fileformat(struct main_context *c, struct file *fe)
 		.buffer		= c->arena.buffer,
 	    },
 	});
-	if (pr == NULL) {
-		error = 1;
-		goto out;
-	}
 	buffer_reset(c->dst);
 	if (parser_exec(pr, fe->fe_diff, c->dst)) {
 		error = 1;
