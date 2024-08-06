@@ -214,8 +214,8 @@ int
 token_type_normalize(const struct token *tk)
 {
 	switch (tk->tk_type) {
-#define OP(type, normalized) case type: if (normalized) return normalized; break;
-	FOR_TOKEN_SENTINELS(OP)
+#define OP(type, normalized, ...) case type: if (normalized) return normalized; break;
+	FOR_TOKEN_CPP(OP)
 #undef OP
 	}
 	return tk->tk_type;
@@ -587,6 +587,7 @@ token_type_str(int token_type)
 	switch (token_type) {
 #define OP(type, ...) case type: return &#type[sizeof("TOKEN_") - 1];
 	FOR_TOKEN_TYPES(OP)
+	FOR_TOKEN_CPP(OP)
 	FOR_TOKEN_SENTINELS(OP)
 #undef OP
 	}

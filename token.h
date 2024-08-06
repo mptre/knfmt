@@ -138,18 +138,20 @@ struct arena_scope;
 	OP(TOKEN_UINT32,	"u_int32_t", 0)				\
 	OP(TOKEN_UINT64,	"u_int64_t", 0)
 
+#define FOR_TOKEN_CPP(OP)						\
+	/* type			normalized	keyword */		\
+	OP(TOKEN_CPP_IF,	0,		"if")			\
+	OP(TOKEN_CPP_IFDEF,	TOKEN_CPP_IF,	"ifdef")		\
+	OP(TOKEN_CPP_IFNDEF,	TOKEN_CPP_IF,	"ifndef")		\
+	OP(TOKEN_CPP_ELSE,	0,		"else")			\
+	OP(TOKEN_CPP_ELIF,	TOKEN_CPP_ELSE,	"elif")			\
+	OP(TOKEN_CPP_ENDIF,	0,		"endif")		\
+	OP(TOKEN_CPP_DEFINE,	0,		"define")		\
+	OP(TOKEN_CPP_INCLUDE,	0,		"include")
+
 #define FOR_TOKEN_SENTINELS(OP)						\
-	/* type			normalized */				\
 	OP(TOKEN_COMMENT,	0)					\
 	OP(TOKEN_CPP,		0)					\
-	OP(TOKEN_CPP_IF,	0)					\
-	OP(TOKEN_CPP_IFDEF,	TOKEN_CPP_IF)				\
-	OP(TOKEN_CPP_IFNDEF,	TOKEN_CPP_IF)				\
-	OP(TOKEN_CPP_ELSE,	0)					\
-	OP(TOKEN_CPP_ELIF,	TOKEN_CPP_ELSE)				\
-	OP(TOKEN_CPP_ENDIF,	0)					\
-	OP(TOKEN_CPP_DEFINE,	0)					\
-	OP(TOKEN_CPP_INCLUDE,	0)					\
 	OP(TOKEN_IDENT,		0)					\
 	OP(TOKEN_LITERAL,	0)					\
 	OP(TOKEN_SPACE,		0)					\
@@ -171,6 +173,7 @@ struct arena_scope;
 enum {
 #define OP(type, ...) type,
 	FOR_TOKEN_TYPES(OP)
+	FOR_TOKEN_CPP(OP)
 	FOR_TOKEN_SENTINELS(OP)
 #undef OP
 };

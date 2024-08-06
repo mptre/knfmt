@@ -72,6 +72,8 @@ static struct token		*clang_read_comment(struct clang *,
     struct lexer *,
     int);
 static struct token		*clang_read_cpp(struct clang *, struct lexer *);
+static int			 clang_find_cpp(const struct lexer *,
+    const struct lexer_state *, int);
 static struct token		*clang_keyword(struct lexer *);
 static const struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
@@ -112,6 +114,7 @@ static void		 token_prolong(struct token *, struct token *);
 static int	isnum(unsigned char);
 
 static MAP(const char, *, struct token *) table_tokens;
+static MAP(const char, *, int) cpp_token_types;
 static const struct token *token_types[TOKEN_NONE + 1];
 
 static const struct token tklit = {
@@ -129,9 +132,15 @@ clang_init(void)
 	.tk_flags	= (flags),					\
 	.tk_str		= (keyword),					\
 	.tk_len		= sizeof((keyword)) - 1,			\
-	},
+},
 	static struct token keywords[] = { FOR_TOKEN_TYPES(OP) };
 	static struct token aliases[] = { FOR_TOKEN_ALIASES(OP) };
+#undef OP
+#define OP(type, normalized_type, keyword) {				\
+	.tk_type	= (type),					\
+	.tk_str		= (keyword),					\
+},
+	const struct token cpp[] = { FOR_TOKEN_CPP(OP) };
 #undef OP
 	size_t i;
 
@@ -156,12 +165,23 @@ clang_init(void)
 		if (MAP_INSERT_VALUE(table_tokens, src->tk_str, src) == NULL)
 			err(1, NULL);
 	}
+
+	if (MAP_INIT(cpp_token_types))
+		err(1, NULL);
+	for (i = 0; i < sizeof(cpp) / sizeof(cpp[0]); i++) {
+		const struct token *src = &cpp[i];
+
+		if (MAP_INSERT_VALUE(cpp_token_types, src->tk_str,
+		    src->tk_type) == NULL)
+			err(1, NULL);
+	}
 }
 
 void
 clang_shutdown(void)
 {
 	MAP_FREE(table_tokens);
+	MAP_FREE(cpp_token_types);
 }
 
 struct clang *
@@ -1110,10 +1130,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 {
 	struct lexer_state kwst, oldst, st;
 	struct token *tk;
-	const char *buf, *kw;
-	size_t buflen;
-	int type = TOKEN_CPP;
-	int comment;
+	int comment, type;
 	unsigned char ch;
 
 	oldst = st = lexer_get_state(lx);
@@ -1123,15 +1140,12 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		return NULL;
 	}
 
-	arena_scope(cl->arena.scratch, s);
-
 	/* Space(s) before keyword is allowed. */
 	lexer_eat_spaces(lx, NULL);
 
 	kwst = lexer_get_state(lx);
 	lexer_match(lx, "az");
-	buf = lexer_buffer_slice(lx, &kwst, &buflen);
-	kw = arena_sprintf(&s, "#%.*s", (int)buflen, buf);
+	type = clang_find_cpp(lx, &kwst, TOKEN_CPP);
 
 	ch = '\0';
 	comment = 0;
@@ -1155,23 +1169,6 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		}
 		ch = peek;
 	}
-
-	if (strcmp(kw, "#ifdef") == 0)
-		type = TOKEN_CPP_IFDEF;
-	else if (strcmp(kw, "#ifndef") == 0)
-		type = TOKEN_CPP_IFNDEF;
-	else if (strcmp(kw, "#if") == 0)
-		type = TOKEN_CPP_IF;
-	else if (strcmp(kw, "#else") == 0)
-		type = TOKEN_CPP_ELSE;
-	else if (strcmp(kw, "#elif") == 0)
-		type = TOKEN_CPP_ELIF;
-	else if (strcmp(kw, "#endif") == 0)
-		type = TOKEN_CPP_ENDIF;
-	else if (strcmp(kw, "#define") == 0)
-		type = TOKEN_CPP_DEFINE;
-	else if (strcmp(kw, "#include") == 0)
-		type = TOKEN_CPP_INCLUDE;
 
 	/*
 	 * As cpp tokens are emitted as is, honor up to 2 hard line(s).
@@ -1199,6 +1196,21 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	lexer_eat_lines(lx, 0, NULL);
 
 	return tk;
+}
+
+static int
+clang_find_cpp(const struct lexer *lx, const struct lexer_state *st,
+    int fallback)
+{
+	const char *buf;
+	size_t buflen;
+	int *token_type;
+
+	buf = lexer_buffer_slice(lx, st, &buflen);
+	token_type = MAP_FIND_N(cpp_token_types, buf, buflen);
+	if (token_type == NULL)
+		return fallback;
+	return *token_type;
 }
 
 static struct token *
