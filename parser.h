@@ -1,4 +1,3 @@
-struct arena_scope;
 struct buffer;
 struct diffchunk;
 
@@ -17,20 +16,6 @@ struct parser_arg {
 	} arena;
 };
 
-struct parser_arena_scope_cookie {
-	struct arena_scope	**restore_scope;
-	struct arena_scope	 *old_scope;
-};
-
 struct parser	*parser_alloc(const struct parser_arg *);
 int		 parser_exec(struct parser *, const struct diffchunk *,
     struct buffer *);
-
-#define parser_arena_scope(old_scope, new_scope, varname)		\
-	__attribute__((cleanup(parser_arena_scope_leave)))		\
-	    struct parser_arena_scope_cookie varname;			\
-	parser_arena_scope_enter(&varname, (old_scope), (new_scope))
-void	parser_arena_scope_enter(struct parser_arena_scope_cookie *,
-    struct arena_scope **, struct arena_scope *);
-
-void	parser_arena_scope_leave(struct parser_arena_scope_cookie *);

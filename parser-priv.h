@@ -51,6 +51,11 @@ struct parser {
 	} pr_token;
 };
 
+struct parser_arena_scope_cookie {
+	struct arena_scope	**restore_scope;
+	struct arena_scope	 *old_scope;
+};
+
 int	parser_good(const struct parser *);
 int	parser_none(const struct parser *);
 
@@ -73,3 +78,12 @@ int	parser_semi(struct parser *, struct doc *);
 unsigned int	parser_width(struct parser *, const struct doc *);
 
 int	parser_root(struct parser *, struct doc *);
+
+#define parser_arena_scope(old_scope, new_scope, varname)		\
+	__attribute__((cleanup(parser_arena_scope_leave)))		\
+	    struct parser_arena_scope_cookie varname;			\
+	parser_arena_scope_enter(&varname, (old_scope), (new_scope))
+void	parser_arena_scope_enter(struct parser_arena_scope_cookie *,
+    struct arena_scope **, struct arena_scope *);
+
+void	parser_arena_scope_leave(struct parser_arena_scope_cookie *);
