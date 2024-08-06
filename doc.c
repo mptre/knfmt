@@ -872,9 +872,9 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 	struct doc *dc = (struct doc *)cdc;
 	VECTOR(struct doc_minimize) minimizers;
 	struct doc_state_snapshot sn;
-	ssize_t best = -1;
 	unsigned int nlines = 0;
 	unsigned int nexceeds = 0;
+	int best = -1;
 	int i, nminimizers;
 	double minpenality = DBL_MAX;
 
@@ -920,12 +920,12 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 		mi->penality.sum = p;
 
 		if (mi->flags & DOC_MINIMIZE_FORCE) {
-			best = (ssize_t)i;
+			best = i;
 			break;
 		}
 		if (p < minpenality) {
 			minpenality = p;
-			best = (ssize_t)i;
+			best = i;
 		}
 	}
 
@@ -936,7 +936,7 @@ doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 
 			if (mi->flags & DOC_MINIMIZE_FORCE)
 				suffix = ", force";
-			else if ((ssize_t)i == best)
+			else if (i == best)
 				suffix = ", best";
 			doc_trace(dc, st, "%s: type indent, penality %.2f, "
 			    "indent %#x, nlines %u, nexceeds %u%s",
