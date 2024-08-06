@@ -14,24 +14,31 @@
 unsigned int
 colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 {
-	/* Fast path. */
-	if (likely(len == 1 && str[0] != '\n' && str[0] != '\t'))
-		return cno + 1;
+	while (len > 0) {
+		size_t n;
 
-	for (; len > 0; len--, str++) {
-		switch (str[0]) {
-		case '\n':
-			cno = 1;
-			if (lno != NULL)
-				(*lno)++;
-			break;
-		case '\t':
-			cno = ((cno + 8 - 1) & ~0x7u) + 1;
-			break;
-		default:
-			cno++;
+		n = KS_str_match_until(str, len, "\t\t\n\n");
+		cno += n;
+		str += n;
+		len -= n;
+
+		while (len > 0) {
+			char c = str[0];
+
+			if (c == '\t') {
+				cno = ((cno + 8 - 1) & ~0x7u) + 1;
+			} else if (c == '\n') {
+				cno = 1;
+				if (lno != NULL)
+					(*lno)++;
+			} else {
+				break;
+			}
+			str++;
+			len--;
 		}
 	}
+
 	return cno;
 }
 
