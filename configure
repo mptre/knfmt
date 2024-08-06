@@ -183,6 +183,7 @@ if [ "${_pedantic}" -eq 1 ]; then
 	CFLAGS="$(cc_has_option -Wused-but-marked-unused) ${CFLAGS}"
 	CFLAGS="-g $(pedantic) ${CFLAGS}"
 	DEBUG="-g ${DEBUG}"
+	LDFLAGS="$(cc_has_option -Wl,--fatal-warnings) ${LDFLAGS}"
 fi
 if [ "${_sanitize}" -eq 1 ]; then
 	{
