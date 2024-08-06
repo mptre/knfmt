@@ -70,6 +70,9 @@ static const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
 static void	lexer_copy_token_list(struct lexer *,
     const struct token_list *, struct token_list *);
 
+static const char       *lexer_serialize_impl(struct lexer *,
+    const struct token *, struct arena_scope *);
+
 struct lexer *
 lexer_alloc(const struct lexer_arg *arg)
 {
@@ -329,9 +332,7 @@ lexer_error_reset(struct lexer *lx)
 const char *
 lexer_serialize(struct lexer *lx, const struct token *tk)
 {
-	if (tk == NULL)
-		return "(null)";
-	return lx->lx_callbacks.serialize_token(tk, lx->lx_arena.eternal_scope);
+	return lexer_serialize_impl(lx, tk, lx->lx_arena.eternal_scope);
 }
 
 unsigned int
@@ -1034,4 +1035,13 @@ lexer_copy_token_list(struct lexer *lx, const struct token_list *src,
 		cp = lx->lx_callbacks.alloc(lx->lx_arena.eternal_scope, tk);
 		LIST_INSERT_TAIL(dst, cp);
 	}
+}
+
+static const char *
+lexer_serialize_impl(struct lexer *lx, const struct token *tk,
+    struct arena_scope *s)
+{
+	if (tk == NULL)
+		return "(null)";
+	return lx->lx_callbacks.serialize_token(tk, s);
 }
