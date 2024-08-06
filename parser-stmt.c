@@ -537,16 +537,18 @@ parser_stmt_kw_expr(struct parser *pr, struct doc *dc, int token_type,
 	}
 
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		struct parser_stmt_block_arg ps = {
-			.head	= expr,
-			.tail	= dc,
-			.flags	= PARSER_STMT_BLOCK_TRIM,
-		};
+		unsigned int parser_stmt_flags = 0;
 
-		if (token_type == TOKEN_SWITCH)
-			ps.flags |= PARSER_STMT_BLOCK_SWITCH;
 		doc_literal(" ", expr);
-		return parser_stmt_block(pr, &ps);
+
+		parser_stmt_flags |= PARSER_STMT_BLOCK_TRIM;
+		if (token_type == TOKEN_SWITCH)
+			parser_stmt_flags |= PARSER_STMT_BLOCK_SWITCH;
+		return parser_stmt_block(pr, &(struct parser_stmt_block_arg){
+		    .head	= expr,
+		    .tail	= dc,
+		    .flags	= parser_stmt_flags,
+		});
 	} else {
 		struct doc *indent;
 		void *simple = NULL;
