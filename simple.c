@@ -117,7 +117,10 @@ simple_enable(struct simple *si, int restore)
 static int
 is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 {
-	static const enum simple_pass exceptions[][2] = {
+	static const struct {
+		enum simple_pass	parent;
+		enum simple_pass	nested;
+	} exceptions[] = {
 		{ SIMPLE_DECL, SIMPLE_BRACES },
 		{ SIMPLE_DECL, SIMPLE_DECL_PROTO },
 		{ SIMPLE_DECL, SIMPLE_IMPLICIT_INT },
@@ -144,7 +147,8 @@ is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 			continue;
 
 		for (j = 0; j < nexceptions; j++) {
-			if (exceptions[j][0] == i && exceptions[j][1] == pass)
+			if (exceptions[j].parent == i &&
+			    exceptions[j].nested == pass)
 				return 0;
 		}
 	}
