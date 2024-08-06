@@ -70,7 +70,7 @@ path_to_guard(const char *path, unsigned int ncomponents, struct arena_scope *s)
 	resolved_path = arena_malloc(s, PATH_MAX);
 	if (realpath(path, resolved_path) == NULL)
 		return NULL;
-	sliced_path = path_slice(resolved_path, ncomponents);
+	sliced_path = path_slice(resolved_path, ncomponents, s);
 
 	bf = arena_buffer_alloc(s, PATH_MAX);
 	for (; sliced_path[0] != '\0'; sliced_path++) {

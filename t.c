@@ -96,9 +96,9 @@ static void	test_tmptemplate_impl(struct context *, const char *,
     const char *, int);
 
 #define test_path_slice(a, b, c) \
-	test_path_slice_impl((a), (b), (c), __LINE__)
-static void	test_path_slice_impl(const char *, unsigned int, const char *,
-    int);
+	test_path_slice_impl(&ctx, (a), (b), (c), __LINE__)
+static void	test_path_slice_impl(struct context *, const char *,
+    unsigned int, const char *, int);
 
 #define test_token_branch_unlink() \
 	test_token_branch_impl(&ctx)
@@ -590,14 +590,15 @@ test_tmptemplate_impl(struct context *c, const char *path, const char *exp,
 }
 
 static void
-test_path_slice_impl(const char *path, unsigned int ncomponents,
-    const char *exp, int lno)
+test_path_slice_impl(struct context *ctx, const char *path,
+    unsigned int ncomponents, const char *exp, int lno)
 {
 	const char *act;
 
 	KS_expect_scope("path_slice", lno, e);
+	arena_scope(ctx->arena.scratch, s);
 
-	act = path_slice(path, ncomponents);
+	act = path_slice(path, ncomponents, &s);
 	KS_expect_str(exp, act);
 }
 

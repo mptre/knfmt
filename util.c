@@ -3,11 +3,12 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <string.h>
 
 #include "libks/arena-buffer.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
+#include "libks/string.h"
+#include "libks/vector.h"
 
 unsigned int
 colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
@@ -33,39 +34,27 @@ colwidth(const char *str, size_t len, unsigned int cno, unsigned int *lno)
 	return cno;
 }
 
-static const char *
-find_last(const char *str, size_t len, char delim)
-{
-	for (; len > 0; len--) {
-		if (str[len - 1] == delim)
-			return &str[len - 1];
-	}
-	return NULL;
-}
-
 const char *
-path_slice(const char *path, unsigned int ncomponents)
+path_slice(const char *path, unsigned int ncomponents, struct arena_scope *s)
 {
-	const char *slice = path;
-	size_t len;
+	VECTOR(char *) components;
+	struct buffer *bf;
+	unsigned int i, n;
 
-	len = strlen(path);
-	for (; ncomponents > 0; ncomponents--) {
-		const char *slash;
-
-		slash = find_last(path, len, '/');
-		if (slash == NULL) {
-			/*
-			 * Less components present than wanted, return the whole
-			 * path.
-			 */
-			slice = path;
-			break;
-		}
-		len -= (size_t)(&path[len] - slash);
-		slice = &path[len];
+	components = KS_str_split(path, "/", s);
+	n = VECTOR_LENGTH(components);
+	if (n < ncomponents) {
+		/* Less components than wanted, return the whole path. */
+		return path;
 	}
-	return slice[0] == '/' ? &slice[1] : slice;
+
+	bf = buffer_alloc(1 << 8);
+	for (i = n - ncomponents; i < n; i++) {
+		if (buffer_get_len(bf) > 0)
+			buffer_putc(bf, '/');
+		buffer_printf(bf, "%s", components[i]);
+	}
+	return buffer_str(bf);
 }
 
 size_t
