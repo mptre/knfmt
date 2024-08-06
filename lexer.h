@@ -27,10 +27,12 @@ struct lexer_arg {
 
 struct lexer_state {
 	struct token	*st_tk;
-	unsigned int	 st_lno;
-	unsigned int	 st_err;
-	unsigned int	 st_eof;
 	size_t		 st_off;
+	unsigned int	 st_lno;
+	struct {
+		unsigned int	error:1,
+				eof:1;
+	} st_flags;
 };
 
 struct lexer	*lexer_alloc(const struct lexer_arg *);

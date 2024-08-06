@@ -189,8 +189,9 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 		 * Do not immediately report EOF. Instead, return something
 		 * that's not expected while reading a token.
 		 */
-		if (lx->lx_st.st_eof++ > 0)
+		if (lx->lx_st.st_flags.eof)
 			return 1;
+		lx->lx_st.st_flags.eof = 1;
 		*ch = '\0';
 		return 0;
 	}
@@ -212,7 +213,7 @@ lexer_ungetc(struct lexer *lx)
 	struct lexer_state *st = &lx->lx_st;
 	unsigned char c;
 
-	if (st->st_eof)
+	if (st->st_flags.eof)
 		return;
 
 	assert(st->st_off > 0);
@@ -271,7 +272,7 @@ lexer_error(struct lexer *lx, const struct token *ctx, const char *fun, int lno,
 	size_t linelen;
 	unsigned int l = ctx != NULL ? ctx->tk_lno : 0;
 
-	lx->lx_st.st_err++;
+	lx->lx_st.st_flags.error = 1;
 
 	bf = error_begin(lx->lx_er);
 
@@ -317,7 +318,7 @@ void
 lexer_error_reset(struct lexer *lx)
 {
 	error_reset(lx->lx_er);
-	lx->lx_st.st_err = 0;
+	lx->lx_st.st_flags.error = 0;
 }
 
 /*
@@ -335,7 +336,7 @@ lexer_serialize(struct lexer *lx, const struct token *tk)
 unsigned int
 lexer_get_error(const struct lexer *lx)
 {
-	return lx->lx_st.st_err;
+	return lx->lx_st.st_flags.error ? 1 : 0;
 }
 
 /*
@@ -1006,8 +1007,9 @@ lexer_expect_error(struct lexer *lx, int type, const struct token *tk,
 	}
 
 	/* Be quiet if an error already has been emitted. */
-	if (lx->lx_st.st_err++ > 0)
+	if (lx->lx_st.st_flags.error)
 		return;
+	lx->lx_st.st_flags.error = 1;
 
 	/* Be quiet while peeking. */
 	if (lx->lx_peek > 0)
