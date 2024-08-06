@@ -17,6 +17,7 @@
 #include "parser-priv.h"
 #include "parser-stmt-asm.h"
 #include "token.h"
+#include "trace.h"
 #include "util.h"
 
 static void

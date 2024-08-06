@@ -290,6 +290,7 @@ CPPCHECKFLAGS+=	--suppress-xml=cppcheck-suppressions.xml
 CPPCHECKFLAGS+=	${CPPFLAGS}
 
 IWYUFLAGS+=	-d config.h
+IWYUFLAGS+=	-d options.h:trace.h
 IWYUFLAGS+=	-d trace.h:options.h
 IWYUFLAGS+=	${CPPFLAGS}
 

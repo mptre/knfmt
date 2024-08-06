@@ -6,6 +6,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include "trace.h"
+
 static int	ctotrace(char c);
 
 void
@@ -34,12 +36,6 @@ options_trace_parse(struct options *op, const char *flags)
 		}
 	}
 	return 0;
-}
-
-unsigned int
-options_trace_level(const struct options *op, enum trace_type type)
-{
-	return op->op_trace[type];
 }
 
 static int

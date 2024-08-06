@@ -33,7 +33,7 @@ enum trace_type {
 		trace_impl((trace), NULL, (fmt), __VA_ARGS__);		\
 } while (0)
 
-void	trace_impl(char, const char *, const char *, ...)
+void	trace_impl(enum trace_type, const char *, const char *, ...)
 	__attribute__((__format__(printf, 3, 4)));
 
 #endif

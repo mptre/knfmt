@@ -25,6 +25,7 @@
 #include "parser.h"
 #include "simple.h"
 #include "style.h"
+#include "trace.h"
 
 struct main_context {
 	struct options	 options;
