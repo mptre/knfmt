@@ -441,8 +441,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 		unsigned int expr_flags = 0;
 
 		/* Never break before the assignment operator. */
-		if (!is_simple_enabled(pr->pr_si, SIMPLE_DECL) &&
-		    (pv = token_prev(equal)) != NULL &&
+		if ((pv = token_prev(equal)) != NULL &&
 		    token_has_line(pv, 1))
 			token_move_suffixes(pv, equal);
 
