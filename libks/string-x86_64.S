@@ -18,8 +18,6 @@
 
 #include "libks/asm.h"
 
-ASM_PROLOGUE
-
 #define CTRL_SOURCE_SHIFT		0
 #define  CTRL_SOURCE_U8			0x00
 #define  CTRL_SOURCE_U16		0x01
@@ -42,6 +40,7 @@ ASM_PROLOGUE
 #define  CTRL_OUTPUT_MASK_BITMASK	0x00
 #define  CTRL_OUTPUT_MASK_BYTEMASK	0x01
 
+	ASM_PROLOGUE
 	.intel_syntax noprefix
 
 ENTRY(KS_str_match_native)
@@ -117,7 +116,8 @@ ctrl_mask = \
 3:
 	lea	rsi, [r8 + rax]
 	lea	rdi, [rsp - 0x18]
-	mov	byte ptr [rdi + r9], 0
+	pxor	xmm0, xmm0
+	movaps	[rdi], xmm0
 	mov	rcx, r9
 	rep	movsb
 	pcmpistri xmm1, [rsp - 0x18], ctrl_mask
