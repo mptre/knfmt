@@ -115,7 +115,7 @@ static void		 token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char);
 
-static MAP(const char, *, const struct token *) table_tokens;
+static MAP(const char, *, const struct token *) clang_tokens;
 static MAP(const char, *, int) cpp_token_types;
 static MAP(const char, *, enum clang_token_type) clang_identifiers;
 static const struct token *token_types[TOKEN_NONE + 1];
@@ -156,13 +156,13 @@ clang_init(void)
 #undef OP
 	size_t i;
 
-	if (MAP_INIT(table_tokens))
+	if (MAP_INIT(clang_tokens))
 		err(1, NULL);
 
 	for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
 		const struct token *src = &keywords[i];
 
-		if (MAP_INSERT_VALUE(table_tokens, src->tk_str, src) == NULL)
+		if (MAP_INSERT_VALUE(clang_tokens, src->tk_str, src) == NULL)
 			err(1, NULL);
 
 		assert(token_types[src->tk_type] == NULL);
@@ -174,7 +174,7 @@ clang_init(void)
 		struct token *src = &aliases[i];
 
 		src->tk_flags = token_types[src->tk_type]->tk_flags;
-		if (MAP_INSERT_VALUE(table_tokens, src->tk_str, src) == NULL)
+		if (MAP_INSERT_VALUE(clang_tokens, src->tk_str, src) == NULL)
 			err(1, NULL);
 	}
 
@@ -200,7 +200,7 @@ clang_init(void)
 void
 clang_shutdown(void)
 {
-	MAP_FREE(table_tokens);
+	MAP_FREE(clang_tokens);
 	MAP_FREE(cpp_token_types);
 	MAP_FREE(clang_identifiers);
 }
@@ -1329,7 +1329,7 @@ clang_find_keyword1(const char *key, size_t len)
 {
 	const struct token **kw;
 
-	kw = MAP_FIND_N(table_tokens, key, len);
+	kw = MAP_FIND_N(clang_tokens, key, len);
 	if (kw == NULL)
 		return NULL;
 	return *kw;
