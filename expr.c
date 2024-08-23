@@ -110,6 +110,7 @@ struct expr_state {
 #define es_flags	es_ea.flags
 
 	struct {
+		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
 		struct arena_scope	*scratch_scope;
 		struct arena		*buffer;
@@ -117,6 +118,7 @@ struct expr_state {
 
 	const struct expr_rule	*es_er;
 	struct token		*es_tk;
+	enum expr_mode		 es_mode;
 	unsigned int		 es_depth;
 	unsigned int		 es_nassign;	/* # nested binary assignments */
 	unsigned int		 es_ncalls;	/* # nested calls */
@@ -1263,17 +1265,20 @@ expr_doc_soft_impl(struct expr *ex, struct expr_state *es, struct doc *dc,
 
 static void
 expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
-    enum expr_mode NDEBUG_UNUSED(mode), struct arena_scope *scratch_scope)
+    enum expr_mode mode, struct arena_scope *scratch_scope)
 {
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->si);
 	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->dc);
+	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->arena.eternal_scope);
 
 	memset(es, 0, sizeof(*es));
 	es->es_ea = *ea;
+	es->es_arena.eternal_scope = ea->arena.eternal_scope;
 	es->es_arena.scratch = ea->arena.scratch;
 	es->es_arena.scratch_scope = scratch_scope;
 	es->es_arena.buffer = ea->arena.buffer;
+	es->es_mode = mode;
 }
 
 static const struct expr_rule *

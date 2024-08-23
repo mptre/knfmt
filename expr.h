@@ -33,8 +33,9 @@ struct expr_exec_arg {
 #define EXPR_EXEC_NOSOFT		0x00000020u
 
 	struct {
-		struct arena	*scratch;
-		struct arena	*buffer;
+		struct arena_scope	*eternal_scope;
+		struct arena		*scratch;
+		struct arena		*buffer;
 	} arena;
 
 	struct {

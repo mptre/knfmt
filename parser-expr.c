@@ -61,6 +61,7 @@ parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 		.align		= arg->align,
 		.flags		= arg->flags,
 		.arena		= {
+			.eternal_scope	= pr->pr_arena.eternal_scope,
 			.scratch	= pr->pr_arena.scratch,
 			.buffer		= pr->pr_arena.buffer,
 		},

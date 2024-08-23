@@ -26,6 +26,7 @@ struct parser {
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
 	struct {
+		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
 		struct arena_scope	*scratch_scope;
 		struct arena		*doc;

@@ -112,6 +112,7 @@ parser_alloc(const struct parser_arg *arg)
 	pr->pr_si = arg->simple;
 	pr->pr_lx = arg->lexer;
 	pr->pr_clang = arg->clang;
+	pr->pr_arena.eternal_scope = arg->arena.eternal_scope;
 	pr->pr_arena.scratch = arg->arena.scratch;
 	pr->pr_arena.doc = arg->arena.doc;
 	pr->pr_arena.buffer = arg->arena.buffer;
