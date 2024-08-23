@@ -876,8 +876,8 @@ static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	simple_cookie(simple);
-	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS,
-	    es->es_depth == 1 ? 0 : SIMPLE_IGNORE, &simple)) {
+	if (es->es_depth == 1 &&
+	    simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple)) {
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
 	} else {
