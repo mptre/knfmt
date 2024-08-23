@@ -149,13 +149,18 @@ struct doc_state_snapshot {
  * chunk.
  */
 struct doc_diff {
-	const struct token	*dd_verbatim;	/* last verbatim token not covered by chunk */
-	unsigned int		 dd_threshold;	/* last seen token */
-	unsigned int		 dd_first;	/* first token in group */
-	unsigned int		 dd_chunk;	/* first token covered by chunk */
-	enum doc_diff_group	 dd_covers;	/* doc_diff_covers() return value */
+	/* Last verbatim token not covered by chunk. */
+	const struct token	*dd_verbatim;
+	/* Last seen token. */
+	unsigned int		 dd_threshold;
+	/* First token in group. */
+	unsigned int		 dd_first;
+	/* First token covered by chun. */
+	unsigned int		 dd_chunk;
+	/* Return value for doc_diff_covers(). */
+	enum doc_diff_group	 dd_covers;
+	/* Below threshold doc_walk() return value. */
 	int			 dd_below_threshold;
-						/* below threshold doc_walk() return value */
 };
 
 struct doc_fits {
