@@ -257,8 +257,8 @@ int	token_is_moveable(const struct token *);
 int	token_is_first(const struct token *);
 int	token_is_dangling(const struct token *);
 
-struct token	*token_next(const struct token *);
-struct token	*token_prev(const struct token *);
+#define token_next(tk)	__extension__ ({ (__typeof__(tk))LIST_NEXT(tk); })
+#define token_prev(tk)	__extension__ ({ (__typeof__(tk))LIST_PREV(tk); })
 
 void    token_set_str(struct token *, const char *, size_t);
 

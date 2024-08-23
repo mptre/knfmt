@@ -385,18 +385,6 @@ token_is_dangling(const struct token *tk)
 	return !LIST_LINKED(tk);
 }
 
-struct token *
-token_next(const struct token *tk)
-{
-	return (struct token *)LIST_NEXT(tk);
-}
-
-struct token *
-token_prev(const struct token *tk)
-{
-	return (struct token *)LIST_PREV(tk);
-}
-
 void
 token_set_str(struct token *tk, const char *str, size_t len)
 {

@@ -24,7 +24,7 @@ struct braces_arg {
 struct braces_field_arg {
 	struct doc		*dc;
 	struct ruler		*rl;
-	const struct token	*rbrace;
+	struct token		*rbrace;
 	unsigned int		 indent;
 	unsigned int		 flags;
 };
@@ -44,7 +44,7 @@ static struct token	*peek_expr_stop(struct parser *, struct lbrace_cache *,
 static struct token	*lbrace_cache_lookup(struct parser *,
     struct lbrace_cache *, struct token *);
 static void		 insert_trailing_comma(struct parser *,
-    const struct token *);
+    struct token *);
 
 int
 parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
@@ -393,7 +393,7 @@ lbrace_cache_lookup(struct parser *pr, struct lbrace_cache *cache,
 }
 
 static void
-insert_trailing_comma(struct parser *pr, const struct token *rbrace)
+insert_trailing_comma(struct parser *pr, struct token *rbrace)
 {
 	struct token *comma, *pv;
 
