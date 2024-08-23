@@ -241,7 +241,7 @@ void	token_position_after(struct token *, struct token *);
 
 int	token_cmp(const struct token *, const struct token *);
 int	token_strcmp(const struct token *, const struct token *);
-int	token_rawcmp(const struct token *, const char *, size_t);
+int	token_memcmp(const struct token *, const char *, size_t);
 int	token_has_cpp(const struct token *);
 int	token_type_normalize(const struct token *);
 int	token_has_indent(const struct token *);

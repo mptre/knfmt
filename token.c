@@ -176,11 +176,11 @@ token_cmp(const struct token *a, const struct token *b)
 int
 token_strcmp(const struct token *a, const struct token *b)
 {
-	return token_rawcmp(a, b->tk_str, b->tk_len);
+	return token_memcmp(a, b->tk_str, b->tk_len);
 }
 
 int
-token_rawcmp(const struct token *tk, const char *str, size_t len)
+token_memcmp(const struct token *tk, const char *str, size_t len)
 {
 	size_t minlen;
 	int cmp, gt, le;

@@ -105,9 +105,9 @@ sense_include_guards(struct lexer *lx, const char *cpp_ifndef,
 	c->define.tk = define;
 	c->endif.tk = endif;
 
-	return token_rawcmp(ifndef, cpp_ifndef, strlen(cpp_ifndef)) == 0 &&
-	    token_rawcmp(define, cpp_define, strlen(cpp_define)) == 0 &&
-	    token_rawcmp(endif, cpp_endif, strlen(cpp_endif)) == 0;
+	return token_memcmp(ifndef, cpp_ifndef, strlen(cpp_ifndef)) == 0 &&
+	    token_memcmp(define, cpp_define, strlen(cpp_define)) == 0 &&
+	    token_memcmp(endif, cpp_endif, strlen(cpp_endif)) == 0;
 }
 
 static struct token *
