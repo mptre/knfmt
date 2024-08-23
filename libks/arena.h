@@ -64,6 +64,11 @@ struct arena_stats {
 	} scopes;
 
 	struct {
+		/* Total amount of registered cleanups. */
+		unsigned long	total;
+	} cleanup;
+
+	struct {
 		/* Effective amount of alignment. */
 		unsigned long	now;
 		/* Total amount of allocated alignment. */

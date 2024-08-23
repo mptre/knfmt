@@ -527,6 +527,8 @@ arena_cleanup(struct arena_scope *s, void (*fun)(void *), void *ptr)
 {
 	struct arena_cleanup *ac;
 
+	s->arena->stats.cleanup.total++;
+
 	ac = arena_malloc(s, sizeof(*ac));
 	ac->ptr = ptr;
 	ac->fun = fun;
