@@ -120,7 +120,7 @@ struct doc	*doc_minimize_impl(const struct doc_minimize *, size_t,
 struct doc	*doc_literal_impl(const char *, struct doc *,
     const char *, int);
 
-struct doc	*doc_token(const struct token *, struct doc *, enum doc_type,
+struct doc	*doc_token(struct token *, struct doc *, enum doc_type,
     const char *, int);
 
 #define doc_max_lines(a, b) \

@@ -560,14 +560,13 @@ doc_token_free(void *arg)
 }
 
 struct doc *
-doc_token(const struct token *tk, struct doc *dc, enum doc_type type,
+doc_token(struct token *tk, struct doc *dc, enum doc_type type,
     const char *fun, int lno)
 {
 	struct doc *token;
 
 	token = doc_alloc_impl(type, dc, 0, fun, lno);
-	/* Must be mutable for reference counting. */
-	token->dc_tk = (struct token *)tk;
+	token->dc_tk = tk;
 	token_ref(token->dc_tk);
 	arena_cleanup(token->dc_scope, doc_token_free, token);
 	token->dc_str = tk->tk_str;
