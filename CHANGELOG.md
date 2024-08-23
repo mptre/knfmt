@@ -18,6 +18,11 @@
   (0057a47df0a4)
   (Anton Lindqvist)
 
+- In simple mode, introduce pass to remove new lines in err/warn/perror format
+  strings.
+  (49e47baa4740)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Fix missing space before increment statement in for loops.
@@ -38,6 +43,18 @@
 
 - Add missing space between outputs and clobbers in inline assembler.
   (8c56495c53ed)
+  (Anton Lindqvist)
+
+- Fix misplaced semicolon with attributes before initialization.
+  (acf9228c6346)
+  (Anton Lindqvist)
+
+- Remove double spaces between braces and attributes.
+  (70f77f2d63d3)
+  (Anton Lindqvist)
+
+- Detect cast expressions can followed by binary operators on separate lines.
+  (857210d52e3f)
   (Anton Lindqvist)
 
 # 4.4.0 - 2024-04-13
