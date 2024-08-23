@@ -146,7 +146,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			end = simple_static(lx, beg, end);
 	}
 
-	if (ntokens == 1) {
+	{
 		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_IMPLICIT_INT, 0, &simple))
 			end = simple_implicit_int(lx, beg, end);
