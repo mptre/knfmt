@@ -591,6 +591,7 @@ TESTS+=	simple-stmt-011.c
 TESTS+=	simple-stmt-012.c
 TESTS+=	simple-stmt-013.c
 TESTS+=	simple-stmt-014.c
+TESTS+=	simple-stmt-015.c
 TESTS+=	simple-stmt-empty-loop-001.c
 TESTS+=	simple-stmt-empty-loop-002.c
 TESTS+=	simple-stmt-empty-loop-003.c
