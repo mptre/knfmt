@@ -397,7 +397,7 @@ static void
 test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
     int lno)
 {
-	struct buffer *bf = NULL;
+	struct buffer *bf;
 	struct doc *concat, *expr;
 	const char *act;
 	int error;
@@ -418,7 +418,7 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 	});
 	KS_expect_int(GOOD, error);
 
-	bf = arena_buffer_alloc(&buffer_scope, 128);
+	bf = arena_buffer_alloc(&buffer_scope, 1 << 8);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc		= concat,
 	    .scratch	= ctx->arena.scratch,
