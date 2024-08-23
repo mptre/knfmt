@@ -142,6 +142,8 @@ strnice_buffer(struct buffer *bf, const char *str, size_t len)
 			buffer_printf(bf, "\\f");
 		else if (c == '\t')
 			buffer_printf(bf, "\\t");
+		else if (c == '\r')
+			buffer_printf(bf, "\\r");
 		else if (c == '"')
 			buffer_printf(bf, "\\\"");
 		else if (isprint((unsigned char)c))
