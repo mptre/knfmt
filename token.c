@@ -13,7 +13,7 @@
 #include "lexer.h"
 #include "util.h"
 
-static void		 strflags(struct buffer *, unsigned int);
+static const char	*token_flags_str(unsigned int, struct arena_scope *);
 static const char	*token_type_str(int);
 
 struct token *
@@ -99,7 +99,7 @@ token_serialize(const struct token *tk, unsigned int flags,
 	if (flags & TOKEN_SERIALIZE_POSITION)
 		buffer_printf(bf, "%u:%u", tk->tk_lno, tk->tk_cno);
 	if (flags & TOKEN_SERIALIZE_FLAGS)
-		strflags(bf, tk->tk_flags);
+		buffer_printf(bf, "%s", token_flags_str(tk->tk_flags, s));
 	if (flags & TOKEN_SERIALIZE_REFS)
 		buffer_printf(bf, ",%d", tk->tk_refs);
 	if (flags & TOKEN_SERIALIZE_ADDRESS)
@@ -544,8 +544,8 @@ token_list_find(const struct token_list *tokens, int type, unsigned int flags)
 	return NULL;
 }
 
-static void
-strflags(struct buffer *bf, unsigned int token_flags)
+static const char *
+token_flags_str(unsigned int token_flags, struct arena_scope *s)
 {
 	static const struct {
 		const char	*str;
@@ -566,18 +566,22 @@ strflags(struct buffer *bf, unsigned int token_flags)
 	};
 	size_t nflags = sizeof(flags) / sizeof(flags[0]);
 	size_t i;
-	int npresent = 0;
+	struct buffer *bf;
+
+	bf = arena_buffer_alloc(s, 1 << 6);
 
 	for (i = 0; i < nflags; i++) {
 		if ((token_flags & flags[i].flag) == 0)
 			continue;
 
-		if (npresent++ == 0)
+		if (buffer_get_len(bf) == 0)
 			buffer_putc(bf, ',');
 		else
 			buffer_putc(bf, '|');
 		buffer_puts(bf, flags[i].str, flags[i].len);
 	}
+
+	return buffer_str(bf);
 }
 
 static const char *
