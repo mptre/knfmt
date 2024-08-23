@@ -33,7 +33,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	struct lexer_state s;
 	struct token *align = NULL;
 	struct token *args = NULL;
-	struct token *beg, *t;
+	struct token *beg, *end;
 	int peek = 0;
 	int nkeywords = 0;
 	int ntokens = 0;
@@ -49,10 +49,10 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	 * variable name.
 	 */
 	if ((flags & (PARSER_TYPE_CAST | PARSER_TYPE_ARG)) &&
-	    (peek_type_noident(lx, &t) || peek_type_unknown_array(lx, &t)))
+	    (peek_type_noident(lx, &end) || peek_type_unknown_array(lx, &end)))
 		goto out;
 
-	if (peek_type_unknown_bitfield(lx, &t))
+	if (peek_type_unknown_bitfield(lx, &end))
 		goto out;
 
 	lexer_peek_enter(lx, &s);
@@ -63,18 +63,18 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			break;
 
 		if (lexer_if_flags(lx,
-		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &t)) {
+		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &end)) {
 			nkeywords++;
-		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &t)) {
-			if (t->tk_type == TOKEN_ENUM ||
-			    t->tk_type == TOKEN_STRUCT ||
-			    t->tk_type == TOKEN_UNION)
-				(void)lexer_if(lx, TOKEN_IDENT, &t);
+		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &end)) {
+			if (end->tk_type == TOKEN_ENUM ||
+			    end->tk_type == TOKEN_STRUCT ||
+			    end->tk_type == TOKEN_UNION)
+				(void)lexer_if(lx, TOKEN_IDENT, &end);
 			/* Recognize constructs like `struct s[]'. */
 			(void)lexer_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE,
-			    NULL, &t);
+			    NULL, &end);
 			peek = 1;
-		} else if (ntokens > 0 && lexer_if(lx, TOKEN_STAR, &t)) {
+		} else if (ntokens > 0 && lexer_if(lx, TOKEN_STAR, &end)) {
 			/*
 			 * A pointer is expected to only be followed by another
 			 * pointer or a known type.
@@ -85,7 +85,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		} else if (parser_cpp_peek_type(pr, &rparen)) {
 			if (!lexer_seek_after(lx, rparen))
 				return 0;
-			t = rparen;
+			end = rparen;
 			peek = 1;
 		} else if (lexer_peek_if(lx, TOKEN_IDENT, NULL)) {
 			/* Ensure this is not the identifier after the type. */
@@ -95,7 +95,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 				break;
 
 			/* Identifier is part of the type, consume it. */
-			if (!lexer_if(lx, TOKEN_IDENT, &t))
+			if (!lexer_if(lx, TOKEN_IDENT, &end))
 				return 0;
 			/*
 			 * Preceding storage/qualifier followed by identifier,
@@ -103,7 +103,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			 */
 			if (nkeywords > 0)
 				peek = 1;
-		} else if (ntokens > 0 && peek_type_func_ptr(lx, &args, &t)) {
+		} else if (ntokens > 0 && peek_type_func_ptr(lx, &args, &end)) {
 			if (!lexer_back(lx, &align))
 				return 0;
 			peek = 1;
@@ -112,7 +112,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			if (!lexer_back(lx, &align) ||
 			    !lexer_seek_after(lx, rsquare))
 				return 0;
-			t = rsquare;
+			end = rsquare;
 			peek = 1;
 			break;
 		} else {
@@ -143,13 +143,13 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	{
 		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
-			t = simple_static(lx, beg, t);
+			end = simple_static(lx, beg, end);
 	}
 
 	if (ntokens == 1) {
 		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_IMPLICIT_INT, 0, &simple))
-			t = simple_implicit_int(lx, beg, t);
+			end = simple_implicit_int(lx, beg, end);
 	}
 
 out:
@@ -162,7 +162,7 @@ out:
 			return 0;
 		*type = (struct parser_type){
 		    .beg	= beg,
-		    .end	= t,
+		    .end	= end,
 		    .align	= align,
 		    .args	= args,
 		};
