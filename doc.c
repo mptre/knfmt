@@ -804,14 +804,10 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 {
 	struct token *tk = dc->dc_tk;
 	unsigned int diff, oldcol;
-	int unmute = 0;
 	int isblock, isnewline;
 
 	if (doc_is_mute(st)) {
-		if (DOC_DIFF(st) &&
-		    st->st_diff.verbatim == tk)
-			unmute = 1;
-		else
+		if (!(DOC_DIFF(st) && st->st_diff.verbatim == tk))
 			return;
 	}
 
@@ -830,8 +826,8 @@ doc_exec_verbatim(const struct doc *dc, struct doc_state *st)
 
 	doc_print(dc, st, dc->dc_str, dc->dc_len, 0);
 
-	/* Restore indentation in diff mode. */
-	if (unmute)
+	/* Unmute in diff mode. */
+	if (DOC_DIFF(st) && st->st_diff.verbatim == tk)
 		st->st_diff.verbatim = NULL;
 
 	/* Restore indentation after emitting a verbatim block or new line. */
