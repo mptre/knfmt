@@ -248,7 +248,8 @@ out:
 	if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_COMMA, NULL) &&
 	    !lexer_peek_if(lx, TOKEN_RBRACE, NULL) &&
-	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL))
+	    !lexer_peek_if(lx, TOKEN_RPAREN, NULL) &&
+	    !lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL))
 		doc_literal(" ", braces);
 
 	return parser_good(pr);
