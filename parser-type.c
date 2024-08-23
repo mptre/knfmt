@@ -33,7 +33,6 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	struct lexer_state s;
 	struct token *align = NULL;
 	struct token *args = NULL;
-	struct token *tkstatic = NULL;
 	struct token *beg, *t;
 	int peek = 0;
 	int nkeywords = 0;
@@ -65,13 +64,6 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 		if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &t)) {
-			/*
-			 * No point in performing the simple static pass if the
-			 * static keyword comes first.
-			 */
-			if (ntokens > 0 && t->tk_type == TOKEN_STATIC)
-				tkstatic = t;
-
 			nkeywords++;
 			peek = 1;
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &t)) {
@@ -143,10 +135,10 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 	if (!peek)
 		return 0;
 
-	if (tkstatic != NULL) {
+	{
 		simple_cookie(simple);
 		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
-			t = simple_static(lx, beg, t, tkstatic);
+			t = simple_static(lx, beg, t);
 	}
 
 	if (ntokens == 1) {
