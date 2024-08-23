@@ -156,6 +156,7 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 	if (parser_type_peek(pr, &type, PARSER_TYPE_CAST) &&
 	    lexer_seek_after(lx, type.end) &&
 	    lexer_if(lx, TOKEN_RPAREN, &rparen) &&
+	    !lexer_if(lx, TOKEN_RPAREN, NULL) &&
 	    !lexer_if(lx, TOKEN_COMMA, NULL) &&
 	    !(lexer_peek_if_flags(lx, TOKEN_FLAG_BINARY, &op) &&
 	    token_has_spaces(rparen) && token_has_spaces(op)) &&
