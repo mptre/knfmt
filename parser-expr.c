@@ -141,6 +141,16 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 	return NULL;
 }
 
+static int
+peek_binary_operator(struct lexer *lx, const struct token *rparen)
+{
+	struct token *op;
+
+	return lexer_peek_if_flags(lx, TOKEN_FLAG_BINARY, &op) &&
+	    token_has_spaces(rparen) &&
+	    (token_has_spaces(op) || token_has_line(op, 1));
+}
+
 static struct doc *
 expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 {
@@ -149,7 +159,7 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 	struct lexer_state s;
 	struct parser *pr = arg;
 	struct lexer *lx = pr->pr_lx;
-	struct token *op, *rparen;
+	struct token *rparen;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -158,8 +168,7 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 	    lexer_if(lx, TOKEN_RPAREN, &rparen) &&
 	    !lexer_if(lx, TOKEN_RPAREN, NULL) &&
 	    !lexer_if(lx, TOKEN_COMMA, NULL) &&
-	    !(lexer_peek_if_flags(lx, TOKEN_FLAG_BINARY, &op) &&
-	    token_has_spaces(rparen) && token_has_spaces(op)) &&
+	    !peek_binary_operator(lx, rparen) &&
 	    !(lexer_if(lx, TOKEN_AMP, NULL) &&
 	    lexer_if(lx, TOKEN_TILDE, NULL)) &&
 	    !lexer_if(lx, LEXER_EOF, NULL))

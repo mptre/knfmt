@@ -191,6 +191,7 @@ main(void)
 	test_parser_expr("(foo_t)x", "(((foo_t))(x))");
 	test_parser_expr("(foo_t *)x", "(((foo_t *))(x))");
 	test_parser_expr("(pc) & ~mask", "(((pc)) & (~(mask)))");
+	test_parser_expr("(int)(x) +\ny", "((((int))((x))) +\n(y))");
 	test_parser_expr("(a), (b)", "(((a)), ((b)))");
 	test_parser_expr("x * y", "((x) * (y))");
 	test_parser_expr("x & y", "((x) & (y))");
