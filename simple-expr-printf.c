@@ -1,5 +1,7 @@
 #include "simple-expr-printf.h"
 
+#include "config.h"
+
 #include <string.h>
 
 #include "libks/arena.h"
