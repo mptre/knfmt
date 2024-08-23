@@ -329,11 +329,6 @@ parser_decl_init(struct parser *pr, struct doc **out,
 			doc_alloc(DOC_SOFTLINE, concat);
 			concat = doc_alloc(DOC_CONCAT,
 			    doc_alloc(DOC_GROUP, concat));
-			/*
-			 * Any preceeding expr cannot be the last one of this
-			 * declaration.
-			 */
-			*out = concat;
 		}
 
 		error = parser_decl_init1(pr, concat, out);
@@ -407,10 +402,8 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 	} else if (parser_attributes(pr, dc, out,
 	    PARSER_ATTRIBUTES_LINE) & GOOD) {
 		if (!lexer_peek_if(lx, TOKEN_SEMI, NULL) &&
-		    !lexer_peek_if(lx, TOKEN_EQUAL, NULL)) {
+		    !lexer_peek_if(lx, TOKEN_EQUAL, NULL))
 			doc_literal(" ", dc);
-			*out = NULL;
-		}
 		return parser_good(pr);
 	} else if (parser_asm_peek(pr)) {
 		doc_alloc(DOC_LINE, dc);
