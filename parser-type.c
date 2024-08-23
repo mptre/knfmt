@@ -101,9 +101,8 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			 * Preceding storage/qualifier followed by identifier,
 			 * treat it as a type.
 			 */
-			if (nkeywords > 0) {
+			if (nkeywords > 0)
 				peek = 1;
-			}
 		} else if (ntokens > 0 && peek_type_func_ptr(lx, &args, &t)) {
 			if (!lexer_back(lx, &align))
 				return 0;

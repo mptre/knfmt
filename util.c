@@ -24,13 +24,12 @@ colwidth(const char *str, size_t len, unsigned int cno)
 		for (; len > 0; len--, str++) {
 			char c = str[0];
 
-			if (c == '\t') {
+			if (c == '\t')
 				cno = ((cno + 8 - 1) & ~0x7u) + 1;
-			} else if (c == '\n') {
+			else if (c == '\n')
 				cno = 1;
-			} else {
+			else
 				break;
-			}
 		}
 	}
 
