@@ -372,6 +372,7 @@ parser_decl_init1(struct parser *pr, struct doc *dc, struct doc **out)
 		parser_doc_token(pr, tk, dc);
 		if (lexer_peek_if(lx, TOKEN_IDENT, NULL))
 			doc_literal(" ", dc);
+		*out = dc;
 		return parser_good(pr);
 	} else if (parser_decl_peek_parens_or_squares(pr, &lhs)) {
 		struct doc *expr = NULL;
@@ -441,6 +442,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 		error = parser_braces(pr, dedent, arg->indent, 0);
 		if (error & (FAIL | NONE))
 			return parser_fail(pr);
+		*out = dedent;
 	} else {
 		struct token *pv, *stop;
 		unsigned int expr_flags = 0;
