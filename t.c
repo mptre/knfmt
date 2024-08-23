@@ -47,13 +47,13 @@ struct context {
 static void	test_parser_expr_impl(struct context *, const char *,
     const char *, int);
 
-#define test_parser_type_peek(a, b) \
-	test_parser_type_peek_impl(&ctx, (a), (b), 0, 1, __LINE__)
-#define test_parser_type_peek_flags(a, b, c) \
-	test_parser_type_peek_impl(&ctx, (b), (c), (a), 1, __LINE__)
-#define test_parser_type_peek_error(a) \
-	test_parser_type_peek_impl(&ctx, (a), "", 0, 0, __LINE__)
-static void	test_parser_type_peek_impl(struct context *, const char *,
+#define test_parser_type(a, b) \
+	test_parser_type_impl(&ctx, (a), (b), 0, 1, __LINE__)
+#define test_parser_type_flags(a, b, c) \
+	test_parser_type_impl(&ctx, (b), (c), (a), 1, __LINE__)
+#define test_parser_type_error(a) \
+	test_parser_type_impl(&ctx, (a), "", 0, 0, __LINE__)
+static void	test_parser_type_impl(struct context *, const char *,
     const char *, unsigned int, int, int);
 
 #define test_parser_attributes_peek(a, b) \
@@ -210,97 +210,94 @@ main(void)
 	test_parser_expr("x->y", "((x)->(y))");
 	test_parser_expr("x.y", "((x).(y))");
 
-	test_parser_type_peek("void", "void");
-	test_parser_type_peek("void *", "void *");
-	test_parser_type_peek("void *p", "void *");
-	test_parser_type_peek("size_t", "size_t");
-	test_parser_type_peek("size_t s)", "size_t");
-	test_parser_type_peek("size_t *", "size_t *");
-	test_parser_type_peek("size_t *p", "size_t *");
-	test_parser_type_peek("void main(int)", "void");
-	test_parser_type_peek("void main(int);", "void");
-	test_parser_type_peek("static foo void", "static foo void");
-	test_parser_type_peek("static void foo", "static void foo");
-	test_parser_type_peek("void foo f(void)", "void foo");
-	test_parser_type_peek("char[]", "char [ ]");
-	test_parser_type_peek(
-	    "struct wsmouse_param[]",
-	    "struct wsmouse_param [ ]");
-	test_parser_type_peek("void)", "void");
-	test_parser_type_peek("void,", "void");
-	test_parser_type_peek("struct {,", "struct");
-	test_parser_type_peek("struct s,", "struct s");
-	test_parser_type_peek("struct s {,", "struct s");
-	test_parser_type_peek("struct s *,", "struct s *");
-	test_parser_type_peek("struct s **,", "struct s * *");
-	test_parser_type_peek("struct s ***,", "struct s * * *");
-	test_parser_type_peek("union {,", "union");
-	test_parser_type_peek("union u,", "union u");
-	test_parser_type_peek("union u {,", "union u");
-	test_parser_type_peek("const* char*", "const * char *");
-	test_parser_type_peek("char x[]", "char");
-	test_parser_type_peek("va_list ap;", "va_list");
-	test_parser_type_peek("struct s *M(v)", "struct s *");
-	test_parser_type_peek(
+	test_parser_type("void", "void");
+	test_parser_type("void *", "void *");
+	test_parser_type("void *p", "void *");
+	test_parser_type("size_t", "size_t");
+	test_parser_type("size_t s)", "size_t");
+	test_parser_type("size_t *", "size_t *");
+	test_parser_type("size_t *p", "size_t *");
+	test_parser_type("void main(int)", "void");
+	test_parser_type("void main(int);", "void");
+	test_parser_type("static foo void", "static foo void");
+	test_parser_type("static void foo", "static void foo");
+	test_parser_type("void foo f(void)", "void foo");
+	test_parser_type("char[]", "char [ ]");
+	test_parser_type("struct wsmouse_param[]", "struct wsmouse_param [ ]");
+	test_parser_type("void)", "void");
+	test_parser_type("void,", "void");
+	test_parser_type("struct {,", "struct");
+	test_parser_type("struct s,", "struct s");
+	test_parser_type("struct s {,", "struct s");
+	test_parser_type("struct s *,", "struct s *");
+	test_parser_type("struct s **,", "struct s * *");
+	test_parser_type("struct s ***,", "struct s * * *");
+	test_parser_type("union {,", "union");
+	test_parser_type("union u,", "union u");
+	test_parser_type("union u {,", "union u");
+	test_parser_type("const* char*", "const * char *");
+	test_parser_type("char x[]", "char");
+	test_parser_type("va_list ap;", "va_list");
+	test_parser_type("struct s *M(v)", "struct s *");
+	test_parser_type(
 	    "const struct filterops *const sysfilt_ops[]",
 	    "const struct filterops * const");
-	test_parser_type_peek("long __guard_local __attribute__", "long");
-	test_parser_type_peek("unsigned int f:1", "unsigned int");
-	test_parser_type_peek(
+	test_parser_type("long __guard_local __attribute__", "long");
+	test_parser_type("unsigned int f:1", "unsigned int");
+	test_parser_type(
 	    "usbd_status (*v)(void)",
 	    "usbd_status ( * v ) ( void )");
-	test_parser_type_peek("register char", "register char");
-	test_parser_type_peek("...", "...");
-	test_parser_type_peek("int (*f[])(void)", "int ( * f [ ] ) ( void )");
-	test_parser_type_peek(
+	test_parser_type("register char", "register char");
+	test_parser_type("...", "...");
+	test_parser_type("int (*f[])(void)", "int ( * f [ ] ) ( void )");
+	test_parser_type(
 	    "int (* volatile f)(void);",
 	    "int ( * volatile f ) ( void )");
-	test_parser_type_peek(
+	test_parser_type(
 	    "void (*const *f)(void);",
 	    "void ( * const * f ) ( void )");
-	test_parser_type_peek("int (**f)(void);", "int ( * * f ) ( void )");
-	test_parser_type_peek("int (*f(void))(void)", "int");
-	test_parser_type_peek(
+	test_parser_type("int (**f)(void);", "int ( * * f ) ( void )");
+	test_parser_type("int (*f(void))(void)", "int");
+	test_parser_type(
 	    "void (*f[1])(void)",
 	    "void ( * f [ 1 ] ) ( void )");
-	test_parser_type_peek("void (*)", "void ( * )");
-	test_parser_type_peek("char (*v)[1]", "char ( * v ) [ 1 ]");
-	test_parser_type_peek(
+	test_parser_type("void (*)", "void ( * )");
+	test_parser_type("char (*v)[1]", "char ( * v ) [ 1 ]");
+	test_parser_type(
 	    "P256_POINT (*table)[16]",
 	    "P256_POINT ( * table ) [ 16 ]");
-	test_parser_type_peek("char (*)[TP_BSIZE]", "char ( * ) [ TP_BSIZE ]");
-	test_parser_type_peek(
+	test_parser_type("char (*)[TP_BSIZE]", "char ( * ) [ TP_BSIZE ]");
+	test_parser_type(
 	    "STACK_OF(X509_EXTENSION) x",
 	    "STACK_OF ( X509_EXTENSION ) x");
-	test_parser_type_peek(
+	test_parser_type(
 	    "STACK_OF(X509_EXTENSION) *",
 	    "STACK_OF ( X509_EXTENSION ) *");
-	test_parser_type_peek(
+	test_parser_type(
 	    "const STACK_OF(X509_EXTENSION)*",
 	    "const STACK_OF ( X509_EXTENSION ) *");
-	test_parser_type_peek(
+	test_parser_type(
 	    "int\nmain(foo)\n\tfoo_t *",
 	    "int");
-	test_parser_type_peek("u_int:4", "u_int");
-	test_parser_type_peek("LIST_ENTRY(list, s);",
-	    "LIST_ENTRY ( list , s )");
+	test_parser_type("u_int:4", "u_int");
+	test_parser_type("LIST_ENTRY(list, s);", "LIST_ENTRY ( list , s )");
 
-	test_parser_type_peek_flags(PARSER_TYPE_CAST,
+	test_parser_type_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");
-	test_parser_type_peek_flags(PARSER_TYPE_ARG,
+	test_parser_type_flags(PARSER_TYPE_ARG,
 	    "const foo_t)", "const");
-	test_parser_type_peek_flags(PARSER_TYPE_ARG,
+	test_parser_type_flags(PARSER_TYPE_ARG,
 	    "size_t)", "size_t");
-	test_parser_type_peek_flags(PARSER_TYPE_ARG,
+	test_parser_type_flags(PARSER_TYPE_ARG,
 	    "foo_t[]", "foo_t [ ]");
-	test_parser_type_peek_flags(PARSER_TYPE_ARG,
+	test_parser_type_flags(PARSER_TYPE_ARG,
 	    "regmatch_t[10]", "regmatch_t [ 10 ]");
-	test_parser_type_peek_flags(PARSER_TYPE_EXPR,
+	test_parser_type_flags(PARSER_TYPE_EXPR,
 	    "const foo_t)", "const foo_t");
 
-	test_parser_type_peek_error("_asm volatile (");
-	test_parser_type_peek_error("*");
-	test_parser_type_peek_error("[");
+	test_parser_type_error("_asm volatile (");
+	test_parser_type_error("*");
+	test_parser_type_error("[");
 
 	test_parser_attributes_peek(
 	    "__attribute__((one))",
@@ -433,8 +430,8 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 }
 
 static void
-test_parser_type_peek_impl(struct context *ctx, const char *src,
-    const char *exp, unsigned int flags, int peek, int lno)
+test_parser_type_impl(struct context *ctx, const char *src, const char *exp,
+    unsigned int flags, int peek, int lno)
 {
 	const char *act;
 	struct parser_type type;
