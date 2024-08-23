@@ -3,8 +3,8 @@ struct expr_exec_arg {
 	const struct style	*st;
 	struct simple		*si;
 	struct lexer		*lx;
-	struct ruler		*rl;
 	struct doc		*dc;
+	struct ruler		*rl;
 
 	/*
 	 * Reaching this token causes the expression parser to stop.
