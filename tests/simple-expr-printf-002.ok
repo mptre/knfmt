@@ -1,0 +1,10 @@
+int
+main(void)
+{
+	warn("one" "two");
+	vwarn("one" "two", ap);
+	warnc(1, "one" "two");
+	vwarnc(1, "one" "two", ap);
+	warnx("one" "two");
+	vwarnx("one" "two", ap);
+}

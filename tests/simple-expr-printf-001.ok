@@ -1,0 +1,10 @@
+int
+main(void)
+{
+	err(1, "one" "two");
+	verr(1, "one" "two", ap);
+	errc(1, 2, "one" "two");
+	verrc(1, 2, "one" "two", ap);
+	errx(1, "one" "two");
+	verrx(1, "one" "two", ap);
+}

@@ -16,6 +16,7 @@
 #include "doc.h"
 #include "lexer.h"
 #include "ruler.h"
+#include "simple-expr-printf.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
@@ -521,6 +522,20 @@ expr_exec_literal(struct expr_state *es, struct expr *NDEBUG_UNUSED(lhs))
 	return expr_alloc(EXPR_LITERAL, es);
 }
 
+static void
+expr_exec_call(struct expr_state *es, struct expr *ex)
+{
+	if (es->es_mode != EXPR_MODE_EXEC ||
+	    ex->ex_lhs->ex_type != EXPR_LITERAL)
+		return;
+
+	simple_cookie(simple);
+	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PRINTF, 0, &simple)) {
+		simple_expr_printf(es->es_lx, ex->ex_lhs->ex_tk,
+		    es->es_arena.eternal_scope);
+	}
+}
+
 static struct expr *
 expr_exec_parens(struct expr_state *es, struct expr *lhs)
 {
@@ -547,6 +562,8 @@ expr_exec_parens(struct expr_state *es, struct expr *lhs)
 		ex = expr_alloc(EXPR_CALL, es);
 		ex->ex_lhs = lhs;
 		ex->ex_rhs = expr_exec1(es, PC0);
+
+		expr_exec_call(es, ex);
 	}
 	ex->ex_tokens[0] = tk;	/* ( */
 
