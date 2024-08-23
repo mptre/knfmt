@@ -113,7 +113,7 @@ static void		 token_prolong(struct token *, struct token *);
 
 static int	isnum(unsigned char);
 
-static MAP(const char, *, struct token *) table_tokens;
+static MAP(const char, *, const struct token *) table_tokens;
 static MAP(const char, *, int) cpp_token_types;
 static const struct token *token_types[TOKEN_NONE + 1];
 
@@ -671,12 +671,12 @@ static const char *
 clang_token_serialize_prefix(const struct token *prefix, struct arena_scope *s)
 {
 	struct buffer *bf;
-	struct clang_token *ct;
+	const struct clang_token *ct;
 
 	bf = arena_buffer_alloc(s, 1 << 8);
 	buffer_printf(bf, "%s", clang_token_serialize(prefix, s));
 
-	ct = token_priv(prefix, struct clang_token);
+	ct = token_priv(prefix, const struct clang_token);
 	if (ct->branch.pv != NULL) {
 		buffer_printf(bf, ", pv %s",
 		    clang_token_serialize(ct->branch.pv, s));
@@ -1287,7 +1287,7 @@ clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 static const struct token *
 clang_find_keyword1(const char *key, size_t len)
 {
-	struct token **kw;
+	const struct token **kw;
 
 	kw = MAP_FIND_N(table_tokens, key, len);
 	if (kw == NULL)
