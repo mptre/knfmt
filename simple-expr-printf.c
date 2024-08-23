@@ -4,6 +4,7 @@
 
 #include "libks/arena.h"
 
+#include "clang.h"
 #include "lexer.h"
 #include "token.h"
 
@@ -14,30 +15,35 @@ enum format_argno {
 };
 
 static int
-identify_function(const struct token *tk, enum format_argno *out)
+identify_function(const struct token *tk, enum format_argno *argno)
 {
-	size_t len = tk->tk_len;
+	enum clang_token_type type = clang_token_type(tk);
 
-	if ((len == 4 && token_memcmp(tk, "warn", 4) == 0) ||
-	    (len == 5 && token_memcmp(tk, "warnx", 5) == 0) ||
-	    (len == 5 && token_memcmp(tk, "vwarn", 5) == 0) ||
-	    (len == 6 && token_memcmp(tk, "vwarnx", 6) == 0) ||
-	    (len == 6 && token_memcmp(tk, "perror", 6) == 0)) {
-		*out = FORMAT_ARGNO_0;
-		return 1;
-	} else if ((len == 3 && token_memcmp(tk, "err", 3) == 0) ||
-	    (len == 4 && token_memcmp(tk, "errx", 4) == 0) ||
-	    (len == 4 && token_memcmp(tk, "verr", 4) == 0) ||
-	    (len == 5 && token_memcmp(tk, "verrx", 5) == 0) ||
-	    (len == 5 && token_memcmp(tk, "warnc", 5) == 0) ||
-	    (len == 6 && token_memcmp(tk, "vwarnc", 6) == 0)) {
-		*out = FORMAT_ARGNO_1;
-		return 1;
-	} else if ((len == 4 && token_memcmp(tk, "errc", 4) == 0) ||
-	    (len == 5 && token_memcmp(tk, "verrc", 5) == 0)) {
-		*out = FORMAT_ARGNO_2;
+	if (type == CLANG_TOKEN_PERROR ||
+	    type == CLANG_TOKEN_VWARN ||
+	    type == CLANG_TOKEN_VWARNX ||
+	    type == CLANG_TOKEN_WARN ||
+	    type == CLANG_TOKEN_WARNX) {
+		*argno = FORMAT_ARGNO_0;
 		return 1;
 	}
+
+	if (type == CLANG_TOKEN_ERR ||
+	    type == CLANG_TOKEN_ERRX ||
+	    type == CLANG_TOKEN_VERR ||
+	    type == CLANG_TOKEN_VERRX ||
+	    type == CLANG_TOKEN_VWARNC ||
+	    type == CLANG_TOKEN_WARNC) {
+		*argno = FORMAT_ARGNO_1;
+		return 1;
+	}
+
+	if (type == CLANG_TOKEN_ERRC ||
+	    type == CLANG_TOKEN_VERRC) {
+		*argno = FORMAT_ARGNO_2;
+		return 1;
+	}
+
 	return 0;
 }
 
