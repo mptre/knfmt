@@ -49,6 +49,8 @@ struct clang_token {
 		struct token	*pv;
 		struct token	*nx;
 	} branch;
+
+	enum clang_token_type	type;
 };
 
 static void	clang_branch_enter(struct clang *, struct lexer *,
@@ -115,6 +117,7 @@ static int	isnum(unsigned char);
 
 static MAP(const char, *, const struct token *) table_tokens;
 static MAP(const char, *, int) cpp_token_types;
+static MAP(const char, *, enum clang_token_type) clang_identifiers;
 static const struct token *token_types[TOKEN_NONE + 1];
 
 static const struct token tklit = {
@@ -141,6 +144,15 @@ clang_init(void)
 	.tk_str		= (keyword),					\
 },
 	const struct token cpp[] = { FOR_TOKEN_CPP(OP) };
+#undef OP
+#define OP(type, keyword) {						\
+	.key	= (keyword),						\
+	.val	= (type),						\
+},
+	const struct {
+		const char		*key;
+		enum clang_token_type	 val;
+	} identifiers[] = { FOR_CLANG_IDENTIFIERS(OP) };
 #undef OP
 	size_t i;
 
@@ -175,6 +187,14 @@ clang_init(void)
 		    src->tk_type) == NULL)
 			err(1, NULL);
 	}
+
+	if (MAP_INIT(clang_identifiers))
+		err(1, NULL);
+	for (i = 0; i < sizeof(identifiers) / sizeof(identifiers[0]); i++) {
+		if (MAP_INSERT_VALUE(clang_identifiers, identifiers[i].key,
+		    identifiers[i].val) == NULL)
+			err(1, NULL);
+	}
 }
 
 void
@@ -182,6 +202,7 @@ clang_shutdown(void)
 {
 	MAP_FREE(table_tokens);
 	MAP_FREE(cpp_token_types);
+	MAP_FREE(clang_identifiers);
 }
 
 struct clang *
@@ -473,6 +494,12 @@ clang_keyword_token(int token_type)
 	return token_types[token_type];
 }
 
+enum clang_token_type
+clang_token_type(const struct token *tk)
+{
+	return token_priv(tk, const struct clang_token)->type;
+}
+
 static void
 clang_after_read(struct lexer *lx, void *arg)
 {
@@ -506,6 +533,17 @@ clang_before_free(struct lexer *lx, void *arg)
 		tail = VECTOR_POP(cl->stamps);
 		token_rele(*tail);
 	}
+}
+
+static enum clang_token_type
+clang_find_identifier(const char *str, size_t len)
+{
+	enum clang_token_type *type;
+
+	type = MAP_FIND_N(clang_identifiers, str, len);
+	if (type == NULL)
+		return CLANG_TOKEN_NONE;
+	return *type;
 }
 
 static struct token *
@@ -577,6 +615,8 @@ clang_read(struct lexer *lx, void *arg)
 			tk = lexer_emit(lx, &st, &(struct token){
 			    .tk_type	= TOKEN_IDENT,
 			});
+			token_priv(tk, struct clang_token)->type =
+			    clang_find_identifier(tk->tk_str, tk->tk_len);
 		}
 	} else if (lexer_eof(lx)) {
 eof:
