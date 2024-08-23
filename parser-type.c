@@ -65,7 +65,6 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &t)) {
 			nkeywords++;
-			peek = 1;
 		} else if (lexer_if_flags(lx, TOKEN_FLAG_TYPE, &t)) {
 			if (t->tk_type == TOKEN_ENUM ||
 			    t->tk_type == TOKEN_STRUCT ||
@@ -98,6 +97,13 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			/* Identifier is part of the type, consume it. */
 			if (!lexer_if(lx, TOKEN_IDENT, &t))
 				return 0;
+			/*
+			 * Preceding storage/qualifier followed by identifier,
+			 * treat it as a type.
+			 */
+			if (nkeywords > 0) {
+				peek = 1;
+			}
 		} else if (ntokens > 0 && peek_type_func_ptr(lx, &args, &t)) {
 			if (!lexer_back(lx, &align))
 				return 0;
