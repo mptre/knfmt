@@ -17,9 +17,11 @@
 #ifndef LIBKS_FUZZER_H
 #define LIBKS_FUZZER_H
 
+#include <assert.h>
 #include <stdint.h>
 
 #include "libks/buffer.h"
+#include "libks/section.h"
 #include "libks/tmp.h"
 
 #if !defined(FUZZER_AFL) && !defined(FUZZER_LLVM)
@@ -27,9 +29,14 @@
 #endif
 
 /* Work around what seems to be a GCC UBSan bug. */
-#if defined(__GNUC__) && __has_attribute(no_sanitize)
-#  define NO_SANITIZE_UNDEFINED no_sanitize("undefined")
-#else
+#if defined(__GNUC__)
+#  if __GNUC__ > 4
+#    if __has_attribute(no_sanitize)
+#      define NO_SANITIZE_UNDEFINED no_sanitize("undefined")
+#    endif
+#  endif
+#endif
+#if !defined(NO_SANITIZE_UNDEFINED)
 #  define NO_SANITIZE_UNDEFINED
 #endif
 
@@ -44,18 +51,18 @@ struct fuzzer_target {
 union fuzzer_callback {
 	void *(*init)(int, char **);
 	void (*teardown)(void *);
-};
+} __attribute__((aligned(16)));
 
 extern const struct fuzzer_target fuzzer_target;
 
 #define FUZZER_INIT(func)						\
 	__attribute__((used))						\
-	__attribute__((section("fuzzer_callback_init")))		\
+	SECTION(fz_init)						\
 	union fuzzer_callback _fuzzer_init_impl = {.init = (func)}	\
 
 #define FUZZER_TEARDOWN(func)						\
 	__attribute__((used))						\
-	__attribute__((section("fuzzer_callback_teardown")))		\
+	SECTION(fz_teardown)						\
 	union fuzzer_callback _fuzzer_teardown_impl = {.teardown = (func)}\
 
 #define FUZZER_TARGET_BUFFER(func)					\
@@ -72,7 +79,7 @@ extern const struct fuzzer_target fuzzer_target;
 
 #define FUZZER_SECTION(type)						\
 	__attribute__((used))						\
-	__attribute__((section("fuzzer_callback_" # type)))		\
+	SECTION(fz_ ## type)						\
 	union fuzzer_callback _fuzzer_ ## type ## _default = {0}	\
 
 /*
@@ -86,37 +93,27 @@ __attribute__((NO_SANITIZE_UNDEFINED))
 static inline void *
 fuzzer_init(int argc, char *argv[])
 {
-	/* NOLINTBEGIN(bugprone-reserved-identifier) */
-
-	extern union fuzzer_callback __start_fuzzer_callback_init,
-				     __stop_fuzzer_callback_init;
-	union fuzzer_callback *it = &__start_fuzzer_callback_init;
-
-	for (; it != &__stop_fuzzer_callback_init; it++) {
+	union fuzzer_callback *it = NULL;
+	while (SECTION_ITERATE(it, fz_init)) {
+		/* Suppress cppcheck nullPointer false positive. */
+		assert(it != NULL);
 		if (it->init != NULL)
 			return it->init(argc, argv);
 	}
 	return NULL;
-
-	/* NOLINTEND(bugprone-reserved-identifier) */
 }
 
 __attribute__((NO_SANITIZE_UNDEFINED))
 static inline void
 fuzzer_teardown(void *userdata)
 {
-	/* NOLINTBEGIN(bugprone-reserved-identifier) */
-
-	extern union fuzzer_callback __start_fuzzer_callback_teardown,
-				     __stop_fuzzer_callback_teardown;
-	union fuzzer_callback *it = &__start_fuzzer_callback_teardown;
-
-	for (; it != &__stop_fuzzer_callback_teardown; it++) {
+	union fuzzer_callback *it = NULL;
+	while (SECTION_ITERATE(it, fz_teardown)) {
+		/* Suppress cppcheck nullPointer false positive. */
+		assert(it != NULL);
 		if (it->teardown != NULL)
 			it->teardown(userdata);
 	}
-
-	/* NOLINTEND(bugprone-reserved-identifier) */
 }
 
 #if defined(FUZZER_AFL)

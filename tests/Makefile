@@ -806,6 +806,7 @@ TESTS+=	../libks/fuzzer.h
 TESTS+=	../libks/list.h
 TESTS+=	../libks/map.c
 TESTS+=	../libks/map.h
+TESTS+=	../libks/section.h
 TESTS+=	../libks/string.c
 TESTS+=	../libks/string.h
 TESTS+=	../libks/tmp.c
