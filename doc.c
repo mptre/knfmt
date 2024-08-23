@@ -570,6 +570,8 @@ doc_token(struct token *tk, struct doc *dc, enum doc_type type,
 {
 	struct doc *token;
 
+	assert(doc_descriptions[type].children.token);
+
 	token = doc_alloc_impl(type, dc, 0, fun, lno);
 	token->dc_tk = tk;
 	token_ref(token->dc_tk);
