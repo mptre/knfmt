@@ -142,8 +142,15 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 	{
 		simple_cookie(simple);
-		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple))
+		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple)) {
 			end = simple_static(lx, beg, end);
+			/*
+			 * Must be evaluated again as the simple static pass
+			 * could reorder tokens.
+			 */
+			if (!lexer_peek(lx, &beg))
+				return 0;
+		}
 	}
 
 	{
@@ -154,12 +161,6 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 out:
 	if (type != NULL) {
-		/*
-		 * Must be evaluated again as the simple static pass above could
-		 * reorder tokens.
-		 */
-		if (!lexer_peek(lx, &beg))
-			return 0;
 		*type = (struct parser_type){
 		    .beg	= beg,
 		    .end	= end,
