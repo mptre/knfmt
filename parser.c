@@ -225,14 +225,15 @@ is_branch(const struct lexer *lx)
 int
 parser_fail_impl(struct parser *pr, const char *fun, int lno)
 {
+	struct token fallback = {.tk_lno = 1, .tk_cno = 1};
 	struct lexer *lx = pr->pr_lx;
 	struct token *tk = NULL;
 
 	if (lexer_get_error(lx))
 		goto out;
 
-	if (!lexer_back(lx, &tk))
-		lexer_peek_first(lx, &tk);
+	if (!lexer_back(lx, &tk) && !lexer_peek_first(lx, &tk))
+		tk = &fallback;
 	lexer_error(pr->pr_lx, tk, fun, lno,
 	    "error at %s", lexer_serialize(lx, tk));
 
