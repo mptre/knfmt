@@ -79,6 +79,9 @@ parser_cpp_peek_decl(struct parser *pr, struct parser_type *type,
 	struct token *macro, *tk;
 	int peek = 0;
 
+	if (!lexer_peek(lx, &type->beg))
+		return 0;
+
 	lexer_peek_enter(lx, &s);
 	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE,
 	    NULL))
