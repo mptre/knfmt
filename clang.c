@@ -1387,6 +1387,7 @@ token_branch_find(struct token *tk)
 		/* Unlinked branches could be present during lexer read phase. */
 		if (pv == NULL)
 			continue;
+		/* Avoid branch hanging of the same token. */
 		if (token_priv(prefix, struct clang_token)->branch.parent !=
 		    token_priv(pv, struct clang_token)->branch.parent)
 			return pv;
