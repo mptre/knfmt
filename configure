@@ -101,20 +101,6 @@ rmdup() {
 	xargs
 }
 
-check_attribute_fallthrough() {
-	compile <<-EOF
-	int main(void) {
-		switch (0) {
-		case 0:
-			__attribute__((__fallthrough__));
-		case 1:
-			return 1;
-		}
-		return 0;
-	}
-	EOF
-}
-
 check_pledge() {
 	compile <<-EOF
 	#include <unistd.h>
@@ -152,7 +138,6 @@ set -u
 # Enable tracing, will end up in config.log.
 set -x
 
-HAVE_ATTRIBUTE_FALLTHROUGH=0
 HAVE_PLEDGE=0
 
 # Order is important, must come first if not defined.
@@ -213,7 +198,6 @@ for _c in ${CFLAGS}; do
 	CXXFLAGS="${CXXFLAGS} $(cxx_has_option "${_c}")"
 done
 
-check_attribute_fallthrough && HAVE_ATTRIBUTE_FALLTHROUGH=1
 check_pledge && HAVE_PLEDGE=1
 
 # Redirect stdout to config.h.
@@ -227,12 +211,6 @@ printf '#ifndef CONFIG_H\n#define CONFIG_H\n'
 } | sort | uniq | headers
 
 [ "${HAVE_PLEDGE}" -eq 1 ] && printf '#define HAVE_PLEDGE\t1\n'
-
-if [ "${HAVE_ATTRIBUTE_FALLTHROUGH}" -eq 1 ]; then
-	printf '#define FALLTHROUGH __attribute__((__fallthrough__))\n'
-else
-	printf '#define FALLTHROUGH do {} while (0) /* FALLTHROUGH */\n'
-fi
 
 if [ -n "${_fuzz}" ]; then
 	printf '#define FUZZER_%s\t1\n' \
