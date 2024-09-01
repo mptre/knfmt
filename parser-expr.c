@@ -120,7 +120,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		int error;
 
 		dc = doc_root(pr->pr_arena.doc_scope);
-		error = parser_braces(pr, dc, ea->indent,
+		error = parser_braces(pr, dc, dc, ea->indent,
 		    PARSER_BRACES_DEDENT | PARSER_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
 			return dc;

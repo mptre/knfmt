@@ -226,7 +226,7 @@ parser_decl2(struct parser *pr, struct doc *dc, struct ruler *rl,
 			doc_alloc(DOC_HARDLINE, concat);
 
 		w = style(pr->pr_st, IndentWidth);
-		error = parser_braces(pr, concat, w,
+		error = parser_braces(pr, concat, concat, w,
 		    PARSER_BRACES_ENUM | PARSER_BRACES_TRIM);
 		if (error & HALT)
 			return parser_fail(pr);
@@ -412,7 +412,7 @@ parser_decl_init_assign(struct parser *pr, struct doc *dc, struct doc **out,
 
 	dedent = doc_alloc(DOC_CONCAT, ruler_dedent(arg->rl, dc, NULL));
 	if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-		error = parser_braces(pr, dedent, arg->indent, 0);
+		error = parser_braces(pr, arg->dc, dedent, arg->indent, 0);
 		if (error & (FAIL | NONE))
 			return parser_fail(pr);
 		*out = dedent;

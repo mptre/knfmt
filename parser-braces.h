@@ -8,5 +8,5 @@ struct parser;
 /* Perform conditional indentation. */
 #define PARSER_BRACES_INDENT_MAYBE		0x00000008u
 
-int	parser_braces(struct parser *, struct doc *, unsigned int,
-    unsigned int);
+int	parser_braces(struct parser *, struct doc *, struct doc *,
+    unsigned int, unsigned int);

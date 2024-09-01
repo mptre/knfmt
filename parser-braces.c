@@ -27,7 +27,7 @@ struct lbrace_cache {
 };
 
 static int	parser_braces_with_ruler(struct parser *, struct doc *,
-    struct ruler *, unsigned int, unsigned int);
+    struct doc *, struct ruler *, unsigned int, unsigned int);
 static int	parser_braces_field(struct parser *, struct braces_field_arg *);
 static int	parser_braces_field1(struct parser *,
     struct braces_field_arg *);
@@ -40,22 +40,52 @@ static void		 insert_trailing_comma(struct parser *,
     struct token *);
 
 int
-parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
-    unsigned int flags)
+parser_braces(struct parser *pr, struct doc *parent, struct doc *dc,
+    unsigned int indent, unsigned int flags)
 {
 	struct ruler rl;
 	int error;
 
 	ruler_init(&rl, 0, RULER_ALIGN_SENSE);
-	error = parser_braces_with_ruler(pr, dc, &rl, indent, flags);
+	error = parser_braces_with_ruler(pr, parent, dc, &rl, indent, flags);
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
 }
 
 static int
-parser_braces_with_ruler(struct parser *pr, struct doc *dc, struct ruler *rl,
-    unsigned int indent_width, unsigned int flags)
+is_first_token_on_line(const struct token *tk)
+{
+	const struct token *pv;
+
+	pv = token_prev(tk);
+	return pv != NULL && token_cmp(pv, tk) < 0;
+}
+
+/*
+ * Returns non-zero if the first element inside the braces is aligned with the
+ * first one on the subsequent line.
+ */
+static int
+is_row_aligned(const struct token *lbrace, const struct token *rbrace)
+{
+	const struct token *first, *tk;
+
+	if (is_first_token_on_line(lbrace))
+		return 0;
+
+	first = token_next(lbrace);
+	for (tk = token_next(first); tk != rbrace; tk = token_next(tk)) {
+		if (token_cmp(tk, first) > 0)
+			return tk->tk_cno == first->tk_cno;
+	}
+
+	return 0;
+}
+
+static int
+parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
+    struct ruler *rl, unsigned int indent_width, unsigned int flags)
 {
 	struct lbrace_cache lbrace_cache = {0};
 	struct doc *braces, *indent;
@@ -96,8 +126,18 @@ parser_braces_with_ruler(struct parser *pr, struct doc *dc, struct ruler *rl,
 			val |= DOC_INDENT_NEWLINE;
 		indent = doc_indent(val, braces);
 		doc_alloc(DOC_HARDLINE, indent);
-	} else if ((pv = token_prev(lbrace)) != NULL &&
-	    token_cmp(pv, lbrace) == 0) {
+	} else if (is_row_aligned(lbrace, rbrace)) {
+		/*
+		 * Rows are aligned using an indent equal to the position of the
+		 * lbrace.
+		 *
+		 * 	int v[] = { 0x1, 0x2,
+		 * 		    0x3, 0x4 };
+		 */
+		if (token_has_spaces(lbrace))
+			doc_literal(" ", braces);
+		indent = doc_indent(parser_width(pr, parent), braces);
+	} else if (!is_first_token_on_line(lbrace)) {
 		/*
 		 * The lbrace is not the first token on this line. Regular
 		 * continuation indentation is wanted.
@@ -143,7 +183,7 @@ parser_braces_with_ruler(struct parser *pr, struct doc *dc, struct ruler *rl,
 			if (error & HALT)
 				return parser_fail(pr);
 		} else if (lexer_peek_if(lx, TOKEN_LBRACE, &nx)) {
-			error = parser_braces_with_ruler(pr, concat, rl,
+			error = parser_braces_with_ruler(pr, parent, concat, rl,
 			    indent_width, flags & ~PARSER_BRACES_DEDENT);
 			if (error & HALT)
 				return parser_fail(pr);
