@@ -191,8 +191,7 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 			 * Inherit the column as we're still on the same row in
 			 * terms of alignment.
 			 */
-			if (align)
-				col = ruler_get_column_count(rl);
+			col = ruler_get_column_count(rl);
 		} else {
 			struct token *stop;
 
@@ -216,9 +215,8 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 			parser_doc_token(pr, comma, expr);
 
 			if (align) {
-				col++;
 				w += parser_width(pr, concat);
-				ruler_insert(rl, comma, concat, col, w, 0);
+				ruler_insert(rl, comma, concat, ++col, w, 0);
 				w = 0;
 				goto next;
 			}
@@ -257,7 +255,7 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 		}
 
 next:
-		if (((flags & PARSER_BRACES_ENUM) == 0) &&
+		if ((flags & PARSER_BRACES_ENUM) == 0 &&
 		    lexer_back(lx, &nx) && token_has_line(nx, 2))
 			ruler_exec(rl);
 	}
