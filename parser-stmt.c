@@ -225,16 +225,17 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 }
 
 static int
-peek_else_if(struct parser *pr, struct token **tkif, struct token **tkelse)
+peek_else_if(struct parser *pr)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
+	struct token *tkelse, *tkif;
 	int peek;
 
 	lexer_peek_enter(lx, &s);
-	peek = lexer_if(lx, TOKEN_ELSE, tkelse) &&
-	    lexer_peek_if(lx, TOKEN_IF, tkif) &&
-	    token_cmp(*tkelse, *tkif) == 0;
+	peek = lexer_if(lx, TOKEN_ELSE, &tkelse) &&
+	    lexer_peek_if(lx, TOKEN_IF, &tkif) &&
+	    token_cmp(tkelse, tkif) == 0;
 	lexer_peek_leave(lx, &s);
 	return peek;
 }
@@ -251,7 +252,6 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 		return parser_fail(pr);
 
 	while (lexer_peek_if(lx, TOKEN_ELSE, NULL)) {
-		struct token *tkelse, *tkif;
 		int error;
 
 		if (lexer_back_if(lx, TOKEN_RBRACE, NULL))
@@ -259,12 +259,14 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 		else
 			doc_alloc(DOC_HARDLINE, dc);
 
-		if (peek_else_if(pr, &tkelse, &tkif)) {
+		if (peek_else_if(pr)) {
 			error = parser_stmt_kw_expr(pr, dc, TOKEN_IF,
 			    PARSER_STMT_EXPR_ELSEIF);
 			if (error & HALT)
 				return parser_fail(pr);
 		} else {
+			struct token *tkelse;
+
 			if (!lexer_expect(lx, TOKEN_ELSE, &tkelse))
 				return parser_fail(pr);
 			parser_doc_token(pr, tkelse, dc);
