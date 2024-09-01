@@ -84,35 +84,47 @@ const char *
 token_serialize(const struct token *tk, unsigned int flags,
     struct arena_scope *s)
 {
-	struct buffer *bf;
-	unsigned int quote, verbatim;
+	struct buffer *bf, *serialized_flags;
+	int comma = 0;
 
-	verbatim = flags & TOKEN_SERIALIZE_VERBATIM;
-	flags &= ~TOKEN_SERIALIZE_VERBATIM;
-	quote = flags & TOKEN_SERIALIZE_QUOTE;
-	flags &= ~TOKEN_SERIALIZE_QUOTE;
+	serialized_flags = arena_buffer_alloc(s, 128);
+	if (flags & TOKEN_SERIALIZE_POSITION) {
+		buffer_printf(serialized_flags, "%s%u:%u",
+		    comma++ ? "" : "",
+		    tk->tk_lno, tk->tk_cno);
+	}
+	if (flags & TOKEN_SERIALIZE_FLAGS) {
+		const char *serialized_token_flags;
+
+		serialized_token_flags = token_flags_str(tk->tk_flags, s);
+		if (serialized_token_flags[0] != '\0') {
+			buffer_printf(serialized_flags, "%s%s",
+			    comma++ ? "," : "",
+			    serialized_token_flags);
+		}
+	}
+	if (flags & TOKEN_SERIALIZE_REFS) {
+		buffer_printf(serialized_flags, "%s%d",
+		    comma++ ? "," : "",
+		    tk->tk_refs);
+	}
+	if (flags & TOKEN_SERIALIZE_ADDRESS) {
+		buffer_printf(serialized_flags, "%s%p",
+		    comma++ ? "," : "",
+		    (void *)tk);
+	}
 
 	bf = arena_buffer_alloc(s, 128);
 	buffer_printf(bf, "%s", token_type_str(tk->tk_type));
-	if (flags > 0)
-		buffer_printf(bf, "<");
-	if (flags & TOKEN_SERIALIZE_POSITION)
-		buffer_printf(bf, "%u:%u", tk->tk_lno, tk->tk_cno);
-	if (flags & TOKEN_SERIALIZE_FLAGS)
-		buffer_printf(bf, "%s", token_flags_str(tk->tk_flags, s));
-	if (flags & TOKEN_SERIALIZE_REFS)
-		buffer_printf(bf, ",%d", tk->tk_refs);
-	if (flags & TOKEN_SERIALIZE_ADDRESS)
-		buffer_printf(bf, ",%p", (void *)tk);
-	if (flags > 0)
-		buffer_printf(bf, ">");
+	if (buffer_get_len(serialized_flags) > 0)
+		buffer_printf(bf, "<%s>", buffer_str(serialized_flags));
 
-	if (verbatim) {
+	if (flags & TOKEN_SERIALIZE_VERBATIM) {
 		buffer_printf(bf, "(");
-		if (quote)
+		if (flags & TOKEN_SERIALIZE_QUOTE)
 			buffer_printf(bf, "\"");
 		strnice_buffer(bf, tk->tk_str, tk->tk_len);
-		if (quote)
+		if (flags & TOKEN_SERIALIZE_QUOTE)
 			buffer_printf(bf, "\"");
 		buffer_printf(bf, ")");
 	}
@@ -541,6 +553,7 @@ token_flags_str(unsigned int token_flags, struct arena_scope *s)
 		unsigned int	 flag;
 	} flags[] = {
 #define F(f, s) { (s), sizeof(s) - 1, (f) }
+		F(TOKEN_FLAG_ASSIGN,			"ASSIGN"),
 		F(TOKEN_FLAG_BRANCH,			"BRANCH"),
 		F(TOKEN_FLAG_DISCARD,			"DISCARD"),
 		F(TOKEN_FLAG_COMMENT_C99,		"C99"),
@@ -562,9 +575,7 @@ token_flags_str(unsigned int token_flags, struct arena_scope *s)
 		if ((token_flags & flags[i].flag) == 0)
 			continue;
 
-		if (buffer_get_len(bf) == 0)
-			buffer_putc(bf, ',');
-		else
+		if (buffer_get_len(bf) > 0)
 			buffer_putc(bf, '|');
 		buffer_puts(bf, flags[i].str, flags[i].len);
 	}

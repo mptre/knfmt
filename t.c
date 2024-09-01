@@ -108,6 +108,9 @@ static void	test_is_path_header_impl(const char *, int, int);
 	test_token_branch_impl(&ctx)
 static void	test_token_branch_impl(struct context *);
 
+static void	test_token_serialize(struct context *);
+static void	test_clang_token_serialize(struct context *);
+
 static void	context_alloc(struct context *);
 static void	context_free(struct context *);
 static void	context_init(struct context *, const char *,
@@ -384,6 +387,8 @@ main(void)
 	test_is_path_header("test.", 0);
 
 	test_token_branch_unlink();
+	test_token_serialize(&ctx);
+	test_clang_token_serialize(&ctx);
 
 	context_free(&ctx);
 	style_shutdown();
@@ -705,6 +710,58 @@ test_token_branch_impl(struct context *ctx)
 		    token_list_first(&tk->tk_prefixes), NULL, &s);
 		KS_expect_str(tests[i].exp, act);
 	}
+}
+
+static void
+test_token_serialize(struct context *ctx)
+{
+	struct token *tkequal, *tkint;
+	const char *act;
+
+	arena_scope(ctx->arena.eternal, s);
+
+	context_init(ctx, "int = ", &s);
+	KS_expect_true(find_token(ctx->lx, TOKEN_INT, &tkint));
+	KS_expect_true(find_token(ctx->lx, TOKEN_EQUAL, &tkequal));
+
+	act = token_serialize(tkint, 0, &s);
+	KS_expect_str("INT", act);
+
+	act = token_serialize(tkint, TOKEN_SERIALIZE_VERBATIM, &s);
+	KS_expect_str("INT(int)", act);
+
+	act = token_serialize(tkint,
+	    TOKEN_SERIALIZE_VERBATIM | TOKEN_SERIALIZE_QUOTE, &s);
+	KS_expect_str("INT(\"int\")", act);
+
+	act = token_serialize(tkint, TOKEN_SERIALIZE_POSITION, &s);
+	KS_expect_str("INT<1:1>", act);
+	act = token_serialize(tkequal,
+	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS, &s);
+	KS_expect_str("EQUAL<1:5,ASSIGN>", act);
+
+	act = token_serialize(tkint, TOKEN_SERIALIZE_FLAGS, &s);
+	KS_expect_str("INT", act);
+	act = token_serialize(tkequal, TOKEN_SERIALIZE_FLAGS, &s);
+	KS_expect_str("EQUAL<ASSIGN>", act);
+
+	act = token_serialize(tkint, TOKEN_SERIALIZE_REFS, &s);
+	KS_expect_str("INT<1>", act);
+}
+
+static void
+test_clang_token_serialize(struct context *ctx)
+{
+	struct token *tkerr;
+	const char *act;
+
+	arena_scope(ctx->arena.eternal, s);
+
+	context_init(ctx, "err", &s);
+	KS_expect_true(find_token(ctx->lx, TOKEN_IDENT, &tkerr));
+
+	act = lexer_serialize(ctx->lx, tkerr);
+	KS_expect_str("IDENT<1:1>(\"err\")", act);
 }
 
 static void
