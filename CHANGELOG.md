@@ -23,6 +23,14 @@
   (49e47baa4740)
   (Anton Lindqvist)
 
+- Honor aligned rows in brace initializers.
+  (714b8490aa10)
+  (Anton Lindqvist)
+
+- In simple mode, introduce pass to insert break in switch default cases.
+  (129416a7425b)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Fix missing space before increment statement in for loops.
@@ -55,6 +63,18 @@
 
 - Detect cast expressions can followed by binary operators on separate lines.
   (857210d52e3f)
+  (Anton Lindqvist)
+
+- Allow subsequent switch cases on a single line.
+  (70cc3ab81a1d)
+  (Anton Lindqvist)
+
+- Fix misplaced parenthesis w/ inline assembly instructions only statements.
+  (ed17dc4dc940)
+  (Anton Lindqvist)
+
+- Fix if/else w/o braces confusion.
+  (ebdec4f136c6)
   (Anton Lindqvist)
 
 # 4.4.0 - 2024-04-13
