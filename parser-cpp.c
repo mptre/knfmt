@@ -206,8 +206,7 @@ parser_cpp_cdefs(struct parser *pr, struct doc *dc)
 
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
-	    lexer_pop(lx, &nx) &&
-	    nx->tk_lno - ident->tk_lno >= 1 &&
+	    lexer_pop(lx, &nx) && token_cmp(nx, ident) > 0 &&
 	    iscdefs(ident->tk_str, ident->tk_len))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
