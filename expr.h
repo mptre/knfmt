@@ -28,7 +28,8 @@ struct expr_exec_arg {
 #define EXPR_EXEC_ALIGN			0x00000004u
 /* Testing backdoor. */
 #define EXPR_EXEC_TEST			0x00000008u
-/* was EXPR_EXEC_ASM			0x00000010u */
+/* Emit a line before the expression. */
+#define EXPR_EXEC_LINE			0x00000010u
 /* Disable expr_doc_soft() logic. */
 #define EXPR_EXEC_NOSOFT		0x00000020u
 

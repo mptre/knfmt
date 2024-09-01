@@ -6,6 +6,6 @@
 int
 main(void)
 {
-	for (int t = 0; ; t++) {
+	for (int t = 0;; t++) {
 	}
 }

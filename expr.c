@@ -335,6 +335,8 @@ expr_exec(const struct expr_exec_arg *ea)
 		indent = doc_indent(ea->indent, optional);
 	else
 		indent = doc_alloc(DOC_CONCAT, optional);
+	if (ea->flags & EXPR_EXEC_LINE)
+		doc_alloc(DOC_LINE, indent);
 	if (ea->flags & EXPR_EXEC_SOFTLINE)
 		doc_alloc(DOC_SOFTLINE, indent);
 	if (ea->flags & EXPR_EXEC_HARDLINE) {
