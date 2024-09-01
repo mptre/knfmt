@@ -261,25 +261,45 @@ peek_else_if(struct parser *pr)
 }
 
 static int
+has_if_stmt_braces(struct parser *pr, int elseif)
+{
+	struct lexer_state ls;
+	struct lexer *lx = pr->pr_lx;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &ls);
+	if ((elseif ? lexer_if(lx, TOKEN_ELSE, NULL) : 1) &&
+	    lexer_if(lx, TOKEN_IF, NULL) &&
+	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, NULL) &&
+	    lexer_if(lx, TOKEN_LBRACE, NULL))
+		peek = 1;
+	lexer_peek_leave(lx, &ls);
+	return peek;
+}
+
+static int
 parser_stmt_if(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
+	int has_braces;
 
 	if (!lexer_peek_if(lx, TOKEN_IF, NULL))
 		return parser_none(pr);
 
+	has_braces = has_if_stmt_braces(pr, 0);
 	if (parser_stmt_kw_expr(pr, dc, TOKEN_IF, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
 	while (lexer_peek_if(lx, TOKEN_ELSE, NULL)) {
 		int error;
 
-		if (lexer_back_if(lx, TOKEN_RBRACE, NULL))
+		if (has_braces)
 			doc_literal(" ", dc);
 		else
 			doc_alloc(DOC_HARDLINE, dc);
 
 		if (peek_else_if(pr)) {
+			has_braces = has_if_stmt_braces(pr, 1);
 			error = parser_stmt_kw_expr(pr, dc, TOKEN_IF,
 			    PARSER_STMT_EXPR_ELSEIF);
 			if (error & HALT)
