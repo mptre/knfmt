@@ -2,7 +2,10 @@
 
 #include "config.h"
 
+#include <assert.h>
 #include <string.h>
+
+#include "libks/compiler.h"
 
 #include "doc.h"
 #include "lexer.h"
@@ -208,7 +211,10 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 	struct lexer *lx = pr->pr_lx;
 	const struct token *align = NULL;
 	const struct token *end = type->end;
+	struct token *NDEBUG_UNUSED(beg);
 	unsigned int nspaces = 0;
+
+	assert(lexer_peek(lx, &beg) && beg == type->beg);
 
 	if (rl != NULL)
 		align = find_align_token(type, &nspaces);
