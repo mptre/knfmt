@@ -25,4 +25,12 @@
     <fileName>libks/arithmetic.h</fileName>
     <id>unusedFunction</id>
   </suppress>
+
+  <!-- lexer.c -->
+  <suppress>
+    <!-- False positive, const struct token pointer argument passed to alloc
+         callback is not returned. -->
+    <fileName>lexer.c</fileName>
+    <id>returnDanglingLifetime</id>
+  </suppress>
 </suppressions>
