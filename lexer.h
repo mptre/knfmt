@@ -50,7 +50,8 @@ void		 lexer_ungetc(struct lexer *);
 size_t		 lexer_match(struct lexer *, const char *);
 void		 lexer_eat_lines_and_spaces(struct lexer *,
     struct lexer_state *);
-struct token	*lexer_emit(struct lexer *, const struct lexer_state *,
+struct token	*lexer_emit(struct lexer *, const struct lexer_state *, int);
+struct token	*lexer_emit_template(struct lexer *, const struct lexer_state *,
     const struct token *);
 struct token	*lexer_emit_synthetic(struct lexer *, const struct token *);
 const char	*lexer_serialize(struct lexer *, const struct token *);

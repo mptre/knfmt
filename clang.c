@@ -120,13 +120,6 @@ static MAP(const char, *, int) cpp_token_types;
 static MAP(const char, *, enum clang_token_type) clang_identifiers;
 static const struct token *token_types[TOKEN_NONE + 1];
 
-static const struct token tklit = {
-	.tk_type	= TOKEN_LITERAL,
-};
-static const struct token tkstr = {
-	.tk_type	= TOKEN_STRING,
-};
-
 void
 clang_init(void)
 {
@@ -595,39 +588,33 @@ clang_read(struct lexer *lx, void *arg)
 				break;
 			pch = ch;
 		}
-		tk = lexer_emit(lx, &st, delim == '"' ? &tkstr : &tklit);
+		tk = lexer_emit(lx, &st,
+		    delim == '"' ? TOKEN_STRING : TOKEN_LITERAL);
 	} else if (isdigit(ch) || ch == '.') {
 		do {
 			if (lexer_getc(lx, &ch))
 				goto eof;
 		} while (isnum(ch));
 		lexer_ungetc(lx);
-		tk = lexer_emit(lx, &st, &tklit);
+		tk = lexer_emit(lx, &st, TOKEN_LITERAL);
 	} else if (isalpha(ch) || ch == '_') {
 		const struct token *kw;
 
 		lexer_match(lx, "AZaz09__");
 
 		if ((kw = clang_find_keyword(lx, &st)) != NULL) {
-			tk = lexer_emit(lx, &st, kw);
+			tk = lexer_emit_template(lx, &st, kw);
 		} else {
 			/* Fallback, treat everything as an identifier. */
-			tk = lexer_emit(lx, &st, &(struct token){
-			    .tk_type	= TOKEN_IDENT,
-			});
+			tk = lexer_emit(lx, &st, TOKEN_IDENT);
 			token_priv(tk, struct clang_token)->type =
 			    clang_find_identifier(tk->tk_str, tk->tk_len);
 		}
 	} else if (lexer_eof(lx)) {
 eof:
-		tk = lexer_emit(lx, &st, &(struct token){
-		    .tk_type	= LEXER_EOF,
-		    .tk_str	= "",
-		});
+		tk = lexer_emit(lx, &st, LEXER_EOF);
 	} else {
-		tk = lexer_emit(lx, &st, &(struct token){
-		    .tk_type	= TOKEN_NONE,
-		});
+		tk = lexer_emit(lx, &st, TOKEN_NONE);
 	}
 
 out:
@@ -832,7 +819,7 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 	token_ref(dst);
 
 	len = (cpp_dst->tk_off + cpp_dst->tk_len) - cpp_src->tk_off;
-	prefix = lexer_emit(lx, &st, &(struct token){
+	prefix = lexer_emit_template(lx, &st, &(struct token){
 	    .tk_type	= TOKEN_CPP,
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	    .tk_str	= cpp_src->tk_str,
@@ -1147,7 +1134,7 @@ again:
 		lexer_eat_lines(lx, 2, NULL);
 	}
 
-	tk = lexer_emit(lx, &st, &(struct token){
+	tk = lexer_emit_template(lx, &st, &(struct token){
 	    .tk_type	= TOKEN_COMMENT,
 	    .tk_flags	= c99 ? TOKEN_FLAG_COMMENT_C99 : 0,
 	});
@@ -1216,7 +1203,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	 */
 	lexer_eat_lines(lx, 2, NULL);
 
-	tk = lexer_emit(lx, &st, &(struct token){
+	tk = lexer_emit_template(lx, &st, &(struct token){
 	    .tk_type	= type,
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	});
@@ -1309,7 +1296,7 @@ clang_keyword(struct lexer *lx)
 		lexer_set_state(lx, &st);
 		return NULL;
 	}
-	return lexer_emit(lx, &st, tk);
+	return lexer_emit_template(lx, &st, tk);
 }
 
 static const struct token *

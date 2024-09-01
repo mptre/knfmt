@@ -819,24 +819,20 @@ again:
 			token_rele(tk);
 			tk = NULL;
 		}
-		if (tk == NULL) {
-			tk = lexer_emit(lx, &s,
-			    &(struct token){.tk_type = String});
-		}
+		if (tk == NULL)
+			tk = lexer_emit(lx, &s, String);
 		lexer_getc(lx, &ch); /* discard '\'' */
 		return tk;
 	}
 
-	tk = lexer_emit(lx, &s, &(struct token){
-	    .tk_type	= Unknown,
-	});
+	tk = lexer_emit(lx, &s, Unknown);
 	lexer_error(lx, tk, __func__, __LINE__,
 	    "unknown token %s", lexer_serialize(lx, tk));
 	token_rele(tk);
 	return NULL;
 
 eof:
-	return lexer_emit(lx, &s, &(struct token){.tk_type = LEXER_EOF});
+	return lexer_emit(lx, &s, LEXER_EOF);
 }
 
 static struct token *
@@ -891,7 +887,7 @@ yaml_read_integer(struct lexer *lx)
 	if (KS_i32_mul_overflow(integer, sign, &integer))
 		overflow = 1;
 
-	tk = lexer_emit(lx, &s, &(struct token){.tk_type = Integer});
+	tk = lexer_emit(lx, &s, Integer);
 	token_priv(tk, struct yaml_token)->integer.i32 = integer;
 	if (overflow) {
 		lexer_error(lx, tk, __func__, __LINE__,
@@ -949,13 +945,13 @@ yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 	if (so == NULL)
 		goto unknown;
 
-	tk = lexer_emit(lx, st, &(struct token){.tk_type = so->so_type});
+	tk = lexer_emit(lx, st, so->so_type);
 	if (so->so_parse != NULL)
 		token_priv(tk, struct yaml_token)->so = so;
 	return tk;
 
 unknown:
-	return lexer_emit(lx, st, &(struct token){.tk_type = Unknown});
+	return lexer_emit(lx, st, Unknown);
 }
 
 static const struct style_option *

@@ -242,7 +242,15 @@ lexer_match(struct lexer *lx, const char *ranges)
 }
 
 struct token *
-lexer_emit(struct lexer *lx, const struct lexer_state *st,
+lexer_emit(struct lexer *lx, const struct lexer_state *st, int token_type)
+{
+	const struct token template = {.tk_type = token_type};
+
+	return lexer_emit_template(lx, st, &template);
+}
+
+struct token *
+lexer_emit_template(struct lexer *lx, const struct lexer_state *st,
     const struct token *tk)
 {
 	struct token *t;
@@ -933,7 +941,7 @@ lexer_eat_lines(struct lexer *lx, int threshold, struct token **tk)
 	if (nlines == 0 || nlines < threshold)
 		return 0;
 	if (tk != NULL) {
-		*tk = lexer_emit(lx, &st, &(struct token){
+		*tk = lexer_emit_template(lx, &st, &(struct token){
 		    .tk_type	= TOKEN_SPACE,
 		    .tk_str	= "\n",
 		    .tk_len	= 1,
@@ -953,10 +961,8 @@ lexer_eat_spaces(struct lexer *lx, struct token **tk)
 	if (nspaces == 0)
 		return 0;
 	lx->lx_st.st_off += nspaces;
-	if (tk != NULL) {
-		*tk = lexer_emit(lx, &st,
-		    &(struct token){.tk_type = TOKEN_SPACE});
-	}
+	if (tk != NULL)
+		*tk = lexer_emit(lx, &st, TOKEN_SPACE);
 	return 1;
 }
 
