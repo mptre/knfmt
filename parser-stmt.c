@@ -367,7 +367,9 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 		w = style(pr->pr_st, ContinuationIndentWidth);
 
 	/* Declarations are allowed in the first expression. */
-	if (parser_decl(pr, loop, 0) & NONE) {
+	if (parser_decl(pr, loop, 0) & GOOD) {
+		expr = loop;
+	} else {
 		error = parser_expr(pr, &expr, &(struct parser_expr_arg){
 		    .dc		= loop,
 		    .indent	= w,
@@ -379,8 +381,6 @@ parser_stmt_for(struct parser *pr, struct doc *dc)
 			expr = loop;
 		if (lexer_expect(lx, TOKEN_SEMI, &semi))
 			parser_doc_token(pr, semi, expr);
-	} else {
-		expr = loop;
 	}
 
 	/* If the expression does not fit, break after the semicolon. */
