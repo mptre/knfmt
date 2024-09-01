@@ -17,26 +17,14 @@
 #ifndef LIBKS_SECTION_H
 #define LIBKS_SECTION_H
 
+#if defined(__MACH__)
 /* Prevent Clang on macOS from adding poisoned bytes between section entries. */
-#if !defined(__has_attribute)
-#  define __has_attribute(x) 0
-#endif
-#if defined(__MACH__) && __has_attribute(no_sanitize)
-#  define NO_SANITIZE_ADDRESS __attribute__((no_sanitize("address")))
-#else
-#  define NO_SANITIZE_ADDRESS
-#endif
-
-#if defined(__MACH__)
-#  define SECTION(s)	__attribute__((section("__DATA," #s))) NO_SANITIZE_ADDRESS
-#else
-#  define SECTION(s)	__attribute__((section(#s))) NO_SANITIZE_ADDRESS
-#endif
-
-#if defined(__MACH__)
+#  define SECTION(s)		__attribute__((section("__DATA," #s))) \
+				__attribute__((no_sanitize("address")))
 #  define SECTION_START(s)	__asm("section$start$__DATA$" #s);
 #  define SECTION_STOP(s)	__asm("section$end$__DATA$" #s);
 #else
+#  define SECTION(s)		__attribute__((section(#s)))
 #  define SECTION_START(s)
 #  define SECTION_STOP(s)
 #endif

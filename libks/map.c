@@ -24,10 +24,6 @@
 #include "libks/arithmetic.h"
 #include "libks/compiler.h"
 
-#if defined(__clang__) || !defined(__GNUC__) || __GNUC__ >= 7
-#define HAVE_IMPLICIT_FALLTHROUGH 1
-#endif
-
 #if defined(__clang__)
 #define NO_SANITIZE_UNSIGNED_INT_OVERFLOW \
 	no_sanitize("unsigned-integer-overflow")
@@ -674,47 +670,40 @@ HASH_JEN(const void *key, size_t keylen)
 	}
 	hashv += (unsigned int)(keylen);
 	switch (k) {
-#if defined(HAVE_IMPLICIT_FALLTHROUGH)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-#endif
 	case 11:
 		hashv += ((unsigned int)_hj_key.u.u8[10] << 24);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 10:
 		hashv += ((unsigned int)_hj_key.u.u8[9] << 16);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 9:
 		hashv += ((unsigned int)_hj_key.u.u8[8] << 8);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 8:
 		_hj_j += ((unsigned int)_hj_key.u.u8[7] << 24);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 7:
 		_hj_j += ((unsigned int)_hj_key.u.u8[6] << 16);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 6:
 		_hj_j += ((unsigned int)_hj_key.u.u8[5] << 8);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 5:
 		_hj_j += _hj_key.u.u8[4];
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 4:
 		_hj_i += ((unsigned int)_hj_key.u.u8[3] << 24);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 3:
 		_hj_i += ((unsigned int)_hj_key.u.u8[2] << 16);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 2:
 		_hj_i += ((unsigned int)_hj_key.u.u8[1] << 8);
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	case 1:
 		_hj_i += _hj_key.u.u8[0];
-		/* FALLTHROUGH */
+		FALLTHROUGH;
 	default: ;
-#if defined(HAVE_IMPLICIT_FALLTHROUGH)
-#  pragma GCC diagnostic pop
-#endif
 	}
 	HASH_JEN_MIX(_hj_i, _hj_j, hashv);
 	return hashv;
