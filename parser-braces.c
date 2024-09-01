@@ -13,13 +13,6 @@
 #include "simple.h"
 #include "token.h"
 
-struct braces_arg {
-	struct doc	*dc;
-	struct ruler	*rl;
-	unsigned int	 indent;
-	unsigned int	 flags;
-};
-
 struct braces_field_arg {
 	struct doc		*dc;
 	struct ruler		*rl;
@@ -33,7 +26,8 @@ struct lbrace_cache {
 	struct token	*lbrace;
 };
 
-static int	parser_braces1(struct parser *, struct braces_arg *);
+static int	parser_braces_with_ruler(struct parser *, struct doc *,
+    struct ruler *, unsigned int, unsigned int);
 static int	parser_braces_field(struct parser *, struct braces_field_arg *);
 static int	parser_braces_field1(struct parser *,
     struct braces_field_arg *);
@@ -53,19 +47,15 @@ parser_braces(struct parser *pr, struct doc *dc, unsigned int indent,
 	int error;
 
 	ruler_init(&rl, 0, RULER_ALIGN_SENSE);
-	error = parser_braces1(pr, &(struct braces_arg){
-	    .dc		= dc,
-	    .rl		= &rl,
-	    .indent	= indent,
-	    .flags	= flags,
-	});
+	error = parser_braces_with_ruler(pr, dc, &rl, indent, flags);
 	ruler_exec(&rl);
 	ruler_free(&rl);
 	return error;
 }
 
 static int
-parser_braces1(struct parser *pr, struct braces_arg *arg)
+parser_braces_with_ruler(struct parser *pr, struct doc *dc, struct ruler *rl,
+    unsigned int indent_width, unsigned int flags)
 {
 	struct lbrace_cache lbrace_cache = {0};
 	struct doc *braces, *indent;
@@ -79,7 +69,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	    &rbrace))
 		return parser_fail(pr);
 
-	braces = doc_alloc(DOC_CONCAT, arg->dc);
+	braces = doc_alloc(DOC_CONCAT, dc);
 
 	if (!lexer_expect(lx, TOKEN_LBRACE, NULL))
 		return parser_fail(pr);
@@ -88,7 +78,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	 * instead respect existing hard line(s).
 	 */
 	align = token_cmp(lbrace, rbrace) == 0;
-	if (arg->flags & PARSER_BRACES_TRIM)
+	if (flags & PARSER_BRACES_TRIM)
 		parser_token_trim_after(pr, lbrace);
 	parser_doc_token(pr, lbrace, braces);
 
@@ -100,9 +90,9 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	}
 
 	if (token_has_line(lbrace, 1)) {
-		unsigned int val = arg->indent;
+		unsigned int val = indent_width;
 
-		if (arg->flags & PARSER_BRACES_INDENT_MAYBE)
+		if (flags & PARSER_BRACES_INDENT_MAYBE)
 			val |= DOC_INDENT_NEWLINE;
 		indent = doc_indent(val, braces);
 		doc_alloc(DOC_HARDLINE, indent);
@@ -114,7 +104,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		 */
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
-		indent = doc_indent(arg->indent, braces);
+		indent = doc_indent(indent_width, braces);
 	} else {
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
@@ -139,36 +129,30 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, indent));
 
-		if ((arg->flags & PARSER_BRACES_ENUM) ||
+		if ((flags & PARSER_BRACES_ENUM) ||
 		    lexer_peek_if(lx, TOKEN_PERIOD, NULL) ||
 		    lexer_peek_if(lx, TOKEN_LSQUARE, NULL)) {
 			error = parser_braces_field(pr,
 			    &(struct braces_field_arg){
 				.dc	= concat,
-				.rl	= arg->rl,
+				.rl	= rl,
 				.rbrace	= rbrace,
-				.indent	= arg->indent,
-				.flags	= arg->flags,
+				.indent	= indent_width,
+				.flags	= flags,
 			});
 			if (error & HALT)
 				return parser_fail(pr);
 		} else if (lexer_peek_if(lx, TOKEN_LBRACE, &nx)) {
-			unsigned int rmflags = PARSER_BRACES_DEDENT;
-			struct braces_arg newarg = {
-				.dc	= concat,
-				.rl	= arg->rl,
-				.indent	= arg->indent,
-				.flags	= arg->flags & ~rmflags,
-			};
-
-			if (parser_braces1(pr, &newarg) & HALT)
+			error = parser_braces_with_ruler(pr, concat, rl,
+			    indent_width, flags & ~PARSER_BRACES_DEDENT);
+			if (error & HALT)
 				return parser_fail(pr);
 			/*
 			 * Inherit the column as we're still on the same row in
 			 * terms of alignment.
 			 */
 			if (align)
-				col = ruler_get_column_count(arg->rl);
+				col = ruler_get_column_count(rl);
 		} else {
 			struct token *stop;
 
@@ -176,7 +160,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			error = parser_expr(pr, &expr,
 			    &(struct parser_expr_arg){
 				.dc	= concat,
-				.rl	= arg->rl,
+				.rl	= rl,
 				.stop	= stop,
 				.flags	= EXPR_EXEC_ALIGN | EXPR_EXEC_NOSOFT,
 			});
@@ -194,7 +178,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			if (align) {
 				col++;
 				w += parser_width(pr, concat);
-				ruler_insert(arg->rl, comma, concat, col, w, 0);
+				ruler_insert(rl, comma, concat, col, w, 0);
 				w = 0;
 				goto next;
 			}
@@ -216,8 +200,8 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			 * right.
 			 */
 			if (token_cmp(pv, rbrace) < 0) {
-				if (arg->flags & PARSER_BRACES_DEDENT) {
-					braces = doc_dedent(arg->indent,
+				if (flags & PARSER_BRACES_DEDENT) {
+					braces = doc_dedent(indent_width,
 					    braces);
 				}
 				doc_alloc(DOC_HARDLINE, braces);
@@ -233,9 +217,9 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 		}
 
 next:
-		if (((arg->flags & PARSER_BRACES_ENUM) == 0) &&
+		if (((flags & PARSER_BRACES_ENUM) == 0) &&
 		    lexer_back(lx, &nx) && token_has_line(nx, 2))
-			ruler_exec(arg->rl);
+			ruler_exec(rl);
 	}
 
 out:
