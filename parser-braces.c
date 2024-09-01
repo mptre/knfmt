@@ -17,7 +17,6 @@ struct braces_arg {
 	struct doc	*dc;
 	struct ruler	*rl;
 	unsigned int	 indent;
-	unsigned int	 col;
 	unsigned int	 flags;
 };
 
@@ -72,6 +71,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 	struct doc *braces, *indent;
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace, *pv, *rbrace, *tk;
+	unsigned int col = 0;
 	unsigned int w = 0;
 	int align, error;
 
@@ -158,7 +158,6 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 				.dc	= concat,
 				.rl	= arg->rl,
 				.indent	= arg->indent,
-				.col	= arg->col,
 				.flags	= arg->flags & ~rmflags,
 			};
 
@@ -169,7 +168,7 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			 * terms of alignment.
 			 */
 			if (align)
-				arg->col = newarg.col;
+				col = ruler_get_column_count(arg->rl);
 		} else {
 			struct token *stop;
 
@@ -193,10 +192,9 @@ parser_braces1(struct parser *pr, struct braces_arg *arg)
 			parser_doc_token(pr, comma, expr);
 
 			if (align) {
-				arg->col++;
+				col++;
 				w += parser_width(pr, concat);
-				ruler_insert(arg->rl, comma, concat,
-				    arg->col, w, 0);
+				ruler_insert(arg->rl, comma, concat, col, w, 0);
 				w = 0;
 				goto next;
 			}

@@ -48,3 +48,5 @@ struct doc	*ruler_indent_impl(struct ruler *, struct doc *,
     struct ruler_indent **, int, const char *, int);
 void		 ruler_indent_remove(struct ruler *,
     const struct ruler_indent *);
+
+unsigned int	ruler_get_column_count(const struct ruler *);

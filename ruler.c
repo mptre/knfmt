@@ -205,6 +205,12 @@ ruler_exec(struct ruler *rl)
 	ruler_reset(rl);
 }
 
+unsigned int
+ruler_get_column_count(const struct ruler *rl)
+{
+	return VECTOR_LENGTH(rl->rl_columns);
+}
+
 static void
 ruler_exec_indent(struct ruler *rl)
 {
