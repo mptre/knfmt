@@ -129,6 +129,19 @@ parser_stmt1(struct parser *pr, struct doc *dc)
 	return parser_none(pr);
 }
 
+static int
+is_case_on_same_line(struct parser *pr, const struct token *pv)
+{
+	struct lexer *lx = pr->pr_lx;
+	struct token *nx;
+
+	if (pv->tk_type != TOKEN_CASE)
+		return 0;
+	if (!lexer_peek_if(lx, TOKEN_CASE, &nx))
+		return 0;
+	return token_cmp(pv, nx) == 0;
+}
+
 /*
  * Parse a block statement wrapped in braces.
  */
@@ -138,7 +151,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	struct doc *dc = arg->tail;
 	struct doc *concat, *indent, *line;
 	struct lexer *lx = pr->pr_lx;
-	struct token *lbrace, *nx, *rbrace, *tk;
+	struct token *lbrace, *nx, *pv, *rbrace, *tk;
 	int isswitch = arg->flags & PARSER_STMT_BLOCK_SWITCH;
 	int doindent = !isswitch && !is_simple_enabled(pr->pr_si, SIMPLE_STMT);
 	int nstmt = 0;
@@ -189,11 +202,18 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 		line = doc_alloc(DOC_HARDLINE, indent);
 	else
 		line = doc_literal(" ", indent);
+	if (!lexer_peek(lx, &pv))
+		return parser_fail(pr);
 	while ((error = parser_stmt(pr, indent)) & GOOD) {
 		nstmt++;
 		if (lexer_peek(lx, &tk) && tk == rbrace)
 			break;
-		doc_alloc(DOC_HARDLINE, indent);
+		if (isswitch && is_case_on_same_line(pr, pv))
+			doc_literal(" ", indent);
+		else
+			doc_alloc(DOC_HARDLINE, indent);
+		if (!lexer_peek(lx, &pv))
+			return parser_fail(pr);
 	}
 	/* Do not keep the hard line if the statement block is empty. */
 	if (nstmt == 0 && (error & BRCH) == 0)
