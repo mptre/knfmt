@@ -101,6 +101,7 @@ ctrl_mask = \
 	cmp	r9, 16
 	jb	3f
 	pcmpistri xmm1, [r8 + rax], ctrl_mask
+	/* The carry flag will be set if there's a match. */
 	jc	2f
 	add	rax, 16
 	sub	r9, 16
@@ -121,6 +122,7 @@ ctrl_mask = \
 	mov	rcx, r9
 	rep	movsb
 	pcmpistri xmm1, [rsp - 0x18], ctrl_mask
+	/* The carry flag will be set if there's a match. */
 	jc	2b
 	add	rax, r9
 	ret

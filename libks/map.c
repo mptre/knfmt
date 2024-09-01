@@ -703,7 +703,8 @@ HASH_JEN(const void *key, size_t keylen)
 	case 1:
 		_hj_i += _hj_key.u.u8[0];
 		FALLTHROUGH;
-	default: ;
+	default:
+		break;
 	}
 	HASH_JEN_MIX(_hj_i, _hj_j, hashv);
 	return hashv;
