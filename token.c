@@ -96,9 +96,9 @@ token_serialize_with_extra_flags(const struct token *tk, unsigned int flags,
 
 	serialized_flags = arena_buffer_alloc(s, 128);
 	if (flags & TOKEN_SERIALIZE_POSITION) {
-		buffer_printf(serialized_flags, "%s%u:%u",
-		    comma++ ? "" : "",
+		buffer_printf(serialized_flags, "%u:%u",
 		    tk->tk_lno, tk->tk_cno);
+		comma++;
 	}
 	if (flags & TOKEN_SERIALIZE_FLAGS) {
 		const char *serialized_token_flags;
