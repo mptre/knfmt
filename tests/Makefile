@@ -612,6 +612,7 @@ TESTS+=	simple-stmt-empty-loop-007.c
 TESTS+=	simple-stmt-empty-loop-008.c
 TESTS+=	simple-stmt-semi-001.c
 TESTS+=	simple-stmt-semi-002.c
+TESTS+=	simple-stmt-switch-001.c
 
 TESTS+=	inplace-001.c
 
@@ -866,6 +867,8 @@ TESTS+=	../simple-static.c
 TESTS+=	../simple-static.h
 TESTS+=	../simple-stmt-empty-loop.c
 TESTS+=	../simple-stmt-empty-loop.h
+TESTS+=	../simple-stmt-switch.c
+TESTS+=	../simple-stmt-switch.h
 TESTS+=	../simple-stmt.c
 TESTS+=	../simple-stmt.h
 TESTS+=	../simple.c

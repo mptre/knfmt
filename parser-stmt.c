@@ -14,6 +14,7 @@
 #include "parser-stmt-asm.h"
 #include "parser-stmt-expr.h"
 #include "simple-stmt-empty-loop.h"
+#include "simple-stmt-switch.h"
 #include "simple-stmt.h"
 #include "simple.h"
 #include "style.h"
@@ -698,6 +699,10 @@ parser_stmt_case(struct parser *pr, struct doc *dc)
 		if (parser_stmt(pr, dc) & FAIL)
 			return parser_fail(pr);
 	}
+
+	simple_cookie(cookie);
+	if (simple_enter(pr->pr_si, SIMPLE_STMT_SWITCH, 0, &cookie))
+		simple_stmt_switch(pr->pr_lx, kw);
 
 	indent = doc_indent(style(pr->pr_st, IndentWidth), dc);
 	for (;;) {
