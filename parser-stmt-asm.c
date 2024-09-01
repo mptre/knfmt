@@ -176,7 +176,7 @@ parser_asm(struct parser *pr, struct doc *dc, struct doc **out)
 	if (qualifier != NULL && token_has_spaces(qualifier))
 		doc_alloc(DOC_LINE, concat);
 
-	opt = doc_indent(style(pr->pr_st, ContinuationIndentWidth),
+	opt = concat = doc_indent(style(pr->pr_st, ContinuationIndentWidth),
 	    doc_alloc(DOC_OPTIONAL, dc));
 	if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &lparen,
 	    &rparen))
