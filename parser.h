@@ -2,10 +2,10 @@ struct buffer;
 struct diffchunk;
 
 struct parser_arg {
+	struct lexer		*lexer;
 	const struct options	*options;
 	const struct style	*style;
 	struct simple		*simple;
-	struct lexer		*lexer;
 	struct clang		*clang;
 
 	struct {

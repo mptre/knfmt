@@ -755,10 +755,10 @@ context_init(struct context *ctx, const char *src,
 	    .callbacks		= clang_lexer_callbacks(ctx->cl),
 	});
 	ctx->pr = parser_alloc(&(struct parser_arg){
+	    .lexer	= ctx->lx,
 	    .options	= &ctx->op,
 	    .style	= ctx->st,
 	    .simple	= ctx->si,
-	    .lexer	= ctx->lx,
 	    .arena	= {
 		.eternal_scope	= eternal_scope,
 		.scratch	= ctx->arena.scratch,

@@ -18,10 +18,10 @@ struct token;
 	trace(TRACE_PARSER, (pr)->pr_op, (fmt), __VA_ARGS__)
 
 struct parser {
+	struct lexer		*pr_lx;
 	const struct options	*pr_op;
 	const struct style	*pr_st;
 	struct simple		*pr_si;
-	struct lexer		*pr_lx;
 	struct clang		*pr_clang;
 	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 

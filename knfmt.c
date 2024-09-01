@@ -222,10 +222,10 @@ fileformat(struct main_context *c, struct file *fe)
 	if (lx == NULL)
 		return 1;
 	pr = parser_alloc(&(struct parser_arg){
+	    .lexer	= lx,
 	    .options	= &c->options,
 	    .style	= c->style,
 	    .simple	= c->simple,
-	    .lexer	= lx,
 	    .clang	= clang,
 	    .arena	= {
 		.eternal_scope	= &eternal_scope,
