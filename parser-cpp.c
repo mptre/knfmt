@@ -7,6 +7,7 @@
 #include "libks/arena.h"
 #include "libks/string.h"
 
+#include "clang.h"
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
@@ -21,10 +22,7 @@ static int	iscdefs(const char *, size_t);
 static int
 is_list_entry(const struct token *tk)
 {
-	const char needle[] = "LIST_ENTRY";
-	size_t needlelen = sizeof(needle) - 1;
-
-	return token_memcmp(tk, needle, needlelen) == 0;
+	return clang_token_type(tk) == CLANG_TOKEN_LIST_ENTRY;
 }
 
 int

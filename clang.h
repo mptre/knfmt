@@ -10,6 +10,7 @@ struct token;
 
 /* Identifiers with support for constant time lookup. */
 #define FOR_CLANG_IDENTIFIERS(OP)					\
+	/* simple-expr-printf.c */					\
 	OP(CLANG_TOKEN_ERR,		"err")				\
 	OP(CLANG_TOKEN_ERRC,		"errc")				\
 	OP(CLANG_TOKEN_ERRX,		"errx")				\
@@ -22,7 +23,9 @@ struct token;
 	OP(CLANG_TOKEN_VWARNX,		"vwarnx")			\
 	OP(CLANG_TOKEN_WARN,		"warn")				\
 	OP(CLANG_TOKEN_WARNC,		"warnc")			\
-	OP(CLANG_TOKEN_WARNX,		"warnx")
+	OP(CLANG_TOKEN_WARNX,		"warnx")			\
+	/* parser-cpp.c */						\
+	OP(CLANG_TOKEN_LIST_ENTRY,	"LIST_ENTRY")
 
 enum clang_token_type {
 	CLANG_TOKEN_NONE = 0,
