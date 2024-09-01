@@ -112,6 +112,7 @@ TESTS+=	error-060.c
 TESTS+=	error-061.c
 TESTS+=	error-062.c
 TESTS+=	error-063.c
+TESTS+=	error-064.c
 TESTS+=	error-065.c
 TESTS+=	error-066.c
 TESTS+=	error-067.c

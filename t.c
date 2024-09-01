@@ -281,6 +281,7 @@ main(void)
 	    "int");
 	test_parser_type("u_int:4", "u_int");
 	test_parser_type("LIST_ENTRY(list, s);", "LIST_ENTRY ( list , s )");
+	test_parser_type("union [)]", "union");
 
 	test_parser_type_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");

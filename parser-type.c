@@ -27,6 +27,7 @@ static int	peek_type_ptr_array(struct lexer *, struct token **);
 static int	peek_type_noident(struct lexer *, struct token **);
 static int	peek_type_unknown_array(struct lexer *, struct token **);
 static int	peek_type_unknown_bitfield(struct lexer *, struct token **);
+static int	peek_type_squares(struct lexer *, struct token **);
 
 int
 parser_type_peek(struct parser *pr, struct parser_type *type,
@@ -74,8 +75,9 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			    end->tk_type == TOKEN_UNION)
 				(void)lexer_if(lx, TOKEN_IDENT, &end);
 			/* Recognize constructs like `struct s[]'. */
-			(void)lexer_if_pair(lx, TOKEN_LSQUARE, TOKEN_RSQUARE,
-			    NULL, &end);
+			if (peek_type_squares(lx, &rsquare) &&
+			    lexer_seek_after(lx, rsquare))
+				end = rsquare;
 			peek = 1;
 		} else if (ntokens > 0 && lexer_if(lx, TOKEN_STAR, &end)) {
 			/*
@@ -436,5 +438,21 @@ peek_type_unknown_bitfield(struct lexer *lx, struct token **tk)
 	    lexer_if(lx, TOKEN_COLON, NULL) &&
 	    lexer_if(lx, TOKEN_LITERAL, NULL);
 	lexer_peek_leave(lx, &s);
+	return peek;
+}
+
+static int
+peek_type_squares(struct lexer *lx, struct token **rsquare)
+{
+	struct lexer_state ls;
+	int peek = 0;
+
+	lexer_peek_enter(lx, &ls);
+	if (lexer_if(lx, TOKEN_LSQUARE, NULL)) {
+		(void)lexer_if(lx, TOKEN_LITERAL, NULL);
+		if (lexer_if(lx, TOKEN_RSQUARE, rsquare))
+			peek = 1;
+	}
+	lexer_peek_leave(lx, &ls);
 	return peek;
 }
