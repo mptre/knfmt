@@ -84,6 +84,13 @@ const char *
 token_serialize(const struct token *tk, unsigned int flags,
     struct arena_scope *s)
 {
+	return token_serialize_with_extra_flags(tk, flags, NULL, s);
+}
+
+const char *
+token_serialize_with_extra_flags(const struct token *tk, unsigned int flags,
+    const char *extra_flags, struct arena_scope *s)
+{
 	struct buffer *bf, *serialized_flags;
 	int comma = 0;
 
@@ -112,6 +119,11 @@ token_serialize(const struct token *tk, unsigned int flags,
 		buffer_printf(serialized_flags, "%s%p",
 		    comma++ ? "," : "",
 		    (void *)tk);
+	}
+	if (extra_flags != NULL) {
+		buffer_printf(serialized_flags, "%s%s",
+		    comma++ ? "," : "",
+		    extra_flags);
 	}
 
 	bf = arena_buffer_alloc(s, 128);

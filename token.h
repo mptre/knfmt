@@ -236,6 +236,8 @@ void		 token_rele(struct token *);
 int		 token_trim(struct token *);
 const char	*token_serialize(const struct token *, unsigned int,
     struct arena_scope *);
+const char	*token_serialize_with_extra_flags(const struct token *,
+    unsigned int, const char *, struct arena_scope *);
 
 void	token_position_after(struct token *, struct token *);
 

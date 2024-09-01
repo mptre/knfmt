@@ -681,11 +681,26 @@ clang_token_alloc(struct arena_scope *s, const struct token *def)
 }
 
 static const char *
+clang_token_type_str(enum clang_token_type type)
+{
+	switch (type) {
+#define OP(type, keyword) case type: return &#type[sizeof("CLANG_TOKEN_") - 1];
+	FOR_CLANG_IDENTIFIERS(OP)
+#undef OP
+
+	case CLANG_TOKEN_NONE:
+		break;
+	}
+	return NULL;
+}
+
+static const char *
 clang_token_serialize(const struct token *tk, struct arena_scope *s)
 {
-	return token_serialize(tk,
+	return token_serialize_with_extra_flags(tk,
 	    TOKEN_SERIALIZE_VERBATIM | TOKEN_SERIALIZE_QUOTE |
-	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS, s);
+	    TOKEN_SERIALIZE_POSITION | TOKEN_SERIALIZE_FLAGS,
+	    clang_token_type_str(clang_token_type(tk)), s);
 }
 
 static const char *

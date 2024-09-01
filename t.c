@@ -761,7 +761,7 @@ test_clang_token_serialize(struct context *ctx)
 	KS_expect_true(find_token(ctx->lx, TOKEN_IDENT, &tkerr));
 
 	act = lexer_serialize(ctx->lx, tkerr);
-	KS_expect_str("IDENT<1:1>(\"err\")", act);
+	KS_expect_str("IDENT<1:1,ERR>(\"err\")", act);
 }
 
 static void
