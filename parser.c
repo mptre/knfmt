@@ -139,18 +139,15 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 		struct doc *concat;
 		struct token *tk;
 
-		concat = doc_alloc(DOC_CONCAT, dc);
-
-		/* Always emit EOF token as it could have dangling tokens. */
+		/* Always emit EOF token as it could have prefixes. */
 		if (lexer_if(lx, LEXER_EOF, &tk)) {
-			struct doc *eof;
-
-			eof = doc_alloc(DOC_CONCAT,
-			    doc_alloc(DOC_GROUP, concat));
-			parser_doc_token(pr, tk, eof);
+			if (token_has_prefixes(tk))
+				parser_doc_token(pr, tk, dc);
 			error = 0;
 			break;
 		}
+
+		concat = doc_alloc(DOC_CONCAT, dc);
 
 		error = parser_root(pr, concat);
 		if (error & GOOD) {
