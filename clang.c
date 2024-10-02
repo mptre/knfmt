@@ -1158,10 +1158,9 @@ again:
 		lexer_eat_lines(lx, 2, NULL);
 	}
 
-	tk = lexer_emit_template(lx, &st, &(struct token){
-	    .tk_type	= TOKEN_COMMENT,
-	    .tk_flags	= c99 ? TOKEN_FLAG_COMMENT_C99 : 0,
-	});
+	tk = lexer_emit(lx, &st, TOKEN_COMMENT);
+	if (c99)
+		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
 	if (oneline)
 		tk->tk_flags |= sense_clang_format_comment(tk);
 
