@@ -80,8 +80,7 @@ static struct token		*clang_keyword(struct lexer *);
 static const struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
 static const struct token	*clang_find_keyword1(const char *, size_t);
-static const struct token	*clang_ellipsis(struct lexer *,
-    const struct lexer_state *);
+static const struct token	*clang_ellipsis(struct lexer *);
 static struct token		*clang_token_alloc(struct arena_scope *,
     const struct token *);
 static const char		*clang_token_serialize(const struct token *,
@@ -1304,7 +1303,7 @@ clang_keyword(struct lexer *lx)
 			lexer_ungetc(lx);
 
 			/* Hack to detect ellipses since ".." is not valid. */
-			ellipsis = clang_ellipsis(lx, &st);
+			ellipsis = clang_ellipsis(lx);
 			if (ellipsis != NULL) {
 				tk = ellipsis;
 				break;
@@ -1348,7 +1347,7 @@ clang_find_keyword1(const char *key, size_t len)
 }
 
 static const struct token *
-clang_ellipsis(struct lexer *lx, const struct lexer_state *st)
+clang_ellipsis(struct lexer *lx)
 {
 	struct lexer_state oldst;
 	unsigned char ch;
@@ -1362,7 +1361,7 @@ clang_ellipsis(struct lexer *lx, const struct lexer_state *st)
 			return NULL;
 		}
 	}
-	return clang_find_keyword(lx, st);
+	return clang_keyword_token(TOKEN_ELLIPSIS);
 }
 
 void
