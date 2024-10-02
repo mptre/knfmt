@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "libks/arena-buffer.h"
@@ -13,6 +14,10 @@
 unsigned int
 colwidth(const char *str, size_t len, unsigned int cno)
 {
+	static const uint8_t tab_offsets[8] = {
+		[0] = 0 + 1, [1] = 7 + 1, [2] = 6 + 1, [3] = 5 + 1,
+		[4] = 4 + 1, [5] = 3 + 1, [6] = 2 + 1, [7] = 1 + 1,
+	};
 	static struct KS_str_match match;
 
 	KS_str_match_init_once("\t\t\n\n", &match);
@@ -29,7 +34,7 @@ colwidth(const char *str, size_t len, unsigned int cno)
 			char c = str[0];
 
 			if (c == '\t')
-				cno = ((cno + 8 - 1) & ~0x7u) + 1;
+				cno += tab_offsets[cno & 0x7];
 			else if (c == '\n')
 				cno = 1;
 			else
@@ -46,6 +51,10 @@ colwidth(const char *str, size_t len, unsigned int cno)
 size_t
 strwidth(const char *str, size_t len, size_t pos)
 {
+	static const uint8_t tab_offsets[8] = {
+		[0] = 8, [1] = 7, [2] = 6, [3] = 5,
+		[4] = 4, [5] = 3, [6] = 2, [7] = 1,
+	};
 	static struct KS_str_match match;
 
 	KS_str_match_init_once("\t\t\n\n", &match);
@@ -62,7 +71,7 @@ strwidth(const char *str, size_t len, size_t pos)
 			char c = str[0];
 
 			if (c == '\t')
-				pos += 8 - (pos % 8);
+				pos += tab_offsets[pos & 0x7];
 			else if (c == '\n')
 				pos = 0;
 			else
