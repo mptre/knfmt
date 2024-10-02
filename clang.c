@@ -1040,7 +1040,7 @@ clang_read_prefix(struct clang *cl, struct lexer *lx)
 }
 
 static int
-peek_c99_comment(struct lexer *lx)
+peek_c99_comment(struct lexer *lx, const struct lexer_state *first_line)
 {
 	struct lexer_state st;
 	int peek = 0;
@@ -1049,8 +1049,15 @@ peek_c99_comment(struct lexer *lx)
 	st = lexer_get_state(lx);
 	lexer_eat_spaces(lx, NULL);
 	if (lexer_getc(lx, &ch) == 0 && ch == '/' &&
-	    lexer_getc(lx, &ch) == 0 && ch == '/')
-		peek = 1;
+	    lexer_getc(lx, &ch) == 0 && ch == '/') {
+		const struct lexer_state line = lexer_get_state(lx);
+
+		/*
+		 * Only consider subsequent C99 comment(s) on the same level of
+		 * indentation to be grouped together.
+		 */
+		peek = lexer_column(lx, first_line) == lexer_column(lx, &line);
+	}
 	lexer_set_state(lx, &st);
 	return peek;
 }
@@ -1113,11 +1120,13 @@ again:
 	c99 = ch == '/';
 
 	if (c99) {
+		const struct lexer_state first_line = lexer_get_state(lx);
+
 		for (;;) {
 			if (lexer_getc(lx, &ch))
 				break;
 			if (ch == '\n') {
-				if (peek_c99_comment(lx)) {
+				if (peek_c99_comment(lx, &first_line)) {
 					oneline = 0;
 					goto again;
 				}

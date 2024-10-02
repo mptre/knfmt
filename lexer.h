@@ -70,6 +70,7 @@ int		lexer_eof(const struct lexer *);
 unsigned int	lexer_get_error(const struct lexer *);
 int		lexer_get_lines(const struct lexer *, unsigned int,
     unsigned int, const char **, size_t *);
+unsigned int	lexer_column(const struct lexer *, const struct lexer_state *);
 
 void	lexer_seek(struct lexer *, struct token *);
 int	lexer_seek_after(struct lexer *, struct token *);

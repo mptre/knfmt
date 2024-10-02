@@ -56,8 +56,6 @@ struct lexer {
 static void	lexer_free(void *);
 
 static void		lexer_line_alloc(struct lexer *, unsigned int);
-static unsigned int	lexer_column(const struct lexer *,
-    const struct lexer_state *);
 
 static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
@@ -987,7 +985,7 @@ lexer_line_alloc(struct lexer *lx, unsigned int lno)
 	*dst = lx->lx_st.st_off;
 }
 
-static unsigned int
+unsigned int
 lexer_column(const struct lexer *lx, const struct lexer_state *st)
 {
 	size_t line_offset;
