@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "libks/arena-vector.h"
+#include "libks/arena.h"
 #include "libks/vector.h"
 
 #include "doc.h"
@@ -48,6 +49,14 @@ static unsigned int	count_trailing_spaces(const char *, size_t);
 
 static int	minimize(const struct ruler_column *);
 
+static void
+ruler_cleanup(void *arg)
+{
+	struct ruler *rl = arg;
+
+	ruler_reset(rl);
+}
+
 void
 ruler_init(struct ruler *rl, unsigned int align, unsigned int flags,
     struct arena_scope *s)
@@ -57,12 +66,7 @@ ruler_init(struct ruler *rl, unsigned int align, unsigned int flags,
 	rl->rl_align = align;
 	rl->rl_flags = flags;
 	rl->rl_arena.ruler_scope = s;
-}
-
-void
-ruler_free(struct ruler *rl)
-{
-	ruler_reset(rl);
+	arena_cleanup(s, ruler_cleanup, rl);
 }
 
 /*

@@ -194,7 +194,6 @@ parser_cpp_x(struct parser *pr, struct doc *dc)
 	} while (parser_cpp_peek_x(pr, &rparen));
 
 	ruler_exec(&rl);
-	ruler_free(&rl);
 	return (error & HALT) ? parser_fail(pr) : parser_good(pr);
 }
 

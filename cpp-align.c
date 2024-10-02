@@ -178,7 +178,6 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	struct ruler rl;
 	struct buffer *bf;
 	struct doc *dc;
-	const char *out = NULL;
 	const char *nx, *str;
 	size_t len;
 	int nlines = 0;
@@ -267,7 +266,8 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 
 	/* Alignment only wanted for multiple lines. */
 	if (nlines <= 1)
-		goto out;
+		return NULL;
+
 	ruler_exec(&rl);
 	buffer_reset(bf);
 	doc_exec(&(struct doc_exec_arg){
@@ -276,9 +276,5 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	    .bf		= bf,
 	    .st		= st,
 	});
-	out = buffer_str(bf);
-
-out:
-	ruler_free(&rl);
-	return out;
+	return buffer_str(bf);
 }

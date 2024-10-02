@@ -38,7 +38,6 @@ struct ruler {
 
 void	ruler_init(struct ruler *, unsigned int, unsigned int,
     struct arena_scope *);
-void	ruler_free(struct ruler *);
 void	ruler_exec(struct ruler *);
 
 #define ruler_insert(a, b, c, d, e, f) \

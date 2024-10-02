@@ -188,7 +188,6 @@ parser_func_impl(struct parser *pr, struct doc *dc)
 	error = parser_func_impl1(pr, dc, &rl, &type);
 	if (error & GOOD)
 		ruler_exec(&rl);
-	ruler_free(&rl);
 	return error;
 }
 

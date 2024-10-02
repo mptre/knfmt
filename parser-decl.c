@@ -143,7 +143,6 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 		doc_remove(decl, dc);
 	else if ((error & FAIL) == 0)
 		ruler_exec(&rl);
-	ruler_free(&rl);
 
 	if (ndecl == 0)
 		return parser_none(pr);
