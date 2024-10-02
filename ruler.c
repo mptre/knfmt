@@ -44,7 +44,7 @@ static void	ruler_reset(struct ruler *);
 static unsigned int	sense_column_length(struct ruler_column *);
 static int		ruler_column_length(const struct ruler *,
     struct ruler_column *, struct ruler_length *);
-static int		countspaces(const char *, size_t, unsigned int *);
+static unsigned int	count_trailing_spaces(const char *, size_t);
 
 static int	minimize(const struct ruler_column *);
 
@@ -286,8 +286,8 @@ sense_column_length(struct ruler_column *rc)
 			if (suffix == NULL)
 				continue;
 
-			if (!countspaces(suffix->tk_str, suffix->tk_len, &n))
-				goto noalign;
+			n = count_trailing_spaces(suffix->tk_str,
+			    suffix->tk_len);
 			if (n > nspaces)
 				nspaces = n;
 		}
@@ -366,19 +366,14 @@ tabs:
 	return 0;
 }
 
-static int
-countspaces(const char *str, size_t len, unsigned int *out)
+static unsigned int
+count_trailing_spaces(const char *str, size_t len)
 {
 	unsigned int nspaces = 0;
 
-	for (; len > 0 && str[0] == '\t'; len--, str++)
-		continue;
-	for (; len > 0 && str[0] == ' '; len--, str++, nspaces++)
-		continue;
-	if (len > 0)
-		return 0;
-	*out = nspaces;
-	return 1;
+	for (; len > 0 && str[len - 1] == ' '; len--)
+		nspaces++;
+	return nspaces;
 }
 
 static int
