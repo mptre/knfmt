@@ -283,7 +283,8 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 {
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc = arg->dc;
-	struct token *equal;
+	struct ruler *rl = arg->rl;
+	struct token *equal, *stop;
 	int nfields = 0;
 	int error;
 
@@ -300,27 +301,23 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 
 	insert_trailing_comma(pr, arg->rbrace);
 
-	if (lexer_if(lx, TOKEN_EQUAL, &equal)) {
-		struct token *stop;
+	if (!lexer_if(lx, TOKEN_EQUAL, &equal))
+		return parser_good(pr);
 
-		ruler_insert(arg->rl, token_prev(equal), dc, 1,
-		    parser_width(pr, dc), 0);
+	ruler_insert(rl, token_prev(equal), dc, 1, parser_width(pr, dc), 0);
+	parser_doc_token(pr, equal, dc);
+	doc_literal(" ", dc);
 
-		parser_doc_token(pr, equal, dc);
-		doc_literal(" ", dc);
-
-		lexer_peek_until_comma(lx, arg->rbrace, &stop);
-		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
-		    .dc		= dc,
-		    .stop	= stop,
-		    .indent	= arg->indent,
-		    .flags	= token_has_line(equal, 1) ?
-			EXPR_EXEC_HARDLINE : 0,
-		});
-		if (error & HALT)
-			return parser_fail(pr);
-	}
-
+	lexer_peek_until_comma(lx, arg->rbrace, &stop);
+	error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+	    .dc		= dc,
+	    .stop	= stop,
+	    .indent	= arg->indent,
+	    .flags	= token_has_line(equal, 1) ?
+		EXPR_EXEC_HARDLINE : 0,
+	});
+	if (error & HALT)
+		return parser_fail(pr);
 	return parser_good(pr);
 }
 
