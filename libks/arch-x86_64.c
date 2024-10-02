@@ -21,6 +21,13 @@
 
 #include "libks/string.h"
 
+enum avx_version {
+	AVX_UNSUPPORTED = 0,
+	AVX1,
+	AVX2,
+	AVX512,
+};
+
 enum sse_version {
 	SSE_UNSUPPORTED = 0,
 	SSE1_0,
@@ -30,15 +37,29 @@ enum sse_version {
 	SSE4_2,
 };
 
+struct avx512 {
+	unsigned int bw:1;
+};
+
 struct cpuid {
 	uint32_t a, b, c, d;
 };
 
+int	KS_str_match_init_default(const char *, struct KS_str_match *);
+size_t	KS_str_match_native_128(const char *, size_t,
+    const struct KS_str_match *);
+size_t	KS_str_match_native_256(const char *, size_t,
+    const struct KS_str_match *);
+size_t	KS_str_match_native_512(const char *, size_t,
+    const struct KS_str_match *);
+size_t	KS_str_match_until_native_128(const char *, size_t,
+    const struct KS_str_match *);
+
 static void KS_init(void) __attribute__((constructor));
 
-size_t (*KS_str_match)(const char *, size_t, const char *) =
+size_t (*KS_str_match)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_default;
-size_t (*KS_str_match_until)(const char *, size_t, const char *) =
+size_t (*KS_str_match_until)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_until_default;
 
 static inline void
@@ -67,6 +88,71 @@ is_x86_64(uint32_t *max_leaf)
 		return 0;
 	*max_leaf = leaf.a;
 	return 1;
+}
+
+static uint64_t
+xgetbv(uint32_t regno)
+{
+	union {
+		uint32_t u32[2];
+		uint64_t u64;
+	} xcr;
+
+	__asm__("xgetbv"
+	    : "=a" (xcr.u32[0]), "=d" (xcr.u32[1])
+	    : "c" (regno));
+	return xcr.u64;
+}
+
+static enum avx_version
+avx_version(uint32_t max_leaf, struct avx512 *avx512)
+{
+#define CPUID_01_C_OSXSAVE_MASK		(1 << 27)
+#define CPUID_01_C_AVX_MASK		(1 << 28)
+#define CPUID_07_B_AVX2_MASK		(1 << 5)
+#define CPUID_07_B_AVXF_MASK		(1 << 16)
+#define CPUID_07_B_AVXBW_MASK		(1 << 30)
+#define XCR0_XMM_MASK			(1 << 1)
+#define XCR0_YMM_MASK			(1 << 2)
+#define XCR0_OPMASK_MASK		(1 << 5)
+#define XCR0_ZMM_HI256_MASK		(1 << 6)
+#define XCR0_HI16_ZMM_MASK		(1 << 7)
+
+	struct cpuid leaf;
+	uint64_t xcr0;
+	enum avx_version version = AVX_UNSUPPORTED;
+
+	if (max_leaf < 1)
+		return version;
+	cpuid(1, 0, &leaf);
+	if ((leaf.c & CPUID_01_C_OSXSAVE_MASK) == 0)
+		return version;
+	xcr0 = xgetbv(0);
+	if ((xcr0 & XCR0_XMM_MASK) == 0 || (xcr0 & XCR0_YMM_MASK) == 0)
+		return version;
+	version = AVX1;
+
+	if ((leaf.c & CPUID_01_C_AVX_MASK) == 0)
+		return version;
+	if (max_leaf < 7)
+		return version;
+	cpuid(7, 0, &leaf);
+	if ((leaf.b & CPUID_07_B_AVX2_MASK) == 0)
+		return version;
+	version = AVX2;
+
+	if ((xcr0 & XCR0_OPMASK_MASK) == 0 ||
+	    (xcr0 & XCR0_ZMM_HI256_MASK) == 0 ||
+	    (xcr0 & XCR0_HI16_ZMM_MASK) == 0)
+		return version;
+	if ((leaf.b & CPUID_07_B_AVXF_MASK) == 0)
+		return version;
+	version = AVX512;
+
+	if (leaf.b & CPUID_07_B_AVXBW_MASK)
+		avx512->bw = 1;
+
+	return version;
 }
 
 static enum sse_version
@@ -101,14 +187,14 @@ sse_version(uint32_t max_leaf)
 static int
 has_bmi1(uint32_t max_leaf)
 {
-#define CPUID_07_B_BMI1		(1 << 3)
+#define CPUID_07_B_BMI1_MASK		(1 << 3)
 
 	struct cpuid leaf;
 
 	if (max_leaf < 7)
 		return 0;
 	cpuid(7, 0, &leaf);
-	return (leaf.b & CPUID_07_B_BMI1) ? 1 : 0;
+	return (leaf.b & CPUID_07_B_BMI1_MASK) ? 1 : 0;
 }
 
 /*
@@ -136,20 +222,61 @@ is_valgrind_running(void)
 static void
 KS_init(void)
 {
+	struct avx512 avx512 = {0};
 	uint32_t max_leaf = 0;
-	int bmi1, sse4_2;
+	enum avx_version avx;
+	enum sse_version sse;
+	int bmi1;
 
 	if (!is_x86_64(&max_leaf))
 		return;
 
-	sse4_2 = sse_version(max_leaf) >= SSE4_2;
+	avx = avx_version(max_leaf, &avx512);
+	sse = sse_version(max_leaf);
 	bmi1 = has_bmi1(max_leaf);
-	if (sse4_2 /* PCMPISTRM */ && bmi1 /* TZCNT */)
-		KS_str_match = KS_str_match_native;
-	if (sse4_2 /* PCMPISTRI */ &&
+
+	if (avx >= AVX512 && avx512.bw && bmi1 /* TZCNT */)
+		KS_str_match = KS_str_match_native_512;
+	else if (avx >= AVX2 && bmi1 /* TZCNT */)
+		KS_str_match = KS_str_match_native_256;
+	else if (sse >= SSE4_2 /* PCMPISTRM */ && bmi1 /* TZCNT */)
+		KS_str_match = KS_str_match_native_128;
+
+	if (sse >= SSE4_2 /* PCMPISTRI */ &&
 	    /* Valgrind does not emulate PCMPISTRI $0x4. */
 	    !is_valgrind_running())
-		KS_str_match_until = KS_str_match_until_native;
+		KS_str_match_until = KS_str_match_until_native_128;
+}
+
+static void
+KS_str_match_init_256(const char *ranges, struct KS_str_match *match)
+{
+	size_t i, ranges_len;
+
+	ranges_len = strlen(ranges);
+
+	for (i = 0; i < ranges_len; i += 2) {
+		uint8_t hi, j, lo;
+
+		lo = (uint8_t)ranges[i];
+		hi = (uint8_t)ranges[i + 1];
+		for (j = lo; j < hi + 1; j++) {
+			match->u512[(j & 0xf) + 0x00] |= 1 << (j >> 4);
+			match->u512[(j & 0xf) + 0x10] |= 1 << (j >> 4);
+			match->u512[(j & 0xf) + 0x20] |= 1 << (j >> 4);
+			match->u512[(j & 0xf) + 0x30] |= 1 << (j >> 4);
+		}
+	}
+}
+
+int
+KS_str_match_init(const char *ranges, struct KS_str_match *match)
+{
+	if (KS_str_match_init_default(ranges, match) == -1)
+		return -1;
+
+	KS_str_match_init_256(ranges, match);
+	return 0;
 }
 
 #else

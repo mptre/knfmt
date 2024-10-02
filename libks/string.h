@@ -19,15 +19,47 @@
 
 #include <stddef.h>	/* size_t */
 
+#include "libks/section.h"
+
 struct arena_scope;
 
-extern size_t	(*KS_str_match)(const char *, size_t, const char *);
-size_t		KS_str_match_default(const char *, size_t, const char *);
-size_t		KS_str_match_native(const char *, size_t, const char *);
+struct KS_str_match {
+	char u8[16 + 1 /* NUL */];
 
-extern size_t	(*KS_str_match_until)(const char *, size_t, const char *);
-size_t		KS_str_match_until_default(const char *, size_t, const char *);
-size_t		KS_str_match_until_native(const char *, size_t, const char *);
+	char _padding[47];
+
+	char u512[64];
+} __attribute__((__packed__, __aligned__(64)));
+
+struct KS_str_match_init_once {
+	const char		*ranges;
+	struct KS_str_match	*match;
+} __attribute__((__aligned__(16)));
+
+int		KS_str_match_init(const char *, struct KS_str_match *);
+
+#define KS_str_match_init_once(r, m) do {				\
+	__attribute__((__used__))					\
+	SECTION(KS_str_ranges)						\
+	static struct KS_str_match_init_once _once = {			\
+		.ranges	= (r),						\
+		.match	= (m),						\
+	};								\
+	/* Avoid unused warnings. */					\
+	(void)_once;							\
+} while (0)
+
+extern size_t	(*KS_str_match)(const char *, size_t,
+    const struct KS_str_match *);
+size_t		KS_str_match_default(const char *, size_t,
+    const struct KS_str_match *);
+size_t		KS_str_match_spaces(const char *, size_t);
+
+extern size_t	(*KS_str_match_until)(const char *, size_t,
+    const struct KS_str_match *);
+size_t		KS_str_match_until_default(const char *, size_t,
+    const struct KS_str_match *);
+size_t		KS_str_match_until_spaces(const char *, size_t);
 
 char	**KS_str_split(const char *, const char *, struct arena_scope *);
 

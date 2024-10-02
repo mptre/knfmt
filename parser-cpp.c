@@ -267,6 +267,7 @@ parser_cpp_decl_leave(struct parser *pr, void *cookie)
 static int
 iscdefs(const char *str, size_t len)
 {
+	static struct KS_str_match match;
 	struct suffix {
 		const char	*str;
 		size_t		 len;
@@ -279,6 +280,8 @@ iscdefs(const char *str, size_t len)
 	size_t nsuffixes = sizeof(suffixes) / sizeof(suffixes[0]);
 	size_t i;
 
+	KS_str_match_init_once("AZ09__", &match);
+
 	for (i = 0; i < nsuffixes; i++) {
 		const struct suffix *s = &suffixes[i];
 
@@ -289,5 +292,5 @@ iscdefs(const char *str, size_t len)
 
 	if (len < 2 || strncmp(str, "__", 2) != 0)
 		return 0;
-	return KS_str_match(&str[2], len - 2, "AZ09__") == len - 2;
+	return KS_str_match(&str[2], len - 2, &match) == len - 2;
 }

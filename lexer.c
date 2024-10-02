@@ -946,11 +946,14 @@ lexer_eat_lines(struct lexer *lx, int threshold, struct token **tk)
 int
 lexer_eat_spaces(struct lexer *lx, struct token **tk)
 {
+	static struct KS_str_match match;
 	struct lexer_state st = lx->lx_st;
 	size_t nspaces;
 
+	KS_str_match_init_once("  \f\f\t\t", &match);
+
 	nspaces = KS_str_match(&lx->lx_input.ptr[lx->lx_st.st_off],
-	    lx->lx_input.len - lx->lx_st.st_off, "  \f\f\t\t");
+	    lx->lx_input.len - lx->lx_st.st_off, &match);
 	if (nspaces == 0)
 		return 0;
 	lx->lx_st.st_off += nspaces;

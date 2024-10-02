@@ -599,12 +599,15 @@ clang_read(struct lexer *lx, void *arg)
 		lexer_ungetc(lx);
 		tk = lexer_emit(lx, &st, TOKEN_LITERAL);
 	} else if (isalpha(ch) || ch == '_') {
+		static struct KS_str_match match;
 		struct lexer_buffer buf;
 		const struct token *kw;
 		size_t len;
 
+		KS_str_match_init_once("AZaz09__", &match);
+
 		lexer_buffer_peek(lx, &buf);
-		len = KS_str_match(buf.ptr, buf.len, "AZaz09__");
+		len = KS_str_match(buf.ptr, buf.len, &match);
 		lexer_buffer_seek(lx, len);
 
 		if ((kw = clang_find_keyword(lx, &st)) != NULL) {
@@ -1183,12 +1186,15 @@ again:
 static struct token *
 clang_read_cpp(struct clang *cl, struct lexer *lx)
 {
+	static struct KS_str_match match;
 	struct lexer_buffer buf;
 	struct lexer_state oldst, st;
 	struct token *tk;
 	size_t len;
 	int comment, type;
 	unsigned char ch;
+
+	KS_str_match_init_once("az", &match);
 
 	oldst = st = lexer_get_state(lx);
 	lexer_eat_lines_and_spaces(lx, &st);
@@ -1201,7 +1207,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	lexer_eat_spaces(lx, NULL);
 
 	lexer_buffer_peek(lx, &buf);
-	len = KS_str_match(buf.ptr, buf.len, "az");
+	len = KS_str_match(buf.ptr, buf.len, &match);
 	lexer_buffer_seek(lx, len);
 	type = clang_find_cpp(buf.ptr, len);
 

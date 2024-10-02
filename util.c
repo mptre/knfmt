@@ -13,10 +13,14 @@
 unsigned int
 colwidth(const char *str, size_t len, unsigned int cno)
 {
+	static struct KS_str_match match;
+
+	KS_str_match_init_once("\t\t\n\n", &match);
+
 	while (len > 0) {
 		size_t n;
 
-		n = KS_str_match_until(str, len, "\t\t\n\n");
+		n = KS_str_match_until(str, len, &match);
 		cno += n;
 		str += n;
 		len -= n;
@@ -42,10 +46,14 @@ colwidth(const char *str, size_t len, unsigned int cno)
 size_t
 strwidth(const char *str, size_t len, size_t pos)
 {
+	static struct KS_str_match match;
+
+	KS_str_match_init_once("\t\t\n\n", &match);
+
 	while (len > 0) {
 		size_t n;
 
-		n = KS_str_match_until(str, len, "\t\t\n\n");
+		n = KS_str_match_until(str, len, &match);
 		pos += n;
 		str += n;
 		len -= n;

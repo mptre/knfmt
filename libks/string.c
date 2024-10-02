@@ -16,29 +16,71 @@
 
 #include "libks/string.h"
 
+#include <assert.h>
+#include <errno.h>
 #include <string.h>
 
 #include "libks/arena-vector.h"
 #include "libks/arena.h"
 #include "libks/compiler.h"
+#include "libks/section.h"
 #include "libks/vector.h"
 
-size_t
-KS_str_match_default(const char *str, size_t len, const char *ranges)
+int	KS_str_match_init_default(const char *, struct KS_str_match *);
+
+static void	KS_str_init(void) __attribute__((constructor));
+
+static void
+KS_str_init(void)
 {
+	struct KS_str_match_init_once *once = NULL;
+
+	while (SECTION_ITERATE(once, KS_str_ranges)) {
+		/* Suppress cppcheck nullPointer false positive. */
+		assert(once != NULL);
+		if (KS_str_match_init(once->ranges, once->match) == -1)
+			__builtin_trap();
+	}
+}
+
+int
+KS_str_match_init_default(const char *ranges, struct KS_str_match *match)
+{
+	size_t len;
+
+	len = strlen(ranges);
+	if (len > 16) {
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+	if (len == 0 || len & 1) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	memset(match, 0, sizeof(*match));
+	memcpy(match->u8, ranges, len);
+	return 0;
+}
+
+size_t
+KS_str_match_default(const char *str, size_t len,
+    const struct KS_str_match *match)
+{
+	const char *ranges = match->u8;
 	size_t i;
 
 	for (i = 0; i < len; i++) {
 		size_t j;
-		int match = 0;
+		int found = 0;
 
 		for (j = 0; ranges[j] != '\0'; j += 2) {
 			if (str[i] >= ranges[j] && str[i] <= ranges[j + 1]) {
-				match = 1;
+				found = 1;
 				break;
 			}
 		}
-		if (!match)
+		if (!found)
 			break;
 	}
 
@@ -46,8 +88,20 @@ KS_str_match_default(const char *str, size_t len, const char *ranges)
 }
 
 size_t
-KS_str_match_until_default(const char *str, size_t len, const char *ranges)
+KS_str_match_spaces(const char *str, size_t len)
 {
+	static struct KS_str_match match;
+
+	KS_str_match_init_once("  \f\f\n\n\r\r\t\t\v\v", &match);
+
+	return KS_str_match(str, len, &match);
+}
+
+size_t
+KS_str_match_until_default(const char *str, size_t len,
+    const struct KS_str_match *match)
+{
+	const char *ranges = match->u8;
 	size_t i;
 
 	for (i = 0; i < len; i++) {
@@ -60,6 +114,16 @@ KS_str_match_until_default(const char *str, size_t len, const char *ranges)
 	}
 
 	return len;
+}
+
+size_t
+KS_str_match_until_spaces(const char *str, size_t len)
+{
+	static struct KS_str_match match;
+
+	KS_str_match_init_once("  \f\f\n\n\r\r\t\t\v\v", &match);
+
+	return KS_str_match_until(str, len, &match);
 }
 
 char **

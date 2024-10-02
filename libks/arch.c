@@ -22,9 +22,17 @@ extern int unused;
 
 #include "libks/string.h"
 
-size_t (*KS_str_match)(const char *, size_t, const char *) =
+int	KS_str_match_init_default(const char *, struct KS_str_match *);
+
+size_t (*KS_str_match)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_default;
-size_t (*KS_str_match_until)(const char *, size_t, const char *) =
+size_t (*KS_str_match_until)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_until_default;
+
+int
+KS_str_match_init(const char *ranges, struct KS_str_match *match)
+{
+	return KS_str_match_init_default(ranges, match);
+}
 
 #endif
