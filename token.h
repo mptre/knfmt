@@ -120,6 +120,7 @@ struct arena_scope;
 	OP(TOKEN_ATTRIBUTE,	"_attribute_", 0)			\
 	OP(TOKEN_ATTRIBUTE,	"_attribute__", 0)			\
 	OP(TOKEN_ATTRIBUTE,	"attribute_", 0)			\
+	OP(TOKEN_ATTRIBUTE,	"__declspec", 0)			\
 	/* inline */							\
 	OP(TOKEN_INLINE,	"_inline", TOKEN_FLAG_STORAGE)		\
 	OP(TOKEN_INLINE,	"_inline_", TOKEN_FLAG_STORAGE)		\
