@@ -241,7 +241,6 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 		    .scratch	= scratch,
 		    .bf		= bf,
 		    .st		= st,
-		    .op		= op,
 		});
 		if (nlines == 0 && alignment.skip_first_line)
 			doc_literal(" ", concat);
@@ -272,7 +271,6 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	    .scratch	= scratch,
 	    .bf		= bf,
 	    .st		= st,
-	    .op		= op,
 	});
 	out = bf;
 

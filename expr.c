@@ -104,7 +104,6 @@ struct expr_rule {
 struct expr_state {
 	struct expr_exec_arg	 es_ea;
 #define es_st		es_ea.st
-#define es_op		es_ea.op
 #define es_lx		es_ea.lx
 #define es_dc		es_ea.dc
 #define es_flags	es_ea.flags
@@ -1247,7 +1246,6 @@ expr_doc_width(struct expr_state *es, const struct doc *dc)
 	    .scratch	= es->es_arena.scratch,
 	    .bf		= bf,
 	    .st		= es->es_st,
-	    .op		= es->es_op,
 	});
 }
 

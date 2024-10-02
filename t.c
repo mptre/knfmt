@@ -428,7 +428,6 @@ test_parser_expr_impl(struct context *ctx, const char *src, const char *exp,
 	    .scratch	= ctx->arena.scratch,
 	    .bf		= bf,
 	    .st		= ctx->st,
-	    .op		= &ctx->op,
 	});
 	buffer_putc(bf, '\0');
 	act = buffer_str(bf);

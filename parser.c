@@ -187,7 +187,6 @@ parser_exec(struct parser *pr, const struct diffchunk *diff_chunks,
 	    .diff_chunks	= pr->pr_op->diffparse ? diff_chunks : NULL,
 	    .bf			= bf,
 	    .st			= pr->pr_st,
-	    .op			= pr->pr_op,
 	    .flags		= doc_flags,
 	});
 
@@ -284,7 +283,6 @@ parser_width(struct parser *pr, const struct doc *dc)
 	    .scratch	= pr->pr_arena.scratch,
 	    .bf		= bf,
 	    .st		= pr->pr_st,
-	    .op		= pr->pr_op,
 	});
 }
 

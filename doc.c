@@ -79,7 +79,6 @@ struct doc_state_indent {
 };
 
 struct doc_state {
-	const struct options		*st_op;
 	const struct style		*st_st;
 	struct buffer			*st_bf;
 	struct lexer			*st_lx;
@@ -1762,7 +1761,6 @@ doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
 	ASSERT_CONSISTENCY(arg->flags & DOC_EXEC_DIFF, arg->diff_chunks);
 
 	memset(st, 0, sizeof(*st));
-	st->st_op = arg->op;
 	st->st_st = arg->st;
 	st->st_bf = arg->bf;
 	st->st_lx = arg->lx;

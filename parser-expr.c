@@ -25,7 +25,6 @@ parser_expr_peek(struct parser *pr, struct token **tk)
 {
 	const struct expr_exec_arg ea = {
 		.st		= pr->pr_st,
-		.op		= pr->pr_op,
 		.lx		= pr->pr_lx,
 		.arena		= {
 			.scratch	= pr->pr_arena.scratch,
@@ -50,7 +49,6 @@ int
 parser_expr(struct parser *pr, struct doc **expr, struct parser_expr_arg *arg)
 {
 	const struct expr_exec_arg ea = {
-		.op		= pr->pr_op,
 		.st		= pr->pr_st,
 		.si		= pr->pr_si,
 		.lx		= pr->pr_lx,
