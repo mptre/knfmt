@@ -1072,6 +1072,25 @@ peek_c99_comment(struct lexer *lx, const struct lexer_state *first_line)
 	return peek;
 }
 
+static const char *
+comment_find_last_line(const char *buf, size_t *buflen)
+{
+	const char *last;
+	size_t len = *buflen;
+	size_t i;
+
+	while (len > 0 && isspace((unsigned char)buf[len - 1]))
+		len--;
+	if (len == 0)
+		return NULL;
+
+	last = &buf[len];
+	for (i = 0; i < len && last[-1] != '\n'; i++)
+		last--;
+	*buflen = i;
+	return last;
+}
+
 static unsigned int
 sense_clang_format_comment(const struct token *tk)
 {
@@ -1080,6 +1099,10 @@ sense_clang_format_comment(const struct token *tk)
 	size_t clang_format_needle_len = sizeof(clang_format_needle) - 1;
 	const char *str = tk->tk_str;
 	size_t len = tk->tk_len;
+
+	str = comment_find_last_line(str, &len);
+	if (str == NULL)
+		return 0;
 
 	for (; len > 0 && isspace((unsigned char)str[0]); len--, str++)
 		continue;
@@ -1108,7 +1131,6 @@ clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 	struct lexer_state oldst, st;
 	struct buffer *bf;
 	struct token *tk;
-	int oneline = 1;
 	int c99;
 	unsigned char ch;
 
@@ -1136,10 +1158,8 @@ again:
 			if (lexer_getc(lx, &ch))
 				break;
 			if (ch == '\n') {
-				if (peek_c99_comment(lx, &first_line)) {
-					oneline = 0;
+				if (peek_c99_comment(lx, &first_line))
 					goto again;
-				}
 				lexer_ungetc(lx);
 				break;
 			}
@@ -1153,8 +1173,6 @@ again:
 				break;
 			if (ch == '*' && peek == '/')
 				break;
-			if (ch == '\n')
-				oneline = 0;
 			ch = peek;
 		}
 	}
@@ -1171,8 +1189,7 @@ again:
 	tk = lexer_emit(lx, &st, TOKEN_COMMENT);
 	if (c99)
 		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
-	if (oneline)
-		tk->tk_flags |= sense_clang_format_comment(tk);
+	tk->tk_flags |= sense_clang_format_comment(tk);
 
 	bf = comment_trim(tk, cl->st, cl->arena.eternal_scope);
 	if (bf != NULL)
