@@ -150,7 +150,7 @@ parser_cpp_peek_x(struct parser *pr, struct token **tk)
 			peek = 1;
 	}
 	lexer_peek_leave(lx, &s);
-	if (peek && tk != NULL)
+	if (peek)
 		*tk = rparen;
 	return peek;
 }
