@@ -25,4 +25,10 @@
     <fileName>libks/arithmetic.h</fileName>
     <id>unusedFunction</id>
   </suppress>
+
+  <!-- libks/vector.h -->
+  <suppress>
+    <fileName>libks/vector.h</fileName>
+    <id>unusedFunction</id>
+  </suppress>
 </suppressions>
