@@ -1246,14 +1246,12 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	});
 
 	if (tk->tk_type == TOKEN_CPP_DEFINE) {
-		struct buffer *bf;
+		const char *str;
 
-		bf = cpp_align(tk, cl->st, cl->arena.eternal_scope,
+		str = cpp_align(tk, cl->st, cl->arena.eternal_scope,
 		    cl->arena.scratch, cl->op);
-		if (bf != NULL) {
-			token_set_str(tk, buffer_get_ptr(bf),
-			    buffer_get_len(bf));
-		}
+		if (str != NULL)
+			token_set_str(tk, str, strlen(str));
 	}
 
 	/* Discard any remaining hard line(s). */

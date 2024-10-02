@@ -166,7 +166,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 /*
  * Align line continuations.
  */
-struct buffer *
+const char *
 cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
     struct arena *scratch, const struct options *op)
 {
@@ -176,9 +176,9 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 		.tabs	= style_use_tabs(st) ? 1 : 0,
 	};
 	struct ruler rl;
-	struct buffer *out = NULL;
 	struct buffer *bf;
 	struct doc *dc;
+	const char *out = NULL;
 	const char *nx, *str;
 	size_t len;
 	int nlines = 0;
@@ -272,7 +272,7 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	    .bf		= bf,
 	    .st		= st,
 	});
-	out = bf;
+	out = buffer_str(bf);
 
 out:
 	ruler_free(&rl);
