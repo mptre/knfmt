@@ -30,7 +30,7 @@ struct KS_expect_scope {
 
 static struct KS_expect_scope KS_expect_current_scope;
 
-__attribute__((__used__))
+__attribute__((used))
 static void
 KS_expect_scope_leave(void *arg)
 {

@@ -107,7 +107,7 @@ void	*arena_realloc(struct arena_scope *, void *, size_t, size_t)
 	__attribute__((malloc, alloc_size(4)));
 
 char	*arena_sprintf(struct arena_scope *, const char *, ...)
-	__attribute__((__format__(printf, 2, 3)));
+	__attribute__((format(printf, 2, 3)));
 
 char	*arena_strdup(struct arena_scope *, const char *);
 char	*arena_strndup(struct arena_scope *, const char *, size_t);

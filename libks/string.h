@@ -29,12 +29,12 @@ struct KS_str_match {
 	char _padding[47];
 
 	char u512[64];
-} __attribute__((__packed__, __aligned__(64)));
+} __attribute__((packed, aligned(64)));
 
 struct KS_str_match_init_once {
 	const char		*ranges;
 	struct KS_str_match	*match;
-} __attribute__((__aligned__(16)));
+} __attribute__((aligned(16)));
 
 int		KS_str_match_init(const char *, struct KS_str_match *);
 
