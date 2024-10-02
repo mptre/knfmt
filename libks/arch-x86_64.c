@@ -28,6 +28,12 @@ enum avx_version {
 	AVX512,
 };
 
+enum bmi_version {
+	BMI_UNSUPPORTED = 0,
+	BMI1,
+	BMI2,
+};
+
 enum sse_version {
 	SSE_UNSUPPORTED = 0,
 	SSE1_0,
@@ -53,6 +59,8 @@ size_t	KS_str_match_native_256(const char *, size_t,
 size_t	KS_str_match_native_512(const char *, size_t,
     const struct KS_str_match *);
 size_t	KS_str_match_until_native_128(const char *, size_t,
+    const struct KS_str_match *);
+size_t	KS_str_match_until_native_256(const char *, size_t,
     const struct KS_str_match *);
 
 static void KS_init(void) __attribute__((constructor));
@@ -184,17 +192,23 @@ sse_version(uint32_t max_leaf)
 	return version;
 }
 
-static int
-has_bmi1(uint32_t max_leaf)
+static enum bmi_version
+bmi_version(uint32_t max_leaf)
 {
 #define CPUID_07_B_BMI1_MASK		(1 << 3)
+#define CPUID_07_B_BMI2_MASK		(1 << 8)
 
 	struct cpuid leaf;
+	enum bmi_version version = BMI_UNSUPPORTED;
 
 	if (max_leaf < 7)
 		return 0;
 	cpuid(7, 0, &leaf);
-	return (leaf.b & CPUID_07_B_BMI1_MASK) ? 1 : 0;
+	if (leaf.b & CPUID_07_B_BMI1_MASK)
+		version = BMI1;
+	if (leaf.b & CPUID_07_B_BMI2_MASK)
+		version = BMI2;
+	return version;
 }
 
 /*
@@ -225,24 +239,26 @@ KS_init(void)
 	struct avx512 avx512 = {0};
 	uint32_t max_leaf = 0;
 	enum avx_version avx;
+	enum bmi_version bmi;
 	enum sse_version sse;
-	int bmi1;
 
 	if (!is_x86_64(&max_leaf))
 		return;
 
 	avx = avx_version(max_leaf, &avx512);
+	bmi = bmi_version(max_leaf);
 	sse = sse_version(max_leaf);
-	bmi1 = has_bmi1(max_leaf);
 
-	if (avx >= AVX512 && avx512.bw && bmi1 /* TZCNT */)
+	if (avx >= AVX512 && avx512.bw && bmi >= BMI1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_512;
-	else if (avx >= AVX2 && bmi1 /* TZCNT */)
+	else if (avx >= AVX2 && bmi >= BMI1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_256;
-	else if (sse >= SSE4_2 /* PCMPISTRM */ && bmi1 /* TZCNT */)
+	else if (sse >= SSE4_2 /* PCMPISTRM */ && bmi >= BMI1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_128;
 
-	if (sse >= SSE4_2 /* PCMPISTRI */ &&
+	if (avx >= AVX2 && bmi >= BMI2 /* BZHI */)
+		KS_str_match_until = KS_str_match_until_native_256;
+	else if (sse >= SSE4_2 /* PCMPISTRI */ &&
 	    /* Valgrind does not emulate PCMPISTRI $0x4. */
 	    !is_valgrind_running())
 		KS_str_match_until = KS_str_match_until_native_128;

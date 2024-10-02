@@ -64,6 +64,27 @@
 	rep	movsb
 .endm
 
+/*
+ * Copy 32 bytes to a stack buffer in order safely continue loading 32 bytes
+ * worth of data. Rely on the stack red zone since this is only expected to be
+ * used in leaf functions.
+ *
+ * Clobbers rcx, rdx, rdi, r8, ymm0.
+ */
+.macro copy_to_stack_256
+	mov	r8, rsi
+	mov	rcx, rsi
+	lea	rsi, [rdi]
+	lea	rdx, [rsp - 32]
+	/* Ensure alignment. */
+	and	rdx, -32
+	mov	rdi, rdx
+	vmovaps	[rdi], ymm0
+	rep	movsb
+	mov	rdi, rdx
+	mov	rsi, r8
+.endm
+
 .macro vpcmpneb reg1, reg2, reg3
 	vpcmpb \reg1, \reg2, \reg3, 4
 .endm
@@ -133,7 +154,7 @@ ENTRY(KS_str_match_native_256)
 	vpandn	ymm2, ymm2, ymm1
 	/* Construct mask in which each bit represents a byte, a set bit implies
 	 * that the corresponding byte is non-zero. */
-	vpmovmskb rdx, ymm2
+	vpmovmskb edx, ymm2
 	/* If 32 bits are set implies that 32 bytes worth of input did match. */
 	cmp	edx, -1
 	jne	.Lmatch_256_partial_match
@@ -151,18 +172,7 @@ ENTRY(KS_str_match_native_256)
 	jnz	.Lmatch_256_aligned
 	ret
 .Lmatch_256_tail:
-	/* Copy the remaining less than 32 bytes to a dedicated buffer in
-	 * order safely continue loading 32 bytes worth of data. Rely on the
-	 * stack red zone since this is a leaf function. */
-	mov	rcx, rsi
-	lea	rsi, [rdi]
-	lea	rdx, [rsp - 32]
-	/* Ensure alignment. */
-	and	rdx, -32
-	mov	rdi, rdx
-	vmovaps	[rdi], ymm0
-	rep	movsb
-	mov	rdi, rdx
+	copy_to_stack_256
 	jmp	.Lmatch_256_match
 .Lmatch_256_unaligned:
 	/* Handle unaligned input by copying the bytes to an aligned stack
@@ -324,6 +334,101 @@ ctrl_mask = \
 	/* The carry flag will be set if there's a match. */
 	jc	.Luntil_128_match
 	add	rax, r8
+	ret
+
+ENTRY(KS_str_match_until_native_256)
+	xor	eax, eax
+	xor	r9, r9
+	vpxor	ymm0, ymm0, ymm0
+	vpcmpeqd ymm1, ymm1, ymm1
+	/* Load aligned constants. */
+	vmovdqa	ymm4, [rdx + KS_STR_MATCH_U512]
+	vmovdqa	ymm5, [rip + .Lmatch_bit_mask]
+	vmovdqa	ymm6, [rip + .Lmatch_lo_mask]
+	/* Save lower bound of the first range, used to enforce a match while
+	 * handling unaligned/tail input. */
+	mov	r10b, byte ptr [rdx]
+	test	rdi, 0x1f
+	jnz	.Luntil_256_unaligned
+	.align 16
+.Luntil_256_loop:
+	cmp	rsi, 32
+	jb	.Luntil_256_tail
+.Luntil_256_match:
+	/* Match low nibbles. */
+	vpshufb	ymm2, ymm4, [rdi]
+	/* Match high nibbles. As no byte granular vector shift instruction is
+	 * available, operate on words (16 bits) which requires masking to get
+	 * rid of spill. */
+	vmovdqa	ymm3, [rdi]
+	vpsraw	ymm3, ymm3, 4
+	vpand	ymm3, ymm3, ymm6
+	/* Transform high nibbles into bitmask. */
+	vpshufb	ymm3, ymm5, ymm3
+	vpand	ymm2, ymm2, ymm3
+	vpcmpeqb ymm2, ymm2, ymm0
+	/* Construct mask in which each bit represents a byte, a set bit implies
+	 * that the corresponding byte is non-zero. */
+	vpmovmskb edx, ymm2
+	/* If 32 bits are set implies that 32 bytes worth of input did not
+	 * match. */
+	cmp	edx, -1
+	jne	.Luntil_256_partial_match
+	add	rax, 32
+	add	rdi, 32
+	sub	rsi, 32
+	jmp	.Luntil_256_loop
+.Luntil_256_partial_match:
+	/* Only keep the lower bits when there's less than 32 bytes left. */
+	cmp	rsi, 32
+	ja	1f
+	bzhi	edx, edx, esi
+1:
+	/* Invert match bitmask, number of consecutive zeros in the least
+	 * significant bits represents the number of non-matched bytes. */
+	not	edx
+	tzcnt	edx, edx
+	add 	rax, rdx
+	test	r9, r9
+	jnz	.Luntil_256_aligned
+	ret
+.Luntil_256_tail:
+	copy_to_stack_256
+	/* Set the first byte after the copied ones to the lower bound of the
+	 * first range. This will ensure that we have match and thus terminate
+	 * the main loop. */
+	mov	byte ptr [rdi + rsi], r10b
+	jmp	.Luntil_256_match
+.Luntil_256_unaligned:
+	/* Handle unaligned input by copying the bytes to an aligned stack
+	 * buffer. Only relevant if there's 32 or more bytes left, otherwise
+	 * just fallback to the tail logic. */
+	cmp	rsi, 32
+	jl	.Luntil_256_tail
+	push	rdi
+	push	rsi
+	mov	r8, rdi
+	and	r8, 0x1f
+	mov	r9, 32
+	sub	r9, r8
+	mov	rsi, r9
+	jmp	.Luntil_256_tail
+.Luntil_256_aligned:
+	/* Restore rdi and rsi after handling unaligned input. Number of handled
+	 * unaligned bytes is reflected in r9. */
+	pop	rsi
+	pop	rdi
+	add	rdi, r9
+	sub	rsi, r9
+	/* Unaligned input can only occur on the first iteration. Hence, rax
+	 * reflects the number of non-matched bytes in the unaligned input. If
+	 * rax is not equal to the number of unaligned bytes we have a partial
+	 * match. */
+	cmp	rax, r9
+	jne	.Luntil_256_done
+	xor	r9, r9
+	jmp	.Luntil_256_loop
+.Luntil_256_done:
 	ret
 
 	.data
