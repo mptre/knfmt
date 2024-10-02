@@ -570,7 +570,7 @@ clang_read(struct lexer *lx, void *arg)
 	if (lexer_getc(lx, &ch))
 		goto eof;
 
-	if (ch == 'L') {
+	if (unlikely(ch == 'L')) {
 		unsigned char peek;
 
 		if (lexer_getc(lx, &peek) == 0 && (peek == '"' || peek == '\''))
@@ -579,29 +579,7 @@ clang_read(struct lexer *lx, void *arg)
 			lexer_ungetc(lx);
 	}
 
-	if (ch == '"' || ch == '\'') {
-		unsigned char delim = ch;
-		unsigned char pch = ch;
-
-		for (;;) {
-			if (lexer_getc(lx, &ch))
-				goto eof;
-			if (pch == '\\' && ch == '\\')
-				ch = '\0';
-			else if (pch != '\\' && ch == delim)
-				break;
-			pch = ch;
-		}
-		tk = lexer_emit(lx, &st,
-		    delim == '"' ? TOKEN_STRING : TOKEN_LITERAL);
-	} else if (isdigit(ch) || ch == '.') {
-		do {
-			if (lexer_getc(lx, &ch))
-				goto eof;
-		} while (isnum(ch));
-		lexer_ungetc(lx);
-		tk = lexer_emit(lx, &st, TOKEN_LITERAL);
-	} else if (isalpha(ch) || ch == '_') {
+	if (isalpha(ch) || ch == '_') {
 		static struct KS_str_match match;
 		struct lexer_buffer buf;
 		const struct token *kw;
@@ -621,6 +599,28 @@ clang_read(struct lexer *lx, void *arg)
 			token_priv(tk, struct clang_token)->type =
 			    clang_find_identifier(tk->tk_str, tk->tk_len);
 		}
+	} else if (isdigit(ch) || ch == '.') {
+		do {
+			if (lexer_getc(lx, &ch))
+				goto eof;
+		} while (isnum(ch));
+		lexer_ungetc(lx);
+		tk = lexer_emit(lx, &st, TOKEN_LITERAL);
+	} else if (ch == '"' || ch == '\'') {
+		unsigned char delim = ch;
+		unsigned char pch = ch;
+
+		for (;;) {
+			if (lexer_getc(lx, &ch))
+				goto eof;
+			if (pch == '\\' && ch == '\\')
+				ch = '\0';
+			else if (pch != '\\' && ch == delim)
+				break;
+			pch = ch;
+		}
+		tk = lexer_emit(lx, &st,
+		    delim == '"' ? TOKEN_STRING : TOKEN_LITERAL);
 	} else if (lexer_eof(lx)) {
 eof:
 		tk = lexer_emit(lx, &st, LEXER_EOF);
