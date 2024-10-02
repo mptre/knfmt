@@ -1,4 +1,37 @@
-# 4.5.0 - YYYY-MM-DD
+# 4.6.0 - YYYY-MM-DD
+
+## Changes
+
+## News
+
+- In simple mode, introduce pass to remove underscores from attribute arguments.
+  (86721da14165)
+  (Anton Lindqvist)
+
+- Honor aligned rows in brace initializers.
+  (f41e016dbdce)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Only consider c99 comments on the same level of indentation to form a
+  multi-line comment.
+  (285ad1e0feb6)
+  (Anton Lindqvist)
+
+- Detect switch case fallthrough w/o semicolon.
+  (91d359793369)
+  (Anton Lindqvist)
+
+- Treat __declspec as an attribute.
+  (262a19369700)
+  (Anton Lindqvist)
+
+- Detect clang-format off/on in multi-line c99 comments.
+  (7f101bd66570)
+  (Anton Lindqvist)
+
+# 4.5.0 - 2024-09-01
 
 ## News
 
