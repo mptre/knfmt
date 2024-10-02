@@ -1,6 +1,6 @@
 include ${.CURDIR}/config.mk
 
-VERSION=	4.6.0rc1
+VERSION=	4.6.0rc2
 
 SRCS+=	arch-x86_64.c
 SRCS+=	arch.c
