@@ -3,7 +3,6 @@
 #include "config.h"
 
 #include <assert.h>
-#include <err.h>
 #include <limits.h>	/* UINT_MAX */
 #include <string.h>
 
@@ -82,17 +81,13 @@ ruler_insert_impl(struct ruler *rl, struct token *tk, struct doc *dc,
 	struct ruler_datum *rd;
 
 	while (VECTOR_LENGTH(rl->rl_columns) < col) {
-		rc = VECTOR_CALLOC(rl->rl_columns);
-		if (rc == NULL)
-			err(1, NULL);
+		rc = ARENA_VECTOR_CALLOC(rl->rl_columns);
 		ARENA_VECTOR_INIT(rl->rl_arena.ruler_scope, rc->rc_datums,
 		    1 << 6);
 	}
 	rc = &rl->rl_columns[col - 1];
 
-	rd = VECTOR_CALLOC(rc->rc_datums);
-	if (rd == NULL)
-		err(1, NULL);
+	rd = ARENA_VECTOR_CALLOC(rc->rc_datums);
 	rd->rd_dc = doc_alloc_impl(DOC_ALIGN, dc, 1, fun, lno);
 	token_ref(tk);
 	rd->rd_tk = tk;
@@ -137,9 +132,7 @@ ruler_indent_impl(struct ruler *rl, struct doc *dc,
 		ARENA_VECTOR_INIT(rl->rl_arena.ruler_scope, rl->rl_indent,
 		    1 << 6);
 	}
-	ri = VECTOR_CALLOC(rl->rl_indent);
-	if (ri == NULL)
-		err(1, NULL);
+	ri = ARENA_VECTOR_CALLOC(rl->rl_indent);
 	ri->ri_rd = VECTOR_LENGTH(rc->rc_datums) - 1;
 	ri->ri_sign = sign;
 	ri->ri_dc = doc_alloc_impl(DOC_INDENT, dc, 0, fun, lno);
