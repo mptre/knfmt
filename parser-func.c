@@ -111,9 +111,6 @@ parser_func_decl(struct parser *pr, struct doc *dc, struct ruler *rl)
 	if (parser_func_peek1(pr, &type) != PARSER_FUNC_PEEK_DECL)
 		return parser_none(pr);
 
-	arena_scope(pr->pr_arena.scratch, scratch_scope);
-	parser_arena_scope(&pr->pr_arena.scratch_scope, &scratch_scope, cookie);
-
 	error = parser_simple_decl_proto_enter(pr, &type);
 	if (error & HALT)
 		return error;
@@ -156,11 +153,13 @@ parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 	if (!simple_enter(pr->pr_si, SIMPLE_DECL_PROTO, 0, &simple))
 		return parser_good(pr);
 
+	arena_scope(pr->pr_arena.scratch, scratch_scope);
+
 	arena_scope(pr->pr_arena.doc, doc_scope);
 	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope, cookie);
 
 	pr->pr_simple.decl_proto = simple_decl_proto_enter(pr->pr_lx,
-	    pr->pr_arena.scratch_scope);
+	    &scratch_scope);
 	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);
 	error = parser_func_decl1(pr, dc, NULL, type);

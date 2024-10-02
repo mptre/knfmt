@@ -75,10 +75,6 @@ parser_stmt(struct parser *pr, struct doc *dc)
 
 	simple_cookie(simple);
 	if (peek_simple_stmt(pr)) {
-		arena_scope(pr->pr_arena.scratch, scratch_scope);
-		parser_arena_scope(&pr->pr_arena.scratch_scope, &scratch_scope,
-		    cookie);
-
 		error = parser_simple_stmt_enter(pr, &simple);
 		if (error & HALT)
 			return error;
@@ -889,11 +885,13 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 	if (!simple_enter(pr->pr_si, SIMPLE_STMT, 0, simple))
 		return parser_good(pr);
 
+	arena_scope(pr->pr_arena.scratch, scratch_scope);
+
 	arena_scope(pr->pr_arena.doc, doc_scope);
 	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope, cookie);
 
 	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st,
-	    pr->pr_arena.scratch_scope, pr->pr_arena.scratch,
+	    &scratch_scope, pr->pr_arena.scratch,
 	    pr->pr_arena.buffer, pr->pr_op);
 	dc = doc_root(&doc_scope);
 	lexer_peek_enter(lx, &s);

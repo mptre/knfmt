@@ -28,7 +28,6 @@ struct parser {
 	struct {
 		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
-		struct arena_scope	*scratch_scope;
 		struct arena		*doc;
 		struct arena_scope	*doc_scope;
 		struct arena		*buffer;
