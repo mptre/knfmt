@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "libks/arena-vector.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
@@ -96,8 +97,8 @@ lexer_tokenize(const struct lexer_arg *arg)
 	LIST_INIT(&lx->lx_tokens);
 	lexer_line_alloc(lx, 1);
 
-	if (VECTOR_INIT(discarded))
-		err(1, NULL);
+	arena_scope(lx->lx_arena.scratch, scratch_scope);
+	ARENA_VECTOR_INIT(&scratch_scope, discarded, 1 << 3);
 
 	for (;;) {
 		struct token *tk;
@@ -106,14 +107,8 @@ lexer_tokenize(const struct lexer_arg *arg)
 		if (tk == NULL)
 			goto err;
 		LIST_INSERT_TAIL(&lx->lx_tokens, tk);
-		if (tk->tk_flags & TOKEN_FLAG_DISCARD) {
-			struct token **dst;
-
-			dst = VECTOR_ALLOC(discarded);
-			if (dst == NULL)
-				err(1, NULL);
-			*dst = tk;
-		}
+		if (tk->tk_flags & TOKEN_FLAG_DISCARD)
+			*ARENA_VECTOR_ALLOC(discarded) = tk;
 		if (tk->tk_type == LEXER_EOF)
 			break;
 	}
@@ -124,7 +119,6 @@ lexer_tokenize(const struct lexer_arg *arg)
 		tail = VECTOR_POP(discarded);
 		lexer_remove(lx, *tail);
 	}
-	VECTOR_FREE(discarded);
 
 	if (lx->lx_callbacks.after_read != NULL)
 		lx->lx_callbacks.after_read(lx, lx->lx_callbacks.arg);
@@ -137,7 +131,6 @@ lexer_tokenize(const struct lexer_arg *arg)
 err:
 	if (lx->lx_callbacks.after_read != NULL)
 		lx->lx_callbacks.after_read(lx, lx->lx_callbacks.arg);
-	VECTOR_FREE(discarded);
 	return NULL;
 }
 
