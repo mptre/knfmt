@@ -41,7 +41,7 @@ struct ruler_length {
 static void	ruler_exec_indent(struct ruler *);
 static void	ruler_reset(struct ruler *);
 
-static unsigned int	ruler_column_alignment(struct ruler_column *);
+static unsigned int	sense_column_length(struct ruler_column *);
 static int		ruler_column_length(const struct ruler *,
     struct ruler_column *, struct ruler_length *);
 static int		countspaces(const char *, size_t, unsigned int *);
@@ -258,7 +258,7 @@ ruler_reset(struct ruler *rl)
 }
 
 static unsigned int
-ruler_column_alignment(struct ruler_column *rc)
+sense_column_length(struct ruler_column *rc)
 {
 	struct token *tk = NULL;
 	size_t oldnspaces = rc->rc_nspaces;
@@ -345,7 +345,7 @@ ruler_column_length(const struct ruler *rl, struct ruler_column *rc,
 	} else if (rl->rl_flags & RULER_ALIGN_FIXED) {
 		maxlen = rl->rl_align;
 	} else if (rl->rl_flags & RULER_ALIGN_SENSE) {
-		maxlen = ruler_column_alignment(rc);
+		maxlen = sense_column_length(rc);
 		if (maxlen == 0) {
 			if (rc->rc_ntabs > 0 &&
 			    rc->rc_ntabs >= VECTOR_LENGTH(rc->rc_datums) / 4)
