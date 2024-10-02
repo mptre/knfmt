@@ -4,6 +4,7 @@
 
 #include "libks/arena.h"
 
+#include "clang.h"
 #include "doc.h"
 #include "expr.h"
 #include "lexer.h"
@@ -840,9 +841,6 @@ parser_stmt_semi(struct parser *pr, struct doc *dc)
 	return parser_semi(pr, dc);
 }
 
-/*
- * Parse statement hidden behind cpp, such as a loop construct from queue(3).
- */
 static int
 parser_stmt_cpp(struct parser *pr, struct doc *dc)
 {
@@ -851,15 +849,25 @@ parser_stmt_cpp(struct parser *pr, struct doc *dc)
 	struct token *ident;
 	int peek = 0;
 
+	/* Statement hidden behind cpp, such as loop construct from queue(3). */
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, NULL) &&
 	    !lexer_if(lx, TOKEN_SEMI, NULL))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
-	if (!peek)
-		return parser_none(pr);
-	return parser_stmt_kw_expr(pr, dc, TOKEN_IDENT, 0);
+	if (peek)
+		return parser_stmt_kw_expr(pr, dc, TOKEN_IDENT, 0);
+
+	/* Swith case fallthrough macro w/o semicolon. */
+	if (lexer_peek_if(lx, TOKEN_IDENT, &ident) &&
+	    clang_token_type(ident) == CLANG_TOKEN_FALLTHROUGH &&
+	    lexer_expect(lx, TOKEN_IDENT, &ident)) {
+		parser_doc_token(pr, ident, dc);
+		return parser_good(pr);
+	}
+
+	return parser_none(pr);
 }
 
 /*

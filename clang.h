@@ -25,7 +25,9 @@ struct token;
 	OP(CLANG_TOKEN_WARNC,		"warnc")			\
 	OP(CLANG_TOKEN_WARNX,		"warnx")			\
 	/* parser-cpp.c */						\
-	OP(CLANG_TOKEN_LIST_ENTRY,	"LIST_ENTRY")
+	OP(CLANG_TOKEN_LIST_ENTRY,	"LIST_ENTRY")			\
+	/* parser-stmt.c */						\
+	OP(CLANG_TOKEN_FALLTHROUGH,	"FALLTHROUGH")
 
 enum clang_token_type {
 	CLANG_TOKEN_NONE = 0,
