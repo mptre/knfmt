@@ -4,6 +4,7 @@
 
 #include <string.h>
 
+#include "libks/arena.h"
 #include "libks/string.h"
 
 #include "clang.h"
@@ -165,7 +166,9 @@ parser_cpp_x(struct parser *pr, struct doc *dc)
 	if (!parser_cpp_peek_x(pr, &rparen))
 		return parser_none(pr);
 
-	ruler_init(&rl, 0, RULER_ALIGN_SENSE, pr->pr_arena.ruler_scope);
+	arena_scope(pr->pr_arena.ruler, ruler_scope);
+
+	ruler_init(&rl, 0, RULER_ALIGN_SENSE, &ruler_scope);
 
 	do {
 		struct doc *concat;

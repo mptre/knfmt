@@ -78,10 +78,6 @@ parser_decl(struct parser *pr, struct doc *dc, unsigned int flags)
 	parser_arena_scope(&pr->pr_arena.scratch_scope, &scratch_scope,
 	    scratch_cookie);
 
-	arena_scope(pr->pr_arena.ruler, ruler_scope);
-	parser_arena_scope(&pr->pr_arena.ruler_scope, &ruler_scope,
-	    ruler_cookie);
-
 	simple_cookie(simple_decl_cookie);
 	error = parser_simple_decl_enter(pr, flags, &simple_decl_cookie);
 	if (error & HALT)
@@ -106,8 +102,10 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 	int ndecl = 0;
 	int error;
 
+	arena_scope(pr->pr_arena.ruler, ruler_scope);
+
+	ruler_init(&rl, 0, RULER_ALIGN_SENSE, &ruler_scope);
 	decl = doc_alloc(DOC_CONCAT, dc);
-	ruler_init(&rl, 0, RULER_ALIGN_SENSE, pr->pr_arena.ruler_scope);
 
 	for (;;) {
 		struct token *tk;

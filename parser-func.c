@@ -183,7 +183,6 @@ parser_func_impl(struct parser *pr, struct doc *dc)
 		return parser_none(pr);
 
 	arena_scope(pr->pr_arena.ruler, ruler_scope);
-	parser_arena_scope(&pr->pr_arena.ruler_scope, &ruler_scope, cookie);
 
 	ruler_init(&rl, 1, RULER_ALIGN_FIXED, &ruler_scope);
 	error = parser_func_impl1(pr, dc, &rl, &type);

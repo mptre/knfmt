@@ -49,7 +49,6 @@ parser_braces(struct parser *pr, struct doc *parent, struct doc *dc,
 	int error;
 
 	arena_scope(pr->pr_arena.ruler, ruler_scope);
-	parser_arena_scope(&pr->pr_arena.ruler_scope, &ruler_scope, cookie);
 
 	ruler_init(&rl, 0, RULER_ALIGN_SENSE, &ruler_scope);
 	error = parser_braces_with_ruler(pr, parent, dc, &rl, indent, flags);
