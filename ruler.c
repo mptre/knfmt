@@ -257,43 +257,53 @@ ruler_reset(struct ruler *rl)
 	VECTOR_FREE(rl->rl_indent);
 }
 
+/*
+ * Sense effective number of spaces when tabs are used for alignment.
+ * Redundant spaces can be present after removing a pointer type from
+ * declarations. Such spaces are considered harmless, otherwise needless
+ * formatting churn would be introduced.
+ */
+static unsigned int
+sense_column_spaces(const struct ruler_column *rc)
+{
+	unsigned int nspaces = rc->rc_nspaces;
+	unsigned int i;
+
+	if (rc->rc_ntabs == 0)
+		return nspaces;
+
+	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
+		const struct ruler_datum *rd = &rc->rc_datums[i];
+		struct token *suffix;
+		unsigned int n;
+
+		if (!token_has_tabs(rd->rd_tk))
+			continue;
+		suffix = token_find_suffix_spaces(rd->rd_tk);
+		if (suffix == NULL)
+			continue;
+
+		n = count_trailing_spaces(suffix->tk_str,
+		    suffix->tk_len);
+		if (n > nspaces)
+			nspaces = n;
+	}
+
+	return nspaces;
+}
+
 static unsigned int
 sense_column_length(struct ruler_column *rc)
 {
 	struct token *tk = NULL;
-	size_t oldnspaces = rc->rc_nspaces;
 	size_t i;
 	unsigned int cno = 0;
-	unsigned int maxlen, w;
+	unsigned int effective_nspaces, maxlen, w;
 
 	assert(!VECTOR_EMPTY(rc->rc_datums));
 
-	/*
-	 * Allow redundant spaces, reduces churn when removing pointer types
-	 * from declarations.
-	 */
-	if (rc->rc_ntabs > 0 && rc->rc_nspaces == 0) {
-		unsigned int nspaces = 0;
+	effective_nspaces = sense_column_spaces(rc);
 
-		for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
-			struct ruler_datum *rd = &rc->rc_datums[i];
-			struct token *suffix;
-			unsigned int n;
-
-			if (!token_has_tabs(rd->rd_tk))
-				continue;
-			suffix = token_find_suffix_spaces(rd->rd_tk);
-			if (suffix == NULL)
-				continue;
-
-			n = count_trailing_spaces(suffix->tk_str,
-			    suffix->tk_len);
-			if (n > nspaces)
-				nspaces = n;
-		}
-
-		rc->rc_nspaces = nspaces;
-	}
 
 	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
 		struct ruler_datum *rd = &rc->rc_datums[i];
@@ -305,7 +315,7 @@ sense_column_length(struct ruler_column *rc)
 		    token_cmp(rd->rd_tk, nx) != 0)
 			goto noalign;
 
-		nspaces = rc->rc_nspaces - rd->rd_nspaces;
+		nspaces = effective_nspaces - rd->rd_nspaces;
 		w = nx->tk_cno - nspaces;
 		end = colwidth(rd->rd_tk->tk_str, rd->rd_tk->tk_len,
 		    rd->rd_tk->tk_cno);
@@ -321,13 +331,13 @@ sense_column_length(struct ruler_column *rc)
 	}
 	assert(tk != NULL);
 
+	rc->rc_nspaces = effective_nspaces;
 	w = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
 	maxlen = rc->rc_len + (cno - w);
 
 	return maxlen;
 
 noalign:
-	rc->rc_nspaces = oldnspaces;
 	return 0;
 }
 
