@@ -1,5 +1,7 @@
 #include "simple-attributes.h"
 
+#include "config.h"
+
 #include <string.h>
 
 #include "libks/arena.h"
