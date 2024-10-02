@@ -80,7 +80,6 @@ static int			 clang_find_cpp(const char *, size_t);
 static struct token		*clang_keyword(struct lexer *);
 static const struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
-static const struct token	*clang_find_keyword1(const char *, size_t);
 static const struct token	*clang_ellipsis(struct lexer *);
 static struct token		*clang_token_alloc(struct arena_scope *,
     const struct token *);
@@ -1335,18 +1334,11 @@ static const struct token *
 clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 {
 	struct lexer_buffer buf;
+	const struct token **kw;
 
 	if (!lexer_buffer_slice(lx, st, &buf))
 		return NULL;
-	return clang_find_keyword1(buf.ptr, buf.len);
-}
-
-static const struct token *
-clang_find_keyword1(const char *key, size_t len)
-{
-	const struct token **kw;
-
-	kw = MAP_FIND_N(clang_tokens, key, len);
+	kw = MAP_FIND_N(clang_tokens, buf.ptr, buf.len);
 	if (kw == NULL)
 		return NULL;
 	return *kw;
