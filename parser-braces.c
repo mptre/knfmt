@@ -16,6 +16,7 @@
 #include "token.h"
 
 struct braces_field_arg {
+	struct doc		*parent;
 	struct doc		*dc;
 	struct ruler		*rl;
 	struct token		*rbrace;
@@ -130,6 +131,8 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 		indent = doc_indent(val, braces);
 		doc_alloc(DOC_HARDLINE, indent);
 	} else if (is_row_aligned(lbrace, rbrace)) {
+		unsigned int effective_indent;
+
 		/*
 		 * Rows are aligned using an indent equal to the position of the
 		 * lbrace.
@@ -139,7 +142,10 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 		 */
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
-		indent = doc_indent(parser_width(pr, parent), braces);
+		effective_indent = parser_width(pr, parent);
+		if (flags & PARSER_BRACES_NESTED)
+			effective_indent -= indent_width;
+		indent = doc_indent(effective_indent, braces);
 	} else if (!is_first_token_on_line(lbrace)) {
 		/*
 		 * The lbrace is not the first token on this line. Regular
@@ -177,6 +183,7 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 		    lexer_peek_if(lx, TOKEN_LSQUARE, NULL)) {
 			error = parser_braces_field(pr,
 			    &(struct braces_field_arg){
+				.parent	= parent,
 				.dc	= concat,
 				.rl	= rl,
 				.rbrace	= rbrace,
@@ -284,7 +291,7 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	struct lexer *lx = pr->pr_lx;
 	struct doc *dc = arg->dc;
 	struct ruler *rl = arg->rl;
-	struct token *equal, *stop;
+	struct token *equal, *lbrace, *stop;
 	int nfields = 0;
 	int error;
 
@@ -307,6 +314,16 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	ruler_insert(rl, token_prev(equal), dc, 1, parser_width(pr, dc), 0);
 	parser_doc_token(pr, equal, dc);
 	doc_literal(" ", dc);
+
+	/* Do not go through expr recovery for nested braces. */
+	if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) &&
+	    token_cmp(equal, lbrace) == 0) {
+		unsigned int nested_flags = PARSER_BRACES_NESTED |
+		    (arg->flags & ~PARSER_BRACES_DEDENT);
+
+		return parser_braces(pr, arg->parent, dc, arg->indent,
+		    nested_flags);
+	}
 
 	lexer_peek_until_comma(lx, arg->rbrace, &stop);
 	error = parser_expr(pr, NULL, &(struct parser_expr_arg){
