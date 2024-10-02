@@ -42,6 +42,38 @@ parser_attributes_peek(struct parser *pr, struct token **rparen,
 	return nattributes > 0;
 }
 
+static int
+parser_attributes_expr(struct parser *pr, struct doc *dc, struct doc **out,
+    struct token *rparen)
+{
+	struct lexer *lx = pr->pr_lx;
+
+	for (;;) {
+		struct token *comma, *nx, *stop;
+		int error;
+
+		lexer_peek_until_comma(lx, rparen, &stop);
+		error = parser_expr(pr, out, &(struct parser_expr_arg){
+		    .dc		= dc,
+		    .stop	= stop,
+		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
+		    .flags	= EXPR_EXEC_SOFTLINE,
+		});
+		if (error & HALT)
+			return parser_fail(pr);
+
+		if (lexer_peek_if(lx, TOKEN_RPAREN, &nx) && nx == rparen)
+			break;
+
+		if (lexer_expect(lx, TOKEN_COMMA, &comma)) {
+			parser_doc_token(pr, comma, *out);
+			doc_alloc(DOC_LINE, *out);
+		}
+	}
+
+	return parser_good(pr);
+}
+
 int
 parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
     unsigned int flags)
@@ -63,8 +95,8 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 	optional = doc_alloc(DOC_CONCAT, doc_alloc(DOC_OPTIONAL, dc));
 	for (;;) {
 		struct doc *concat;
-		struct token *rparen = NULL;
-		struct token *tk;
+		struct token *rparen = end;
+		struct token *lparen, *tk;
 		int error;
 
 		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk) &&
@@ -78,13 +110,10 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 		parser_doc_token(pr, tk, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			parser_doc_token(pr, tk, concat);
-		if (lexer_if(lx, TOKEN_LPAREN, &tk))
-			parser_doc_token(pr, tk, concat);
-		error = parser_expr(pr, out, &(struct parser_expr_arg){
-		    .dc		= concat,
-		    .indent	= style(pr->pr_st, ContinuationIndentWidth),
-		    .flags	= EXPR_EXEC_SOFTLINE,
-		});
+		if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
+		    NULL, &rparen) && lexer_if(lx, TOKEN_LPAREN, &lparen))
+			parser_doc_token(pr, lparen, concat);
+		error = parser_attributes_expr(pr, concat, out, rparen);
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
