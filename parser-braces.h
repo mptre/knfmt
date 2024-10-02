@@ -7,8 +7,6 @@ struct parser;
 #define PARSER_BRACES_DEDENT			0x00000004u
 /* Perform conditional indentation. */
 #define PARSER_BRACES_INDENT_MAYBE		0x00000008u
-/* Used internally to compensate indentation for nested braces. */
-#define PARSER_BRACES_NESTED			0x00000010u
 
 int	parser_braces(struct parser *, struct doc *, struct doc *,
     unsigned int, unsigned int);

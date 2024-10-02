@@ -58,6 +58,18 @@ parser_braces(struct parser *pr, struct doc *parent, struct doc *dc,
 }
 
 static int
+parser_braces_nested(struct parser *pr, struct doc *parent, struct doc *dc,
+    unsigned int indent, unsigned int flags)
+{
+	int error;
+
+	pr->pr_braces.nested++;
+	error = parser_braces(pr, parent, dc, indent, flags);
+	pr->pr_braces.nested--;
+	return error;
+}
+
+static int
 is_first_token_on_line(const struct token *tk)
 {
 	const struct token *pv;
@@ -142,9 +154,8 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 		 */
 		if (token_has_spaces(lbrace))
 			doc_literal(" ", braces);
-		effective_indent = parser_width(pr, parent);
-		if (flags & PARSER_BRACES_NESTED)
-			effective_indent -= indent_width;
+		effective_indent = parser_width(pr, parent) -
+		    (pr->pr_braces.nested * indent_width);
 		indent = doc_indent(effective_indent, braces);
 	} else if (!is_first_token_on_line(lbrace)) {
 		/*
@@ -318,10 +329,9 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	/* Do not go through expr recovery for nested braces. */
 	if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace) &&
 	    token_cmp(equal, lbrace) == 0) {
-		unsigned int nested_flags = PARSER_BRACES_NESTED |
-		    (arg->flags & ~PARSER_BRACES_DEDENT);
+		unsigned int nested_flags = arg->flags & ~PARSER_BRACES_DEDENT;
 
-		return parser_braces(pr, arg->parent, dc, arg->indent,
+		return parser_braces_nested(pr, arg->parent, dc, arg->indent,
 		    nested_flags);
 	}
 

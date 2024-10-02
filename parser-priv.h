@@ -45,6 +45,10 @@ struct parser {
 		struct token	*unmute;
 		struct token	*clang_format_off;
 	} pr_token;
+
+	struct {
+		unsigned int	nested;
+	} pr_braces;
 };
 
 struct parser_arena_scope_cookie {
