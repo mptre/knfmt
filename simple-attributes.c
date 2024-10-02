@@ -1,6 +1,5 @@
 #include "simple-attributes.h"
 
-#include <stdio.h> // XXX
 #include <string.h>
 
 #include "libks/arena.h"
