@@ -493,19 +493,11 @@ lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
 struct token *
 lexer_move_before(struct lexer *lx, struct token *before, struct token *mv)
 {
-	unsigned int mv_suffix_flags = 0;
-
-	if (token_is_first(mv))
-		mv_suffix_flags |= TOKEN_FLAG_OPTSPACE;
-
 	LIST_REMOVE(&lx->lx_tokens, mv);
 	LIST_INSERT_BEFORE(before, mv);
 	mv->tk_lno = before->tk_lno;
-
 	lx->lx_callbacks.move_prefixes(before, mv);
-	token_list_swap(&before->tk_suffixes, TOKEN_FLAG_OPTLINE,
-	    &mv->tk_suffixes, mv_suffix_flags);
-
+	token_list_swap(&before->tk_suffixes, &mv->tk_suffixes);
 	return mv;
 }
 

@@ -256,7 +256,6 @@ int	token_has_spaces(const struct token *);
 int	token_has_c99_comment(const struct token *);
 int	token_is_decl(const struct token *, int);
 int	token_is_moveable(const struct token *);
-int	token_is_first(const struct token *);
 int	token_is_dangling(const struct token *);
 
 #define token_next(tk)	__extension__ ({ (__typeof__(tk))LIST_NEXT(tk); })
@@ -269,8 +268,7 @@ void		 token_list_append(struct token_list *, struct token *);
 void		 token_list_append_after(struct token_list *, struct token *,
     struct token *);
 void		 token_list_remove(struct token_list *, struct token *);
-void		 token_list_swap(struct token_list *, unsigned int,
-    struct token_list *, unsigned int);
+void		 token_list_swap(struct token_list *, struct token_list *);
 struct token	*token_list_first(struct token_list *);
 struct token	*token_list_last(struct token_list *);
 struct token	*token_list_find(const struct token_list *, int, unsigned int);

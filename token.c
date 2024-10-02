@@ -389,18 +389,6 @@ token_is_moveable(const struct token *tk)
 }
 
 /*
- * Returns non-zero if the given token is the first one on the line it resides.
- */
-int
-token_is_first(const struct token *tk)
-{
-	const struct token *pv;
-
-	pv = token_prev(tk);
-	return pv == NULL || pv->tk_lno != tk->tk_lno;
-}
-
-/*
  * Returns non-zero if the given token is not part of a token_list.
  */
 int
@@ -443,39 +431,22 @@ token_list_remove(struct token_list *tl, struct token *tk)
 	token_rele(tk);
 }
 
-/*
- * Swap the two lists but preserve tokens with the given flags.
- */
 void
-token_list_swap(struct token_list *src, unsigned int src_token_flags,
-    struct token_list *dst, unsigned int dst_token_flags)
+token_list_swap(struct token_list *src, struct token_list *dst)
 {
 	struct token_list tmp;
-	struct token *before = NULL;
 	struct token *safe, *tk;
 
 	LIST_INIT(&tmp);
 	LIST_FOREACH_SAFE(tk, src, safe) {
 		tk = LIST_FIRST(src);
-		if (tk->tk_flags & src_token_flags) {
-			if (before == NULL)
-				before = tk;
-			continue;
-		}
-
 		LIST_REMOVE(src, tk);
 		LIST_INSERT_TAIL(&tmp, tk);
 	}
 
 	LIST_FOREACH_SAFE(tk, dst, safe) {
-		if (tk->tk_flags & dst_token_flags)
-			continue;
-
 		LIST_REMOVE(dst, tk);
-		if (before != NULL)
-			LIST_INSERT_BEFORE(before, tk);
-		else
-			LIST_INSERT_TAIL(src, tk);
+		LIST_INSERT_TAIL(src, tk);
 	}
 
 	while (!LIST_EMPTY(&tmp)) {
