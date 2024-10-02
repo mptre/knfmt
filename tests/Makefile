@@ -542,6 +542,7 @@ TESTS+=	simple-007.c
 TESTS+=	simple-008.c
 TESTS+=	simple-038.c
 TESTS+=	simple-attributes-001.c
+TESTS+=	simple-attributes-002.c
 TESTS+=	simple-braces-001.c
 TESTS+=	simple-cpp-sort-includes-001.c
 TESTS+=	simple-cpp-sort-includes-002.c

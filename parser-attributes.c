@@ -46,12 +46,13 @@ parser_attributes_peek(struct parser *pr, struct token **rparen,
 
 static int
 parser_attributes_expr(struct parser *pr, struct doc *dc, struct doc **out,
-    struct token *rparen)
+    struct token *attribute, struct token *rparen)
 {
 	struct lexer *lx = pr->pr_lx;
 
 	simple_cookie(cookie);
-	simple_enter(pr->pr_si, SIMPLE_ATTRIBUTES, 0, &cookie);
+	if (attribute->tk_type == TOKEN_ATTRIBUTE)
+		simple_enter(pr->pr_si, SIMPLE_ATTRIBUTES, 0, &cookie);
 
 	for (;;) {
 		struct token *comma, *nx, *stop;
@@ -104,24 +105,25 @@ parser_attributes(struct parser *pr, struct doc *dc, struct doc **out,
 	for (;;) {
 		struct doc *concat;
 		struct token *rparen = end;
-		struct token *lparen, *tk;
+		struct token *attribute, *lparen, *tk;
 		int error;
 
-		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &tk) &&
-		    !lexer_if(lx, TOKEN_IDENT, &tk))
+		if (!lexer_if(lx, TOKEN_ATTRIBUTE, &attribute) &&
+		    !lexer_if(lx, TOKEN_IDENT, &attribute))
 			break;
 
 		if ((flags & PARSER_ATTRIBUTES_LINE) || nattributes > 0)
 			doc_alloc(linetype, optional);
 		linetype = DOC_LINE;
 		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, optional));
-		parser_doc_token(pr, tk, concat);
+		parser_doc_token(pr, attribute, concat);
 		if (lexer_expect(lx, TOKEN_LPAREN, &tk))
 			parser_doc_token(pr, tk, concat);
 		if (lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN,
 		    NULL, &rparen) && lexer_if(lx, TOKEN_LPAREN, &lparen))
 			parser_doc_token(pr, lparen, concat);
-		error = parser_attributes_expr(pr, concat, out, rparen);
+		error = parser_attributes_expr(pr, concat, out, attribute,
+		    rparen);
 		if (error & HALT)
 			return parser_fail(pr);
 		if (lexer_expect(lx, TOKEN_RPAREN, &rparen))
