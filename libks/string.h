@@ -39,7 +39,7 @@ struct KS_str_match_init_once {
 int		KS_str_match_init(const char *, struct KS_str_match *);
 
 #define KS_str_match_init_once(r, m) do {				\
-	__attribute__((__used__))					\
+	__attribute__((used))						\
 	SECTION(KS_str_ranges)						\
 	static struct KS_str_match_init_once _once = {			\
 		.ranges	= (r),						\

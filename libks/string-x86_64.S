@@ -250,13 +250,13 @@ ENTRY(KS_str_match_native_512)
 	 * stack red zone since this is a leaf function. */
 	mov	rcx, rsi
 	lea	rsi, [rdi]
-	lea	r8, [rsp - 64]
+	lea	rdx, [rsp - 64]
 	/* Ensure 64 bytes alignment. */
-	and	r8, -64
-	mov	rdi, r8
+	and	rdx, -64
+	mov	rdi, rdx
 	vmovaps	[rdi], zmm0
 	rep	movsb
-	mov	rdi, r8
+	mov	rdi, rdx
 	jmp	.Lmatch_512_match
 .Lmatch_512_unaligned:
 	/* Handle unaligned input by copying the bytes to an aligned stack

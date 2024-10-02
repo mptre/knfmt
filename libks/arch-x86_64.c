@@ -249,7 +249,7 @@ KS_init(void)
 }
 
 static void
-KS_str_match_init_256(const char *ranges, struct KS_str_match *match)
+KS_str_match_init_512(const char *ranges, struct KS_str_match *match)
 {
 	size_t i, ranges_len;
 
@@ -275,7 +275,7 @@ KS_str_match_init(const char *ranges, struct KS_str_match *match)
 	if (KS_str_match_init_default(ranges, match) == -1)
 		return -1;
 
-	KS_str_match_init_256(ranges, match);
+	KS_str_match_init_512(ranges, match);
 	return 0;
 }
 

@@ -63,15 +63,16 @@ callback_free(void *ptr, size_t UNUSED(size), void *UNUSED(arg))
 int
 vector_init(void **vv, size_t stride)
 {
-	return vector_init_impl(vv, stride, &(struct vector_callbacks){
-	    .calloc	= callback_calloc,
-	    .realloc	= callback_realloc,
-	    .free	= callback_free,
+	return vector_init_impl(VECTOR_DEFAULT, vv, stride,
+	    &(struct vector_callbacks){
+		.calloc		= callback_calloc,
+		.realloc	= callback_realloc,
+		.free		= callback_free,
 	});
 }
 
 int
-vector_init_impl(void **vv, size_t stride,
+vector_init_impl(enum vector_type type, void **vv, size_t stride,
     const struct vector_callbacks *callbacks)
 {
 	struct vector *vc;
@@ -81,6 +82,7 @@ vector_init_impl(void **vv, size_t stride,
 		return 1;
 	vc->vc_callbacks = *callbacks;
 	vc->vc_stride = stride;
+	vc->p.type = type;
 	*vv = &vc[1];
 	return 0;
 }

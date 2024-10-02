@@ -21,7 +21,7 @@
 #  define __has_attribute(x) 0
 #endif
 
-#define UNUSED(x)	_##x __attribute__((__unused__))
+#define UNUSED(x)	_##x __attribute__((unused))
 
 #ifndef NDEBUG
 #define NDEBUG_UNUSED(x) x
@@ -32,8 +32,8 @@
 #define likely(x)	__builtin_expect((x), 1)
 #define unlikely(x)	__builtin_expect((x), 0)
 
-#if __has_attribute(__fallthrough__)
-#  define FALLTHROUGH	__attribute__((__fallthrough__))
+#if __has_attribute(fallthrough)
+#  define FALLTHROUGH	__attribute__((fallthrough))
 #else
 #  define FALLTHROUGH	do {} while (0) /* FALLTHROUGH */
 #endif

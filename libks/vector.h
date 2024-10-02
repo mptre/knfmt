@@ -20,8 +20,14 @@
 #include <limits.h>	/* ULONG_MAX */
 #include <stddef.h>	/* size_t */
 
+enum vector_type {
+	VECTOR_DEFAULT,
+	VECTOR_ARENA,
+};
+
 struct vector_public {
-	size_t	len;
+	size_t			len;
+	enum vector_type	type;
 };
 
 struct vector_callbacks {
@@ -35,7 +41,8 @@ struct vector_callbacks {
 
 #define VECTOR_INIT(vc) vector_init((void **)&(vc), sizeof(*(vc)))
 int	vector_init(void **, size_t);
-int	vector_init_impl(void **, size_t, const struct vector_callbacks *);
+int	vector_init_impl(enum vector_type, void **, size_t,
+    const struct vector_callbacks *);
 
 #define VECTOR_FREE(vc) vector_free((void **)&(vc))
 void	vector_free(void **);
@@ -88,6 +95,14 @@ vector_length(const void *vc)
 	const struct vector_public *vp = vc;
 
 	return vp[-1].len;
+}
+
+static inline enum vector_type
+vector_type(const void *vc)
+{
+	const struct vector_public *vp = vc;
+
+	return vp[-1].type;
 }
 
 #define VECTOR_EMPTY(vc) (VECTOR_LENGTH(vc) == 0)
