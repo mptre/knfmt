@@ -1001,14 +1001,15 @@ lexer_column(const struct lexer *lx, const struct lexer_state *st)
 	    st->st_off - line_offset, 1);
 }
 
-const char *
+int
 lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
-    size_t *len)
+    struct lexer_buffer *buf)
 {
-	*len = lx->lx_st.st_off - st->st_off;
-	if (*len == 0)
-		return NULL;
-	return &lx->lx_input.ptr[st->st_off];
+	buf->len = lx->lx_st.st_off - st->st_off;
+	if (buf->len == 0)
+		return 0;
+	buf->ptr = &lx->lx_input.ptr[st->st_off];
+	return 1;
 }
 
 static const char *

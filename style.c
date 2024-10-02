@@ -933,15 +933,13 @@ yaml_token_type_serialize(int type, struct arena_scope *s)
 static struct token *
 yaml_keyword(struct lexer *lx, const struct lexer_state *st)
 {
+	struct lexer_buffer buf;
 	const struct style_option *so;
 	struct token *tk;
-	const char *buf;
-	size_t buflen;
 
-	buf = lexer_buffer_slice(lx, st, &buflen);
-	if (buf == NULL)
+	if (!lexer_buffer_slice(lx, st, &buf))
 		goto unknown;
-	so = yaml_find_keyword(buf, buflen);
+	so = yaml_find_keyword(buf.ptr, buf.len);
 	if (so == NULL)
 		goto unknown;
 

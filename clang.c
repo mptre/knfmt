@@ -1253,14 +1253,12 @@ static int
 clang_find_cpp(const struct lexer *lx, const struct lexer_state *st,
     int fallback)
 {
-	const char *buf;
-	size_t buflen;
+	struct lexer_buffer buf;
 	int *token_type;
 
-	buf = lexer_buffer_slice(lx, st, &buflen);
-	if (buf == NULL)
+	if (!lexer_buffer_slice(lx, st, &buf))
 		return fallback;
-	token_type = MAP_FIND_N(cpp_token_types, buf, buflen);
+	token_type = MAP_FIND_N(cpp_token_types, buf.ptr, buf.len);
 	if (token_type == NULL)
 		return fallback;
 	return *token_type;
@@ -1326,13 +1324,11 @@ clang_keyword(struct lexer *lx)
 static const struct token *
 clang_find_keyword(const struct lexer *lx, const struct lexer_state *st)
 {
-	const char *key;
-	size_t len;
+	struct lexer_buffer buf;
 
-	key = lexer_buffer_slice(lx, st, &len);
-	if (key == NULL)
+	if (!lexer_buffer_slice(lx, st, &buf))
 		return NULL;
-	return clang_find_keyword1(key, len);
+	return clang_find_keyword1(buf.ptr, buf.len);
 }
 
 static const struct token *

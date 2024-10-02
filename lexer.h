@@ -26,6 +26,11 @@ struct lexer_arg {
 	struct lexer_callbacks	 callbacks;
 };
 
+struct lexer_buffer {
+	const char	*ptr;
+	size_t		 len;
+};
+
 struct lexer_state {
 	struct token	*st_tk;
 	size_t		 st_off;
@@ -63,8 +68,8 @@ void	lexer_error(struct lexer *, const struct token *, const char *, int,
 void	lexer_error_flush(struct lexer *);
 void	lexer_error_reset(struct lexer *);
 
-const char	*lexer_buffer_slice(const struct lexer *,
-    const struct lexer_state *, size_t *);
+int	lexer_buffer_slice(const struct lexer *,
+    const struct lexer_state *, struct lexer_buffer *);
 
 int		lexer_eof(const struct lexer *);
 unsigned int	lexer_get_error(const struct lexer *);
