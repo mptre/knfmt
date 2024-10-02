@@ -103,14 +103,12 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 	struct doc *line = NULL;
 	struct doc *decl;
 	struct lexer *lx = pr->pr_lx;
-	void *cookie;
 	int ndecl = 0;
 	int error;
 
 	decl = doc_alloc(DOC_CONCAT, dc);
 	ruler_init(&rl, 0, RULER_ALIGN_SENSE, pr->pr_arena.ruler_scope);
 
-	cookie = parser_cpp_decl_enter(pr);
 	for (;;) {
 		struct token *tk;
 
@@ -143,7 +141,6 @@ parser_decl1(struct parser *pr, struct doc *dc, unsigned int flags)
 				break;
 		}
 	}
-	parser_cpp_decl_leave(pr, cookie);
 	if (ndecl == 0)
 		doc_remove(decl, dc);
 	else if ((error & FAIL) == 0)

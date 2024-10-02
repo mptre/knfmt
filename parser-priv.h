@@ -44,10 +44,6 @@ struct parser {
 	} pr_simple;
 
 	struct {
-		struct ruler	*ruler;		/* align X macros */
-	} pr_cpp;
-
-	struct {
 		struct token	*unmute;
 		struct token	*clang_format_off;
 	} pr_token;

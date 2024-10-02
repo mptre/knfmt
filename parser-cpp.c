@@ -4,7 +4,6 @@
 
 #include <string.h>
 
-#include "libks/arena.h"
 #include "libks/string.h"
 
 #include "clang.h"
@@ -158,40 +157,42 @@ parser_cpp_peek_x(struct parser *pr, struct token **tk)
 int
 parser_cpp_x(struct parser *pr, struct doc *dc)
 {
-	struct doc *concat;
+	struct ruler rl;
 	struct lexer *lx = pr->pr_lx;
-	struct token *rparen, *tk;
+	struct token *rparen;
 	int error;
 
 	if (!parser_cpp_peek_x(pr, &rparen))
 		return parser_none(pr);
 
-	if (pr->pr_cpp.ruler == NULL) {
-		pr->pr_cpp.ruler = arena_malloc(pr->pr_arena.scratch_scope,
-		    sizeof(*pr->pr_cpp.ruler));
-		ruler_init(pr->pr_cpp.ruler, 0, RULER_ALIGN_SENSE,
-		    pr->pr_arena.ruler_scope);
-	}
+	ruler_init(&rl, 0, RULER_ALIGN_SENSE, pr->pr_arena.ruler_scope);
 
-	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+	do {
+		struct doc *concat;
+		struct token *tk;
 
-	while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, &tk)) {
-		parser_doc_token(pr, tk, concat);
-		doc_alloc(DOC_LINE, concat);
-	}
-	error = parser_expr(pr, NULL, &(struct parser_expr_arg){
-	    .dc		= concat,
-	    .rl		= pr->pr_cpp.ruler,
-	    .stop	= token_next(rparen),
-	    .flags	= EXPR_EXEC_ALIGN,
-	});
-	if (error & HALT)
-		return parser_fail(pr);
-	/* Compensate for the expression parser only honoring one new line. */
-	if (token_has_line(rparen, 2))
-		doc_alloc(DOC_HARDLINE, concat);
+		concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
 
-	return parser_good(pr);
+		while (lexer_if_flags(lx, TOKEN_FLAG_STORAGE, &tk)) {
+			parser_doc_token(pr, tk, concat);
+			doc_alloc(DOC_LINE, concat);
+		}
+		error = parser_expr(pr, NULL, &(struct parser_expr_arg){
+		    .dc		= concat,
+		    .rl		= &rl,
+		    .stop	= token_next(rparen),
+		    .flags	= EXPR_EXEC_ALIGN,
+		});
+		if (error & HALT)
+			break;
+		/* Compensate for the expression parser only honoring one new line. */
+		if (token_has_line(rparen, 2))
+			doc_alloc(DOC_HARDLINE, concat);
+	} while (parser_cpp_peek_x(pr, &rparen));
+
+	ruler_exec(&rl);
+	ruler_free(&rl);
+	return (error & HALT) ? parser_fail(pr) : parser_good(pr);
 }
 
 /*
@@ -240,29 +241,6 @@ parser_cpp_decl_root(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
 		parser_doc_token(pr, semi, dc);
 	return parser_good(pr);
-}
-
-void *
-parser_cpp_decl_enter(struct parser *pr)
-{
-	struct ruler *cookie = pr->pr_cpp.ruler;
-
-	/* Cope with nested declarations, use a dedicated ruler per scope. */
-	pr->pr_cpp.ruler = NULL;
-	return cookie;
-}
-
-void
-parser_cpp_decl_leave(struct parser *pr, void *cookie)
-{
-	struct ruler *rl = pr->pr_cpp.ruler;
-
-	pr->pr_cpp.ruler = cookie;
-	if (rl == NULL)
-		return;
-
-	ruler_exec(rl);
-	ruler_free(rl);
 }
 
 static int
