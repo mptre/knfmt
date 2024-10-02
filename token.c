@@ -438,8 +438,8 @@ token_list_swap(struct token_list *src, struct token_list *dst)
 	struct token *safe, *tk;
 
 	LIST_INIT(&tmp);
+
 	LIST_FOREACH_SAFE(tk, src, safe) {
-		tk = LIST_FIRST(src);
 		LIST_REMOVE(src, tk);
 		LIST_INSERT_TAIL(&tmp, tk);
 	}
@@ -449,8 +449,7 @@ token_list_swap(struct token_list *src, struct token_list *dst)
 		LIST_INSERT_TAIL(src, tk);
 	}
 
-	while (!LIST_EMPTY(&tmp)) {
-		tk = LIST_FIRST(&tmp);
+	LIST_FOREACH_SAFE(tk, &tmp, safe) {
 		LIST_REMOVE(&tmp, tk);
 		LIST_INSERT_TAIL(dst, tk);
 	}
