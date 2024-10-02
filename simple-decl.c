@@ -4,7 +4,6 @@
 
 #include <assert.h>
 #include <err.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "libks/arena-buffer.h"
