@@ -321,17 +321,18 @@ sense_datum_width(const struct ruler_datum *rd, unsigned int nspaces)
 static unsigned int
 sense_column_length(struct ruler_column *rc)
 {
-	struct token *tk = NULL;
+	struct token *tk;
 	size_t i;
-	unsigned int effective_nspaces, effective_width, maxlen, w;
+	unsigned int alignment_width, effective_nspaces, effective_width, len,
+		     width;
 
 	assert(!VECTOR_EMPTY(rc->rc_datums));
 
 	effective_nspaces = sense_column_spaces(rc);
 
 	/*
-	 * Since all datums are expected to be of same width, calculate the
-	 * effective width using the first one.
+	 * Since all datums are expected to be of same width, operate on the
+	 * first one.
 	 */
 	effective_width = sense_datum_width(&rc->rc_datums[0],
 	    effective_nspaces);
@@ -340,22 +341,30 @@ sense_column_length(struct ruler_column *rc)
 
 	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
 		struct ruler_datum *rd = &rc->rc_datums[i];
-		unsigned int width;
 
 		width = sense_datum_width(rd, effective_nspaces);
 		if (width == 0 || width != effective_width)
 			return 0;
-
-		if (rd->rd_len == rc->rc_len)
-			tk = rd->rd_tk;
 	}
-	assert(tk != NULL);
 
+	/* Commit potentially changed number of spaces. */
 	rc->rc_nspaces = effective_nspaces;
-	w = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
-	maxlen = rc->rc_len + (effective_width - w);
 
-	return maxlen;
+	/*
+	 * Column is aligned, calculate the wanted column length including
+	 * alignment. Since all datums have the same length, operate on the
+	 * first one.
+	 *
+	 * <tab> struct sss <tab> <space> *
+	 * |     ^rd_len--^             |
+	 * ^width---------^             |
+	 * ^effective_width-------------^
+	 */
+	tk = rc->rc_datums[0].rd_tk;
+	width = colwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
+	alignment_width = effective_width - width;
+	len = rc->rc_datums[0].rd_len + alignment_width;
+	return len;
 }
 
 static int
