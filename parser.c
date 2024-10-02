@@ -116,6 +116,7 @@ parser_alloc(const struct parser_arg *arg)
 	pr->pr_arena.scratch = arg->arena.scratch;
 	pr->pr_arena.doc = arg->arena.doc;
 	pr->pr_arena.buffer = arg->arena.buffer;
+	pr->pr_arena.ruler = arg->arena.ruler;
 
 	return pr;
 }

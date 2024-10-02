@@ -38,6 +38,7 @@ struct context {
 		struct arena		*scratch;
 		struct arena		*doc;
 		struct arena		*buffer;
+		struct arena		*ruler;
 	} arena;
 };
 
@@ -769,6 +770,7 @@ context_alloc(struct context *ctx)
 	ctx->arena.eternal = arena_alloc();
 	ctx->arena.doc = arena_alloc();
 	ctx->arena.buffer = arena_alloc();
+	ctx->arena.ruler = arena_alloc();
 	ctx->bf = NULL;
 }
 
@@ -782,6 +784,7 @@ context_free(struct context *ctx)
 	arena_free(ctx->arena.scratch);
 	arena_free(ctx->arena.doc);
 	arena_free(ctx->arena.buffer);
+	arena_free(ctx->arena.ruler);
 }
 
 static void
@@ -799,7 +802,7 @@ context_init(struct context *ctx, const char *src,
 	    ctx->arena.scratch, &ctx->op);
 	ctx->si = simple_alloc(eternal_scope, &ctx->op);
 	ctx->cl = clang_alloc(ctx->st, ctx->si, eternal_scope,
-	    ctx->arena.scratch, &ctx->op);
+	    ctx->arena.scratch, ctx->arena.ruler, &ctx->op);
 	ctx->lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= ctx->bf,

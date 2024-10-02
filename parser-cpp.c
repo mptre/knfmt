@@ -169,7 +169,8 @@ parser_cpp_x(struct parser *pr, struct doc *dc)
 	if (pr->pr_cpp.ruler == NULL) {
 		pr->pr_cpp.ruler = arena_malloc(pr->pr_arena.scratch_scope,
 		    sizeof(*pr->pr_cpp.ruler));
-		ruler_init(pr->pr_cpp.ruler, 0, RULER_ALIGN_SENSE);
+		ruler_init(pr->pr_cpp.ruler, 0, RULER_ALIGN_SENSE,
+		    pr->pr_arena.ruler_scope);
 	}
 
 	concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));

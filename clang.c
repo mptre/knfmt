@@ -41,6 +41,7 @@ struct clang {
 	struct {
 		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
+		struct arena		*ruler;
 	} arena;
 };
 
@@ -201,7 +202,8 @@ clang_shutdown(void)
 
 struct clang *
 clang_alloc(const struct style *st, struct simple *si,
-    struct arena_scope *eternal_scope, struct arena *scratch,
+    struct arena_scope *eternal_scope,
+    struct arena *scratch, struct arena *ruler,
     const struct options *op)
 {
 	struct clang *cl;
@@ -213,6 +215,7 @@ clang_alloc(const struct style *st, struct simple *si,
 	cl->op = op;
 	cl->arena.eternal_scope = eternal_scope;
 	cl->arena.scratch = scratch;
+	cl->arena.ruler = ruler;
 	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, eternal_scope,
 	    scratch, op);
 	if (VECTOR_INIT(cl->branches))
@@ -1249,7 +1252,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 		const char *str;
 
 		str = cpp_align(tk, cl->st, cl->arena.eternal_scope,
-		    cl->arena.scratch, cl->op);
+		    cl->arena.scratch, cl->arena.ruler, cl->op);
 		if (str != NULL)
 			token_set_str(tk, str, strlen(str));
 	}

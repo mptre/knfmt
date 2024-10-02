@@ -39,6 +39,7 @@ struct main_context {
 		struct arena		*scratch;
 		struct arena		*doc;
 		struct arena		*buffer;
+		struct arena		*ruler;
 	} arena;
 };
 
@@ -112,6 +113,7 @@ main(int argc, char *argv[])
 	c.arena.scratch = arena_alloc();
 	c.arena.doc = arena_alloc();
 	c.arena.buffer = arena_alloc();
+	c.arena.ruler = arena_alloc();
 	arena_scope(c.arena.buffer, buffer_scope);
 	c.style = style_parse(clang_format, &eternal_scope, c.arena.scratch,
 	    &c.options);
@@ -154,6 +156,7 @@ main(int argc, char *argv[])
 
 out:
 	files_free(&files);
+	arena_free(c.arena.ruler);
 	arena_free(c.arena.buffer);
 	arena_free(c.arena.doc);
 	arena_free(c.arena.scratch);
@@ -205,7 +208,7 @@ fileformat(struct main_context *c, struct file *fe)
 	if (file_read(fe, c->src))
 		return 1;
 	clang = clang_alloc(c->style, c->simple, &eternal_scope,
-	    c->arena.scratch, &c->options);
+	    c->arena.scratch, c->arena.ruler, &c->options);
 	lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,
@@ -232,6 +235,7 @@ fileformat(struct main_context *c, struct file *fe)
 		.scratch	= c->arena.scratch,
 		.doc		= c->arena.doc,
 		.buffer		= c->arena.buffer,
+		.ruler		= c->arena.ruler,
 	    },
 	});
 	if (parser_exec(pr, fe->fe_diff, c->dst))

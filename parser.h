@@ -13,6 +13,7 @@ struct parser_arg {
 		struct arena		*scratch;
 		struct arena		*doc;
 		struct arena		*buffer;
+		struct arena		*ruler;
 	} arena;
 };
 

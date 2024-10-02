@@ -1,3 +1,4 @@
+struct arena_scope;
 struct doc;
 struct token;
 
@@ -29,9 +30,14 @@ struct ruler {
  * Sense and honor existing alignment.
  */
 #define RULER_ALIGN_SENSE	0x00000020u
+
+	struct {
+		struct arena_scope	*ruler_scope;
+	} rl_arena;
 };
 
-void	ruler_init(struct ruler *, unsigned int, unsigned int);
+void	ruler_init(struct ruler *, unsigned int, unsigned int,
+    struct arena_scope *);
 void	ruler_free(struct ruler *);
 void	ruler_exec(struct ruler *);
 

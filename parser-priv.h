@@ -32,6 +32,8 @@ struct parser {
 		struct arena		*doc;
 		struct arena_scope	*doc_scope;
 		struct arena		*buffer;
+		struct arena		*ruler;
+		struct arena_scope	*ruler_scope;
 	} pr_arena;
 
 	struct {

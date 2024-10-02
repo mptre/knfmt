@@ -168,7 +168,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
  */
 const char *
 cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
-    struct arena *scratch, const struct options *op)
+    struct arena *scratch, struct arena *ruler, const struct options *op)
 {
 	struct alignment alignment = {
 		.mode	= style(st, AlignEscapedNewlines),
@@ -188,6 +188,8 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	if (nextline(str, len, &nx) == NULL)
 		return NULL;
 
+	arena_scope(ruler, ruler_scope);
+
 	if (sense_alignment(str, len, st, &alignment)) {
 		cpp_trace(op, "mode %s, width %u, tabs %d, skip %d",
 		    style_keyword_str(alignment.mode), alignment.width,
@@ -196,15 +198,17 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	}
 	switch (alignment.mode) {
 	case DontAlign:
-		ruler_init(&rl, 1, RULER_ALIGN_FIXED);
+		ruler_init(&rl, 1, RULER_ALIGN_FIXED, &ruler_scope);
 		break;
 	case Left:
 		ruler_init(&rl, 0,
-		    alignment.tabs ? RULER_ALIGN_TABS : RULER_ALIGN_MIN);
+		    alignment.tabs ? RULER_ALIGN_TABS : RULER_ALIGN_MIN,
+		    &ruler_scope);
 		break;
 	case Right:
 		ruler_init(&rl, alignment.width,
-		    RULER_ALIGN_MAX | (alignment.tabs ? RULER_ALIGN_TABS : 0));
+		    RULER_ALIGN_MAX | (alignment.tabs ? RULER_ALIGN_TABS : 0),
+		    &ruler_scope);
 		break;
 	default:
 		return NULL;

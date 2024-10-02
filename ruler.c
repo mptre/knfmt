@@ -7,6 +7,7 @@
 #include <limits.h>	/* UINT_MAX */
 #include <string.h>
 
+#include "libks/arena-vector.h"
 #include "libks/vector.h"
 
 #include "doc.h"
@@ -49,28 +50,20 @@ static unsigned int	count_trailing_spaces(const char *, size_t);
 static int	minimize(const struct ruler_column *);
 
 void
-ruler_init(struct ruler *rl, unsigned int align, unsigned int flags)
+ruler_init(struct ruler *rl, unsigned int align, unsigned int flags,
+    struct arena_scope *s)
 {
 	memset(rl, 0, sizeof(*rl));
-	if (VECTOR_INIT(rl->rl_columns))
-		err(1, NULL);
+	ARENA_VECTOR_INIT(s, rl->rl_columns, 1 << 3);
 	rl->rl_align = align;
 	rl->rl_flags = flags;
+	rl->rl_arena.ruler_scope = s;
 }
 
 void
 ruler_free(struct ruler *rl)
 {
-	while (!VECTOR_EMPTY(rl->rl_columns)) {
-		struct ruler_column *rc = VECTOR_POP(rl->rl_columns);
-		size_t i;
-
-		for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++)
-			token_rele(rc->rc_datums[i].rd_tk);
-		VECTOR_FREE(rc->rc_datums);
-	}
-	VECTOR_FREE(rl->rl_columns);
-	VECTOR_FREE(rl->rl_indent);
+	ruler_reset(rl);
 }
 
 /*
@@ -92,8 +85,8 @@ ruler_insert_impl(struct ruler *rl, struct token *tk, struct doc *dc,
 		rc = VECTOR_CALLOC(rl->rl_columns);
 		if (rc == NULL)
 			err(1, NULL);
-		if (VECTOR_INIT(rc->rc_datums))
-			err(1, NULL);
+		ARENA_VECTOR_INIT(rl->rl_arena.ruler_scope, rc->rc_datums,
+		    1 << 6);
 	}
 	rc = &rl->rl_columns[col - 1];
 
@@ -141,8 +134,8 @@ ruler_indent_impl(struct ruler *rl, struct doc *dc,
 		goto err;
 
 	if (rl->rl_indent == NULL) {
-		if (VECTOR_INIT(rl->rl_indent))
-			err(1, NULL);
+		ARENA_VECTOR_INIT(rl->rl_arena.ruler_scope, rl->rl_indent,
+		    1 << 6);
 	}
 	ri = VECTOR_CALLOC(rl->rl_indent);
 	if (ri == NULL)
@@ -252,8 +245,8 @@ ruler_reset(struct ruler *rl)
 
 		for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++)
 			token_rele(rc->rc_datums[i].rd_tk);
-		VECTOR_FREE(rc->rc_datums);
 	}
+
 	VECTOR_FREE(rl->rl_indent);
 }
 
