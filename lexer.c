@@ -228,17 +228,6 @@ lexer_ungetc(struct lexer *lx)
 		st->st_lno--;
 }
 
-size_t
-lexer_match(struct lexer *lx, const char *ranges)
-{
-	size_t len;
-
-	len = KS_str_match(&lx->lx_input.ptr[lx->lx_st.st_off],
-	    lx->lx_input.len - lx->lx_st.st_off, ranges);
-	lx->lx_st.st_off += len;
-	return len;
-}
-
 struct token *
 lexer_emit(struct lexer *lx, const struct lexer_state *st, int token_type)
 {
@@ -1001,6 +990,13 @@ lexer_column(const struct lexer *lx, const struct lexer_state *st)
 	    st->st_off - line_offset, 1);
 }
 
+void
+lexer_buffer_peek(const struct lexer *lx, struct lexer_buffer *buf)
+{
+	buf->ptr = &lx->lx_input.ptr[lx->lx_st.st_off];
+	buf->len = lx->lx_input.len - lx->lx_st.st_off;
+}
+
 int
 lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
     struct lexer_buffer *buf)
@@ -1010,6 +1006,12 @@ lexer_buffer_slice(const struct lexer *lx, const struct lexer_state *st,
 		return 0;
 	buf->ptr = &lx->lx_input.ptr[st->st_off];
 	return 1;
+}
+
+void
+lexer_buffer_seek(struct lexer *lx, size_t off)
+{
+	lx->lx_st.st_off += off;
 }
 
 static const char *

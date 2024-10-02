@@ -52,7 +52,6 @@ int		 lexer_get_peek(const struct lexer *);
 
 int		 lexer_getc(struct lexer *, unsigned char *);
 void		 lexer_ungetc(struct lexer *);
-size_t		 lexer_match(struct lexer *, const char *);
 void		 lexer_eat_lines_and_spaces(struct lexer *,
     struct lexer_state *);
 struct token	*lexer_emit(struct lexer *, const struct lexer_state *, int);
@@ -68,8 +67,10 @@ void	lexer_error(struct lexer *, const struct token *, const char *, int,
 void	lexer_error_flush(struct lexer *);
 void	lexer_error_reset(struct lexer *);
 
+void	lexer_buffer_peek(const struct lexer *, struct lexer_buffer *);
 int	lexer_buffer_slice(const struct lexer *,
     const struct lexer_state *, struct lexer_buffer *);
+void	lexer_buffer_seek(struct lexer *, size_t);
 
 int		lexer_eof(const struct lexer *);
 unsigned int	lexer_get_error(const struct lexer *);

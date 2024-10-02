@@ -14,6 +14,7 @@
 #include "libks/compiler.h"
 #include "libks/list.h"
 #include "libks/map.h"
+#include "libks/string.h"
 #include "libks/vector.h"
 
 #include "comment.h"
@@ -74,8 +75,7 @@ static struct token		*clang_read_comment(struct clang *,
     struct lexer *,
     int);
 static struct token		*clang_read_cpp(struct clang *, struct lexer *);
-static int			 clang_find_cpp(const struct lexer *,
-    const struct lexer_state *, int);
+static int			 clang_find_cpp(const char *, size_t);
 static struct token		*clang_keyword(struct lexer *);
 static const struct token	*clang_find_keyword(const struct lexer *,
     const struct lexer_state *);
@@ -599,9 +599,13 @@ clang_read(struct lexer *lx, void *arg)
 		lexer_ungetc(lx);
 		tk = lexer_emit(lx, &st, TOKEN_LITERAL);
 	} else if (isalpha(ch) || ch == '_') {
+		struct lexer_buffer buf;
 		const struct token *kw;
+		size_t len;
 
-		lexer_match(lx, "AZaz09__");
+		lexer_buffer_peek(lx, &buf);
+		len = KS_str_match(buf.ptr, buf.len, "AZaz09__");
+		lexer_buffer_seek(lx, len);
 
 		if ((kw = clang_find_keyword(lx, &st)) != NULL) {
 			tk = lexer_emit_template(lx, &st, kw);
@@ -1179,8 +1183,10 @@ again:
 static struct token *
 clang_read_cpp(struct clang *cl, struct lexer *lx)
 {
-	struct lexer_state kwst, oldst, st;
+	struct lexer_buffer buf;
+	struct lexer_state oldst, st;
 	struct token *tk;
+	size_t len;
 	int comment, type;
 	unsigned char ch;
 
@@ -1194,9 +1200,10 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	/* Space(s) before keyword is allowed. */
 	lexer_eat_spaces(lx, NULL);
 
-	kwst = lexer_get_state(lx);
-	lexer_match(lx, "az");
-	type = clang_find_cpp(lx, &kwst, TOKEN_CPP);
+	lexer_buffer_peek(lx, &buf);
+	len = KS_str_match(buf.ptr, buf.len, "az");
+	lexer_buffer_seek(lx, len);
+	type = clang_find_cpp(buf.ptr, len);
 
 	ch = '\0';
 	comment = 0;
@@ -1250,17 +1257,13 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 }
 
 static int
-clang_find_cpp(const struct lexer *lx, const struct lexer_state *st,
-    int fallback)
+clang_find_cpp(const char *str, size_t len)
 {
-	struct lexer_buffer buf;
 	int *token_type;
 
-	if (!lexer_buffer_slice(lx, st, &buf))
-		return fallback;
-	token_type = MAP_FIND_N(cpp_token_types, buf.ptr, buf.len);
+	token_type = MAP_FIND_N(cpp_token_types, str, len);
 	if (token_type == NULL)
-		return fallback;
+		return TOKEN_CPP;
 	return *token_type;
 }
 
