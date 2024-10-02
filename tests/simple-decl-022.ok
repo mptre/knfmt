@@ -1,0 +1,9 @@
+int
+main(void)
+{
+	for (;;) {
+		uint8_t hi, j, lo;
+
+		continue;
+	}
+}
