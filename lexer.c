@@ -482,12 +482,12 @@ lexer_insert_after(struct lexer *lx, struct token *after,
 }
 
 struct token *
-lexer_move_after(struct lexer *lx, struct token *after, struct token *tk)
+lexer_move_after(struct lexer *lx, struct token *after, struct token *mv)
 {
-	LIST_REMOVE(&lx->lx_tokens, tk);
-	token_position_after(after, tk);
-	LIST_INSERT_AFTER(&lx->lx_tokens, after, tk);
-	return tk;
+	LIST_REMOVE(&lx->lx_tokens, mv);
+	token_position_after(after, mv);
+	LIST_INSERT_AFTER(&lx->lx_tokens, after, mv);
+	return mv;
 }
 
 struct token *
