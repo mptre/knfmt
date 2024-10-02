@@ -121,6 +121,7 @@ is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 		enum simple_pass	parent;
 		enum simple_pass	nested;
 	} exceptions[] = {
+		{ SIMPLE_DECL, SIMPLE_ATTRIBUTES },
 		{ SIMPLE_DECL, SIMPLE_BRACES },
 		{ SIMPLE_DECL, SIMPLE_DECL_PROTO },
 		{ SIMPLE_DECL, SIMPLE_IMPLICIT_INT },

@@ -7,6 +7,8 @@
 #include "lexer.h"
 #include "parser-expr.h"
 #include "parser-priv.h"
+#include "simple-attributes.h"
+#include "simple.h"
 #include "style.h"
 #include "token.h"
 
@@ -48,9 +50,15 @@ parser_attributes_expr(struct parser *pr, struct doc *dc, struct doc **out,
 {
 	struct lexer *lx = pr->pr_lx;
 
+	simple_cookie(cookie);
+	simple_enter(pr->pr_si, SIMPLE_ATTRIBUTES, 0, &cookie);
+
 	for (;;) {
 		struct token *comma, *nx, *stop;
 		int error;
+
+		if (is_simple_enabled(pr->pr_si, SIMPLE_ATTRIBUTES))
+			simple_attributes(lx, pr->pr_arena.eternal_scope);
 
 		lexer_peek_until_comma(lx, rparen, &stop);
 		error = parser_expr(pr, out, &(struct parser_expr_arg){

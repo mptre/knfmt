@@ -1,0 +1,3 @@
+struct s {
+	int x;
+} __attribute__((packed, aligned(16), used));
