@@ -293,39 +293,59 @@ sense_column_spaces(const struct ruler_column *rc)
 }
 
 static unsigned int
+sense_datum_width(const struct ruler_datum *rd, unsigned int nspaces)
+{
+	const struct token *tk = rd->rd_tk;
+	const struct token *nx;
+	unsigned int alignment_width, datum_width;
+
+	if (token_has_suffix(tk, TOKEN_COMMENT))
+		return 0;
+
+	nx = token_next(tk);
+	if (nx == NULL || token_cmp(tk, nx) != 0)
+		return 0;
+	/*
+	 * <tab> struct sss <tab> <space> *
+	 * ^datum_width---^             | |
+	 * ^alignment_width-------------^ |
+	 * ^nx->tk_cno--------------------^
+	 */
+	datum_width = colwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
+	alignment_width = nx->tk_cno - (nspaces - rd->rd_nspaces);
+	if (datum_width >= alignment_width)
+		return 0;
+	return alignment_width;
+}
+
+static unsigned int
 sense_column_length(struct ruler_column *rc)
 {
 	struct token *tk = NULL;
 	size_t i;
-	unsigned int cno = 0;
-	unsigned int effective_nspaces, maxlen, w;
+	unsigned int effective_nspaces, effective_width, maxlen, w;
 
 	assert(!VECTOR_EMPTY(rc->rc_datums));
 
 	effective_nspaces = sense_column_spaces(rc);
 
+	/*
+	 * Since all datums are expected to be of same width, calculate the
+	 * effective width using the first one.
+	 */
+	effective_width = sense_datum_width(&rc->rc_datums[0],
+	    effective_nspaces);
+	if (effective_width == 0)
+		return 0;
 
 	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
 		struct ruler_datum *rd = &rc->rc_datums[i];
-		struct token *nx;
-		unsigned int end, nspaces;
+		unsigned int width;
 
-		if (token_has_suffix(rd->rd_tk, TOKEN_COMMENT) ||
-		    (nx = token_next(rd->rd_tk)) == NULL ||
-		    token_cmp(rd->rd_tk, nx) != 0)
-			goto noalign;
+		width = sense_datum_width(rd, effective_nspaces);
+		if (width == 0 || width != effective_width)
+			return 0;
 
-		nspaces = effective_nspaces - rd->rd_nspaces;
-		w = nx->tk_cno - nspaces;
-		end = colwidth(rd->rd_tk->tk_str, rd->rd_tk->tk_len,
-		    rd->rd_tk->tk_cno);
-		if (end >= w)
-			goto noalign;
-
-		if (cno == 0)
-			cno = w;
-		else if (cno != w)
-			goto noalign;
 		if (rd->rd_len == rc->rc_len)
 			tk = rd->rd_tk;
 	}
@@ -333,12 +353,9 @@ sense_column_length(struct ruler_column *rc)
 
 	rc->rc_nspaces = effective_nspaces;
 	w = strwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
-	maxlen = rc->rc_len + (cno - w);
+	maxlen = rc->rc_len + (effective_width - w);
 
 	return maxlen;
-
-noalign:
-	return 0;
 }
 
 static int
