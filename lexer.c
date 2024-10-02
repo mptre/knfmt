@@ -545,6 +545,12 @@ lexer_remove(struct lexer *lx, struct token *tk)
 	token_list_remove(&lx->lx_tokens, tk);
 }
 
+void
+lexer_move_prefixes(struct lexer *lx, struct token *src, struct token *dst)
+{
+	lx->lx_callbacks.move_prefixes(src, dst);
+}
+
 int
 lexer_expect_impl(struct lexer *lx, int type, struct token **tk,
     const char *fun, int lno)

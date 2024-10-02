@@ -12,7 +12,6 @@
 #include "libks/consistency.h"
 #include "libks/vector.h"
 
-#include "clang.h"
 #include "doc.h"
 #include "lexer.h"
 #include "ruler.h"
@@ -205,7 +204,7 @@ static void	expr_state_init(struct expr_state *,
 
 static const struct expr_rule	*expr_find_rule(const struct token *, int);
 
-static void	token_move_next_line(struct token *);
+static void	token_move_next_line(struct lexer *, struct token *);
 static void	token_move_prev_line(struct token *);
 
 static const char	*expr_type_str(enum expr_type);
@@ -848,7 +847,7 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (doalign)
 			dc = expr_doc_align(ex, es, dc, 0);
 
-		token_move_next_line(ex->ex_tk);
+		token_move_next_line(es->es_lx, ex->ex_tk);
 		lhs = expr_doc(ex->ex_lhs, es, dc);
 		dospace = expr_doc_has_spaces(ex);
 		if (dospace)
@@ -1080,9 +1079,9 @@ expr_doc_ternary(struct expr *ex, struct expr_state *es, struct doc *dc)
 		struct doc *cond, *lhs, *rhs;
 
 		if (ex->ex_tokens[0] != NULL)
-			token_move_next_line(ex->ex_tokens[0]);
+			token_move_next_line(es->es_lx, ex->ex_tokens[0]);
 		if (ex->ex_tokens[1] != NULL)
-			token_move_next_line(ex->ex_tokens[1]);
+			token_move_next_line(es->es_lx, ex->ex_tokens[1]);
 		cond = expr_doc(ex->ex_lhs, es, dc);
 		doc_alloc(DOC_LINE, cond);
 		if (style(es->es_st, AlignOperands) == Align)
@@ -1310,7 +1309,7 @@ expr_find_rule(const struct token *tk, int unary)
  * Move the token to the next line if not already correctly placed.
  */
 static void
-token_move_next_line(struct token *tk)
+token_move_next_line(struct lexer *lx, struct token *tk)
 {
 	struct token *nx, *pv;
 
@@ -1321,7 +1320,7 @@ token_move_next_line(struct token *tk)
 	token_move_suffixes(tk, pv);
 
 	nx = token_next(tk);
-	clang_token_move_prefixes(nx, tk);
+	lexer_move_prefixes(lx, nx, tk);
 }
 
 /*

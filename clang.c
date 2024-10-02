@@ -91,6 +91,8 @@ static const char		*clang_token_type_serialize(int,
 static const char		*clang_token_serialize_prefix(
     const struct token *,
     struct arena_scope *);
+static void			 clang_token_move_prefixes(struct token *,
+    struct token *);
 
 static struct token	*clang_end_of_branch(struct lexer *, struct token *,
     void *);
@@ -411,7 +413,7 @@ clang_recover(struct clang *cl, struct lexer *lx, struct token **unmute)
 	return error ? 0 : ndocs;
 }
 
-void
+static void
 clang_token_move_prefixes(struct token *src, struct token *dst)
 {
 	while (!LIST_EMPTY(&src->tk_prefixes)) {

@@ -7,7 +7,6 @@
 #include "libks/arena.h"
 #include "libks/vector.h"
 
-#include "clang.h"
 #include "lexer.h"
 #include "options.h"
 #include "token.h"
@@ -90,7 +89,7 @@ simple_decl_forward_leave(struct simple_decl_forward *sd)
 	first_sorted = first_token(sd);
 	last_sorted = last_token(sd);
 	if (first_unsorted != first_sorted)
-		clang_token_move_prefixes(first_unsorted, first_sorted);
+		lexer_move_prefixes(sd->lx, first_unsorted, first_sorted);
 	if (last_unsorted != last_sorted)
 		token_move_suffixes_if(last_unsorted, last_sorted, TOKEN_SPACE);
 
