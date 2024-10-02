@@ -42,7 +42,7 @@ struct main_context {
 	} arena;
 };
 
-static void	usage(void) __attribute__((__noreturn__));
+static void	usage(void) __attribute__((noreturn));
 
 static int	filelist(int, char **, struct files *, struct arena_scope *,
     struct arena *, const struct options *);

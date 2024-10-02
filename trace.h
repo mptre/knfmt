@@ -12,4 +12,4 @@
 } while (0)
 
 void	trace_impl(enum trace_type, const char *, const char *, ...)
-	__attribute__((__format__(printf, 3, 4)));
+	__attribute__((format(printf, 3, 4)));

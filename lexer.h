@@ -63,7 +63,7 @@ int		 lexer_eat_lines(struct lexer *, int, struct token **);
 int		 lexer_eat_spaces(struct lexer *, struct token **);
 
 void	lexer_error(struct lexer *, const struct token *, const char *, int,
-    const char *, ...) __attribute__((__format__(printf, 5, 6)));
+    const char *, ...) __attribute__((format(printf, 5, 6)));
 void	lexer_error_flush(struct lexer *);
 void	lexer_error_reset(struct lexer *);
 

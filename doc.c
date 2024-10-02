@@ -349,7 +349,7 @@ static int	doc_print(const struct doc *, struct doc_state *, const char *,
 } while (0)
 static void	doc_trace_impl(const struct doc *, const struct doc_state *,
     const char *, ...)
-	__attribute__((__format__(printf, 3, 4)));
+	__attribute__((format(printf, 3, 4)));
 
 #define doc_trace_enter(dc, st) do {					\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
