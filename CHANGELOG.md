@@ -9,7 +9,7 @@
   (Anton Lindqvist)
 
 - Honor aligned rows in brace initializers.
-  (f41e016dbdce)
+  (f41e016dbdce, 76eeddebfa0d)
   (Anton Lindqvist)
 
 ## Bug fixes
