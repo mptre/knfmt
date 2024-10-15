@@ -152,9 +152,12 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 
 	/* The first line is allowed to not be aligned. */
 	if (nlines >= 3 && all_identical(&lines[1], nlines - 1)) {
+		unsigned int width = alignment->width;
+		if (lines[nlines - 1].width < width)
+			width = lines[nlines - 1].width;
 		*alignment = (struct alignment){
 		    .mode		= Right,
-		    .width		= lines[nlines - 1].width,
+		    .width		= width,
 		    .tabs		= all_tabs(lines, nlines) ? 1 : 0,
 		    .skip_first_line	= is_not_aligned(&lines[0]) ? 1 : 0,
 		};
