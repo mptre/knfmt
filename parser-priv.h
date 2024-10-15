@@ -47,7 +47,7 @@ struct parser {
 	} pr_token;
 
 	struct {
-		unsigned int	nested;
+		unsigned int	depth;
 	} pr_braces;
 };
 
