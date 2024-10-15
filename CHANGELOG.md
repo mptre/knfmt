@@ -31,6 +31,10 @@
   (7f101bd66570)
   (Anton Lindqvist)
 
+- Fix too long alignment in multi-line cpp macros.
+  (f9cf4098ac50)
+  (Anton Lindqvist)
+
 # 4.5.0 - 2024-09-01
 
 ## News
