@@ -32,7 +32,6 @@ enum vector_error {
 struct vector {
 	struct vector_callbacks	vc_callbacks;
 	size_t			vc_siz;
-	size_t			vc_stride;
 	/* Must come last. */
 	struct vector_public	p;
 };
@@ -81,7 +80,7 @@ vector_init_impl(enum vector_type type, void **vv, size_t stride,
 	if (vc == NULL)
 		return 1;
 	vc->vc_callbacks = *callbacks;
-	vc->vc_stride = stride;
+	vc->p.stride = stride;
 	vc->p.type = type;
 	*vv = &vc[1];
 	return 0;
@@ -95,7 +94,7 @@ vector_free(void **vv)
 	if (*vv == NULL)
 		return;
 	vc = ptov(*vv);
-	vc->vc_callbacks.free(vc, sizeof(*vc) + vc->p.len * vc->vc_stride,
+	vc->vc_callbacks.free(vc, sizeof(*vc) + vc->p.len * vc->p.stride,
 	    vc->vc_callbacks.arg);
 	*vv = NULL;
 }
@@ -136,8 +135,8 @@ vector_alloc(void **vv, int zero)
 		unsigned char *ptr;
 
 		ptr = (unsigned char *)(&vc[1]);
-		ptr += vc->vc_stride * vc->p.len;
-		memset(ptr, 0, vc->vc_stride);
+		ptr += vc->p.stride * vc->p.len;
+		memset(ptr, 0, vc->p.stride);
 	}
 
 	return vc->p.len++;
@@ -167,7 +166,7 @@ vector_sort(void *v, int (*cmp)(const void *, const void *))
 	struct vector *vc = ptov(v);
 
 	if (vc->p.len > 0)
-		qsort(v, vc->p.len, vc->vc_stride, cmp);
+		qsort(v, vc->p.len, vc->p.stride, cmp);
 }
 
 size_t
@@ -202,7 +201,7 @@ vector_reserve1(struct vector **vv, size_t len)
 	if (vc->p.len + len <= vc->vc_siz)
 		return VECTOR_SUCCESS;
 
-	oldlen = sizeof(*vc) + vc->p.len * vc->vc_stride;
+	oldlen = sizeof(*vc) + vc->p.len * vc->p.stride;
 
 	newsiz = vc->vc_siz ? vc->vc_siz : 16;
 	while (newsiz < vc->p.len + len) {
@@ -211,9 +210,9 @@ vector_reserve1(struct vector **vv, size_t len)
 		newsiz *= 2;
 	}
 	totlen = newsiz;
-	if (totlen > ULONG_MAX / vc->vc_stride)
+	if (totlen > ULONG_MAX / vc->p.stride)
 		goto overflow;
-	totlen *= vc->vc_stride;
+	totlen *= vc->p.stride;
 	if (totlen > ULONG_MAX - sizeof(*vc))
 		goto overflow;
 	totlen += sizeof(*vc);

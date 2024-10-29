@@ -58,12 +58,12 @@ extern const struct fuzzer_target fuzzer_target;
 #define FUZZER_INIT(func)						\
 	__attribute__((used))						\
 	SECTION(fz_init)						\
-	union fuzzer_callback _fuzzer_init_impl = {.init = (func)}	\
+	union fuzzer_callback _fuzzer_init_impl = {.init = (func)}
 
 #define FUZZER_TEARDOWN(func)						\
 	__attribute__((used))						\
 	SECTION(fz_teardown)						\
-	union fuzzer_callback _fuzzer_teardown_impl = {.teardown = (func)}\
+	union fuzzer_callback _fuzzer_teardown_impl = {.teardown = (func)}
 
 #define FUZZER_TARGET_BUFFER(func)					\
 	const struct fuzzer_target fuzzer_target = {			\
@@ -80,7 +80,7 @@ extern const struct fuzzer_target fuzzer_target;
 #define FUZZER_SECTION(type)						\
 	__attribute__((used))						\
 	SECTION(fz_ ## type)						\
-	union fuzzer_callback _fuzzer_ ## type ## _default = {0}	\
+	union fuzzer_callback _fuzzer_ ## type ## _default = {0}
 
 /*
  * Since init and teardown callbacks are optional, ensure respective section is

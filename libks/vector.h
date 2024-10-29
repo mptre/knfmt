@@ -27,6 +27,7 @@ enum vector_type {
 
 struct vector_public {
 	size_t			len;
+	size_t			stride;
 	enum vector_type	type;
 };
 
@@ -88,20 +89,25 @@ size_t	vector_first(void *);
 size_t	vector_last(void *);
 
 #define VECTOR_LENGTH(vc) vector_length((const void *)(vc))
-
 static inline size_t
 vector_length(const void *vc)
 {
 	const struct vector_public *vp = vc;
-
 	return vp[-1].len;
+}
+
+#define VECTOR_STRIDE(vc) vector_stride((const void *)(vc))
+static inline size_t
+vector_stride(const void *vc)
+{
+	const struct vector_public *vp = vc;
+	return vp[-1].stride;
 }
 
 static inline enum vector_type
 vector_type(const void *vc)
 {
 	const struct vector_public *vp = vc;
-
 	return vp[-1].type;
 }
 
