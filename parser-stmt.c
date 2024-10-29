@@ -168,12 +168,12 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 		lexer_remove(lx, nx);
 
 	if (doindent)
-		pr->pr_nindent++;
+		pr->pr_stmt.depth++;
 
 	if ((arg->flags & PARSER_STMT_BLOCK_EXPR_GNU) == 0 &&
 	    is_simple_enabled(pr->pr_si, SIMPLE_STMT)) {
 		dc = simple_stmt_braces_enter(pr->pr_simple.stmt, dc, lbrace,
-		    rbrace, pr->pr_nindent * style(pr->pr_st, IndentWidth));
+		    rbrace, pr->pr_stmt.depth * style(pr->pr_st, IndentWidth));
 	}
 
 	parser_token_trim_before(pr, rbrace);
@@ -237,7 +237,7 @@ parser_stmt_block(struct parser *pr, struct parser_stmt_block_arg *arg)
 	arg->rbrace = concat;
 
 	if (doindent)
-		pr->pr_nindent--;
+		pr->pr_stmt.depth--;
 
 	return parser_good(pr);
 }
@@ -912,12 +912,15 @@ parser_simple_stmt_no_braces_enter(struct parser *pr, struct doc *dc,
 {
 	struct lexer *lx = pr->pr_lx;
 	struct token *lbrace;
+	unsigned int indent;
 
 	if (!is_simple_enabled(pr->pr_si, SIMPLE_STMT) ||
 	    !lexer_peek(lx, &lbrace))
 		return dc;
+
+	indent = (pr->pr_stmt.depth + 1) * style(pr->pr_st, IndentWidth);
 	return simple_stmt_no_braces_enter(pr->pr_simple.stmt, dc, lbrace,
-	    (pr->pr_nindent + 1) * style(pr->pr_st, IndentWidth), cookie);
+	    indent, cookie);
 }
 
 static void

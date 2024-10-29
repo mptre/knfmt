@@ -23,7 +23,6 @@ struct parser {
 	const struct style	*pr_st;
 	struct simple		*pr_si;
 	struct clang		*pr_clang;
-	unsigned int		 pr_nindent;	/* # indented stmt blocks */
 
 	struct {
 		struct arena_scope	*eternal_scope;
@@ -49,6 +48,10 @@ struct parser {
 	struct {
 		unsigned int	depth;
 	} pr_braces;
+
+	struct {
+		unsigned int	depth;
+	} pr_stmt;
 };
 
 struct parser_arena_scope_cookie {
