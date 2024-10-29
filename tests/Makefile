@@ -908,17 +908,17 @@ TESTS+=	simple.sh
 TESTS+=	stdin.sh
 TESTS+=	style-enoent.sh
 
-.SUFFIXES: .c .cfake .h .hfake .sh .shfake
+.SUFFIXES: .c .c-phony .h .h-phony .sh .sh-phony
 
-.c.cfake:
+.c.c-phony:
 	sh ${.CURDIR}/knfmt.sh $< ${T}
 
-.h.hfake:
+.h.h-phony:
 	sh ${.CURDIR}/knfmt.sh $< ${T}
 
-.sh.shfake:
+.sh.sh-phony:
 	sh ${.CURDIR}/$<
 
-all: ${TESTS:.c=.cfake}
-all: ${TESTS:.h=.hfake}
-all: ${TESTS:.sh=.shfake}
+all: ${TESTS:.c=.c-phony}
+all: ${TESTS:.h=.h-phony}
+all: ${TESTS:.sh=.sh-phony}
