@@ -12,6 +12,10 @@
   (f41e016dbdce, 76eeddebfa0d)
   (Anton Lindqvist)
 
+- Discard line continuation(s) if the next line is empty in macro declarations.
+  (d1a0bf68962c)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Only consider c99 comments on the same level of indentation to form a
@@ -33,6 +37,10 @@
 
 - Fix too long alignment in multi-line cpp macros.
   (f9cf4098ac50)
+  (Anton Lindqvist)
+
+- In simple mod, fix simple-stmt-switch/simple-stmt interaction regression.
+  (d30553be7869)
   (Anton Lindqvist)
 
 # 4.5.0 - 2024-09-01
