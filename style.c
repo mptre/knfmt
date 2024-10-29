@@ -49,7 +49,7 @@
 	OP(Sequence,		4)					\
 	OP(String,		5)					\
 	OP(Integer,		6)					\
-	OP(Unknown,		7)					\
+	OP(Unknown,		7)
 
 /* Continuation of token types used to represent YAML primitives. */
 enum yaml_type {
