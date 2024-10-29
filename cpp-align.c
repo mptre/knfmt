@@ -252,13 +252,16 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 			doc_literal(" ", concat);
 		else
 			ruler_insert(&rl, tk, concat, 1, w, 0);
-		doc_literal("\\", concat);
-		doc_alloc(DOC_HARDLINE, concat);
 
 		linelen = (size_t)(nx - str);
 		len -= linelen;
 		str += linelen;
 		nlines++;
+
+		/* No continuation wanted if the next line is empty. */
+		if (len > 0 && nx[0] != '\n')
+			doc_literal("\\", concat);
+		doc_alloc(DOC_HARDLINE, concat);
 	}
 	if (len > 0) {
 		const char *literal;

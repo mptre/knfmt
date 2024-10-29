@@ -1,0 +1,4 @@
+#define M								\
+	1
+
+int x;
