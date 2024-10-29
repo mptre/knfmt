@@ -701,6 +701,7 @@ parser_stmt_case(struct parser *pr, struct doc *dc)
 	if (simple_enter(pr->pr_si, SIMPLE_STMT_SWITCH, 0, &cookie))
 		simple_stmt_switch(pr->pr_lx, kw);
 
+	pr->pr_stmt.depth++;
 	indent = doc_indent(style(pr->pr_st, IndentWidth), dc);
 	for (;;) {
 		struct doc *line;
@@ -726,6 +727,7 @@ parser_stmt_case(struct parser *pr, struct doc *dc)
 			break;
 		}
 	}
+	pr->pr_stmt.depth--;
 
 	return parser_good(pr);
 }
