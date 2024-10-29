@@ -707,11 +707,9 @@ parser_stmt_case(struct parser *pr, struct doc *dc)
 		struct token *nx;
 
 		if (lexer_peek_if(lx, TOKEN_CASE, NULL) ||
-		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL))
+		    lexer_peek_if(lx, TOKEN_DEFAULT, NULL) ||
+		    !lexer_peek(lx, &nx))
 			break;
-
-		if (!lexer_peek(lx, &nx))
-			return parser_fail(pr);
 
 		/*
 		 * Allow following statement(s) to be placed on the same line as
