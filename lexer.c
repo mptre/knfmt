@@ -61,6 +61,7 @@ static void		lexer_line_alloc(struct lexer *, unsigned int);
 static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
 
+static int	lexer_until(struct lexer *, int, struct token **);
 static int	lexer_peek_until_not_nested(struct lexer *, int,
     struct token *, struct token **);
 
@@ -802,7 +803,7 @@ lexer_peek_until_comma(struct lexer *lx, struct token *stop, struct token **tk)
  * Consume token(s) until the given token type is encountered. Returns non-zero
  * if such token is found.
  */
-int
+static int
 lexer_until(struct lexer *lx, int type, struct token **tk)
 {
 	for (;;) {
