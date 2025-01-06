@@ -43,6 +43,22 @@
   (d30553be7869)
   (Anton Lindqvist)
 
+- Preserve comments tied to functions while inserting cpp include guards.
+  (490e1493d6ca)
+  (Anton Lindqvist)
+
+- Trim whitespace from last line from cpp macros.
+  (02e25540fe0a)
+  (Anton Lindqvist)
+
+- Break long cast expressions.
+  (70b14a19aca2)
+  (Anton Lindqvist)
+
+- Do not emit a line between designated initializers and expressions.
+  (a711491af561)
+  (Anton Lindqvist)
+
 # 4.5.0 - 2024-09-01
 
 ## News
