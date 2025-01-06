@@ -71,7 +71,7 @@ ruler_init(struct ruler *rl, unsigned int align, unsigned int flags,
 
 /*
  * Insert a new datum, indicating that this line must be aligned after the given
- * token with any preceeding or following line(s).
+ * token with any preceding or subsequent line(s).
  *
  * The caller is expected to call ruler_exec() once all datums have been emitted
  * in order to insert the alignment in the document.
