@@ -84,11 +84,14 @@ strwidth(const char *str, size_t len, size_t pos)
 const char *
 path_slice(const char *path, unsigned int ncomponents, struct arena_scope *s)
 {
+	static struct KS_str_match match;
+	KS_str_match_init_once("//", &match);
+
 	VECTOR(char *) components;
 	struct buffer *bf;
 	unsigned int i, n;
 
-	components = KS_str_split(path, "/", s);
+	components = KS_str_split(path, &match, s);
 	n = VECTOR_LENGTH(components);
 	if (n < ncomponents) {
 		/* Less components than wanted, return the whole path. */

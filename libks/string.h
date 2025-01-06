@@ -23,6 +23,19 @@
 
 struct arena_scope;
 
+#define CONCAT_INNER(x, y)	x ## y
+#define CONCAT(x, y)		CONCAT_INNER(x, y)
+
+#define KS_str_match_init_once(r, m)					\
+	__attribute__((used))						\
+	SECTION(KS_str_ranges)						\
+	static struct KS_str_match_init_once CONCAT(once, __LINE__) = {	\
+		.ranges	= (r),						\
+		.match	= (m),						\
+		/* Suppress cppcheck unreadVariable false positives. */	\
+		.unused	= &CONCAT(once, __LINE__),			\
+	}
+
 struct KS_str_match {
 	char u8[16 + 1 /* NUL */];
 
@@ -34,20 +47,10 @@ struct KS_str_match {
 struct KS_str_match_init_once {
 	const char		*ranges;
 	struct KS_str_match	*match;
+	const void		*unused;
 } __attribute__((aligned(16)));
 
 int		KS_str_match_init(const char *, struct KS_str_match *);
-
-#define KS_str_match_init_once(r, m) do {				\
-	__attribute__((used))						\
-	SECTION(KS_str_ranges)						\
-	static struct KS_str_match_init_once _once = {			\
-		.ranges	= (r),						\
-		.match	= (m),						\
-	};								\
-	/* Avoid unused warnings. */					\
-	(void)_once;							\
-} while (0)
 
 extern size_t	(*KS_str_match)(const char *, size_t,
     const struct KS_str_match *);
@@ -61,7 +64,9 @@ size_t		KS_str_match_until_default(const char *, size_t,
     const struct KS_str_match *);
 size_t		KS_str_match_until_spaces(const char *, size_t);
 
-char	**KS_str_split(const char *, const char *, struct arena_scope *);
+char	**KS_str_split(const char *, const struct KS_str_match *,
+    struct arena_scope *);
+char	**KS_str_split_spaces(const char *, struct arena_scope *);
 
 char	*KS_str_vis(const char *, size_t, struct arena_scope *);
 

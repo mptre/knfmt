@@ -182,6 +182,22 @@ include_cmp(struct include *const *aa, struct include *const *bb)
 	return token_strcmp(a->tk, b->tk);
 }
 
+static char **
+split_on_period(const char *str, struct arena_scope *s)
+{
+	static struct KS_str_match match;
+	KS_str_match_init_once("..", &match);
+	return KS_str_split(str, &match, s);
+}
+
+static char **
+split_on_slash(const char *str, struct arena_scope *s)
+{
+	static struct KS_str_match match;
+	KS_str_match_init_once("//", &match);
+	return KS_str_split(str, &match, s);
+}
+
 static int
 is_main_include(const char *include_path, const char *path,
     struct arena *scratch)
@@ -192,7 +208,7 @@ is_main_include(const char *include_path, const char *path,
 	arena_scope(scratch, s);
 
 	/* Transform path "a/b.c" into "a/b.h". */
-	str = VECTOR_FIRST(KS_str_split(path, ".", &s));
+	str = VECTOR_FIRST(split_on_period(path, &s));
 	if (str == NULL)
 		return 0; /* UNREACHABLE */
 	basename = *str;
@@ -201,11 +217,11 @@ is_main_include(const char *include_path, const char *path,
 		return 1;
 
 	/* Transform path "a/b.c" into "b.h". */
-	str = VECTOR_LAST(KS_str_split(path, "/", &s));
+	str = VECTOR_LAST(split_on_slash(path, &s));
 	if (str == NULL)
 		return 0; /* UNREACHABLE */
 	filename = *str;
-	str = VECTOR_FIRST(KS_str_split(filename, ".", &s));
+	str = VECTOR_FIRST(split_on_period(filename, &s));
 	if (str == NULL)
 		return 0; /* UNREACHABLE */
 	basename = *str;

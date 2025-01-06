@@ -25,13 +25,15 @@
 #include "libks/arena-vector.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
-#include "libks/compiler.h"
 #include "libks/section.h"
 #include "libks/vector.h"
 
 int	KS_str_match_init_default(const char *, struct KS_str_match *);
 
 static void	KS_str_init(void) __attribute__((constructor));
+
+static struct KS_str_match match_spaces;
+KS_str_match_init_once("  \f\f\n\n\r\r\t\t\v\v", &match_spaces);
 
 static void
 KS_str_init(void)
@@ -93,11 +95,7 @@ KS_str_match_default(const char *str, size_t len,
 size_t
 KS_str_match_spaces(const char *str, size_t len)
 {
-	static struct KS_str_match match;
-
-	KS_str_match_init_once("  \f\f\n\n\r\r\t\t\v\v", &match);
-
-	return KS_str_match(str, len, &match);
+	return KS_str_match(str, len, &match_spaces);
 }
 
 size_t
@@ -122,40 +120,45 @@ KS_str_match_until_default(const char *str, size_t len,
 size_t
 KS_str_match_until_spaces(const char *str, size_t len)
 {
-	static struct KS_str_match match;
-
-	KS_str_match_init_once("  \f\f\n\n\r\r\t\t\v\v", &match);
-
-	return KS_str_match_until(str, len, &match);
+	return KS_str_match_until(str, len, &match_spaces);
 }
 
 char **
-KS_str_split(const char *str, const char *delim, struct arena_scope *s)
+KS_str_split(const char *str, const struct KS_str_match *match,
+    struct arena_scope *s)
 {
 	VECTOR(char *) parts;
-	size_t delimlen;
+	size_t len;
 
 	ARENA_VECTOR_INIT(s, parts, 2);
-	delimlen = strlen(delim);
+	len = strlen(str);
 
-	for (;;) {
-		const char *p;
-		char **dst;
+	while (len > 0) {
+		size_t prefix_len;
 
-		dst = VECTOR_ALLOC(parts);
-		if (unlikely(dst == NULL))
-			return NULL; /* UNREACHABLE */
-		p = strstr(str, delim);
-		if (p != NULL) {
-			*dst = arena_strndup(s, str, (size_t)(p - str));
-			str = &p[delimlen];
-		} else {
-			*dst = arena_strdup(s, str);
+		prefix_len = KS_str_match(str, len, match);
+		str += prefix_len;
+		len -= prefix_len;
+
+		prefix_len = KS_str_match_until(str, len, match);
+		if (prefix_len == 0)
 			break;
-		}
+		*ARENA_VECTOR_ALLOC(parts) = arena_strndup(s, str, prefix_len);
+		str += prefix_len;
+		len -= prefix_len;
 	}
 
+	/* Handle any remaining tail. */
+	if (len > 0 || VECTOR_LENGTH(parts) == 0)
+		*ARENA_VECTOR_ALLOC(parts) = arena_strdup(s, str);
+
 	return parts;
+}
+
+char **
+KS_str_split_spaces(const char *str, struct arena_scope *s)
+{
+	return KS_str_split(str, &match_spaces, s);
 }
 
 char *
