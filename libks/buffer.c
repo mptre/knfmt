@@ -122,7 +122,7 @@ buffer_read_fd_impl(struct buffer *bf, int fd)
 		if (n == 0)
 			break;
 		bf->bf_len += (size_t)n;
-		if (buffer_reserve(bf, bf->bf_siz / 2))
+		if (buffer_reserve(bf, bf->bf_siz / 8))
 			return 1;
 	}
 

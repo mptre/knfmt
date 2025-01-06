@@ -17,11 +17,14 @@
 #include "libks/string.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 
+#include "libks/arena-buffer.h"
 #include "libks/arena-vector.h"
 #include "libks/arena.h"
+#include "libks/buffer.h"
 #include "libks/compiler.h"
 #include "libks/section.h"
 #include "libks/vector.h"
@@ -153,4 +156,34 @@ KS_str_split(const char *str, const char *delim, struct arena_scope *s)
 	}
 
 	return parts;
+}
+
+char *
+KS_str_vis(const char *str, size_t len, struct arena_scope *s)
+{
+	struct buffer *bf;
+	size_t i;
+
+	bf = arena_buffer_alloc(s, 2 * len + 1);
+
+	for (i = 0; i < len; i++) {
+		char c = str[i];
+
+		if (c == '\n')
+			buffer_printf(bf, "\\n");
+		else if (c == '\f')
+			buffer_printf(bf, "\\f");
+		else if (c == '\t')
+			buffer_printf(bf, "\\t");
+		else if (c == '\r')
+			buffer_printf(bf, "\\r");
+		else if (c == '"')
+			buffer_printf(bf, "\\\"");
+		else if (isprint((unsigned char)c))
+			buffer_putc(bf, c);
+		else
+			buffer_printf(bf, "\\x%02x", (unsigned char)c);
+	}
+
+	return buffer_str(bf);
 }

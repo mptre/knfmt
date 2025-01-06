@@ -34,7 +34,7 @@ KS_exec_diff(const char *path, const char *src, size_t srclen, const char *dst,
 	int dstfd = -1;
 	int srcfd = -1;
 	int rv = -1;
-	int n;
+	int n, status;
 
 	n = snprintf(label, sizeof(label), "%s.orig", path);
 	if (n < 0 || (size_t)n >= sizeof(label)) {
@@ -59,10 +59,12 @@ KS_exec_diff(const char *path, const char *src, size_t srclen, const char *dst,
 		_exit(1);
 	}
 
-	if (waitpid(pid, NULL, 0) == -1)
+	if (waitpid(pid, &status, 0) == -1)
 		goto out;
-
-	rv = 1;
+	if (WIFEXITED(status))
+		rv = WEXITSTATUS(status);
+	else
+		rv = 1;
 
 out:
 	if (srcfd != -1)

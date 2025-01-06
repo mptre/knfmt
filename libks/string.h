@@ -63,4 +63,6 @@ size_t		KS_str_match_until_spaces(const char *, size_t);
 
 char	**KS_str_split(const char *, const char *, struct arena_scope *);
 
+char	*KS_str_vis(const char *, size_t, struct arena_scope *);
+
 #endif /* !LIBKS_STRING_H */
