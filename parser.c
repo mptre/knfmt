@@ -102,17 +102,16 @@ clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 }
 
 struct parser *
-parser_alloc(const struct parser_arg *arg)
+parser_alloc(const struct parser_arg *arg, struct arena_scope *s)
 {
 	struct parser *pr;
 
-	pr = arena_calloc(arg->arena.eternal_scope, 1, sizeof(*pr));
+	pr = arena_calloc(s, 1, sizeof(*pr));
 	pr->pr_op = arg->options;
 	pr->pr_st = arg->style;
 	pr->pr_si = arg->simple;
 	pr->pr_lx = arg->lexer;
 	pr->pr_clang = arg->clang;
-	pr->pr_arena.eternal_scope = arg->arena.eternal_scope;
 	pr->pr_arena.scratch = arg->arena.scratch;
 	pr->pr_arena.doc = arg->arena.doc;
 	pr->pr_arena.buffer = arg->arena.buffer;

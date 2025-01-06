@@ -226,13 +226,12 @@ fileformat(struct main_context *c, struct file *fe)
 	    .simple	= c->simple,
 	    .clang	= clang,
 	    .arena	= {
-		.eternal_scope	= &eternal_scope,
 		.scratch	= c->arena.scratch,
 		.doc		= c->arena.doc,
 		.buffer		= c->arena.buffer,
 		.ruler		= c->arena.ruler,
 	    },
-	});
+	}, &eternal_scope);
 	if (parser_exec(pr, fe->fe_diff, c->dst))
 		return 1;
 

@@ -1,3 +1,4 @@
+struct arena_scope;
 struct buffer;
 struct diffchunk;
 
@@ -9,7 +10,6 @@ struct parser_arg {
 	struct clang		*clang;
 
 	struct {
-		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
 		struct arena		*doc;
 		struct arena		*buffer;
@@ -17,6 +17,6 @@ struct parser_arg {
 	} arena;
 };
 
-struct parser	*parser_alloc(const struct parser_arg *);
+struct parser	*parser_alloc(const struct parser_arg *, struct arena_scope *);
 int		 parser_exec(struct parser *, const struct diffchunk *,
     struct buffer *);

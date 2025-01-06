@@ -50,6 +50,8 @@ void			lexer_set_state(struct lexer *,
 const char	*lexer_get_path(const struct lexer *);
 int		 lexer_get_peek(const struct lexer *);
 
+struct arena_scope	*lexer_arena_scope(struct lexer *);
+
 int		 lexer_getc(struct lexer *, unsigned char *);
 void		 lexer_ungetc(struct lexer *);
 void		 lexer_eat_lines_and_spaces(struct lexer *,

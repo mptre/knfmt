@@ -95,10 +95,11 @@ string_has_line(const char *str, size_t len)
 }
 
 void
-simple_expr_printf(struct lexer *lx, struct token *tk, struct arena_scope *s)
+simple_expr_printf(struct lexer *lx, struct token *tk)
 {
 	enum format_argno argno;
 	const char *sanitized_format;
+	struct arena_scope *s;
 	struct token *format;
 
 	if (!identify_function(tk, &argno))
@@ -109,6 +110,7 @@ simple_expr_printf(struct lexer *lx, struct token *tk, struct arena_scope *s)
 	if (!string_has_line(format->tk_str, format->tk_len))
 		return;
 
+	s = lexer_arena_scope(lx);
 	sanitized_format = arena_sprintf(s, "\"%.*s\"",
 	    (int)(format->tk_len - 1 /* " */ - 3 /* \n" */),
 	    &format->tk_str[1]);

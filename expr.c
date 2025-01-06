@@ -109,7 +109,6 @@ struct expr_state {
 #define es_flags	es_ea.flags
 
 	struct {
-		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
 		struct arena_scope	*scratch_scope;
 		struct arena		*buffer;
@@ -530,10 +529,8 @@ expr_exec_call(struct expr_state *es, struct expr *ex)
 		return;
 
 	simple_cookie(simple);
-	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PRINTF, 0, &simple)) {
-		simple_expr_printf(es->es_lx, ex->ex_lhs->ex_tk,
-		    es->es_arena.eternal_scope);
-	}
+	if (simple_enter(es->es_ea.si, SIMPLE_EXPR_PRINTF, 0, &simple))
+		simple_expr_printf(es->es_lx, ex->ex_lhs->ex_tk);
 }
 
 static struct expr *
@@ -1286,11 +1283,9 @@ expr_state_init(struct expr_state *es, const struct expr_exec_arg *ea,
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->si);
 	ASSERT_CONSISTENCY(ea->flags & EXPR_EXEC_ALIGN, ea->rl);
 	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->dc);
-	ASSERT_CONSISTENCY(mode == EXPR_MODE_EXEC, ea->arena.eternal_scope);
 
 	memset(es, 0, sizeof(*es));
 	es->es_ea = *ea;
-	es->es_arena.eternal_scope = ea->arena.eternal_scope;
 	es->es_arena.scratch = ea->arena.scratch;
 	es->es_arena.scratch_scope = scratch_scope;
 	es->es_arena.buffer = ea->arena.buffer;

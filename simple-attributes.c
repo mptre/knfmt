@@ -27,14 +27,16 @@ has_underscores(const struct token *tk)
 }
 
 void
-simple_attributes(struct lexer *lx, struct arena_scope *s)
+simple_attributes(struct lexer *lx)
 {
 	const char *sanitized_ident;
+	struct arena_scope *s;
 	struct token *ident;
 
 	if (!lexer_peek_if(lx, TOKEN_IDENT, &ident) || !has_underscores(ident))
 		return;
 
+	s = lexer_arena_scope(lx);
 	sanitized_ident = remove_underscores(ident->tk_str, ident->tk_len, s);
 	token_set_str(ident, sanitized_ident, strlen(sanitized_ident));
 }

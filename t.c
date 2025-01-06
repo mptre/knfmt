@@ -797,11 +797,10 @@ context_init(struct context *ctx, const char *src,
 	    .style	= ctx->st,
 	    .simple	= ctx->si,
 	    .arena	= {
-		.eternal_scope	= eternal_scope,
 		.scratch	= ctx->arena.scratch,
 		.doc		= ctx->arena.doc,
 	    },
-	});
+	}, eternal_scope);
 }
 
 static void

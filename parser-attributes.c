@@ -59,7 +59,7 @@ parser_attributes_expr(struct parser *pr, struct doc *dc, struct doc **out,
 		int error;
 
 		if (is_simple_enabled(pr->pr_si, SIMPLE_ATTRIBUTES))
-			simple_attributes(lx, pr->pr_arena.eternal_scope);
+			simple_attributes(lx);
 
 		lexer_peek_until_comma(lx, rparen, &stop);
 		error = parser_expr(pr, out, &(struct parser_expr_arg){
