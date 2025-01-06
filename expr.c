@@ -763,11 +763,11 @@ expr_doc(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_tokens[0] != NULL)
 			expr_doc_token(es, ex->ex_tokens[0], concat);	/* ( */
 		if (ex->ex_lhs != NULL)
-			expr_doc(ex->ex_lhs, es, concat);
+			concat = expr_doc(ex->ex_lhs, es, concat);
 		if (ex->ex_tokens[1] != NULL)
 			expr_doc_token(es, ex->ex_tokens[1], concat);	/* ) */
 		if (ex->ex_rhs != NULL)
-			expr_doc(ex->ex_rhs, es, concat);
+			concat = expr_doc(ex->ex_rhs, es, concat);
 		break;
 
 	case EXPR_SIZEOF:

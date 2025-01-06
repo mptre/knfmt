@@ -1,0 +1,12 @@
+/*
+ * Long expression.
+ */
+
+int
+main(void)
+{
+	if (reg > 0) {
+		reg = (uint32_t)(
+		    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa - 1);
+	}
+}
