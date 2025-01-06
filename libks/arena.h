@@ -100,17 +100,19 @@ struct arena_scope	arena_scope_enter_impl(struct arena *, const char *,
 void			arena_scope_leave(struct arena_scope *);
 
 void	*arena_malloc(struct arena_scope *, size_t)
-	__attribute__((malloc, alloc_size(2)));
+	__attribute__((malloc, alloc_size(2), returns_nonnull));
 void	*arena_calloc(struct arena_scope *, size_t, size_t)
-	__attribute__((malloc, alloc_size(2, 3)));
+	__attribute__((malloc, alloc_size(2, 3), returns_nonnull));
 void	*arena_realloc(struct arena_scope *, void *, size_t, size_t)
-	__attribute__((malloc, alloc_size(4)));
+	__attribute__((malloc, alloc_size(4), returns_nonnull));
 
 char	*arena_sprintf(struct arena_scope *, const char *, ...)
-	__attribute__((format(printf, 2, 3)));
+	__attribute__((format(printf, 2, 3), returns_nonnull));
 
-char	*arena_strdup(struct arena_scope *, const char *);
-char	*arena_strndup(struct arena_scope *, const char *, size_t);
+char	*arena_strdup(struct arena_scope *, const char *)
+	__attribute__((returns_nonnull));
+char	*arena_strndup(struct arena_scope *, const char *, size_t)
+	__attribute__((returns_nonnull));
 
 void    arena_cleanup(struct arena_scope *, void (*)(void *), void *);
 

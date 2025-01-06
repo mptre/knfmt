@@ -64,10 +64,9 @@ void	*map_insert_n(void *, const void *const *, size_t);
 })
 
 #define MAP_KEY(m, val) __extension__ ({				\
-	const __typeof__(*(m)->v) *_v = (val);				\
-	(const __typeof__((m)->k) *)map_key((m), _v);			\
+	(const __typeof__((m)->k) *)map_key((m), (val));		\
 })
-void	*map_key(void *, const void *);
+void	*map_key(void *, void *);
 
 #define MAP_FIND(m, key) __extension__ ({				\
 	const __typeof__((m)->kp) _k = (key);				\

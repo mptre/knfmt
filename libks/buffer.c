@@ -168,6 +168,12 @@ buffer_printf(struct buffer *bf, const char *fmt, ...)
 	return error;
 }
 
+static int
+is_string_directive(const char *fmt)
+{
+	return fmt[0] == '%' && fmt[1] == 's' && fmt[2] == '\0';
+}
+
 int
 buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 {
@@ -175,6 +181,16 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	size_t len;
 	int error = 0;
 	int n;
+
+	if (is_string_directive(fmt)) {
+		const char *str;
+
+		str = va_arg(ap, const char *);
+		if (str == NULL)
+			str = "(null)";
+		buffer_puts(bf, str, strlen(str));
+		return 0;
+	}
 
 	va_copy(cp, ap);
 

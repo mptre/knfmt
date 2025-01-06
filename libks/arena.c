@@ -449,10 +449,8 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 	union address old_addr;
 
 	old_addr.s8 = ptr;
-	if ((old_addr.u64 & (maxalign - 1)) != 0) {
-		errno = EFAULT;
-		return NULL;
-	}
+	if ((old_addr.u64 & (maxalign - 1)) != 0)
+		errx(1, "%s: Misaligned pointer", __func__);
 
 	a->stats.realloc.total++;
 	if (old_size == 0)

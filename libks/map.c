@@ -171,7 +171,7 @@ map_insert_n(void *mp, const void *const *key, size_t keysize)
 }
 
 void *
-map_key(void *mp, const void *val)
+map_key(void *mp, void *val)
 {
 	struct map *m = mp;
 	struct map_element *el = (struct map_element *)val;

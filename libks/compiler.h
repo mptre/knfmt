@@ -38,4 +38,12 @@
 #  define FALLTHROUGH	do {} while (0) /* FALLTHROUGH */
 #endif
 
+#define UNSAFE_CAST(type, ptr) __extension__ ({			\
+	union {							\
+		__typeof__(ptr) src;				\
+		type dst;					\
+	} _u = {.src = (ptr)};					\
+	_u.dst;							\
+})
+
 #endif /* !LIBKS_COMPILER_H */
