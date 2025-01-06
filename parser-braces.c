@@ -207,12 +207,14 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 			struct token *stop;
 
 			stop = peek_expr_stop(pr, &lbrace_cache, rbrace);
+			/* Delegate column alignment to the expression parser. */
 			error = parser_expr(pr, &expr,
 			    &(struct parser_expr_arg){
 				.dc	= concat,
-				.rl	= rl,
+				.rl	= !align ? rl : NULL,
 				.stop	= stop,
-				.flags	= EXPR_EXEC_ALIGN | EXPR_EXEC_NOSOFT,
+				.flags	= EXPR_EXEC_NOSOFT |
+				    (!align ? EXPR_EXEC_ALIGN : 0),
 			});
 			if (error & HALT)
 				return parser_fail(pr);
