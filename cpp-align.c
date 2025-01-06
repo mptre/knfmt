@@ -34,6 +34,26 @@ struct alignment {
 				 skip_first_line:1;
 };
 
+static const char *
+trim_line(const char *str, size_t len, struct arena_scope *s)
+{
+	int newlines = 0;
+
+	/* Honor up to two trailing new line(s). */
+	if (len > 0 && str[len - 1] == '\n')
+		newlines++;
+	if (len > 1 && str[len - 2] == '\n')
+		newlines++;
+
+	while (len > 0 && isspace((unsigned char)str[len - 1]))
+		len--;
+
+	return arena_sprintf(s, "%.*s%s%s",
+	    (int)len, str,
+	    newlines >= 2 ? "\n" : "",
+	    newlines >= 1 ? "\n" : "");
+}
+
 static enum indent_type
 classify_indent(const char *str)
 {
@@ -184,6 +204,7 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	const char *nx, *str;
 	size_t len;
 	int nlines = 0;
+	int didtrim = 0;
 
 	str = tk->tk_str;
 	len = tk->tk_len;
@@ -266,12 +287,13 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	if (len > 0) {
 		const char *literal;
 
-		literal = arena_strndup(&scratch_scope, str, len);
+		literal = trim_line(str, len, &scratch_scope);
+		didtrim = len != strlen(literal);
 		doc_literal(literal, dc);
 	}
 
 	/* Alignment only wanted for multiple lines. */
-	if (nlines <= 1)
+	if (nlines <= 1 && !didtrim)
 		return NULL;
 
 	ruler_exec(&rl);

@@ -1,0 +1,10 @@
+/*
+ * Trailing whitespace in macro definitions.
+ */
+
+#define FOR_EVEX_TUPLE_TYPES(OP)					\
+	OP(Tuple1,        0)						\
+	OP(Movddup,       0)	
+
+#define FOR_EVEX_TUPLE_TYPES(OP)					\
+	OP(Movddup,       0)	
