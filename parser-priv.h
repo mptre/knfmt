@@ -25,7 +25,6 @@ struct parser {
 	struct clang		*pr_clang;
 
 	struct {
-		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
 		struct arena		*doc;
 		struct arena_scope	*doc_scope;
