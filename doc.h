@@ -32,7 +32,6 @@ struct doc_exec_arg {
 	const struct diffchunk	*diff_chunks;
 	const struct doc	*dc;
 	struct arena		*scratch;
-	unsigned int		 col_offset;
 	unsigned int		 flags;
 #define DOC_EXEC_DIFF	    0x00000001u
 #define DOC_EXEC_TRACE	    0x00000002u
@@ -102,6 +101,10 @@ struct doc	*doc_alloc_impl(enum doc_type, struct doc *, int, const char *,
  * Indent using the width of the current line, used to align subsequent line(s).
  */
 #define DOC_INDENT_WIDTH	0x08000000
+/*
+ * Determine if the given indent has sentinel(s).
+ */
+#define DOC_INDENT_HAS_SENTINELS(indent) ((indent) & 0x7f000000)
 
 #define doc_indent(a, b) \
 	doc_indent_impl((a), (b), __func__, __LINE__)

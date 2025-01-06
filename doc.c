@@ -44,6 +44,15 @@ enum doc_diff_group {
 	DOC_DIFF_GROUP_COVERED,
 };
 
+struct doc_state_indent {
+	unsigned int	cur;	/* current indent */
+	unsigned int	pre;	/* last emitted indent */
+};
+
+struct doc_walk_state {
+	struct doc_state_indent	indent;
+};
+
 struct doc {
 	enum doc_type		 dc_type;
 
@@ -72,12 +81,9 @@ struct doc {
 
 	struct arena_scope	*dc_scope;
 
-	LIST_ENTRY(doc_list, doc);
-};
+	struct doc_walk_state	 dc_walk;
 
-struct doc_state_indent {
-	unsigned int	cur;	/* current indent */
-	unsigned int	pre;	/* last emitted indent */
+	LIST_ENTRY(doc_list, doc);
 };
 
 struct doc_state {
@@ -114,10 +120,6 @@ struct doc_state {
 		unsigned int	nlines;		/* # emitted lines */
 		unsigned int	nexceeds;	/* # characters exceeding column limit */
 	} st_stats;
-
-	struct {
-		unsigned int	col;
-	} st_fits;
 
 	unsigned int			 st_col;
 	unsigned int			 st_depth;
@@ -173,11 +175,13 @@ struct doc_fits {
 
 struct doc_walk_queue {
 	const struct doc	*dc;
+	int			 restore;
 };
 
 enum {
 	DOC_WALK_BREAK		= 0x00000001u,
 	DOC_WALK_CONTINUE	= 0x00000002u,
+	DOC_WALK_RESTORE	= 0x40000000u,
 };
 
 /*
@@ -348,6 +352,11 @@ static void	doc_diff_leave_impl(const struct doc *, struct doc_state *,
 
 static int	doc_print(const struct doc *, struct doc_state *, const char *,
     size_t, unsigned int);
+
+static void	doc_walk_state_snapshot(struct doc_walk_state *,
+    const struct doc_state *);
+static void	doc_walk_state_restore(const struct doc_walk_state *,
+    struct doc_state *);
 
 #define doc_trace(dc, st, fmt, ...) do {				\
 	if ((st)->st_flags & DOC_EXEC_TRACE)				\
@@ -1032,13 +1041,26 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 	while (!VECTOR_EMPTY(queue)) {
 		const struct doc_walk_queue *tail;
 		const struct doc_description *desc;
+		unsigned int rv;
 
 		tail = VECTOR_POP(queue);
 		dc = tail->dc;
 		desc = &doc_descriptions[dc->dc_type];
 
-		if (cb(dc, st, arg) == DOC_WALK_BREAK)
+		if (tail->restore) {
+			doc_walk_state_restore(&dc->dc_walk, st);
+			continue;
+		}
+
+		rv = cb(dc, st, arg);
+		if (rv & DOC_WALK_BREAK)
 			break;
+		if (rv & DOC_WALK_RESTORE) {
+			*ARENA_VECTOR_ALLOC(queue) = (struct doc_walk_queue){
+			    .dc		= dc,
+			    .restore	= 1,
+			};
+		}
 
 		if (desc->children.many) {
 			const struct doc_list *dl = &dc->dc_list;
@@ -1083,6 +1105,9 @@ static unsigned int
 doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 {
 	struct doc_fits *fits = arg;
+	struct doc_walk_state *ws = UNSAFE_CAST(
+	    struct doc_walk_state *, &dc->dc_walk);
+	int restore = 0;
 
 	if (st->st_newline) {
 		fits->fits = st->st_col <= style(st->st_st, ColumnLimit);
@@ -1090,6 +1115,17 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 	}
 
 	switch (dc->dc_type) {
+	case DOC_INDENT:
+		doc_walk_state_snapshot(ws, st);
+		/*
+		 * Only handle regular positive indentation for now as this is
+		 * an estimate.
+		 */
+		if (!DOC_INDENT_HAS_SENTINELS(dc->dc_int) && dc->dc_int > 0)
+			st->st_indent.cur += (unsigned int)dc->dc_int;
+		restore = 1;
+		break;
+
 	case DOC_ALIGN: {
 		unsigned int indent = dc->dc_align.indent;
 		unsigned int spaces = dc->dc_align.spaces;
@@ -1121,7 +1157,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 
 	case DOC_HARDLINE:
 		doc_column(st, "\n", 1);
-		st->st_col += st->st_fits.col;
+		st->st_col += st->st_indent.cur;
 		break;
 
 	case DOC_OPTLINE:
@@ -1137,7 +1173,6 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 
 	case DOC_CONCAT:
 	case DOC_GROUP:
-	case DOC_INDENT:
 	case DOC_NOINDENT:
 	case DOC_SOFTLINE:
 	case DOC_MUTE:
@@ -1152,7 +1187,8 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 		fits->fits = 0;
 		return DOC_WALK_BREAK;
 	}
-	return DOC_WALK_CONTINUE;
+
+	return DOC_WALK_CONTINUE | (restore ? DOC_WALK_RESTORE : 0);
 }
 
 static unsigned int
@@ -1244,6 +1280,18 @@ doc_print(const struct doc *dc, struct doc_state *st, const char *str,
 		doc_print_indent(dc, st, st->st_indent.cur);
 
 	return 1;
+}
+
+static void
+doc_walk_state_snapshot(struct doc_walk_state *ws, const struct doc_state *st)
+{
+	ws->indent = st->st_indent;
+}
+
+static void
+doc_walk_state_restore(const struct doc_walk_state *ws, struct doc_state *st)
+{
+	st->st_indent = ws->indent;
 }
 
 static void
@@ -1767,7 +1815,6 @@ doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
 	st->st_diff.beg = 1;
 	st->st_minimize.idx = -1;
 	st->st_minimize.force = -1;
-	st->st_fits.col = arg->col_offset;
 }
 
 /*

@@ -214,7 +214,6 @@ simple_stmt_need_braces(struct simple_stmt *ss, const struct stmt *st,
 	    .scratch	= ss->arena.scratch,
 	    .bf		= bf,
 	    .st		= ss->st,
-	    .col_offset	= st->indent_width,
 	});
 	buflen = buffer_get_len(bf);
 	buf = strtrim(buffer_get_ptr(bf), &buflen);
