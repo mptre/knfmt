@@ -19,7 +19,7 @@
 
 #include "arenas.h"
 #include "comment.h"
-#include "cpp-align.h"
+#include "cpp-format.h"
 #include "cpp-include-guard.h"
 #include "cpp-include.h"
 #include "lexer-callbacks.h"
@@ -1258,7 +1258,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	if (tk->tk_type == TOKEN_CPP_DEFINE) {
 		const char *str;
 
-		str = cpp_align(lx, tk, cl->st, &cl->arena, cl->op);
+		str = cpp_format(lx, tk, cl->st, &cl->arena, cl->op);
 		if (str != NULL)
 			token_set_str(tk, str, strlen(str));
 	}

@@ -1,4 +1,4 @@
-#include "cpp-align.h"
+#include "cpp-format.h"
 
 #include "config.h"
 
@@ -192,7 +192,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
  * Align line continuations.
  */
 const char *
-cpp_align(const struct lexer *lx, struct token *tk, const struct style *st,
+cpp_format(const struct lexer *lx, struct token *tk, const struct style *st,
     struct arenas *arena, const struct options *op)
 {
 	struct alignment alignment = {
