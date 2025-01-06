@@ -39,7 +39,7 @@
   (f9cf4098ac50)
   (Anton Lindqvist)
 
-- In simple mod, fix simple-stmt-switch/simple-stmt interaction regression.
+- In simple mode, fix simple-stmt-switch/simple-stmt interaction regression.
   (d30553be7869)
   (Anton Lindqvist)
 
