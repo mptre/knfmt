@@ -782,10 +782,7 @@ context_init(struct context *ctx, const char *src,
 	    .options	= &ctx->op,
 	    .style	= ctx->st,
 	    .simple	= ctx->si,
-	    .arena	= {
-		.scratch	= ctx->arena.scratch,
-		.doc		= ctx->arena.doc,
-	    },
+	    .arena	= &ctx->arena,
 	}, eternal_scope);
 }
 

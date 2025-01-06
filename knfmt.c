@@ -211,12 +211,7 @@ fileformat(struct main_context *c, struct file *fe)
 	    .style	= c->style,
 	    .simple	= c->simple,
 	    .clang	= clang,
-	    .arena	= {
-		.scratch	= c->arena.scratch,
-		.doc		= c->arena.doc,
-		.buffer		= c->arena.buffer,
-		.ruler		= c->arena.ruler,
-	    },
+	    .arena	= &c->arena,
 	}, &eternal_scope);
 	if (parser_exec(pr, fe->fe_diff, c->dst))
 		return 1;

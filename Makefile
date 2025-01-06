@@ -338,6 +338,7 @@ CPPCHECKFLAGS+=	--max-configs=2
 CPPCHECKFLAGS+=	--suppress-xml=cppcheck-suppressions.xml
 CPPCHECKFLAGS+=	${CPPFLAGS}
 
+IWYUFLAGS+=	-a arenas.h
 IWYUFLAGS+=	-d config.h
 IWYUFLAGS+=	-d trace.h:options.h
 IWYUFLAGS+=	${CPPFLAGS}

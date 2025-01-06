@@ -1,3 +1,4 @@
+#include "arenas.h"
 #include "trace.h"
 
 struct doc;
@@ -23,13 +24,7 @@ struct parser {
 	const struct style	*pr_st;
 	struct simple		*pr_si;
 	struct clang		*pr_clang;
-
-	struct {
-		struct arena		*scratch;
-		struct arena		*doc;
-		struct arena		*buffer;
-		struct arena		*ruler;
-	} pr_arena;
+	struct arenas		 pr_arena;
 
 	struct {
 		struct arena_scope	*doc;
