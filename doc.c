@@ -114,6 +114,10 @@ struct doc_state {
 		unsigned int	nexceeds;	/* # characters exceeding column limit */
 	} st_stats;
 
+	struct {
+		unsigned int	col;
+	} st_fits;
+
 	VECTOR(const struct doc *)	 st_walk;	/* stack used by doc_walk() */
 
 	unsigned int			 st_col;
@@ -1128,6 +1132,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 
 	case DOC_HARDLINE:
 		doc_column(st, dc->dc_str, dc->dc_len);
+		st->st_col += st->st_fits.col;
 		break;
 
 	case DOC_OPTLINE:
@@ -1773,6 +1778,7 @@ doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
 	st->st_diff.beg = 1;
 	st->st_minimize.idx = -1;
 	st->st_minimize.force = -1;
+	st->st_fits.col = arg->col_offset;
 }
 
 static void

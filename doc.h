@@ -32,6 +32,7 @@ struct doc_exec_arg {
 	const struct diffchunk	*diff_chunks;
 	const struct doc	*dc;
 	struct arena		*scratch;
+	unsigned int		 col_offset;
 	unsigned int		 flags;
 #define DOC_EXEC_DIFF	    0x00000001u
 #define DOC_EXEC_TRACE	    0x00000002u

@@ -24,6 +24,7 @@ struct stmt {
 	struct doc	*indent;
 	struct token	*lbrace;
 	struct token	*rbrace;
+	unsigned int	 indent_width;
 	unsigned int	 flags;
 #define STMT_BRACES			0x00000001u
 #define STMT_IGNORE			0x00000002u
@@ -170,6 +171,7 @@ simple_stmt_alloc(struct simple_stmt *ss, struct doc *dc, unsigned int indent,
 	st->root = doc_alloc(DOC_GROUP, dc);
 	st->indent = doc_indent(indent, st->root);
 	doc_alloc(DOC_HARDLINE, st->indent);
+	st->indent_width = indent;
 	st->flags = flags;
 	return st;
 }
@@ -212,6 +214,7 @@ simple_stmt_need_braces(struct simple_stmt *ss, const struct stmt *st,
 	    .scratch	= ss->arena.scratch,
 	    .bf		= bf,
 	    .st		= ss->st,
+	    .col_offset	= st->indent_width,
 	});
 	buflen = buffer_get_len(bf);
 	buf = strtrim(buffer_get_ptr(bf), &buflen);
