@@ -19,6 +19,7 @@
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"
+#include "libks/string.h"
 #include "libks/vector.h"
 
 #include "lexer.h"
@@ -27,7 +28,6 @@
 #include "token.h"
 #include "trace-types.h"
 #include "trace.h"
-#include "util.h"
 
 #define style_trace(st, fmt, ...) \
 	trace_no_func(TRACE_STYLE, (st)->op, (fmt), __VA_ARGS__)
@@ -911,7 +911,7 @@ yaml_token_serialize(const struct token *tk, struct arena_scope *s)
 	buffer_printf(bf, "%s", yaml_token_type_serialize(tk->tk_type, s));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
-		buffer_printf(bf, "%s", strnice(tk->tk_str, tk->tk_len, s));
+		buffer_printf(bf, "%s", KS_str_vis(tk->tk_str, tk->tk_len, s));
 		buffer_printf(bf, "\")");
 	}
 	return buffer_str(bf);

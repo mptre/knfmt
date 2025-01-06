@@ -17,6 +17,7 @@
 #include "libks/compiler.h"
 #include "libks/consistency.h"
 #include "libks/list.h"
+#include "libks/string.h"
 #include "libks/vector.h"
 
 #include "diff.h"
@@ -1582,7 +1583,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
 		arena_scope(st->st_scratch, s);
 
 		doc_trace(dc, st, "%s: verbatim \"%s\"",
-		    __func__, strnice(str, len, &s));
+		    __func__, KS_str_vis(str, len, &s));
 	}
 
 	doc_state_reset_lines(st);
@@ -1860,7 +1861,7 @@ doc_trace_enter_impl(const struct doc *dc, struct doc_state *st)
 		fprintf(stderr, "%d", dc->dc_int);
 	if (desc->value.string) {
 		fprintf(stderr, "\"%s\", %zu",
-		    strnice(dc->dc_str, dc->dc_len, &s), dc->dc_len);
+		    KS_str_vis(dc->dc_str, dc->dc_len, &s), dc->dc_len);
 	}
 
 	switch (dc->dc_type) {

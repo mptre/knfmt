@@ -9,6 +9,7 @@
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/list.h"
+#include "libks/string.h"
 
 #include "lexer.h"
 #include "util.h"
@@ -135,7 +136,7 @@ token_serialize_with_extra_flags(const struct token *tk, unsigned int flags,
 		buffer_printf(bf, "(");
 		if (flags & TOKEN_SERIALIZE_QUOTE)
 			buffer_printf(bf, "\"");
-		buffer_printf(bf, "%s", strnice(tk->tk_str, tk->tk_len, s));
+		buffer_printf(bf, "%s", KS_str_vis(tk->tk_str, tk->tk_len, s));
 		if (flags & TOKEN_SERIALIZE_QUOTE)
 			buffer_printf(bf, "\"");
 		buffer_printf(bf, ")");
