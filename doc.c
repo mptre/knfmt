@@ -171,6 +171,10 @@ struct doc_fits {
 	unsigned int	optline;
 };
 
+struct doc_walk_queue {
+	const struct doc	*dc;
+};
+
 enum {
 	DOC_WALK_BREAK,
 	DOC_WALK_CONTINUE,
@@ -1016,20 +1020,20 @@ static void
 doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
-	VECTOR(const struct doc *) queue;
+	VECTOR(struct doc_walk_queue) queue;
 
 	arena_scope(st->st_scratch, s);
 
 	ARENA_VECTOR_INIT(&s, queue, 1 << 4);
 
 	/* Recursion flatten into a loop for increased performance. */
-	*ARENA_VECTOR_ALLOC(queue) = dc;
+	*ARENA_VECTOR_ALLOC(queue) = (struct doc_walk_queue){.dc = dc};
 	while (!VECTOR_EMPTY(queue)) {
-		const struct doc **tail;
+		const struct doc_walk_queue *tail;
 		const struct doc_description *desc;
 
 		tail = VECTOR_POP(queue);
-		dc = *tail;
+		dc = tail->dc;
 		desc = &doc_descriptions[dc->dc_type];
 
 		if (cb(dc, st, arg) == DOC_WALK_BREAK)
@@ -1038,10 +1042,13 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		if (desc->children.many) {
 			const struct doc_list *dl = &dc->dc_list;
 
-			LIST_FOREACH_REVERSE(dc, dl)
-				*ARENA_VECTOR_ALLOC(queue) = dc;
+			LIST_FOREACH_REVERSE(dc, dl) {
+				*ARENA_VECTOR_ALLOC(queue) =
+				    (struct doc_walk_queue){.dc = dc};
+			}
 		} else if (desc->children.one) {
-			*VECTOR_ALLOC(queue) = dc->dc_doc;
+			*ARENA_VECTOR_ALLOC(queue) =
+			    (struct doc_walk_queue){.dc = dc->dc_doc};
 		}
 	}
 }
