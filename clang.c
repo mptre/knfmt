@@ -211,7 +211,7 @@ clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
 	cl->op = op;
 	cl->arena.scratch = scratch;
 	cl->arena.ruler = ruler;
-	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, s, scratch, op);
+	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, scratch, op, s);
 	if (VECTOR_INIT(cl->branches))
 		err(1, NULL);
 	if (VECTOR_INIT(cl->stamps))

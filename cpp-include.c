@@ -52,8 +52,8 @@ static void	token_trim_verbatim_line(struct token *);
 
 struct cpp_include *
 cpp_include_alloc(const struct style *st, struct simple *si,
-    struct token_list *prefixes, struct arena_scope *eternal_scope,
-    struct arena *scratch, const struct options *op)
+    struct token_list *prefixes, struct arena *scratch,
+    const struct options *op, struct arena_scope *eternal_scope)
 {
 	struct cpp_include *ci;
 	VECTOR(int) priorities;
