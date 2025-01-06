@@ -1,9 +1,6 @@
 #include "config.h"
 
-#include <sys/wait.h>
-
 #include <err.h>
-#include <limits.h>	/* PATH_MAX */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -248,53 +245,12 @@ fileformat(struct main_context *c, struct file *fe)
 static int
 filediff(struct main_context *c, const struct file *fe)
 {
-	char dstpath[PATH_MAX], srcpath[PATH_MAX];
-	const struct buffer *dst = c->dst;
-	const struct buffer *src = c->src;
-	pid_t pid;
-	int dstfd = -1;
-	int srcfd = -1;
+	int error;
 
-	if (buffer_cmp(src, dst) == 0)
-		return 0;
-
-	srcfd = KS_fs_tmpfd(buffer_get_ptr(src), buffer_get_len(src),
-	    srcpath, sizeof(srcpath));
-	if (srcfd == -1)
-		goto out;
-	dstfd = KS_fs_tmpfd(buffer_get_ptr(dst), buffer_get_len(dst),
-	    dstpath, sizeof(dstpath));
-	if (dstfd == -1)
-		goto out;
-
-	pid = fork();
-	if (pid == -1) {
-		warn("fork");
-		goto out;
-	}
-	if (pid == 0) {
-		const char *diff = "/usr/bin/diff";
-		const char *label;
-
-		arena_scope(c->arena.scratch, s);
-
-		label = arena_sprintf(&s, "%s.orig", fe->fe_path);
-		execl(diff, diff, "-u", "-L", label, "-L", fe->fe_path,
-		    srcpath, dstpath, NULL);
-		_exit(1);
-	}
-
-	if (waitpid(pid, NULL, 0) == -1) {
-		warn("waitpid");
-		goto out;
-	}
-
-out:
-	if (srcfd != -1)
-		close(srcfd);
-	if (dstfd != -1)
-		close(dstfd);
-	return 1;
+	error = buffer_diff(c->src, c->dst, fe->fe_path);
+	if (error == -1)
+		warn("%s", fe->fe_path);
+	return error;
 }
 
 static int

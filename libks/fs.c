@@ -79,7 +79,7 @@ KS_fs_replace(const char *path, const char *buf, size_t buflen)
 	char tmppath[PATH_MAX] = {0};
 	mode_t old_umask;
 	int tmpfd = -1;
-	int error = 1;
+	int error = -1;
 	int srcfd;
 
 	srcfd = open(path, O_RDONLY | O_CLOEXEC);
@@ -87,7 +87,7 @@ KS_fs_replace(const char *path, const char *buf, size_t buflen)
 		goto out;
 
 	if (tmptemplate(path, tmppath, sizeof(tmppath)))
-		return 1;
+		goto out;
 
 	old_umask = umask(0022);
 	tmpfd = mkstemp(tmppath);

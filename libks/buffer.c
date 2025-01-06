@@ -16,6 +16,8 @@
 
 #include "libks/buffer.h"
 
+#include <sys/wait.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -26,6 +28,7 @@
 #include <unistd.h>
 
 #include "libks/compiler.h"
+#include "libks/fs.h"
 
 struct buffer {
 	struct buffer_callbacks	 bf_callbacks;
@@ -192,6 +195,58 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	bf->bf_len += (size_t)n;
 
 	return error;
+}
+
+int
+buffer_diff(const struct buffer *src, const struct buffer *dst,
+    const char *path)
+{
+	char dstpath[PATH_MAX], srcpath[PATH_MAX];
+	pid_t pid;
+	int dstfd = -1;
+	int srcfd = -1;
+	int rv = -1;
+
+	if (buffer_cmp(src, dst) == 0)
+		return 0;
+
+	srcfd = KS_fs_tmpfd(buffer_get_ptr(src), buffer_get_len(src),
+	    srcpath, sizeof(srcpath));
+	if (srcfd == -1)
+		goto out;
+	dstfd = KS_fs_tmpfd(buffer_get_ptr(dst), buffer_get_len(dst),
+	    dstpath, sizeof(dstpath));
+	if (dstfd == -1)
+		goto out;
+
+	pid = fork();
+	if (pid == -1)
+		goto out;
+	if (pid == 0) {
+		char label[PATH_MAX];
+		int n;
+
+		n = snprintf(label, sizeof(label), "%s.orig", path);
+		if (n < 0 || (size_t)n >= sizeof(label))
+			_exit(1);
+
+		execlp("diff", "diff", "-u",
+		    "-L", label, "-L", path,
+		    srcpath, dstpath, NULL);
+		_exit(1);
+	}
+
+	if (waitpid(pid, NULL, 0) == -1)
+		goto out;
+
+	rv = 1;
+
+out:
+	if (srcfd != -1)
+		close(srcfd);
+	if (dstfd != -1)
+		close(dstfd);
+	return rv;
 }
 
 char *
