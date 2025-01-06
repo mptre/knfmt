@@ -779,8 +779,8 @@ context_init(struct context *ctx, const char *src,
 	ctx->st = style_parse("/dev/null", eternal_scope,
 	    ctx->arena.scratch, &ctx->op);
 	ctx->si = simple_alloc(eternal_scope, &ctx->op);
-	ctx->cl = clang_alloc(ctx->st, ctx->si, eternal_scope,
-	    ctx->arena.scratch, ctx->arena.ruler, &ctx->op);
+	ctx->cl = clang_alloc(ctx->st, ctx->si, ctx->arena.scratch,
+	    ctx->arena.ruler, &ctx->op, eternal_scope);
 	ctx->lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= ctx->bf,

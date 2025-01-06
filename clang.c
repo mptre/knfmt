@@ -39,7 +39,6 @@ struct clang {
 	VECTOR(struct token *)	 stamps;
 
 	struct {
-		struct arena_scope	*eternal_scope;
 		struct arena		*scratch;
 		struct arena		*ruler;
 	} arena;
@@ -200,23 +199,19 @@ clang_shutdown(void)
 }
 
 struct clang *
-clang_alloc(const struct style *st, struct simple *si,
-    struct arena_scope *eternal_scope,
-    struct arena *scratch, struct arena *ruler,
-    const struct options *op)
+clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
+    struct arena *ruler, const struct options *op, struct arena_scope *s)
 {
 	struct clang *cl;
 
-	cl = arena_calloc(eternal_scope, 1, sizeof(*cl));
-	arena_cleanup(eternal_scope, clang_free, cl);
+	cl = arena_calloc(s, 1, sizeof(*cl));
+	arena_cleanup(s, clang_free, cl);
 	LIST_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
-	cl->arena.eternal_scope = eternal_scope;
 	cl->arena.scratch = scratch;
 	cl->arena.ruler = ruler;
-	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, eternal_scope,
-	    scratch, op);
+	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, s, scratch, op);
 	if (VECTOR_INIT(cl->branches))
 		err(1, NULL);
 	if (VECTOR_INIT(cl->stamps))
@@ -1190,7 +1185,7 @@ again:
 		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
 	tk->tk_flags |= sense_clang_format_comment(tk);
 
-	bf = comment_trim(tk, cl->st, cl->arena.eternal_scope);
+	bf = comment_trim(tk, cl->st, lexer_arena_scope(lx));
 	if (bf != NULL)
 		token_set_str(tk, buffer_get_ptr(bf), buffer_get_len(bf));
 
@@ -1266,7 +1261,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	if (tk->tk_type == TOKEN_CPP_DEFINE) {
 		const char *str;
 
-		str = cpp_align(tk, cl->st, cl->arena.eternal_scope,
+		str = cpp_align(tk, cl->st, lexer_arena_scope(lx),
 		    cl->arena.scratch, cl->arena.ruler, cl->op);
 		if (str != NULL)
 			token_set_str(tk, str, strlen(str));

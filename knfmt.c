@@ -202,8 +202,8 @@ fileformat(struct main_context *c, struct file *fe)
 
 	if (file_read(fe, c->src))
 		return 1;
-	clang = clang_alloc(c->style, c->simple, &eternal_scope,
-	    c->arena.scratch, c->arena.ruler, &c->options);
+	clang = clang_alloc(c->style, c->simple, c->arena.scratch,
+	    c->arena.ruler, &c->options, &eternal_scope);
 	lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,
