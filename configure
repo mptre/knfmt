@@ -88,6 +88,7 @@ pedantic() {
 	-Wshadow
 	-Wsign-conversion
 	-Wwrite-strings
+	-Wcast-qual
 	EOF
 }
 
