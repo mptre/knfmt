@@ -305,8 +305,12 @@ filewrite(struct main_context *c, const struct file *fe)
 
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
-	return KS_fs_replace(fe->fe_path, buffer_get_ptr(dst),
-	    buffer_get_len(dst));
+	if (KS_fs_replace(fe->fe_path,
+	    buffer_get_ptr(dst), buffer_get_len(dst)) == -1) {
+		warn("%s", fe->fe_path);
+		return 1;
+	}
+	return 0;
 }
 
 static int
