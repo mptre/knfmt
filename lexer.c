@@ -120,8 +120,8 @@ lexer_tokenize(const struct lexer_arg *arg)
 		lexer_remove(lx, *tail);
 	}
 
-	if (lx->lx_callbacks.after_read != NULL)
-		lx->lx_callbacks.after_read(lx, lx->lx_callbacks.arg);
+	if (lx->lx_callbacks.after_tokenize != NULL)
+		lx->lx_callbacks.after_tokenize(lx, lx->lx_callbacks.arg);
 
 	if (options_trace_level(lx->lx_op, TRACE_TOKEN) > 0)
 		lexer_dump(lx);
@@ -129,8 +129,8 @@ lexer_tokenize(const struct lexer_arg *arg)
 	return lx;
 
 err:
-	if (lx->lx_callbacks.after_read != NULL)
-		lx->lx_callbacks.after_read(lx, lx->lx_callbacks.arg);
+	if (lx->lx_callbacks.after_tokenize != NULL)
+		lx->lx_callbacks.after_tokenize(lx, lx->lx_callbacks.arg);
 	return NULL;
 }
 

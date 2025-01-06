@@ -55,10 +55,9 @@ struct lexer_callbacks {
 	void		 (*move_prefixes)(struct token *, struct token *);
 
 	/*
-	 * Informative callback invoked once all tokens are read.
-	 * May be omitted.
+	 * Informative callback invoked after tokenize. May be omitted.
 	 */
-	void		 (*after_read)(struct lexer *, void *);
+	void		 (*after_tokenize)(struct lexer *, void *);
 
 	/*
 	 * Informative callback invoked before freeing the lexer.
