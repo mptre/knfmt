@@ -222,9 +222,10 @@ ensure_line(struct lexer *lx, struct token *eof)
 
 void
 cpp_include_guard(const struct style *st, struct lexer *lx,
-    struct arena_scope *eternal_scope, struct arena *scratch)
+    struct arena *scratch)
 {
 	struct include_guard_context c = {0};
+	struct arena_scope *eternal_scope;
 	struct token *define, *endif, *ifndef;
 	const char *cpp_define, *cpp_endif, *cpp_ifndef, *guard, *path;
 
@@ -236,6 +237,7 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 		return;
 
 	arena_scope(scratch, s);
+	eternal_scope = lexer_arena_scope(lx);
 
 	guard = path_to_guard(path, style(st, IncludeGuards), &s);
 	if (guard == NULL)

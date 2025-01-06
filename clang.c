@@ -503,8 +503,7 @@ clang_after_tokenize(struct lexer *lx, void *arg)
 
 	clang_branch_purge(cl, lx);
 	cpp_include_done(cl->ci);
-	cpp_include_guard(cl->st, lx, cl->arena.eternal_scope,
-	    cl->arena.scratch);
+	cpp_include_guard(cl->st, lx, cl->arena.scratch);
 }
 
 static void
