@@ -25,7 +25,7 @@
 struct parser_decl_init_arg {
 	struct doc		*dc;
 	struct ruler		*rl;
-	const struct token	*semi;
+	struct token		*semi;
 	unsigned int		 indent;
 	unsigned int		 flags;
 /* Insert space before equal operator. */

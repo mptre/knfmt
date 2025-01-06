@@ -871,7 +871,7 @@ static void
 doc_exec_minimize_indent(const struct doc *cdc, struct doc_state *st)
 {
 	/* Ugly, must be mutable for value mutation. */
-	struct doc *dc = (struct doc *)cdc;
+	struct doc *dc = UNSAFE_CAST(struct doc *, cdc);
 	VECTOR(struct doc_minimize) minimizers;
 	struct doc_state_snapshot sn;
 	unsigned int nlines = 0;

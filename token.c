@@ -119,7 +119,7 @@ token_serialize_with_extra_flags(const struct token *tk, unsigned int flags,
 	if (flags & TOKEN_SERIALIZE_ADDRESS) {
 		buffer_printf(serialized_flags, "%s%p",
 		    comma++ ? "," : "",
-		    (void *)tk);
+		    (const void *)tk);
 	}
 	if (extra_flags != NULL) {
 		buffer_printf(serialized_flags, "%s%s",

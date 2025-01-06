@@ -62,7 +62,7 @@ static void	lexer_expect_error(struct lexer *, int, const struct token *,
     const char *, int);
 
 static int	lexer_peek_until_not_nested(struct lexer *, int,
-    const struct token *, struct token **);
+    struct token *, struct token **);
 
 static const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
     unsigned int);
@@ -765,7 +765,7 @@ lexer_peek_until(struct lexer *lx, int type, struct token **tk)
  */
 static int
 lexer_peek_until_not_nested(struct lexer *lx, int type,
-    const struct token *stop, struct token **tk)
+    struct token *stop, struct token **tk)
 {
 	struct lexer_state s;
 	struct token *t = NULL;
@@ -788,13 +788,12 @@ lexer_peek_until_not_nested(struct lexer *lx, int type,
 	}
 	lexer_peek_leave(lx, &s);
 	if (tk != NULL)
-		*tk = peek ? t : (struct token *)stop;
+		*tk = peek ? t : stop;
 	return peek;
 }
 
 int
-lexer_peek_until_comma(struct lexer *lx, const struct token *stop,
-    struct token **tk)
+lexer_peek_until_comma(struct lexer *lx, struct token *stop, struct token **tk)
 {
 	return lexer_peek_until_not_nested(lx, TOKEN_COMMA, stop, tk);
 }
