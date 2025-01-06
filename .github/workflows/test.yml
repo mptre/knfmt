@@ -34,23 +34,6 @@ jobs:
           ./configure --pedantic
           make -j`nproc` test
 
-  linux-gcc-4:
-    runs-on: ubuntu-22.04
-    container: ghcr.io/mptre/gcc:4
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: test
-        env:
-          CC: gcc
-          CFLAGS: -O2 -Werror
-        run: |
-          # Skip pedantic due to compiler being ancient.
-          ./configure
-          make -j`nproc` test
-
   linux-clang-sanitize:
     runs-on: ubuntu-22.04
     steps:
