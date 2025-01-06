@@ -1,7 +1,7 @@
 #include "lexer-callbacks.h"
 
-struct arena;
 struct arena_scope;
+struct arenas;
 struct lexer;
 struct options;
 struct simple;
@@ -41,7 +41,7 @@ void	clang_init(void);
 void	clang_shutdown(void);
 
 struct clang	*clang_alloc(const struct style *, struct simple *,
-    struct arena *, struct arena *, const struct options *,
+    struct arenas *, const struct options *,
     struct arena_scope *);
 
 struct lexer_callbacks	clang_lexer_callbacks(struct clang *);

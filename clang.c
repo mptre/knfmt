@@ -17,6 +17,7 @@
 #include "libks/string.h"
 #include "libks/vector.h"
 
+#include "arenas.h"
 #include "comment.h"
 #include "cpp-align.h"
 #include "cpp-include-guard.h"
@@ -34,14 +35,10 @@ struct clang {
 	const struct style	*st;
 	const struct options	*op;
 	struct cpp_include	*ci;
+	struct arenas		 arena;
 	struct token_list	 prefixes;
 	VECTOR(struct token *)	 branches;
 	VECTOR(struct token *)	 stamps;
-
-	struct {
-		struct arena		*scratch;
-		struct arena		*ruler;
-	} arena;
 };
 
 struct clang_token {
@@ -199,8 +196,8 @@ clang_shutdown(void)
 }
 
 struct clang *
-clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
-    struct arena *ruler, const struct options *op, struct arena_scope *s)
+clang_alloc(const struct style *st, struct simple *si, struct arenas *arena,
+    const struct options *op, struct arena_scope *s)
 {
 	struct clang *cl;
 
@@ -209,9 +206,9 @@ clang_alloc(const struct style *st, struct simple *si, struct arena *scratch,
 	LIST_INIT(&cl->prefixes);
 	cl->st = st;
 	cl->op = op;
-	cl->arena.scratch = scratch;
-	cl->arena.ruler = ruler;
-	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, scratch, op, s);
+	cl->arena = *arena;
+	cl->ci = cpp_include_alloc(st, si, &cl->prefixes, arena->scratch, op,
+	    s);
 	if (VECTOR_INIT(cl->branches))
 		err(1, NULL);
 	if (VECTOR_INIT(cl->stamps))

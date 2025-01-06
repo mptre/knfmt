@@ -7,6 +7,7 @@ SRCS+=	arch.c
 SRCS+=	arena-buffer.c
 SRCS+=	arena-vector.c
 SRCS+=	arena.c
+SRCS+=	arenas.c
 SRCS+=	arithmetic.c
 SRCS+=	buffer.c
 SRCS+=	clang.c
@@ -97,6 +98,8 @@ OBJS_benchmark:=	${OBJS_benchmark:.S=.o}
 DEPS_benchmark=		${OBJS_benchmark:.o=.d}
 PROG_benchmark=		benchmark
 
+KNFMT+=	arenas.c
+KNFMT+=	arenas.h
 KNFMT+=	clang.c
 KNFMT+=	clang.h
 KNFMT+=	comment.c
@@ -188,6 +191,8 @@ KNFMT+=	trace.h
 KNFMT+=	util.c
 KNFMT+=	util.h
 
+CLANGTIDY+=	arenas.c
+CLANGTIDY+=	arenas.h
 CLANGTIDY+=	clang.c
 CLANGTIDY+=	clang.h
 CLANGTIDY+=	comment.c
@@ -278,6 +283,7 @@ CLANGTIDY+=	trace.h
 CLANGTIDY+=	util.c
 CLANGTIDY+=	util.h
 
+CPPCHECK+=	arenas.c
 CPPCHECK+=	clang.c
 CPPCHECK+=	comment.c
 CPPCHECK+=	cpp-align.c

@@ -8,6 +8,7 @@
 #include "libks/expect.h"
 #include "libks/list.h"
 
+#include "arenas.h"
 #include "clang.h"
 #include "doc.h"
 #include "expr.h"
@@ -31,14 +32,7 @@ struct context {
 	struct clang		*cl;
 	struct lexer		*lx;
 	struct parser		*pr;
-
-	struct {
-		struct arena		*eternal;
-		struct arena		*scratch;
-		struct arena		*doc;
-		struct arena		*buffer;
-		struct arena		*ruler;
-	} arena;
+	struct arenas		 arena;
 };
 
 #define test_parser_expr(a, b) \
@@ -744,11 +738,7 @@ test_clang_token_serialize(struct context *ctx)
 static void
 context_alloc(struct context *ctx)
 {
-	ctx->arena.scratch = arena_alloc();
-	ctx->arena.eternal = arena_alloc();
-	ctx->arena.doc = arena_alloc();
-	ctx->arena.buffer = arena_alloc();
-	ctx->arena.ruler = arena_alloc();
+	arenas_init(&ctx->arena);
 	ctx->bf = NULL;
 }
 
@@ -758,11 +748,7 @@ context_free(struct context *ctx)
 	if (ctx == NULL)
 		return;
 
-	arena_free(ctx->arena.eternal);
-	arena_free(ctx->arena.scratch);
-	arena_free(ctx->arena.doc);
-	arena_free(ctx->arena.buffer);
-	arena_free(ctx->arena.ruler);
+	arenas_free(&ctx->arena);
 }
 
 static void
@@ -779,8 +765,8 @@ context_init(struct context *ctx, const char *src,
 	ctx->st = style_parse("/dev/null", eternal_scope,
 	    ctx->arena.scratch, &ctx->op);
 	ctx->si = simple_alloc(eternal_scope, &ctx->op);
-	ctx->cl = clang_alloc(ctx->st, ctx->si, ctx->arena.scratch,
-	    ctx->arena.ruler, &ctx->op, eternal_scope);
+	ctx->cl = clang_alloc(ctx->st, ctx->si, &ctx->arena, &ctx->op,
+	    eternal_scope);
 	ctx->lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= path,
 	    .bf			= ctx->bf,

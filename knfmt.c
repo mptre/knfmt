@@ -12,6 +12,7 @@
 #include "libks/fs.h"
 #include "libks/vector.h"
 
+#include "arenas.h"
 #include "clang.h"
 #include "diff.h"
 #include "expr.h"
@@ -29,14 +30,7 @@ struct main_context {
 	struct simple	*simple;
 	struct buffer	*src;
 	struct buffer	*dst;
-
-	struct {
-		struct arena		*eternal;
-		struct arena		*scratch;
-		struct arena		*doc;
-		struct arena		*buffer;
-		struct arena		*ruler;
-	} arena;
+	struct arenas	 arena;
 };
 
 static void	usage(void) __attribute__((noreturn));
@@ -103,12 +97,8 @@ main(int argc, char *argv[])
 	if (VECTOR_INIT(files.fs_vc))
 		err(1, NULL);
 
-	c.arena.eternal = arena_alloc();
+	arenas_init(&c.arena);
 	arena_scope(c.arena.eternal, eternal_scope);
-	c.arena.scratch = arena_alloc();
-	c.arena.doc = arena_alloc();
-	c.arena.buffer = arena_alloc();
-	c.arena.ruler = arena_alloc();
 	arena_scope(c.arena.buffer, buffer_scope);
 	c.style = style_parse(clang_format, &eternal_scope, c.arena.scratch,
 	    &c.options);
@@ -151,11 +141,7 @@ main(int argc, char *argv[])
 
 out:
 	files_free(&files);
-	arena_free(c.arena.ruler);
-	arena_free(c.arena.buffer);
-	arena_free(c.arena.doc);
-	arena_free(c.arena.scratch);
-	arena_free(c.arena.eternal);
+	arenas_free(&c.arena);
 	style_shutdown();
 	expr_shutdown();
 	clang_shutdown();
@@ -202,8 +188,8 @@ fileformat(struct main_context *c, struct file *fe)
 
 	if (file_read(fe, c->src))
 		return 1;
-	clang = clang_alloc(c->style, c->simple, c->arena.scratch,
-	    c->arena.ruler, &c->options, &eternal_scope);
+	clang = clang_alloc(c->style, c->simple, &c->arena,
+	    &c->options, &eternal_scope);
 	lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,

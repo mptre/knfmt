@@ -784,6 +784,8 @@ TESTS+=	style-simple-AlignOperands-001.c
 TESTS+=	style-simple-AlignOperands-002.c
 TESTS+=	style-trace-001.c
 
+TESTS+=	../arenas.c
+TESTS+=	../arenas.h
 TESTS+=	../clang.c
 TESTS+=	../clang.h
 TESTS+=	../comment.c
