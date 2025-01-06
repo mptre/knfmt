@@ -19,6 +19,7 @@ SRCS+=	cpp-include.c
 SRCS+=	diff.c
 SRCS+=	doc.c
 SRCS+=	error.c
+SRCS+=	exec.c
 SRCS+=	expr.c
 SRCS+=	file.c
 SRCS+=	fs.c

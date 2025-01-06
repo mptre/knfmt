@@ -27,7 +27,7 @@
 #include <unistd.h>
 
 static int
-tmptemplate(const char *path, char *buf, size_t bufsiz)
+construct_hidden_path(const char *path, char *buf, size_t bufsiz)
 {
 	char prefix[PATH_MAX];
 	const char *p, *suffix;
@@ -39,8 +39,10 @@ tmptemplate(const char *path, char *buf, size_t bufsiz)
 
 		len = (size_t)(&p[1] - path);
 		n = snprintf(prefix, sizeof(prefix), "%.*s", (int)len, path);
-		if (n < 0 || (size_t)n >= sizeof(prefix))
-			return 1;
+		if (n < 0 || (size_t)n >= sizeof(prefix)) {
+			errno = ENAMETOOLONG;
+			return -1;
+		}
 		suffix = &p[1];
 	} else {
 		prefix[0] = '\0';
@@ -48,27 +50,29 @@ tmptemplate(const char *path, char *buf, size_t bufsiz)
 	}
 
 	n = snprintf(buf, bufsiz, "%s.%s.XXXXXX", prefix, suffix);
-	if (n < 0 || (size_t)n >= bufsiz)
-		return 1;
+	if (n < 0 || (size_t)n >= bufsiz) {
+		errno = ENAMETOOLONG;
+		return -1;
+	}
 	return 0;
 }
 
 static int
-inherit_attributes(int srcfd, int dstfd)
+inherit_ownership_and_permissions(int srcfd, int dstfd)
 {
 	struct stat dstsb, srcsb;
 
 	if (fstat(srcfd, &srcsb) == -1)
-		return 1;
+		return -1;
 	if (fstat(dstfd, &dstsb) == -1)
-		return 1;
+		return -1;
 
 	if (srcsb.st_mode != dstsb.st_mode &&
 	    fchmod(dstfd, srcsb.st_mode) == -1)
-		return 1;
+		return -1;
 	if ((srcsb.st_uid != dstsb.st_uid || srcsb.st_gid != dstsb.st_gid) &&
 	    fchown(dstfd, srcsb.st_uid, srcsb.st_gid) == -1)
-		return 1;
+		return -1;
 
 	return 0;
 }
@@ -86,7 +90,7 @@ KS_fs_replace(const char *path, const char *buf, size_t buflen)
 	if (srcfd == -1)
 		goto out;
 
-	if (tmptemplate(path, tmppath, sizeof(tmppath)))
+	if (construct_hidden_path(path, tmppath, sizeof(tmppath)) == -1)
 		goto out;
 
 	old_umask = umask(0022);
@@ -104,7 +108,7 @@ KS_fs_replace(const char *path, const char *buf, size_t buflen)
 		buflen -= (size_t)nw;
 	}
 
-	if (inherit_attributes(srcfd, tmpfd))
+	if (inherit_ownership_and_permissions(srcfd, tmpfd) == -1)
 		goto out;
 
 	if (rename(tmppath, path) == -1)

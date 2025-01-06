@@ -8,6 +8,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/exec.h"
 #include "libks/fs.h"
 #include "libks/vector.h"
 
@@ -247,7 +248,12 @@ filediff(struct main_context *c, const struct file *fe)
 {
 	int error;
 
-	error = buffer_diff(c->src, c->dst, fe->fe_path);
+	if (buffer_cmp(c->src, c->dst) == 0)
+		return 0;
+
+	error = KS_exec_diff(fe->fe_path,
+	    buffer_get_ptr(c->src), buffer_get_len(c->src),
+	    buffer_get_ptr(c->dst), buffer_get_len(c->dst));
 	if (error == -1)
 		warn("%s", fe->fe_path);
 	return error;
