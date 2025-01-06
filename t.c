@@ -11,7 +11,6 @@
 #include "clang.h"
 #include "doc.h"
 #include "expr.h"
-#include "fs.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser-attributes.h"
@@ -89,11 +88,6 @@ static void	test_style_impl(struct context *, const char *, int, int, int);
 #define test_strwidth(a, b, c) \
 	test_strwidth_impl((a), (b), (c), __LINE__)
 static void	test_strwidth_impl(const char *, size_t, size_t, int);
-
-#define test_tmptemplate(a, b) \
-	test_tmptemplate_impl(&ctx, (a), (b), __LINE__)
-static void	test_tmptemplate_impl(struct context *, const char *,
-    const char *, int);
 
 #define test_path_slice(a, b, c) \
 	test_path_slice_impl(&ctx, (a), (b), (c), __LINE__)
@@ -371,10 +365,6 @@ main(void)
 	test_strwidth("int\nx", 0, 1);
 	test_strwidth("int\n", 0, 0);
 
-	test_tmptemplate("file.c", ".file.c.XXXXXXXX");
-	test_tmptemplate("/file.c", "/.file.c.XXXXXXXX");
-	test_tmptemplate("/root/file.c", "/root/.file.c.XXXXXXXX");
-
 	test_path_slice("", 1, "");
 	test_path_slice("", 2, "");
 	test_path_slice("file", 1, "file");
@@ -587,19 +577,6 @@ test_strwidth_impl(const char *str, size_t pos, size_t exp, int lno)
 
 	act = strwidth(str, strlen(str), pos);
 	KS_expect_int(exp, act);
-}
-
-static void
-test_tmptemplate_impl(struct context *c, const char *path, const char *exp,
-    int lno)
-{
-	char *act;
-
-	KS_expect_scope("tmptemplate", lno, e);
-	arena_scope(c->arena.scratch, s);
-
-	act = tmptemplate(path, &s);
-	KS_expect_str(exp, act);
 }
 
 static void

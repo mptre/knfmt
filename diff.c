@@ -18,8 +18,8 @@
 #include "libks/vector.h"
 
 #include "file.h"
-#include "fs.h"
 #include "options.h"
+#include "path.h"
 #include "trace-types.h"
 #include "trace.h"
 

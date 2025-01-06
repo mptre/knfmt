@@ -21,9 +21,9 @@
 #include "libks/compiler.h"
 #include "libks/vector.h"
 
-#include "fs.h"
 #include "lexer.h"
 #include "options.h"
+#include "path.h"
 #include "token.h"
 #include "trace-types.h"
 #include "trace.h"

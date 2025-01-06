@@ -30,7 +30,7 @@
 #endif
 
 #define SECTION_ITERATE(it, s) __extension__ ({				\
-	extern char _aligned[sizeof(*(it)) & 0xf ? -1 : 0]; (void)_aligned;\
+	_Static_assert((sizeof(*(it)) & 0xf) == 0, "Unaligned");	\
 	extern typeof(*(it)) __start_ ## s SECTION_START(s);		\
 	typeof(it) _start = &__start_ ## s;				\
 	extern typeof(*(it)) __stop_##s SECTION_STOP(s);		\

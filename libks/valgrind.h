@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Anton Lindqvist <anton@basename.se>
+ * Copyright (c) 2024 Anton Lindqvist <anton@basename.se>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,11 +14,35 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIBKS_TMP_H
-#define LIBKS_TMP_H
+#ifndef LIBKS_VALGRIND_H
+#define LIBKS_VALGRIND_H
 
-#include <stddef.h>	/* size_t */
+#include <stdint.h>
 
-int	KS_tmpfd(const char *, size_t, char *, size_t);
+/*
+ * The gist of RUNNING_ON_VALGRIND from valgrind.h.
+ */
+static inline int
+is_valgrind_running(void)
+{
+#if defined(__x86_64__)
+	uint64_t request = 0x1001;
+	int d;
 
-#endif /* !LIBKS_TMP_H */
+	__asm__(
+	    "rolq $3, %%rdi\n"
+	    "rolq $13, %%rdi\n"
+	    "rolq $61, %%rdi\n"
+	    "rolq $51, %%rdi\n"
+	    "xchgq %%rbx, %%rbx\n"
+	    : [res] "=d" (d)
+	    : "a" (&request), "[res]" (0)
+	    : "cc", "memory");
+
+	return d;
+#else
+	return 0;
+#endif
+}
+
+#endif /* !LIBKS_VALGRIND_H */

@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "libks/string.h"
+#include "libks/valgrind.h"
 
 enum avx_version {
 	AVX_UNSUPPORTED = 0,
@@ -211,28 +212,6 @@ bmi_version(uint32_t max_leaf)
 	return version;
 }
 
-/*
- * The gist of RUNNING_ON_VALGRIND from valgrind.h.
- */
-static int
-is_valgrind_running(void)
-{
-	uint64_t request = 0x1001;
-	int d;
-
-	__asm__(
-	    "rolq $3, %%rdi\n"
-	    "rolq $13, %%rdi\n"
-	    "rolq $61, %%rdi\n"
-	    "rolq $51, %%rdi\n"
-	    "xchgq %%rbx, %%rbx\n"
-	    : [res] "=d" (d)
-	    : "a" (&request), "[res]" (0)
-	    : "cc", "memory");
-
-	return d;
-}
-
 static void
 KS_init(void)
 {
@@ -277,10 +256,19 @@ KS_str_match_init_512(const char *ranges, struct KS_str_match *match)
 		lo = (uint8_t)ranges[i];
 		hi = (uint8_t)ranges[i + 1];
 		for (j = lo; j < hi + 1; j++) {
-			match->u512[(j & 0xf) + 0x00] |= 1 << (j >> 4);
-			match->u512[(j & 0xf) + 0x10] |= 1 << (j >> 4);
-			match->u512[(j & 0xf) + 0x20] |= 1 << (j >> 4);
-			match->u512[(j & 0xf) + 0x30] |= 1 << (j >> 4);
+			uint8_t mask = (uint8_t)(1 << (j >> 4));
+
+	/* Avoid loss of precision due to conversion warnings. Caused by the or
+	 * operator promoting its operands to integers. */
+#define OR(off) do {							\
+	uint8_t *u8 = (uint8_t *)&match->u512[(j & 0xf) + (off)];	\
+	*u8 = *u8 | mask;						\
+} while (0)
+			OR(0x00);
+			OR(0x10);
+			OR(0x20);
+			OR(0x30);
+#undef OR
 		}
 	}
 }

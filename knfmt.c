@@ -1,6 +1,5 @@
 #include "config.h"
 
-#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include <err.h>
@@ -12,14 +11,13 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
-#include "libks/tmp.h"
+#include "libks/fs.h"
 #include "libks/vector.h"
 
 #include "clang.h"
 #include "diff.h"
 #include "expr.h"
 #include "file.h"
-#include "fs.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
@@ -51,7 +49,6 @@ static int	fileformat(struct main_context *, struct file *);
 static int	filediff(struct main_context *, const struct file *);
 static int	filewrite(struct main_context *, const struct file *);
 static int	fileprint(const struct buffer *);
-static int	fileattr(const char *, int, const char *, int);
 
 int
 main(int argc, char *argv[])
@@ -261,11 +258,11 @@ filediff(struct main_context *c, const struct file *fe)
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
 
-	srcfd = KS_tmpfd(buffer_get_ptr(src), buffer_get_len(src),
+	srcfd = KS_fs_tmpfd(buffer_get_ptr(src), buffer_get_len(src),
 	    srcpath, sizeof(srcpath));
 	if (srcfd == -1)
 		goto out;
-	dstfd = KS_tmpfd(buffer_get_ptr(dst), buffer_get_len(dst),
+	dstfd = KS_fs_tmpfd(buffer_get_ptr(dst), buffer_get_len(dst),
 	    dstpath, sizeof(dstpath));
 	if (dstfd == -1)
 		goto out;
@@ -305,61 +302,11 @@ filewrite(struct main_context *c, const struct file *fe)
 {
 	const struct buffer *src = c->src;
 	const struct buffer *dst = c->dst;
-	const char *buf;
-	char *tmppath;
-	size_t buflen;
-	mode_t old_umask;
-	int fd;
 
 	if (buffer_cmp(src, dst) == 0)
 		return 0;
-
-	arena_scope(c->arena.scratch, s);
-
-	tmppath = tmptemplate(fe->fe_path, &s);
-	old_umask = umask(0022);
-	fd = mkstemp(tmppath);
-	umask(old_umask);
-	if (fd == -1) {
-		warn("mkstemp: %s", tmppath);
-		goto err;
-	}
-
-	buf = buffer_get_ptr(dst);
-	buflen = buffer_get_len(dst);
-	while (buflen > 0) {
-		ssize_t nw;
-
-		nw = write(fd, buf, buflen);
-		if (nw == -1) {
-			warn("write: %s", tmppath);
-			goto err;
-		}
-		buf += nw;
-		buflen -= (size_t)nw;
-	}
-
-	if (fileattr(tmppath, fd, fe->fe_path, fe->fe_fd))
-		goto err;
-
-	/*
-	 * Atomically replace the file using rename(2), matches what
-	 * clang-format does.
-	 */
-	if (rename(tmppath, fe->fe_path) == -1) {
-		warn("rename: %s", tmppath);
-		goto err;
-	}
-
-	close(fd);
-	return 0;
-
-err:
-	if (fd != -1) {
-		close(fd);
-		(void)unlink(tmppath);
-	}
-	return 1;
+	return KS_fs_replace(fe->fe_path, buffer_get_ptr(dst),
+	    buffer_get_len(dst));
 }
 
 static int
@@ -379,33 +326,5 @@ fileprint(const struct buffer *dst)
 		buflen -= (size_t)nw;
 		buf += nw;
 	}
-	return 0;
-}
-
-static int
-fileattr(const char *srcpath, int srcfd, const char *dstpath, int dstfd)
-{
-	struct stat dstsb, srcsb;
-
-	if (fstat(srcfd, &srcsb) == -1) {
-		warn("stat: %s", srcpath);
-		return 1;
-	}
-	if (fstat(dstfd, &dstsb) == -1) {
-		warn("stat: %s", dstpath);
-		return 1;
-	}
-
-	if (srcsb.st_mode != dstsb.st_mode &&
-	    fchmod(srcfd, dstsb.st_mode) == -1) {
-		warn("chmod: %s", srcpath);
-		return 1;
-	}
-	if ((srcsb.st_uid != dstsb.st_uid || srcsb.st_gid != dstsb.st_gid) &&
-	    fchown(srcfd, dstsb.st_uid, dstsb.st_gid) == -1) {
-		warn("chown: %s", srcpath);
-		return 1;
-	}
-
 	return 0;
 }

@@ -1,16 +1,11 @@
-#include "fs.h"
+#include "path.h"
 
 #include "config.h"
 
 #include <sys/stat.h>
 
 #include <fcntl.h>
-#include <limits.h>	/* PATH_MAX */
-#include <string.h>
 #include <unistd.h>
-
-#include "libks/arena-buffer.h"
-#include "libks/buffer.h"
 
 /*
  * Search for the given filename starting at the current working directory and
@@ -62,26 +57,4 @@ out:
 	if (fd != -1 && nlevels != NULL)
 		*nlevels = i;
 	return fd;
-}
-
-/*
- * Transform the given path into a mkstemp(3) compatible template.
- * The temporary file will reside in the same directory as a "hidden" file.
- */
-char *
-tmptemplate(const char *path, struct arena_scope *s)
-{
-	struct buffer *bf;
-	const char *basename, *p;
-
-	bf = arena_buffer_alloc(s, PATH_MAX);
-	p = strrchr(path, '/');
-	if (p != NULL) {
-		buffer_puts(bf, path, (size_t)(&p[1] - path));
-		basename = &p[1];
-	} else {
-		basename = path;
-	}
-	buffer_printf(bf, ".%s.XXXXXXXX", basename);
-	return buffer_str(bf);
 }
