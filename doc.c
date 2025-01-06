@@ -1120,7 +1120,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 		break;
 
 	case DOC_HARDLINE:
-		doc_column(st, dc->dc_str, dc->dc_len);
+		doc_column(st, "\n", 1);
 		st->st_col += st->st_fits.col;
 		break;
 
