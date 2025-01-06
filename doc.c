@@ -275,7 +275,8 @@ static const struct doc_description {
 };
 
 static void		doc_exec1(const struct doc *, struct doc_state *);
-static void		doc_exec_indent(const struct doc *, struct doc_state *);
+static void		doc_exec_indent(const struct doc *, struct doc_state *,
+    int);
 static void		doc_exec_align(const struct doc *, struct doc_state *);
 static void		doc_exec_verbatim(const struct doc *,
     struct doc_state *);
@@ -658,7 +659,7 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	}
 
 	case DOC_INDENT:
-		doc_exec_indent(dc, st);
+		doc_exec_indent(dc, st, dc->dc_int);
 		break;
 
 	case DOC_NOINDENT: {
@@ -756,36 +757,36 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 }
 
 static void
-doc_exec_indent(const struct doc *dc, struct doc_state *st)
+doc_exec_indent(const struct doc *dc, struct doc_state *st, int indent)
 {
 	unsigned int oldparens = 0;
 	unsigned int oldindent = st->st_indent.cur;
 
-	if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
+	if (IS_DOC_INDENT_PARENS(indent)) {
 		oldparens = st->st_parens;
 		if (doc_parens_align(st))
 			st->st_parens++;
-	} else if (IS_DOC_INDENT_FORCE(dc->dc_int)) {
+	} else if (IS_DOC_INDENT_FORCE(indent)) {
 		doc_print_indent(dc, st, st->st_indent.cur);
-	} else if (IS_DOC_INDENT_NEWLINE(dc->dc_int)) {
+	} else if (IS_DOC_INDENT_NEWLINE(indent)) {
 		if (st->st_stats.nlines > 0) {
-			st->st_indent.cur += (unsigned int)(dc->dc_int &
-			    ~DOC_INDENT_NEWLINE);
+			st->st_indent.cur +=
+			    (unsigned int)(indent & ~DOC_INDENT_NEWLINE);
 		}
-	} else if (IS_DOC_INDENT_WIDTH(dc->dc_int)) {
+	} else if (IS_DOC_INDENT_WIDTH(indent)) {
 		if (!st->st_newline)
 			st->st_indent.cur = st->st_col;
 	} else {
-		if (dc->dc_int > 0)
-			st->st_indent.cur += (unsigned int)dc->dc_int;
+		if (indent > 0)
+			st->st_indent.cur += (unsigned int)indent;
 		else if (KS_u32_sub_overflow(st->st_indent.cur,
-		    (unsigned int)-dc->dc_int, &st->st_indent.cur))
+		    (unsigned int)-indent, &st->st_indent.cur))
 			st->st_indent.cur = 0;
 	}
 	doc_exec1(dc->dc_doc, st);
-	if (IS_DOC_INDENT_PARENS(dc->dc_int)) {
+	if (IS_DOC_INDENT_PARENS(indent)) {
 		st->st_parens = oldparens;
-	} else if (IS_DOC_INDENT_FORCE(dc->dc_int)) {
+	} else if (IS_DOC_INDENT_FORCE(indent)) {
 		/* nothing */
 	} else {
 		st->st_indent.cur = oldindent;
@@ -975,9 +976,7 @@ doc_exec_minimize_indent1(struct doc *dc, struct doc_state *st, int idx)
 	if (minimizers[idx].flags & DOC_MINIMIZE_FORCE)
 		st->st_minimize.force = idx;
 
-	doc_set_indent(dc, minimizers[idx].indent);
-	doc_exec_indent(dc, st);
-	dc->dc_minimizers = minimizers;
+	doc_exec_indent(dc, st, (int)minimizers[idx].indent);
 }
 
 static void
