@@ -163,7 +163,7 @@ struct doc_diff {
 	/* Return value for doc_diff_covers(). */
 	enum doc_diff_group	 dd_covers;
 	/* Below threshold doc_walk() return value. */
-	int			 dd_below_threshold;
+	unsigned int		 dd_below_threshold;
 };
 
 struct doc_fits {
@@ -176,8 +176,8 @@ struct doc_walk_queue {
 };
 
 enum {
-	DOC_WALK_BREAK,
-	DOC_WALK_CONTINUE,
+	DOC_WALK_BREAK		= 0x00000001u,
+	DOC_WALK_CONTINUE	= 0x00000002u,
 };
 
 /*
@@ -286,9 +286,9 @@ static void		doc_exec_scope(const struct doc *, struct doc_state *);
 static void		doc_exec_maxlines(const struct doc *,
     struct doc_state *);
 static void		doc_walk(const struct doc *, struct doc_state *,
-    int (*)(const struct doc *, struct doc_state *, void *), void *);
+    unsigned int (*)(const struct doc *, struct doc_state *, void *), void *);
 static int		doc_fits(const struct doc *, struct doc_state *);
-static int		doc_fits1(const struct doc *, struct doc_state *,
+static unsigned int	doc_fits1(const struct doc *, struct doc_state *,
     void *);
 static unsigned int	doc_print_indent(const struct doc *,
     struct doc_state *, unsigned int);
@@ -300,7 +300,7 @@ static int		doc_is_mute(const struct doc_state *);
 static int		doc_parens_align(const struct doc_state *);
 static int		doc_has_list(const struct doc *);
 static unsigned int	doc_column(struct doc_state *, const char *, size_t);
-static int		doc_max1(const struct doc *, struct doc_state *,
+static unsigned int	doc_max1(const struct doc *, struct doc_state *,
     void *);
 
 static void	doc_state_init(struct doc_state *, struct doc_exec_arg *,
@@ -330,7 +330,7 @@ static unsigned int	doc_diff_verbatim(const struct doc *,
 static void		doc_diff_exit(const struct doc *, struct doc_state *);
 static void		doc_diff_emit(const struct doc *, struct doc_state *,
     unsigned int, unsigned int);
-static int		doc_diff_covers(const struct doc *, struct doc_state *,
+static unsigned int	doc_diff_covers(const struct doc *, struct doc_state *,
     void *);
 static int		doc_diff_is_mute(const struct doc_state *);
 
@@ -1018,7 +1018,8 @@ doc_exec_maxlines(const struct doc *dc, struct doc_state *st)
 
 static void
 doc_walk(const struct doc *dc, struct doc_state *st,
-    int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
+    unsigned int (*cb)(const struct doc *, struct doc_state *, void *),
+    void *arg)
 {
 	VECTOR(struct doc_walk_queue) queue;
 
@@ -1078,7 +1079,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	return fits.fits;
 }
 
-static int
+static unsigned int
 doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 {
 	struct doc_fits *fits = arg;
@@ -1589,7 +1590,7 @@ doc_diff_emit(const struct doc *dc, struct doc_state *st, unsigned int beg,
  * Returns non-zero if any document covers a token which is part of a diff
  * chunk.
  */
-static int
+static unsigned int
 doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 {
 	struct doc_diff *dd = (struct doc_diff *)arg;
@@ -1731,7 +1732,7 @@ doc_column(struct doc_state *st, const char *str, size_t len)
 	return st->st_col > oldcol ? st->st_col - oldcol : 0;
 }
 
-static int
+static unsigned int
 doc_max1(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 {
 	int *max = arg;
