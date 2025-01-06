@@ -131,6 +131,40 @@ emit_line(struct lexer *lx)
 	});
 }
 
+static unsigned int
+token_count_lines(const struct token *tk)
+{
+	const char *str = tk->tk_str;
+	size_t len = tk->tk_len;
+	size_t i;
+	unsigned int count = 0;
+
+	for (i = 0; i < len; i++) {
+		if (str[i] == '\n')
+			count++;
+	}
+	return count;
+}
+
+static int
+is_comment(const struct token *prefix, const struct token *parent)
+{
+	unsigned int lno;
+
+	if (prefix->tk_type != TOKEN_COMMENT)
+		return 0;
+
+	if (parent->tk_type == LEXER_EOF)
+		return 1;
+
+	/*
+	 * If there's no blank line between the comment and the token it's tied
+	 * to, assume it must be kept inside the include guards.
+	 */
+	lno = prefix->tk_lno + token_count_lines(prefix);
+	return lno < parent->tk_lno;
+}
+
 static struct token *
 emit_ifndef(struct lexer *lx, struct token *tk, const char *cpp)
 {
@@ -142,7 +176,7 @@ emit_ifndef(struct lexer *lx, struct token *tk, const char *cpp)
 	/* Allow one or many comments before the include guard. */
 	for (prefix = token_list_first(&tk->tk_prefixes); prefix != NULL;
 	    prefix = token_next(prefix)) {
-		if (prefix->tk_type == TOKEN_COMMENT)
+		if (is_comment(prefix, tk))
 			comment = prefix;
 		else
 			break;

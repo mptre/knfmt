@@ -1,0 +1,14 @@
+/* comment */
+
+#ifndef TEST_H
+#define TEST_H
+
+/*
+ * function comment
+ */
+int
+main(void)
+{
+}
+
+#endif /* !TEST_H */
