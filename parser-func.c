@@ -156,7 +156,7 @@ parser_simple_decl_proto_enter(struct parser *pr, struct parser_type *type)
 	arena_scope(pr->pr_arena.scratch, scratch_scope);
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
-	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope, cookie);
+	parser_arena_scope(&pr->pr_arena_scope.doc, &doc_scope, cookie);
 
 	pr->pr_simple.decl_proto = simple_decl_proto_enter(pr->pr_lx,
 	    &scratch_scope);

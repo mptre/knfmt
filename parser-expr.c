@@ -98,7 +98,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		      (nx->tk_type == TOKEN_RPAREN ||
 		       nx->tk_type == TOKEN_COMMA ||
 		       nx->tk_type == LEXER_EOF)))) {
-			dc = doc_root(pr->pr_arena.doc_scope);
+			dc = doc_root(pr->pr_arena_scope.doc);
 			if (parser_type(pr, dc, &type, NULL) & GOOD)
 				return dc;
 		}
@@ -109,21 +109,21 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		if (pv != NULL &&
 		    (pv->tk_type == TOKEN_LPAREN ||
 		     pv->tk_type == TOKEN_COMMA)) {
-			dc = doc_root(pr->pr_arena.doc_scope);
+			dc = doc_root(pr->pr_arena_scope.doc);
 			parser_doc_token(pr, tk, dc);
 			return dc;
 		}
 	} else if (lexer_peek_if(lx, TOKEN_LBRACE, &lbrace)) {
 		int error;
 
-		dc = doc_root(pr->pr_arena.doc_scope);
+		dc = doc_root(pr->pr_arena_scope.doc);
 		error = parser_braces(pr, dc, dc, ea->indent,
 		    PARSER_BRACES_DEDENT | PARSER_BRACES_INDENT_MAYBE);
 		if (error & GOOD)
 			return dc;
 		if (error & FAIL) {
 			/* Try again, could be a GNU statement expression. */
-			dc = doc_root(pr->pr_arena.doc_scope);
+			dc = doc_root(pr->pr_arena_scope.doc);
 			parser_reset(pr);
 			lexer_seek(lx, lbrace);
 			if (parser_stmt_expr_gnu(pr, dc) & GOOD)
@@ -131,7 +131,7 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		}
 	} else if (lexer_if(lx, TOKEN_COMMA, &tk)) {
 		/* Some macros allow empty arguments such as queue(3). */
-		dc = doc_root(pr->pr_arena.doc_scope);
+		dc = doc_root(pr->pr_arena_scope.doc);
 		parser_doc_token(pr, tk, dc);
 		return dc;
 	}
@@ -175,7 +175,7 @@ expr_recover_cast(const struct expr_exec_arg *UNUSED(ea), void *arg)
 	if (!peek)
 		return NULL;
 
-	dc = doc_root(pr->pr_arena.doc_scope);
+	dc = doc_root(pr->pr_arena_scope.doc);
 	if (parser_type(pr, dc, &type, NULL) & GOOD)
 		return dc;
 	return NULL;

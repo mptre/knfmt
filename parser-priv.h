@@ -27,10 +27,13 @@ struct parser {
 	struct {
 		struct arena		*scratch;
 		struct arena		*doc;
-		struct arena_scope	*doc_scope;
 		struct arena		*buffer;
 		struct arena		*ruler;
 	} pr_arena;
+
+	struct {
+		struct arena_scope	*doc;
+	} pr_arena_scope;
 
 	struct {
 		struct simple_stmt		*stmt;

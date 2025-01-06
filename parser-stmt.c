@@ -59,7 +59,7 @@ parser_stmt_peek(struct parser *pr)
 	int error, simple;
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
-	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope, cookie);
+	parser_arena_scope(&pr->pr_arena_scope.doc, &doc_scope, cookie);
 
 	dc = doc_root(&doc_scope);
 	simple = simple_disable(pr->pr_si);
@@ -888,7 +888,7 @@ parser_simple_stmt_enter(struct parser *pr, struct simple_cookie *simple)
 	arena_scope(pr->pr_arena.scratch, scratch_scope);
 
 	arena_scope(pr->pr_arena.doc, doc_scope);
-	parser_arena_scope(&pr->pr_arena.doc_scope, &doc_scope, cookie);
+	parser_arena_scope(&pr->pr_arena_scope.doc, &doc_scope, cookie);
 
 	pr->pr_simple.stmt = simple_stmt_enter(lx, pr->pr_st,
 	    &scratch_scope, pr->pr_arena.scratch,
