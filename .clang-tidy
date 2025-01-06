@@ -14,6 +14,7 @@ Checks: |
     -clang-analyzer-optin.performance.Padding,
     -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
     -clang-analyzer-unix.Malloc,
+    -clang-analyzer-valist.Uninitialized,
   performance-*,
   portability-*,
 CheckOptions:
