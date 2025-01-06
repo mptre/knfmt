@@ -911,7 +911,7 @@ yaml_token_serialize(const struct token *tk, struct arena_scope *s)
 	buffer_printf(bf, "%s", yaml_token_type_serialize(tk->tk_type, s));
 	if (tk->tk_str != NULL) {
 		buffer_printf(bf, "<%u:%u>(\"", tk->tk_lno, tk->tk_cno);
-		strnice_buffer(bf, tk->tk_str, tk->tk_len);
+		buffer_printf(bf, "%s", strnice(tk->tk_str, tk->tk_len, s));
 		buffer_printf(bf, "\")");
 	}
 	return buffer_str(bf);

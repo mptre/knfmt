@@ -135,7 +135,7 @@ token_serialize_with_extra_flags(const struct token *tk, unsigned int flags,
 		buffer_printf(bf, "(");
 		if (flags & TOKEN_SERIALIZE_QUOTE)
 			buffer_printf(bf, "\"");
-		strnice_buffer(bf, tk->tk_str, tk->tk_len);
+		buffer_printf(bf, "%s", strnice(tk->tk_str, tk->tk_len, s));
 		if (flags & TOKEN_SERIALIZE_QUOTE)
 			buffer_printf(bf, "\"");
 		buffer_printf(bf, ")");

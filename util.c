@@ -139,16 +139,9 @@ const char *
 strnice(const char *str, size_t len, struct arena_scope *s)
 {
 	struct buffer *bf;
+	size_t i;
 
 	bf = arena_buffer_alloc(s, 2 * len + 1);
-	strnice_buffer(bf, str, len);
-	return buffer_str(bf);
-}
-
-void
-strnice_buffer(struct buffer *bf, const char *str, size_t len)
-{
-	size_t i;
 
 	for (i = 0; i < len; i++) {
 		char c = str[i];
@@ -168,4 +161,6 @@ strnice_buffer(struct buffer *bf, const char *str, size_t len)
 		else
 			buffer_printf(bf, "\\x%02x", (unsigned char)c);
 	}
+
+	return buffer_str(bf);
 }
