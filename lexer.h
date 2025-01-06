@@ -47,7 +47,7 @@ struct lexer_state	lexer_get_state(const struct lexer *);
 void			lexer_set_state(struct lexer *,
     const struct lexer_state *);
 
-struct arena_scope	*lexer_get_arena_scope(struct lexer *);
+struct arena_scope	*lexer_get_arena_scope(const struct lexer *);
 const char		*lexer_get_path(const struct lexer *);
 int			 lexer_get_peek(const struct lexer *);
 

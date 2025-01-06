@@ -1258,8 +1258,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	if (tk->tk_type == TOKEN_CPP_DEFINE) {
 		const char *str;
 
-		str = cpp_align(tk, cl->st, lexer_get_arena_scope(lx),
-		    cl->arena.scratch, cl->arena.ruler, cl->op);
+		str = cpp_align(lx, tk, cl->st, &cl->arena, cl->op);
 		if (str != NULL)
 			token_set_str(tk, str, strlen(str));
 	}

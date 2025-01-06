@@ -9,7 +9,9 @@
 #include "libks/arena.h"
 #include "libks/buffer.h"
 
+#include "arenas.h"
 #include "doc.h"
+#include "lexer.h"
 #include "ruler.h"
 #include "style.h"
 #include "token.h"
@@ -190,8 +192,8 @@ sense_alignment(const char *str, size_t len, const struct style *st,
  * Align line continuations.
  */
 const char *
-cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
-    struct arena *scratch, struct arena *ruler, const struct options *op)
+cpp_align(const struct lexer *lx, struct token *tk, const struct style *st,
+    struct arenas *arena, const struct options *op)
 {
 	struct alignment alignment = {
 		.mode	= style(st, AlignEscapedNewlines),
@@ -211,7 +213,7 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	if (nextline(str, len, &nx) == NULL)
 		return NULL;
 
-	arena_scope(ruler, ruler_scope);
+	arena_scope(arena->ruler, ruler_scope);
 
 	if (sense_alignment(str, len, st, &alignment)) {
 		cpp_trace(op, "mode %s, width %u, tabs %d, skip %d",
@@ -237,9 +239,9 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 		return NULL;
 	}
 
-	arena_scope(scratch, scratch_scope);
+	arena_scope(arena->scratch, scratch_scope);
 
-	bf = arena_buffer_alloc(s, len);
+	bf = arena_buffer_alloc(lexer_get_arena_scope(lx), len);
 	dc = doc_root(&scratch_scope);
 
 	for (;;) {
@@ -265,7 +267,7 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 		buffer_reset(bf);
 		w = doc_width(&(struct doc_exec_arg){
 		    .dc		= concat,
-		    .scratch	= scratch,
+		    .scratch	= arena->scratch,
 		    .bf		= bf,
 		    .st		= st,
 		});
@@ -300,7 +302,7 @@ cpp_align(struct token *tk, const struct style *st, struct arena_scope *s,
 	buffer_reset(bf);
 	doc_exec(&(struct doc_exec_arg){
 	    .dc		= dc,
-	    .scratch	= scratch,
+	    .scratch	= arena->scratch,
 	    .bf		= bf,
 	    .st		= st,
 	});
