@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "libks/arena-buffer.h"
+#include "libks/arena-vector.h"
 #include "libks/arena.h"
 #include "libks/arithmetic.h"
 #include "libks/buffer.h"
@@ -117,8 +118,6 @@ struct doc_state {
 	struct {
 		unsigned int	col;
 	} st_fits;
-
-	VECTOR(const struct doc *)	 st_walk;	/* stack used by doc_walk() */
 
 	unsigned int			 st_col;
 	unsigned int			 st_depth;
@@ -302,7 +301,6 @@ static int		doc_max1(const struct doc *, struct doc_state *,
 
 static void	doc_state_init(struct doc_state *, struct doc_exec_arg *,
     enum doc_mode);
-static void	doc_state_reset(struct doc_state *);
 static void	doc_state_reset_lines(struct doc_state *);
 static void	doc_state_snapshot(struct doc_state_snapshot *,
     const struct doc_state *, struct arena_scope *);
@@ -385,7 +383,6 @@ doc_exec(struct doc_exec_arg *arg)
 	doc_exec1(dc, &st);
 	if (arg->flags & DOC_EXEC_TRIM)
 		doc_trim_lines(dc, &st);
-	doc_state_reset(&st);
 	doc_diff_exit(dc, &st);
 	doc_trace(dc, &st, "%s: nfits %u", __func__, st.st_stats.nfits);
 }
@@ -397,7 +394,6 @@ doc_width(struct doc_exec_arg *arg)
 
 	doc_state_init(&st, arg, MUNGE);
 	doc_exec1(arg->dc, &st);
-	doc_state_reset(&st);
 	return st.st_col;
 }
 
@@ -599,7 +595,6 @@ doc_max(const struct doc *dc, struct arena *scratch)
 
 	doc_state_init(&st, &arg, BREAK);
 	doc_walk(dc, &st, doc_max1, &max);
-	doc_state_reset(&st);
 	return max;
 }
 
@@ -1021,23 +1016,19 @@ static void
 doc_walk(const struct doc *dc, struct doc_state *st,
     int (*cb)(const struct doc *, struct doc_state *, void *), void *arg)
 {
-	const struct doc **dst;
+	VECTOR(const struct doc *) queue;
 
-	if (st->st_walk == NULL) {
-		if (VECTOR_INIT(st->st_walk))
-			err(1, NULL);
-	}
+	arena_scope(st->st_scratch, s);
+
+	ARENA_VECTOR_INIT(&s, queue, 1 << 4);
 
 	/* Recursion flatten into a loop for increased performance. */
-	dst = VECTOR_ALLOC(st->st_walk);
-	if (dst == NULL)
-		err(1, NULL);
-	*dst = dc;
-	while (!VECTOR_EMPTY(st->st_walk)) {
+	*ARENA_VECTOR_ALLOC(queue) = dc;
+	while (!VECTOR_EMPTY(queue)) {
 		const struct doc **tail;
 		const struct doc_description *desc;
 
-		tail = VECTOR_POP(st->st_walk);
+		tail = VECTOR_POP(queue);
 		dc = *tail;
 		desc = &doc_descriptions[dc->dc_type];
 
@@ -1047,20 +1038,12 @@ doc_walk(const struct doc *dc, struct doc_state *st,
 		if (desc->children.many) {
 			const struct doc_list *dl = &dc->dc_list;
 
-			LIST_FOREACH_REVERSE(dc, dl) {
-				dst = VECTOR_ALLOC(st->st_walk);
-				if (dst == NULL)
-					err(1, NULL);
-				*dst = dc;
-			}
+			LIST_FOREACH_REVERSE(dc, dl)
+				*ARENA_VECTOR_ALLOC(queue) = dc;
 		} else if (desc->children.one) {
-			dst = VECTOR_ALLOC(st->st_walk);
-			if (dst == NULL)
-				err(1, NULL);
-			*dst = dc->dc_doc;
+			*VECTOR_ALLOC(queue) = dc->dc_doc;
 		}
 	}
-	VECTOR_CLEAR(st->st_walk);
 }
 
 static int
@@ -1078,9 +1061,7 @@ doc_fits(const struct doc *dc, struct doc_state *st)
 	/* Should not perform any printing. */
 	fst.st_bf = NULL;
 	fst.st_mode = MUNGE;
-	fst.st_walk = NULL;
 	doc_walk(dc, &fst, doc_fits1, &fits);
-	doc_state_reset(&fst);
 	col = fst.st_col;
 	optline = fits.optline;
 	doc_trace(dc, st, "%s: %u %s %u, optline %u", __func__,
@@ -1779,12 +1760,6 @@ doc_state_init(struct doc_state *st, struct doc_exec_arg *arg,
 	st->st_minimize.idx = -1;
 	st->st_minimize.force = -1;
 	st->st_fits.col = arg->col_offset;
-}
-
-static void
-doc_state_reset(struct doc_state *st)
-{
-	VECTOR_FREE(st->st_walk);
 }
 
 /*
