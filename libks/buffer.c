@@ -67,6 +67,19 @@ buffer_alloc_impl(size_t init_size, struct buffer_callbacks *callbacks)
 	return bf;
 }
 
+static int
+buffer_read_impl(struct buffer *bf, const char *path)
+{
+	int error, fd;
+
+	fd = open(path, O_RDONLY | O_CLOEXEC);
+	if (fd == -1)
+		return 1;
+	error = buffer_read_fd_impl(bf, fd);
+	close(fd);
+	return error;
+}
+
 struct buffer *
 buffer_read(const char *path)
 {
@@ -80,19 +93,6 @@ buffer_read(const char *path)
 		return NULL;
 	}
 	return bf;
-}
-
-int
-buffer_read_impl(struct buffer *bf, const char *path)
-{
-	int error, fd;
-
-	fd = open(path, O_RDONLY | O_CLOEXEC);
-	if (fd == -1)
-		return 1;
-	error = buffer_read_fd_impl(bf, fd);
-	close(fd);
-	return error;
 }
 
 struct buffer *

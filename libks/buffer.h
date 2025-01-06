@@ -39,7 +39,6 @@ struct buffer	*buffer_alloc_impl(size_t, struct buffer_callbacks *);
 void		 buffer_free(struct buffer *);
 
 struct buffer	*buffer_read(const char *);
-int		 buffer_read_impl(struct buffer *, const char *);
 struct buffer	*buffer_read_fd(int);
 int		 buffer_read_fd_impl(struct buffer *, int);
 
