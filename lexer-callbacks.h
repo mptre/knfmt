@@ -15,7 +15,7 @@ struct lexer_callbacks {
 	 *     3. If none of the above occurs, the next consumed token
 	 *        is assumed to be returned.
 	 */
-	struct token	*(*read)(struct lexer *, void *);
+	struct token	*(*tokenize)(struct lexer *, void *);
 
 	/*
 	 * Allocate a new token from the given arena scope.

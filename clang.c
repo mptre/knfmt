@@ -237,7 +237,7 @@ struct lexer_callbacks
 clang_lexer_callbacks(struct clang *cl)
 {
 	return (struct lexer_callbacks){
-	    .read			= clang_read,
+	    .tokenize			= clang_read,
 	    .alloc			= clang_token_alloc,
 	    .serialize_token		= clang_token_serialize,
 	    .serialize_token_type	= clang_token_type_serialize,

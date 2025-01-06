@@ -569,7 +569,7 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 		.scratch	= st->arena.scratch,
 	    },
 	    .callbacks		= {
-		.read			= yaml_read,
+		.tokenize		= yaml_read,
 		.alloc			= yaml_token_alloc,
 		.serialize_token	= yaml_token_serialize,
 		.serialize_token_type	= yaml_token_type_serialize,

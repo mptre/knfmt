@@ -103,7 +103,7 @@ lexer_tokenize(const struct lexer_arg *arg)
 	for (;;) {
 		struct token *tk;
 
-		tk = lx->lx_callbacks.read(lx, lx->lx_callbacks.arg);
+		tk = lx->lx_callbacks.tokenize(lx, lx->lx_callbacks.arg);
 		if (tk == NULL)
 			goto err;
 		LIST_INSERT_TAIL(&lx->lx_tokens, tk);
