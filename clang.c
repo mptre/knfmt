@@ -1185,7 +1185,7 @@ again:
 		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
 	tk->tk_flags |= sense_clang_format_comment(tk);
 
-	bf = comment_trim(tk, cl->st, lexer_arena_scope(lx));
+	bf = comment_trim(tk, cl->st, lexer_get_arena_scope(lx));
 	if (bf != NULL)
 		token_set_str(tk, buffer_get_ptr(bf), buffer_get_len(bf));
 
@@ -1261,7 +1261,7 @@ clang_read_cpp(struct clang *cl, struct lexer *lx)
 	if (tk->tk_type == TOKEN_CPP_DEFINE) {
 		const char *str;
 
-		str = cpp_align(tk, cl->st, lexer_arena_scope(lx),
+		str = cpp_align(tk, cl->st, lexer_get_arena_scope(lx),
 		    cl->arena.scratch, cl->arena.ruler, cl->op);
 		if (str != NULL)
 			token_set_str(tk, str, strlen(str));

@@ -237,7 +237,7 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 		return;
 
 	arena_scope(scratch, s);
-	eternal_scope = lexer_arena_scope(lx);
+	eternal_scope = lexer_get_arena_scope(lx);
 
 	guard = path_to_guard(path, style(st, IncludeGuards), &s);
 	if (guard == NULL)

@@ -36,7 +36,7 @@ simple_attributes(struct lexer *lx)
 	if (!lexer_peek_if(lx, TOKEN_IDENT, &ident) || !has_underscores(ident))
 		return;
 
-	s = lexer_arena_scope(lx);
+	s = lexer_get_arena_scope(lx);
 	sanitized_ident = remove_underscores(ident->tk_str, ident->tk_len, s);
 	token_set_str(ident, sanitized_ident, strlen(sanitized_ident));
 }

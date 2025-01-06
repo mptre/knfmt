@@ -110,7 +110,7 @@ simple_expr_printf(struct lexer *lx, struct token *tk)
 	if (!string_has_line(format->tk_str, format->tk_len))
 		return;
 
-	s = lexer_arena_scope(lx);
+	s = lexer_get_arena_scope(lx);
 	sanitized_format = arena_sprintf(s, "\"%.*s\"",
 	    (int)(format->tk_len - 1 /* " */ - 3 /* \n" */),
 	    &format->tk_str[1]);

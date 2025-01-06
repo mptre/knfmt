@@ -179,7 +179,7 @@ lexer_get_peek(const struct lexer *lx)
  * Returns the arena scope with the same lifetime as the given lexer.
  */
 struct arena_scope *
-lexer_arena_scope(struct lexer *lx)
+lexer_get_arena_scope(struct lexer *lx)
 {
 	return lx->lx_arena.eternal_scope;
 }
