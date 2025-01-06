@@ -731,10 +731,10 @@ doc_exec1(const struct doc *dc, struct doc_state *st)
 	case DOC_OPTIONAL: {
 		int oldoptline = st->st_optline;
 
-		st->st_optline++;
+		st->st_optline = 1;
 		doc_exec1(dc->dc_doc, st);
 		/* Note, could already be cleared by doc_print(). */
-		if (oldoptline <= st->st_optline)
+		if (st->st_optline)
 			st->st_optline = oldoptline;
 		break;
 	}
@@ -1168,7 +1168,7 @@ doc_fits1(const struct doc *dc, struct doc_state *st, void *arg)
 		break;
 
 	case DOC_OPTIONAL:
-		st->st_optline++;
+		st->st_optline = 1;
 		break;
 
 	case DOC_CONCAT:
