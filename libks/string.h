@@ -27,13 +27,11 @@ struct arena_scope;
 #define CONCAT(x, y)		CONCAT_INNER(x, y)
 
 #define KS_str_match_init_once(r, m)					\
-	__attribute__((used))						\
-	SECTION(KS_str_ranges)						\
-	static struct KS_str_match_init_once CONCAT(once, __LINE__) = {	\
+	static struct KS_str_match_init_once				\
+	    __attribute__((used)) SECTION(KS_str_ranges)		\
+	    CONCAT(once, __LINE__) = {					\
 		.ranges	= (r),						\
 		.match	= (m),						\
-		/* Suppress cppcheck unreadVariable false positives. */	\
-		.unused	= &CONCAT(once, __LINE__),			\
 	}
 
 struct KS_str_match {
@@ -47,7 +45,6 @@ struct KS_str_match {
 struct KS_str_match_init_once {
 	const char		*ranges;
 	struct KS_str_match	*match;
-	const void		*unused;
 } __attribute__((aligned(16)));
 
 int		KS_str_match_init(const char *, struct KS_str_match *);
