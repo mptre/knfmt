@@ -59,6 +59,10 @@
   (a711491af561)
   (Anton Lindqvist)
 
+- Detect typedef types hidden behind cpp.
+  (f738e90cd875)
+  (Anton Lindqvist)
+
 # 4.5.0 - 2024-09-01
 
 ## News
