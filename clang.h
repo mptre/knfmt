@@ -2,6 +2,7 @@
 
 struct arena_scope;
 struct arenas;
+struct diffchunk;
 struct lexer;
 struct options;
 struct simple;
@@ -41,7 +42,7 @@ void	clang_init(void);
 void	clang_shutdown(void);
 
 struct clang	*clang_alloc(const struct style *, struct simple *,
-    struct arenas *, const struct options *,
+    struct arenas *, const struct diffchunk *, const struct options *,
     struct arena_scope *);
 
 struct lexer_callbacks	clang_lexer_callbacks(struct clang *);

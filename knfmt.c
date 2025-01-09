@@ -188,12 +188,12 @@ fileformat(struct main_context *c, struct file *fe)
 
 	if (file_read(fe, c->src))
 		return 1;
+
 	clang = clang_alloc(c->style, c->simple, &c->arena,
-	    &c->options, &eternal_scope);
+	    fe->fe_diff, &c->options, &eternal_scope);
 	lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= fe->fe_path,
 	    .bf			= c->src,
-	    .diff		= fe->fe_diff,
 	    .op			= &c->options,
 	    .error_flush	= options_trace_level(&c->options,
 		TRACE_LEXER) > 0,

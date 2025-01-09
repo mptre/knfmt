@@ -16,7 +16,6 @@
 #include "libks/string.h"
 #include "libks/vector.h"
 
-#include "diff.h"
 #include "error.h"
 #include "options.h"
 #include "token.h"
@@ -33,7 +32,6 @@ struct lexer {
 	const char		*lx_path;
 	struct error		*lx_er;
 	const struct options	*lx_op;
-	const struct diffchunk	*lx_diff;
 
 	struct {
 		struct arena_scope	*eternal_scope;
@@ -65,9 +63,6 @@ static int	lexer_until(struct lexer *, int, struct token **);
 static int	lexer_peek_until_not_nested(struct lexer *, int,
     struct token *, struct token **);
 
-static const struct diffchunk	*lexer_get_diffchunk(const struct lexer *,
-    unsigned int);
-
 static void	lexer_copy_token_list(struct lexer *,
     const struct token_list *, struct token_list *);
 
@@ -91,7 +86,6 @@ lexer_tokenize(const struct lexer_arg *arg)
 	lx->lx_input.bf = arg->bf;
 	lx->lx_input.ptr = buffer_get_ptr(arg->bf);
 	lx->lx_input.len = buffer_get_len(arg->bf);
-	lx->lx_diff = arg->diff;
 	lx->lx_st.st_lno = 1;
 	if (VECTOR_INIT(lx->lx_lines))
 		err(1, NULL);
@@ -249,8 +243,6 @@ lexer_emit_template(struct lexer *lx, const struct lexer_state *st,
 	t->tk_off = st->st_off;
 	t->tk_lno = st->st_lno;
 	t->tk_cno = lexer_column(lx, st);
-	if (lexer_get_diffchunk(lx, t->tk_lno) != NULL)
-		t->tk_flags |= TOKEN_FLAG_DIFF;
 	if (t->tk_str == NULL) {
 		const char *buf = lx->lx_input.ptr;
 
@@ -831,14 +823,6 @@ lexer_peek_last(struct lexer *lx, struct token **tk)
 {
 	*tk = LIST_LAST(&lx->lx_tokens);
 	return *tk != NULL;
-}
-
-static const struct diffchunk *
-lexer_get_diffchunk(const struct lexer *lx, unsigned int lno)
-{
-	if (lx->lx_diff == NULL)
-		return NULL;
-	return diff_get_chunk(lx->lx_diff, lno);
 }
 
 /*
