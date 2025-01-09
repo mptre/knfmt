@@ -205,6 +205,9 @@ fileformat(struct main_context *c, struct file *fe)
 	});
 	if (lx == NULL)
 		return 1;
+	if (options_trace_level(&c->options, TRACE_TOKEN) > 0)
+		lexer_dump(lx);
+
 	pr = parser_alloc(&(struct parser_arg){
 	    .lexer	= lx,
 	    .options	= &c->options,

@@ -577,6 +577,9 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 	});
 	if (lx == NULL)
 		return 1;
+	if (options_trace_level(st->op, TRACE_TOKEN) > 0)
+		lexer_dump(lx);
+
 	return style_parse_yaml_documents(st, lx, 0);
 }
 

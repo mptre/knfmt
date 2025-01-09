@@ -118,9 +118,6 @@ lexer_tokenize(const struct lexer_arg *arg)
 	if (lx->lx_callbacks.after_tokenize != NULL)
 		lx->lx_callbacks.after_tokenize(lx, lx->lx_callbacks.arg);
 
-	if (options_trace_level(lx->lx_op, TRACE_TOKEN) > 0)
-		lexer_dump(lx);
-
 	return lx;
 
 err:
