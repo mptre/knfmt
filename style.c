@@ -557,7 +557,6 @@ static int
 style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 {
 	struct lexer *lx;
-	int error = 0;
 
 	lx = lexer_tokenize(&(const struct lexer_arg){
 	    .path		= path,
@@ -576,14 +575,9 @@ style_parse_yaml(struct style *st, const char *path, const struct buffer *bf)
 		.arg			= st,
 	    },
 	});
-	if (lx == NULL) {
-		error = 1;
-		goto out;
-	}
-	error = style_parse_yaml_documents(st, lx, 0);
-
-out:
-	return error;
+	if (lx == NULL)
+		return 1;
+	return style_parse_yaml_documents(st, lx, 0);
 }
 
 static enum style_keyword
