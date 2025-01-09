@@ -47,7 +47,7 @@
   (490e1493d6ca)
   (Anton Lindqvist)
 
-- Trim whitespace from last line from cpp macros.
+- Trim whitespace from last line in cpp macros.
   (02e25540fe0a)
   (Anton Lindqvist)
 
