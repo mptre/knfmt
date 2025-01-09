@@ -848,10 +848,6 @@ static void
 clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
     struct token **unmute)
 {
-	const struct lexer_state st = {
-		.st_lno	= cpp_src->tk_lno,
-		.st_off	= cpp_src->tk_off,
-	};
 	struct token *cpp_dst, *dst, *prefix, *pv, *rm, *src;
 	size_t len;
 	int dangling = 0;
@@ -865,11 +861,13 @@ clang_branch_fold(struct clang *cl, struct lexer *lx, struct token *cpp_src,
 	token_ref(dst);
 
 	len = (cpp_dst->tk_off + cpp_dst->tk_len) - cpp_src->tk_off;
-	prefix = clang_token_emit_with_template(cl, lx, &st, &(struct token){
+	prefix = lexer_emit_synthetic(lx, &(struct token){
 	    .tk_type	= TOKEN_CPP,
+	    .tk_lno	= cpp_src->tk_lno,
 	    .tk_flags	= TOKEN_FLAG_CPP,
 	    .tk_str	= cpp_src->tk_str,
 	    .tk_len	= len,
+	    .tk_off	= cpp_src->tk_off,
 	});
 
 	/*
