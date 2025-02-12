@@ -21,26 +21,6 @@
 #include "token.h"
 #include "trace-types.h"
 
-static unsigned int
-countlines(const char *str, size_t len)
-{
-	unsigned int nlines = 0;
-
-	while (len > 0) {
-		const char *p;
-		size_t linelen;
-
-		p = memchr(str, '\n', len);
-		if (p == NULL)
-			break;
-		nlines++;
-		linelen = (size_t)(p - str);
-		len -= linelen + 1;
-		str = p + 1;
-	}
-	return nlines;
-}
-
 static void
 clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 {
@@ -53,7 +33,7 @@ clang_format_verbatim(struct parser *pr, struct doc *dc, unsigned int end)
 	pr->pr_token.clang_format_off = NULL;
 	if (off == NULL)
 		return;
-	beg = off->tk_lno + countlines(off->tk_str, off->tk_len);
+	beg = off->tk_lno + token_lines(off);
 	token_rele(off);
 
 	parser_trace(pr, "beg %u, end %u", beg, end);

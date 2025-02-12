@@ -405,6 +405,28 @@ token_set_str(struct token *tk, const char *str, size_t len)
 	tk->tk_len = len;
 }
 
+unsigned int
+token_lines(const struct token *tk)
+{
+	const char *str = tk->tk_str;
+	size_t len = tk->tk_len;
+	unsigned int nlines = 0;
+
+	while (len > 0) {
+		const char *p;
+		size_t linelen;
+
+		p = memchr(str, '\n', len);
+		if (p == NULL)
+			break;
+		nlines++;
+		linelen = (size_t)(p - str);
+		len -= linelen + 1;
+		str = p + 1;
+	}
+	return nlines;
+}
+
 void
 token_list_prepend(struct token_list *tl, struct token *tk)
 {

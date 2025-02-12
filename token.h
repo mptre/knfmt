@@ -262,6 +262,8 @@ int	token_is_dangling(const struct token *);
 #define token_next(tk)	__extension__ ({ (__typeof__(tk))LIST_NEXT(tk); })
 #define token_prev(tk)	__extension__ ({ (__typeof__(tk))LIST_PREV(tk); })
 
+unsigned int    token_lines(const struct token *);
+
 void    token_set_str(struct token *, const char *, size_t);
 
 void		 token_list_prepend(struct token_list *, struct token *);
