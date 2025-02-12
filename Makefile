@@ -340,6 +340,7 @@ CPPCHECKFLAGS+=	${CPPFLAGS}
 
 IWYUFLAGS+=	-a arenas.h
 IWYUFLAGS+=	-d config.h
+IWYUFLAGS+=	-d file.c:diff.h
 IWYUFLAGS+=	-d trace.h:options.h
 IWYUFLAGS+=	${CPPFLAGS}
 
