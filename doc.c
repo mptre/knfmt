@@ -385,7 +385,8 @@ static const char	*indentstr(const struct doc *,
 static const char	*statestr(const struct doc_state *, unsigned int,
     struct arena_scope *);
 
-static unsigned int	countlines(const char *, size_t);
+static unsigned int	count_verbatim_lines(const char *, size_t,
+    unsigned int);
 
 void
 doc_exec(struct doc_exec_arg *arg)
@@ -1464,7 +1465,8 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st, int nested)
 		 * the last verbatim token not covered by the diff chunk.
 		 */
 		st->st_diff.verbatim = tk;
-		end = tk->tk_lno + countlines(tk->tk_str, tk->tk_len);
+		end = tk->tk_lno +
+		    count_verbatim_lines(tk->tk_str, tk->tk_len, 0);
 		doc_trace(dc, st, "%s: verbatim mute [%u-%u)", __func__,
 		    st->st_diff.beg, end);
 	} else {
@@ -1579,7 +1581,7 @@ doc_diff_verbatim(const struct doc *dc, struct doc_state *st)
 	 * takes us beyond the diff chunk. Signal that after emitting this
 	 * document the diff chunk must be left.
 	 */
-	n = countlines(dc->dc_str, dc->dc_len);
+	n = count_verbatim_lines(dc->dc_str, dc->dc_len, 0);
 	if (n > 0 && lno + n > st->st_diff.end) {
 		unsigned int end;
 
@@ -2038,13 +2040,13 @@ statestr(const struct doc_state *st, unsigned int depth, struct arena_scope *s)
 }
 
 static unsigned int
-countlines(const char *str, size_t len)
+count_verbatim_lines(const char *str, size_t len, unsigned int fallback)
 {
 	unsigned int nlines = 0;
 
 	/* Only applicable to tokens ending with a hard line. */
 	if (len > 0 && str[len - 1] != '\n')
-		return 0;
+		return fallback;
 
 	while (len > 0) {
 		const char *p;
