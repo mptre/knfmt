@@ -592,6 +592,7 @@ TESTS+=	simple-decl-forward-006.c
 TESTS+=	simple-decl-forward-007.c
 TESTS+=	simple-decl-proto-001.c
 TESTS+=	simple-decl-proto-002.c
+TESTS+=	simple-decl-proto-003.c
 TESTS+=	simple-expr-parens-001.c
 TESTS+=	simple-expr-parens-002.c
 TESTS+=	simple-expr-printf-001.c

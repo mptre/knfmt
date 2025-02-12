@@ -77,6 +77,14 @@ simple_decl_proto_arg(struct simple_decl_proto *sp)
 		err(1, NULL);
 }
 
+static int
+is_first_argument(const struct token *tk)
+{
+	const struct token *pv = token_prev(tk);
+	return pv->tk_type == TOKEN_LPAREN || pv->tk_type == TOKEN_COMMA ||
+	    (pv->tk_flags & TOKEN_FLAG_QUALIFIER);
+}
+
 void
 simple_decl_proto_arg_ident(struct simple_decl_proto *sp, struct token *tk)
 {
@@ -87,7 +95,8 @@ simple_decl_proto_arg_ident(struct simple_decl_proto *sp, struct token *tk)
 	assert(arg != NULL);
 	pv = token_prev(tk);
 	if (pv->tk_type == TOKEN_STAR ||
-	    (pv->tk_flags & (TOKEN_FLAG_TYPE | TOKEN_FLAG_QUALIFIER)))
+	    (pv->tk_flags & TOKEN_FLAG_TYPE) ||
+	    ((pv->tk_flags & TOKEN_FLAG_QUALIFIER) && !is_first_argument(pv)))
 		arg->tk = tk;
 	else
 		sp->flags.ignore = 1;
