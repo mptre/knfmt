@@ -89,6 +89,10 @@ struct expr {
 			struct token	*lparen;
 			struct token	*rparen;
 		} ex_sizeof;
+
+		struct {
+			struct token	*comma;
+		} ex_arg;
 	};
 };
 
@@ -459,16 +463,24 @@ static struct expr *
 expr_exec_binary(struct expr_state *es, struct expr *lhs)
 {
 	struct expr *ex;
+	struct token *comma = es->es_tk;
 	enum expr_pc pc;
 	int iscomma = es->es_tk->tk_type == TOKEN_COMMA;
+
+	/* Some macros allow empty arguments such as queue(3). */
+	while (iscomma && lexer_if(es->es_lx, TOKEN_COMMA, &comma))
+		continue;
 
 	pc = PC(es->es_er->er_pc);
 	if (es->es_er->er_rassoc)
 		pc--;
 
 	ex = expr_alloc(iscomma ? EXPR_ARG : EXPR_BINARY, es);
+	if (iscomma)
+		ex->ex_arg.comma = comma;
 	ex->ex_lhs = lhs;
 	ex->ex_rhs = expr_exec1(es, pc);
+
 	return ex;
 }
 
@@ -996,21 +1008,25 @@ static struct doc *
 expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	struct doc *lhs = dc;
+	struct token *comma = ex->ex_tk;
 
 	if (ex->ex_lhs != NULL)
 		lhs = expr_doc(ex->ex_lhs, es, dc);
-	expr_doc_token(es, ex->ex_tk, lhs);
+
+	for (;;) {
+		expr_doc_token(es, comma, lhs);
+		if (comma == ex->ex_arg.comma)
+			break;
+		comma = token_next(comma);
+	}
+
 	if (es->es_flags & EXPR_EXEC_ALIGN) {
 		unsigned int w;
 
 		w = expr_doc_width(es, es->es_col == 0 ? es->es_dc : lhs);
 		ruler_insert(es->es_ea.rl, ex->ex_tk, lhs, ++es->es_col, w, 0);
 	} else {
-		struct token *nx;
-
-		nx = token_next(ex->ex_tk);
-		if (nx->tk_type != TOKEN_COMMA)
-			doc_alloc(DOC_LINE, lhs);
+		doc_alloc(DOC_LINE, lhs);
 	}
 	if (ex->ex_rhs != NULL)
 		dc = expr_doc_soft(ex->ex_rhs, es, dc, soft_weights.arg);
