@@ -3,6 +3,7 @@ SRCS		!(fuzz-*|knfmt|t).c $(cd libks && ls *.[cS]) -- \
 KNFMT		!(compat-*).c compat-pledge.c !(compat-*|config).h -- \
 CLANGTIDY	!(config|compat-*).[ch] -- \
 CPPCHECK	!(compat-*).c -- \
+IWYU		!(compat-*).c !(config).h -- \
 SHLINT		configure tests/*.sh
 
 cd tests

@@ -338,8 +338,101 @@ CPPCHECKFLAGS+=	--max-configs=2
 CPPCHECKFLAGS+=	--suppress-xml=cppcheck-suppressions.xml
 CPPCHECKFLAGS+=	${CPPFLAGS}
 
+IWYU+=	arenas.c
+IWYU+=	arenas.h
+IWYU+=	clang.c
+IWYU+=	clang.h
+IWYU+=	comment.c
+IWYU+=	comment.h
+IWYU+=	cpp-format.c
+IWYU+=	cpp-format.h
+IWYU+=	cpp-include-guard.c
+IWYU+=	cpp-include-guard.h
+IWYU+=	cpp-include.c
+IWYU+=	cpp-include.h
+IWYU+=	diff.c
+IWYU+=	diff.h
+IWYU+=	doc.c
+IWYU+=	doc.h
+IWYU+=	error.c
+IWYU+=	error.h
+IWYU+=	expr.c
+IWYU+=	expr.h
+IWYU+=	file.c
+IWYU+=	file.h
+IWYU+=	fuzz-dict.c
+IWYU+=	fuzz-style.c
+IWYU+=	knfmt.c
+IWYU+=	lexer-callbacks.h
+IWYU+=	lexer.c
+IWYU+=	lexer.h
+IWYU+=	options.c
+IWYU+=	options.h
+IWYU+=	parser-attributes.c
+IWYU+=	parser-attributes.h
+IWYU+=	parser-braces.c
+IWYU+=	parser-braces.h
+IWYU+=	parser-cpp.c
+IWYU+=	parser-cpp.h
+IWYU+=	parser-decl.c
+IWYU+=	parser-decl.h
+IWYU+=	parser-expr.c
+IWYU+=	parser-expr.h
+IWYU+=	parser-extern.c
+IWYU+=	parser-extern.h
+IWYU+=	parser-func.c
+IWYU+=	parser-func.h
+IWYU+=	parser-priv.h
+IWYU+=	parser-stmt-asm.c
+IWYU+=	parser-stmt-asm.h
+IWYU+=	parser-stmt-expr.c
+IWYU+=	parser-stmt-expr.h
+IWYU+=	parser-stmt.c
+IWYU+=	parser-stmt.h
+IWYU+=	parser-type.c
+IWYU+=	parser-type.h
+IWYU+=	parser.c
+IWYU+=	parser.h
+IWYU+=	path.c
+IWYU+=	path.h
+IWYU+=	ruler.c
+IWYU+=	ruler.h
+IWYU+=	simple-attributes.c
+IWYU+=	simple-attributes.h
+IWYU+=	simple-decl-forward.c
+IWYU+=	simple-decl-forward.h
+IWYU+=	simple-decl-proto.c
+IWYU+=	simple-decl-proto.h
+IWYU+=	simple-decl.c
+IWYU+=	simple-decl.h
+IWYU+=	simple-expr-printf.c
+IWYU+=	simple-expr-printf.h
+IWYU+=	simple-implicit-int.c
+IWYU+=	simple-implicit-int.h
+IWYU+=	simple-static.c
+IWYU+=	simple-static.h
+IWYU+=	simple-stmt-empty-loop.c
+IWYU+=	simple-stmt-empty-loop.h
+IWYU+=	simple-stmt-switch.c
+IWYU+=	simple-stmt-switch.h
+IWYU+=	simple-stmt.c
+IWYU+=	simple-stmt.h
+IWYU+=	simple.c
+IWYU+=	simple.h
+IWYU+=	style.c
+IWYU+=	style.h
+IWYU+=	t.c
+IWYU+=	token.c
+IWYU+=	token.h
+IWYU+=	trace-types.h
+IWYU+=	trace.c
+IWYU+=	trace.h
+IWYU+=	util.c
+IWYU+=	util.h
+
 IWYUFLAGS+=	-a arenas.h
 IWYUFLAGS+=	-d config.h
+IWYUFLAGS+=	-d clang.h:lexer-callbacks.h
 IWYUFLAGS+=	-d file.c:diff.h
 IWYUFLAGS+=	-d trace.h:options.h
 IWYUFLAGS+=	${CPPFLAGS}
@@ -429,7 +522,7 @@ lint-cppcheck:
 .PHONY: lint-cppcheck
 
 lint-include-what-you-use:
-	cd ${.CURDIR} && iwyu-filter ${IWYUFLAGS} -- ${CPPCHECK}
+	cd ${.CURDIR} && iwyu-filter ${IWYUFLAGS} -- ${IWYU}
 .PHONY: lint-include-what-you-use
 
 lint-shellcheck:
