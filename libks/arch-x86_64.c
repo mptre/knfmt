@@ -258,8 +258,8 @@ KS_str_match_init_512(const char *ranges, struct KS_str_match *match)
 		for (j = lo; j < hi + 1; j++) {
 			uint8_t mask = (uint8_t)(1 << (j >> 4));
 
-	/* Avoid loss of precision due to conversion warnings. Caused by the or
-	 * operator promoting its operands to integers. */
+	/* Avoid loss of precision due to conversion warnings. Caused by the
+	 * bitwise OR operator promoting its operands to integers. */
 #define OR(off) do {							\
 	uint8_t *u8 = (uint8_t *)&match->u512[(j & 0xf) + (off)];	\
 	*u8 = *u8 | mask;						\

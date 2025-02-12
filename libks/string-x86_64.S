@@ -120,6 +120,7 @@ ctrl_mask = \
 	copy_to_stack_128
 	pcmpistrm xmm1, [rdx], ctrl_mask
 	jmp	.Lmatch_128_partial_match
+END(KS_str_match_native_128)
 
 	.align 16
 
@@ -205,6 +206,7 @@ ENTRY(KS_str_match_native_256)
 	jmp	.Lmatch_256_loop
 .Lmatch_256_done:
 	ret
+END(KS_str_match_native_256)
 
 	.align 16
 
@@ -299,6 +301,7 @@ ENTRY(KS_str_match_native_512)
 	jmp	.Lmatch_512_loop
 .Lmatch_512_done:
 	ret
+END(KS_str_match_native_512)
 
 	.align 16
 
@@ -335,6 +338,7 @@ ctrl_mask = \
 	jc	.Luntil_128_match
 	add	rax, r8
 	ret
+END(KS_str_match_until_native_128)
 
 ENTRY(KS_str_match_until_native_256)
 	xor	eax, eax
@@ -430,6 +434,7 @@ ENTRY(KS_str_match_until_native_256)
 	jmp	.Luntil_256_loop
 .Luntil_256_done:
 	ret
+END(KS_str_match_until_native_256)
 
 	.data
 	.align 64
