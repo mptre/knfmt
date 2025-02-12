@@ -32,6 +32,7 @@ TESTS+=	diff-031.c
 TESTS+=	diff-032.c
 TESTS+=	diff-033.c
 TESTS+=	diff-034.c
+TESTS+=	diff-035.c
 
 TESTS+=	diff-simple-001.c
 TESTS+=	diff-simple-002.c

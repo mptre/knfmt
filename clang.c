@@ -699,6 +699,29 @@ clang_token_emit(const struct clang *cl, struct lexer *lx,
 	    &(struct token){.tk_type = token_type});
 }
 
+static int
+is_token_diff(const struct clang *cl, const struct token *tk)
+{
+	unsigned int i, n;
+
+	if (cl->diff == NULL)
+		return 0;
+
+	if (diff_get_chunk(cl->diff, tk->tk_lno) != NULL)
+		return 1;
+
+	/* Cope with cpp define's spanning multiple lines. */
+	if (tk->tk_type != TOKEN_CPP_DEFINE)
+		return 0;
+	n = token_lines(tk);
+	for (i = 0; i < n; i++) {
+		if (diff_get_chunk(cl->diff, tk->tk_lno + i) != NULL)
+			return 1;
+	}
+
+	return 0;
+}
+
 static struct token *
 clang_token_emit_with_template(const struct clang *cl, struct lexer *lx,
     const struct lexer_state *st, const struct token *template)
@@ -706,7 +729,7 @@ clang_token_emit_with_template(const struct clang *cl, struct lexer *lx,
 	struct token *tk;
 
 	tk = lexer_emit_template(lx, st, template);
-	if (cl->diff != NULL && diff_get_chunk(cl->diff, tk->tk_lno))
+	if (is_token_diff(cl, tk))
 		tk->tk_flags |= TOKEN_FLAG_DIFF;
 	return tk;
 }

@@ -156,12 +156,12 @@ struct doc_state_snapshot {
 struct doc_diff {
 	/* Last verbatim token not covered by chunk. */
 	const struct token	*dd_verbatim;
+	/* First token covered by chunk. */
+	const struct token	*dd_tk;
 	/* Last seen token. */
 	unsigned int		 dd_threshold;
 	/* First token in group. */
 	unsigned int		 dd_first;
-	/* First token covered by chun. */
-	unsigned int		 dd_chunk;
 	/* Return value for doc_diff_covers(). */
 	enum doc_diff_group	 dd_covers;
 	/* Below threshold doc_walk() return value. */
@@ -1339,6 +1339,22 @@ doc_trim_lines(const struct doc *dc, struct doc_state *st)
 		doc_trace(dc, st, "%s: trimmed %d line(s)", __func__, ntrim);
 }
 
+static const struct diffchunk *
+doc_diff_find_chunk(const struct doc_state *st, const struct token *tk)
+{
+	unsigned int i, n;
+
+	n = count_verbatim_lines(tk->tk_str, tk->tk_len, 1);
+	for (i = 0; i < n; i++) {
+		const struct diffchunk *du;
+
+		du = diff_get_chunk(st->st_diff_chunks, tk->tk_lno + i);
+		if (du != NULL)
+			return du;
+	}
+	return NULL;
+}
+
 static int
 doc_diff_group_enter(const struct doc *dc, struct doc_state *st, int nested)
 {
@@ -1414,7 +1430,7 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st, int nested)
 	doc_trace(dc, st, "%s: enter chunk: beg %u, end %u, first %u, "
 	    "chunk %u, seen %d, nested %d", __func__,
 	    st->st_diff.beg, st->st_diff.end,
-	    dd.dd_first, dd.dd_chunk,
+	    dd.dd_first, dd.dd_tk->tk_lno,
 	    st->st_diff.end > 0,
 	    nested);
 
@@ -1426,9 +1442,13 @@ doc_diff_group_enter(const struct doc *dc, struct doc_state *st, int nested)
 		return 1;
 	}
 
-	du = diff_get_chunk(st->st_diff_chunks, dd.dd_chunk);
-	if (du == NULL)
-		return 1;
+	/*
+	 * Find the corresponding diff chunk covering the token with respect to
+	 * the fact that the token can span multiple lines.
+	 */
+	du = doc_diff_find_chunk(st, dd.dd_tk);
+	assert(du != NULL);
+
 	/*
 	 * Signal to doc_diff_leave() that this group covers more than one diff
 	 * chunk. This could happen when a prefix token and the corresponding
@@ -1653,13 +1673,15 @@ doc_diff_covers(const struct doc *dc, struct doc_state *UNUSED(st), void *arg)
 		if (dc->dc_tk != NULL) {
 			unsigned int lno = dc->dc_tk->tk_lno;
 
-			if (lno < dd->dd_threshold)
+			if (lno < dd->dd_threshold) {
+				dd->dd_verbatim = NULL;
 				return dd->dd_below_threshold;
+			}
 
 			if (dd->dd_first == 0)
 				dd->dd_first = lno;
 			if (dc->dc_tk->tk_flags & TOKEN_FLAG_DIFF) {
-				dd->dd_chunk = lno;
+				dd->dd_tk = dc->dc_tk;
 				dd->dd_covers = DOC_DIFF_GROUP_COVERED;
 				return DOC_WALK_BREAK;
 			}
