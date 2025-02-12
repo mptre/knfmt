@@ -30,7 +30,7 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
-	struct token *ident, *pv;
+	struct token *ident;
 	int peek = 0;
 
 	/* Detect usage of types hidden behind cpp such as STACK_OF(X509). */
@@ -65,7 +65,7 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 
 	/* Detect typedef types hidden behind cpp. */
 	lexer_peek_enter(lx, &s);
-	if (lexer_back(lx, &pv) && pv->tk_type == TOKEN_TYPEDEF &&
+	if (lexer_back_if(lx, TOKEN_TYPEDEF, NULL) &&
 	    lexer_if(lx, TOKEN_IDENT, NULL) &&
 	    lexer_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, NULL, rparen))
 		peek = 1;
