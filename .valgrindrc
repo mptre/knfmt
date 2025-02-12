@@ -1,0 +1,6 @@
+--memcheck:quiet
+--memcheck:child-silent-after-fork=yes
+--memcheck:error-exitcode=1
+--memcheck:errors-for-leak-kinds=all
+--memcheck:leak-check=full
+--memcheck:show-leak-kinds=all

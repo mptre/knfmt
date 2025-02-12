@@ -437,7 +437,9 @@ lint-shellcheck:
 .PHONY: lint-shellcheck
 
 test: ${PROG_knfmt} test-${PROG_test}
-	${MAKE} -C ${.CURDIR}/tests "KNFMT=${.OBJDIR}/${PROG_knfmt}"
+	${MAKE} -C ${.CURDIR}/tests \
+		"KNFMT=${.OBJDIR}/${PROG_knfmt}" \
+		"VALGRINDRC=${.CURDIR}/.valgrindrc"
 .PHONY: test
 
 test-${PROG_test}: ${PROG_test}

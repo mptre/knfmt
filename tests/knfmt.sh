@@ -99,6 +99,8 @@ testcase() {
 		return 1
 	fi
 
+	[ -z "${VALGRINDRC:-}" ] || export "VALGRIND_OPTS=$(xargs <"${VALGRINDRC}")"
+
 	if [ -e "${_patch}" ]; then
 		if [ "${_clang}" -eq 1 ]; then
 			commstrip "${_file}" >"${_wrkdir}/${_name}"

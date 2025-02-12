@@ -69,12 +69,6 @@ jobs:
         env:
           CC: gcc
           EXEC: valgrind
-          VALGRIND_OPTS: >
-            --quiet
-            --error-exitcode=1
-            --errors-for-leak-kinds=all
-            --leak-check=full
-            --show-leak-kinds=all
         run: |
           ./configure --pedantic
           make -j`nproc` test
