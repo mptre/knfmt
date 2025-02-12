@@ -36,7 +36,8 @@
 	if (__builtin_types_compatible_p(__typeof__((m)->kp), char *) ||\
 	    __builtin_types_compatible_p(__typeof__((m)->kp), const char *))\
 		_flags |= MAP_KEY_STR;					\
-	map_init((void **)&(m), sizeof((m)->k), sizeof(*(m)->v), _flags);\
+	map_init((void **)&(m), sizeof((m)->k),				\
+	    sizeof(__typeof__(*(m)->v)), _flags);			\
 })
 int	map_init(void **, size_t, size_t, unsigned int);
 

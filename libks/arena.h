@@ -52,6 +52,8 @@ struct arena_stats {
 		unsigned long	total;
 		/* Peek amount of effective allocated frames. */
 		unsigned long	max;
+		/* Number of bytes spilled while allocating a new frame. */
+		unsigned long	spill;
 	} frames;
 
 	struct {

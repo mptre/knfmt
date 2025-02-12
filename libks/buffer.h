@@ -35,7 +35,8 @@ struct buffer_getline {
 };
 
 struct buffer	*buffer_alloc(size_t);
-struct buffer	*buffer_alloc_impl(size_t, struct buffer_callbacks *);
+struct buffer	*buffer_alloc_impl(size_t, int,
+    const struct buffer_callbacks *);
 void		 buffer_free(struct buffer *);
 
 struct buffer	*buffer_read(const char *);

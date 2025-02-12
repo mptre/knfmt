@@ -21,7 +21,8 @@
 
 struct arena_scope;
 
-#define ARENA_VECTOR_INIT(s, vc, n) arena_vector_init(s, (void **)&(vc), sizeof(*(vc)), n)
+#define ARENA_VECTOR_INIT(s, vc, n) \
+	arena_vector_init(s, (void **)&(vc), sizeof(__typeof__(*(vc))), n)
 void	arena_vector_init(struct arena_scope *, void **, size_t, size_t);
 
 #define ARENA_VECTOR_ALLOC(vc) __extension__ ({				\

@@ -16,6 +16,8 @@
 
 #include "libks/buffer.h"
 
+#include <sys/stat.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -34,7 +36,7 @@ struct buffer {
 	size_t			 bf_len;
 };
 
-static int	buffer_reserve(struct buffer *, size_t);
+static int	buffer_reserve(struct buffer *, size_t, int);
 
 static void	*callback_alloc(size_t, void *);
 static void	*callback_realloc(void *, size_t, size_t, void *);
@@ -43,7 +45,7 @@ static void	 callback_free(void *, size_t, void *);
 struct buffer *
 buffer_alloc(size_t init_size)
 {
-	return buffer_alloc_impl(init_size, &(struct buffer_callbacks){
+	return buffer_alloc_impl(init_size, 1, &(struct buffer_callbacks){
 	    .alloc	= callback_alloc,
 	    .realloc	= callback_realloc,
 	    .free	= callback_free,
@@ -51,7 +53,8 @@ buffer_alloc(size_t init_size)
 }
 
 struct buffer *
-buffer_alloc_impl(size_t init_size, struct buffer_callbacks *callbacks)
+buffer_alloc_impl(size_t init_size, int overshoot,
+    const struct buffer_callbacks *callbacks)
 {
 	struct buffer *bf;
 
@@ -60,7 +63,7 @@ buffer_alloc_impl(size_t init_size, struct buffer_callbacks *callbacks)
 		return NULL;
 	memset(bf, 0, sizeof(*bf));
 	bf->bf_callbacks = *callbacks;
-	if (buffer_reserve(bf, init_size)) {
+	if (buffer_reserve(bf, init_size, overshoot)) {
 		buffer_free(bf);
 		return NULL;
 	}
@@ -110,9 +113,21 @@ buffer_read_fd(int fd)
 	return bf;
 }
 
+static size_t
+estimate_size(int fd)
+{
+	struct stat sb;
+
+	if (fstat(fd, &sb) == -1 || !S_ISREG(sb.st_mode) || sb.st_size <= 0)
+		return 0;
+	return (size_t)sb.st_size;
+}
+
 int
 buffer_read_fd_impl(struct buffer *bf, int fd)
 {
+	int doreserve = estimate_size(fd) != bf->bf_siz - bf->bf_len;
+
 	for (;;) {
 		ssize_t n;
 
@@ -122,7 +137,7 @@ buffer_read_fd_impl(struct buffer *bf, int fd)
 		if (n == 0)
 			break;
 		bf->bf_len += (size_t)n;
-		if (buffer_reserve(bf, bf->bf_siz / 8))
+		if (doreserve && buffer_reserve(bf, bf->bf_siz / 8, 1))
 			return 1;
 	}
 
@@ -143,7 +158,7 @@ buffer_puts(struct buffer *bf, const char *str, size_t len)
 {
 	if (str == NULL || len == 0)
 		return 0;
-	if (buffer_reserve(bf, len))
+	if (buffer_reserve(bf, len, 1))
 		return 1;
 	memcpy(&bf->bf_ptr[bf->bf_len], str, len);
 	bf->bf_len += len;
@@ -195,7 +210,7 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	va_copy(cp, ap);
 
 	n = vsnprintf(NULL, 0, fmt, ap);
-	if (n < 0 || buffer_reserve(bf, (size_t)n + 1)) {
+	if (n < 0 || buffer_reserve(bf, (size_t)n + 1, 1)) {
 		va_end(cp);
 		return 1;
 	}
@@ -320,7 +335,7 @@ buffer_getline_free(struct buffer_getline *getline)
 }
 
 static int
-buffer_reserve(struct buffer *bf, size_t len)
+buffer_reserve(struct buffer *bf, size_t len, int overshoot)
 {
 	size_t newlen, newsiz;
 	char *ptr;
@@ -331,11 +346,15 @@ buffer_reserve(struct buffer *bf, size_t len)
 	if (bf->bf_siz > 0 && bf->bf_siz >= newlen)
 		return 0;
 
-	newsiz = bf->bf_siz ? bf->bf_siz : 16;
-	while (newsiz < newlen) {
-		if (newsiz > ULONG_MAX / 2)
-			goto overflow;
-		newsiz *= 2;
+	if (overshoot) {
+		newsiz = bf->bf_siz ? bf->bf_siz : 16;
+		while (newsiz < newlen) {
+			if (newsiz > ULONG_MAX / 2)
+				goto overflow;
+			newsiz *= 2;
+		}
+	} else {
+		newsiz = newlen;
 	}
 	ptr = bf->bf_callbacks.realloc(bf->bf_ptr, bf->bf_siz, newsiz,
 	    bf->bf_callbacks.arg);

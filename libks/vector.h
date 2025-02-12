@@ -40,7 +40,8 @@ struct vector_callbacks {
 
 #define VECTOR(type) type *
 
-#define VECTOR_INIT(vc) vector_init((void **)&(vc), sizeof(*(vc)))
+#define VECTOR_INIT(vc) \
+	vector_init((void **)&(vc), sizeof(__typeof__(*(vc))))
 int	vector_init(void **, size_t);
 int	vector_init_impl(enum vector_type, void **, size_t,
     const struct vector_callbacks *);

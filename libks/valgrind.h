@@ -17,32 +17,98 @@
 #ifndef LIBKS_VALGRIND_H
 #define LIBKS_VALGRIND_H
 
+#if defined(__x86_64__) && !defined(NDEBUG)
+
+#include <stddef.h>	/* size_t */
 #include <stdint.h>
 
-/*
- * The gist of RUNNING_ON_VALGRIND from valgrind.h.
- */
-static inline int
-is_valgrind_running(void)
+static int
+KS_valgrind_request(const uint64_t *request)
 {
-#if defined(__x86_64__)
-	uint64_t request = 0x1001;
 	int d;
 
-	__asm__(
+	__asm__ volatile (
 	    "rolq $3, %%rdi\n"
 	    "rolq $13, %%rdi\n"
 	    "rolq $61, %%rdi\n"
 	    "rolq $51, %%rdi\n"
 	    "xchgq %%rbx, %%rbx\n"
 	    : [res] "=d" (d)
-	    : "a" (&request), "[res]" (0)
+	    : "a" (request), "[res]" (0)
 	    : "cc", "memory");
-
 	return d;
-#else
-	return 0;
-#endif
 }
+
+static inline int
+KS_valgrind_is_running(void)
+{
+	static int is_running = -1;
+
+	if (is_running == -1) {
+		const uint64_t request[] = { 0x1001U };
+		is_running = KS_valgrind_request(request);
+	}
+	return is_running;
+}
+
+static inline int
+KS_valgrind_make_mem_noaccess(const void *ptr, size_t len)
+{
+	if (!KS_valgrind_is_running())
+		return 0;
+
+	const uint64_t request[] = { 0x4d430000U, (uintptr_t)ptr, len };
+	return KS_valgrind_request(request) == -1;
+}
+
+static inline int
+KS_valgrind_make_mem_undefined(const void *ptr, size_t len)
+{
+	if (!KS_valgrind_is_running())
+		return 0;
+
+	const uint64_t request[] = { 0x4d430001U, (uintptr_t)ptr, len };
+	return KS_valgrind_request(request) == -1;
+}
+
+static inline int
+KS_valgrind_make_mem_defined(const void *ptr, size_t len)
+{
+	if (!KS_valgrind_is_running())
+		return 0;
+
+	const uint64_t request[] = { 0x4d430002U, (uintptr_t)ptr, len };
+	return KS_valgrind_request(request) == -1;
+}
+
+#else
+
+#include "libks/compiler.h"
+
+static inline int
+KS_valgrind_is_running(void)
+{
+	return 0;
+}
+
+static inline int
+KS_valgrind_make_mem_noaccess(const void *UNUSED(ptr), size_t UNUSED(len))
+{
+	return 0;
+}
+
+static inline int
+KS_valgrind_make_mem_undefined(const void *UNUSED(ptr), size_t UNUSED(len))
+{
+	return 0;
+}
+
+static inline int
+KS_valgrind_make_mem_defined(const void *UNUSED(ptr), size_t UNUSED(len))
+{
+	return 0;
+}
+
+#endif
 
 #endif /* !LIBKS_VALGRIND_H */

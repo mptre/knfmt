@@ -27,6 +27,7 @@
 
 #include "libks/arithmetic.h"
 #include "libks/compiler.h"
+#include "libks/valgrind.h"
 
 #if defined(__has_feature)
 #  if  __has_feature(address_sanitizer)
@@ -37,16 +38,17 @@
 #endif
 #if defined(HAVE_ASAN)
 #  include <sanitizer/asan_interface.h>
-#  define USED_IF_ASAN(x) x
-#  define POISON_SIZE sizeof(void *)
 #else
 #  define ASAN_POISON_MEMORY_REGION(...) (void)0
 #  define ASAN_UNPOISON_MEMORY_REGION(...) (void)0
-#  define USED_IF_ASAN(x) UNUSED(x)
-#  define POISON_SIZE 0
 #endif
 
 #define MAX_SOURCE_LOCATIONS 8
+
+enum poison_type {
+	POISON_UNDEFINED,
+	POISON_DEFINED,
+};
 
 struct source_location {
 	const char	*fun;
@@ -85,18 +87,49 @@ union address {
 
 static const size_t maxalign = sizeof(void *);
 
-static void
-frame_poison(const struct arena_frame *USED_IF_ASAN(frame))
+static size_t
+poison_size(void)
 {
-	ASAN_POISON_MEMORY_REGION(&frame->ptr[frame->len],
-	    frame->size - frame->len);
+	const size_t size = sizeof(void *);
+#if defined(HAVE_ASAN)
+	return size;
+#else
+	return KS_valgrind_is_running() ? size : 0;
+#endif
 }
 
 static void
-frame_unpoison(const struct arena_frame *USED_IF_ASAN(frame),
-    size_t USED_IF_ASAN(size))
+frame_poison_with_len(const struct arena_frame *frame, size_t len)
 {
-	ASAN_UNPOISON_MEMORY_REGION(&frame->ptr[frame->len], size);
+	const void *ptr = &frame->ptr[len];
+	size_t size = frame->size - len;
+
+	ASAN_POISON_MEMORY_REGION(ptr, size);
+	KS_valgrind_make_mem_noaccess(ptr, size);
+}
+
+static void
+frame_poison(const struct arena_frame *frame)
+{
+	frame_poison_with_len(frame, frame->len);
+}
+
+static void
+frame_unpoison(const struct arena_frame *frame, size_t size,
+    enum poison_type poison)
+{
+	const void *ptr = &frame->ptr[frame->len];
+
+	ASAN_UNPOISON_MEMORY_REGION(ptr, size);
+
+	switch (poison) {
+	case POISON_UNDEFINED:
+		KS_valgrind_make_mem_undefined(ptr, size);
+		break;
+	case POISON_DEFINED:
+		KS_valgrind_make_mem_defined(ptr, size);
+		break;
+	}
 }
 
 static union address
@@ -162,22 +195,23 @@ arena_stats_alignment(struct arena *a, size_t alignment)
 		a->stats.alignment.max = a->stats.alignment.now;
 }
 
-static void *
-arena_push(struct arena *a, struct arena_frame *frame, size_t size)
+static int
+arena_push(struct arena *a, struct arena_frame *frame, size_t size,
+    enum poison_type poison, void **out)
 {
 	void *ptr;
 	size_t newlen, oldlen;
 
 	if (KS_size_add_overflow(frame->len, size, &newlen)) {
 		errno = EOVERFLOW;
-		return NULL;
+		return 0;
 	}
 	if (newlen > frame->size) {
 		errno = ENOMEM;
-		return NULL;
+		return 0;
 	}
 
-	frame_unpoison(frame, size);
+	frame_unpoison(frame, size, poison);
 	ptr = &frame->ptr[frame->len];
 	oldlen = newlen;
 	newlen = align_address(a, (union address){.size = newlen}).size;
@@ -187,7 +221,9 @@ arena_push(struct arena *a, struct arena_frame *frame, size_t size)
 	 * require a new frame anyway.
 	 */
 	frame->len = newlen > frame->size ? frame->size : newlen;
-	return ptr;
+	if (out != NULL)
+		*out = ptr;
+	return 1;
 }
 
 static int
@@ -202,13 +238,17 @@ arena_frame_alloc(struct arena *a, size_t frame_size)
 	frame->size = frame_size;
 	frame->len = 0;
 	frame->next = NULL;
-	if (arena_push(a, frame, sizeof(*frame)) == NULL) {
+	if (!arena_push(a, frame, sizeof(*frame), POISON_DEFINED, NULL)) {
 		free(frame);
 		return 0;
 	}
+
+	if (a->frame != NULL)
+		a->stats.frames.spill += a->frame->size - a->frame->len;
 	frame->next = a->frame;
 	a->frame = frame;
-	frame_poison(a->frame);
+	/* Ensure poison bytes between the frame and the first allocation. */
+	frame_poison_with_len(a->frame, sizeof(*frame));
 
 	arena_stats_frames(a, 1);
 
@@ -229,7 +269,7 @@ arena_alloc(void)
 	if (a == NULL)
 		err(1, "%s", __func__);
 	a->frame_size = 16 * (size_t)page_size;
-	a->poison_size = POISON_SIZE;
+	a->poison_size = poison_size();
 	arena_ref(a);
 	if (!arena_frame_alloc(a, a->frame_size))
 		err(1, "%s", __func__);
@@ -366,8 +406,7 @@ arena_malloc(struct arena_scope *s, size_t size)
 
 	arena_scope_validate(a, s, size);
 
-	ptr = arena_push(a, a->frame, size);
-	if (ptr != NULL) {
+	if (arena_push(a, a->frame, size, POISON_UNDEFINED, &ptr)) {
 		arena_stats_bytes(a, size);
 		return ptr;
 	}
@@ -388,8 +427,7 @@ arena_malloc(struct arena_scope *s, size_t size)
 	if (!arena_frame_alloc(a, frame_size))
 		err(1, "%s", __func__);
 
-	ptr = arena_push(a, a->frame, size);
-	if (ptr == NULL)
+	if (!arena_push(a, a->frame, size, POISON_UNDEFINED, &ptr))
 		err(1, "%s", __func__);
 	arena_stats_bytes(a, size);
 	return ptr;
@@ -406,6 +444,7 @@ arena_calloc(struct arena_scope *s, size_t nmemb, size_t size)
 
 	ptr = arena_malloc(s, total_size);
 	memset(ptr, 0, total_size);
+	KS_valgrind_make_mem_defined(ptr, total_size);
 	return ptr;
 }
 
@@ -433,7 +472,7 @@ arena_realloc_fast(struct arena_scope *s, char *ptr, size_t old_size,
 	/* Check if the new size still fits within the current frame. */
 	frame = *a->frame;
 	frame.len = (size_t)(ptr - frame.ptr);
-	if (arena_push(a, &frame, new_size) == NULL)
+	if (!arena_push(a, &frame, new_size, POISON_DEFINED, NULL))
 		return 0;
 	arena_stats_bytes(a, new_size - old_size);
 	*a->frame = frame;
@@ -541,7 +580,8 @@ arena_stats(struct arena *a)
 }
 
 void
-arena_poison(const void *USED_IF_ASAN(ptr), size_t USED_IF_ASAN(size))
+arena_poison(const void *ptr, size_t size)
 {
 	ASAN_POISON_MEMORY_REGION(ptr, size);
+	KS_valgrind_make_mem_noaccess(ptr, size);
 }

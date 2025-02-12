@@ -239,7 +239,7 @@ KS_init(void)
 		KS_str_match_until = KS_str_match_until_native_256;
 	else if (sse >= SSE4_2 /* PCMPISTRI */ &&
 	    /* Valgrind does not emulate PCMPISTRI $0x4. */
-	    !is_valgrind_running())
+	    !KS_valgrind_is_running())
 		KS_str_match_until = KS_str_match_until_native_128;
 }
 
