@@ -63,6 +63,19 @@
   (f738e90cd875)
   (Anton Lindqvist)
 
+- In diff mode, improve handling of cpp constructs covered by diff chunks.
+  (b6ec363801a8)
+  (Anton Lindqvist)
+
+- Fix handling of empty arguments.
+  (42ca8afef627)
+  (Anton Lindqvist)
+
+- In simple mode, be more conservative when removing named arguments from
+  function prototypes.
+  (d73c8ac77a20)
+  (Anton Lindqvist)
+
 # 4.5.0 - 2024-09-01
 
 ## News
