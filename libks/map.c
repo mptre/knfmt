@@ -24,13 +24,6 @@
 #include "libks/arithmetic.h"
 #include "libks/compiler.h"
 
-#if defined(__clang__)
-#define NO_SANITIZE_UNSIGNED_INT_OVERFLOW \
-	no_sanitize("unsigned-integer-overflow")
-#else
-#define NO_SANITIZE_UNSIGNED_INT_OVERFLOW
-#endif
-
 struct map_element {
 	struct map_element *prev;	/* prev element in app order      */
 	struct map_element *next;	/* next element in app order      */
@@ -96,7 +89,7 @@ static struct map_element	*HASH_FIND(struct map *, const void *,
 static struct UT_hash_table	*HASH_MAKE_TABLE(struct map_element *);
 static unsigned			 HASH_TO_BKT(unsigned int, unsigned int);
 static unsigned			 HASH_JEN(const void *, size_t)
-	__attribute__((NO_SANITIZE_UNSIGNED_INT_OVERFLOW));
+	__attribute__((NO_SANITIZE_UNSIGNED_INTEGER_OVERFLOW));
 
 int
 map_init(void **mp, size_t keysize, size_t valsize, unsigned int flags)

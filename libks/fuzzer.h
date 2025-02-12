@@ -21,23 +21,12 @@
 #include <stdint.h>
 
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/fs.h"
 #include "libks/section.h"
 
 #if !defined(FUZZER_AFL) && !defined(FUZZER_LLVM)
 #  define FUZZER_AFL
-#endif
-
-/* Work around what seems to be a GCC UBSan bug. */
-#if defined(__GNUC__)
-#  if __GNUC__ > 4
-#    if __has_attribute(no_sanitize)
-#      define NO_SANITIZE_UNDEFINED no_sanitize("undefined")
-#    endif
-#  endif
-#endif
-#if !defined(NO_SANITIZE_UNDEFINED)
-#  define NO_SANITIZE_UNDEFINED
 #endif
 
 struct fuzzer_target {
@@ -89,6 +78,7 @@ extern const struct fuzzer_target fuzzer_target;
 FUZZER_SECTION(init);
 FUZZER_SECTION(teardown);
 
+/* Work around what seems to be a GCC UBSan bug. */
 __attribute__((NO_SANITIZE_UNDEFINED))
 static inline void *
 fuzzer_init(int argc, char *argv[])
@@ -103,6 +93,7 @@ fuzzer_init(int argc, char *argv[])
 	return NULL;
 }
 
+/* Work around what seems to be a GCC UBSan bug. */
 __attribute__((NO_SANITIZE_UNDEFINED))
 static inline void
 fuzzer_teardown(void *userdata)
