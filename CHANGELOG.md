@@ -68,7 +68,7 @@
   (Anton Lindqvist)
 
 - Fix handling of empty arguments.
-  (42ca8afef627)
+  (42ca8afef627, 4b654a3b1a4d)
   (Anton Lindqvist)
 
 - In simple mode, be more conservative when removing named arguments from
