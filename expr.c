@@ -370,6 +370,19 @@ expr_peek(const struct expr_exec_arg *ea, struct token **tk)
 	return peek;
 }
 
+static int
+is_star_argument(struct lexer *lx)
+{
+	struct lexer_state ls;
+	int peek;
+
+	lexer_peek_enter(lx, &ls);
+	peek = lexer_if(lx, TOKEN_STAR, NULL) &&
+	    lexer_if(lx, TOKEN_COMMA, NULL);
+	lexer_peek_leave(lx, &ls);
+	return peek;
+}
+
 static struct expr *
 expr_exec1(struct expr_state *es, enum expr_pc pc)
 {
@@ -382,12 +395,11 @@ expr_exec1(struct expr_state *es, enum expr_pc pc)
 
 	/* Only consider unary operators. */
 	er = expr_find_rule(tk, 1);
-	if (er == NULL || tk->tk_type == TOKEN_IDENT) {
-		/*
-		 * Even if a literal operator was found, let the parser recover
-		 * before continuing. Otherwise, pointer types can be
-		 * erroneously treated as a multiplication expression.
-		 */
+	if (er == NULL ||
+	    /* Avoid interpreting pointer types as multiplication. */
+	    tk->tk_type == TOKEN_IDENT ||
+	    /* Avoid interpreting star as unary pointer dereference. */
+	    is_star_argument(es->es_lx)) {
 		ex = expr_exec_recover(es);
 		if (ex == NULL && er == NULL)
 			return NULL;

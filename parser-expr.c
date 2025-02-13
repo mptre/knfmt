@@ -134,6 +134,15 @@ expr_recover(const struct expr_exec_arg *ea, void *arg)
 		dc = doc_root(pr->pr_arena_scope.doc);
 		parser_doc_token(pr, tk, dc);
 		return dc;
+	} else if (lexer_if(lx, TOKEN_STAR, &tk)) {
+		/*
+		 * Some macros like MAP() from libks accepts a sole star as an
+		 * argument. Prevent the expression parser from interpreting it
+		 * as a unary operator.
+		 */
+		dc = doc_root(pr->pr_arena_scope.doc);
+		parser_doc_token(pr, tk, dc);
+		return dc;
 	}
 
 	return NULL;
