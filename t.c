@@ -726,7 +726,7 @@ test_token_serialize(struct context *ctx)
 static void
 test_clang_token_serialize(struct context *ctx)
 {
-	struct token *tkerr;
+	struct token *tkerr = NULL;
 	const char *act;
 
 	arena_scope(ctx->arena.eternal, s);
