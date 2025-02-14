@@ -103,7 +103,7 @@ struct map_iterator {
 	(iterator)->val = (__typeof__((m)->v))map_iterate(		\
 	    (m), &((iterator)->it));					\
 	if ((iterator)->val != NULL) {					\
-		void *_k = map_key((m), (iterator)->val);		\
+		void *_k = map_key((m), (void *)(iterator)->val);	\
 		(iterator)->key = __builtin_choose_expr(		\
 		    sizeof((m)->p) > sizeof(char),			\
 		    _k,							\
