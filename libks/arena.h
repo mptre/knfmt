@@ -18,6 +18,7 @@
 #define LIBKS_ARENA_H
 
 #include <stddef.h>	/* size_t */
+#include <stdint.h>
 
 #define arena_scope(arena, varname) \
 	__attribute__((cleanup(arena_scope_leave))) \
@@ -33,6 +34,22 @@ struct arena_scope {
 	unsigned long		 scopes;
 	unsigned long		 alignment;
 	int			 id;
+};
+
+struct arena_trace_event {
+	uintptr_t	arena;
+#define ARENA_TRACE_STACK_TRACE_DEPTH 5
+	uintptr_t	stack_trace[ARENA_TRACE_STACK_TRACE_DEPTH];
+
+	union {
+		struct {
+			size_t	size;
+		} push;
+	} data;
+
+	enum {
+		ARENA_TRACE_PUSH,
+	} type;
 };
 
 struct arena_stats {

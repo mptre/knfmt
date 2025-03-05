@@ -18,6 +18,7 @@
 
 #include <err.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -44,6 +45,15 @@
 #endif
 
 #define MAX_SOURCE_LOCATIONS 8
+
+#define arena_trace_push(a, size) do {					\
+	if (is_arena_trace_enabled(a)) {				\
+		arena_trace((a), &(struct arena_trace_event){		\
+		    .type = ARENA_TRACE_PUSH,				\
+		    .data.push.size = (size),				\
+		});							\
+	}								\
+} while (0)
 
 enum poison_type {
 	POISON_UNDEFINED,
@@ -77,6 +87,10 @@ struct arena {
 	int			 refs;
 	struct arena_stats	 stats;
 	struct source_location	 scope_locations[MAX_SOURCE_LOCATIONS];
+
+	struct {
+		int	fd;
+	} trace;
 };
 
 union address {
@@ -86,6 +100,29 @@ union address {
 };
 
 static const size_t maxalign = sizeof(void *);
+
+static inline int
+is_arena_trace_enabled(const struct arena *a)
+{
+	return a->trace.fd != -1;
+}
+
+static void
+read_stack_trace(uintptr_t *stack_trace, uint32_t stack_trace_length)
+{
+#if defined(__x86_64__)
+	void **rbp;
+	__asm__ volatile ("mov %%rbp, %0" : "=r" (rbp));
+
+	for (uint32_t i = 0; i < stack_trace_length && rbp != 0; i++) {
+		stack_trace[i] = (uintptr_t)rbp[1];
+		rbp = (void **)*rbp;
+	}
+#else
+	(void)stack_trace;
+	(void)stack_trace_length;
+#endif
+}
 
 static size_t
 poison_size(void)
@@ -143,6 +180,14 @@ align_address(const struct arena *a, union address addr)
 		(void)KS_u64_add_overflow(a->poison_size, addr.u64, &addr.u64);
 	}
 	return addr;
+}
+
+static void
+arena_trace(const struct arena *a, struct arena_trace_event *ev)
+{
+	ev->arena = (uintptr_t)a;
+	read_stack_trace(ev->stack_trace, ARENA_TRACE_STACK_TRACE_DEPTH);
+	(void)write(a->trace.fd, ev, sizeof(*ev));
 }
 
 static void
@@ -223,6 +268,7 @@ arena_push(struct arena *a, struct arena_frame *frame, size_t size,
 	frame->len = newlen > frame->size ? frame->size : newlen;
 	if (out != NULL)
 		*out = ptr;
+	arena_trace_push(a, size);
 	return 1;
 }
 
@@ -268,11 +314,16 @@ arena_alloc(void)
 	a = calloc(1, sizeof(*a));
 	if (a == NULL)
 		err(1, "%s", __func__);
+	a->trace.fd = -1;
 	a->frame_size = 16 * (size_t)page_size;
 	a->poison_size = poison_size();
 	arena_ref(a);
 	if (!arena_frame_alloc(a, a->frame_size))
 		err(1, "%s", __func__);
+
+	const char *path = getenv("ARENA_TRACE");
+	if (path != NULL)
+		a->trace.fd = open(path, O_WRONLY | O_CREAT);
 
 	return a;
 }
