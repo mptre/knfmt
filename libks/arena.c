@@ -323,7 +323,7 @@ arena_alloc(void)
 
 	const char *path = getenv("ARENA_TRACE");
 	if (path != NULL)
-		a->trace.fd = open(path, O_WRONLY);
+		a->trace.fd = open(path, O_WRONLY | O_CLOEXEC);
 
 	return a;
 }
