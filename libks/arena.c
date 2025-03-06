@@ -46,11 +46,30 @@
 
 #define MAX_SOURCE_LOCATIONS 8
 
-#define arena_trace_push(a, size) do {					\
+#define arena_trace_push(a, b, c) do {					\
 	if (is_arena_trace_enabled(a)) {				\
 		arena_trace((a), &(struct arena_trace_event){		\
 		    .type = ARENA_TRACE_PUSH,				\
-		    .data.push.size = (size),				\
+		    .data.push.size = (b),				\
+		    .data.push.alignment_spill = (c),			\
+		});							\
+	}								\
+} while (0)
+
+#define arena_trace_frame_spill(a, b) do {				\
+	if (is_arena_trace_enabled(a)) {				\
+		arena_trace((a), &(struct arena_trace_event){		\
+		    .type = ARENA_TRACE_FRAME_SPILL,			\
+		    .data.frame_spill.size = (b),			\
+		});							\
+	}								\
+} while (0)
+
+#define arena_trace_realloc_spill(a, b) do {				\
+	if (is_arena_trace_enabled(a)) {				\
+		arena_trace((a), &(struct arena_trace_event){		\
+		    .type = ARENA_TRACE_REALLOC_SPILL,			\
+		    .data.realloc_spill.size = (b),			\
 		});							\
 	}								\
 } while (0)
@@ -268,7 +287,7 @@ arena_push(struct arena *a, struct arena_frame *frame, size_t size,
 	frame->len = newlen > frame->size ? frame->size : newlen;
 	if (out != NULL)
 		*out = ptr;
-	arena_trace_push(a, size);
+	arena_trace_push(a, size, newlen - oldlen);
 	return 1;
 }
 
@@ -475,6 +494,9 @@ arena_malloc(struct arena_scope *s, size_t size)
 		}
 	}
 
+	size_t frame_spill = a->frame->size - a->frame->len;
+	if (frame_spill > 0)
+		arena_trace_frame_spill(a, frame_spill);
 	if (!arena_frame_alloc(a, frame_size))
 		err(1, "%s", __func__);
 
@@ -551,6 +573,7 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 		a->stats.realloc.fast++;
 		return ptr;
 	}
+	arena_trace_realloc_spill(a, old_size);
 
 	new_ptr = arena_malloc(s, new_size);
 	if (ptr != NULL)

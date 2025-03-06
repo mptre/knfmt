@@ -44,11 +44,22 @@ struct arena_trace_event {
 	union {
 		struct {
 			size_t	size;
+			size_t	alignment_spill;
 		} push;
+
+		struct {
+			size_t	size;
+		} frame_spill;
+
+		struct {
+			size_t	size;
+		} realloc_spill;
 	} data;
 
 	enum {
 		ARENA_TRACE_PUSH,
+		ARENA_TRACE_FRAME_SPILL,
+		ARENA_TRACE_REALLOC_SPILL,
 	} type;
 };
 
