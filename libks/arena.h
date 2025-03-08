@@ -38,7 +38,7 @@ struct arena_scope {
 
 struct arena_trace_event {
 	uintptr_t	arena;
-#define ARENA_TRACE_STACK_TRACE_DEPTH 5
+#define ARENA_TRACE_STACK_TRACE_DEPTH 10
 	uintptr_t	stack_trace[ARENA_TRACE_STACK_TRACE_DEPTH];
 
 	union {

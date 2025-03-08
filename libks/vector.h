@@ -77,6 +77,28 @@ void	vector_clear(void *);
 })
 void	vector_sort(void *, int (*)(const void *, const void *));
 
+#define VECTOR_SEARCH(vc, cmp, needle) __extension__ ({			\
+	__typeof__(*(vc)) *_out = NULL;					\
+	size_t _n = VECTOR_LENGTH(vc);					\
+	if (_n > 0) {							\
+		size_t _l = 0;						\
+		size_t _r = _n - 1;					\
+		while (_l <= _r) {					\
+			size_t _m = (_r + _l) / 2;			\
+			int _c = cmp(&(vc)[_m], (needle));		\
+			if (_c == 0) {					\
+				_out = &(vc)[_m];			\
+				break;					\
+			} else if (_c < 0) {				\
+				_l = _m + 1;				\
+			} else if (_c > 0) {				\
+				_r = _m - 1;				\
+			}						\
+		}							\
+	}								\
+	_out;								\
+})
+
 #define VECTOR_FIRST(vc) __extension__ ({				\
 	size_t _i = vector_first((void *)(vc));				\
 	_i == ULONG_MAX ? NULL : (vc) + _i;				\
