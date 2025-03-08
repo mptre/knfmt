@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "libks/arena-buffer.h"
+#include "libks/arena.h"
 #include "libks/buffer.h"
 
 #include "style.h"
@@ -16,9 +17,16 @@ static const char	*nextline(const char *, size_t);
 static const char	*skipws(const char *, size_t);
 static size_t		 rskipws(const char *, size_t);
 
-struct buffer *
+static int
+is_comment_trimmed(const struct token *tk, const struct buffer *bf)
+{
+	return tk->tk_len != buffer_get_len(bf) &&
+	    memcmp(tk->tk_str, buffer_get_ptr(bf), buffer_get_len(bf)) != 0;
+}
+
+const char *
 comment_trim(const struct token *tk, const struct style *st,
-    struct arena_scope *s)
+    struct arena *scratch, struct arena_scope *s)
 {
 	struct buffer *bf;
 	const char *sp = tk->tk_str;
@@ -28,8 +36,10 @@ comment_trim(const struct token *tk, const struct style *st,
 	if (len == 0 || sp[len - 1] != '\n')
 		return NULL;
 
+	arena_scope(scratch, scratch_scope);
+
 	iscrlf = len >= 2 && sp[len - 2] == '\r';
-	bf = arena_buffer_alloc(s, len);
+	bf = arena_buffer_alloc(&scratch_scope, len);
 	for (;;) {
 		const char *ep;
 		size_t commlen;
@@ -57,7 +67,9 @@ comment_trim(const struct token *tk, const struct style *st,
 		sp += commlen;
 	}
 
-	return bf;
+	if (!is_comment_trimmed(tk, bf))
+		return NULL;
+	return arena_strdup(s, buffer_str(bf));
 }
 
 static const char *

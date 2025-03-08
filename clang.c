@@ -1171,8 +1171,8 @@ static struct token *
 clang_read_comment(struct clang *cl, struct lexer *lx, int block)
 {
 	struct lexer_state oldst, st;
-	struct buffer *bf;
 	struct token *tk;
+	const char *trim;
 	int c99;
 	unsigned char ch;
 
@@ -1233,9 +1233,10 @@ again:
 		tk->tk_flags |= TOKEN_FLAG_COMMENT_C99;
 	tk->tk_flags |= sense_clang_format_comment(tk);
 
-	bf = comment_trim(tk, cl->st, lexer_get_arena_scope(lx));
-	if (bf != NULL)
-		token_set_str(tk, buffer_get_ptr(bf), buffer_get_len(bf));
+	trim = comment_trim(tk, cl->st, cl->arena.scratch,
+	    lexer_get_arena_scope(lx));
+	if (trim != NULL)
+		token_set_str(tk, trim, strlen(trim));
 
 	/* Discard any remaining hard line(s). */
 	if (block)

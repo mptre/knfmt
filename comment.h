@@ -1,6 +1,7 @@
+struct arena;
 struct arena_scope;
 struct style;
 struct token;
 
-struct buffer	*comment_trim(const struct token *, const struct style *,
-    struct arena_scope *);
+const char	*comment_trim(const struct token *, const struct style *,
+    struct arena *, struct arena_scope *);
