@@ -104,7 +104,6 @@ struct arena {
 	/* Number of ASAN poison bytes between allocations. */
 	size_t			 poison_size;
 	int			 refs;
-	struct arena_stats	 stats;
 	struct source_location	 scope_locations[MAX_SOURCE_LOCATIONS];
 
 	struct {
@@ -223,42 +222,6 @@ arena_rele(struct arena *a)
 	free(a);
 }
 
-static void
-arena_stats_bytes(struct arena *a, size_t bytes)
-{
-	a->stats.bytes.now += bytes;
-	a->stats.bytes.total += bytes;
-	if (a->stats.bytes.now > a->stats.bytes.max)
-		a->stats.bytes.max = a->stats.bytes.now;
-}
-
-static void
-arena_stats_frames(struct arena *a, size_t frames)
-{
-	a->stats.frames.now += frames;
-	a->stats.frames.total += frames;
-	if (a->stats.frames.now > a->stats.frames.max)
-		a->stats.frames.max = a->stats.frames.now;
-}
-
-static void
-arena_stats_scopes(struct arena *a)
-{
-	a->stats.scopes.now++;
-	a->stats.scopes.total++;
-	if (a->stats.scopes.now > a->stats.scopes.max)
-		a->stats.scopes.max = a->stats.scopes.now;
-}
-
-static void
-arena_stats_alignment(struct arena *a, size_t alignment)
-{
-	a->stats.alignment.now += alignment;
-	a->stats.alignment.total += alignment;
-	if (a->stats.alignment.now > a->stats.alignment.max)
-		a->stats.alignment.max = a->stats.alignment.now;
-}
-
 static int
 arena_push(struct arena *a, struct arena_frame *frame, size_t size,
     enum poison_type poison, void **out)
@@ -279,7 +242,6 @@ arena_push(struct arena *a, struct arena_frame *frame, size_t size,
 	ptr = &frame->ptr[frame->len];
 	oldlen = newlen;
 	newlen = align_address(a, (union address){.size = newlen}).size;
-	arena_stats_alignment(a, newlen - oldlen);
 	/*
 	 * Discard alignment if the frame is exhausted, the next allocation will
 	 * require a new frame anyway.
@@ -308,14 +270,10 @@ arena_frame_alloc(struct arena *a, size_t frame_size)
 		return 0;
 	}
 
-	if (a->frame != NULL)
-		a->stats.frames.spill += a->frame->size - a->frame->len;
 	frame->next = a->frame;
 	a->frame = frame;
 	/* Ensure poison bytes between the frame and the first allocation. */
 	frame_poison_with_len(a->frame, sizeof(*frame));
-
-	arena_stats_frames(a, 1);
 
 	return 1;
 }
@@ -383,13 +341,6 @@ arena_scope_leave(struct arena_scope *s)
 	while (a->frame != NULL && a->frame != last_frame) {
 		struct arena_frame *frame = a->frame;
 
-		if (frame->size <= a->stats.bytes.now)
-			a->stats.bytes.now -= frame->size;
-		else
-			a->stats.bytes.now = 0;
-		if (a->stats.frames.now > 0)
-			a->stats.frames.now--;
-
 		a->frame = frame->next;
 		free(frame);
 	}
@@ -398,11 +349,6 @@ arena_scope_leave(struct arena_scope *s)
 		    s->frame_len : 0;
 		frame_poison(a->frame);
 	}
-
-	a->stats.bytes.now = s->bytes;
-	a->stats.frames.now = s->frames;
-	a->stats.scopes.now = s->scopes;
-	a->stats.alignment.now = s->alignment;
 
 	arena_rele(a);
 }
@@ -425,13 +371,8 @@ arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 	    .arena	= a,
 	    .frame	= a->frame,
 	    .frame_len	= a->frame->len,
-	    .bytes	= a->stats.bytes.now,
-	    .frames	= a->stats.frames.now,
-	    .scopes	= a->stats.scopes.now,
-	    .alignment	= a->stats.alignment.now,
 	    .id		= a->refs,
 	};
-	arena_stats_scopes(a);
 	return s;
 }
 
@@ -476,10 +417,8 @@ arena_malloc(struct arena_scope *s, size_t size)
 
 	arena_scope_validate(a, s, size);
 
-	if (arena_push(a, a->frame, size, POISON_UNDEFINED, &ptr)) {
-		arena_stats_bytes(a, size);
+	if (arena_push(a, a->frame, size, POISON_UNDEFINED, &ptr))
 		return ptr;
-	}
 
 	/* Must account for first arena_push() representing the actual frame. */
 	if (KS_size_add_overflow(size, sizeof(*frame), &total_size) ||
@@ -502,7 +441,6 @@ arena_malloc(struct arena_scope *s, size_t size)
 
 	if (!arena_push(a, a->frame, size, POISON_UNDEFINED, &ptr))
 		err(1, "%s", __func__);
-	arena_stats_bytes(a, size);
 	return ptr;
 }
 
@@ -547,7 +485,6 @@ arena_realloc_fast(struct arena_scope *s, char *ptr, size_t old_size,
 	frame.len = (size_t)(ptr - frame.ptr);
 	if (!arena_push(a, &frame, new_size, POISON_DEFINED, NULL))
 		return 0;
-	arena_stats_bytes(a, new_size - old_size);
 	*a->frame = frame;
 	return 1;
 }
@@ -564,21 +501,14 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 	if ((old_addr.u64 & (maxalign - 1)) != 0)
 		errx(1, "%s: Misaligned pointer", __func__);
 
-	a->stats.realloc.total++;
-	if (old_size == 0)
-		a->stats.realloc.zero++;
-
 	/* Fast path while reallocating last allocated object. */
-	if (ptr != NULL && arena_realloc_fast(s, ptr, old_size, new_size)) {
-		a->stats.realloc.fast++;
+	if (ptr != NULL && arena_realloc_fast(s, ptr, old_size, new_size))
 		return ptr;
-	}
 	arena_trace_realloc_spill(a, old_size);
 
 	new_ptr = arena_malloc(s, new_size);
 	if (ptr != NULL)
 		memcpy(new_ptr, ptr, old_size);
-	a->stats.realloc.spill += old_size;
 	return new_ptr;
 }
 
@@ -638,19 +568,11 @@ arena_cleanup(struct arena_scope *s, void (*fun)(void *), void *ptr)
 {
 	struct arena_cleanup *ac;
 
-	s->arena->stats.cleanup.total++;
-
 	ac = arena_malloc(s, sizeof(*ac));
 	ac->ptr = ptr;
 	ac->fun = fun;
 	ac->next = s->cleanup;
 	s->cleanup = ac;
-}
-
-struct arena_stats *
-arena_stats(struct arena *a)
-{
-	return &a->stats;
 }
 
 void

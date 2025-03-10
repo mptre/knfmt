@@ -29,10 +29,6 @@ struct arena_scope {
 	struct arena_frame	*frame;
 	struct arena_cleanup	*cleanup;
 	size_t			 frame_len;
-	unsigned long		 bytes;
-	unsigned long		 frames;
-	unsigned long		 scopes;
-	unsigned long		 alignment;
 	int			 id;
 };
 
@@ -63,62 +59,6 @@ struct arena_trace_event {
 	} type;
 };
 
-struct arena_stats {
-	struct {
-		/* Effective amount of allocated bytes. */
-		unsigned long	now;
-		/* Total amount of allocated bytes. */
-		unsigned long	total;
-		/* Peek amount of effective allocated bytes. */
-		unsigned long	max;
-	} bytes;
-
-	struct {
-		/* Effective amount of allocated frames. */
-		unsigned long	now;
-		/* Total amount of allocated frames. */
-		unsigned long	total;
-		/* Peek amount of effective allocated frames. */
-		unsigned long	max;
-		/* Number of bytes spilled while allocating a new frame. */
-		unsigned long	spill;
-	} frames;
-
-	struct {
-		/* Effective amount of scopes. */
-		unsigned long	now;
-		/* Total amount of scopes. */
-		unsigned long	total;
-		/* Peek amount of effective scopes. */
-		unsigned long	max;
-	} scopes;
-
-	struct {
-		/* Total amount of registered cleanups. */
-		unsigned long	total;
-	} cleanup;
-
-	struct {
-		/* Effective amount of alignment. */
-		unsigned long	now;
-		/* Total amount of allocated alignment. */
-		unsigned long	total;
-		/* Peek amount of effective allocated alignment. */
-		unsigned long	max;
-	} alignment;
-
-	struct {
-		/* Number of fast reallocations. */
-		unsigned long	fast;
-		/* Number of zero sized reallocations. */
-		unsigned long	zero;
-		/* Number of reallocations. */
-		unsigned long	total;
-		/* Number of bytes spilled while moving allocations. */
-		unsigned long	spill;
-	} realloc;
-};
-
 struct arena	*arena_alloc(void);
 void		 arena_free(struct arena *);
 
@@ -145,8 +85,6 @@ char	*arena_strndup(struct arena_scope *, const char *, size_t)
 	__attribute__((returns_nonnull));
 
 void    arena_cleanup(struct arena_scope *, void (*)(void *), void *);
-
-struct arena_stats	*arena_stats(struct arena *);
 
 void    arena_poison(const void *, size_t);
 

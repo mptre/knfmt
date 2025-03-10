@@ -159,10 +159,10 @@ buffer_puts(struct buffer *bf, const char *str, size_t len)
 	if (str == NULL || len == 0)
 		return 0;
 	if (buffer_reserve(bf, len, 1))
-		return 1;
+		return -1;
 	memcpy(&bf->bf_ptr[bf->bf_len], str, len);
 	bf->bf_len += len;
-	return 0;
+	return (int)len;
 }
 
 int
@@ -194,7 +194,6 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 {
 	va_list cp;
 	size_t len;
-	int error = 0;
 	int n;
 
 	if (is_string_directive(fmt)) {
@@ -203,8 +202,7 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 		str = va_arg(ap, const char *);
 		if (str == NULL)
 			str = "(null)";
-		buffer_puts(bf, str, strlen(str));
-		return 0;
+		return buffer_puts(bf, str, strlen(str));
 	}
 
 	va_copy(cp, ap);
@@ -212,17 +210,17 @@ buffer_vprintf(struct buffer *bf, const char *fmt, va_list ap)
 	n = vsnprintf(NULL, 0, fmt, ap);
 	if (n < 0 || buffer_reserve(bf, (size_t)n + 1, 1)) {
 		va_end(cp);
-		return 1;
+		return -1;
 	}
 
 	len = bf->bf_siz - bf->bf_len;
 	n = vsnprintf(&bf->bf_ptr[bf->bf_len], len, fmt, cp);
 	va_end(cp);
 	if (n < 0 || (size_t)n >= len)
-		return 1;
+		return -1;
 	bf->bf_len += (size_t)n;
 
-	return error;
+	return n;
 }
 
 char *
@@ -241,7 +239,7 @@ char *
 buffer_str(struct buffer *bf)
 {
 	if (bf->bf_len == 0 || bf->bf_ptr[bf->bf_len - 1] != '\0') {
-		if (buffer_putc(bf, '\0'))
+		if (buffer_putc(bf, '\0') == -1)
 			return NULL;
 	}
 	return buffer_release(bf);
