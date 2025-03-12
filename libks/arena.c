@@ -223,7 +223,7 @@ arena_rele(struct arena *a)
 }
 
 static int
-arena_push(struct arena *a, struct arena_frame *frame, size_t size,
+arena_push(const struct arena *a, struct arena_frame *frame, size_t size,
     enum poison_type poison, void **out)
 {
 	void *ptr;
