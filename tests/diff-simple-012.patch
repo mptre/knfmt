@@ -1,0 +1,10 @@
+--- diff-simple-012.c
++++ diff-simple-012.c
+@@ -1,5 +1,6 @@
+ typedef struct p p_t;
+-typedef union a a_t;
++typedef struct b b_t;
++typedef struct c c_t;
+ 
+ typedef union x {
+ 	int x;

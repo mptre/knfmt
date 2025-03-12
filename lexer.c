@@ -476,6 +476,9 @@ lexer_insert_after(struct lexer *lx, struct token *after,
 struct token *
 lexer_move_after(struct lexer *lx, struct token *after, struct token *mv)
 {
+	if (token_next(after) == mv)
+		return mv;
+
 	LIST_REMOVE(&lx->lx_tokens, mv);
 	token_position_after(after, mv);
 	LIST_INSERT_AFTER(&lx->lx_tokens, after, mv);
