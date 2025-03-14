@@ -29,6 +29,9 @@ struct arena_scope {
 	struct arena_frame	*frame;
 	struct arena_cleanup	*cleanup;
 	size_t			 frame_len;
+	size_t			 bytes;
+	size_t			 frames;
+	size_t			 scopes;
 	int			 id;
 };
 
@@ -50,12 +53,20 @@ struct arena_trace_event {
 		struct {
 			size_t	size;
 		} realloc_spill;
+
+		struct {
+			size_t	max;
+			size_t	total;
+		} stats;
 	} data;
 
 	enum {
 		ARENA_TRACE_PUSH,
 		ARENA_TRACE_FRAME_SPILL,
 		ARENA_TRACE_REALLOC_SPILL,
+		ARENA_TRACE_STATS_BYTES,
+		ARENA_TRACE_STATS_FRAMES,
+		ARENA_TRACE_STATS_SCOPES,
 	} type;
 };
 
@@ -86,6 +97,7 @@ char	*arena_strndup(struct arena_scope *, const char *, size_t)
 
 void    arena_cleanup(struct arena_scope *, void (*)(void *), void *);
 
-void    arena_poison(const void *, size_t);
+size_t	arena_capacity(const struct arena_scope *);
+void	arena_poison(const void *, size_t);
 
 #endif /* !LIBKS_ARENA_H */

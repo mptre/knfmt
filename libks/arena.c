@@ -74,6 +74,16 @@
 	}								\
 } while (0)
 
+#define arena_trace_stats(a, b, c, d) do {				\
+	if (is_arena_trace_enabled(a)) {				\
+		arena_trace((a), &(struct arena_trace_event){		\
+		    .type = (b),					\
+		    .data.stats.max = (c),				\
+		    .data.stats.total = (d),				\
+		});							\
+	}								\
+} while (0)
+
 enum poison_type {
 	POISON_UNDEFINED,
 	POISON_DEFINED,
@@ -107,6 +117,14 @@ struct arena {
 	struct source_location	 scope_locations[MAX_SOURCE_LOCATIONS];
 
 	struct {
+		struct {
+			size_t	now;
+			size_t	max;
+			size_t	total;
+		} bytes, frames, scopes;
+	} stats;
+
+	struct {
 		int	fd;
 	} trace;
 };
@@ -125,12 +143,18 @@ is_arena_trace_enabled(const struct arena *a)
 	return a->trace.fd != -1;
 }
 
+#if defined(__x86_64__)
+#define REG_BP "rbp"
+#elif defined(__i386__)
+#define REG_BP "ebp"
+#endif
+
 static void
 read_stack_trace(uintptr_t *stack_trace, uint32_t stack_trace_length)
 {
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(__i386__)
 	void **rbp;
-	__asm__ volatile ("mov %%rbp, %0" : "=r" (rbp));
+	__asm__ volatile ("mov %%" REG_BP ", %0" : "=r" (rbp));
 
 	for (uint32_t i = 0; i < stack_trace_length && rbp != 0; i++) {
 		stack_trace[i] = (uintptr_t)rbp[1];
@@ -201,6 +225,33 @@ align_address(const struct arena *a, union address addr)
 }
 
 static void
+arena_stats_bytes(struct arena *a, size_t bytes)
+{
+	a->stats.bytes.now += bytes;
+	a->stats.bytes.total += bytes;
+	if (a->stats.bytes.now > a->stats.bytes.max)
+		a->stats.bytes.max = a->stats.bytes.now;
+}
+
+static void
+arena_stats_frames(struct arena *a, size_t frames)
+{
+	a->stats.frames.now += frames;
+	a->stats.frames.total += frames;
+	if (a->stats.frames.now > a->stats.frames.max)
+		a->stats.frames.max = a->stats.frames.now;
+}
+
+static void
+arena_stats_scopes(struct arena *a)
+{
+	a->stats.scopes.now++;
+	a->stats.scopes.total++;
+	if (a->stats.scopes.now > a->stats.scopes.max)
+		a->stats.scopes.max = a->stats.scopes.now;
+}
+
+static void
 arena_trace(const struct arena *a, struct arena_trace_event *ev)
 {
 	ev->arena = (uintptr_t)a;
@@ -223,7 +274,7 @@ arena_rele(struct arena *a)
 }
 
 static int
-arena_push(const struct arena *a, struct arena_frame *frame, size_t size,
+arena_push(struct arena *a, struct arena_frame *frame, size_t size,
     enum poison_type poison, void **out)
 {
 	void *ptr;
@@ -249,6 +300,7 @@ arena_push(const struct arena *a, struct arena_frame *frame, size_t size,
 	frame->len = newlen > frame->size ? frame->size : newlen;
 	if (out != NULL)
 		*out = ptr;
+	arena_stats_bytes(a, size + (newlen - oldlen));
 	arena_trace_push(a, size, newlen - oldlen);
 	return 1;
 }
@@ -274,6 +326,8 @@ arena_frame_alloc(struct arena *a, size_t frame_size)
 	a->frame = frame;
 	/* Ensure poison bytes between the frame and the first allocation. */
 	frame_poison_with_len(a->frame, sizeof(*frame));
+
+	arena_stats_frames(a, 1);
 
 	return 1;
 }
@@ -310,6 +364,13 @@ arena_free(struct arena *a)
 {
 	if (a == NULL)
 		return;
+
+	arena_trace_stats(a, ARENA_TRACE_STATS_BYTES,
+	    a->stats.bytes.max, a->stats.bytes.total);
+	arena_trace_stats(a, ARENA_TRACE_STATS_FRAMES,
+	    a->stats.frames.max, a->stats.frames.total);
+	arena_trace_stats(a, ARENA_TRACE_STATS_SCOPES,
+	    a->stats.scopes.max, a->stats.scopes.total);
 
 	if (a->refs > 1) {
 		/* Scope(s) still alive. */
@@ -350,6 +411,10 @@ arena_scope_leave(struct arena_scope *s)
 		frame_poison(a->frame);
 	}
 
+	a->stats.bytes.now = s->bytes;
+	a->stats.frames.now = s->frames;
+	a->stats.scopes.now = s->scopes;
+
 	arena_rele(a);
 }
 
@@ -371,8 +436,12 @@ arena_scope_enter_impl(struct arena *a, const char *fun, int lno)
 	    .arena	= a,
 	    .frame	= a->frame,
 	    .frame_len	= a->frame->len,
+	    .bytes	= a->stats.bytes.now,
+	    .frames	= a->stats.frames.now,
+	    .scopes	= a->stats.scopes.now,
 	    .id		= a->refs,
 	};
+	arena_stats_scopes(a);
 	return s;
 }
 
@@ -573,6 +642,13 @@ arena_cleanup(struct arena_scope *s, void (*fun)(void *), void *ptr)
 	ac->fun = fun;
 	ac->next = s->cleanup;
 	s->cleanup = ac;
+}
+
+size_t
+arena_capacity(const struct arena_scope *s)
+{
+	const struct arena_frame *frame = s->arena->frame;
+	return frame->size - frame->len;
 }
 
 void
