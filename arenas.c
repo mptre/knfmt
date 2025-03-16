@@ -7,11 +7,11 @@
 void
 arenas_init(struct arenas *a)
 {
-	a->eternal = arena_alloc();
-	a->scratch = arena_alloc();
-	a->doc = arena_alloc();
-	a->buffer = arena_alloc();
-	a->ruler = arena_alloc();
+	a->eternal = arena_alloc("eternal");
+	a->scratch = arena_alloc("scratch");
+	a->doc = arena_alloc("doc");
+	a->buffer = arena_alloc("buffer");
+	a->ruler = arena_alloc("ruler");
 }
 
 void

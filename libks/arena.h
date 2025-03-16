@@ -37,10 +37,17 @@ struct arena_scope {
 
 struct arena_trace_event {
 	uintptr_t	arena;
-#define ARENA_TRACE_STACK_TRACE_DEPTH 10
-	uintptr_t	stack_trace[ARENA_TRACE_STACK_TRACE_DEPTH];
 
 	union {
+#define ARENA_TRACE_STACK_TRACE_DEPTH 10
+#define ARENA_NAME_MAX_LENGTH sizeof(uintptr_t) * ARENA_TRACE_STACK_TRACE_DEPTH
+		uintptr_t	stack_trace[ARENA_TRACE_STACK_TRACE_DEPTH];
+		char		name[ARENA_NAME_MAX_LENGTH];
+	};
+
+	union {
+		uintptr_t	name;
+
 		struct {
 			size_t	size;
 			size_t	alignment_spill;
@@ -61,6 +68,7 @@ struct arena_trace_event {
 	} data;
 
 	enum {
+		ARENA_TRACE_NAME,
 		ARENA_TRACE_PUSH,
 		ARENA_TRACE_FRAME_SPILL,
 		ARENA_TRACE_REALLOC_SPILL,
@@ -70,7 +78,7 @@ struct arena_trace_event {
 	} type;
 };
 
-struct arena	*arena_alloc(void);
+struct arena	*arena_alloc(const char *);
 void		 arena_free(struct arena *);
 
 #define arena_scope_enter(a) \

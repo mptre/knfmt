@@ -21,7 +21,7 @@ main(int argc, const char *argv[])
 	if (argc != 2)
 		usage();
 
-	scratch = arena_alloc();
+	scratch = arena_alloc("scratch");
 
 	arena_scope(scratch, s);
 

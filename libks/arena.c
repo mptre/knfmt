@@ -46,6 +46,13 @@
 
 #define MAX_SOURCE_LOCATIONS 8
 
+#if defined(ARENA_TRACE)
+
+#define arena_trace_name(a, b) do {					\
+	if (is_arena_trace_enabled(a))					\
+		arena_trace_name_impl((a), (b));			\
+} while (0)
+
 #define arena_trace_push(a, b, c) do {					\
 	if (is_arena_trace_enabled(a)) {				\
 		arena_trace((a), &(struct arena_trace_event){		\
@@ -83,6 +90,16 @@
 		});							\
 	}								\
 } while (0)
+
+#else
+
+#define arena_trace_name(a, b)		(void)0
+#define arena_trace_push(a, b, c)	(void)0
+#define arena_trace_frame_spill(a, b)	(void)0
+#define arena_trace_realloc_spill(a, b)	(void)0
+#define arena_trace_stats(a, b, c, d)	(void)0
+
+#endif
 
 enum poison_type {
 	POISON_UNDEFINED,
@@ -137,6 +154,8 @@ union address {
 
 static const size_t maxalign = sizeof(void *);
 
+#if defined(ARENA_TRACE)
+
 static inline int
 is_arena_trace_enabled(const struct arena *a)
 {
@@ -166,6 +185,29 @@ read_stack_trace(uintptr_t *stack_trace, uint32_t stack_trace_length)
 	(void)stack_trace_length;
 #endif
 }
+
+static void
+arena_trace(const struct arena *a, struct arena_trace_event *ev)
+{
+	ev->arena = (uintptr_t)a;
+	read_stack_trace(ev->stack_trace, ARENA_TRACE_STACK_TRACE_DEPTH);
+	(void)write(a->trace.fd, ev, sizeof(*ev));
+}
+
+static void
+arena_trace_name_impl(const struct arena *a, const char *name)
+{
+	struct arena_trace_event ev = {
+		.arena = (uintptr_t)a,
+	};
+	size_t length = strlen(name);
+	if (length > sizeof(ev.name) - 1)
+		length = sizeof(ev.name) - 1;
+	memcpy(ev.name, name, length);
+	(void)write(a->trace.fd, &ev, sizeof(ev));
+}
+
+#endif
 
 static size_t
 poison_size(void)
@@ -253,14 +295,6 @@ arena_stats_scopes(struct arena *a)
 }
 
 static void
-arena_trace(const struct arena *a, struct arena_trace_event *ev)
-{
-	ev->arena = (uintptr_t)a;
-	read_stack_trace(ev->stack_trace, ARENA_TRACE_STACK_TRACE_DEPTH);
-	(void)write(a->trace.fd, ev, sizeof(*ev));
-}
-
-static void
 arena_ref(struct arena *a)
 {
 	a->refs++;
@@ -334,7 +368,7 @@ arena_frame_alloc(struct arena *a, size_t frame_size)
 }
 
 struct arena *
-arena_alloc(void)
+arena_alloc(const char *name)
 {
 	struct arena *a;
 	long page_size;
@@ -354,8 +388,11 @@ arena_alloc(void)
 		err(1, "%s", __func__);
 
 	const char *path = getenv("ARENA_TRACE");
-	if (path != NULL)
+	if (path != NULL) {
 		a->trace.fd = open(path, O_WRONLY | O_CLOEXEC);
+		if (name != NULL)
+			arena_trace_name(a, name);
+	}
 
 	return a;
 }
@@ -563,7 +600,6 @@ void *
 arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
     size_t new_size)
 {
-	struct arena *a = s->arena;
 	void *new_ptr;
 	union address old_addr;
 
@@ -574,7 +610,7 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 	/* Fast path while reallocating last allocated object. */
 	if (ptr != NULL && arena_realloc_fast(s, ptr, old_size, new_size))
 		return ptr;
-	arena_trace_realloc_spill(a, old_size);
+	arena_trace_realloc_spill(s->arena, old_size);
 
 	new_ptr = arena_malloc(s, new_size);
 	if (ptr != NULL)
