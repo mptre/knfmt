@@ -40,7 +40,7 @@ struct arena_trace_event {
 
 	union {
 #define ARENA_TRACE_STACK_TRACE_DEPTH 10
-#define ARENA_NAME_MAX_LENGTH sizeof(uintptr_t) * ARENA_TRACE_STACK_TRACE_DEPTH
+#define ARENA_NAME_MAX_LENGTH (sizeof(uintptr_t) * ARENA_TRACE_STACK_TRACE_DEPTH)
 		uintptr_t	stack_trace[ARENA_TRACE_STACK_TRACE_DEPTH];
 		char		name[ARENA_NAME_MAX_LENGTH];
 	};
