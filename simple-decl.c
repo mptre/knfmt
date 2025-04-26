@@ -204,13 +204,21 @@ simple_decl_free(struct simple_decl *sd)
 }
 
 static int
-is_type_valid(struct token *beg, struct token *end)
+is_type_valid(const struct simple_decl *sd, struct token *beg,
+    struct token *end)
 {
 	struct token_range tr = {
 		.tr_beg	= beg,
 		.tr_end	= end,
 	};
 	struct token *tk, *tmp;
+
+	if (sd->op->diffparse) {
+		TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
+			if ((tmp->tk_flags & TOKEN_FLAG_DIFF) == 0)
+				return 0;
+		}
+	}
 
 	/* Ignore anonymous struct and union. */
 	if (beg == end &&
@@ -244,7 +252,7 @@ simple_decl_type(struct simple_decl *sd, struct token *beg, struct token *end)
 	struct decl_var *dv;
 	const char *type;
 
-	if (!is_type_valid(beg, end))
+	if (!is_type_valid(sd, beg, end))
 		return;
 
 	type = token_range_str(&tr, sd->eternal_scope);
