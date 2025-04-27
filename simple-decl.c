@@ -213,13 +213,6 @@ is_type_valid(const struct simple_decl *sd, struct token *beg,
 	};
 	struct token *tk, *tmp;
 
-	if (sd->op->diffparse) {
-		TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
-			if ((tmp->tk_flags & TOKEN_FLAG_DIFF) == 0)
-				return 0;
-		}
-	}
-
 	/* Ignore anonymous struct and union. */
 	if (beg == end &&
 	    (token_is_decl(beg, TOKEN_STRUCT) ||
@@ -227,6 +220,9 @@ is_type_valid(const struct simple_decl *sd, struct token *beg,
 		return 0;
 
 	TOKEN_RANGE_FOREACH(tk, &tr, tmp) {
+		if (sd->op->diffparse && (tk->tk_flags & TOKEN_FLAG_DIFF) == 0)
+			return 0;
+
 		if (!token_is_moveable(tk))
 			return 0;
 
