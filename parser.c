@@ -66,8 +66,10 @@ clang_format_on(struct parser *pr, struct token *comment, struct doc *dc)
 static void
 clang_format_off(struct parser *pr, struct token *comment, struct doc *dc)
 {
-	/* Ignore while peeking and branching. */
-	if (lexer_get_peek(pr->pr_lx) || pr->pr_token.unmute != NULL)
+	/* Ignore while peeking, branching and already off. */
+	if (lexer_get_peek(pr->pr_lx) ||
+	    pr->pr_token.unmute != NULL ||
+	    pr->pr_token.clang_format_off != NULL)
 		return;
 
 	parser_trace(pr, "%s", lexer_serialize(pr->pr_lx, comment));
