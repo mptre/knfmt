@@ -81,8 +81,8 @@ KS_expect_scope_leave(void *arg)
 	KS_expect_str_n((exp), (act), strlen((act)))
 
 #define KS_expect_str_n(exp, act, act_len) __extension__ ({		\
-	typeof(exp) _exp = (exp);					\
-	typeof(act) _act = (act);					\
+	__typeof__(exp) _exp = (exp);					\
+	__typeof__(act) _act = (act);					\
 	size_t _exp_len = strlen(_exp);					\
 	size_t _act_len = (act_len);					\
 	if (_exp_len != _act_len ||					\

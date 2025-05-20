@@ -72,7 +72,7 @@ size_t	vector_pop(void *);
 void	vector_clear(void *);
 
 #define VECTOR_SORT(vc, c) __extension__ ({				\
-	int (*_c)(const typeof(*(vc)) *, const typeof(*(vc)) *) = &(c);	\
+	int (*_c)(const __typeof__(*(vc)) *, const __typeof__(*(vc)) *) = &(c);\
 	vector_sort((void *)(vc), (int (*)(const void *, const void *))_c);\
 })
 void	vector_sort(void *, int (*)(const void *, const void *));
