@@ -1,0 +1,31 @@
+/*
+ * Redundant parenthesis around expression.
+ */
+
+void
+test1(void)
+{
+	if (a && (!b))
+		return;
+}
+
+void
+test2(void)
+{
+	if (1 || ((1 ? 1 : 0)))
+		return;
+}
+
+void
+test3(void)
+{
+	if ((*x)->y)
+		return;
+}
+
+void
+test4(void)
+{
+	if (~(0))
+		return;
+}

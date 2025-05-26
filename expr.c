@@ -912,11 +912,26 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 	return dc;
 }
 
+static int
+must_keep_parens(const struct expr *ex)
+{
+	if (ex == NULL)
+		return 0;
+	if ((ex->ex_type == EXPR_UNARY && ex->ex_tk->tk_type == TOKEN_STAR) ||
+	    ex->ex_type == EXPR_BINARY ||
+	    ex->ex_type == EXPR_TERNARY ||
+	    ex->ex_type == EXPR_CAST ||
+	    ex->ex_type == EXPR_SQUARES)
+		return 1;
+	return must_keep_parens(ex->ex_lhs) ||
+	    must_keep_parens(ex->ex_rhs);
+}
+
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
 	simple_cookie(simple);
-	if (es->es_depth == 1 &&
+	if ((es->es_depth == 1 || !must_keep_parens(ex)) &&
 	    simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple)) {
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);

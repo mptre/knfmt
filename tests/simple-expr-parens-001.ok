@@ -7,7 +7,7 @@ test1(void)
 int
 test2(void)
 {
-	return (1) + 2;
+	return 1 + 2;
 }
 
 int
