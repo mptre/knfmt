@@ -913,18 +913,23 @@ expr_doc_binary(struct expr *ex, struct expr_state *es, struct doc *dc)
 }
 
 static int
+is_pointer_dereference(const struct expr *ex)
+{
+	return ex->ex_type == EXPR_SQUARES ||
+	    (ex->ex_type == EXPR_UNARY && ex->ex_tk->tk_type == TOKEN_STAR);
+}
+
+static int
 must_keep_parens(const struct expr *ex)
 {
 	if (ex == NULL)
 		return 0;
-	if ((ex->ex_type == EXPR_UNARY && ex->ex_tk->tk_type == TOKEN_STAR) ||
+	if (is_pointer_dereference(ex) ||
 	    ex->ex_type == EXPR_BINARY ||
 	    ex->ex_type == EXPR_TERNARY ||
-	    ex->ex_type == EXPR_CAST ||
-	    ex->ex_type == EXPR_SQUARES)
+	    ex->ex_type == EXPR_CAST)
 		return 1;
-	return must_keep_parens(ex->ex_lhs) ||
-	    must_keep_parens(ex->ex_rhs);
+	return must_keep_parens(ex->ex_lhs) || must_keep_parens(ex->ex_rhs);
 }
 
 static struct doc *
