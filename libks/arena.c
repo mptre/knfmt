@@ -53,12 +53,13 @@
 		arena_trace_name_impl((a), (b));			\
 } while (0)
 
-#define arena_trace_push(a, b, c) do {					\
+#define arena_trace_push(a, b, c, d) do {				\
 	if (is_arena_trace_enabled(a)) {				\
 		arena_trace((a), &(struct arena_trace_event){		\
 		    .type = ARENA_TRACE_PUSH,				\
 		    .data.push.size = (b),				\
 		    .data.push.alignment_spill = (c),			\
+		    .data.push.internal = (d),				\
 		});							\
 	}								\
 } while (0)
@@ -94,7 +95,7 @@
 #else
 
 #define arena_trace_name(a, b)		(void)0
-#define arena_trace_push(a, b, c)	(void)0
+#define arena_trace_push(a, b, c, d)	(void)0
 #define arena_trace_frame_spill(a, b)	(void)0
 #define arena_trace_realloc_spill(a, b)	(void)0
 #define arena_trace_stats(a, b, c, d)	(void)0
@@ -308,20 +309,20 @@ arena_rele(struct arena *a)
 	free(a);
 }
 
-static int
-arena_push(struct arena *a, struct arena_frame *frame, size_t size,
-    enum poison_type poison, void **out)
+static void *
+arena_push_impl(struct arena *a, struct arena_frame *frame, size_t size,
+    enum poison_type poison, int internal)
 {
 	void *ptr;
 	size_t newlen, oldlen;
 
 	if (KS_size_add_overflow(frame->len, size, &newlen)) {
 		errno = EOVERFLOW;
-		return 0;
+		return NULL;
 	}
 	if (newlen > frame->size) {
 		errno = ENOMEM;
-		return 0;
+		return NULL;
 	}
 
 	frame_unpoison(frame, size, poison);
@@ -333,11 +334,25 @@ arena_push(struct arena *a, struct arena_frame *frame, size_t size,
 	 * require a new frame anyway.
 	 */
 	frame->len = newlen > frame->size ? frame->size : newlen;
-	if (out != NULL)
-		*out = ptr;
 	arena_stats_bytes(a, size + (newlen - oldlen));
-	arena_trace_push(a, size, newlen - oldlen);
-	return 1;
+	arena_trace_push(a, size, newlen - oldlen, internal);
+	/* Avoid unused warnings. */
+	(void)internal;
+	return ptr;
+}
+
+static void *
+arena_push_internal(struct arena *a, struct arena_frame *frame, size_t size,
+    enum poison_type poison)
+{
+	return arena_push_impl(a, frame, size, poison, 1);
+}
+
+static void *
+arena_push(struct arena *a, struct arena_frame *frame, size_t size,
+    enum poison_type poison)
+{
+	return arena_push_impl(a, frame, size, poison, 0);
 }
 
 static int
@@ -352,7 +367,9 @@ arena_frame_alloc(struct arena *a, size_t frame_size)
 	frame->size = frame_size;
 	frame->len = 0;
 	frame->next = NULL;
-	if (!arena_push(a, frame, sizeof(*frame), POISON_DEFINED, NULL)) {
+	const void *ptr = arena_push_internal(a, frame, sizeof(*frame),
+	    POISON_DEFINED);
+	if (ptr == NULL) {
 		free(frame);
 		return 0;
 	}
@@ -524,7 +541,8 @@ arena_malloc(struct arena_scope *s, size_t size)
 
 	arena_scope_validate(a, s, size);
 
-	if (arena_push(a, a->frame, size, POISON_UNDEFINED, &ptr))
+	ptr = arena_push(a, a->frame, size, POISON_UNDEFINED);
+	if (ptr != NULL)
 		return ptr;
 
 	/* Must account for first arena_push() representing the actual frame. */
@@ -546,7 +564,8 @@ arena_malloc(struct arena_scope *s, size_t size)
 	if (!arena_frame_alloc(a, frame_size))
 		err(1, "%s", __func__);
 
-	if (!arena_push(a, a->frame, size, POISON_UNDEFINED, &ptr))
+	ptr = arena_push(a, a->frame, size, POISON_UNDEFINED);
+	if (ptr == NULL)
 		err(1, "%s", __func__);
 	return ptr;
 }
@@ -590,7 +609,7 @@ arena_realloc_fast(struct arena_scope *s, char *ptr, size_t old_size,
 	/* Check if the new size still fits within the current frame. */
 	frame = *a->frame;
 	frame.len = (size_t)(ptr - frame.ptr);
-	if (!arena_push(a, &frame, new_size, POISON_DEFINED, NULL))
+	if (arena_push(a, &frame, new_size, POISON_DEFINED) == NULL)
 		return 0;
 	*a->frame = frame;
 	return 1;

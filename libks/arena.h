@@ -51,6 +51,7 @@ struct arena_trace_event {
 		struct {
 			size_t	size;
 			size_t	alignment_spill;
+			int	internal;
 		} push;
 
 		struct {
