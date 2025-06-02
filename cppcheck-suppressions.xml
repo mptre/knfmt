@@ -5,6 +5,9 @@
     <id>checkersReport</id>
   </suppress>
   <suppress>
+    <id>constParameterCallback</id>
+  </suppress>
+  <suppress>
     <id>constParameterPointer</id>
   </suppress>
   <suppress>
