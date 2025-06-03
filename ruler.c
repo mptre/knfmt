@@ -308,10 +308,25 @@ sense_datum_width(const struct ruler_datum *rd, unsigned int nspaces)
 	return alignment_width;
 }
 
+static const struct ruler_datum *
+sense_column_longest_datum(const struct ruler_column *rc)
+{
+	const struct ruler_datum *rd = NULL;
+	unsigned int i;
+
+	for (i = 0; i < VECTOR_LENGTH(rc->rc_datums); i++) {
+		const struct ruler_datum *candidate = &rc->rc_datums[i];
+		if (rd == NULL || candidate->rd_len > rd->rd_len)
+			rd = candidate;
+	}
+	assert(rd != NULL);
+
+	return rd;
+}
+
 static unsigned int
 sense_column_length(struct ruler_column *rc)
 {
-	struct token *tk;
 	size_t i;
 	unsigned int alignment_width, effective_nspaces, effective_width, len,
 		     width;
@@ -342,18 +357,19 @@ sense_column_length(struct ruler_column *rc)
 
 	/*
 	 * Column is aligned, calculate the wanted column length including
-	 * alignment. Since all datums have the same length, operate on the
-	 * first one.
+	 * alignment.
 	 *
 	 * <tab> struct sss <tab> <space> *
 	 * |     ^rd_len--^             |
 	 * ^width---------^             |
 	 * ^effective_width-------------^
 	 */
-	tk = rc->rc_datums[0].rd_tk;
+	const struct ruler_datum *longest_datum =
+	    sense_column_longest_datum(rc);
+	const struct token *tk = longest_datum->rd_tk;
 	width = colwidth(tk->tk_str, tk->tk_len, tk->tk_cno);
 	alignment_width = effective_width - width;
-	len = rc->rc_datums[0].rd_len + alignment_width;
+	len = longest_datum->rd_len + alignment_width;
 	return len;
 }
 

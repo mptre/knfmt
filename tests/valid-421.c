@@ -1,0 +1,7 @@
+/*
+ * Ruler alignment regression.
+ */
+
+void       unused AAAAAAAAAAAAAAAAAA(int n, int i, vvvvvvvvvv ptr);
+vvvvvvvvvv unused BBBBBBBBBBBBBBBBBB(int n, int i);
+void       unused CCCCCCCCCCCCCCCCCC(int n, int i, vvvvvvvvvv ptr);
