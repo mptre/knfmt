@@ -21,4 +21,4 @@ enum trace_type {
 	TRACE_MAX,
 };
 
-#endif
+#endif /* !TRACE_TYPES_H */

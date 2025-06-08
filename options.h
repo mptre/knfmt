@@ -20,4 +20,4 @@ options_trace_level(const struct options *op, enum trace_type type)
 	return op->trace[type];
 }
 
-#endif
+#endif /* !OPTIONS_H */
