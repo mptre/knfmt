@@ -107,18 +107,6 @@ path_slice(const char *path, unsigned int ncomponents, struct arena_scope *s)
 	return buffer_str(bf);
 }
 
-int
-is_path_header(const char *path)
-{
-	const char needle[] = ".h";
-	const char *dot;
-
-	dot = strrchr(path, '.');
-	if (dot == NULL)
-		return 0;
-	return strcmp(dot, needle) == 0 && dot[sizeof(needle) - 1] == '\0';
-}
-
 size_t
 strindent_buffer(struct buffer *bf, size_t indent, int usetabs, size_t pos)
 {

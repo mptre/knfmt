@@ -1,5 +1,7 @@
 /*
- * IncludeGuards: 1
+ * IncludeGuards:
+ *   - Regex: 'test.h'
+ *     PathComponents: 1
  */
 
 #ifndef LIBKS_EXPECT_H

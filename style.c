@@ -73,13 +73,26 @@ struct style {
 		unsigned int	isset;
 		unsigned int	val;
 	} options[Last];
+
 	VECTOR(struct include_category)	 include_categories;
+	VECTOR(struct include_guard)	 include_guards;
+
+	struct regex			*regex;
+};
+
+struct regex {
+	const char	*pattern;
+	regex_t		 r;
 };
 
 struct include_category {
-	const char		*pattern;
-	regex_t			 regex;
+	struct regex		 regex;
 	struct include_priority	 priority;
+};
+
+struct include_guard {
+	struct regex	regex;
+	unsigned int	ncomponents;
 };
 
 struct style_option {
@@ -108,6 +121,7 @@ static int	style_parse_yaml(struct style *, const char *,
 static int	style_parse_yaml_documents(struct style *, struct lexer *, int);
 static void	style_dump(const struct style *);
 static void	style_dump_IncludeCategories(const struct style *);
+static void	style_dump_IncludeGuards(const struct style *);
 
 static struct token			*yaml_read(struct lexer *, void *);
 static struct token			*yaml_read_integer(struct lexer *);
@@ -143,6 +157,8 @@ static int	parse_ColumnLimit(struct style *, struct lexer *,
 static int	parse_IncludeCategories(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_IncludeGuards(struct style *, struct lexer *,
+    const struct style_option *);
+static int	parse_PathComponents(struct style *, struct lexer *,
     const struct style_option *);
 static int	parse_Priority(struct style *, struct lexer *,
     const struct style_option *);
@@ -229,6 +245,8 @@ style_init(void)
 		{ N(IncludeCategories, SortPriority), parse_Priority, {0} },
 
 		{ S(IncludeGuards), parse_IncludeGuards, {0} },
+		{ N(IncludeGuards, Regex), parse_Regex, {0} },
+		{ N(IncludeGuards, PathComponents), parse_PathComponents, {0} },
 
 		{ S(IndentWidth), parse_integer, {0} },
 
@@ -403,6 +421,8 @@ style_parse_buffer(const struct buffer *bf, const char *path,
 	st->op = op;
 	if (VECTOR_INIT(st->include_categories))
 		err(1, NULL);
+	if (VECTOR_INIT(st->include_guards))
+		err(1, NULL);
 	style_defaults(st);
 	if (bf == NULL) {
 		 /*
@@ -426,9 +446,17 @@ style_free(void *arg)
 		struct include_category *ic;
 
 		ic = VECTOR_POP(st->include_categories);
-		regfree(&ic->regex);
+		regfree(&ic->regex.r);
 	}
 	VECTOR_FREE(st->include_categories);
+
+	while (!VECTOR_EMPTY(st->include_guards)) {
+		struct include_guard *guard;
+
+		guard = VECTOR_POP(st->include_guards);
+		regfree(&guard->regex.r);
+	}
+	VECTOR_FREE(st->include_guards);
 }
 
 unsigned int
@@ -462,6 +490,22 @@ priority_cmp(const int *aa, const int *bb)
 		return -1;
 	if (a > b)
 		return 1;
+	return 0;
+}
+
+unsigned int
+style_include_guards(const struct style *st, const char *path)
+{
+	if (style(st, IncludeGuards) == 0)
+		return 0;
+
+	for (uint32_t i = 0; i < VECTOR_LENGTH(st->include_guards); i++) {
+		const struct include_guard *guard = &st->include_guards[i];
+		int error = regexec(&guard->regex.r, path, 0, NULL, 0);
+		if (error == 0)
+			return guard->ncomponents;
+	}
+
 	return 0;
 }
 
@@ -508,7 +552,7 @@ style_include_priority(const struct style *st, const char *include_path)
 		const struct include_category *ic = &st->include_categories[i];
 		int error;
 
-		error = regexec(&ic->regex, include_path, 0, NULL, 0);
+		error = regexec(&ic->regex.r, include_path, 0, NULL, 0);
 		if (error == 0)
 			return ic->priority;
 	}
@@ -622,6 +666,32 @@ skip_document(struct lexer *lx)
 }
 
 static int
+is_in_scope(const struct style *st, const struct style_option *so, int nested)
+{
+	unsigned int i;
+	unsigned char slot;
+
+	if (st->scope == so->so_scope)
+		return 1;
+	if (!nested)
+		return 0;
+
+	/* Some options are valid in multiple scopes. */
+	slot = (unsigned char)so->so_key[0];
+	if (keywords[slot] == NULL)
+		return 0;
+	for (i = 0; i < VECTOR_LENGTH(keywords[slot]); i++) {
+		const struct style_option *candidate = &keywords[slot][i];
+
+		if (candidate->so_type == so->so_type &&
+		    st->scope == candidate->so_scope)
+			return 1;
+	}
+
+	return 0;
+}
+
+static int
 style_parse_yaml_documents(struct style *st, struct lexer *lx, int nested)
 {
 	int error;
@@ -663,7 +733,7 @@ style_parse_yaml_documents(struct style *st, struct lexer *lx, int nested)
 			break;
 		}
 		so = token_priv(key, struct yaml_token)->so;
-		if (so != NULL && so->so_scope != st->scope)
+		if (so != NULL && !is_in_scope(st, so, nested))
 			break;
 		if (so != NULL)
 			error = so->so_parse(st, lx, so);
@@ -723,6 +793,8 @@ style_dump(const struct style *st)
 
 		if (so->so_type == IncludeCategories) {
 			style_dump_IncludeCategories(st);
+		} else if (so->so_type == IncludeGuards) {
+			style_dump_IncludeGuards(st);
 		} else {
 			switch (st->options[i].type) {
 			case Integer:
@@ -748,9 +820,25 @@ style_dump_IncludeCategories(const struct style *st)
 	for (i = 0; i < VECTOR_LENGTH(st->include_categories); i++) {
 		const struct include_category *ic = &st->include_categories[i];
 
-		fprintf(stderr, "[s] - Regex: '%s'\n", ic->pattern);
+		fprintf(stderr, "[s] - Regex: '%s'\n", ic->regex.pattern);
 		fprintf(stderr, "[s]   Priority: %d\n", ic->priority.group);
 		fprintf(stderr, "[s]   SortPriority: %d\n", ic->priority.sort);
+	}
+}
+
+static void
+style_dump_IncludeGuards(const struct style *st)
+{
+	size_t i;
+
+	fprintf(stderr, "\n");
+
+	for (i = 0; i < VECTOR_LENGTH(st->include_guards); i++) {
+		const struct include_guard *guard = &st->include_guards[i];
+
+		fprintf(stderr, "[s] - Regex: '%s'\n", guard->regex.pattern);
+		fprintf(stderr, "[s]   PathComponents: %d\n",
+		    guard->ncomponents);
 	}
 }
 
@@ -1213,9 +1301,13 @@ parse_IncludeCategories(struct style *st, struct lexer *lx,
 	scope = st->scope;
 	st->scope = so->so_type;
 	while (lexer_if(lx, Sequence, NULL)) {
-		if (VECTOR_CALLOC(st->include_categories) == NULL)
+		struct include_category *ic = VECTOR_CALLOC(
+		    st->include_categories);
+		if (ic == NULL)
 			err(1, NULL);
+		st->regex = &ic->regex;
 		style_parse_yaml_documents(st, lx, 1);
+		st->regex = NULL;
 	}
 	st->scope = scope;
 	/* Only used by style_dump(). */
@@ -1227,19 +1319,53 @@ static int
 parse_IncludeGuards(struct style *st, struct lexer *lx,
     const struct style_option *so)
 {
-	struct token *val;
-	int error;
+	int scope;
 
-	error = parse_integer(st, lx, so);
+	if (!lexer_if(lx, so->so_type, NULL))
+		return NONE;
+	if (!lexer_expect(lx, Colon, NULL))
+		return FAIL;
+
+	scope = st->scope;
+	st->scope = so->so_type;
+	while (lexer_if(lx, Sequence, NULL)) {
+		struct include_guard *guard = VECTOR_CALLOC(st->include_guards);
+		if (guard == NULL)
+			err(1, NULL);
+		guard->ncomponents = 1;
+		st->regex = &guard->regex;
+		style_parse_yaml_documents(st, lx, 1);
+		st->regex = NULL;
+	}
+	st->scope = scope;
+
+	style_set(st, IncludeGuards, Integer, 1);
+	return GOOD;
+}
+
+static int
+parse_PathComponents(struct style *st, struct lexer *lx,
+    const struct style_option *so)
+{
+	struct include_guard *guard;
+	struct token *key, *val;
+	int error, ncomponents;
+
+	error = parse_integer_impl(st, lx, so, &key, &val);
 	if ((error & GOOD) == 0)
 		return error;
-	if (lexer_back(lx, &val) &&
-	    token_priv(val, struct yaml_token)->integer.i32 <= 0) {
+
+	guard = VECTOR_LAST(st->include_guards);
+	if (guard == NULL)
+		return FAIL; /* UNREACHABLE */
+	ncomponents = token_priv(val, struct yaml_token)->integer.i32;
+	if (ncomponents <= 0) {
 		style_set(st, IncludeGuards, Integer, 0);
 		lexer_error(lx, val, __func__, __LINE__,
 		    "integer %s too small", lexer_serialize(lx, val));
 		return FAIL;
 	}
+	guard->ncomponents = (unsigned int)ncomponents;
 	return GOOD;
 }
 
@@ -1273,7 +1399,7 @@ parse_Priority(struct style *st, struct lexer *lx,
 static int
 parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 {
-	struct include_category *ic;
+	struct regex *regex;
 	struct token *tk;
 	int error;
 
@@ -1283,12 +1409,12 @@ parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 	if (!lexer_back(lx, &tk))
 		return FAIL;
 
-	ic = VECTOR_LAST(st->include_categories);
-	ic->pattern = arena_strndup(st->arena.eternal_scope,
+	regex = st->regex;
+	regex->pattern = arena_strndup(st->arena.eternal_scope,
 	    tk->tk_str, tk->tk_len);
 	/* Allow the pattern to be redefined. */
-	regfree(&ic->regex);
-	error = regcomp(&ic->regex, ic->pattern,
+	regfree(&regex->r);
+	error = regcomp(&regex->r, regex->pattern,
 	    REG_EXTENDED | REG_NOSUB | REG_ICASE);
 	if (error) {
 		char errbuf[128] = {0};
@@ -1298,8 +1424,8 @@ parse_Regex(struct style *st, struct lexer *lx, const struct style_option *so)
 			(void)snprintf(errbuf, sizeof(errbuf),
 			    "parentheses not balanced");
 		} else {
-			regerror(error, &ic->regex, errbuf,
-			    sizeof(errbuf));
+			regerror(error, &regex->r,
+			    errbuf, sizeof(errbuf));
 		}
 		lexer_error(lx, tk, __func__, __LINE__, "%s", errbuf);
 		return FAIL;

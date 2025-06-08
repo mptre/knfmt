@@ -228,18 +228,17 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 	struct arena_scope *eternal_scope;
 	struct token *define, *endif, *ifndef;
 	const char *cpp_define, *cpp_endif, *cpp_ifndef, *guard, *path;
-
-	if (style(st, IncludeGuards) == 0)
-		return;
+	unsigned int ncomponents;
 
 	path = lexer_get_path(lx);
-	if (!is_path_header(path))
+	ncomponents = style_include_guards(st, path);
+	if (ncomponents == 0)
 		return;
 
 	arena_scope(scratch, s);
 	eternal_scope = lexer_get_arena_scope(lx);
 
-	guard = path_to_guard(path, style(st, IncludeGuards), &s);
+	guard = path_to_guard(path, ncomponents, &s);
 	if (guard == NULL)
 		return;
 	cpp_ifndef = arena_sprintf(eternal_scope, "#ifndef %s\n", guard);

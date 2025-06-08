@@ -342,19 +342,33 @@ Regroup blocks of includes according to
 .It Cm IncludeCategories
 Rules used to group includes into blocks.
 .It Cm IncludeGuards Pq extension
+List of headers in which include guards must be present.
+The supported nested options are as follows:
+.Bl -tag -width Ds
+.It Cm Regex
+Extended regular expression used to determine if
+.Ar file
+denotes a header, see
+.Xr regex 3 .
+.It Cm PathComponents
 Number of path components used to construct header include guards.
 .Bl -tag -width Ds
 .It Cm >0
-Example using two path components.
-.Bd -literal
+.Bd -literal -compact
 $ cat libks/vector.h
 #ifndef LIBKS_VECTOR_H
 #define LIBKS_VECTOR_H
 #endif /* !LIBKS_VECTOR_H */
 .Ed
-.It Cm 0
-Disable include guards.
+.It Cm 1
 .Pq default
+.Bd -literal -compact
+$ cat libks/vector.h
+#ifndef VECTOR_H
+#define VECTOR_H
+#endif /* !VECTOR_H */
+.Ed
+.El
 .El
 .It Cm IndentWidth
 Indentation width.

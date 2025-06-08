@@ -92,6 +92,11 @@ PenaltyBreakBeforeFirstCallParameter: '15'
 [s] - Regex: '.*'
 [s]   Priority: 4
 [s]   SortPriority: 4
+[s] IncludeGuards: 
+[s] - Regex: 'include/.*\.h$'
+[s]   PathComponents: 2
+[s] - Regex: '.*\.h$'
+[s]   PathComponents: 1
 [s] IndentWidth: 8
 [s] Language: Cpp
 [s] UseTab: Always

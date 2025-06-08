@@ -88,10 +88,6 @@ static void	test_strwidth_impl(const char *, size_t, size_t, int);
 static void	test_path_slice_impl(struct context *, const char *,
     unsigned int, const char *, int);
 
-#define test_is_path_header(a, b) \
-	test_is_path_header_impl((a), (b), __LINE__)
-static void	test_is_path_header_impl(const char *, int, int);
-
 #define test_token_branch_unlink() \
 	test_token_branch_impl(&ctx)
 static void	test_token_branch_impl(struct context *);
@@ -370,10 +366,6 @@ main(void)
 	test_path_slice("/dir/file", 2, "dir/file");
 	test_path_slice("dir/file", 3, "dir/file");
 
-	test_is_path_header("test.h", 1);
-	test_is_path_header("test.c", 0);
-	test_is_path_header("test.", 0);
-
 	test_token_branch_unlink();
 	test_token_serialize(&ctx);
 	test_clang_token_serialize(&ctx);
@@ -587,14 +579,6 @@ test_path_slice_impl(struct context *ctx, const char *path,
 
 	act = path_slice(path, ncomponents, &s);
 	KS_expect_str(exp, act);
-}
-
-static void
-test_is_path_header_impl(const char *path, int exp, int lno)
-{
-	KS_expect_scope("path_slice", lno, e);
-
-	KS_expect_int(exp, is_path_header(path));
 }
 
 static void

@@ -1,12 +1,9 @@
 /*
  * IncludeGuards:
- *   - Regex: 'test.h'
+ *   - Regex: 'nein.h'
+ *     PathComponents: 2
+ *   - Regex: '.*'
  *     PathComponents: 1
  */
 
-#ifndef FOO_H
-#define FOO_H
-
 extern int unused;
-
-#endif

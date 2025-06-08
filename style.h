@@ -74,6 +74,7 @@ struct style;
 	  OP(Regroup)							\
 	OP(IncludeCategories)						\
 	OP(IncludeGuards)						\
+	  OP(PathComponents)						\
 	OP(IndentWidth)							\
 	OP(Language)							\
 	  OP(Cpp)							\
@@ -126,6 +127,8 @@ struct style	*style_parse_buffer(const struct buffer *, const char *,
 unsigned int	style(const struct style *, int);
 int		style_brace_wrapping(const struct style *, int);
 
+unsigned int		 style_include_guards(const struct style *,
+    const char *);
 int			*style_include_priorities(const struct style *);
 struct include_priority	 style_include_priority(const struct style *,
     const char *);

@@ -46,5 +46,12 @@
  *     Priority:        '2'
  *   - Regex:           '.*'
  *     Priority:        '4'
+ * ---
+ * Language: 'Cpp'
+ * IncludeGuards:
+ *   - Regex:           'include/.*\.h$'
+ *     PathComponents:  2
+ *   - Regex:           '.*\.h$'
+ *     PathComponents:  1
  * ...
  */

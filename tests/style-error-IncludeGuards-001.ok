@@ -1,3 +1,3 @@
-.clang-format:1: integer Integer<1:16>("0") too small
-IncludeGuards: 0
-               ^
+.clang-format:2: integer Integer<2:21>("0") too small
+  - PathComponents: 0
+                    ^

@@ -1,5 +1,7 @@
 /*
- * IncludeGuards: 2
+ * IncludeGuards:
+ *   - Regex: 'test.h'
+ *     PathComponents: 2
  */
 
 /*

@@ -1,3 +1,4 @@
 /*
- * IncludeGuards: 0
+ * IncludeGuards:
+ *   - PathComponents: 0
  */
