@@ -1,6 +1,10 @@
-# 4.6.0 - YYYY-MM-DD
+# 5.0.0 - YYYY-MM-DD
 
 ## Changes
+
+- Support multiple clang-format IncludeGuards configurations.
+  (b03266f55889)
+  (Anton Lindqvist)
 
 ## News
 
@@ -14,6 +18,10 @@
 
 - Discard line continuation(s) if the next line is empty in macro declarations.
   (d1a0bf68962c)
+  (Anton Lindqvist)
+
+- In simple mode, be more aggressive while removing parenthesis.
+  (924f89fcba0c)
   (Anton Lindqvist)
 
 ## Bug fixes
