@@ -10,6 +10,9 @@ static int
 is_implicit_int(const struct token *beg, const struct token *end,
     int token_type)
 {
+	/* Allow implicit integer(s) to be preceded by static. */
+	if (token_next(beg) == end && beg->tk_type == TOKEN_STATIC)
+		beg = token_next(beg);
 	return beg == end && beg->tk_type == token_type &&
 	    token_is_moveable(beg);
 }
