@@ -21,6 +21,7 @@ struct braces_field_arg {
 	struct ruler		*rl;
 	struct token		*rbrace;
 	unsigned int		 indent;
+	unsigned int		 col;
 	unsigned int		 flags;
 };
 
@@ -182,17 +183,23 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 		if ((flags & PARSER_BRACES_ENUM) ||
 		    lexer_peek_if(lx, TOKEN_PERIOD, NULL) ||
 		    lexer_peek_if(lx, TOKEN_LSQUARE, NULL)) {
-			error = parser_braces_field(pr,
-			    &(struct braces_field_arg){
+			struct braces_field_arg arg = {
 				.parent	= parent,
 				.dc	= concat,
 				.rl	= rl,
 				.rbrace	= rbrace,
 				.indent	= indent_width,
+				.col	= col,
 				.flags	= flags,
-			});
+			};
+			error = parser_braces_field(pr, &arg);
 			if (error & HALT)
 				return parser_fail(pr);
+			/*
+			 * Inherit the column as we're still on the same row in
+			 * terms of alignment.
+			 */
+			col = arg.col;
 		} else if (lexer_peek_if(lx, TOKEN_LBRACE, &nx)) {
 			error = parser_braces_with_ruler(pr, parent, concat, rl,
 			    indent_width, flags & ~PARSER_BRACES_DEDENT);
@@ -232,6 +239,11 @@ parser_braces_with_ruler(struct parser *pr, struct doc *parent, struct doc *dc,
 				ruler_insert(rl, comma, concat, ++col, w, 0);
 				w = 0;
 				goto next;
+			} else if (token_has_line(comma, 1)) {
+				/* Only relevant when aligning field
+				 * initializers which are allowed span multiple
+				 * lines. */
+				col = 0;
 			}
 		}
 
@@ -315,7 +327,8 @@ parser_braces_field(struct parser *pr, struct braces_field_arg *arg)
 	if (!lexer_if(lx, TOKEN_EQUAL, &equal))
 		return parser_good(pr);
 
-	ruler_insert(rl, token_prev(equal), dc, 1, parser_width(pr, dc), 0);
+	ruler_insert(rl, token_prev(equal), dc, ++arg->col,
+	    parser_width(pr, dc), 0);
 	parser_doc_token(pr, equal, dc);
 	doc_literal(" ", dc);
 
