@@ -198,9 +198,11 @@ if [ "${_benchmark}" -eq 1 ]; then
 fi
 
 # Let CXX inherit applicable CFLAGS.
+_cxxflags=""
 for _c in ${CFLAGS}; do
-	CXXFLAGS="${CXXFLAGS} $(cxx_has_option "${_c}")"
+	_cxxflags="${_cxxflags} $(cxx_has_option "${_c}")"
 done
+CXXFLAGS="${_cxxflags} ${CXXFLAGS}"
 
 check_pledge && HAVE_PLEDGE=1
 
@@ -251,5 +253,5 @@ INSTALL_MAN?=		$(echo ${INSTALL_MAN})
 NO_SANITIZE_FUZZER=	$(echo ${NO_SANITIZE_FUZZER:-})
 
 .PATH:	\${.CURDIR}/libks
-VPATH=	\${.CURDIR}/libks
+VPATH+=	\${.CURDIR}/libks
 EOF
