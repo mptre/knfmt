@@ -837,7 +837,7 @@ style_dump_IncludeGuards(const struct style *st)
 		const struct include_guard *guard = &st->include_guards[i];
 
 		fprintf(stderr, "[s] - Regex: '%s'\n", guard->regex.pattern);
-		fprintf(stderr, "[s]   PathComponents: %d\n",
+		fprintf(stderr, "[s]   PathComponents: %u\n",
 		    guard->ncomponents);
 	}
 }
