@@ -87,8 +87,8 @@ static int			 HASH_EXPAND_BUCKETS(struct map *);
 static struct map_element	*HASH_FIND(struct map *, const void *,
     size_t);
 static struct UT_hash_table	*HASH_MAKE_TABLE(struct map_element *);
-static unsigned			 HASH_TO_BKT(unsigned int, unsigned int);
-static unsigned			 HASH_JEN(const void *, size_t)
+static unsigned int		 HASH_TO_BKT(unsigned int, unsigned int);
+static unsigned int		 HASH_JEN(const void *, size_t)
 	__attribute__((NO_SANITIZE_UNSIGNED_INTEGER_OVERFLOW));
 
 int
@@ -598,7 +598,7 @@ HASH_MAKE_TABLE(struct map_element *tail)
 	return tbl;
 }
 
-static unsigned
+static unsigned int
 HASH_TO_BKT(unsigned int hashv, unsigned int num_bkts)
 {
 	return hashv & (num_bkts - 1U);
@@ -640,7 +640,7 @@ hash_key_read_u32(struct hash_key *key)
 	return val;
 }
 
-static unsigned
+static unsigned int
 HASH_JEN(const void *key, size_t keylen)
 {
 	struct hash_key _hj_key;
