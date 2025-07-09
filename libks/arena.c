@@ -192,7 +192,7 @@ arena_trace(const struct arena *a, struct arena_trace_event *ev)
 {
 	ev->arena = (uintptr_t)a;
 	read_stack_trace(ev->stack_trace, ARENA_TRACE_STACK_TRACE_DEPTH);
-	(void)write(a->trace.fd, ev, sizeof(*ev));
+	ssize_t UNUSED(n) = write(a->trace.fd, ev, sizeof(*ev));
 }
 
 static void
@@ -205,7 +205,7 @@ arena_trace_name_impl(const struct arena *a, const char *name)
 	if (length > sizeof(ev.name) - 1)
 		length = sizeof(ev.name) - 1;
 	memcpy(ev.name, name, length);
-	(void)write(a->trace.fd, &ev, sizeof(ev));
+	ssize_t UNUSED(n) = write(a->trace.fd, &ev, sizeof(ev));
 }
 
 #endif
