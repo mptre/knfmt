@@ -6,6 +6,7 @@
 
 #include "doc.h"
 #include "lexer.h"
+#include "parser-attributes.h"
 #include "parser-cpp.h"
 #include "parser-expr.h"
 #include "parser-func.h"
@@ -19,7 +20,7 @@
 
 static int	peek_type_func_ptr(struct lexer *, struct token **,
     struct token **);
-static int	peek_type_ident_after_type(struct lexer *lx);
+static int	peek_type_ident_after_type(struct parser *);
 static int	peek_type_ptr_array(struct lexer *, struct token **);
 static int	peek_type_noident(struct lexer *, struct token **);
 static int	peek_type_unknown_array(struct lexer *, struct token **);
@@ -93,7 +94,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			/* Ensure this is not the identifier after the type. */
 			if ((flags & PARSER_TYPE_CAST) == 0 &&
 			    (flags & PARSER_TYPE_EXPR) == 0 &&
-			    peek_type_ident_after_type(lx))
+			    peek_type_ident_after_type(pr))
 				break;
 
 			/* Identifier is part of the type, consume it. */
@@ -367,9 +368,11 @@ peek_type_ptr_array(struct lexer *lx, struct token **rsquare)
 }
 
 static int
-peek_type_ident_after_type(struct lexer *lx)
+peek_type_ident_after_type(struct parser *pr)
 {
 	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *rparen;
 	int peek = 0;
 
 	lexer_peek_enter(lx, &s);
@@ -382,7 +385,9 @@ peek_type_ident_after_type(struct lexer *lx)
 	     lexer_if(lx, TOKEN_SEMI, NULL) ||
 	     lexer_if(lx, TOKEN_COMMA, NULL) ||
 	     lexer_if(lx, TOKEN_COLON, NULL) ||
-	     lexer_if(lx, TOKEN_ATTRIBUTE, NULL)))
+	     (parser_attributes_peek(pr, &rparen, 0) &&
+	      lexer_seek_after(lx, rparen) &&
+	      !lexer_if(lx, TOKEN_IDENT, NULL))))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 

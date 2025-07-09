@@ -230,7 +230,7 @@ main(void)
 	test_parser_type(
 	    "const struct filterops *const sysfilt_ops[]",
 	    "const struct filterops * const");
-	test_parser_type("long __guard_local __attribute__", "long");
+	test_parser_type("long __guard_local __attribute__((unused))", "long");
 	test_parser_type("unsigned int f:1", "unsigned int");
 	test_parser_type(
 	    "usbd_status (*v)(void)",
@@ -273,6 +273,7 @@ main(void)
 	test_parser_type(
 	    "typedef MAP(uint64_t,, uint32_t) Labels;",
 	    "typedef MAP ( uint64_t , , uint32_t )");
+	test_parser_type("static S __attribute__((unused)) f", "static S");
 
 	test_parser_type_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");
