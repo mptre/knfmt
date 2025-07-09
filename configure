@@ -149,7 +149,7 @@ CFLAGS="$(unset CFLAGS DEBUG; makevar CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
 CFLAGS="${CFLAGS} -MD -MP"
 CXX=$(makevar CXX || fatal "CXX: not defined")
 CXXFLAGS="$(unset CXXFLAGS DEBUG; makevar CXXFLAGS || :) ${CXXFLAGS:-} ${DEBUG}"
-CXXFLAGS="${CXXFLAGS} -MD -MP"
+CXXFLAGS="${CXXFLAGS} -MD -MP -std=c++17"
 CPPFLAGS="$(makevar CPPFLAGS || :)"
 AFLAGS="$(makevar AFLAGS || :) -MD -MP"
 ASFLAGS="$(makevar ASFLAGS || :) -MD -MP"
