@@ -29,6 +29,8 @@
 #define NDEBUG_UNUSED(x) UNUSED(x)
 #endif
 
+#define countof(x)	(sizeof((x)) / sizeof((x)[0]))
+
 #define likely(x)	__builtin_expect((x), 1)
 #define unlikely(x)	__builtin_expect((x), 0)
 
