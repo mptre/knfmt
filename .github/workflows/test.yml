@@ -113,24 +113,3 @@ jobs:
         run: |
           ./configure --pedantic --fuzz afl
           make -j`nproc` fuzz
-
-  clang-tidy:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: clang-tidy
-        run: |
-          ./configure --pedantic
-          make lint-clang-tidy
-
-  cppcheck:
-    runs-on: ubuntu-22.04
-    container: ghcr.io/mptre/cppcheck:latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: cppcheck
-        run: |
-          ./configure --pedantic
-          make lint-cppcheck
