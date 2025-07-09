@@ -325,10 +325,9 @@ style_init(void)
 #undef Y
 #undef S
 	};
-	size_t nkeywords = sizeof(kw) / sizeof(kw[0]);
 	size_t i;
 
-	for (i = 0; i < nkeywords; i++) {
+	for (i = 0; i < countof(kw); i++) {
 		const struct style_option *src = &kw[i];
 		struct style_option *dst;
 		unsigned char slot;
@@ -348,20 +347,18 @@ style_init(void)
 void
 style_shutdown(void)
 {
-	size_t nslots = sizeof(keywords) / sizeof(keywords[0]);
 	size_t i;
 
-	for (i = 0; i < nslots; i++)
+	for (i = 0; i < countof(keywords); i++)
 		VECTOR_FREE(keywords[i]);
 }
 
 void
 style_dump_keywords(struct buffer *bf)
 {
-	size_t nslots = sizeof(keywords) / sizeof(keywords[0]);
 	size_t i;
 
-	for (i = 0; i < nslots; i++) {
+	for (i = 0; i < countof(keywords); i++) {
 		VECTOR(struct style_option) options = keywords[i];
 		size_t j;
 
@@ -582,10 +579,9 @@ style_defaults(struct style *st)
 		{ SortIncludes,			Never },
 		{ UseTab,			Always },
 	};
-	size_t ndefaults = sizeof(defaults) / sizeof(defaults[0]);
 	size_t i;
 
-	for (i = 0; i < ndefaults; i++)
+	for (i = 0; i < countof(defaults); i++)
 		st->options[defaults[i].key].val = defaults[i].val;
 }
 
@@ -766,11 +762,10 @@ style_parse_yaml_documents(struct style *st, struct lexer *lx, int nested)
 static void
 style_dump(const struct style *st)
 {
-	size_t noptions = sizeof(st->options) / sizeof(st->options[0]);
 	size_t i;
 	int scope = 0;
 
-	for (i = First; i < noptions; i++) {
+	for (i = First; i < countof(st->options); i++) {
 		const struct style_option *so;
 		const char *key;
 

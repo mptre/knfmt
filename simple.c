@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include "libks/arena.h"
+#include "libks/compiler.h"
 
 #include "options.h"
 
@@ -142,7 +143,6 @@ is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 
 		{ SIMPLE_STMT_SWITCH, SIMPLE_STMT },
 	};
-	unsigned int nexceptions = sizeof(exceptions) / sizeof(exceptions[0]);
 	unsigned int i;
 
 	for (i = 0; i < SIMPLE_LAST; i++) {
@@ -152,7 +152,7 @@ is_pass_mutually_exclusive(const struct simple *si, enum simple_pass pass)
 		    si->passes[i].state != SIMPLE_STATE_IGNORE)
 			continue;
 
-		for (j = 0; j < nexceptions; j++) {
+		for (j = 0; j < countof(exceptions); j++) {
 			if (exceptions[j].parent == i &&
 			    exceptions[j].nested == pass)
 				return 0;

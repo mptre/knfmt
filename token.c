@@ -8,6 +8,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/list.h"
 #include "libks/string.h"
 
@@ -570,13 +571,12 @@ token_flags_str(unsigned int token_flags, struct arena_scope *s)
 		F(TOKEN_FLAG_DIFF,			"DIFF"),
 #undef F
 	};
-	size_t nflags = sizeof(flags) / sizeof(flags[0]);
 	size_t i;
 	struct buffer *bf;
 
 	bf = arena_buffer_alloc(s, 1 << 6);
 
-	for (i = 0; i < nflags; i++) {
+	for (i = 0; i < countof(flags); i++) {
 		if ((token_flags & flags[i].flag) == 0)
 			continue;
 

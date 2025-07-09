@@ -294,10 +294,9 @@ static const struct {
 void
 expr_init(void)
 {
-	size_t nrules = sizeof(rules) / sizeof(rules[0]);
 	size_t i;
 
-	for (i = 0; i < nrules; i++) {
+	for (i = 0; i < countof(rules); i++) {
 		const struct expr_rule *er = &rules[i];
 
 		table_rules[er->er_type][(er->er_pc & PCUNARY) ? 1 : 0] = er;

@@ -8,6 +8,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 
 #include "arenas.h"
 #include "doc.h"
@@ -143,7 +144,7 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 	unsigned int nlines = 0;
 	unsigned int i;
 
-	for (i = 0; i < sizeof(lines) / sizeof(lines[0]); i++) {
+	for (i = 0; i < countof(lines); i++) {
 		const char *indent, *nx;
 		size_t linelen;
 		unsigned int col;

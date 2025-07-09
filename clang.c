@@ -157,7 +157,7 @@ clang_init(void)
 	if (MAP_INIT(clang_tokens))
 		err(1, NULL);
 
-	for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
+	for (i = 0; i < countof(keywords); i++) {
 		const struct token *src = &keywords[i];
 
 		if (MAP_INSERT_VALUE(clang_tokens, src->tk_str, src) == NULL)
@@ -168,7 +168,7 @@ clang_init(void)
 	}
 
 	/* Let aliases inherit token flags. */
-	for (i = 0; i < sizeof(aliases) / sizeof(aliases[0]); i++) {
+	for (i = 0; i < countof(aliases); i++) {
 		struct token *src = &aliases[i];
 
 		src->tk_flags = token_types[src->tk_type]->tk_flags;
@@ -178,7 +178,7 @@ clang_init(void)
 
 	if (MAP_INIT(cpp_token_types))
 		err(1, NULL);
-	for (i = 0; i < sizeof(cpp) / sizeof(cpp[0]); i++) {
+	for (i = 0; i < countof(cpp); i++) {
 		const struct token *src = &cpp[i];
 
 		if (MAP_INSERT_VALUE(cpp_token_types, src->tk_str,
@@ -188,7 +188,7 @@ clang_init(void)
 
 	if (MAP_INIT(clang_identifiers))
 		err(1, NULL);
-	for (i = 0; i < sizeof(identifiers) / sizeof(identifiers[0]); i++) {
+	for (i = 0; i < countof(identifiers); i++) {
 		if (MAP_INSERT_VALUE(clang_identifiers, identifiers[i].key,
 		    identifiers[i].val) == NULL)
 			err(1, NULL);

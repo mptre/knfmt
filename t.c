@@ -5,6 +5,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/expect.h"
 #include "libks/list.h"
 
@@ -638,10 +639,9 @@ test_token_branch_impl(struct context *ctx)
 			.exp	= "CPP_IF(#if 0\\n) CPP_ELSE(#else\\n) CPP(#else\\n) CPP_ENDIF(#endif\\n)",
 		},
 	};
-	int ntests = sizeof(tests) / sizeof(tests[0]);
-	int i;
+	unsigned int i;
 
-	for (i = 0; i < ntests; i++) {
+	for (i = 0; i < countof(tests); i++) {
 		struct token *it = NULL;
 		struct token *prefix = NULL;
 		struct token *tk;

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "libks/arena.h"
+#include "libks/compiler.h"
 #include "libks/string.h"
 
 #include "clang.h"
@@ -266,12 +267,11 @@ iscdefs(const char *str, size_t len)
 		S("_END_DECLS"),
 #undef S
 	};
-	size_t nsuffixes = sizeof(suffixes) / sizeof(suffixes[0]);
 	size_t i;
 
 	KS_str_match_init_once("AZ09__", &match);
 
-	for (i = 0; i < nsuffixes; i++) {
+	for (i = 0; i < countof(suffixes); i++) {
 		const struct suffix *s = &suffixes[i];
 
 		if (len >= s->len &&

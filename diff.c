@@ -15,6 +15,7 @@
 #include "libks/arena-buffer.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
+#include "libks/compiler.h"
 #include "libks/vector.h"
 
 #include "file.h"
@@ -50,11 +51,10 @@ diff_init(void)
 		{ &rechunk,	"^@@.+\\+([[:digit:]]+)(,([[:digit:]]+))?.+@@" },
 		{ &repath,	"^\\+\\+\\+[[:space:]]+([^[:space:]]+)" },
 	};
-	size_t n = sizeof(patterns) / sizeof(patterns[0]);
 	size_t i;
 	int fd;
 
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < countof(patterns); i++) {
 		char errbuf[128];
 		int error;
 

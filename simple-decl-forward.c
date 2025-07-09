@@ -5,6 +5,7 @@
 #include <err.h>
 
 #include "libks/arena.h"
+#include "libks/compiler.h"
 #include "libks/vector.h"
 
 #include "lexer.h"
@@ -128,10 +129,9 @@ is_forward_decl(const struct token *beg, const struct token *end)
 		  TOKEN_SEMI, TOKEN_NONE },
 		{ TOKEN_STRUCT, TOKEN_IDENT, TOKEN_SEMI, TOKEN_NONE },
 	};
-	int n = sizeof(token_types) / sizeof(token_types[0]);
-	int i;
+	unsigned int i;
 
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < countof(token_types); i++) {
 		const struct token *tk = beg;
 		int j;
 
