@@ -1319,6 +1319,7 @@ static int
 parse_IncludeGuards(struct style *st, struct lexer *lx,
     const struct style_option *so)
 {
+	int error = 0;
 	int scope;
 
 	if (!lexer_if(lx, so->so_type, NULL))
@@ -1334,12 +1335,13 @@ parse_IncludeGuards(struct style *st, struct lexer *lx,
 			err(1, NULL);
 		guard->ncomponents = 1;
 		st->regex = &guard->regex;
-		style_parse_yaml_documents(st, lx, 1);
+		error |= style_parse_yaml_documents(st, lx, 1);
 		st->regex = NULL;
 	}
 	st->scope = scope;
 
-	style_set(st, IncludeGuards, Integer, 1);
+	if ((error & FAIL) == 0)
+		style_set(st, IncludeGuards, Integer, 1);
 	return GOOD;
 }
 
