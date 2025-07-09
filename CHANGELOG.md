@@ -24,6 +24,14 @@
   (924f89fcba0c)
   (Anton Lindqvist)
 
+- In simple mode, allow implicit integers to be preceded with static
+  (6c342972a64c)
+  (Anton Lindqvist)
+
+- Align field initializers spanning multiple lines.
+  (a09915840a23)
+  (Anton Lindqvist)
+
 ## Bug fixes
 
 - Only consider c99 comments on the same level of indentation to form a
@@ -82,6 +90,10 @@
 - In simple mode, be more conservative when removing named arguments from
   function prototypes.
   (d73c8ac77a20)
+  (Anton Lindqvist)
+
+- Improve handling of attributes in function implementation.
+  (8a6ce9615f4f)
   (Anton Lindqvist)
 
 # 4.5.0 - 2024-09-01
