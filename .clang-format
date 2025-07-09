@@ -16,5 +16,8 @@ IncludeCategories:
   - Regex: '^"'
     Priority: 5
 IncludeGuards:
-  - Regex: '(arenas|lexer-callbacks|options|trace-types)\.h'
+  - Regex: 'arenas\.h'
+  - Regex: 'lexer-callbacks\.h'
+  - Regex: 'options\.h'
+  - Regex: 'trace-types\.h'
 ...
