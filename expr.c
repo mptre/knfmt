@@ -934,6 +934,9 @@ must_keep_parens(const struct expr *ex)
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
+	struct token *lparen = ex->ex_tokens[0];
+	struct token *rparen = ex->ex_tokens[1];
+
 	simple_cookie(simple);
 	if ((es->es_depth == 1 || !must_keep_parens(ex)) &&
 	    simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple)) {
@@ -942,11 +945,10 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 	} else {
 		struct token *pv;
 
-		if (ex->ex_tokens[0] != NULL)
-			expr_doc_token(es, ex->ex_tokens[0], dc);	/* ( */
-		if (ex->ex_tokens[1] != NULL &&
-		    (pv = token_prev(ex->ex_tokens[1])) != NULL)
-			token_trim(pv);
+		expr_doc_token(es, lparen, dc);
+
+		pv = token_prev(rparen);
+		token_trim(pv);
 
 		if (style(es->es_st, AlignAfterOpenBracket) == Align)
 			dc = doc_indent(DOC_INDENT_WIDTH, dc);
@@ -954,8 +956,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 			dc = expr_doc_indent_parens(es, dc);
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
-		if (ex->ex_tokens[1] != NULL)
-			expr_doc_token(es, ex->ex_tokens[1], dc);	/* ) */
+		expr_doc_token(es, rparen, dc);
 	}
 
 	return dc;
