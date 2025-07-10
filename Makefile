@@ -2,8 +2,6 @@ include ${.CURDIR}/config.mk
 
 VERSION=	5.0.0rc3
 
-SRCS+=	arch-x86_64.c
-SRCS+=	arch.c
 SRCS+=	arena-buffer.c
 SRCS+=	arena-vector.c
 SRCS+=	arena.c
@@ -24,6 +22,8 @@ SRCS+=	exec.c
 SRCS+=	expr.c
 SRCS+=	file.c
 SRCS+=	fs.c
+SRCS+=	init-x86_64.c
+SRCS+=	init.c
 SRCS+=	lexer.c
 SRCS+=	map.c
 SRCS+=	options.c
@@ -59,6 +59,7 @@ SRCS+=	token.c
 SRCS+=	trace.c
 SRCS+=	util.c
 SRCS+=	vector.c
+SRCS+=	x86.c
 
 SRCS_knfmt+=	${SRCS}
 SRCS_knfmt+=	knfmt.c
