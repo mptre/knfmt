@@ -931,6 +931,19 @@ must_keep_parens(const struct expr *ex)
 	return must_keep_parens(ex->ex_lhs) || must_keep_parens(ex->ex_rhs);
 }
 
+static int
+is_preceded_with_comment(const struct token *tk)
+{
+	const struct token *pv = token_prev(tk);
+	if (pv == NULL)
+		return 0;
+	const struct token *comment = token_list_find(&pv->tk_suffixes,
+	    TOKEN_COMMENT, 0);
+	if (comment == NULL)
+		return 0;
+	return comment->tk_lno == tk->tk_lno;
+}
+
 static struct doc *
 expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
@@ -938,7 +951,8 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 	struct token *rparen = ex->ex_tokens[1];
 
 	simple_cookie(simple);
-	if ((es->es_depth == 1 || !must_keep_parens(ex)) &&
+	if (!is_preceded_with_comment(lparen) &&
+	    (es->es_depth == 1 || !must_keep_parens(ex)) &&
 	    simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple)) {
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
