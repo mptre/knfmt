@@ -957,11 +957,9 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
 	} else {
-		struct token *pv;
-
 		expr_doc_token(es, lparen, dc);
 
-		pv = token_prev(rparen);
+		struct token *pv = token_prev(rparen);
 		token_trim(pv);
 
 		if (style(es->es_st, AlignAfterOpenBracket) == Align)
