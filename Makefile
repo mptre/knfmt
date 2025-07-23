@@ -8,6 +8,7 @@ SRCS+=	arena.c
 SRCS+=	arenas.c
 SRCS+=	arithmetic.c
 SRCS+=	buffer.c
+SRCS+=	capabilities-x86.c
 SRCS+=	clang.c
 SRCS+=	comment.c
 SRCS+=	compat-pledge.c
@@ -59,7 +60,6 @@ SRCS+=	token.c
 SRCS+=	trace.c
 SRCS+=	util.c
 SRCS+=	vector.c
-SRCS+=	x86.c
 
 SRCS_knfmt+=	${SRCS}
 SRCS_knfmt+=	knfmt.c

@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "libks/x86.h"
+#include "libks/capabilities.h"
 
 #if defined(__x86_64__)
 
@@ -25,32 +25,21 @@ struct cpuid {
 	uint32_t a, b, c, d;
 };
 
-static inline void
+static void cpuid(uint32_t, uint32_t, struct cpuid *);
+static uint64_t xgetbv(uint32_t);
+
+extern void (*KS_cpuid)(uint32_t, uint32_t, struct cpuid *);
+void (*KS_cpuid)(uint32_t, uint32_t, struct cpuid *) = cpuid;
+
+extern uint64_t (*KS_xgetbv)(uint32_t);
+uint64_t (*KS_xgetbv)(uint32_t) = xgetbv;
+
+static void
 cpuid(uint32_t leaf, uint32_t subleaf, struct cpuid *out)
 {
 	__asm__("cpuid"
 	    : "=a" (out->a), "=b" (out->b), "=c" (out->c), "=d" (out->d)
 	    : "a" (leaf), "c" (subleaf));
-}
-
-static int
-is_x86_64(uint32_t *max_leaf)
-{
-	union {
-		uint8_t u8[12];
-		uint32_t u32[3];
-	} ident;
-	struct cpuid leaf;
-
-	cpuid(0, 0, &leaf);
-	ident.u32[0] = leaf.b;
-	ident.u32[1] = leaf.d;
-	ident.u32[2] = leaf.c;
-	if (memcmp(ident.u8, "GenuineIntel", sizeof(ident)) != 0 &&
-	    memcmp(ident.u8, "AuthenticAMD", sizeof(ident)) != 0)
-		return 0;
-	*max_leaf = leaf.a;
-	return 1;
 }
 
 static uint64_t
@@ -67,41 +56,50 @@ xgetbv(uint32_t regno)
 	return xcr.u64;
 }
 
+static int
+is_x86_64(uint32_t *max_leaf)
+{
+	union {
+		uint8_t u8[12];
+		uint32_t u32[3];
+	} ident;
+	struct cpuid leaf;
+
+	KS_cpuid(0, 0, &leaf);
+	ident.u32[0] = leaf.b;
+	ident.u32[1] = leaf.d;
+	ident.u32[2] = leaf.c;
+	if (memcmp(ident.u8, "GenuineIntel", sizeof(ident)) != 0 &&
+	    memcmp(ident.u8, "AuthenticAMD", sizeof(ident)) != 0)
+		return 0;
+	*max_leaf = leaf.a;
+	return 1;
+}
+
 static void
 avx(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 {
-#define CPUID_01_C_OSXSAVE_MASK		(1 << 27)
-#define CPUID_01_C_AVX_MASK		(1 << 28)
-#define CPUID_07_B_AVX2_MASK		(1 << 5)
-#define CPUID_07_B_AVXF_MASK		(1 << 16)
-#define CPUID_07_B_AVXBW_MASK		(1 << 30)
-#define XCR0_XMM_MASK			(1 << 1)
-#define XCR0_YMM_MASK			(1 << 2)
-#define XCR0_OPMASK_MASK		(1 << 5)
-#define XCR0_ZMM_HI256_MASK		(1 << 6)
-#define XCR0_HI16_ZMM_MASK		(1 << 7)
-
 	struct cpuid leaf;
 	uint64_t xcr0;
 
 	if (max_leaf < 1)
 		return;
-	cpuid(1, 0, &leaf);
+	KS_cpuid(1, 0, &leaf);
 	if ((leaf.c & CPUID_01_C_OSXSAVE_MASK) == 0)
 		return;
-	xcr0 = xgetbv(0);
+	xcr0 = KS_xgetbv(0);
 	if ((xcr0 & XCR0_XMM_MASK) == 0 || (xcr0 & XCR0_YMM_MASK) == 0)
 		return;
-	caps->avx.major = 1;
+	caps->avx = 1;
 
 	if ((leaf.c & CPUID_01_C_AVX_MASK) == 0)
 		return;
 	if (max_leaf < 7)
 		return;
-	cpuid(7, 0, &leaf);
+	KS_cpuid(7, 0, &leaf);
 	if ((leaf.b & CPUID_07_B_AVX2_MASK) == 0)
 		return;
-	caps->avx.major = 2;
+	caps->avx = 2;
 
 	if ((xcr0 & XCR0_OPMASK_MASK) == 0 ||
 	    (xcr0 & XCR0_ZMM_HI256_MASK) == 0 ||
@@ -109,7 +107,7 @@ avx(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 		return;
 	if ((leaf.b & CPUID_07_B_AVXF_MASK) == 0)
 		return;
-	caps->avx.major = 512;
+	caps->avx = 512;
 
 	if (leaf.b & CPUID_07_B_AVXBW_MASK)
 		caps->avx512.bw = 1;
@@ -118,50 +116,36 @@ avx(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 static void
 sse(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 {
-#define CPUID_01_C_SSE3_0_MASK		(1 << 9)
-#define CPUID_01_C_SSE4_1_MASK		(1 << 19)
-#define CPUID_01_C_SSE4_2_MASK		(1 << 20)
-#define CPUID_01_D_SSE1_0_MASK		(1 << 25)
-#define CPUID_01_D_SSE2_0_MASK		(1 << 26)
-
 	struct cpuid leaf;
 
 	if (max_leaf < 1)
 		return;
 
-	cpuid(1, 0, &leaf);
+	KS_cpuid(1, 0, &leaf);
 	if (leaf.d & CPUID_01_D_SSE1_0_MASK)
-		caps->sse.major = 1;
-	if (caps->sse.major == 1 && (leaf.d & CPUID_01_D_SSE2_0_MASK))
-		caps->sse.major = 2;
-	if (caps->sse.major == 2 && (leaf.c & CPUID_01_C_SSE3_0_MASK))
-		caps->sse.major = 3;
-	if (caps->sse.major == 3 && (leaf.c & CPUID_01_C_SSE4_1_MASK)) {
-		caps->sse.major = 4;
-		caps->sse.minor = 1;
-	}
-	if (caps->sse.major == 4 && caps->sse.minor == 1 &&
-	    (leaf.c & CPUID_01_C_SSE4_2_MASK)) {
-		caps->sse.major = 4;
-		caps->sse.minor = 2;
-	}
+		caps->sse = 0x10;
+	if (caps->sse == 0x10 && (leaf.d & CPUID_01_D_SSE2_0_MASK))
+		caps->sse = 0x20;
+	if (caps->sse == 0x20 && (leaf.c & CPUID_01_C_SSE3_0_MASK))
+		caps->sse = 0x30;
+	if (caps->sse == 0x30 && (leaf.c & CPUID_01_C_SSE4_1_MASK))
+		caps->sse = 0x41;
+	if (caps->sse == 0x41 && (leaf.c & CPUID_01_C_SSE4_2_MASK))
+		caps->sse = 0x42;
 }
 
 static void
 bmi(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 {
-#define CPUID_07_B_BMI1_MASK		(1 << 3)
-#define CPUID_07_B_BMI2_MASK		(1 << 8)
-
 	struct cpuid leaf;
 
 	if (max_leaf < 7)
 		return;
-	cpuid(7, 0, &leaf);
+	KS_cpuid(7, 0, &leaf);
 	if (leaf.b & CPUID_07_B_BMI1_MASK)
-		caps->bmi.major = 1;
+		caps->bmi = 1;
 	if (leaf.b & CPUID_07_B_BMI2_MASK)
-		caps->bmi.major = 2;
+		caps->bmi = 2;
 }
 
 int

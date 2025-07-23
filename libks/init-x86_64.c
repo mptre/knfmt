@@ -19,9 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "libks/capabilities.h"
 #include "libks/string.h"
 #include "libks/valgrind.h"
-#include "libks/x86.h"
 
 int	KS_str_match_init_default(const char *, struct KS_str_match *);
 size_t	KS_str_match_native_128(const char *, size_t,
@@ -50,18 +50,16 @@ KS_init(void)
 	if (!KS_x86_capabilites(&caps))
 		return;
 
-	if (caps.avx.major >= 512 && caps.avx512.bw &&
-	    caps.bmi.major >= 1 /* TZCNT */)
+	if (caps.avx >= 512 && caps.avx512.bw && caps.bmi >= 1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_512;
-	else if (caps.avx.major >= 2 && caps.bmi.major >= 1 /* TZCNT */)
+	else if (caps.avx >= 2 && caps.bmi >= 1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_256;
-	else if (caps.sse.major == 4 && caps.sse.minor == 2 /* PCMPISTRM */ &&
-	    caps.bmi.major >= 1 /* TZCNT */)
+	else if (caps.sse == 0x42 /* PCMPISTRM */ && caps.bmi >= 1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_128;
 
-	if (caps.avx.major >= 2 && caps.bmi.major >= 2 /* BZHI */)
+	if (caps.avx >= 2 && caps.bmi >= 2 /* BZHI */)
 		KS_str_match_until = KS_str_match_until_native_256;
-	else if (caps.sse.major == 4 && caps.sse.minor == 2 /* PCMPISTRI */ &&
+	else if (caps.sse == 0x42 /* PCMPISTRI */ &&
 	    /* Valgrind does not emulate PCMPISTRI $0x4. */
 	    !KS_valgrind_is_running())
 		KS_str_match_until = KS_str_match_until_native_128;
