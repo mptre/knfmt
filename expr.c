@@ -951,7 +951,8 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 	struct token *rparen = ex->ex_tokens[1];
 
 	simple_cookie(simple);
-	if (!is_preceded_with_comment(lparen) &&
+	if (token_is_moveable(lparen) && token_is_moveable(rparen) &&
+	    !is_preceded_with_comment(lparen) &&
 	    (es->es_depth == 1 || !must_keep_parens(ex)) &&
 	    simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple)) {
 		if (ex->ex_lhs != NULL)
