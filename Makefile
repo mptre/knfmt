@@ -1,6 +1,6 @@
 include ${.CURDIR}/config.mk
 
-VERSION=	5.0.0rc3
+VERSION=	5.0.0rc4
 
 SRCS+=	arena-buffer.c
 SRCS+=	arena-vector.c
