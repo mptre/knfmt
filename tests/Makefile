@@ -606,6 +606,7 @@ TESTS+=	simple-expr-parens-002.c
 TESTS+=	simple-expr-parens-003.c
 TESTS+=	simple-expr-parens-004.c
 TESTS+=	simple-expr-parens-005.c
+TESTS+=	simple-expr-parens-006.c
 TESTS+=	simple-expr-printf-001.c
 TESTS+=	simple-expr-printf-002.c
 TESTS+=	simple-expr-printf-003.c

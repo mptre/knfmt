@@ -955,6 +955,12 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 	    !is_preceded_with_comment(lparen) &&
 	    (es->es_depth == 1 || !must_keep_parens(ex)) &&
 	    simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple)) {
+		struct token *pv = token_prev(rparen);
+		struct token *nx = token_next(rparen);
+		if (nx != NULL && nx->tk_type == TOKEN_SEMI &&
+		    pv != NULL && token_has_line(pv, 1))
+			token_trim(pv);
+
 		if (ex->ex_lhs != NULL)
 			dc = expr_doc(ex->ex_lhs, es, dc);
 	} else {
