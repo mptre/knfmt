@@ -159,20 +159,12 @@ token_position_after(struct token *after, struct token *tk)
 	cno = colwidth(last->tk_str, last->tk_len, last->tk_cno);
 	/*
 	 * If after is the last token on this line, use the column from the
-	 * first token on the same line.
+	 * first token on the next line.
 	 */
 	if (cno == 1) {
-		struct token *pv = after;
-
-		for (;;) {
-			struct token *tmp;
-
-			cno = pv->tk_cno;
-			tmp = token_prev(pv);
-			if (tmp == NULL || tmp->tk_lno != lno)
-				break;
-			pv = tmp;
-		}
+		struct token *nx = token_next(after);
+		if (nx != NULL)
+			cno = nx->tk_cno;
 	}
 
 	/* Intentionally not adjusting prefixes. */

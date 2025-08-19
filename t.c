@@ -347,6 +347,20 @@ main(void)
 	    },
 	}));
 
+	test_token_position_after((&(struct test_token_move){
+	    .src	= "int;\n\tchar;\n",
+	    .target	= TOKEN_SEMI,
+	    .move	= TOKEN_INT,
+	    .want	= {
+		"INT<1:9>(int)",
+		"SEMI<1:4>(;)",
+		"  SPACE<1:5>(\\n)",
+		"CHAR<2:9>(char)",
+		"SEMI<2:13>(;)",
+		"  SPACE<2:14>(\\n)",
+	    },
+	}));
+
 	test_style("UseTab: Never", UseTab, Never);
 	test_style("UseTab: 'Never'", UseTab, Never);
 	test_style("ColumnLimit: '100'", ColumnLimit, 100);
