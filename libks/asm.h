@@ -32,9 +32,9 @@
 #endif
 
 /* NOLINTBEGIN(bugprone-macro-parentheses) */
-#define ENTRY(x)	.globl x; .text; .type x,@function; x: _CET_ENDBR
+#define ENTRY(x) .globl x; .hidden x; .text; .type x,@function; x: _CET_ENDBR
 /* NOLINTEND(bugprone-macro-parentheses) */
-#define END(x)		.size x, . - x
+#define END(x) .size x, . - x
 
 #endif
 
