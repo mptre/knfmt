@@ -64,7 +64,16 @@ headers() {
 	xargs printf '#include <%s>\n' <"${_tmp}"
 }
 
-makevar() {
+make_has_object_dir() (
+	cd "${WRKDIR}"
+	# shellcheck disable=SC2016
+	printf 'all:\n\t[ ${PWD} = ${.OBJDIR} ]\n' >Makefile
+	printf 'all:\n\tfalse\n' >GNUMakefile
+	mkdir -p obj
+	make >/dev/null 1>&2
+)
+
+make_variable() {
 	# shellcheck disable=SC2016
 	var="$(printf 'all:\n\t@echo ${%s}\n' "$1" | make -sf -)"
 	if [ -n "${var}" ]; then
@@ -142,26 +151,26 @@ set -x
 HAVE_PLEDGE=0
 
 # Order is important, must come first if not defined.
-DEBUG="$(makevar DEBUG || :)"
+DEBUG="$(make_variable DEBUG || :)"
 
-CC=$(makevar CC || fatal "CC: not defined")
-CFLAGS="$(unset CFLAGS DEBUG; makevar CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
+CC=$(make_variable CC || fatal "CC: not defined")
+CFLAGS="$(unset CFLAGS DEBUG; make_variable CFLAGS || :) ${CFLAGS:-} ${DEBUG}"
 CFLAGS="${CFLAGS} -MD -MP"
-CXX=$(makevar CXX || fatal "CXX: not defined")
-CXXFLAGS="$(unset CXXFLAGS DEBUG; makevar CXXFLAGS || :) ${CXXFLAGS:-} ${DEBUG}"
+CXX=$(make_variable CXX || fatal "CXX: not defined")
+CXXFLAGS="$(unset CXXFLAGS DEBUG; make_variable CXXFLAGS || :) ${CXXFLAGS:-} ${DEBUG}"
 CXXFLAGS="${CXXFLAGS} -MD -MP -std=c++20"
-CPPFLAGS="$(makevar CPPFLAGS || :)"
-AFLAGS="$(makevar AFLAGS || :) -MD -MP"
-ASFLAGS="$(makevar ASFLAGS || :) -MD -MP"
-LDFLAGS="$(unset DEBUG; makevar LDFLAGS || :)"
-
-PREFIX="$(makevar PREFIX || echo /usr/local)"
-BINDIR="$(makevar BINDIR || echo "${PREFIX}/bin")"
-MANDIR="$(makevar MANDIR || echo "${PREFIX}/man")"
-INSTALL="$(makevar INSTALL || echo install)"
-INSTALL_MAN="$(makevar INSTALL_MAN || echo "${INSTALL}")"
+CPPFLAGS="$(make_variable CPPFLAGS || :)"
+AFLAGS="$(make_variable AFLAGS || :) -MD -MP"
+ASFLAGS="$(make_variable ASFLAGS || :) -MD -MP"
+LDFLAGS="$(unset DEBUG; make_variable LDFLAGS || :)"
+PREFIX="$(make_variable PREFIX || echo /usr/local)"
+BINDIR="$(make_variable BINDIR || echo "${PREFIX}/bin")"
+MANDIR="$(make_variable MANDIR || echo "${PREFIX}/man")"
+INSTALL="$(make_variable INSTALL || echo install)"
+INSTALL_MAN="$(make_variable INSTALL_MAN || echo "${INSTALL}")"
 
 # Following chunks must happen after CC is defined.
+
 if [ "${_pedantic}" -eq 1 ]; then
 	CFLAGS="$(cc_has_option -Waddress-of-packed-member) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wextra-semi-stmt) ${CFLAGS}"
@@ -174,6 +183,7 @@ if [ "${_pedantic}" -eq 1 ]; then
 	DEBUG="-g ${DEBUG}"
 	LDFLAGS="$(cc_has_option -Wl,--fatal-warnings) ${LDFLAGS}"
 fi
+
 if [ "${_sanitize}" -eq 1 ]; then
 	{
 		cc_has_sanitizer address
@@ -192,6 +202,7 @@ if [ "${_sanitize}" -eq 1 ]; then
 		NO_SANITIZE_FUZZER="$(cc_has_option -fno-sanitize=fuzzer)"
 	fi
 fi
+
 if [ "${_benchmark}" -eq 1 ]; then
 	CPPFLAGS="${CPPFLAGS} $(pkg-config --cflags-only-I benchmark)"
 	LDFLAGS_benchmark="${LDFLAGS} $(pkg-config --libs benchmark)"
@@ -203,6 +214,10 @@ for _c in ${CFLAGS}; do
 	_cxxflags="${_cxxflags} $(cxx_has_option "${_c}")"
 done
 CXXFLAGS="${_cxxflags} ${CXXFLAGS}"
+
+if make_has_object_dir; then
+	mkdir -p obj/{,libks}
+fi
 
 check_pledge && HAVE_PLEDGE=1
 
@@ -251,7 +266,28 @@ INSTALL?=		$(echo ${INSTALL})
 INSTALL_MAN?=		$(echo ${INSTALL_MAN})
 
 NO_SANITIZE_FUZZER=	$(echo ${NO_SANITIZE_FUZZER:-})
-
-.PATH:	\${.CURDIR}/libks
-VPATH+=	\${.CURDIR}/libks
 EOF
+
+if make_has_object_dir; then
+	cat <<EOF
+
+.SUFFIXES: .c .cc .o .S
+.c.o:
+	\${CC} \${CPPFLAGS} \${CFLAGS} \${DEBUG} -c -o \${<:\${.CURDIR}/%.c=%.o} \$<
+.cc.o:
+	\${CXX} \${CPPFLAGS} \${CXXFLAGS} \${DEBUG} -c -o \${<:\${.CURDIR}/%.cc=%.o} \$<
+.S.o:
+	\${CC} \${CPPFLAGS} \${CFLAGS} \${DEBUG} -c -o \${<:\${.CURDIR}/%.S=%.o} \$<
+EOF
+else
+	cat <<EOF
+
+.SUFFIXES: .c .cc .o .S
+.c.o:
+	\${CC} \${CPPFLAGS} \${CFLAGS} \${DEBUG} -c -o \$@ \$<
+.cc.o:
+	\${CXX} \${CPPFLAGS} \${CXXFLAGS} \${DEBUG} -c -o \$@ \$<
+.S.o:
+	\${CC} \${CPPFLAGS} \${CFLAGS} \${DEBUG} -c -o \$@ \$<
+EOF
+fi
