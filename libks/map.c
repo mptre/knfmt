@@ -643,7 +643,7 @@ hash_key_read_u32(struct hash_key *key)
 static unsigned int
 HASH_JEN(const void *key, size_t keylen)
 {
-	struct hash_key _hj_key;
+	struct hash_key _hj_key = {0};
 	size_t k;
 	unsigned int hashv = 0xfeedbeefu;
 	unsigned int _hj_i, _hj_j;
