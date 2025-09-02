@@ -117,7 +117,7 @@ callback_alloc(size_t size, void *arg)
 {
 	struct arena_scope *s = arg;
 
-	return arena_malloc(s, size);
+	return arena_calloc(s, 1, size);
 }
 
 static void *

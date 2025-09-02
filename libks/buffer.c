@@ -61,7 +61,6 @@ buffer_alloc_impl(size_t init_size, int overshoot,
 	bf = callbacks->alloc(sizeof(*bf), callbacks->arg);
 	if (bf == NULL)
 		return NULL;
-	memset(bf, 0, sizeof(*bf));
 	bf->bf_callbacks = *callbacks;
 	if (buffer_reserve(bf, init_size, overshoot)) {
 		buffer_free(bf);
@@ -370,7 +369,7 @@ overflow:
 static void *
 callback_alloc(size_t size, void *UNUSED(arg))
 {
-	return malloc(size);
+	return calloc(1, size);
 }
 
 static void *
