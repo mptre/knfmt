@@ -19,28 +19,32 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "libks/bit.h"
 #include "libks/capabilities.h"
 #include "libks/string.h"
 #include "libks/valgrind.h"
 
-int	KS_str_match_init_default(const char *, struct KS_str_match *);
-size_t	KS_str_match_native_128(const char *, size_t,
-    const struct KS_str_match *);
-size_t	KS_str_match_native_256(const char *, size_t,
-    const struct KS_str_match *);
-size_t	KS_str_match_native_512(const char *, size_t,
-    const struct KS_str_match *);
-size_t	KS_str_match_until_native_128(const char *, size_t,
-    const struct KS_str_match *);
-size_t	KS_str_match_until_native_256(const char *, size_t,
-    const struct KS_str_match *);
-
 static void KS_init(void) __attribute__((constructor));
+
+int KS_str_match_init_default(const char *, struct KS_str_match *);
+size_t KS_str_match_native_128(const char *, size_t,
+    const struct KS_str_match *);
+size_t KS_str_match_native_256(const char *, size_t,
+    const struct KS_str_match *);
+size_t KS_str_match_native_512(const char *, size_t,
+    const struct KS_str_match *);
+size_t KS_str_match_until_native_128(const char *, size_t,
+    const struct KS_str_match *);
+size_t KS_str_match_until_native_256(const char *, size_t,
+    const struct KS_str_match *);
+uint64_t KS_extract_and_deposit_native(uint64_t, uint64_t, uint64_t);
 
 size_t (*KS_str_match)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_default;
 size_t (*KS_str_match_until)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_until_default;
+uint64_t (*KS_extract_and_deposit)(uint64_t, uint64_t, uint64_t) =
+    KS_extract_and_deposit_default;
 
 static void
 KS_init(void)
@@ -63,6 +67,9 @@ KS_init(void)
 	    /* Valgrind does not emulate PCMPISTRI $0x4. */
 	    !KS_valgrind_is_running())
 		KS_str_match_until = KS_str_match_until_native_128;
+
+	if (caps.bmi >= 2 /* PEXT, PDEP */)
+		KS_extract_and_deposit = KS_extract_and_deposit_native;
 }
 
 static void

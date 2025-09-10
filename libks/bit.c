@@ -14,32 +14,27 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIBKS_BIT_H
-#define LIBKS_BIT_H
+#include "libks/bit.h"
 
 #include <stdint.h>
 
-#define KS_clamp(x, nbits) ((uint64_t)(x) & (((1U << (nbits)) - 1)))
-
-static inline uint8_t
-KS_u8_clamp(uint64_t x)
+uint64_t
+KS_extract_and_deposit_default(uint64_t val, uint64_t extract_mask,
+    uint64_t deposit_mask)
 {
-	return x & 0xffU;
+	uint64_t extracted_bits = 0;
+	for (uint32_t i = 0; extract_mask != 0; extract_mask >>= 1, val >>= 1) {
+		if (extract_mask & 0x1)
+			extracted_bits |= (val & 0x1) << i++;
+	}
+
+	uint32_t deposited_bits = 0;
+	for (uint32_t i = 0; deposit_mask != 0; deposit_mask >>= 1, i += 1) {
+		if (deposit_mask & 0x1) {
+			deposited_bits |= (extracted_bits & 0x1) << i;
+			extracted_bits >>= 1;
+		}
+	}
+
+	return deposited_bits;
 }
-
-static inline uint16_t
-KS_u16_clamp(uint64_t x)
-{
-	return x & 0xffffU;
-}
-
-static inline uint32_t
-KS_u32_clamp(uint64_t x)
-{
-	return (uint32_t)x;
-}
-
-uint64_t KS_extract_and_deposit_default(uint64_t, uint64_t, uint64_t);
-extern uint64_t (*KS_extract_and_deposit)(uint64_t, uint64_t, uint64_t);
-
-#endif /* !LIBKS_BIT_H */

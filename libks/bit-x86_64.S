@@ -1,3 +1,5 @@
+#if defined(__x86_64__)
+
 /*
  * Copyright (c) 2025 Anton Lindqvist <anton@basename.se>
  *
@@ -14,32 +16,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIBKS_BIT_H
-#define LIBKS_BIT_H
+#include "libks/asm.h"
 
-#include <stdint.h>
+	ASM_PROLOGUE
+	.intel_syntax noprefix
 
-#define KS_clamp(x, nbits) ((uint64_t)(x) & (((1U << (nbits)) - 1)))
+ENTRY(KS_extract_and_deposit_native)
+	pext	rax, rdi, rsi
+	pdep	rax, rax, rdx
+	ret
 
-static inline uint8_t
-KS_u8_clamp(uint64_t x)
-{
-	return x & 0xffU;
-}
-
-static inline uint16_t
-KS_u16_clamp(uint64_t x)
-{
-	return x & 0xffffU;
-}
-
-static inline uint32_t
-KS_u32_clamp(uint64_t x)
-{
-	return (uint32_t)x;
-}
-
-uint64_t KS_extract_and_deposit_default(uint64_t, uint64_t, uint64_t);
-extern uint64_t (*KS_extract_and_deposit)(uint64_t, uint64_t, uint64_t);
-
-#endif /* !LIBKS_BIT_H */
+#endif
