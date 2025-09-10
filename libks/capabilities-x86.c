@@ -16,7 +16,7 @@
 
 #include "libks/capabilities.h"
 
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(__i386__)
 
 #include <stdint.h>
 #include <string.h>
