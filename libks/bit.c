@@ -28,7 +28,7 @@ KS_extract_and_deposit_default(uint64_t val, uint64_t extract_mask,
 			extracted_bits |= (val & 0x1) << i++;
 	}
 
-	uint32_t deposited_bits = 0;
+	uint64_t deposited_bits = 0;
 	for (uint32_t i = 0; deposit_mask != 0; deposit_mask >>= 1, i += 1) {
 		if (deposit_mask & 0x1) {
 			deposited_bits |= (extracted_bits & 0x1) << i;
