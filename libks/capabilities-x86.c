@@ -77,6 +77,19 @@ is_x86_64(uint32_t *max_leaf)
 }
 
 static void
+mode(struct KS_x86_capabilites *caps)
+{
+	/* In 32-bit mode, the opcodes will be interpreted as dec eax, nop.
+	 * In 64-bit mode, the opcodes will be interpreted as rex.w nop.
+	 * As the eax register is initialized to 1, we must be operating in
+	 * 32-bit mode if the same register is equal to 0 after executing these
+	 * two opcodes. */
+	int is_64 = 1;
+	__asm__ volatile (".byte 0x48, 0x90" : "=a" (is_64) : "a" (is_64));
+	caps->mode = is_64 ? 64 : 32;
+}
+
+static void
 avx(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 {
 	struct cpuid leaf;
@@ -157,6 +170,7 @@ KS_x86_capabilites(struct KS_x86_capabilites *caps)
 		return 0;
 
 	memset(caps, 0, sizeof(*caps));
+	mode(caps);
 	avx(max_leaf, caps);
 	bmi(max_leaf, caps);
 	sse(max_leaf, caps);

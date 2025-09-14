@@ -41,6 +41,7 @@
 #define XCR0_HI16_ZMM_MASK		(1 << 7)
 
 struct KS_x86_capabilites {
+	uint32_t mode;
 	uint32_t avx;
 	uint32_t bmi;
 	uint32_t sse;
