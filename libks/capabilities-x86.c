@@ -57,7 +57,7 @@ xgetbv(uint32_t regno)
 }
 
 static int
-is_x86_64(uint32_t *max_leaf)
+is_x86(uint32_t *max_leaf)
 {
 	union {
 		uint8_t u8[12];
@@ -166,7 +166,7 @@ KS_x86_capabilites(struct KS_x86_capabilites *caps)
 {
 	uint32_t max_leaf;
 
-	if (!is_x86_64(&max_leaf))
+	if (!is_x86(&max_leaf))
 		return 0;
 
 	memset(caps, 0, sizeof(*caps));
