@@ -237,7 +237,7 @@ DEBUG=			$(rmdup ${DEBUG})
 AFLAGS=			$(rmdup ${AFLAGS})
 ASFLAGS=		$(rmdup ${ASFLAGS})
 LDFLAGS=		$(rmdup ${LDFLAGS})
-LDFLAGS_benchmark=	$(rmdup ${LDFLAGS_benchmark})
+LDFLAGS_benchmark=	$(rmdup ${LDFLAGS_benchmark:-})
 
 BINDIR?=		$(echo ${BINDIR})
 MANDIR?=		$(echo ${MANDIR})
