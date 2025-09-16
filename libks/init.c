@@ -30,9 +30,6 @@ size_t (*KS_str_match)(const char *, size_t, const struct KS_str_match *) =
 size_t (*KS_str_match_until)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_until_default;
 
-uint64_t (*KS_extract_and_deposit)(uint64_t, uint64_t, uint64_t) =
-    KS_extract_and_deposit_default;
-
 int
 KS_str_match_init(const char *ranges, struct KS_str_match *match)
 {
