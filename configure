@@ -124,14 +124,14 @@ check_pledge() {
 _benchmark=0
 _fuzz=''
 _pedantic=0
-_sanitize=0
+_sanitize=''
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 	--benchmark)	_benchmark=1;;
-	--fuzz)		shift; _fuzz="$1"; _sanitize=1;;
+	--fuzz)		shift; _fuzz="$1"; _sanitize="address";;
 	--pedantic)	_pedantic=1;;
-	--sanitize)	_sanitize=1;;
+	--sanitize)	shift; _sanitize="${1}";;
 	*)		;;
 	esac
 	shift
@@ -185,9 +185,9 @@ if [ "${_pedantic}" -eq 1 ]; then
 	LDFLAGS="$(cc_has_option -Wl,--fatal-warnings) ${LDFLAGS}"
 fi
 
-if [ "${_sanitize}" -eq 1 ]; then
+if [ -n "${_sanitize}" ]; then
 	{
-		cc_has_sanitizer address
+		cc_has_sanitizer "${_sanitize}"
 		cc_has_sanitizer undefined
 		cc_has_sanitizer unsigned-integer-overflow
 		[ "${_fuzz}" = "llvm" ] && echo fuzzer
