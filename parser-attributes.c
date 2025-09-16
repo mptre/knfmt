@@ -52,7 +52,7 @@ parser_attributes_expr(struct parser *pr, struct doc *dc, struct doc **out,
 
 	simple_cookie(cookie);
 	if (attribute->tk_type == TOKEN_ATTRIBUTE)
-		simple_enter(pr->pr_si, SIMPLE_ATTRIBUTES, 0, &cookie);
+		(void)simple_enter(pr->pr_si, SIMPLE_ATTRIBUTES, 0, &cookie);
 
 	for (;;) {
 		struct token *comma, *nx, *stop;
