@@ -5,17 +5,43 @@ on:
   - pull_request
 
 jobs:
-  linux-gcc-sanitize:
+  linux-clang-sanitize-address:
     runs-on: ubuntu-22.04
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: test
         env:
-          CC: gcc
+          CC: clang
         run: |
-          ./configure --pedantic --sanitize
+          ./configure --pedantic --sanitize address
           make -j`nproc` test
+
+  linux-clang-sanitize-memory:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: test
+        env:
+          CC: clang
+        run: |
+          ./configure --pedantic --sanitize memory
+          make -j`nproc` test
+
+  linux-gcc-fuzz:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: dependenices
+        run: sudo apt-get update && sudo apt-get install afl
+      - name: test
+        env:
+          CC: afl-gcc
+        run: |
+          ./configure --pedantic --fuzz afl
+          make -j`nproc` fuzz
 
   linux-gcc-i386:
     runs-on: ubuntu-22.04
@@ -34,31 +60,46 @@ jobs:
           ./configure --pedantic
           make -j`nproc` test
 
-  linux-clang-sanitize:
+  linux-gcc-musl:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: dependenices
+        run: sudo apt-get update && sudo apt-get install musl-tools
+      - name: test
+        env:
+          CC: musl-gcc
+        run: |
+          ./configure --pedantic
+          make -j`nproc` test
+
+  linux-gcc-ndebug:
     runs-on: ubuntu-22.04
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: test
         env:
-          CC: clang
+          CC: gcc
+          CPPFLAGS: -DNDEBUG
         run: |
-          ./configure --pedantic --sanitize
+          ./configure --pedantic
           make -j`nproc` test
 
-  macos-clang-sanitize:
-    runs-on: macos-latest
+  linux-gcc-sanitize-address:
+    runs-on: ubuntu-22.04
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: test
         env:
-          CC: clang
+          CC: gcc
         run: |
-          ./configure --pedantic --sanitize
-          make -j`sysctl -n hw.logicalcpu` test
+          ./configure --pedantic --sanitize address
+          make -j`nproc` test
 
-  valgrind:
+  linux-gcc-valgrind:
     runs-on: ubuntu-22.04
     steps:
       - name: checkout
@@ -73,43 +114,14 @@ jobs:
           ./configure --pedantic
           make -j`nproc` test
 
-  musl:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: dependenices
-        run: sudo apt-get update && sudo apt-get install musl-tools
-      - name: test
-        env:
-          CC: musl-gcc
-        run: |
-          ./configure --pedantic
-          make -j`nproc` test
-
-  ndebug:
-    runs-on: ubuntu-22.04
+  macos-clang-sanitize-address:
+    runs-on: macos-latest
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: test
         env:
-          CC: gcc
-          CPPFLAGS: -DNDEBUG
+          CC: clang
         run: |
-          ./configure --pedantic
-          make -j`nproc` test
-
-  fuzz:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: dependenices
-        run: sudo apt-get update && sudo apt-get install afl
-      - name: test
-        env:
-          CC: afl-gcc
-        run: |
-          ./configure --pedantic --fuzz afl
-          make -j`nproc` fuzz
+          ./configure --pedantic --sanitize address
+          make -j`sysctl -n hw.logicalcpu` test
