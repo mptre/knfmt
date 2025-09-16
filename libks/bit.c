@@ -18,6 +18,13 @@
 
 #include <stdint.h>
 
+#include "libks/capabilities.h"
+
+extern uint64_t KS_extract_and_deposit_native(uint64_t, uint64_t, uint64_t);
+
+uint64_t (*KS_extract_and_deposit)(uint64_t, uint64_t, uint64_t) =
+    KS_extract_and_deposit_default;
+
 uint64_t
 KS_extract_and_deposit_default(uint64_t val, uint64_t extract_mask,
     uint64_t deposit_mask)
@@ -37,4 +44,16 @@ KS_extract_and_deposit_default(uint64_t val, uint64_t extract_mask,
 	}
 
 	return deposited_bits;
+}
+
+void
+KS_bit_init(void)
+{
+#if defined(__x86_64__)
+	struct KS_x86_capabilites caps;
+	if (!KS_x86_capabilites(&caps))
+		return;
+	if (caps.bmi >= 2 /* PEXT, PDEP */)
+		KS_extract_and_deposit = KS_extract_and_deposit_native;
+#endif
 }

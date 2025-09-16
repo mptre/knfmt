@@ -37,14 +37,11 @@ size_t KS_str_match_until_native_128(const char *, size_t,
     const struct KS_str_match *);
 size_t KS_str_match_until_native_256(const char *, size_t,
     const struct KS_str_match *);
-uint64_t KS_extract_and_deposit_native(uint64_t, uint64_t, uint64_t);
 
 size_t (*KS_str_match)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_default;
 size_t (*KS_str_match_until)(const char *, size_t, const struct KS_str_match *) =
     KS_str_match_until_default;
-uint64_t (*KS_extract_and_deposit)(uint64_t, uint64_t, uint64_t) =
-    KS_extract_and_deposit_default;
 
 static void
 KS_init(void)
@@ -68,8 +65,7 @@ KS_init(void)
 	    !KS_valgrind_is_running())
 		KS_str_match_until = KS_str_match_until_native_128;
 
-	if (caps.bmi >= 2 /* PEXT, PDEP */)
-		KS_extract_and_deposit = KS_extract_and_deposit_native;
+	KS_bit_init();
 }
 
 static void
