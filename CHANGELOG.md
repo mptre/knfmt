@@ -1,4 +1,4 @@
-# 5.0.0 - YYYY-MM-DD
+# 5.0.0 - 2025-09-16
 
 ## Changes
 
@@ -24,7 +24,8 @@
   (924f89fcba0c)
   (Anton Lindqvist)
 
-- In simple mode, allow implicit integers to be preceded with static
+- In simple mode, allow implicit integers to be preceded with the static
+  keyword.
   (6c342972a64c)
   (Anton Lindqvist)
 
@@ -51,7 +52,7 @@
   (7f101bd66570)
   (Anton Lindqvist)
 
-- Fix too long alignment in multi-line cpp macros.
+- Fix excessive alignment in multi-line cpp macros.
   (f9cf4098ac50)
   (Anton Lindqvist)
 
@@ -95,6 +96,10 @@
 - Improve handling of attributes in function implementation.
   (8a6ce9615f4f)
   (Anton Lindqvist)
+
+- Ensure LDFLAGS_benchmark is always defined in configure script.
+  (bfc0e24babb3)
+  (mw)
 
 # 4.5.0 - 2024-09-01
 
