@@ -25,6 +25,8 @@ struct cpuid {
 	uint32_t a, b, c, d;
 };
 
+int KS_x86_capabilites_impl(struct KS_x86_capabilites *);
+
 static void cpuid(uint32_t, uint32_t, struct cpuid *);
 static uint64_t xgetbv(uint32_t);
 
@@ -57,7 +59,7 @@ xgetbv(uint32_t regno)
 }
 
 static int
-is_x86(uint32_t *max_leaf)
+is_x86(uint32_t *max_leaf, uint32_t *extended_max_leaf)
 {
 	union {
 		uint8_t u8[12];
@@ -73,6 +75,10 @@ is_x86(uint32_t *max_leaf)
 	    memcmp(ident.u8, "AuthenticAMD", sizeof(ident)) != 0)
 		return 0;
 	*max_leaf = leaf.a;
+
+	KS_cpuid(0x80000000, 0, &leaf);
+	*extended_max_leaf = leaf.a;
+
 	return 1;
 }
 
@@ -161,30 +167,57 @@ bmi(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 		caps->bmi = 2;
 }
 
-int
-KS_x86_capabilites(struct KS_x86_capabilites *caps)
+static void
+lzcnt(uint32_t extended_max_leaf, struct KS_x86_capabilites *caps)
 {
-	uint32_t max_leaf;
+	if (extended_max_leaf < 0x80000001)
+		return;
 
-	if (!is_x86(&max_leaf))
+	struct cpuid leaf;
+	KS_cpuid(0x80000001, 0, &leaf);
+	if (leaf.c & CPUID_0x80000001_C_LZCNT_MASK)
+		caps->lzcnt = 1;
+}
+
+int
+KS_x86_capabilites_impl(struct KS_x86_capabilites *caps)
+{
+	uint32_t extended_max_leaf, max_leaf;
+	if (!is_x86(&max_leaf, &extended_max_leaf))
 		return 0;
 
-	memset(caps, 0, sizeof(*caps));
 	mode(caps);
 	avx(max_leaf, caps);
 	bmi(max_leaf, caps);
+	lzcnt(extended_max_leaf, caps);
 	sse(max_leaf, caps);
 	return 1;
+}
+
+const struct KS_x86_capabilites *
+KS_x86_capabilites(void)
+{
+	static struct KS_x86_capabilites storage = {0};
+	static struct KS_x86_capabilites *caps = NULL;
+	static int first = 1;
+	if (!first)
+		return caps;
+	first = 0;
+
+	if (!KS_x86_capabilites_impl(&storage))
+		return NULL;
+	caps = &storage;
+	return caps;
 }
 
 #else
 
 #include "libks/compiler.h"
 
-int
-KS_x86_capabilites(struct KS_x86_capabilites *UNUSED(caps))
+const struct KS_x86_capabilites *
+KS_x86_capabilites(void)
 {
-	return 0;
+	return NULL;
 }
 
 #endif

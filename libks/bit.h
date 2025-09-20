@@ -21,7 +21,7 @@
 
 #define KS_clamp(x, nbits) ((uint64_t)(x) & (((1U << (nbits)) - 1)))
 
-void KS_bit_init(void);
+int KS_bit_init(void);
 
 static inline uint8_t
 KS_u8_clamp(uint64_t x)

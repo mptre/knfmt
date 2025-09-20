@@ -34,6 +34,8 @@
 #define CPUID_07_B_AVXF_MASK		(1 << 16)
 #define CPUID_07_B_AVXBW_MASK		(1 << 30)
 
+#define CPUID_0x80000001_C_LZCNT_MASK	(1 << 5)
+
 #define XCR0_XMM_MASK			(1 << 1)
 #define XCR0_YMM_MASK			(1 << 2)
 #define XCR0_OPMASK_MASK		(1 << 5)
@@ -45,12 +47,13 @@ struct KS_x86_capabilites {
 	uint32_t avx;
 	uint32_t bmi;
 	uint32_t sse;
+	uint32_t lzcnt:1;
 
 	struct {
 		uint32_t bw:1;
 	} avx512;
 };
 
-int KS_x86_capabilites(struct KS_x86_capabilites *);
+const struct KS_x86_capabilites *KS_x86_capabilites(void);
 
 #endif /* !LIBKS_CAPABILITIES_H */

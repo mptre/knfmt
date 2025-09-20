@@ -16,6 +16,7 @@
 
 #include "libks/bit.h"
 
+#include <stddef.h>	/* NULL */
 #include <stdint.h>
 
 #include "libks/capabilities.h"
@@ -46,14 +47,18 @@ KS_extract_and_deposit_default(uint64_t val, uint64_t extract_mask,
 	return deposited_bits;
 }
 
-void
+int
 KS_bit_init(void)
 {
 #if defined(__x86_64__)
-	struct KS_x86_capabilites caps;
-	if (!KS_x86_capabilites(&caps))
-		return;
-	if (caps.bmi >= 2 /* PEXT, PDEP */)
+	const struct KS_x86_capabilites *caps = KS_x86_capabilites();
+	if (caps == NULL)
+		return 0;
+	if (caps->bmi >= 2 /* PEXT, PDEP */) {
 		KS_extract_and_deposit = KS_extract_and_deposit_native;
+		return 1;
+	}
 #endif
+
+	return 0;
 }

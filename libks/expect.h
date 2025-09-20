@@ -54,7 +54,7 @@ KS_expect_scope_leave(void *arg)
 	 __LINE__)
 
 #define KS_expect_true(expr) KS_expect_int(1, (expr) ? 1 : 0)
-#define KS_expect_false(expr) KS_expect_int(0, (expr))
+#define KS_expect_false(expr) KS_expect_int(0, (expr) ? 1 : 0)
 
 #define KS_expect_int(exp, act) __extension__ ({			\
 	__typeof__(exp) _exp = (exp);					\

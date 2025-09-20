@@ -46,21 +46,21 @@ size_t (*KS_str_match_until)(const char *, size_t, const struct KS_str_match *) 
 static void
 KS_init(void)
 {
-	struct KS_x86_capabilites caps;
-
-	if (!KS_x86_capabilites(&caps))
+	const struct KS_x86_capabilites *caps = KS_x86_capabilites();
+	if (caps == NULL)
 		return;
 
-	if (caps.avx >= 512 && caps.avx512.bw && caps.bmi >= 1 /* TZCNT */)
+	if (caps->avx >= 512 && caps->avx512.bw && caps->bmi >= 1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_512;
-	else if (caps.avx >= 2 && caps.bmi >= 1 /* TZCNT */)
+	else if (caps->avx >= 2 && caps->bmi >= 1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_256;
-	else if (caps.sse == 0x42 /* PCMPISTRM */ && caps.bmi >= 1 /* TZCNT */)
+	else if (caps->sse == 0x42 /* PCMPISTRM */ &&
+	    caps->bmi >= 1 /* TZCNT */)
 		KS_str_match = KS_str_match_native_128;
 
-	if (caps.avx >= 2 && caps.bmi >= 2 /* BZHI */)
+	if (caps->avx >= 2 && caps->bmi >= 2 /* BZHI */)
 		KS_str_match_until = KS_str_match_until_native_256;
-	else if (caps.sse == 0x42 /* PCMPISTRI */ &&
+	else if (caps->sse == 0x42 /* PCMPISTRI */ &&
 	    /* Valgrind does not emulate PCMPISTRI $0x4. */
 	    !KS_valgrind_is_running())
 		KS_str_match_until = KS_str_match_until_native_128;
