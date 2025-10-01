@@ -29,12 +29,19 @@ cc_has_option() {
 cc_has_sanitizer() {
 	local _sanitizer
 
-	_sanitizer="$1"; : "${_sanitizer:?}"
+	_sanitizer="$1"; shift; : "${_sanitizer:?}"
 	if echo 'int main(void) { return 0; }' |
-	   compile "-fsanitize=${_sanitizer}"
+	   compile "-fsanitize=${_sanitizer}" "$@"
 	then
-		echo "$@"
+		echo "${_sanitizer}"
 	fi
+}
+
+cc_sanitizer_runtime() {
+	case "$(uname -s)" in
+	OpenBSD)	echo "-fsanitize-minimal-runtime";;
+	*)		;;
+	esac
 }
 
 cxx_compile() {
@@ -186,14 +193,16 @@ if [ "${_pedantic}" -eq 1 ]; then
 fi
 
 if [ -n "${_sanitize}" ]; then
+	_runtime="$(cc_sanitizer_runtime)"
 	{
-		cc_has_sanitizer "${_sanitize}"
-		cc_has_sanitizer undefined
-		cc_has_sanitizer unsigned-integer-overflow
+		cc_has_sanitizer "${_sanitize}" ${_runtime:+"${_runtime}"}
+		cc_has_sanitizer undefined ${_runtime:+"${_runtime}"}
+		cc_has_sanitizer unsigned-integer-overflow ${_runtime:+"${_runtime}"}
 		[ "${_fuzz}" = "llvm" ] && echo fuzzer
 	} >"${WRKDIR}/sanitize"
 	if ! cmp -s /dev/null "${WRKDIR}/sanitize"; then
-		_sanitize="-fsanitize=$(paste -sd , "${WRKDIR}/sanitize")"
+		_sanitize="${_runtime}"
+		_sanitize="${_sanitize} -fsanitize=$(paste -sd , "${WRKDIR}/sanitize")"
 		_sanitize="${_sanitize} $(cc_has_option -fno-sanitize-recover=all)"
 		_sanitize="${_sanitize} $(cc_has_option -fno-omit-frame-pointer)"
 		CFLAGS="${_sanitize} ${CFLAGS}"
