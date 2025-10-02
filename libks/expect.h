@@ -32,7 +32,7 @@ static struct KS_expect_scope KS_expect_current_scope;
 
 __attribute__((used))
 static void
-KS_expect_scope_leave(void *arg)
+KS_expect_scope_leave(const void *arg)
 {
 	const struct KS_expect_scope *scope = arg;
 
