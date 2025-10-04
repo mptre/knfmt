@@ -31,10 +31,10 @@
 
 #define SECTION_ITERATE(it, s) __extension__ ({				\
 	_Static_assert((sizeof(*(it)) & 0xf) == 0, "Unaligned");	\
-	extern __typeof__(*(it)) __start_ ## s SECTION_START(s);	\
-	__typeof__(it) _start = &__start_ ## s;				\
-	extern __typeof__(*(it)) __stop_##s SECTION_STOP(s);		\
-	__typeof__(it) _stop = &__stop_ ## s;				\
+	extern __typeof__(*(it)) __start_##s [] SECTION_START(s);	\
+	__typeof__(it) _start = &__start_##s [0];			\
+	extern __typeof__(*(it)) __stop_##s [] SECTION_STOP(s);		\
+	__typeof__(it) _stop = &__stop_##s [0];				\
 	if ((it) == NULL)						\
 		(it) = _start;						\
 	else								\
