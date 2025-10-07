@@ -1292,9 +1292,7 @@ expr_doc_has_spaces(const struct expr *ex)
 	if (token_has_spaces(ex->ex_tk))
 		return 1;
 	pv = token_prev(ex->ex_tk);
-	if (token_has_spaces(pv))
-		return 1;
-	return 0;
+	return token_has_spaces(pv) || token_has_suffix(pv, TOKEN_COMMENT);
 }
 
 static unsigned int
