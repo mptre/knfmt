@@ -223,7 +223,7 @@ fi
 
 if [ "${_benchmark}" -eq 1 ]; then
 	CPPFLAGS="${CPPFLAGS} $(pkg-config --cflags-only-I benchmark)"
-	LDFLAGS_benchmark="${LDFLAGS} $(pkg-config --libs benchmark)"
+	LDFLAGS_benchmark="$(pkg-config --libs benchmark)"
 fi
 
 # Let CXX inherit applicable CFLAGS.

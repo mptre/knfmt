@@ -469,7 +469,7 @@ ${PROG_test}: ${OBJS_test}
 
 ${PROG_benchmark}: ${OBJS_benchmark}
 	${CXX} ${DEBUG} -o ${PROG_benchmark} ${OBJS_benchmark} \
-		${LDFLAGS_benchmark}
+		${LDFLAGS} ${LDFLAGS_benchmark}
 
 clean:
 	rm -f ${DEPS_knfmt} ${OBJS_knfmt} ${PROG_knfmt} \
