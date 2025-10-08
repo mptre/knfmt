@@ -302,6 +302,13 @@ parser_func_impl1(struct parser *pr, struct doc *dc, struct ruler *rl,
 	return parser_good(pr);
 }
 
+static int
+has_many_args(struct parser *pr, struct token *rparen)
+{
+	struct lexer *lx = pr->pr_lx;
+	return lexer_peek_until_comma(lx, rparen, NULL);
+}
+
 /*
  * Parse a function prototype, i.e. return type, identifier, arguments and
  * optional attributes. The caller is expected to already have parsed the
@@ -378,6 +385,7 @@ parser_func_proto(struct parser *pr, struct doc **out,
 	if (!lexer_peek_if_pair(lx, TOKEN_LPAREN, TOKEN_RPAREN, &lparen,
 	    &rparen))
 		return parser_fail(pr);
+	int lparen_has_line = token_has_line(lparen, 1);
 	if (lexer_expect(lx, TOKEN_LPAREN, NULL)) {
 		parser_token_trim_after(pr, lparen);
 		parser_token_trim_before(pr, rparen);
@@ -400,6 +408,10 @@ parser_func_proto(struct parser *pr, struct doc **out,
 		indent = doc_minimize(minimizers, dc);
 	} else {
 		indent = doc_indent(w, concat);
+	}
+	if (lparen_has_line && has_many_args(pr, rparen)) {
+		/* Must be emitted here to get indentation right. */
+		doc_alloc(DOC_HARDLINE, indent);
 	}
 	while (parser_func_arg(pr, indent, out, rparen) & GOOD)
 		continue;
