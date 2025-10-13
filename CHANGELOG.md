@@ -1,3 +1,17 @@
+# 5.1.0 - YYYY-MM-DD
+
+## News
+
+- Allow hard line after opening parenthesis in function prototypes.
+  (69d9643d8502)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Ensure spaces around binary operators if preceded with comment(s).
+  (7c1bed8c4d51)
+  (Anton Lindqvist)
+
 # 5.0.0 - 2025-09-16
 
 ## Changes
