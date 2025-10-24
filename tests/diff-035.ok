@@ -296,24 +296,24 @@ struct usb_video_probe_commit {
  * USB Video Payload Uncompressed
  */
 /* Table 2-1: Compression Formats */
-#define	UVIDEO_FORMAT_GUID_YUY2	{					\
-    'Y',  'U',  'Y',  '2',  '\0', 0x00, 0x10, 0x00,			\
+#define	UVIDEO_FORMAT_GUID_YUY2	{			\
+    'Y',  'U',  'Y',  '2',  '\0', 0x00, 0x10, 0x00,	\
     0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 }
 
-#define	UVIDEO_FORMAT_GUID_YV12	{					\
-    'Y',  'V',  '1',  '2',  '\0', 0x00, 0x10, 0x00,			\
+#define	UVIDEO_FORMAT_GUID_YV12	{			\
+    'Y',  'V',  '1',  '2',  '\0', 0x00, 0x10, 0x00,	\
     0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 }
 
-#define	UVIDEO_FORMAT_GUID_I420	{					\
-    'I',  '4',  '2',  '0',  '\0', 0x00, 0x10, 0x00,			\
+#define	UVIDEO_FORMAT_GUID_I420	{			\
+    'I',  '4',  '2',  '0',  '\0', 0x00, 0x10, 0x00,	\
     0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 }
 
-#define	UVIDEO_FORMAT_GUID_Y800	{					\
-    'Y',  '8',  '0',  '0',  '\0', 0x00, 0x10, 0x00,			\
+#define	UVIDEO_FORMAT_GUID_Y800	{			\
+    'Y',  '8',  '0',  '0',  '\0', 0x00, 0x10, 0x00,	\
     0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 }
 
-#define	UVIDEO_FORMAT_GUID_Y8	{					\
-    'Y',  '8',  ' ',  ' ',  '\0', 0x00, 0x10, 0x00,			\
+#define	UVIDEO_FORMAT_GUID_Y8	{			\
+    'Y',  '8',  ' ',  ' ',  '\0', 0x00, 0x10, 0x00,	\
     0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 }
 
 #define	UVIDEO_FORMAT_GUID_KSMEDIA_L8_IR	{	\

@@ -92,18 +92,31 @@ is_not_aligned(const struct alignment *a)
 	return strncmp(a->indent, " \\", 2) == 0;
 }
 
+static const struct alignment *
+max_alignment(const struct alignment *a, unsigned int len)
+{
+	const struct alignment *max = NULL;
+	for (unsigned int i = 0; i < len; i++) {
+		const struct alignment *candidate = &a[len - i - 1];
+		if (candidate->indent_type == INDENT_TYPE_NONE)
+			continue;
+		if (max == NULL || candidate->width > max->width)
+			max = candidate;
+	}
+	return max;
+}
+
 static int
 all_identical(const struct alignment *a, unsigned int len)
 {
 	unsigned int i;
 
 	for (i = 0; i < len - 1; i++) {
-		if (a[i].width != a[i + 1].width)
-			return 0;
-
 		if (a[i].indent_type == INDENT_TYPE_NONE ||
 		    a[i + 1].indent_type == INDENT_TYPE_NONE)
 			continue;
+		if (a[i].width != a[i + 1].width)
+			return 0;
 		if (a[i].indent_type != a[i + 1].indent_type)
 			return 0;
 	}
@@ -174,10 +187,11 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 	}
 
 	/* The first line is allowed to not be aligned. */
-	if (nlines >= 3 && all_identical(&lines[1], nlines - 1)) {
+	if (nlines >= 2 && all_identical(&lines[1], nlines - 1)) {
 		unsigned int width = alignment->width;
-		if (lines[nlines - 1].width < width)
-			width = lines[nlines - 1].width;
+		const struct alignment *max = max_alignment(lines, nlines);
+		if (max != NULL && max->width < width)
+			width = max->width;
 		*alignment = (struct alignment){
 		    .mode		= Right,
 		    .width		= width,
