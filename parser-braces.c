@@ -435,12 +435,34 @@ peek_expr_stop(struct parser *pr, struct lbrace_cache *cache,
 }
 
 static struct token *
+find_next_lbrace(struct parser *pr)
+{
+	struct lexer_state s;
+	struct lexer *lx = pr->pr_lx;
+	struct token *next_lbrace = NULL;
+	struct token *lbrace, *rbrace;
+
+	lexer_peek_enter(lx, &s);
+	if (lexer_peek_until(lx, TOKEN_LBRACE, &lbrace)) {
+		lexer_seek(lx, lbrace);
+		if (lexer_peek_if_pair(lx, TOKEN_LBRACE, TOKEN_RBRACE, &lbrace, &rbrace) &&
+		    token_cmp(lbrace, rbrace) != 0)
+			next_lbrace = lbrace;
+	}
+	lexer_peek_leave(lx, &s);
+	return next_lbrace;
+}
+
+static struct token *
 lbrace_cache_lookup(struct parser *pr, struct lbrace_cache *cache,
     struct token *fallback)
 {
 	if (!cache->valid) {
-		lexer_peek_until(pr->pr_lx, TOKEN_LBRACE, &cache->lbrace);
-		cache->valid = 1;
+		struct token *lbrace = find_next_lbrace(pr);
+		if (lbrace != NULL) {
+			cache->lbrace = lbrace;
+			cache->valid = 1;
+		}
 	}
 	return cache->lbrace != NULL ? cache->lbrace : fallback;
 }
