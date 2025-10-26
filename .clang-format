@@ -1,5 +1,6 @@
 ---
 BasedOnStyle: OpenBSD
+ColumnLimit: 100
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '^"config\.h"'
