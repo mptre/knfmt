@@ -328,8 +328,7 @@ static unsigned int
 sense_column_length(struct ruler_column *rc)
 {
 	size_t i;
-	unsigned int alignment_width, effective_nspaces, effective_width, len,
-		     width;
+	unsigned int alignment_width, effective_nspaces, effective_width, len, width;
 
 	assert(!VECTOR_EMPTY(rc->rc_datums));
 

@@ -76,8 +76,7 @@ void
 simple_decl_forward_leave(struct simple_decl_forward *sd)
 {
 	struct token *after = sd->after;
-	struct token *first_sorted, *first_unsorted, *last_sorted,
-		     *last_unsorted;
+	struct token *first_sorted, *first_unsorted, *last_sorted, *last_unsorted;
 	unsigned int i;
 
 	if (VECTOR_LENGTH(sd->decls) < 2)
