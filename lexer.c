@@ -11,7 +11,6 @@
 #include "libks/arena-vector.h"
 #include "libks/arena.h"
 #include "libks/buffer.h"
-#include "libks/compiler.h"
 #include "libks/list.h"
 #include "libks/string.h"
 #include "libks/vector.h"
@@ -182,7 +181,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 	size_t off;
 	unsigned char c;
 
-	if (unlikely(lexer_eof(lx))) {
+	if (lexer_eof(lx)) {
 		/*
 		 * Do not immediately report EOF. Instead, return something
 		 * that's not expected while reading a token.
@@ -196,7 +195,7 @@ lexer_getc(struct lexer *lx, unsigned char *ch)
 
 	off = lx->lx_st.st_off++;
 	c = (unsigned char)lx->lx_input.ptr[off];
-	if (unlikely(c == '\n')) {
+	if (c == '\n') {
 		lx->lx_st.st_lno++;
 		lexer_line_alloc(lx, lx->lx_st.st_lno);
 	}
@@ -406,7 +405,7 @@ lexer_pop(struct lexer *lx, struct token **tk)
 		return 0;
 
 	st->st_tk = token_next(st->st_tk);
-	if (unlikely(st->st_tk->tk_flags & TOKEN_FLAG_BRANCH)) {
+	if (st->st_tk->tk_flags & TOKEN_FLAG_BRANCH) {
 		if (lx->lx_peek == 0) {
 			/* While not peeking, instruct the parser to halt. */
 			lexer_trace(lx, "halt %s",

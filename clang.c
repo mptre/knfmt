@@ -569,7 +569,7 @@ clang_read(struct lexer *lx, void *arg)
 	if (lexer_getc(lx, &ch))
 		goto eof;
 
-	if (unlikely(ch == 'L')) {
+	if (ch == 'L') {
 		unsigned char peek;
 
 		if (lexer_getc(lx, &peek) == 0 && (peek == '"' || peek == '\''))
