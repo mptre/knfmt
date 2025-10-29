@@ -29,10 +29,14 @@
 #define NDEBUG_UNUSED(x) UNUSED(x)
 #endif
 
-#define countof(x)	(sizeof((x)) / sizeof((x)[0]))
+/* _Static_assert() was introduced in C11. */
+#if defined(__STDC_VERSION__) || __STDC_VERSION__ >= 201112L
+#  define STATIC_ASSERT(expression, message) _Static_assert(expression, message)
+#else
+#  define STATIC_ASSERT(expression, message)
+#endif
 
-#define likely(x)	__builtin_expect((x), 1)
-#define unlikely(x)	__builtin_expect((x), 0)
+#define countof(x)	(sizeof((x)) / sizeof((x)[0]))
 
 #if __has_attribute(fallthrough)
 #  define FALLTHROUGH	__attribute__((fallthrough))

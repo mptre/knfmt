@@ -510,7 +510,7 @@ arena_scope_validate(struct arena *a, const struct arena_scope *s, size_t size)
 	const struct source_location *scope_location;
 	int i;
 
-	if (likely(s->id == a->refs))
+	if (s->id == a->refs)
 		return;
 
 	scope_location = s->id - 1 < MAX_SOURCE_LOCATIONS ?

@@ -17,6 +17,8 @@
 #ifndef LIBKS_SECTION_H
 #define LIBKS_SECTION_H
 
+#include "libks/compiler.h"
+
 #if defined(__MACH__)
 /* Prevent Clang on macOS from adding poisoned bytes between section entries. */
 #  define SECTION(s)		__attribute__((section("__DATA," #s))) \
@@ -30,7 +32,7 @@
 #endif
 
 #define SECTION_ITERATE(it, s) __extension__ ({				\
-	_Static_assert((sizeof(*(it)) & 0xf) == 0, "Unaligned");	\
+	STATIC_ASSERT((sizeof(*(it)) & 0xf) == 0, "Unaligned");		\
 	extern __typeof__(*(it)) __start_##s [] SECTION_START(s);	\
 	__typeof__(it) _start = &__start_##s [0];			\
 	extern __typeof__(*(it)) __stop_##s [] SECTION_STOP(s);		\
