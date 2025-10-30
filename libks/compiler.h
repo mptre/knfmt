@@ -30,7 +30,7 @@
 #endif
 
 /* _Static_assert() was introduced in C11. */
-#if defined(__STDC_VERSION__) || __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #  define STATIC_ASSERT(expression, message) _Static_assert(expression, message)
 #else
 #  define STATIC_ASSERT(expression, message)
