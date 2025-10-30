@@ -1,4 +1,4 @@
-# 5.1.0 - YYYY-MM-DD
+# 5.1.0 - 2025-10-30
 
 ## News
 
@@ -10,6 +10,15 @@
 
 - Ensure spaces around binary operators if preceded with comment(s).
   (7c1bed8c4d51)
+  (Anton Lindqvist)
+
+- Honor aligned line continuations in preprocessor defines despite them being
+  smaller than ColumnLimit.
+  (27d86ffa7f2a)
+  (Anton Lindqvist)
+
+- Improve detection of brace initializers only spanning a single line.
+  (33e48ab3f1fb)
   (Anton Lindqvist)
 
 # 5.0.0 - 2025-09-16
