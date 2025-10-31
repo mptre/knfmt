@@ -1,3 +1,11 @@
+# 5.1.1 - 2025-10-31
+
+## Bug fixes
+
+- Correct sensing of _Static_assert() availability.
+  (f9ca9780227d)
+  (Theo Buehler)
+
 # 5.1.0 - 2025-10-30
 
 ## News
