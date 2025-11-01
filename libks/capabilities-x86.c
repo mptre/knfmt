@@ -85,11 +85,11 @@ is_x86(uint32_t *max_leaf, uint32_t *extended_max_leaf)
 static void
 mode(struct KS_x86_capabilites *caps)
 {
-	/* In 32-bit mode, the opcodes will be interpreted as dec eax, nop.
+	/* In 32-bit mode, the opcodes will be interpreted as dec eax; nop.
 	 * In 64-bit mode, the opcodes will be interpreted as rex.w nop.
 	 * As the eax register is initialized to 1, we must be operating in
-	 * 32-bit mode if the same register is equal to 0 after executing these
-	 * two opcodes. */
+	 * 32-bit mode if the same register is equal to 0 after executing this
+	 * sequence. */
 	int is_64 = 1;
 	__asm__ volatile (".byte 0x48, 0x90" : "=a" (is_64) : "a" (is_64));
 	caps->mode = is_64 ? 64 : 32;
