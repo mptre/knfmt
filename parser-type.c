@@ -192,13 +192,16 @@ find_align_token(const struct parser_type *type, unsigned int *nspaces)
 		align = token_prev(align);
 	}
 
-	/*
-	 * No alignment wanted if the first non-pointer token is followed by a
-	 * semi.
-	 */
 	nx = token_next(align);
-	if (nx != NULL && nx->tk_type == TOKEN_SEMI)
-		return NULL;
+	if (nx != NULL) {
+		/* No alignment wanted if the first non-pointer token is
+		 * followed by a semi. */
+		if (nx->tk_type == TOKEN_SEMI)
+			return NULL;
+		/* No alignment wanted for function pointer types. */
+		if (align->tk_type == TOKEN_RPAREN && nx->tk_type == TOKEN_LPAREN)
+			return NULL;
+	}
 
 	*nspaces = nstars;
 	return align;
