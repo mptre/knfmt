@@ -1,3 +1,11 @@
+# 5.1.2 - 2025-11-09
+
+## Bug fixes
+
+- Do not try to align function pointer types.
+  (6c6b0ebfae6c)
+  (Anton Lindqvist)
+
 # 5.1.1 - 2025-10-31
 
 ## Bug fixes
