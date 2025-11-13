@@ -53,6 +53,7 @@
 })
 
 #if defined(__clang__) && defined(__has_attribute) && __has_attribute(no_sanitize)
+#  define NO_SANITIZE_ALIGNMENT no_sanitize("alignment")
 #  define NO_SANITIZE_UNDEFINED no_sanitize("undefined")
 #  define NO_SANITIZE_SIGNED_INTEGER_OVERFLOW \
 	no_sanitize("signed-integer-overflow")
@@ -61,11 +62,15 @@
 #endif
 
 #if defined(__GNUC__) && defined(__has_attribute) && __has_attribute(no_sanitize)
+#  define NO_SANITIZE_ALIGNMENT no_sanitize("alignment")
 #  define NO_SANITIZE_UNDEFINED no_sanitize("undefined")
 #  define NO_SANITIZE_SIGNED_INTEGER_OVERFLOW \
 	no_sanitize("signed-integer-overflow")
 #endif
 
+#if !defined(NO_SANITIZE_ALIGNMENT)
+#  define NO_SANITIZE_ALIGNMENT
+#endif
 #if !defined(NO_SANITIZE_UNDEFINED)
 #  define NO_SANITIZE_UNDEFINED
 #endif
