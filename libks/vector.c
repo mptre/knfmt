@@ -99,6 +99,24 @@ vector_free(void **vv)
 	*vv = NULL;
 }
 
+void *
+vector_copy(void *v)
+{
+	const struct vector *src = ptov(v);
+
+	void *dst;
+	if (vector_init_impl(src->p.type, &dst, src->p.stride, &src->vc_callbacks))
+		return NULL;
+	if (vector_reserve(&dst, src->p.len)) {
+		vector_free(&dst);
+		return NULL;
+	}
+	memcpy(dst, v, src->p.len * src->p.stride);
+	ptov(dst)->p.len = src->p.len;
+
+	return dst;
+}
+
 int
 vector_reserve(void **vv, size_t n)
 {

@@ -51,6 +51,9 @@ int	vector_init_impl(enum vector_type, void **, size_t,
 #define VECTOR_FREE(vc) vector_free((void **)&(vc))
 void	vector_free(void **);
 
+#define VECTOR_COPY(vc) vector_copy((void *)(vc))
+void	*vector_copy(void *);
+
 #define VECTOR_RESERVE(vc, n) vector_reserve((void **)&(vc), (n))
 int	vector_reserve(void **, size_t);
 
