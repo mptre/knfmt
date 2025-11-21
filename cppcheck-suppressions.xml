@@ -17,9 +17,6 @@
     <id>missingIncludeSystem</id>
   </suppress>
   <suppress>
-    <id>toomanyconfigs</id>
-  </suppress>
-  <suppress>
     <id>redundantContinue</id>
   </suppress>
 
