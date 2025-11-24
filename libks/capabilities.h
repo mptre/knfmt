@@ -28,6 +28,7 @@
 #define CPUID_01_D_SSE1_0_MASK		(1u << 25)
 #define CPUID_01_D_SSE2_0_MASK		(1u << 26)
 
+#define CPUID_07_B_FSGSBASE_MASK	(1u << 0)
 #define CPUID_07_B_BMI1_MASK		(1u << 3)
 #define CPUID_07_B_AVX2_MASK		(1u << 5)
 #define CPUID_07_B_BMI2_MASK		(1u << 8)
@@ -47,7 +48,8 @@ struct KS_x86_capabilites {
 	uint32_t avx;
 	uint32_t bmi;
 	uint32_t sse;
-	uint32_t lzcnt:1;
+	uint32_t fsgsbase:1,
+		 lzcnt:1;
 
 	struct {
 		uint32_t bw:1;

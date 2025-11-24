@@ -168,6 +168,18 @@ bmi(uint32_t max_leaf, struct KS_x86_capabilites *caps)
 }
 
 static void
+fsgsbase(uint32_t max_leaf, struct KS_x86_capabilites *caps)
+{
+	if (max_leaf < 7)
+		return;
+
+	struct cpuid leaf;
+	KS_cpuid(7, 0, &leaf);
+	if (leaf.b & CPUID_07_B_FSGSBASE_MASK)
+		caps->fsgsbase = 1;
+}
+
+static void
 lzcnt(uint32_t extended_max_leaf, struct KS_x86_capabilites *caps)
 {
 	if (extended_max_leaf < 0x80000001)
@@ -189,6 +201,7 @@ KS_x86_capabilites_impl(struct KS_x86_capabilites *caps)
 	mode(caps);
 	avx(max_leaf, caps);
 	bmi(max_leaf, caps);
+	fsgsbase(max_leaf, caps);
 	lzcnt(extended_max_leaf, caps);
 	sse(max_leaf, caps);
 	return 1;
