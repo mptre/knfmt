@@ -220,6 +220,21 @@ ensure_line(struct lexer *lx, struct token *eof)
 	}
 }
 
+static void
+remove_branch_token(struct token *tk, struct token *parent)
+{
+	clang_token_branch_unlink(tk);
+	token_list_remove(&parent->tk_prefixes, tk);
+}
+
+static void
+remove_include_guards(struct include_guard_context *c)
+{
+	remove_branch_token(c->ifndef.tk, c->ifndef.parent);
+	token_list_remove(&c->define.parent->tk_prefixes, c->define.tk);
+	remove_branch_token(c->endif.tk, c->endif.parent);
+}
+
 void
 cpp_include_guard(const struct style *st, struct lexer *lx,
     struct arena *scratch)
@@ -232,30 +247,29 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 
 	path = lexer_get_path(lx);
 	ncomponents = style_include_guards(st, path);
-	if (ncomponents == 0)
-		return;
 
 	arena_scope(scratch, s);
 	eternal_scope = lexer_get_arena_scope(lx);
 
-	guard = path_to_guard(path, ncomponents, &s);
+	guard = path_to_guard(path, ncomponents > 0 ? ncomponents : 1, &s);
 	if (guard == NULL)
 		return;
 	cpp_ifndef = arena_sprintf(eternal_scope, "#ifndef %s\n", guard);
 	cpp_define = arena_sprintf(eternal_scope, "#define %s\n\n", guard);
 	cpp_endif = arena_sprintf(eternal_scope, "#endif /* !%s */\n", guard);
 
-	if (sense_include_guards(lx, cpp_ifndef, cpp_define, cpp_endif, &c))
+	int has_include_guards = sense_include_guards(lx, cpp_ifndef, cpp_define, cpp_endif, &c);
+	if (has_include_guards && ncomponents == 0)
+		remove_include_guards(&c);
+	if (has_include_guards || ncomponents == 0)
 		return;
 
 	/*
 	 * Intentionally not creating a cpp branch as recovering from it won't
 	 * make a difference.
 	 */
-	if (c.ifndef.tk != NULL) {
-		clang_token_branch_unlink(c.ifndef.tk);
-		token_list_remove(&c.ifndef.parent->tk_prefixes, c.ifndef.tk);
-	}
+	if (c.ifndef.tk != NULL)
+		remove_branch_token(c.ifndef.tk, c.ifndef.parent);
 	ifndef = emit_ifndef(lx, c.ifndef.parent, cpp_ifndef);
 
 	if (c.define.tk != NULL)
@@ -264,12 +278,10 @@ cpp_include_guard(const struct style *st, struct lexer *lx,
 	token_list_append_after(&c.define.parent->tk_prefixes, ifndef,
 	    define);
 
-	if (c.endif.tk != NULL) {
-		clang_token_branch_unlink(c.endif.tk);
-		token_list_remove(&c.endif.parent->tk_prefixes, c.endif.tk);
-	} else {
+	if (c.endif.tk != NULL)
+		remove_branch_token(c.endif.tk, c.endif.parent);
+	else
 		ensure_line(lx, c.endif.parent);
-	}
 	endif = emit_cpp(lx, TOKEN_CPP, cpp_endif);
 	token_list_append(&c.endif.parent->tk_prefixes, endif);
 }
