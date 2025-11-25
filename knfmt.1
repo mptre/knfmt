@@ -331,7 +331,9 @@ Indentation width for line continuations.
 Treatment of blocks of includes.
 .Bl -tag -width Ds
 .It Cm Merge
-Not supported.
+Regroup blocks of includes according to
+.Ic IncludeCategories
+but do not emit a blank line between the block of includes.
 .It Cm Preserve
 Preserve blocks of includes.
 .Pq default

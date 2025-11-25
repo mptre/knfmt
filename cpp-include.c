@@ -28,6 +28,7 @@ struct cpp_include {
 	const struct options		*op;
 	int				 ignore;
 	int				 regroup;
+	int				 merge;
 };
 
 struct include {
@@ -71,7 +72,9 @@ cpp_include_alloc(const struct style *st, struct simple *si,
 	ci->si = si;
 	ci->scratch = scratch;
 	ci->op = op;
-	ci->regroup = style(st, IncludeBlocks) == Regroup;
+	unsigned int include_blocks = style(st, IncludeBlocks);
+	ci->regroup = include_blocks == Regroup || include_blocks == Merge;
+	ci->merge = include_blocks == Merge;
 
 	priorities = style_include_priorities(st);
 	for (i = 0; i < VECTOR_LENGTH(priorities); i++) {
@@ -297,7 +300,7 @@ cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 		if (p == NULL)
 			continue;
 		last = *p;
-		doline = ci->regroup || token_has_verbatim_line(last->tk, 2);
+		doline = !ci->merge && (ci->regroup || token_has_verbatim_line(last->tk, 2));
 
 		VECTOR_SORT(group->includes, include_cmp);
 
@@ -319,6 +322,9 @@ cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 		if (doline)
 			after = add_line(ci, lx, after);
 	}
+
+	if (ci->merge)
+		add_line(ci, lx, after);
 }
 
 static void
