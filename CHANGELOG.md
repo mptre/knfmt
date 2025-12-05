@@ -1,3 +1,16 @@
+# 5.2.0rc1 - 2025-12-05
+
+## News
+
+- Remove unwanted include guards as part of the IncludeGuards clang-format
+  option.
+  (f268175d548a)
+  (Anton Lindqvist)
+
+- Add support for IncludeBlocks Merge strategy.
+  (e11d1e50b5d2)
+  (Anton Lindqvist)
+
 # 5.1.2 - 2025-11-09
 
 ## Bug fixes
