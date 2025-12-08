@@ -287,6 +287,7 @@ CLANGTIDY+=	util.c
 CLANGTIDY+=	util.h
 
 CPPCHECK+=	arenas.c
+CPPCHECK+=	benchmark.cpp
 CPPCHECK+=	clang.c
 CPPCHECK+=	comment.c
 CPPCHECK+=	cpp-format.c

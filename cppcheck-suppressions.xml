@@ -20,6 +20,12 @@
     <id>redundantContinue</id>
   </suppress>
 
+  <!-- benchmark -->
+  <suppress>
+    <fileName>/usr/local/include/benchmark/*.h</fileName>
+    <id>*</id>
+  </suppress>
+
   <!-- libks/arithmetic.h -->
   <suppress>
     <fileName>libks/arithmetic.h</fileName>
