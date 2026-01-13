@@ -25,6 +25,14 @@ struct cpuid {
 	uint32_t a, b, c, d;
 };
 
+struct enumerations {
+	struct cpuid cpuid_01,
+		     cpuid_07,
+		     cpuid_80000001;
+
+	uint64_t xcr0;
+};
+
 int KS_x86_capabilites_impl(struct KS_x86_capabilites *);
 
 static void cpuid(uint32_t, uint32_t, struct cpuid *);
@@ -96,98 +104,67 @@ mode(struct KS_x86_capabilites *caps)
 }
 
 static void
-avx(uint32_t max_leaf, struct KS_x86_capabilites *caps)
+avx(const struct enumerations *e, struct KS_x86_capabilites *caps)
 {
-	struct cpuid leaf;
-	uint64_t xcr0;
-
-	if (max_leaf < 1)
+	if ((e->cpuid_01.c & CPUID_01_C_OSXSAVE_MASK) == 0)
 		return;
-	KS_cpuid(1, 0, &leaf);
-	if ((leaf.c & CPUID_01_C_OSXSAVE_MASK) == 0)
-		return;
-	xcr0 = KS_xgetbv(0);
-	if ((xcr0 & XCR0_XMM_MASK) == 0 || (xcr0 & XCR0_YMM_MASK) == 0)
+	if ((e->xcr0 & XCR0_XMM_MASK) == 0 || (e->xcr0 & XCR0_YMM_MASK) == 0)
 		return;
 	caps->avx = 1;
 
-	if ((leaf.c & CPUID_01_C_AVX_MASK) == 0)
+	if ((e->cpuid_01.c & CPUID_01_C_AVX_MASK) == 0)
 		return;
-	if (max_leaf < 7)
-		return;
-	KS_cpuid(7, 0, &leaf);
-	if ((leaf.b & CPUID_07_B_AVX2_MASK) == 0)
+	if ((e->cpuid_07.b & CPUID_07_B_AVX2_MASK) == 0)
 		return;
 	caps->avx = 2;
 
-	if ((xcr0 & XCR0_OPMASK_MASK) == 0 ||
-	    (xcr0 & XCR0_ZMM_HI256_MASK) == 0 ||
-	    (xcr0 & XCR0_HI16_ZMM_MASK) == 0)
+	if ((e->xcr0 & XCR0_OPMASK_MASK) == 0 ||
+	    (e->xcr0 & XCR0_ZMM_HI256_MASK) == 0 ||
+	    (e->xcr0 & XCR0_HI16_ZMM_MASK) == 0)
 		return;
-	if ((leaf.b & CPUID_07_B_AVXF_MASK) == 0)
+	if ((e->cpuid_07.b & CPUID_07_B_AVXF_MASK) == 0)
 		return;
 	caps->avx = 512;
 
-	if (leaf.b & CPUID_07_B_AVXBW_MASK)
+	if (e->cpuid_07.b & CPUID_07_B_AVXBW_MASK)
 		caps->avx512.bw = 1;
 }
 
 static void
-sse(uint32_t max_leaf, struct KS_x86_capabilites *caps)
+sse(const struct enumerations *e, struct KS_x86_capabilites *caps)
 {
-	struct cpuid leaf;
-
-	if (max_leaf < 1)
-		return;
-
-	KS_cpuid(1, 0, &leaf);
-	if (leaf.d & CPUID_01_D_SSE1_0_MASK)
+	if (e->cpuid_01.d & CPUID_01_D_SSE1_0_MASK)
 		caps->sse = 0x10;
-	if (caps->sse == 0x10 && (leaf.d & CPUID_01_D_SSE2_0_MASK))
+	if (caps->sse == 0x10 && (e->cpuid_01.d & CPUID_01_D_SSE2_0_MASK))
 		caps->sse = 0x20;
-	if (caps->sse == 0x20 && (leaf.c & CPUID_01_C_SSE3_0_MASK))
+	if (caps->sse == 0x20 && (e->cpuid_01.c & CPUID_01_C_SSE3_0_MASK))
 		caps->sse = 0x30;
-	if (caps->sse == 0x30 && (leaf.c & CPUID_01_C_SSE4_1_MASK))
+	if (caps->sse == 0x30 && (e->cpuid_01.c & CPUID_01_C_SSE4_1_MASK))
 		caps->sse = 0x41;
-	if (caps->sse == 0x41 && (leaf.c & CPUID_01_C_SSE4_2_MASK))
+	if (caps->sse == 0x41 && (e->cpuid_01.c & CPUID_01_C_SSE4_2_MASK))
 		caps->sse = 0x42;
 }
 
 static void
-bmi(uint32_t max_leaf, struct KS_x86_capabilites *caps)
+bmi(const struct enumerations *e, struct KS_x86_capabilites *caps)
 {
-	struct cpuid leaf;
-
-	if (max_leaf < 7)
-		return;
-	KS_cpuid(7, 0, &leaf);
-	if (leaf.b & CPUID_07_B_BMI1_MASK)
+	if (e->cpuid_07.b & CPUID_07_B_BMI1_MASK)
 		caps->bmi = 1;
-	if (leaf.b & CPUID_07_B_BMI2_MASK)
+	if (e->cpuid_07.b & CPUID_07_B_BMI2_MASK)
 		caps->bmi = 2;
 }
 
 static void
-fsgsbase(uint32_t max_leaf, struct KS_x86_capabilites *caps)
+fsgsbase(const struct enumerations *e, struct KS_x86_capabilites *caps)
 {
-	if (max_leaf < 7)
-		return;
-
-	struct cpuid leaf;
-	KS_cpuid(7, 0, &leaf);
-	if (leaf.b & CPUID_07_B_FSGSBASE_MASK)
+	if (e->cpuid_07.b & CPUID_07_B_FSGSBASE_MASK)
 		caps->fsgsbase = 1;
 }
 
 static void
-lzcnt(uint32_t extended_max_leaf, struct KS_x86_capabilites *caps)
+lzcnt(const struct enumerations *e, struct KS_x86_capabilites *caps)
 {
-	if (extended_max_leaf < 0x80000001)
-		return;
-
-	struct cpuid leaf;
-	KS_cpuid(0x80000001, 0, &leaf);
-	if (leaf.c & CPUID_0x80000001_C_LZCNT_MASK)
+	if (e->cpuid_80000001.c & CPUID_0x80000001_C_LZCNT_MASK)
 		caps->lzcnt = 1;
 }
 
@@ -198,12 +175,21 @@ KS_x86_capabilites_impl(struct KS_x86_capabilites *caps)
 	if (!is_x86(&max_leaf, &extended_max_leaf))
 		return 0;
 
+	struct enumerations e = {0};
+	if (max_leaf >= 1)
+		KS_cpuid(1, 0, &e.cpuid_01);
+	if (max_leaf >= 7)
+		KS_cpuid(7, 0, &e.cpuid_07);
+	if (extended_max_leaf >= 0x80000001)
+		KS_cpuid(0x80000001, 0, &e.cpuid_80000001);
+	e.xcr0 = KS_xgetbv(0);
+
 	mode(caps);
-	avx(max_leaf, caps);
-	bmi(max_leaf, caps);
-	fsgsbase(max_leaf, caps);
-	lzcnt(extended_max_leaf, caps);
-	sse(max_leaf, caps);
+	avx(&e, caps);
+	bmi(&e, caps);
+	fsgsbase(&e, caps);
+	lzcnt(&e, caps);
+	sse(&e, caps);
 	return 1;
 }
 
