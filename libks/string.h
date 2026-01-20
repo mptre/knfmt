@@ -18,7 +18,6 @@
 #define LIBKS_STRING_H
 
 #include <stddef.h>	/* size_t */
-
 #include "libks/section.h"
 
 struct arena_scope;

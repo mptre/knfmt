@@ -15,13 +15,10 @@
  */
 
 #include "libks/arena-buffer.h"
-
 #include <sys/stat.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
-
 #include "libks/arena.h"
 #include "libks/buffer.h"
 #include "libks/compiler.h"

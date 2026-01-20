@@ -18,7 +18,6 @@
 
 #include <stdint.h>
 #include <string.h>
-
 #include "libks/bit.h"
 #include "libks/capabilities.h"
 #include "libks/string.h"

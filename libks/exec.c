@@ -15,14 +15,11 @@
  */
 
 #include "libks/exec.h"
-
 #include <sys/wait.h>
-
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
-
 #include "libks/fs.h"
 
 int

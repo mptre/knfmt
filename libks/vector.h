@@ -19,7 +19,6 @@
 
 #include <limits.h>	/* ULONG_MAX */
 #include <stddef.h>	/* size_t */
-
 #include "libks/search.h"
 
 enum vector_type {

@@ -15,7 +15,6 @@
  */
 
 #include "libks/arithmetic.h"
-
 #include <limits.h>
 
 #define SIGNED_ADD_OVERFLOW(max, min, a, b, c) do {			\

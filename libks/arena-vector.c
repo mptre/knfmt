@@ -15,9 +15,7 @@
  */
 
 #include "libks/arena-vector.h"
-
 #include <err.h>
-
 #include "libks/arena.h"
 #include "libks/compiler.h"
 #include "libks/vector.h"

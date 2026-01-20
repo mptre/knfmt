@@ -15,7 +15,6 @@
  */
 
 #include "libks/arena.h"
-
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -25,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include "libks/arithmetic.h"
 #include "libks/compiler.h"
 #include "libks/valgrind.h"

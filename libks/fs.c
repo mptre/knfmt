@@ -15,10 +15,8 @@
  */
 
 #include "libks/fs.h"
-
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>

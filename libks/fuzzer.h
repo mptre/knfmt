@@ -19,7 +19,6 @@
 
 #include <assert.h>
 #include <stdint.h>
-
 #include "libks/buffer.h"
 #include "libks/compiler.h"
 #include "libks/fs.h"

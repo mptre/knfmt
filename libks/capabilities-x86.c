@@ -212,7 +212,6 @@ KS_x86_capabilites(void)
 #else
 
 #include <stddef.h>	/* NULL */
-
 #include "libks/compiler.h"
 
 const struct KS_x86_capabilites *

@@ -15,10 +15,8 @@
  */
 
 #include "libks/bit.h"
-
 #include <stddef.h>	/* NULL */
 #include <stdint.h>
-
 #include "libks/capabilities.h"
 
 extern uint64_t KS_extract_and_deposit_native(uint64_t, uint64_t, uint64_t);

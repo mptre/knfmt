@@ -15,12 +15,10 @@
  */
 
 #include "libks/string.h"
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>
-
 #include "libks/arena-buffer.h"
 #include "libks/arena-vector.h"
 #include "libks/arena.h"
