@@ -182,6 +182,7 @@ INSTALL_MAN="$(make_variable INSTALL_MAN || echo "${INSTALL}")"
 
 if [ "${_pedantic}" -eq 1 ]; then
 	CFLAGS="$(cc_has_option -Waddress-of-packed-member) ${CFLAGS}"
+	CFLAGS="$(cc_has_option -Wcovered-switch-default) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wextra-semi-stmt) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wformat-signedness) ${CFLAGS}"
 	CFLAGS="$(cc_has_option -Wimplicit-fallthrough) ${CFLAGS}"
