@@ -1055,6 +1055,14 @@ expr_doc_call(struct expr *ex, struct expr_state *es, struct doc *dc)
 	return dc;
 }
 
+/* Returns non-zero if comma is followed by space(s) and a comment. */
+static int
+comma_has_spaces(const struct token *comma)
+{
+	const struct token *comment = token_list_find(&comma->tk_suffixes, TOKEN_COMMENT, 0);
+	return comment != NULL && comment->tk_len > 0 && comment->tk_str[0] == ' ';
+}
+
 static struct doc *
 expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 {
@@ -1076,7 +1084,7 @@ expr_doc_arg(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 		w = expr_doc_width(es, es->es_col == 0 ? es->es_dc : lhs);
 		ruler_insert(es->es_ea.rl, ex->ex_tk, lhs, ++es->es_col, w, 0);
-	} else {
+	} else if (!comma_has_spaces(comma)) {
 		doc_alloc(DOC_LINE, lhs);
 	}
 	if (ex->ex_rhs != NULL)
