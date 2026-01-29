@@ -31,6 +31,7 @@ SRCS+=	libks/init.c
 SRCS+=	libks/map.c
 SRCS+=	libks/string-x86_64.S
 SRCS+=	libks/string.c
+SRCS+=	libks/valgrind.c
 SRCS+=	libks/vector.c
 SRCS+=	options.c
 SRCS+=	parser-attributes.c
