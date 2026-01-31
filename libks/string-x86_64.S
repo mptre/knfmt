@@ -141,11 +141,12 @@ ENTRY(KS_str_match_native_256)
 	jb	.Lmatch_256_tail
 .Lmatch_256_match:
 	/* Match low nibbles. */
-	vpshufb	ymm2, ymm4, [rdi]
+	vmovdqa	ymm7, [rdi]
+	vpshufb	ymm2, ymm4, ymm7
 	/* Match high nibbles. As no byte granular vector shift instruction is
 	 * available, operate on words (16 bits) which requires masking to get
 	 * rid of spill. */
-	vmovdqa	ymm3, [rdi]
+	vmovdqa	ymm3, ymm7
 	vpsraw	ymm3, ymm3, 4
 	vpand	ymm3, ymm3, ymm6
 	/* Transform high nibbles into bitmask. */
@@ -226,11 +227,12 @@ ENTRY(KS_str_match_native_512)
 	jb	.Lmatch_512_tail
 .Lmatch_512_match:
 	/* Match low nibbles. */
-	vpshufb	zmm2, zmm4, [rdi]
+	vmovdqa64 zmm7, [rdi]
+	vpshufb	zmm2, zmm4, zmm7
 	/* Match high nibbles. As no byte granular vector shift instruction is
 	 * available, operate on words (16 bits) which requires masking to get
 	 * rid of spill. */
-	vmovdqa64 zmm3, [rdi]
+	vmovdqa64 zmm3, zmm7
 	vpsraw	zmm3, zmm3, 4
 	vpandq	zmm3, zmm3, zmm6
 	/* Transform high nibbles into bitmask. */
@@ -360,11 +362,12 @@ ENTRY(KS_str_match_until_native_256)
 	jb	.Luntil_256_tail
 .Luntil_256_match:
 	/* Match low nibbles. */
-	vpshufb	ymm2, ymm4, [rdi]
+	vmovdqa	ymm7, [rdi]
+	vpshufb	ymm2, ymm4, ymm7
 	/* Match high nibbles. As no byte granular vector shift instruction is
 	 * available, operate on words (16 bits) which requires masking to get
 	 * rid of spill. */
-	vmovdqa	ymm3, [rdi]
+	vmovdqa	ymm3, ymm7
 	vpsraw	ymm3, ymm3, 4
 	vpand	ymm3, ymm3, ymm6
 	/* Transform high nibbles into bitmask. */
