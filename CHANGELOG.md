@@ -1,4 +1,4 @@
-# 5.2.0rc1 - 2025-12-05
+# 5.2.0 - YYYY-MM-DD
 
 ## News
 
@@ -17,6 +17,10 @@
 
 - Do not try to align function pointer types.
   (6c6b0ebfae6c)
+  (Anton Lindqvist)
+
+- Do not enforce spaces between a comment and function argument.
+  (7272dab146ec)
   (Anton Lindqvist)
 
 # 5.1.1 - 2025-10-31
