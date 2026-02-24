@@ -18,7 +18,35 @@
 #include "ruler.h"
 #include "token.h"
 
-static int	iscdefs(const char *, size_t);
+static int
+iscdefs(const char *str, size_t len)
+{
+	static struct KS_str_match match;
+	struct suffix {
+		const char	*str;
+		size_t		 len;
+	} suffixes[] = {
+#define S(s) { s, sizeof(s) - 1 }
+		S("_BEGIN_DECLS"),
+		S("_END_DECLS"),
+#undef S
+	};
+	size_t i;
+
+	KS_str_match_init_once("AZ09__", &match);
+
+	for (i = 0; i < countof(suffixes); i++) {
+		const struct suffix *s = &suffixes[i];
+
+		if (len >= s->len &&
+		    strncmp(&str[len - s->len], s->str, s->len) == 0)
+			return 1;
+	}
+
+	if (len < 2 || strncmp(str, "__", 2) != 0)
+		return 0;
+	return KS_str_match(&str[2], len - 2, &match) == len - 2;
+}
 
 static int
 is_list_entry(const struct token *tk)
@@ -259,34 +287,4 @@ parser_cpp_decl_root(struct parser *pr, struct doc *dc)
 	if (lexer_expect(lx, TOKEN_SEMI, &semi))
 		parser_doc_token(pr, semi, dc);
 	return parser_good(pr);
-}
-
-static int
-iscdefs(const char *str, size_t len)
-{
-	static struct KS_str_match match;
-	struct suffix {
-		const char	*str;
-		size_t		 len;
-	} suffixes[] = {
-#define S(s) { s, sizeof(s) - 1 }
-		S("_BEGIN_DECLS"),
-		S("_END_DECLS"),
-#undef S
-	};
-	size_t i;
-
-	KS_str_match_init_once("AZ09__", &match);
-
-	for (i = 0; i < countof(suffixes); i++) {
-		const struct suffix *s = &suffixes[i];
-
-		if (len >= s->len &&
-		    strncmp(&str[len - s->len], s->str, s->len) == 0)
-			return 1;
-	}
-
-	if (len < 2 || strncmp(str, "__", 2) != 0)
-		return 0;
-	return KS_str_match(&str[2], len - 2, &match) == len - 2;
 }
