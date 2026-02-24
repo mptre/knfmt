@@ -26,6 +26,15 @@ is_list_entry(const struct token *tk)
 	return clang_token_type(tk) == CLANG_TOKEN_LIST_ENTRY;
 }
 
+static int
+cpp_type_in_parens(struct lexer *lx)
+{
+	while (lexer_if_flags(lx, TOKEN_FLAG_QUALIFIER, NULL))
+		continue;
+	return lexer_if(lx, TOKEN_IDENT, NULL) ||
+	    (!lexer_peek_if(lx, TOKEN_VOID, NULL) && lexer_if_flags(lx, TOKEN_FLAG_TYPE, NULL));
+}
+
 int
 parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 {
@@ -38,12 +47,10 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) &&
 	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
-	    lexer_if(lx, TOKEN_IDENT, NULL) &&
+	    cpp_type_in_parens(lx) &&
 	    lexer_if(lx, TOKEN_RPAREN, rparen)) {
 		struct token *nx;
-
-		if (lexer_peek_if(lx, TOKEN_IDENT, &nx) &&
-		    token_cmp(ident, nx) == 0)
+		if (lexer_peek_if(lx, TOKEN_IDENT, &nx) && token_cmp(ident, nx) == 0)
 			peek = 1;
 		else if (lexer_peek_if(lx, TOKEN_STAR, NULL))
 			peek = 1;
@@ -52,7 +59,7 @@ parser_cpp_peek_type(struct parser *pr, struct token **rparen)
 	if (peek)
 		return 1;
 
-	/* Detect LIST_ENTRY(list, struct s) from libks:list. */
+	/* Detect LIST_ENTRY(list, struct s) from libks. */
 	lexer_peek_enter(lx, &s);
 	if (lexer_if(lx, TOKEN_IDENT, &ident) && is_list_entry(ident) &&
 	    lexer_if(lx, TOKEN_LPAREN, NULL) &&
