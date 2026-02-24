@@ -105,6 +105,8 @@ enum KS_x86_uarch {
 	KS_X86_INTEL_DARKMONT,
 	KS_X86_INTEL_NOVALAKE,
 	KS_X86_INTEL_DIAMONDRAPIDS,
+
+	KS_X86_AMD_JAGUAR,
 };
 
 struct KS_x86_capabilites {

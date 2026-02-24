@@ -22,6 +22,11 @@
 #include <string.h>
 #include "libks/compiler.h"
 
+enum vendor {
+	Vendor_Intel,
+	Vendor_Amd,
+};
+
 struct cpuid {
 	uint32_t a, b, c, d;
 };
@@ -72,7 +77,7 @@ xgetbv(uint32_t regno)
 }
 
 static int
-is_x86(uint32_t *max_leaf, uint32_t *extended_max_leaf)
+is_x86(uint32_t *max_leaf, uint32_t *extended_max_leaf, enum vendor *vendor)
 {
 	union {
 		uint8_t u8[12];
@@ -84,8 +89,11 @@ is_x86(uint32_t *max_leaf, uint32_t *extended_max_leaf)
 	ident.u32[0] = leaf.b;
 	ident.u32[1] = leaf.d;
 	ident.u32[2] = leaf.c;
-	if (memcmp(ident.u8, "GenuineIntel", sizeof(ident)) != 0 &&
-	    memcmp(ident.u8, "AuthenticAMD", sizeof(ident)) != 0)
+	if (memcmp(ident.u8, "GenuineIntel", sizeof(ident)) == 0)
+		*vendor = Vendor_Intel;
+	else if (memcmp(ident.u8, "AuthenticAMD", sizeof(ident)) == 0)
+		*vendor = Vendor_Amd;
+	else
 		return 0;
 	*max_leaf = leaf.a;
 
@@ -110,7 +118,7 @@ fms(const struct enumerations *e, struct fms *fms)
 }
 
 static void
-uarch(const struct enumerations *e, struct KS_x86_capabilites *caps)
+intel_uarch(const struct enumerations *e, struct KS_x86_capabilites *caps)
 {
 	/* Based on intel-family.h from the Linux kernel. */
 	static const struct {
@@ -230,6 +238,30 @@ uarch(const struct enumerations *e, struct KS_x86_capabilites *caps)
 }
 
 static void
+amd_uarch(const struct enumerations *e, struct KS_x86_capabilites *caps)
+{
+	static const struct {
+		enum KS_x86_uarch uarch;
+		struct fms fms;
+	} lut[] = {
+		/* clang-format off */
+
+		{ KS_X86_AMD_JAGUAR,       { 22, 0x30, 1 } },
+
+		/* clang-format on */
+	};
+
+	struct fms f = {0};
+	fms(e, &f);
+	for (uint32_t i = 0; i < countof(lut); i++) {
+		if (f.f == lut[i].fms.f && f.m == lut[i].fms.m && f.s == lut[i].fms.s) {
+			caps->uarch = lut[i].uarch;
+			break;
+		}
+	}
+}
+
+static void
 mode(struct KS_x86_capabilites *caps)
 {
 	/* In 32-bit mode, the opcodes will be interpreted as dec eax; nop.
@@ -311,7 +343,8 @@ int
 KS_x86_capabilites_impl(struct KS_x86_capabilites *caps)
 {
 	uint32_t extended_max_leaf, max_leaf;
-	if (!is_x86(&max_leaf, &extended_max_leaf))
+	enum vendor vendor;
+	if (!is_x86(&max_leaf, &extended_max_leaf, &vendor))
 		return 0;
 
 	struct enumerations e = {0};
@@ -323,7 +356,10 @@ KS_x86_capabilites_impl(struct KS_x86_capabilites *caps)
 		KS_cpuid(0x80000001, 0, &e.cpuid_80000001);
 	e.xcr0 = KS_xgetbv(0);
 
-	uarch(&e, caps);
+	if (vendor == Vendor_Intel)
+		intel_uarch(&e, caps);
+	else if (vendor == Vendor_Amd)
+		amd_uarch(&e, caps);
 	mode(caps);
 	avx(&e, caps);
 	bmi(&e, caps);
