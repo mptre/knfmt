@@ -1,4 +1,4 @@
-# 5.2.0 - YYYY-MM-DD
+# 5.2.0 - 2026-02-24
 
 ## News
 
@@ -9,6 +9,12 @@
 
 - Add support for IncludeBlocks Merge strategy.
   (e11d1e50b5d2)
+  (Anton Lindqvist)
+
+## Bug fixes
+
+- Detect more variations of types wrapped in cpp macros.
+  (b5bdbc509097)
   (Anton Lindqvist)
 
 # 5.1.2 - 2025-11-09
