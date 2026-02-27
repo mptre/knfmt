@@ -189,7 +189,9 @@ if [ "${_pedantic}" -eq 1 ]; then
 	-Wextra-semi-stmt
 	-Wformat-signedness
 	-Wimplicit-fallthrough
+	-Wmissing-format-attribute
 	-Wmissing-variable-declarations
+	-Wtautological-unsigned-enum-zero-compare
 	-Wunreachable-code-aggressive
 	-Wused-but-marked-unused
 	CC-PEDANTIC
