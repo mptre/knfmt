@@ -55,7 +55,8 @@ int	buffer_puts(struct buffer *, const char *, size_t);
 int	buffer_putc(struct buffer *, char);
 int	buffer_printf(struct buffer *, const char *, ...)
 	__attribute__((format(printf, 2, 3)));
-int	buffer_vprintf(struct buffer *, const char *, va_list);
+int	buffer_vprintf(struct buffer *, const char *, va_list)
+	__attribute__((format(printf, 2, 0)));
 
 const char	*buffer_getline(const struct buffer *,
     struct buffer_getline *);
