@@ -181,17 +181,27 @@ INSTALL_MAN="$(make_variable INSTALL_MAN || echo "${INSTALL}")"
 # Following chunks must happen after CC is defined.
 
 if [ "${_pedantic}" -eq 1 ]; then
-	CFLAGS="$(cc_has_option -Waddress-of-packed-member) ${CFLAGS}"
-	CFLAGS="$(cc_has_option -Wcovered-switch-default) ${CFLAGS}"
-	CFLAGS="$(cc_has_option -Wextra-semi-stmt) ${CFLAGS}"
-	CFLAGS="$(cc_has_option -Wformat-signedness) ${CFLAGS}"
-	CFLAGS="$(cc_has_option -Wimplicit-fallthrough) ${CFLAGS}"
-	CFLAGS="$(cc_has_option -Wmissing-variable-declarations) ${CFLAGS}"
-	CFLAGS="$(cc_has_option -Wunreachable-code-aggressive) ${CFLAGS}"
-	CFLAGS="$(cc_has_option -Wused-but-marked-unused) ${CFLAGS}"
+	while read -r _o; do
+		CFLAGS="$(cc_has_option "${_o}") ${CFLAGS}"
+	done <<-CC-PEDANTIC
+	-Waddress-of-packed-member
+	-Wcovered-switch-default
+	-Wextra-semi-stmt
+	-Wformat-signedness
+	-Wimplicit-fallthrough
+	-Wmissing-variable-declarations
+	-Wunreachable-code-aggressive
+	-Wused-but-marked-unused
+	CC-PEDANTIC
 	CFLAGS="-g $(pedantic) ${CFLAGS}"
+
+	while read -r _o; do
+		LDFLAGS="$(cc_has_option "${_o}") ${LDFLAGS}"
+	done <<-LD-PEDANTIC
+	-Wl,--fatal-warnings
+	LD-PEDANTIC
+
 	DEBUG="-g ${DEBUG}"
-	LDFLAGS="$(cc_has_option -Wl,--fatal-warnings) ${LDFLAGS}"
 fi
 
 if [ -n "${_sanitize}" ]; then
