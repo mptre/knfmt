@@ -1,3 +1,11 @@
+# 5.3.0 - YYYY-MM-DD
+
+## News
+
+- Allow new line between else branches preceded with a comment.
+  (d98e7a8d5a7a)
+  (Anton Lindqvist)
+
 # 5.2.0 - 2026-02-24
 
 ## News
