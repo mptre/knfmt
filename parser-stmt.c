@@ -276,9 +276,24 @@ has_if_stmt_braces(struct parser *pr, int elseif)
 }
 
 static int
+has_line_before_comment(const struct token *tk)
+{
+	const struct token *comment = token_list_find(&tk->tk_prefixes, TOKEN_COMMENT, 0);
+	if (comment == NULL)
+		return 0;
+
+	const struct token *pv = token_prev(tk);
+	if (pv == NULL)
+		return 0;
+
+	return token_has_line(pv, 1) && (comment->tk_lno - pv->tk_lno) > 1;
+}
+
+static int
 parser_stmt_if(struct parser *pr, struct doc *dc)
 {
 	struct lexer *lx = pr->pr_lx;
+	struct token *nx;
 	int has_braces;
 
 	if (!lexer_peek_if(lx, TOKEN_IF, NULL))
@@ -288,17 +303,19 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 	if (parser_stmt_kw_expr(pr, dc, TOKEN_IF, 0) & (FAIL | NONE))
 		return parser_fail(pr);
 
-	while (lexer_peek_if(lx, TOKEN_ELSE, NULL)) {
-		int error;
-
-		if (has_braces)
-			doc_literal(" ", dc);
-		else
+	while (lexer_peek_if(lx, TOKEN_ELSE, &nx)) {
+		if (has_braces && has_line_before_comment(nx)) {
 			doc_alloc(DOC_HARDLINE, dc);
+			doc_alloc(DOC_HARDLINE, dc);
+		} else if (has_braces) {
+			doc_literal(" ", dc);
+		} else {
+			doc_alloc(DOC_HARDLINE, dc);
+		}
 
 		if (peek_else_if(pr)) {
 			has_braces = has_if_stmt_braces(pr, 1);
-			error = parser_stmt_kw_expr(pr, dc, TOKEN_IF,
+			int error = parser_stmt_kw_expr(pr, dc, TOKEN_IF,
 			    PARSER_STMT_EXPR_ELSEIF);
 			if (error & HALT)
 				return parser_fail(pr);
@@ -311,7 +328,7 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 			doc_literal(" ", dc);
 
 			if (lexer_peek_if(lx, TOKEN_LBRACE, NULL)) {
-				error = parser_stmt(pr, dc);
+				int error = parser_stmt(pr, dc);
 				if (error & FAIL)
 					return parser_fail(pr);
 			} else {
@@ -323,7 +340,7 @@ parser_stmt_if(struct parser *pr, struct doc *dc)
 
 				dc = parser_simple_stmt_no_braces_enter(pr, dc,
 				    &simple);
-				error = parser_stmt(pr, dc);
+				int error = parser_stmt(pr, dc);
 				parser_simple_stmt_no_braces_leave(pr, simple);
 				if (error & (FAIL | NONE))
 					return parser_fail(pr);
