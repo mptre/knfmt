@@ -203,6 +203,13 @@ sense_alignment(const char *str, size_t len, const struct style *st,
 	return 0;
 }
 
+static unsigned int
+max_width(const struct style *st)
+{
+	unsigned int width = style(st, ColumnLimit) - style(st, IndentWidth);
+	return width - (width % 8);
+}
+
 /*
  * Align line continuations.
  */
@@ -212,7 +219,7 @@ cpp_format(const struct lexer *lx, struct token *tk, const struct style *st,
 {
 	struct alignment alignment = {
 		.mode	= style(st, AlignEscapedNewlines),
-		.width	= style(st, ColumnLimit) - style(st, IndentWidth),
+		.width	= max_width(st),
 		.tabs	= style_use_tabs(st) ? 1 : 0,
 	};
 	struct ruler rl;

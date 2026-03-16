@@ -768,6 +768,7 @@ TESTS+=	style-ColumnLimit-001.c
 TESTS+=	style-ColumnLimit-002.c
 TESTS+=	style-ColumnLimit-003.c
 TESTS+=	style-ColumnLimit-004.c
+TESTS+=	style-ColumnLimit-005.c
 TESTS+=	style-ContinuationIndentWidth-001.c
 TESTS+=	style-IncludeBlocks-001.c
 TESTS+=	style-IncludeCategories-001.c

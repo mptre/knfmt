@@ -1,0 +1,8 @@
+#define CPUID										\
+	.b.type = 2096 /* AED_X86_CPUID */,						\
+	.info.b.mnemonic = "cpuid",							\
+	.info.b.id = 0x000000310cc3cf0eULL,						\
+	.info.implicit_operands[0] = { { Reg_A, X86_Implicit_Operand_Gpr, .r = 1, .w = 1 } },\
+	.info.implicit_operands[1] = { { Reg_B, X86_Implicit_Operand_Gpr, .w = 1 } },	\
+	.info.implicit_operands[2] = { { Reg_C, X86_Implicit_Operand_Gpr, .c = 1, .r = 1, .w = 1 } },\
+	.info.implicit_operands[3] = { { Reg_D, X86_Implicit_Operand_Gpr, .w = 1 } }
