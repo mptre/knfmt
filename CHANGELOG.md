@@ -6,6 +6,13 @@
   (d98e7a8d5a7a)
   (Anton Lindqvist)
 
+## Bug fixes
+
+- Ensure wanted alignment is a multiple of 8 when formatting preprocessor
+  define line continuations.
+  (4f31d14fdce0)
+  (Anton Lindqvist)
+
 # 5.2.0 - 2026-02-24
 
 ## News
