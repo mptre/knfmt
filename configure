@@ -194,6 +194,7 @@ if [ "${_pedantic}" -eq 1 ]; then
 	-Wtautological-unsigned-enum-zero-compare
 	-Wunreachable-code-aggressive
 	-Wused-but-marked-unused
+	-Wno-gnu-zero-variadic-macro-arguments
 	CC-PEDANTIC
 	CFLAGS="-g $(pedantic) ${CFLAGS}"
 
