@@ -341,6 +341,7 @@ CPPCHECKFLAGS+=	--enable=all
 CPPCHECKFLAGS+=	--error-exitcode=1
 CPPCHECKFLAGS+=	--max-configs=2
 CPPCHECKFLAGS+=	--suppress-xml=cppcheck-suppressions.xml
+CPPCHECKFLAGS+=	-D__has_builtin
 CPPCHECKFLAGS+=	${CPPFLAGS}
 
 IWYU+=	arenas.c
