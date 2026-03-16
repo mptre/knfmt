@@ -31,10 +31,10 @@
 				_out = &(v)[_m];			\
 				break;					\
 			} else if (_c < 0) {				\
-				if (KS_size_sub_overflow(_m, 1, &_r))	\
+				if (KS_size_add_overflow(_m, 1, &_l))	\
 					break;				\
 			} else if (_c > 0) {				\
-				if (KS_size_add_overflow(_m, 1, &_l))	\
+				if (KS_size_sub_overflow(_m, 1, &_r))	\
 					break;				\
 			} else {					\
 				break;					\

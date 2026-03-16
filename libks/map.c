@@ -510,7 +510,7 @@ HASH_EXPAND_BUCKETS(struct map *m)
 	struct UT_hash_table *tbl = m->table;
 	struct UT_hash_bucket *_he_newbkt, *newbuckets;
 	struct map_element *_he_hh_nxt, *_he_thh;
-	unsigned int bkt_idx, i, nbuckets;
+	unsigned int i, nbuckets;
 
 	if (KS_u32_mul_overflow(tbl->num_buckets, 2, &nbuckets))
 		return 1;
@@ -527,7 +527,7 @@ HASH_EXPAND_BUCKETS(struct map *m)
 		_he_thh = tbl->buckets[i].hh_head;
 		while (_he_thh != NULL) {
 			_he_hh_nxt = _he_thh->hh_next;
-			bkt_idx = HASH_TO_BKT(_he_thh->hashv, nbuckets);
+			unsigned int bkt_idx = HASH_TO_BKT(_he_thh->hashv, nbuckets);
 			_he_newbkt = &newbuckets[bkt_idx];
 			if (++(_he_newbkt->count) > tbl->ideal_chain_maxlen) {
 				tbl->nonideal_items++;
