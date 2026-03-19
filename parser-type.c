@@ -13,7 +13,7 @@
 #include "parser-priv.h"
 #include "ruler.h"
 #include "simple-implicit-int.h"
-#include "simple-static.h"
+#include "simple-storage.h"
 #include "simple.h"
 #include "style.h"
 #include "token.h"
@@ -145,8 +145,8 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 
 	{
 		simple_cookie(simple);
-		if (simple_enter(pr->pr_si, SIMPLE_STATIC, 0, &simple)) {
-			end = simple_static(lx, beg, end);
+		if (simple_enter(pr->pr_si, SIMPLE_STORAGE, 0, &simple)) {
+			end = simple_storage(lx, beg, end);
 			/*
 			 * Must be evaluated again as the simple static pass
 			 * could reorder tokens.

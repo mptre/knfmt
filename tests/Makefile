@@ -622,7 +622,6 @@ TESTS+=	simple-expr-sizeof-002.c
 TESTS+=	simple-implicit-int-001.c
 TESTS+=	simple-implicit-int-002.c
 TESTS+=	simple-implicit-int-003.c
-TESTS+=	simple-static-001.c
 TESTS+=	simple-static-002.c
 TESTS+=	simple-static-003.c
 TESTS+=	simple-static-004.c
@@ -655,6 +654,7 @@ TESTS+=	simple-stmt-empty-loop-008.c
 TESTS+=	simple-stmt-semi-001.c
 TESTS+=	simple-stmt-semi-002.c
 TESTS+=	simple-stmt-switch-001.c
+TESTS+=	simple-storage-001.c
 
 TESTS+=	inplace-001.c
 

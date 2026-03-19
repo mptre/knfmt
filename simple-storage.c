@@ -1,4 +1,4 @@
-#include "simple-static.h"
+#include "simple-storage.h"
 
 #include "config.h"
 
@@ -21,7 +21,7 @@ find_static_token(struct token *beg, struct token *end)
 }
 
 struct token *
-simple_static(struct lexer *lx, struct token *beg, struct token *end)
+simple_storage(struct lexer *lx, struct token *beg, struct token *end)
 {
 	struct token *tk;
 
