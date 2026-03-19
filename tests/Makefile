@@ -655,6 +655,7 @@ TESTS+=	simple-stmt-semi-001.c
 TESTS+=	simple-stmt-semi-002.c
 TESTS+=	simple-stmt-switch-001.c
 TESTS+=	simple-storage-001.c
+TESTS+=	simple-storage-002.c
 
 TESTS+=	inplace-001.c
 
