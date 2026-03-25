@@ -632,6 +632,7 @@ arena_realloc(struct arena_scope *s, void *ptr, size_t old_size,
 	new_ptr = arena_malloc(s, new_size);
 	if (ptr != NULL)
 		memcpy(new_ptr, ptr, old_size);
+	arena_poison(ptr, old_size);
 	return new_ptr;
 }
 
