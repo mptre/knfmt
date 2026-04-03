@@ -561,6 +561,7 @@ TESTS+=	valid-427.c
 TESTS+=	valid-428.c
 TESTS+=	valid-429.c
 TESTS+=	valid-430.c
+TESTS+=	valid-431.c
 
 TESTS+=	simple-001.c
 TESTS+=	simple-002.c
@@ -614,6 +615,7 @@ TESTS+=	simple-expr-parens-003.c
 TESTS+=	simple-expr-parens-004.c
 TESTS+=	simple-expr-parens-005.c
 TESTS+=	simple-expr-parens-006.c
+TESTS+=	simple-expr-parens-007.c
 TESTS+=	simple-expr-printf-001.c
 TESTS+=	simple-expr-printf-002.c
 TESTS+=	simple-expr-printf-003.c

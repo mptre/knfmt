@@ -18,9 +18,16 @@
 #include "style.h"
 #include "token.h"
 
+typedef struct Parser_Type_Context {
+	/* Type of previously consumed token. */
+	int previous_token_type;
+	/* Type of consumed token. */
+	int token_type;
+} Parser_Type_Context;
+
 static int	peek_type_func_ptr(struct lexer *, struct token **,
     struct token **);
-static int	peek_type_ident_after_type(struct parser *);
+static int	peek_type_ident_after_type(struct parser *, const Parser_Type_Context *);
 static int	peek_type_ptr_array(struct lexer *, struct token **);
 static int	peek_type_noident(struct lexer *, struct token **);
 static int	peek_type_unknown_array(struct lexer *, struct token **);
@@ -31,6 +38,7 @@ int
 parser_type_peek(struct parser *pr, struct parser_type *type,
     unsigned int flags)
 {
+	Parser_Type_Context c = {.previous_token_type = TOKEN_NONE};
 	struct lexer *lx = pr->pr_lx;
 	struct lexer_state s;
 	struct token *align = NULL;
@@ -64,6 +72,9 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 		if (lexer_peek_if(lx, LEXER_EOF, NULL))
 			break;
 
+		c.previous_token_type = c.token_type;
+		c.token_type = TOKEN_NONE;
+
 		if (lexer_if_flags(lx,
 		    TOKEN_FLAG_QUALIFIER | TOKEN_FLAG_STORAGE, &end)) {
 			nkeywords++;
@@ -94,7 +105,7 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			/* Ensure this is not the identifier after the type. */
 			if ((flags & PARSER_TYPE_CAST) == 0 &&
 			    (flags & PARSER_TYPE_EXPR) == 0 &&
-			    peek_type_ident_after_type(pr))
+			    peek_type_ident_after_type(pr, &c))
 				break;
 
 			/* Identifier is part of the type, consume it. */
@@ -118,6 +129,11 @@ parser_type_peek(struct parser *pr, struct parser_type *type,
 			end = rsquare;
 			peek = 1;
 			break;
+		} else if (ntokens > 0 && parser_attributes_peek(pr, &rparen, 0)) {
+			if (!lexer_seek_after(lx, rparen))
+				return 0;
+			c.token_type = TOKEN_ATTRIBUTE;
+			end = rparen;
 		} else {
 			unknown = 1;
 			break;
@@ -223,6 +239,16 @@ parser_type(struct parser *pr, struct doc *dc, struct parser_type *type,
 		struct doc *concat;
 		struct token *tk;
 		int didalign = 0;
+
+		if (lexer_peek_if(lx, TOKEN_ATTRIBUTE, NULL)) {
+			concat = doc_alloc(DOC_CONCAT, doc_alloc(DOC_GROUP, dc));
+			if ((parser_attributes(pr, concat, NULL, 0) & FAIL) || !lexer_back(lx, &tk))
+				return parser_fail(pr);
+			doc_alloc(DOC_LINE, concat);
+			if (tk == end)
+				break;
+			continue;
+		}
 
 		if (!lexer_pop(lx, &tk))
 			return parser_fail(pr);
@@ -371,7 +397,7 @@ peek_type_ptr_array(struct lexer *lx, struct token **rsquare)
 }
 
 static int
-peek_type_ident_after_type(struct parser *pr)
+peek_type_ident_after_type(struct parser *pr, const Parser_Type_Context *c)
 {
 	struct lexer_state s;
 	struct lexer *lx = pr->pr_lx;
@@ -390,7 +416,8 @@ peek_type_ident_after_type(struct parser *pr)
 	     lexer_if(lx, TOKEN_COLON, NULL) ||
 	     (parser_attributes_peek(pr, &rparen, 0) &&
 	      lexer_seek_after(lx, rparen) &&
-	      !lexer_if(lx, TOKEN_IDENT, NULL))))
+	      !lexer_if(lx, TOKEN_IDENT, NULL)) ||
+	     c->previous_token_type == TOKEN_ATTRIBUTE))
 		peek = 1;
 	lexer_peek_leave(lx, &s);
 

@@ -273,7 +273,8 @@ main(void)
 	test_parser_type(
 	    "typedef MAP(uint64_t,, uint32_t) Labels;",
 	    "typedef MAP ( uint64_t , , uint32_t )");
-	test_parser_type("static S __attribute__((unused)) f", "static S");
+	test_parser_type("static S __attribute__((unused)) f",
+	    "static S __attribute__ ( ( unused ) )");
 
 	test_parser_type_flags(PARSER_TYPE_CAST,
 	    "const foo_t)", "const foo_t");
