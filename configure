@@ -91,24 +91,6 @@ make_variable() {
 	fi
 }
 
-# pedantic
-#
-# Pedantic flags supported by most compilers.
-pedantic() {
-	cat <<-EOF | xargs
-	-O2
-	-Wall
-	-Werror
-	-Wextra
-	-Wmissing-prototypes
-	-Wpedantic
-	-Wshadow
-	-Wsign-conversion
-	-Wwrite-strings
-	-Wcast-qual
-	EOF
-}
-
 # rmdup arg ...
 #
 # Remove duplicates from the given arguments while preserving the order.
@@ -182,8 +164,24 @@ INSTALL_MAN="$(make_variable INSTALL_MAN || echo "${INSTALL}")"
 
 if [ "${_pedantic}" -eq 1 ]; then
 	while read -r _o; do
-		CFLAGS="$(cc_has_option "${_o}") ${CFLAGS}"
+		CFLAGS="${CFLAGS} ${_o}"
 	done <<-CC-PEDANTIC
+	-g
+	-O2
+	-Wall
+	-Werror
+	-Wextra
+	-Wcast-qual
+	-Wmissing-prototypes
+	-Wpedantic
+	-Wshadow
+	-Wsign-conversion
+	-Wwrite-strings
+	CC-PEDANTIC
+
+	while read -r _o; do
+		CFLAGS="${CFLAGS} $(cc_has_option "${_o}")"
+	done <<-CC-PEDANTIC-OPTIONAL
 	-Waddress-of-packed-member
 	-Wcovered-switch-default
 	-Wextra-semi-stmt
@@ -195,14 +193,13 @@ if [ "${_pedantic}" -eq 1 ]; then
 	-Wunreachable-code-aggressive
 	-Wused-but-marked-unused
 	-Wno-gnu-zero-variadic-macro-arguments
-	CC-PEDANTIC
-	CFLAGS="-g $(pedantic) ${CFLAGS}"
+	CC-PEDANTIC-OPTIONAL
 
 	while read -r _o; do
-		LDFLAGS="$(cc_has_option "${_o}") ${LDFLAGS}"
-	done <<-LD-PEDANTIC
+		LDFLAGS="${LDFLAGS} $(cc_has_option "${_o}")"
+	done <<-LD-PEDANTIC-OPTIONAL
 	-Wl,--fatal-warnings
-	LD-PEDANTIC
+	LD-PEDANTIC-OPTIONAL
 
 	DEBUG="-g ${DEBUG}"
 fi
