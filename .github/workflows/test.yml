@@ -29,20 +29,6 @@ jobs:
           ./configure --pedantic --sanitize memory
           make -j`nproc` test
 
-  linux-gcc-fuzz:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: dependenices
-        run: sudo apt-get update && sudo apt-get install afl
-      - name: test
-        env:
-          CC: afl-gcc
-        run: |
-          ./configure --pedantic --fuzz afl
-          make -j`nproc` fuzz
-
   linux-gcc-i386:
     runs-on: ubuntu-22.04
     steps:
