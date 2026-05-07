@@ -156,8 +156,10 @@ map_insert_n(void *mp, const void *const *key, size_t keysize)
 	if (el == NULL)
 		return NULL;
 	memcpy(element_get_key(m, el), keyptr, keysize);
-	if (HASH_ADD(m, element_get_key(m, el), keysize, el))
+	if (HASH_ADD(m, element_get_key(m, el), keysize, el)) {
+		free(el);
 		return NULL;
+	}
 	return element_get_val(el);
 }
 
