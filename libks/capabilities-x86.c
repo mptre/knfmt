@@ -214,7 +214,8 @@ intel_uarch(const struct enumerations *e, struct KS_x86_capabilites *caps)
 		{ KS_X86_INTEL_LUNARLAKE,        { 6, 0xbd, 0 } },
 		{ KS_X86_INTEL_ARROWLAKE,        { 6, 0xc5, 0 } },
 		{ KS_X86_INTEL_ARROWLAKE,        { 6, 0xc6, 0 } },
-		{ KS_X86_INTEL_PANTHERLAKE,      { 6, 0xcc, 0 } },
+		{ KS_X86_INTEL_PANTHERLAKE,      { 6, 0xcc, 0 } },  /* Cougar Cove / Darkmont */
+		{ KS_X86_INTEL_PANTHERLAKE,      { 6, 0xe5, 0 } },  /* Cougar Cove / Darkmont */
 		{ KS_X86_INTEL_EMERALDRAPIDS,    { 6, 0xcf, 0 } },
 		{ KS_X86_INTEL_WILDCATLAKE,      { 6, 0xd5, 0 } },
 		{ KS_X86_INTEL_BARTLETTLAKE,     { 6, 0xd7, 0 } },
