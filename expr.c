@@ -932,6 +932,13 @@ must_keep_parens(const struct expr *ex)
 }
 
 static int
+is_gnu_stmt_expr(const struct token *lparen)
+{
+	const struct token *nx = token_next(lparen);
+	return nx != NULL && nx->tk_type == TOKEN_LBRACE;
+}
+
+static int
 is_preceded_with_comment(const struct token *tk)
 {
 	const struct token *pv = token_prev(tk);
@@ -952,6 +959,7 @@ expr_doc_parens(struct expr *ex, struct expr_state *es, struct doc *dc)
 
 	simple_cookie(simple);
 	if (token_is_moveable(lparen) && token_is_moveable(rparen) &&
+	    !is_gnu_stmt_expr(lparen) &&
 	    !is_preceded_with_comment(lparen) &&
 	    (es->es_depth == 1 || !must_keep_parens(ex)) &&
 	    simple_enter(es->es_ea.si, SIMPLE_EXPR_PARENS, 0, &simple)) {
