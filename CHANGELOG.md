@@ -1,3 +1,11 @@
+# 5.3.1 - YYYY-MM-DD
+
+## Bug fixes
+
+- In simple mode, do not remove parenthesis around gnu statement expressions.
+  (91fb32f40003)
+  (Anton Lindqvist)
+
 # 5.3.0 - 2026-05-07
 
 ## News
