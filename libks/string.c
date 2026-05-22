@@ -195,7 +195,7 @@ KS_str_vis(const char *str, size_t len, struct arena_scope *s)
 int
 KS_str_to_u8(const char *str, uint8_t *out)
 {
-	uint64_t u64 = 0;
+	uint64_t u64;
 	if (KS_str_to_u64(str, &u64)) {
 		return 1;
 	} else if (u64 > UINT8_MAX) {
@@ -209,7 +209,7 @@ KS_str_to_u8(const char *str, uint8_t *out)
 int
 KS_str_to_u16(const char *str, uint16_t *out)
 {
-	uint64_t u64 = 0;
+	uint64_t u64;
 	if (KS_str_to_u64(str, &u64)) {
 		return 1;
 	} else if (u64 > UINT16_MAX) {
@@ -223,7 +223,7 @@ KS_str_to_u16(const char *str, uint16_t *out)
 int
 KS_str_to_u32(const char *str, uint32_t *out)
 {
-	uint64_t u64 = 0;
+	uint64_t u64;
 	if (KS_str_to_u64(str, &u64)) {
 		return 1;
 	} else if (u64 > UINT32_MAX) {
@@ -239,16 +239,22 @@ KS_str_to_u64(const char *str, uint64_t *out)
 {
 	errno = 0;
 
-	size_t n = strlen(str);
-	if (n == 0 || !isdigit(str[0])) {
+	if (str[0] == '\0' || !isdigit((unsigned char)str[0])) {
 		errno = EINVAL;
 		return 1;
 	}
 
 	char *end;
 	unsigned long long val = strtoull(str, &end, 0);
-	if (errno == ERANGE && val == ULLONG_MAX)
+	if (end[0] != '\0') {
+		errno = EINVAL;
 		return 1;
+	} else if (errno == ERANGE && val == ULLONG_MAX) {
+		return 1;
+	} else if (val > ULLONG_MAX) {
+		errno = ERANGE;
+		return 1;
+	}
 	*out = val;
 	return 0;
 }
