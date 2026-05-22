@@ -18,10 +18,13 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 #include "libks/arena-buffer.h"
 #include "libks/arena-vector.h"
 #include "libks/arena.h"
+#include "libks/bit.h"
 #include "libks/buffer.h"
 #include "libks/section.h"
 #include "libks/vector.h"
@@ -187,4 +190,65 @@ KS_str_vis(const char *str, size_t len, struct arena_scope *s)
 	}
 
 	return buffer_str(bf);
+}
+
+int
+KS_str_to_u8(const char *str, uint8_t *out)
+{
+	uint64_t u64 = 0;
+	if (KS_str_to_u64(str, &u64)) {
+		return 1;
+	} else if (u64 > UINT8_MAX) {
+		errno = ERANGE;
+		return 1;
+	}
+	*out = KS_u8_clamp(u64);
+	return 0;
+}
+
+int
+KS_str_to_u16(const char *str, uint16_t *out)
+{
+	uint64_t u64 = 0;
+	if (KS_str_to_u64(str, &u64)) {
+		return 1;
+	} else if (u64 > UINT16_MAX) {
+		errno = ERANGE;
+		return 1;
+	}
+	*out = KS_u16_clamp(u64);
+	return 0;
+}
+
+int
+KS_str_to_u32(const char *str, uint32_t *out)
+{
+	uint64_t u64 = 0;
+	if (KS_str_to_u64(str, &u64)) {
+		return 1;
+	} else if (u64 > UINT32_MAX) {
+		errno = ERANGE;
+		return 1;
+	}
+	*out = KS_u32_clamp(u64);
+	return 0;
+}
+
+int
+KS_str_to_u64(const char *str, uint64_t *out)
+{
+	errno = 0;
+
+	size_t n = strlen(str);
+	if (n == 0 || !isdigit(str[0])) {
+		errno = EINVAL;
+		return 1;
+	}
+
+	char *end;
+	unsigned long long val = strtoull(str, &end, 0);
+	if (errno == ERANGE && val == ULLONG_MAX)
+		return 1;
+	*out = val;
+	return 0;
 }

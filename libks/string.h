@@ -18,6 +18,7 @@
 #define LIBKS_STRING_H
 
 #include <stddef.h>	/* size_t */
+#include <stdint.h>
 #include "libks/section.h"
 
 struct arena_scope;
@@ -65,5 +66,10 @@ char	**KS_str_split(const char *, const struct KS_str_match *,
 char	**KS_str_split_spaces(const char *, struct arena_scope *);
 
 char	*KS_str_vis(const char *, size_t, struct arena_scope *);
+
+int	KS_str_to_u8(const char *, uint8_t *);
+int	KS_str_to_u16(const char *, uint16_t *);
+int	KS_str_to_u32(const char *, uint32_t *);
+int	KS_str_to_u64(const char *, uint64_t *);
 
 #endif /* !LIBKS_STRING_H */
