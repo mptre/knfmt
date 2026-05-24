@@ -43,7 +43,7 @@ struct enumerations {
 	uint64_t xcr0;
 };
 
-int KS_x86_capabilites_impl(struct KS_x86_capabilites *);
+extern int KS_x86_capabilites_impl(struct KS_x86_capabilites *);
 
 static void cpuid(uint32_t, uint32_t, struct cpuid *);
 static uint64_t xgetbv(uint32_t);
@@ -278,8 +278,6 @@ mode(struct KS_x86_capabilites *caps)
 static void
 avx(const struct enumerations *e, struct KS_x86_capabilites *caps)
 {
-	if ((e->cpuid_01.c & CPUID_01_C_OSXSAVE_MASK) == 0)
-		return;
 	if ((e->xcr0 & XCR0_XMM_MASK) == 0 || (e->xcr0 & XCR0_YMM_MASK) == 0)
 		return;
 	caps->avx = 1;
@@ -355,7 +353,8 @@ KS_x86_capabilites_impl(struct KS_x86_capabilites *caps)
 		KS_cpuid(7, 0, &e.cpuid_07);
 	if (extended_max_leaf >= 0x80000001)
 		KS_cpuid(0x80000001, 0, &e.cpuid_80000001);
-	e.xcr0 = KS_xgetbv(0);
+	if (e.cpuid_01.c & CPUID_01_C_OSXSAVE_MASK)
+		e.xcr0 = KS_xgetbv(0);
 
 	if (vendor == Vendor_Intel)
 		intel_uarch(&e, caps);

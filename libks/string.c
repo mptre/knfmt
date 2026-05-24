@@ -29,7 +29,7 @@
 #include "libks/section.h"
 #include "libks/vector.h"
 
-int	KS_str_match_init_default(const char *, struct KS_str_match *);
+extern int	KS_str_match_init_default(const char *, struct KS_str_match *);
 
 static void	KS_str_init(void) __attribute__((constructor));
 
