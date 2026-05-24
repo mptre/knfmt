@@ -103,7 +103,9 @@ struct style;
 	OP(UseTab)
 
 enum style_keyword {
+	Invalid = 0,
 	First = 1,
+
 #define DO(style) style,
 	FOR_STYLES(DO)
 #undef DO

@@ -1032,9 +1032,9 @@ clang_branch_leave(struct clang *cl, struct lexer *lx, struct token *cpp,
 			token_branch_parent_update_flags(
 			    token_priv(br, struct clang_token)->branch.parent);
 		}
-	}
 
-	VECTOR_POP(cl->branches);
+		VECTOR_POP(cl->branches);
+	}
 }
 
 /*
