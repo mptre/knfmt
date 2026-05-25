@@ -14,9 +14,13 @@ Checks: |
     -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
     -clang-analyzer-unix.Malloc,
     -clang-analyzer-valist.Uninitialized,
+  hicpp-uppercase-literal-suffix,
+  misc-misplaced-const,
   misc-use-internal-linkage,
   performance-*,
   portability-*,
+  readability-math-missing-parentheses,
+  readability-redundant-casting,
 CheckOptions:
   - key:   bugprone-suspicious-string-compare.StringCompareLikeFunctions
     value: buffer_cmp;token_cmp;
