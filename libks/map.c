@@ -645,12 +645,12 @@ HASH_JEN(const void *key, size_t keylen)
 {
 	struct hash_key _hj_key = {0};
 	size_t k;
-	unsigned int hashv = 0xfeedbeefu;
+	unsigned int hashv = 0xfeedbeefU;
 	unsigned int _hj_i, _hj_j;
 
 	hash_key_init(&_hj_key, key, keylen);
 
-	_hj_i = _hj_j = 0x9e3779b9u;
+	_hj_i = _hj_j = 0x9e3779b9U;
 	k = keylen;
 	while (k >= 12U) {
 		_hj_i += hash_key_read_u32(&_hj_key);

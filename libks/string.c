@@ -168,7 +168,7 @@ KS_str_vis(const char *str, size_t len, struct arena_scope *s)
 	struct buffer *bf;
 	size_t i;
 
-	bf = arena_buffer_alloc(s, 4 * len + 1);
+	bf = arena_buffer_alloc(s, (4 * len) + 1);
 
 	for (i = 0; i < len; i++) {
 		char c = str[i];

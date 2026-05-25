@@ -92,8 +92,7 @@ vector_free(void **vv)
 	if (*vv == NULL)
 		return;
 	vc = ptov(*vv);
-	vc->vc_callbacks.free(vc, sizeof(*vc) + vc->p.len * vc->p.stride,
-	    vc->vc_callbacks.arg);
+	vc->vc_callbacks.free(vc, sizeof(*vc) + (vc->p.len * vc->p.stride), vc->vc_callbacks.arg);
 	*vv = NULL;
 }
 
@@ -217,7 +216,7 @@ vector_reserve1(struct vector **vv, size_t len)
 	if (vc->p.len + len <= vc->vc_siz)
 		return VECTOR_SUCCESS;
 
-	oldlen = sizeof(*vc) + vc->p.len * vc->p.stride;
+	oldlen = sizeof(*vc) + (vc->p.len * vc->p.stride);
 
 	newsiz = vc->vc_siz ? vc->vc_siz : 16;
 	while (newsiz < vc->p.len + len) {
