@@ -159,12 +159,12 @@ struct arena_scope;
 	OP(TOKEN_STRING,	0)					\
 	OP(TOKEN_NONE,		0)
 
-#define TOKEN_SERIALIZE_VERBATIM	0x00000001u
-#define TOKEN_SERIALIZE_POSITION	0x00000002u
-#define TOKEN_SERIALIZE_FLAGS		0x00000004u
-#define TOKEN_SERIALIZE_REFS		0x00000008u
-#define TOKEN_SERIALIZE_ADDRESS		0x00000010u
-#define TOKEN_SERIALIZE_QUOTE		0x00000020u
+#define TOKEN_SERIALIZE_VERBATIM	0x00000001U
+#define TOKEN_SERIALIZE_POSITION	0x00000002U
+#define TOKEN_SERIALIZE_FLAGS		0x00000004U
+#define TOKEN_SERIALIZE_REFS		0x00000008U
+#define TOKEN_SERIALIZE_ADDRESS		0x00000010U
+#define TOKEN_SERIALIZE_QUOTE		0x00000020U
 
 #define token_priv(tk, type) __extension__ ({				\
 	typeof(tk) _nx = (tk) + 1;					\
@@ -189,36 +189,36 @@ struct token {
 	unsigned int		 tk_cno;
 	unsigned int		 tk_flags;
 /* Token denotes a type keyword. */
-#define TOKEN_FLAG_TYPE						0x00000001u
+#define TOKEN_FLAG_TYPE						0x00000001U
 /* Token denotes a qualifier keyword. */
-#define TOKEN_FLAG_QUALIFIER					0x00000002u
+#define TOKEN_FLAG_QUALIFIER					0x00000002U
 /* Token denotes a storage keyword. */
-#define TOKEN_FLAG_STORAGE					0x00000004u
-#define TOKEN_FLAG_BRANCH					0x00000008u
+#define TOKEN_FLAG_STORAGE					0x00000004U
+#define TOKEN_FLAG_BRANCH					0x00000008U
 /* Token denotes an assignment operator. */
-#define TOKEN_FLAG_ASSIGN					0x00000010u
-#define TOKEN_FLAG_AMBIGUOUS					0x00000020u
-#define TOKEN_FLAG_BINARY					0x00000040u
-#define TOKEN_FLAG_DISCARD					0x00000080u
-#define TOKEN_FLAG_COMMENT_C99					0x00000100u
-#define TOKEN_FLAG_CPP						0x00000200u
+#define TOKEN_FLAG_ASSIGN					0x00000010U
+#define TOKEN_FLAG_AMBIGUOUS					0x00000020U
+#define TOKEN_FLAG_BINARY					0x00000040U
+#define TOKEN_FLAG_DISCARD					0x00000080U
+#define TOKEN_FLAG_COMMENT_C99					0x00000100U
+#define TOKEN_FLAG_CPP						0x00000200U
 /*
  * Token followed by exactly one new line. Dangling suffix and only emitted
  * in certain contexts.
  */
-#define TOKEN_FLAG_OPTLINE					0x00000400u
+#define TOKEN_FLAG_OPTLINE					0x00000400U
 /* Token followed by spaces or tabs. Dangling suffix and never emitted. */
-#define TOKEN_FLAG_OPTSPACE					0x00000800u
+#define TOKEN_FLAG_OPTSPACE					0x00000800U
 /*
  * Token may be surrounded by spaces. Only applicable to binary operators, see
  * token.h.
  */
-#define TOKEN_FLAG_SPACE					0x00001000u
+#define TOKEN_FLAG_SPACE					0x00001000U
 /* Token covered by diff chunk. */
-#define TOKEN_FLAG_DIFF						0x00002000u
-#define TOKEN_FLAG_TYPE_FUNC					0x00004000u
-#define TOKEN_FLAG_COMMENT_CLANG_FORMAT_OFF			0x00008000u
-#define TOKEN_FLAG_COMMENT_CLANG_FORMAT_ON			0x00010000u
+#define TOKEN_FLAG_DIFF						0x00002000U
+#define TOKEN_FLAG_TYPE_FUNC					0x00004000U
+#define TOKEN_FLAG_COMMENT_CLANG_FORMAT_OFF			0x00008000U
+#define TOKEN_FLAG_COMMENT_CLANG_FORMAT_ON			0x00010000U
 
 	const char		*tk_str;
 	size_t			 tk_len;

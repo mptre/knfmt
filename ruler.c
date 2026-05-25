@@ -215,7 +215,7 @@ ruler_exec_indent(struct ruler *rl)
 	rc = &rl->rl_columns[0];
 	(void)ruler_column_length(rl, rc, &len);
 	if (len.tabalign)
-		len.max = (len.max + 8 - 1) & ~0x7u;
+		len.max = (len.max + 8 - 1) & ~0x7U;
 
 	for (i = 0; i < VECTOR_LENGTH(rl->rl_indent); i++) {
 		struct ruler_indent *ri = &rl->rl_indent[i];

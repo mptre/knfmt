@@ -47,7 +47,7 @@ enum expr_pc {
 	PC15,		/* () [] -> . */
 };
 
-#define PCUNARY		0x80000000u
+#define PCUNARY		0x80000000U
 #define PC(pc)		((pc) & ~PCUNARY)
 
 #define FOR_EXPR_TYPES(OP)						\

@@ -179,9 +179,9 @@ struct doc_walk_queue {
 };
 
 enum {
-	DOC_WALK_BREAK		= 0x00000001u,
-	DOC_WALK_CONTINUE	= 0x00000002u,
-	DOC_WALK_RESTORE	= 0x40000000u,
+	DOC_WALK_BREAK		= 0x00000001U,
+	DOC_WALK_CONTINUE	= 0x00000002U,
+	DOC_WALK_RESTORE	= 0x40000000U,
 };
 
 /*
@@ -1885,7 +1885,7 @@ doc_trace_impl(const struct doc *UNUSED(dc), const struct doc_state *st,
 	arena_scope(st->st_scratch, s);
 
 	fprintf(stderr, "%s", statestr(st, st->st_depth, &s));
-	depth = st->st_depth * 2 + 1;
+	depth = (st->st_depth * 2) + 1;
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "-");
 

@@ -20,17 +20,17 @@ struct expr_exec_arg {
 	unsigned int		 align;
 	unsigned int		 flags;
 /* Emit a soft line before the expression. */
-#define EXPR_EXEC_SOFTLINE		0x00000001u
+#define EXPR_EXEC_SOFTLINE		0x00000001U
 /* Emit a hard line before the expression. */
-#define EXPR_EXEC_HARDLINE		0x00000002u
+#define EXPR_EXEC_HARDLINE		0x00000002U
 /* Align arguments using the supplied ruler. */
-#define EXPR_EXEC_ALIGN			0x00000004u
+#define EXPR_EXEC_ALIGN			0x00000004U
 /* Testing backdoor. */
-#define EXPR_EXEC_TEST			0x00000008u
+#define EXPR_EXEC_TEST			0x00000008U
 /* Emit a line before the expression. */
-#define EXPR_EXEC_LINE			0x00000010u
+#define EXPR_EXEC_LINE			0x00000010U
 /* Disable expr_doc_soft() logic. */
-#define EXPR_EXEC_NOSOFT		0x00000020u
+#define EXPR_EXEC_NOSOFT		0x00000020U
 
 	struct {
 		struct arena		*scratch;

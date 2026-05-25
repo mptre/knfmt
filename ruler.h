@@ -10,26 +10,26 @@ struct ruler {
 /*
  * Minimum alignment, use smallest possible alignment to align all columns.
  */
-#define RULER_ALIGN_MIN		0x00000001u
+#define RULER_ALIGN_MIN		0x00000001U
 /*
  * Maximum alignment, the aligment for all columns will be less or equal to the
  * alignment given to ruler_init().
  */
-#define RULER_ALIGN_MAX		0x00000002u
+#define RULER_ALIGN_MAX		0x00000002U
 /*
  * Fixed alignment, unconditionally align all columns to the alignment given to
  * ruler_init().
  */
-#define RULER_ALIGN_FIXED	0x00000004u
+#define RULER_ALIGN_FIXED	0x00000004U
 /*
  * Minimum alignment, use smallest possible alignment ceiled to a multiple of 8
  * to align all columns.
  */
-#define RULER_ALIGN_TABS	0x00000008u
+#define RULER_ALIGN_TABS	0x00000008U
 /*
  * Sense and honor existing alignment.
  */
-#define RULER_ALIGN_SENSE	0x00000020u
+#define RULER_ALIGN_SENSE	0x00000020U
 
 	struct {
 		struct arena_scope	*ruler_scope;

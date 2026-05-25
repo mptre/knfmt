@@ -2,9 +2,9 @@ struct doc;
 struct parser;
 struct ruler;
 
-#define PARSER_TYPE_CAST		0x00000001u
-#define PARSER_TYPE_ARG			0x00000002u
-#define PARSER_TYPE_EXPR		0x00000004u
+#define PARSER_TYPE_CAST		0x00000001U
+#define PARSER_TYPE_ARG			0x00000002U
+#define PARSER_TYPE_EXPR		0x00000004U
 
 struct parser_type {
 	struct token	*beg;
