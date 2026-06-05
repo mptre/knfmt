@@ -235,6 +235,13 @@ is_main_include(const char *include_path, const char *path,
 	return 0;
 }
 
+static int
+has_trailing_comment(const struct token *tk)
+{
+	const struct token *nx = token_next(tk);
+	return nx && nx->tk_type == TOKEN_COMMENT && (nx->tk_lno - tk->tk_lno) == 1;
+}
+
 static void
 cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 {
@@ -290,10 +297,10 @@ cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 		add_to_include_group(ci, include);
 	}
 
+	struct include *last = NULL;
 	while (MAP_ITERATE(ci->groups, &it)) {
 		struct include_group *group = it.val;
 		struct include **p;
-		struct include *last;
 		int doline;
 
 		p = VECTOR_LAST(group->includes);
@@ -322,8 +329,7 @@ cpp_include_exec(struct cpp_include *ci, struct lexer *lx)
 		if (doline)
 			after = add_line(ci, lx, after);
 	}
-
-	if (ci->merge)
+	if (ci->merge && (last == NULL || !has_trailing_comment(last->tk)))
 		add_line(ci, lx, after);
 }
 
