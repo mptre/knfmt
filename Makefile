@@ -1,6 +1,6 @@
 include ${.CURDIR}/config.mk
 
-VERSION=	5.3.1rc1
+VERSION=	5.3.1
 
 SRCS+=	arenas.c
 SRCS+=	clang.c
