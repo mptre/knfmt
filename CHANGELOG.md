@@ -1,9 +1,13 @@
-# 5.3.1 - YYYY-MM-DD
+# 5.3.1 - 2026-06-06
 
 ## Bug fixes
 
 - In simple mode, do not remove parenthesis around gnu statement expressions.
   (91fb32f40003)
+  (Anton Lindqvist)
+
+- Honor trailing comments with IncludeBlocks Merge.
+  (798befab99bd)
   (Anton Lindqvist)
 
 # 5.3.0 - 2026-05-07
